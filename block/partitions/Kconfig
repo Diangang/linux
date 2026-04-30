@@ -91,7 +91,7 @@ config OSF_PARTITION
 
 config AMIGA_PARTITION
 	bool "Amiga partition table support" if PARTITION_ADVANCED
-	default y if (AMIGA || AFFS_FS=y)
+	default y if AMIGA
 	help
 	  Say Y here if you would like to use hard disks under Linux which
 	  were partitioned under AmigaOS.
