@@ -4488,7 +4488,6 @@ BFS FILE SYSTEM
 M:	"Tigran A. Aivazian" <aivazian.tigran@gmail.com>
 S:	Maintained
 F:	Documentation/filesystems/bfs.rst
-F:	fs/bfs/
 F:	include/uapi/linux/bfs_fs.h
 
 BITMAP API
