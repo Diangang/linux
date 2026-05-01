@@ -22,7 +22,7 @@ static const char *const known_fs[] = {
 	"coda", "configfs", "cpuset", "cramfs", "cxl", "dax", "debugfs",
 	"devpts", "devtmpfs", "dmabuf", "drm", "ecryptfs", "efivarfs", "efs",
 	"erofs", "exfat", "ext2", "ext3", "ext4", "f2fs", "functionfs",
-	"fuse", "fuseblk", "fusectl", "gadgetfs", "gfs2", "gfs2meta", "hfs",
+	"fuse", "fuseblk", "fusectl", "gadgetfs", "gfs2", "gfs2meta",
 	"hfsplus", "hostfs", "hugetlbfs", "ibmasmfs", "iomem",
 	"ipathfs", "iso9660", "jffs2", "jfs", "minix", "mqueue", "msdos",
 	"nfs", "nfs4", "nfsd", "nilfs2", "nsfs", "ntfs", "ntfs3", "ocfs2",

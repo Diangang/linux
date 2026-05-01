@@ -11331,17 +11331,6 @@ L:	linux-rdma@vger.kernel.org
 S:	Supported
 F:	drivers/infiniband/hw/hfi1
 
-HFS FILESYSTEM
-M:	Viacheslav Dubeyko <slava@dubeyko.com>
-M:	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-M:	Yangtao Li <frank.li@vivo.com>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/vdubeyko/hfs.git
-F:	Documentation/filesystems/hfs.rst
-F:	fs/hfs/
-F:	include/linux/hfs_common.h
-
 HFSPLUS FILESYSTEM
 M:	Viacheslav Dubeyko <slava@dubeyko.com>
 M:	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>

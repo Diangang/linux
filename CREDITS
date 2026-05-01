@@ -3909,7 +3909,6 @@ D: misc kernel fixes and updates
 
 N: Adrian Sun
 E: asun@cobaltnet.com
-D: hfs support
 D: alpha rtc port, random appletalk fixes
 S: Department of Zoology, University of Washington
 S: Seattle, WA  98195-1800
