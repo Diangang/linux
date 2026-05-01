@@ -77,7 +77,6 @@ obj-$(CONFIG_MINIX_FS)		+= minix/
 obj-$(CONFIG_FAT_FS)		+= fat/
 obj-$(CONFIG_EXFAT_FS)		+= exfat/
 obj-$(CONFIG_ISO9660_FS)	+= isofs/
-obj-$(CONFIG_HFSPLUS_FS)	+= hfsplus/
 obj-$(CONFIG_ECRYPT_FS)		+= ecryptfs/
 obj-$(CONFIG_NFS_FS)		+= nfs/
 obj-$(CONFIG_EXPORTFS)		+= exportfs/

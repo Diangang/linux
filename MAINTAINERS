@@ -11331,17 +11331,6 @@ L:	linux-rdma@vger.kernel.org
 S:	Supported
 F:	drivers/infiniband/hw/hfi1
 
-HFSPLUS FILESYSTEM
-M:	Viacheslav Dubeyko <slava@dubeyko.com>
-M:	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-M:	Yangtao Li <frank.li@vivo.com>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/vdubeyko/hfs.git
-F:	Documentation/filesystems/hfsplus.rst
-F:	fs/hfsplus/
-F:	include/linux/hfs_common.h
-
 HGA FRAMEBUFFER DRIVER
 M:	Ferenc Bakonyi <fero@drama.obuda.kando.hu>
 L:	linux-nvidia@lists.surfsouth.com

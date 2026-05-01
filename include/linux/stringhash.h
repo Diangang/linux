@@ -31,8 +31,7 @@
  *	hash = partial_name_hash(tolower(*p++), hash);
  * hash = end_name_hash(hash);
  *
- * Although this is designed for bytes, fs/hfsplus/unicode.c
- * abuses it to hash 16-bit values.
+ * This is designed for bytes.
  */
 
 /* Hash courtesy of the R5 hash in reiserfs modulo sign bits */
