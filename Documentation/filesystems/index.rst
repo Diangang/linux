@@ -92,7 +92,6 @@ Documentation for filesystem implementations.
    gfs2/index
    hfs
    hfsplus
-   hpfs
    fuse/index
    inotify
    isofs

@@ -23,7 +23,7 @@ static const char *const known_fs[] = {
 	"devpts", "devtmpfs", "dmabuf", "drm", "ecryptfs", "efivarfs", "efs",
 	"erofs", "exfat", "ext2", "ext3", "ext4", "f2fs", "functionfs",
 	"fuse", "fuseblk", "fusectl", "gadgetfs", "gfs2", "gfs2meta", "hfs",
-	"hfsplus", "hostfs", "hpfs", "hugetlbfs", "ibmasmfs", "iomem",
+	"hfsplus", "hostfs", "hugetlbfs", "ibmasmfs", "iomem",
 	"ipathfs", "iso9660", "jffs2", "jfs", "minix", "mqueue", "msdos",
 	"nfs", "nfs4", "nfsd", "nilfs2", "nsfs", "ntfs", "ntfs3", "ocfs2",
 	"ocfs2_dlmfs", "omfs", "openpromfs", "overlay", "pipefs", "proc",
