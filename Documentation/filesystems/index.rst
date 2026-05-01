@@ -107,7 +107,6 @@ Documentation for filesystem implementations.
    orangefs
    overlayfs
    proc
-   qnx6
    ramfs-rootfs-initramfs
    relay
    resctrl

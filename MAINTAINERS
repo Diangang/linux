@@ -21713,12 +21713,6 @@ W:	http://www.alarsen.net/linux/qnx4fs/
 F:	include/uapi/linux/qnx4_fs.h
 F:	include/uapi/linux/qnxtypes.h
 
-QNX6 FILESYSTEM
-S:	Orphan
-F:	Documentation/filesystems/qnx6.rst
-F:	fs/qnx6/
-F:	include/linux/qnx6_fs.h
-
 QORIQ DPAA2 FSL-MC BUS DRIVER
 M:	Ioana Ciornei <ioana.ciornei@nxp.com>
 L:	linuxppc-dev@lists.ozlabs.org
