@@ -4469,14 +4469,6 @@ L:	netdev@vger.kernel.org
 S:	Maintained
 F:	drivers/net/ethernet/ec_bhf.c
 
-BEFS FILE SYSTEM
-M:	Luis de Bethencourt <luisbg@kernel.org>
-M:	Salah Triki <salah.triki@gmail.com>
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/luisbg/linux-befs.git
-F:	Documentation/filesystems/befs.rst
-F:	fs/befs/
-
 BFQ I/O SCHEDULER
 M:	Yu Kuai <yukuai@fnnas.com>
 L:	linux-block@vger.kernel.org
