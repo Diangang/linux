@@ -101,7 +101,6 @@ Documentation for filesystem implementations.
    ntfs3
    ocfs2
    ocfs2-online-filecheck
-   omfs
    orangefs
    overlayfs
    proc
