@@ -1644,7 +1644,6 @@ S: Germany
 N: Christoph Hellwig
 E: hch@infradead.org
 D: all kinds of driver, filesystem & core kernel hacking
-D: freevxfs driver
 D: sysvfs maintainer
 D: chief codingstyle nitpicker
 S: Ampferstr. 50 / 4
