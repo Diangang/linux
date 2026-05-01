@@ -35,6 +35,7 @@
 # by the device.
 
 menu "USB Gadget precomposed configurations"
+	depends on CONFIGFS_FS
 
 config USB_ZERO
 	tristate "Gadget Zero (DEVELOPMENT)"

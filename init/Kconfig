@@ -546,9 +546,8 @@ config HAVE_ARCH_AUDITSYSCALL
 	bool
 
 config AUDITSYSCALL
-	def_bool y
+	def_bool n
 	depends on AUDIT && HAVE_ARCH_AUDITSYSCALL
-	select FSNOTIFY
 
 source "kernel/irq/Kconfig"
 source "kernel/time/Kconfig"
@@ -1732,8 +1731,7 @@ config SGETMASK_SYSCALL
 
 config FHANDLE
 	bool "open by fhandle syscalls" if EXPERT
-	select EXPORTFS
-	default y
+	default n
 	help
 	  If you say Y here, a user level program will be able to map
 	  file names to handle and then later use the handle for

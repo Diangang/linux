@@ -21,7 +21,6 @@ obj-y :=	open.o read_write.o file_table.o super.o \
 obj-$(CONFIG_BUFFER_HEAD)	+= buffer.o mpage.o
 obj-$(CONFIG_PROC_FS)		+= proc_namespace.o
 obj-$(CONFIG_LEGACY_DIRECT_IO)	+= direct-io.o
-obj-y				+= notify/
 obj-$(CONFIG_EPOLL)		+= eventpoll.o
 obj-y				+= anon_inodes.o
 obj-$(CONFIG_SIGNALFD)		+= signalfd.o
@@ -30,8 +29,6 @@ obj-$(CONFIG_EVENTFD)		+= eventfd.o
 obj-$(CONFIG_USERFAULTFD)	+= userfaultfd.o
 obj-$(CONFIG_AIO)               += aio.o
 obj-$(CONFIG_FS_DAX)		+= dax.o
-obj-$(CONFIG_FS_ENCRYPTION)	+= crypto/
-obj-$(CONFIG_FS_VERITY)		+= verity/
 obj-$(CONFIG_FILE_LOCKING)      += locks.o
 obj-$(CONFIG_BINFMT_MISC)	+= binfmt_misc.o
 obj-$(CONFIG_BINFMT_SCRIPT)	+= binfmt_script.o
@@ -46,32 +43,14 @@ obj-$(CONFIG_FS_POSIX_ACL)	+= posix_acl.o
 obj-$(CONFIG_COREDUMP)		+= coredump.o
 obj-$(CONFIG_SYSCTL)		+= drop_caches.o sysctls.o
 
-obj-$(CONFIG_FHANDLE)		+= fhandle.o
-obj-y				+= iomap/
-
-obj-y				+= quota/
-
 obj-$(CONFIG_PROC_FS)		+= proc/
 obj-$(CONFIG_KERNFS)		+= kernfs/
 obj-$(CONFIG_SYSFS)		+= sysfs/
-obj-$(CONFIG_CONFIGFS_FS)	+= configfs/
-obj-y				+= devpts/
 
 # Do not add any filesystems before this line
-obj-$(CONFIG_JBD2)		+= jbd2/
 obj-$(CONFIG_CRAMFS)		+= cramfs/
 obj-y				+= ramfs/
-obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
 obj-$(CONFIG_MINIX_FS)		+= minix/
-obj-$(CONFIG_EXPORTFS)		+= exportfs/
-obj-$(CONFIG_NLS)		+= nls/
-obj-y				+= unicode/
-obj-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs/
-obj-y				+= hostfs/
 obj-$(CONFIG_DEBUG_FS)		+= debugfs/
-obj-$(CONFIG_TRACING)		+= tracefs/
 obj-$(CONFIG_PSTORE)		+= pstore/
-obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
-obj-$(CONFIG_VBOXSF_FS)		+= vboxsf/
 obj-$(CONFIG_BPF_LSM)		+= bpf_fs_kfuncs.o
-obj-$(CONFIG_RESCTRL_FS)	+= resctrl/

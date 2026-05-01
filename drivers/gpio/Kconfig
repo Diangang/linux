@@ -2010,7 +2010,7 @@ menu "Virtual GPIO drivers"
 
 config GPIO_AGGREGATOR
 	tristate "GPIO Aggregator"
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	help
 	  Say yes here to enable the GPIO Aggregator, which provides a way to
 	  aggregate existing GPIO lines into a new virtual GPIO chip.
@@ -2060,8 +2060,8 @@ config GPIO_VIRTIO
 
 config GPIO_SIM
 	tristate "GPIO Simulator Module"
+	depends on CONFIGFS_FS
 	select IRQ_SIM
-	select CONFIGFS_FS
 	help
 	  This enables the GPIO simulator - a configfs-based GPIO testing
 	  driver.
@@ -2096,8 +2096,8 @@ config GPIO_SLOPPY_LOGIC_ANALYZER
 
 config GPIO_VIRTUSER
 	tristate "GPIO Virtual User Testing Module"
+	depends on CONFIGFS_FS
 	select DEBUG_FS
-	select CONFIGFS_FS
 	select IRQ_WORK
 	help
 	  Say Y here to enable the configurable, configfs-based virtual GPIO

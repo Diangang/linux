@@ -121,6 +121,7 @@ config CRASH_DM_CRYPT
 	depends on CRASH_DUMP
 	depends on DM_CRYPT
 	depends on KEYS
+	depends on CONFIGFS_FS
 	help
 	  With this option enabled, user space can intereact with
 	  /sys/kernel/config/crash_dm_crypt_keys to make the dm crypt keys
@@ -128,7 +129,7 @@ config CRASH_DM_CRYPT
 
 config CRASH_DM_CRYPT_CONFIGS
 	def_tristate CRASH_DM_CRYPT
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	help
 	  CRASH_DM_CRYPT cannot directly select CONFIGFS_FS, because that
 	  is required to be built-in.

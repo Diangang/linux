@@ -6,9 +6,9 @@ menuconfig CORESIGHT
 	tristate "CoreSight Tracing Support"
 	depends on ARM || ARM64
 	depends on OF || ACPI
+	depends on CONFIGFS_FS
 	select ARM_AMBA
 	select PERF_EVENTS
-	select CONFIGFS_FS
 	help
 	  This framework provides a kernel interface for the CoreSight debug
 	  and trace drivers to register themselves with. It's intended to build

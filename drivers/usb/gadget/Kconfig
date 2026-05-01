@@ -144,7 +144,7 @@ source "drivers/usb/gadget/udc/Kconfig"
 # composite based drivers
 config USB_LIBCOMPOSITE
 	tristate
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	depends on USB_GADGET
 
 config USB_F_ACM
@@ -227,6 +227,7 @@ config USB_F_TCM
 
 config USB_CONFIGFS
 	tristate "USB Gadget functions configurable through configfs"
+	depends on CONFIGFS_FS
 	select USB_LIBCOMPOSITE
 	help
 	  A Linux USB "gadget" can be set up through configfs.

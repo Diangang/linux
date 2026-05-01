@@ -518,7 +518,7 @@ config ACPI_ADXL
 
 config ACPI_CONFIGFS
 	tristate "ACPI configfs support"
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	help
 	  Select this option to enable support for ACPI configuration from
 	  userspace. The configurable ACPI groups will be visible under

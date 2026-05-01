@@ -2141,7 +2141,3 @@ static void __exit exit_elf_binfmt(void)
 
 core_initcall(init_elf_binfmt);
 module_exit(exit_elf_binfmt);
-
-#ifdef CONFIG_BINFMT_ELF_KUNIT_TEST
-#include "tests/binfmt_elf_kunit.c"
-#endif

@@ -7,7 +7,7 @@ config TSM_GUEST
 
 config TSM_REPORTS
 	select TSM_GUEST
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	tristate
 
 config TSM_MEASUREMENTS

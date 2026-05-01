@@ -6370,7 +6370,6 @@ M:	Andreas Hindborg <a.hindborg@kernel.org>
 R:	Breno Leitao <leitao@debian.org>
 S:	Supported
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/a.hindborg/linux.git configfs-next
-F:	fs/configfs/
 F:	include/linux/configfs.h
 F:	rust/kernel/configfs.rs
 F:	samples/configfs/
@@ -7391,7 +7390,6 @@ R:	Amir Goldstein <amir73il@gmail.com>
 L:	linux-fsdevel@vger.kernel.org
 S:	Maintained
 F:	Documentation/filesystems/dnotify.rst
-F:	fs/notify/dnotify/
 F:	include/linux/dnotify.h
 
 DISK GEOMETRY AND PARTITION HANDLING
@@ -7405,7 +7403,6 @@ DISKQUOTA
 M:	Jan Kara <jack@suse.com>
 S:	Maintained
 F:	Documentation/filesystems/quota.rst
-F:	fs/quota/
 F:	include/linux/quota*.h
 F:	include/uapi/linux/quota*.h
 
@@ -9260,7 +9257,6 @@ M:	Ard Biesheuvel <ardb@kernel.org>
 L:	linux-efi@vger.kernel.org
 S:	Maintained
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/efi/efi.git
-F:	fs/efivarfs/
 
 EFIFB FRAMEBUFFER DRIVER
 M:	Peter Jones <pjones@redhat.com>
@@ -9494,8 +9490,6 @@ F:	Documentation/userspace-api/ELF.rst
 F:	fs/*binfmt_*.c
 F:	fs/Kconfig.binfmt
 F:	fs/exec.c
-F:	fs/tests/binfmt_*_kunit.c
-F:	fs/tests/exec_kunit.c
 F:	include/linux/binfmts.h
 F:	include/linux/elf.h
 F:	include/uapi/linux/auxvec.h
@@ -9611,7 +9605,6 @@ R:	Amir Goldstein <amir73il@gmail.com>
 R:	Matthew Bobrowski <repnop@google.com>
 L:	linux-fsdevel@vger.kernel.org
 S:	Maintained
-F:	fs/notify/fanotify/
 F:	include/linux/fanotify.h
 F:	include/uapi/linux/fanotify.h
 
@@ -9717,7 +9710,6 @@ L:	linux-fsdevel@vger.kernel.org
 L:	linux-nfs@vger.kernel.org
 S:	Supported
 F:	Documentation/filesystems/nfs/exporting.rst
-F:	fs/exportfs/
 F:	fs/fhandle.c
 F:	include/linux/exportfs.h
 
@@ -9738,7 +9730,6 @@ L:	linux-xfs@vger.kernel.org
 L:	linux-fsdevel@vger.kernel.org
 S:	Supported
 F:	Documentation/filesystems/iomap/*
-F:	fs/iomap/
 F:	include/linux/iomap.h
 
 FILESYSTEMS [NETFS LIBRARY]
@@ -10288,7 +10279,6 @@ S:	Supported
 Q:	https://patchwork.kernel.org/project/linux-fscrypt/list/
 T:	git https://git.kernel.org/pub/scm/fs/fscrypt/linux.git
 F:	Documentation/filesystems/fscrypt.rst
-F:	fs/crypto/
 F:	include/linux/fscrypt.h
 F:	include/uapi/linux/fscrypt.h
 
@@ -10324,7 +10314,6 @@ R:	Amir Goldstein <amir73il@gmail.com>
 L:	linux-fsdevel@vger.kernel.org
 S:	Maintained
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git fsnotify
-F:	fs/notify/
 F:	include/linux/fsnotify*.h
 
 FSVERITY: READ-ONLY FILE-BASED AUTHENTICITY PROTECTION
@@ -10335,7 +10324,6 @@ S:	Supported
 Q:	https://patchwork.kernel.org/project/fsverity/list/
 T:	git https://git.kernel.org/pub/scm/fs/fsverity/linux.git
 F:	Documentation/filesystems/fsverity.rst
-F:	fs/verity/
 F:	include/linux/fsverity.h
 F:	include/trace/events/fsverity.h
 F:	include/uapi/linux/fsverity.h
@@ -11647,7 +11635,6 @@ F:	Documentation/ABI/testing/sysfs-kernel-mm-hugepages
 F:	Documentation/admin-guide/mm/hugetlbpage.rst
 F:	Documentation/mm/hugetlbfs_reserv.rst
 F:	Documentation/mm/vmemmap_dedup.rst
-F:	fs/hugetlbfs/
 F:	include/linux/hugetlb.h
 F:	include/trace/events/hugetlbfs.h
 F:	mm/hugetlb.c
@@ -12443,7 +12430,6 @@ R:	Amir Goldstein <amir73il@gmail.com>
 L:	linux-fsdevel@vger.kernel.org
 S:	Maintained
 F:	Documentation/filesystems/inotify.rst
-F:	fs/notify/inotify/
 F:	include/linux/inotify.h
 F:	include/uapi/linux/inotify.h
 
@@ -13497,7 +13483,6 @@ M:	"Theodore Ts'o" <tytso@mit.edu>
 M:	Jan Kara <jack@suse.com>
 L:	linux-ext4@vger.kernel.org
 S:	Maintained
-F:	fs/jbd2/
 F:	include/linux/jbd2.h
 
 JPU V4L2 MEM2MEM DRIVER FOR RENESAS
@@ -21957,7 +21942,6 @@ P:	Documentation/process/maintainer-tip.rst
 F:	Documentation/filesystems/resctrl.rst
 F:	arch/x86/include/asm/resctrl.h
 F:	arch/x86/kernel/cpu/resctrl/
-F:	fs/resctrl/
 F:	include/linux/resctrl*.h
 F:	tools/testing/selftests/resctrl/
 
@@ -26637,7 +26621,6 @@ Q:	https://patchwork.kernel.org/project/linux-trace-kernel/list/
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/trace/linux-trace.git
 F:	Documentation/core-api/tracepoint.rst
 F:	Documentation/trace/*
-F:	fs/tracefs/
 F:	include/linux/trace*.h
 F:	include/trace/
 F:	kernel/trace/
@@ -26894,7 +26877,6 @@ M:	Gabriel Krisman Bertazi <krisman@kernel.org>
 L:	linux-fsdevel@vger.kernel.org
 S:	Supported
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/krisman/unicode.git
-F:	fs/unicode/
 
 UNIFDEF
 M:	Tony Finch <dot@dotat.at>
@@ -27366,7 +27348,6 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/uml/linux.git fixes
 F:	Documentation/virt/uml/
 F:	arch/um/
 F:	arch/x86/um/
-F:	fs/hostfs/
 
 USERSPACE COPYIN/COPYOUT (UIOVEC)
 M:	Alexander Viro <viro@zeniv.linux.org.uk>
@@ -27896,7 +27877,6 @@ VIRTUAL BOX SHARED FOLDER VFS DRIVER
 M:	Hans de Goede <hansg@kernel.org>
 L:	linux-fsdevel@vger.kernel.org
 S:	Maintained
-F:	fs/vboxsf/*
 
 VIRTUAL PCM TEST DRIVER
 M:	Ivan Orlov <ivan.orlov0322@gmail.com>

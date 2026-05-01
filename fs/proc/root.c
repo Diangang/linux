@@ -374,10 +374,6 @@ void __init proc_root_init(void)
 	proc_mkdir("fs", NULL);
 	proc_mkdir("driver", NULL);
 	proc_create_mount_point("fs/nfsd"); /* somewhere for the nfsd filesystem to be mounted */
-#if defined(CONFIG_SUN_OPENPROMFS) || defined(CONFIG_SUN_OPENPROMFS_MODULE)
-	/* just give it a mountpoint */
-	proc_create_mount_point("openprom");
-#endif
 	proc_tty_init();
 	proc_mkdir("bus", NULL);
 	proc_sys_init();

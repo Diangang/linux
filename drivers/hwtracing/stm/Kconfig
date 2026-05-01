@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config STM
 	tristate "System Trace Module devices"
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	help
 	  A System Trace Module (STM) is a device exporting data in System
 	  Trace Protocol (STP) format as defined by MIPI STP standards.

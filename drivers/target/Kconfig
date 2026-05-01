@@ -3,7 +3,7 @@
 menuconfig TARGET_CORE
 	tristate "Generic Target Core Mod (TCM) and ConfigFS Infrastructure"
 	depends on BLOCK
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 	select CRC_T10DIF
 	select SCSI_COMMON
 	select SGL_ALLOC

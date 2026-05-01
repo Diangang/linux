@@ -93,7 +93,6 @@ config VT_HW_CONSOLE_BINDING
 
 config UNIX98_PTYS
 	bool "Unix98 PTY support" if EXPERT
-	default y
 	help
 	  A pseudo terminal (PTY) is a software device consisting of two
 	  halves: a master and a slave. The slave device behaves identical to

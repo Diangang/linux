@@ -5,7 +5,7 @@
 
 config BLK_DEV_NULL_BLK
 	tristate "Null test block driver"
-	select CONFIGFS_FS
+	depends on CONFIGFS_FS
 
 config BLK_DEV_NULL_BLK_FAULT_INJECTION
 	bool "Support fault injection for Null test block driver"
