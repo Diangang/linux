@@ -96,7 +96,6 @@
 #include "smp.h"
 
 #include "../workqueue_internal.h"
-#include "../../io_uring/io-wq.h"
 #include "../smpboot.h"
 #include "../locking/mutex.h"
 
@@ -7229,8 +7228,6 @@ static inline void sched_submit_work(struct task_struct *tsk)
 	 */
 	if (task_flags & PF_WQ_WORKER)
 		wq_worker_sleeping(tsk);
-	else if (task_flags & PF_IO_WORKER)
-		io_wq_worker_sleeping(tsk);
 
 	/*
 	 * spinlock and rwlock must not flush block requests.  This will
@@ -7255,8 +7252,6 @@ static void sched_update_worker(struct task_struct *tsk)
 			blk_plug_invalidate_ts(tsk);
 		if (tsk->flags & PF_WQ_WORKER)
 			wq_worker_running(tsk);
-		else if (tsk->flags & PF_IO_WORKER)
-			io_wq_worker_running(tsk);
 	}
 }
 

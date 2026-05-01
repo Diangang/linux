@@ -187,7 +187,4 @@ source "fs/pstore/Kconfig"
 
 endif # MISC_FILESYSTEMS
 
-config IO_WQ
-	bool
-
 endmenu

@@ -466,6 +466,7 @@ config DEFAULT_HOSTNAME
 
 config SYSVIPC
 	bool "System V IPC"
+	depends on BROKEN
 	help
 	  Inter Process Communication is a suite of library functions and
 	  system calls which let processes (running programs) synchronize and
@@ -1316,6 +1317,7 @@ config PROC_PID_CPUSET
 
 config CGROUP_DEVICE
 	bool "Device controller"
+	depends on BROKEN
 	help
 	  Provides a cgroup controller implementing whitelists for
 	  devices which a process in the cgroup can mknod or open.
@@ -1340,6 +1342,7 @@ config CGROUP_PERF
 config CGROUP_BPF
 	bool "Support for eBPF programs attached to cgroups"
 	depends on BPF_SYSCALL
+	depends on BROKEN
 	select SOCK_CGROUP_DATA
 	help
 	  Allow attaching eBPF programs to a cgroup using the bpf(2)
@@ -1892,39 +1895,6 @@ config AIO
 	  This option enables POSIX asynchronous I/O which may by used
 	  by some high performance threaded applications. Disabling
 	  this option saves about 7k.
-
-config IO_URING
-	bool "Enable IO uring support" if EXPERT
-	select IO_WQ
-	default y
-	help
-	  This option enables support for the io_uring interface, enabling
-	  applications to submit and complete IO through submission and
-	  completion rings that are shared between the kernel and application.
-
-config GCOV_PROFILE_URING
-	bool "Enable GCOV profiling on the io_uring subsystem"
-	depends on IO_URING && GCOV_KERNEL
-	help
-	  Enable GCOV profiling on the io_uring subsystem, to facilitate
-	  code coverage testing.
-
-	  If unsure, say N.
-
-	  Note that this will have a negative impact on the performance of
-	  the io_uring subsystem, hence this should only be enabled for
-	  specific test purposes.
-
-config IO_URING_MOCK_FILE
-	tristate "Enable io_uring mock files (Experimental)" if EXPERT
-	default n
-	depends on IO_URING
-	help
-	  Enable mock files for io_uring subsystem testing. The ABI might
-	  still change, so it's still experimental and should only be enabled
-	  for specific test purposes.
-
-	  If unsure, say N.
 
 config ADVISE_SYSCALLS
 	bool "Enable madvise/fadvise syscalls" if EXPERT

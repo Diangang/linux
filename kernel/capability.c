@@ -19,6 +19,12 @@
 #include <linux/pid_namespace.h>
 #include <linux/user_namespace.h>
 #include <linux/uaccess.h>
+#include <linux/xattr.h>
+
+#ifdef CONFIG_MMU
+unsigned long dac_mmap_min_addr = CONFIG_DEFAULT_MMAP_MIN_ADDR;
+unsigned long mmap_min_addr = CONFIG_DEFAULT_MMAP_MIN_ADDR;
+#endif
 
 int file_caps_enabled = 1;
 
@@ -327,6 +333,140 @@ bool has_capability_noaudit(struct task_struct *t, int cap)
 	return has_ns_capability_noaudit(t, &init_user_ns, cap);
 }
 EXPORT_SYMBOL(has_capability_noaudit);
+
+int cap_capable(const struct cred *cred, struct user_namespace *target_ns,
+		int cap, unsigned int opts)
+{
+	struct user_namespace *ns = target_ns;
+
+	for (;;) {
+		if (ns == cred->user_ns)
+			return cap_raised(cred->cap_effective, cap) ? 0 : -EPERM;
+		if (ns->level <= cred->user_ns->level)
+			return -EPERM;
+		if (ns->parent == cred->user_ns && uid_eq(ns->owner, cred->euid))
+			return 0;
+		ns = ns->parent;
+	}
+}
+
+int cap_settime(const struct timespec64 *ts, const struct timezone *tz)
+{
+	return capable(CAP_SYS_TIME) ? 0 : -EPERM;
+}
+
+int cap_ptrace_access_check(struct task_struct *child, unsigned int mode)
+{
+	return 0;
+}
+
+int cap_ptrace_traceme(struct task_struct *parent)
+{
+	return 0;
+}
+
+int cap_capget(const struct task_struct *target, kernel_cap_t *effective,
+	       kernel_cap_t *inheritable, kernel_cap_t *permitted)
+{
+	const struct cred *cred;
+
+	rcu_read_lock();
+	cred = __task_cred(target);
+	*effective = cred->cap_effective;
+	*inheritable = cred->cap_inheritable;
+	*permitted = cred->cap_permitted;
+	rcu_read_unlock();
+	return 0;
+}
+
+int cap_capset(struct cred *new, const struct cred *old,
+	       const kernel_cap_t *effective,
+	       const kernel_cap_t *inheritable,
+	       const kernel_cap_t *permitted)
+{
+	new->cap_effective = *effective;
+	new->cap_inheritable = *inheritable;
+	new->cap_permitted = *permitted;
+	return 0;
+}
+
+int cap_bprm_creds_from_file(struct linux_binprm *bprm, const struct file *file)
+{
+	return 0;
+}
+
+int cap_inode_setxattr(struct dentry *dentry, const char *name,
+		       const void *value, size_t size, int flags)
+{
+	return 0;
+}
+
+int cap_inode_removexattr(struct mnt_idmap *idmap,
+			  struct dentry *dentry, const char *name)
+{
+	return 0;
+}
+
+int cap_inode_need_killpriv(struct dentry *dentry)
+{
+	return 0;
+}
+
+int cap_inode_killpriv(struct mnt_idmap *idmap, struct dentry *dentry)
+{
+	return 0;
+}
+
+int cap_inode_getsecurity(struct mnt_idmap *idmap, struct inode *inode,
+			  const char *name, void **buffer, bool alloc)
+{
+	return -EOPNOTSUPP;
+}
+
+int cap_mmap_addr(unsigned long addr)
+{
+	if (addr < dac_mmap_min_addr && !capable(CAP_SYS_RAWIO))
+		return -EPERM;
+	return 0;
+}
+
+int cap_task_fix_setuid(struct cred *new, const struct cred *old, int flags)
+{
+	return 0;
+}
+
+int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
+		   unsigned long arg4, unsigned long arg5)
+{
+	return -ENOSYS;
+}
+
+int cap_task_setscheduler(struct task_struct *p)
+{
+	return 0;
+}
+
+int cap_task_setioprio(struct task_struct *p, int ioprio)
+{
+	return 0;
+}
+
+int cap_task_setnice(struct task_struct *p, int nice)
+{
+	return 0;
+}
+
+int cap_vm_enough_memory(struct mm_struct *mm, long pages)
+{
+	return cap_capable(current_cred(), &init_user_ns, CAP_SYS_ADMIN,
+			   CAP_OPT_NOAUDIT);
+}
+
+int cap_convert_nscap(struct mnt_idmap *idmap, struct dentry *dentry,
+		      const void **ivalue, size_t size)
+{
+	return size;
+}
 
 static bool ns_capable_common(struct user_namespace *ns,
 			      int cap,

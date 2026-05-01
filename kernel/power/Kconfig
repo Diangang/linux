@@ -38,10 +38,9 @@ config HIBERNATE_CALLBACKS
 config HIBERNATION
 	bool "Hibernation (aka 'suspend to disk')"
 	depends on SWAP && ARCH_HIBERNATION_POSSIBLE
+	depends on BROKEN
 	select HIBERNATE_CALLBACKS
 	select CRC32
-	select CRYPTO
-	select CRYPTO_LZO
 	help
 	  Enable the suspend to disk (STD) functionality, which is usually
 	  called "hibernation" in user interfaces.  STD checkpoints the
