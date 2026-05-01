@@ -95,7 +95,6 @@ obj-$(CONFIG_UFS_FS)		+= ufs/
 obj-$(CONFIG_JFFS2_FS)		+= jffs2/
 obj-$(CONFIG_UBIFS_FS)		+= ubifs/
 obj-$(CONFIG_ROMFS_FS)		+= romfs/
-obj-$(CONFIG_QNX4FS_FS)		+= qnx4/
 obj-$(CONFIG_QNX6FS_FS)		+= qnx6/
 obj-$(CONFIG_AUTOFS_FS)		+= autofs/
 obj-$(CONFIG_FUSE_FS)		+= fuse/

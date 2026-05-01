@@ -21710,7 +21710,6 @@ QNX4 FILESYSTEM
 M:	Anders Larsen <al@alarsen.net>
 S:	Maintained
 W:	http://www.alarsen.net/linux/qnx4fs/
-F:	fs/qnx4/
 F:	include/uapi/linux/qnx4_fs.h
 F:	include/uapi/linux/qnxtypes.h
 
