@@ -123,16 +123,10 @@ Block-layer and filesystem administration
    bcache
    binderfs
    blockdev/index
-   cifs/index
    device-mapper/index
-   ext4
    filesystem-monitoring
-   nfs/index
    iostats
-   jfs
    md
-   ufs
-   xfs
 
 Device-specific guides
 ----------------------

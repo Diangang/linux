@@ -830,12 +830,12 @@ The methods defined in the table are:
    paths to ask the filesystem to update its idea of the file size.  If not
    given, netfslib will set i_size and i_blocks and update the local cache
    cookie.
-   
+
  * ``post_modify()``
 
    [Optional] This is called after netfslib writes to the pagecache or when it
    allows an mmap'd page to be marked as writable.
-   
+
  * ``begin_writeback()``
 
    [Optional] Netfslib calls this when processing a writeback request if it
@@ -843,7 +843,7 @@ The methods defined in the table are:
    indicating it must be written to the server.  This allows the filesystem to
    only set up writeback resources when it knows it's going to have to perform
    a write.
-   
+
  * ``prepare_write()``
 
    [Optional] This is called to allow the filesystem to limit the size of a
@@ -882,7 +882,7 @@ The methods defined in the table are:
    allows the filesystem to examine the state of the request, the subrequests
    in the indicated stream and of its own data and make adjustments or
    renegotiate resources.
-   
+
  * ``invalidate_cache()``
 
    [Optional] This is called by netfslib to invalidate data stored in the local
@@ -1048,4 +1048,3 @@ API Function Reference
 ======================
 
 .. kernel-doc:: include/linux/netfs.h
-.. kernel-doc:: fs/netfs/buffered_read.c

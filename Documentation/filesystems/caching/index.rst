@@ -7,6 +7,4 @@ Filesystem Caching
    :maxdepth: 2
 
    fscache
-   netfs-api
    backend-api
-   cachefiles

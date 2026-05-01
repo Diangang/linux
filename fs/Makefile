@@ -4,7 +4,7 @@
 #
 # 14 Sep 2000, Christoph Hellwig <hch@infradead.org>
 # Rewritten to use lists instead of if-statements.
-# 
+#
 
 
 obj-y :=	open.o read_write.o file_table.o super.o \
@@ -43,7 +43,6 @@ obj-$(CONFIG_BINFMT_FLAT)	+= binfmt_flat.o
 obj-$(CONFIG_FS_STACK)		+= backing-file.o
 obj-$(CONFIG_FS_MBCACHE)	+= mbcache.o
 obj-$(CONFIG_FS_POSIX_ACL)	+= posix_acl.o
-obj-$(CONFIG_NFS_COMMON)	+= nfs_common/
 obj-$(CONFIG_COREDUMP)		+= coredump.o
 obj-$(CONFIG_SYSCTL)		+= drop_caches.o sysctls.o
 
@@ -58,63 +57,21 @@ obj-$(CONFIG_SYSFS)		+= sysfs/
 obj-$(CONFIG_CONFIGFS_FS)	+= configfs/
 obj-y				+= devpts/
 
-obj-$(CONFIG_DLM)		+= dlm/
- 
 # Do not add any filesystems before this line
-obj-$(CONFIG_NETFS_SUPPORT)	+= netfs/
-obj-$(CONFIG_EXT4_FS)		+= ext4/
-# We place ext4 before ext2 so that clean ext3 root fs's do NOT mount using the
-# ext2 driver, which doesn't know about journalling!  Explicitly request ext2
-# by giving the rootfstype= parameter.
-obj-$(CONFIG_EXT2_FS)		+= ext2/
 obj-$(CONFIG_JBD2)		+= jbd2/
 obj-$(CONFIG_CRAMFS)		+= cramfs/
-obj-$(CONFIG_SQUASHFS)		+= squashfs/
 obj-y				+= ramfs/
 obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
-obj-$(CONFIG_CODA_FS)		+= coda/
 obj-$(CONFIG_MINIX_FS)		+= minix/
-obj-$(CONFIG_FAT_FS)		+= fat/
-obj-$(CONFIG_EXFAT_FS)		+= exfat/
-obj-$(CONFIG_ISO9660_FS)	+= isofs/
-obj-$(CONFIG_ECRYPT_FS)		+= ecryptfs/
-obj-$(CONFIG_NFS_FS)		+= nfs/
 obj-$(CONFIG_EXPORTFS)		+= exportfs/
-obj-$(CONFIG_NFSD)		+= nfsd/
-obj-$(CONFIG_LOCKD)		+= lockd/
 obj-$(CONFIG_NLS)		+= nls/
 obj-y				+= unicode/
-obj-$(CONFIG_SMBFS)		+= smb/
-obj-$(CONFIG_NTFS_FS)		+= ntfs/
-obj-$(CONFIG_NTFS3_FS)		+= ntfs3/
-obj-$(CONFIG_UFS_FS)		+= ufs/
-obj-$(CONFIG_JFFS2_FS)		+= jffs2/
-obj-$(CONFIG_UBIFS_FS)		+= ubifs/
-obj-$(CONFIG_ROMFS_FS)		+= romfs/
-obj-$(CONFIG_AUTOFS_FS)		+= autofs/
-obj-$(CONFIG_FUSE_FS)		+= fuse/
-obj-$(CONFIG_OVERLAY_FS)	+= overlayfs/
-obj-$(CONFIG_ORANGEFS_FS)       += orangefs/
-obj-$(CONFIG_UDF_FS)		+= udf/
 obj-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs/
-obj-$(CONFIG_JFS_FS)		+= jfs/
-obj-$(CONFIG_XFS_FS)		+= xfs/
-obj-$(CONFIG_9P_FS)		+= 9p/
-obj-$(CONFIG_AFS_FS)		+= afs/
-obj-$(CONFIG_NILFS2_FS)		+= nilfs2/
 obj-y				+= hostfs/
-obj-$(CONFIG_CACHEFILES)	+= cachefiles/
 obj-$(CONFIG_DEBUG_FS)		+= debugfs/
 obj-$(CONFIG_TRACING)		+= tracefs/
-obj-$(CONFIG_OCFS2_FS)		+= ocfs2/
-obj-$(CONFIG_BTRFS_FS)		+= btrfs/
-obj-$(CONFIG_GFS2_FS)           += gfs2/
-obj-$(CONFIG_F2FS_FS)		+= f2fs/
-obj-$(CONFIG_CEPH_FS)		+= ceph/
 obj-$(CONFIG_PSTORE)		+= pstore/
 obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
-obj-$(CONFIG_EROFS_FS)		+= erofs/
 obj-$(CONFIG_VBOXSF_FS)		+= vboxsf/
-obj-$(CONFIG_ZONEFS_FS)		+= zonefs/
 obj-$(CONFIG_BPF_LSM)		+= bpf_fs_kfuncs.o
 obj-$(CONFIG_RESCTRL_FS)	+= resctrl/

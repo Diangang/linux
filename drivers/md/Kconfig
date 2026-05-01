@@ -203,7 +203,7 @@ config MD_CLUSTER
 	tristate "Cluster Support for MD"
 	select MD_BITMAP
 	depends on BLK_DEV_MD
-	depends on DLM
+	depends on n
 	default n
 	help
 	Clustering support for MD devices. This enables locking and

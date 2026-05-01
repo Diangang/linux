@@ -143,7 +143,7 @@ L:	netdev@vger.kernel.org
 S:	Orphan / Obsolete
 F:	drivers/net/ethernet/8390/
 
-9P FILE SYSTEM
+9P PROTOCOL
 M:	Eric Van Hensbergen <ericvh@kernel.org>
 M:	Latchesar Ionkov <lucho@ionkov.net>
 M:	Dominique Martinet <asmadeus@codewreck.org>
@@ -154,8 +154,6 @@ W:	http://github.com/v9fs
 Q:	http://patchwork.kernel.org/project/v9fs-devel/list/
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/ericvh/v9fs.git
 T:	git https://github.com/martinetd/linux.git
-F:	Documentation/filesystems/9p.rst
-F:	fs/9p/
 F:	include/net/9p/
 F:	include/trace/events/9p.h
 F:	include/uapi/linux/virtio_9p.h
@@ -689,23 +687,6 @@ S:	Orphan
 W:	https://linuxtv.org
 Q:	http://patchwork.linuxtv.org/project/linux-media/list/
 F:	drivers/media/dvb-frontends/af9033*
-
-AFFS FILE SYSTEM
-M:	David Sterba <dsterba@suse.com>
-L:	linux-fsdevel@vger.kernel.org
-S:	Odd Fixes
-F:	Documentation/filesystems/affs.rst
-F:	fs/affs/
-
-AFS FILESYSTEM
-M:	David Howells <dhowells@redhat.com>
-M:	Marc Dionne <marc.dionne@auristor.com>
-L:	linux-afs@lists.infradead.org
-S:	Supported
-W:	https://www.infradead.org/~dhowells/kafs/
-F:	Documentation/filesystems/afs.rst
-F:	fs/afs/
-F:	include/trace/events/afs.h
 
 AGPGART DRIVER
 M:	David Airlie <airlied@redhat.com>
@@ -5523,21 +5504,6 @@ S:	Maintained
 W:	http://bu3sch.de/btgpio.php
 F:	drivers/gpio/gpio-bt8xx.c
 
-BTRFS FILE SYSTEM
-M:	Chris Mason <clm@fb.com>
-M:	David Sterba <dsterba@suse.com>
-L:	linux-btrfs@vger.kernel.org
-S:	Maintained
-W:	https://btrfs.readthedocs.io
-Q:	https://patchwork.kernel.org/project/linux-btrfs/list/
-C:	irc://irc.libera.chat/btrfs
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-F:	Documentation/filesystems/btrfs.rst
-F:	fs/btrfs/
-F:	include/linux/btrfs*
-F:	include/trace/events/btrfs.h
-F:	include/uapi/linux/btrfs*
-
 BTTV VIDEO4LINUX DRIVER
 M:	Mauro Carvalho Chehab <mchehab@kernel.org>
 L:	linux-media@vger.kernel.org
@@ -5598,13 +5564,6 @@ S:	Orphan
 W:	https://github.com/Cascoda/ca8210-linux.git
 F:	Documentation/devicetree/bindings/net/ieee802154/ca8210.txt
 F:	drivers/net/ieee802154/ca8210.c
-
-CACHEFILES: FS-CACHE BACKEND FOR CACHING ON MOUNTED FILESYSTEMS
-M:	David Howells <dhowells@redhat.com>
-L:	netfs@lists.linux.dev
-S:	Supported
-F:	Documentation/filesystems/caching/cachefiles.rst
-F:	fs/cachefiles/
 
 CACHESTAT: PAGE CACHE STATS FOR A FILE
 M:	Nhat Pham <nphamcs@gmail.com>
@@ -5884,18 +5843,6 @@ T:	git https://github.com/ceph/ceph-client.git
 F:	include/linux/ceph/
 F:	include/linux/crush/
 F:	net/ceph/
-
-CEPH DISTRIBUTED FILE SYSTEM CLIENT (CEPH)
-M:	Ilya Dryomov <idryomov@gmail.com>
-M:	Alex Markuze <amarkuze@redhat.com>
-M:	Viacheslav Dubeyko <slava@dubeyko.com>
-L:	ceph-devel@vger.kernel.org
-S:	Supported
-W:	http://ceph.com/
-B:	https://tracker.ceph.com/
-T:	git https://github.com/ceph/ceph-client.git
-F:	Documentation/filesystems/ceph.rst
-F:	fs/ceph/
 
 CERTIFICATE HANDLING
 M:	David Howells <dhowells@redhat.com>
@@ -6306,17 +6253,6 @@ F:	Documentation/dev-tools/coccinelle.rst
 F:	scripts/coccicheck
 F:	scripts/coccinelle/
 
-CODA FILE SYSTEM
-M:	Jan Harkes <jaharkes@cs.cmu.edu>
-M:	coda@cs.cmu.edu
-L:	codalist@coda.cs.cmu.edu
-S:	Maintained
-W:	http://www.coda.cs.cmu.edu/
-F:	Documentation/filesystems/coda.rst
-F:	fs/coda/
-F:	include/linux/coda*.h
-F:	include/uapi/linux/coda*.h
-
 CODA V4L2 MEM2MEM DRIVER
 M:	Philipp Zabel <p.zabel@pengutronix.de>
 L:	linux-media@vger.kernel.org
@@ -6363,24 +6299,6 @@ F:	scripts/gdb/linux/clk.py
 F:	rust/helpers/clk.c
 F:	rust/kernel/clk.rs
 X:	drivers/clk/clkdev.c
-
-COMMON INTERNET FILE SYSTEM CLIENT (CIFS and SMB3)
-M:	Steve French <sfrench@samba.org>
-M:	Steve French <smfrench@gmail.com>
-R:	Paulo Alcantara <pc@manguebit.org> (DFS, global name space)
-R:	Ronnie Sahlberg <ronniesahlberg@gmail.com> (directory leases, sparse files)
-R:	Shyam Prasad N <sprasad@microsoft.com> (multichannel)
-R:	Tom Talpey <tom@talpey.com> (RDMA, smbdirect)
-R:	Bharath SM <bharathsm@microsoft.com> (deferred close, directory leases)
-L:	linux-cifs@vger.kernel.org
-L:	samba-technical@lists.samba.org (moderated for non-subscribers)
-S:	Supported
-W:	https://wiki.samba.org/index.php/LinuxCIFS
-T:	git https://git.samba.org/sfrench/cifs-2.6.git
-F:	Documentation/admin-guide/cifs/
-F:	fs/smb/client/
-F:	fs/smb/common/
-F:	include/uapi/linux/cifs
 
 COMPACTPCI HOTPLUG CORE
 M:	Scott Murray <scott@spiteful.org>
@@ -7499,15 +7417,6 @@ W:	http://plugable.com/category/projects/udlfb/
 F:	Documentation/fb/udlfb.rst
 F:	drivers/video/fbdev/udlfb.c
 F:	include/video/udlfb.h
-
-DISTRIBUTED LOCK MANAGER (DLM)
-M:	Alexander Aring <aahringo@redhat.com>
-M:	David Teigland <teigland@redhat.com>
-L:	gfs2@lists.linux.dev
-S:	Supported
-W:	https://pagure.io/dlm
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/teigland/linux-dlm.git
-F:	fs/dlm/
 
 DMA BUFFER SHARING FRAMEWORK
 M:	Sumit Semwal <sumit.semwal@linaro.org>
@@ -9134,16 +9043,6 @@ F:	drivers/irqchip/irq-econet-en751221.c
 F:	include/dt-bindings/clock/econet,en751221-scu.h
 F:	include/dt-bindings/reset/econet,en751221-scu.h
 
-ECRYPT FILE SYSTEM
-M:	Tyler Hicks <code@tyhicks.com>
-L:	ecryptfs@vger.kernel.org
-S:	Odd Fixes
-W:	http://ecryptfs.org
-W:	https://launchpad.net/ecryptfs
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/tyhicks/ecryptfs.git
-F:	Documentation/filesystems/ecryptfs.rst
-F:	fs/ecryptfs/
-
 EDAC-AMD64
 M:	Yazen Ghannam <yazen.ghannam@amd.com>
 L:	linux-edac@vger.kernel.org
@@ -9481,23 +9380,6 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/kristoffer/linux-hpc.git
 F:	drivers/video/fbdev/s1d13xxxfb.c
 F:	include/video/s1d13xxxfb.h
 
-EROFS FILE SYSTEM
-M:	Gao Xiang <xiang@kernel.org>
-M:	Chao Yu <chao@kernel.org>
-R:	Yue Hu <zbestahu@gmail.com>
-R:	Jeffle Xu <jefflexu@linux.alibaba.com>
-R:	Sandeep Dhavale <dhavale@google.com>
-R:	Hongbo Li <lihongbo22@huawei.com>
-R:	Chunhai Guo <guochunhai@vivo.com>
-L:	linux-erofs@lists.ozlabs.org
-S:	Maintained
-W:	https://erofs.docs.kernel.org
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/xiang/erofs.git
-F:	Documentation/ABI/testing/sysfs-fs-erofs
-F:	Documentation/filesystems/erofs.rst
-F:	fs/erofs/
-F:	include/trace/events/erofs.h
-
 ERRSEQ ERROR TRACKING INFRASTRUCTURE
 M:	Jeff Layton <jlayton@kernel.org>
 S:	Maintained
@@ -9625,48 +9507,12 @@ F:	tools/testing/selftests/exec/
 N:	asm/elf.h
 N:	binfmt
 
-EXFAT FILE SYSTEM
-M:	Namjae Jeon <linkinjeon@kernel.org>
-M:	Sungjong Seo <sj1557.seo@samsung.com>
-R:	Yuezhang Mo <yuezhang.mo@sony.com>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/linkinjeon/exfat.git
-F:	fs/exfat/
-
 EXPRESSWIRE PROTOCOL LIBRARY
 M:	Duje Mihanović <duje.mihanovic@skole.hr>
 L:	linux-leds@vger.kernel.org
 S:	Maintained
 F:	drivers/leds/leds-expresswire.c
 F:	include/linux/leds-expresswire.h
-
-EXT2 FILE SYSTEM
-M:	Jan Kara <jack@suse.com>
-L:	linux-ext4@vger.kernel.org
-S:	Maintained
-F:	Documentation/filesystems/ext2.rst
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/jack/linux-fs.git
-F:	fs/ext2/
-F:	include/linux/ext2*
-
-EXT4 FILE SYSTEM
-M:	"Theodore Ts'o" <tytso@mit.edu>
-R:	Andreas Dilger <adilger.kernel@dilger.ca>
-R:	Baokun Li <libaokun@linux.alibaba.com>
-R:	Jan Kara <jack@suse.cz>
-R:	Ojaswin Mujoo <ojaswin@linux.ibm.com>
-R:	Ritesh Harjani (IBM) <ritesh.list@gmail.com>
-R:	Zhang Yi <yi.zhang@huawei.com>
-L:	linux-ext4@vger.kernel.org
-S:	Maintained
-W:	http://ext4.wiki.kernel.org
-Q:	http://patchwork.ozlabs.org/project/linux-ext4/list/
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/tytso/ext4.git
-F:	Documentation/filesystems/ext4/
-F:	fs/ext4/
-F:	include/trace/events/ext4.h
-F:	include/uapi/linux/ext4.h
 
 Extended Verification Module (EVM)
 M:	Mimi Zohar <zohar@linux.ibm.com>
@@ -9738,22 +9584,6 @@ M:	Marek Szyprowski <m.szyprowski@samsung.com>
 L:	iommu@lists.linux.dev
 S:	Maintained
 F:	drivers/iommu/exynos-iommu.c
-
-F2FS FILE SYSTEM
-M:	Jaegeuk Kim <jaegeuk@kernel.org>
-M:	Chao Yu <chao@kernel.org>
-L:	linux-f2fs-devel@lists.sourceforge.net
-S:	Maintained
-W:	https://f2fs.wiki.kernel.org/
-Q:	https://patchwork.kernel.org/project/f2fs/list/
-B:	https://bugzilla.kernel.org/enter_bug.cgi?product=File%20System&component=f2fs
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs.git
-F:	Documentation/ABI/testing/sysfs-fs-f2fs
-F:	Documentation/filesystems/f2fs.rst
-F:	fs/f2fs/
-F:	include/linux/f2fs_fs.h
-F:	include/trace/events/f2fs.h
-F:	include/uapi/linux/f2fs.h
 
 F71805F HARDWARE MONITORING DRIVER
 M:	Jean Delvare <jdelvare@suse.com>
@@ -9918,8 +9748,6 @@ L:	netfs@lists.linux.dev
 L:	linux-fsdevel@vger.kernel.org
 S:	Supported
 F:	Documentation/filesystems/caching/
-F:	Documentation/filesystems/netfs_library.rst
-F:	fs/netfs/
 F:	include/linux/fscache*.h
 F:	include/linux/netfs.h
 F:	include/trace/events/fscache.h
@@ -10554,17 +10382,6 @@ L:	netdev@vger.kernel.org
 S:	Maintained
 F:	drivers/net/ethernet/fungible/
 
-FUSE: FILESYSTEM IN USERSPACE
-M:	Miklos Szeredi <miklos@szeredi.hu>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-W:	https://github.com/libfuse/
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/mszeredi/fuse.git
-F:	Documentation/filesystems/fuse/*
-F:	fs/fuse/
-F:	include/uapi/linux/fuse.h
-F:	tools/testing/selftests/filesystems/fuse/
-
 FUTEX SUBSYSTEM
 M:	Thomas Gleixner <tglx@kernel.org>
 M:	Ingo Molnar <mingo@redhat.com>
@@ -10852,16 +10669,6 @@ GET_MAINTAINER SCRIPT
 M:	Joe Perches <joe@perches.com>
 S:	Maintained
 F:	scripts/get_maintainer.pl
-
-GFS2 FILE SYSTEM
-M:	Andreas Gruenbacher <agruenba@redhat.com>
-L:	gfs2@lists.linux.dev
-S:	Supported
-B:	https://bugzilla.kernel.org/enter_bug.cgi?product=File%20System&component=gfs2
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/gfs2/linux-gfs2.git
-F:	Documentation/filesystems/gfs2/
-F:	fs/gfs2/
-F:	include/uapi/linux/gfs2_ondisk.h
 
 GIGABYTE WATERFORCE SENSOR DRIVER
 M:	Aleksa Savic <savicaleksa83@gmail.com>
@@ -13624,13 +13431,6 @@ F:	Documentation/devicetree/bindings/hwmon/renesas,isl28022.yaml
 F:	Documentation/hwmon/isl28022.rst
 F:	drivers/hwmon/isl28022.c
 
-ISOFS FILESYSTEM
-M:	Jan Kara <jack@suse.cz>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-F:	Documentation/filesystems/isofs.rst
-F:	fs/isofs/
-
 IT87 HARDWARE MONITORING DRIVER
 M:	Jean Delvare <jdelvare@suse.com>
 L:	linux-hwmon@vger.kernel.org
@@ -13686,30 +13486,11 @@ S:	Maintained
 F:	arch/x86/include/asm/jailhouse_para.h
 F:	arch/x86/kernel/jailhouse.c
 
-JFS FILESYSTEM
-M:	Dave Kleikamp <shaggy@kernel.org>
-L:	jfs-discussion@lists.sourceforge.net
-S:	Odd Fixes
-W:	http://jfs.sourceforge.net/
-T:	git https://github.com/kleikamp/linux-shaggy.git
-F:	Documentation/admin-guide/jfs.rst
-F:	fs/jfs/
-
 JME NETWORK DRIVER
 M:	Guo-Fu Tseng <cooldavid@cooldavid.org>
 L:	netdev@vger.kernel.org
 S:	Odd Fixes
 F:	drivers/net/ethernet/jme.*
-
-JOURNALLING FLASH FILE SYSTEM V2 (JFFS2)
-M:	David Woodhouse <dwmw2@infradead.org>
-M:	Richard Weinberger <richard@nod.at>
-L:	linux-mtd@lists.infradead.org
-S:	Odd Fixes
-W:	http://www.linux-mtd.infradead.org/doc/jffs2.html
-T:	git git://git.infradead.org/ubifs-2.6.git
-F:	fs/jffs2/
-F:	include/uapi/linux/jffs2.h
 
 JOURNALLING LAYER FOR BLOCK DEVICES (JBD2)
 M:	"Theodore Ts'o" <tytso@mit.edu>
@@ -13828,12 +13609,6 @@ W:	https://linuxtv.org
 T:	git git://linuxtv.org/media.git
 F:	drivers/media/radio/radio-keene*
 
-KERNEL AUTOMOUNTER
-M:	Ian Kent <raven@themaw.net>
-L:	autofs@vger.kernel.org
-S:	Maintained
-F:	fs/autofs/
-
 KERNEL BUILD + files below scripts/ (unless maintained elsewhere)
 M:	Nathan Chancellor <nathan@kernel.org>
 M:	Nicolas Schier <nsc@kernel.org>
@@ -13900,11 +13675,7 @@ S:	Supported
 P:	Documentation/filesystems/nfs/nfsd-maintainer-entry-profile.rst
 B:	https://bugzilla.kernel.org
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/cel/linux.git
-F:	Documentation/filesystems/nfs/
-F:	fs/lockd/
-F:	fs/nfs_common/
-F:	fs/nfsd/
-F:	include/linux/lockd/
+
 F:	include/linux/sunrpc/
 F:	include/trace/events/rpcgss.h
 F:	include/trace/events/rpcrdma.h
@@ -13916,11 +13687,6 @@ F:	include/uapi/linux/nfsd/
 F:	include/uapi/linux/sunrpc/
 F:	net/sunrpc/
 F:	tools/net/sunrpc/
-
-KERNEL NFSD BLOCK and SCSI LAYOUT DRIVER
-R:	Christoph Hellwig <hch@lst.de>
-F:	fs/nfsd/blocklayout*
-
 KERNEL PACMAN PACKAGING (in addition to generic KERNEL BUILD)
 M:	Thomas Weißschuh <linux@weissschuh.net>
 R:	Christian Heusel <christian@heusel.eu>
@@ -13944,20 +13710,6 @@ Q:	https://patchwork.kernel.org/project/linux-kselftest/list/
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/shuah/linux-kselftest.git
 F:	Documentation/dev-tools/kselftest*
 F:	tools/testing/selftests/
-
-KERNEL SMB3 SERVER (KSMBD)
-M:	Namjae Jeon <linkinjeon@kernel.org>
-M:	Namjae Jeon <linkinjeon@samba.org>
-M:	Steve French <smfrench@gmail.com>
-M:	Steve French <sfrench@samba.org>
-R:	Sergey Senozhatsky <senozhatsky@chromium.org>
-R:	Tom Talpey <tom@talpey.com>
-L:	linux-cifs@vger.kernel.org
-S:	Maintained
-T:	git https://git.samba.org/ksmbd.git
-F:	Documentation/filesystems/smb/ksmbd.rst
-F:	fs/smb/common/
-F:	fs/smb/server/
 
 KERNEL UNIT TESTING FRAMEWORK (KUnit)
 M:	Brendan Higgins <brendan.higgins@linux.dev>
@@ -18796,37 +18548,6 @@ S:	Supported
 F:	drivers/nfc/virtual_ncidev.c
 F:	tools/testing/selftests/nci/
 
-NFS, SUNRPC, AND LOCKD CLIENTS
-M:	Trond Myklebust <trondmy@kernel.org>
-M:	Anna Schumaker <anna@kernel.org>
-L:	linux-nfs@vger.kernel.org
-S:	Maintained
-W:	http://client.linux-nfs.org
-T:	git git://git.linux-nfs.org/projects/trondmy/linux-nfs.git
-F:	Documentation/filesystems/nfs/
-F:	fs/lockd/
-F:	fs/nfs/
-F:	fs/nfs_common/
-F:	include/linux/lockd/
-F:	include/linux/nfs*
-F:	include/linux/sunrpc/
-F:	include/uapi/linux/nfs*
-F:	include/uapi/linux/sunrpc/
-F:	net/sunrpc/
-
-NILFS2 FILESYSTEM
-M:	Ryusuke Konishi <konishi.ryusuke@gmail.com>
-M:	Viacheslav Dubeyko <slava@dubeyko.com>
-L:	linux-nilfs@vger.kernel.org
-S:	Maintained
-W:	https://nilfs.sourceforge.io/
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/vdubeyko/nilfs2.git
-F:	Documentation/filesystems/nilfs2.rst
-F:	fs/nilfs2/
-F:	include/trace/events/nilfs2.h
-F:	include/uapi/linux/nilfs2_api.h
-F:	include/uapi/linux/nilfs2_ondisk.h
-
 NINJA SCSI-3 / NINJA SCSI-32Bi (16bit/CardBus) PCMCIA SCSI HOST ADAPTER DRIVER
 M:	YOKOTA Hiroshi <yokota@netlab.is.tsukuba.ac.jp>
 S:	Maintained
@@ -18957,24 +18678,6 @@ S:	Supported
 W:	https://github.com/davejiang/linux/wiki
 T:	git https://github.com/davejiang/linux.git
 F:	drivers/ntb/hw/intel/
-
-NTFS FILESYSTEM
-M:	Namjae Jeon <linkinjeon@kernel.org>
-M:	Hyunchul Lee <hyc.lee@gmail.com>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/linkinjeon/ntfs.git
-F:	Documentation/filesystems/ntfs.rst
-F:	fs/ntfs/
-
-NTFS3 FILESYSTEM
-M:	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>
-L:	ntfs3@lists.linux.dev
-S:	Supported
-W:	http://www.paragon-software.com/
-T:	git https://github.com/Paragon-Software-Group/linux-ntfs3.git
-F:	Documentation/filesystems/ntfs3.rst
-F:	fs/ntfs3/
 
 NTSYNC SYNCHRONIZATION PRIMITIVE DRIVER
 M:	Elizabeth Figura <zfigura@codeweavers.com>
@@ -19988,26 +19691,6 @@ S:	Maintained
 T:	git git://git.kernel.org/pub/scm/linux/kernel/git/tiwai/sound.git
 F:	sound/drivers/opl4/
 
-ORACLE CLUSTER FILESYSTEM 2 (OCFS2)
-M:	Mark Fasheh <mark@fasheh.com>
-M:	Joel Becker <jlbec@evilplan.org>
-M:	Joseph Qi <joseph.qi@linux.alibaba.com>
-L:	ocfs2-devel@lists.linux.dev
-S:	Supported
-W:	http://ocfs2.wiki.kernel.org
-F:	Documentation/filesystems/dlmfs.rst
-F:	Documentation/filesystems/ocfs2.rst
-F:	fs/ocfs2/
-
-ORANGEFS FILESYSTEM
-M:	Mike Marshall <hubcap@omnibond.com>
-R:	Martin Brandenburg <martin@omnibond.com>
-L:	devel@lists.orangefs.org
-S:	Supported
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/hubcap/linux.git
-F:	Documentation/filesystems/orangefs.rst
-F:	fs/orangefs/
-
 OV2659 OMNIVISION SENSOR DRIVER
 M:	"Lad, Prabhakar" <prabhakar.csengg@gmail.com>
 L:	linux-media@vger.kernel.org
@@ -20018,15 +19701,6 @@ T:	git git://linuxtv.org/mhadli/v4l-dvb-davinci_devices.git
 F:	Documentation/devicetree/bindings/media/i2c/ovti,ov2659.txt
 F:	drivers/media/i2c/ov2659.c
 F:	include/media/i2c/ov2659.h
-
-OVERLAY FILESYSTEM
-M:	Miklos Szeredi <miklos@szeredi.hu>
-M:	Amir Goldstein <amir73il@gmail.com>
-L:	linux-unionfs@vger.kernel.org
-S:	Supported
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/overlayfs/vfs.git
-F:	Documentation/filesystems/overlayfs.rst
-F:	fs/overlayfs/
 
 P54 WIRELESS DRIVER
 M:	Christian Lamparter <chunkeey@googlemail.com>
@@ -24541,20 +24215,6 @@ T:	git https://github.com/cschaufler/smack-next.git
 F:	Documentation/admin-guide/LSM/Smack.rst
 F:	security/smack/
 
-SMBDIRECT (RDMA Stream Transport with Read/Write-Offload, MS-SMBD)
-M:	Steve French <smfrench@gmail.com>
-M:	Steve French <sfrench@samba.org>
-M:	Namjae Jeon <linkinjeon@kernel.org>
-M:	Namjae Jeon <linkinjeon@samba.org>
-R:	Stefan Metzmacher <metze@samba.org>
-R:	Tom Talpey <tom@talpey.com>
-L:	linux-cifs@vger.kernel.org
-L:	samba-technical@lists.samba.org (moderated for non-subscribers)
-S:	Maintained
-F:	fs/smb/client/smbdirect.*
-F:	fs/smb/smbdirect/
-F:	fs/smb/server/transport_rdma.*
-
 SMC91x ETHERNET DRIVER
 M:	Nicolas Pitre <nico@fluxnic.net>
 S:	Odd Fixes
@@ -25123,15 +24783,6 @@ L:	linuxppc-dev@lists.ozlabs.org
 S:	Orphan
 F:	Documentation/filesystems/spufs/spufs.rst
 F:	arch/powerpc/platforms/cell/spufs/
-
-SQUASHFS FILE SYSTEM
-M:	Phillip Lougher <phillip@squashfs.org.uk>
-L:	squashfs-devel@lists.sourceforge.net (subscribers-only)
-S:	Maintained
-W:	http://squashfs.org.uk
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/pkl/squashfs-next.git
-F:	Documentation/filesystems/squashfs.rst
-F:	fs/squashfs/
 
 SRM (Alpha) environment access
 M:	Jan-Benedict Glaw <jbglaw@lug-owl.de>
@@ -27173,19 +26824,6 @@ F:	drivers/misc/uacce/
 F:	include/linux/uacce.h
 F:	include/uapi/misc/uacce/
 
-UBI FILE SYSTEM (UBIFS)
-M:	Richard Weinberger <richard@nod.at>
-R:	Zhihao Cheng <chengzhihao1@huawei.com>
-L:	linux-mtd@lists.infradead.org
-S:	Supported
-W:	http://www.linux-mtd.infradead.org/doc/ubifs.html
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/rw/ubifs.git next
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/rw/ubifs.git fixes
-F:	Documentation/ABI/testing/sysfs-fs-ubifs
-F:	Documentation/filesystems/ubifs-authentication.rst
-F:	Documentation/filesystems/ubifs.rst
-F:	fs/ubifs/
-
 UBLK USERSPACE BLOCK DRIVER
 M:	Ming Lei <tom.leiming@gmail.com>
 L:	linux-block@vger.kernel.org
@@ -27223,12 +26861,6 @@ F:	arch/m68k/*/*_no.*
 F:	arch/m68k/68*/
 F:	arch/m68k/coldfire/
 F:	arch/m68k/include/asm/*_no.*
-
-UDF FILESYSTEM
-M:	Jan Kara <jack@suse.com>
-S:	Maintained
-F:	Documentation/filesystems/udf.rst
-F:	fs/udf/
 
 UDRAW TABLET
 M:	Bastien Nocera <hadess@hadess.net>
@@ -27856,13 +27488,6 @@ L:	linux-mtd@lists.infradead.org
 S:	Supported
 F:	drivers/mtd/nand/raw/vf610_nfc.c
 
-VFAT/FAT/MSDOS FILESYSTEM
-M:	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
-S:	Maintained
-F:	Documentation/filesystems/vfat.rst
-F:	fs/fat/
-F:	tools/testing/selftests/filesystems/fat/
-
 VFIO CDX DRIVER
 M:	Nipun Gupta <nipun.gupta@amd.com>
 M:	Nikhil Agarwal <nikhil.agarwal@amd.com>
@@ -28136,20 +27761,6 @@ L:	kvm@vger.kernel.org
 S:	Supported
 F:	arch/s390/include/uapi/asm/virtio-ccw.h
 F:	drivers/s390/virtio/
-
-VIRTIO FILE SYSTEM
-M:	German Maglione <gmaglione@redhat.com>
-M:	Vivek Goyal <vgoyal@redhat.com>
-M:	Stefan Hajnoczi <stefanha@redhat.com>
-M:	Miklos Szeredi <miklos@szeredi.hu>
-R:	Eugenio Pérez <eperezma@redhat.com>
-L:	virtualization@lists.linux.dev
-L:	linux-fsdevel@vger.kernel.org
-S:	Supported
-W:	https://virtio-fs.gitlab.io/
-F:	Documentation/filesystems/virtiofs.rst
-F:	fs/fuse/virtio_fs.c
-F:	include/uapi/linux/virtio_fs.h
 
 VIRTIO GPIO DRIVER
 M:	Enrico Weigelt, metux IT consult <info@metux.net>
@@ -29039,21 +28650,6 @@ F:	drivers/xen/swiotlb-xen.c
 F:	include/xen/arm/swiotlb-xen.h
 F:	include/xen/swiotlb-xen.h
 
-XFS FILESYSTEM
-M:	Carlos Maiolino <cem@kernel.org>
-L:	linux-xfs@vger.kernel.org
-S:	Supported
-W:	http://xfs.org/
-C:	irc://irc.oftc.net/xfs
-T:	git git://git.kernel.org/pub/scm/fs/xfs/xfs-linux.git
-P:	Documentation/filesystems/xfs/xfs-maintainer-entry-profile.rst
-F:	Documentation/ABI/testing/sysfs-fs-xfs
-F:	Documentation/admin-guide/xfs.rst
-F:	Documentation/filesystems/xfs/*
-F:	fs/xfs/
-F:	include/uapi/linux/dqblk_xfs.h
-F:	include/uapi/linux/fsmap.h
-
 XILINX AMS DRIVER
 M:	Salih Erim <salih.erim@amd.com>
 M:	Conall O'Griofa <conall.ogriofa@amd.com>
@@ -29303,16 +28899,6 @@ L:	linux-block@vger.kernel.org
 S:	Maintained
 F:	Documentation/admin-guide/blockdev/zoned_loop.rst
 F:	drivers/block/zloop.c
-
-ZONEFS FILESYSTEM
-M:	Damien Le Moal <dlemoal@kernel.org>
-M:	Naohiro Aota <naohiro.aota@wdc.com>
-R:	Johannes Thumshirn <jth@kernel.org>
-L:	linux-fsdevel@vger.kernel.org
-S:	Maintained
-T:	git git://git.kernel.org/pub/scm/linux/kernel/git/dlemoal/zonefs.git
-F:	Documentation/filesystems/zonefs.rst
-F:	fs/zonefs/
 
 ZR36067 VIDEO FOR LINUX DRIVER
 M:	Corentin Labbe <clabbe@baylibre.com>

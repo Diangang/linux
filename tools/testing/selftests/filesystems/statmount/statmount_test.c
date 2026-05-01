@@ -16,22 +16,19 @@
 #include "kselftest.h"
 
 static const char *const known_fs[] = {
-	"9p", "adfs", "affs", "afs", "aio", "anon_inodefs", "apparmorfs",
-	"autofs", "bcachefs", "bdev", "bfs", "binder", "binfmt_misc",
-	"bpf", "btrfs", "btrfs_test_fs", "ceph", "cgroup", "cgroup2", "cifs",
-	"coda", "configfs", "cpuset", "cramfs", "cxl", "dax", "debugfs",
-	"devpts", "devtmpfs", "dmabuf", "drm", "ecryptfs", "efivarfs", "efs",
-	"erofs", "exfat", "ext2", "ext3", "ext4", "f2fs", "functionfs",
-	"fuse", "fuseblk", "fusectl", "gadgetfs", "gfs2", "gfs2meta",
-	"hostfs", "hugetlbfs", "ibmasmfs", "iomem", "ipathfs", "iso9660",
-	"jffs2", "jfs", "minix", "mqueue", "msdos",
-	"nfs", "nfs4", "nfsd", "nilfs2", "nsfs", "ntfs", "ntfs3", "ocfs2",
-	"ocfs2_dlmfs", "openpromfs", "overlay", "pipefs", "proc",
-	"pstore", "pvfs2", "qnx4", "qnx6", "ramfs", "resctrl", "romfs",
+	"adfs", "aio", "anon_inodefs", "apparmorfs", "bcachefs", "bdev",
+	"bfs", "binder", "binfmt_misc",
+	"bpf", "cgroup", "cgroup2",
+	"configfs", "cpuset", "cramfs", "cxl", "dax", "debugfs",
+	"devpts", "devtmpfs", "dmabuf", "drm", "efivarfs", "efs",
+	"functionfs", "gadgetfs",
+	"hostfs", "hugetlbfs", "ibmasmfs", "iomem", "ipathfs",
+	"minix", "mqueue", "nsfs", "openpromfs", "pipefs", "proc",
+	"pstore", "qnx4", "qnx6", "ramfs", "resctrl",
 	"rootfs", "rpc_pipefs", "s390_hypfs", "secretmem", "securityfs",
-	"selinuxfs", "smackfs", "smb3", "sockfs", "spufs", "squashfs", "sysfs",
-	"sysv", "tmpfs", "tracefs", "ubifs", "udf", "ufs", "v7", "vboxsf",
-	"vfat", "virtiofs", "vxfs", "xenfs", "xfs", "zonefs", NULL };
+	"selinuxfs", "smackfs", "sockfs", "spufs", "sysfs", "sysv",
+	"tmpfs", "tracefs", "v7", "vboxsf", "vxfs", "xenfs",
+	NULL };
 
 static void write_file(const char *path, const char *val)
 {

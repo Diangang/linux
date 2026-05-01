@@ -441,7 +441,14 @@ ssize_t netfs_extract_user_iter(struct iov_iter *orig, size_t orig_len,
 size_t netfs_limit_iter(const struct iov_iter *iter, size_t start_offset,
 			size_t max_size, size_t max_segs);
 void netfs_prepare_write_failed(struct netfs_io_subrequest *subreq);
+#if IS_ENABLED(CONFIG_NETFS_SUPPORT)
 void netfs_write_subrequest_terminated(void *_op, ssize_t transferred_or_error);
+#else
+static inline void netfs_write_subrequest_terminated(void *_op,
+					 ssize_t transferred_or_error)
+{
+}
+#endif
 
 int netfs_start_io_read(struct inode *inode);
 void netfs_end_io_read(struct inode *inode);

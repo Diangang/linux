@@ -57,7 +57,6 @@ filesystem implementations.
    journalling
    fscrypt
    fsverity
-   netfs_library
 
 Filesystems
 ===========
@@ -67,54 +66,18 @@ Documentation for filesystem implementations.
 .. toctree::
    :maxdepth: 2
 
-   9p
    adfs
-   affs
-   afs
-   autofs
-   autofs-mount-control
    bfs
-   btrfs
-   ceph
-   coda
    configfs
    cramfs
    dax
    debugfs
-   dlmfs
-   ecryptfs
    efivarfs
-   erofs
-   ext2
-   ext3
-   ext4/index
-   f2fs
-   gfs2/index
-   fuse/index
    inotify
-   isofs
-   nilfs2
-   nfs/index
-   ntfs
-   ntfs3
-   ocfs2
-   ocfs2-online-filecheck
-   orangefs
-   overlayfs
    proc
    ramfs-rootfs-initramfs
    relay
    resctrl
-   romfs
-   smb/index
    spufs/index
-   squashfs
    sysfs
    tmpfs
-   ubifs
-   ubifs-authentication
-   udf
-   virtiofs
-   vfat
-   xfs/index
-   zonefs

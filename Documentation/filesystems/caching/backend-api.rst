@@ -417,7 +417,7 @@ A cache backend provides a data I/O API by through the netfs library's ``struct
 netfs_cache_ops`` attached to a ``struct netfs_cache_resources`` by the
 ``begin_operation`` method described above.
 
-See the Documentation/filesystems/netfs_library.rst for a description.
+See ``include/linux/netfs.h`` for a description.
 
 
 Miscellaneous Functions

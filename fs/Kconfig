@@ -31,27 +31,11 @@ config LEGACY_DIRECT_IO
 	bool
 
 if BLOCK
-
-source "fs/ext2/Kconfig"
-source "fs/ext4/Kconfig"
 source "fs/jbd2/Kconfig"
 
 config FS_MBCACHE
-# Meta block cache for Extended Attributes (ext2/ext3/ext4)
+	# Meta block cache for extended attributes
 	tristate
-	default y if EXT2_FS=y && EXT2_FS_XATTR
-	default y if EXT4_FS=y
-	default m if EXT2_FS_XATTR || EXT4_FS
-
-source "fs/jfs/Kconfig"
-
-source "fs/xfs/Kconfig"
-source "fs/gfs2/Kconfig"
-source "fs/ocfs2/Kconfig"
-source "fs/btrfs/Kconfig"
-source "fs/nilfs2/Kconfig"
-source "fs/f2fs/Kconfig"
-source "fs/zonefs/Kconfig"
 
 endif # BLOCK
 
@@ -127,36 +111,7 @@ source "fs/notify/Kconfig"
 
 source "fs/quota/Kconfig"
 
-source "fs/autofs/Kconfig"
-source "fs/fuse/Kconfig"
-source "fs/overlayfs/Kconfig"
 
-menu "Caches"
-
-source "fs/netfs/Kconfig"
-source "fs/cachefiles/Kconfig"
-
-endmenu
-
-if BLOCK
-menu "CD-ROM/DVD Filesystems"
-
-source "fs/isofs/Kconfig"
-source "fs/udf/Kconfig"
-
-endmenu
-endif # BLOCK
-
-if BLOCK
-menu "DOS/FAT/EXFAT/NT Filesystems"
-
-source "fs/fat/Kconfig"
-source "fs/exfat/Kconfig"
-source "fs/ntfs/Kconfig"
-source "fs/ntfs3/Kconfig"
-
-endmenu
-endif # BLOCK
 
 menu "Pseudo filesystems"
 
@@ -306,106 +261,15 @@ menuconfig MISC_FILESYSTEMS
 	  disabled; if unsure, say Y here.
 
 if MISC_FILESYSTEMS
-
-source "fs/orangefs/Kconfig"
-source "fs/ecryptfs/Kconfig"
-source "fs/jffs2/Kconfig"
-# UBIFS File system configuration
-source "fs/ubifs/Kconfig"
 source "fs/cramfs/Kconfig"
-source "fs/squashfs/Kconfig"
 source "fs/minix/Kconfig"
 source "fs/resctrl/Kconfig"
-source "fs/romfs/Kconfig"
 source "fs/pstore/Kconfig"
-source "fs/ufs/Kconfig"
-source "fs/erofs/Kconfig"
 source "fs/vboxsf/Kconfig"
 
 endif # MISC_FILESYSTEMS
 
-menuconfig NETWORK_FILESYSTEMS
-	bool "Network File Systems"
-	default y
-	depends on NET
-	help
-	  Say Y here to get to see options for network filesystems and
-	  filesystem-related networking code, such as NFS daemon and
-	  RPCSEC security modules.
-
-	  This option alone does not add any kernel code.
-
-	  If you say N, all options in this submenu will be skipped and
-	  disabled; if unsure, say Y here.
-
-if NETWORK_FILESYSTEMS
-
-source "fs/nfs/Kconfig"
-source "fs/nfsd/Kconfig"
-
-config GRACE_PERIOD
-	tristate
-
-config LOCKD
-	tristate
-	depends on FILE_LOCKING
-	select CRC32
-	select GRACE_PERIOD
-
-config LOCKD_V4
-	bool
-	depends on NFSD || NFS_V3
-	depends on FILE_LOCKING
-	default y
-
-config NFS_ACL_SUPPORT
-	tristate
-	select FS_POSIX_ACL
-
-config NFS_COMMON
-	bool
-	depends on NFSD || NFS_FS || LOCKD
-	default y
-
-config NFS_COMMON_LOCALIO_SUPPORT
-	tristate
-	depends on NFS_LOCALIO
-	default y if NFSD=y || NFS_FS=y
-	default m if NFSD=m && NFS_FS=m
-	select SUNRPC
-
-config NFS_LOCALIO
-	bool "NFS client and server support for LOCALIO auxiliary protocol"
-	depends on NFSD && NFS_FS
-	select NFS_COMMON_LOCALIO_SUPPORT
-	default n
-	help
-	  Some NFS servers support an auxiliary NFS LOCALIO protocol
-	  that is not an official part of the NFS protocol.
-
-	  This option enables support for the LOCALIO protocol in the
-	  kernel's NFS server and client. Enable this to permit local
-	  NFS clients to bypass the network when issuing reads and
-	  writes to the local NFS server.
-
-	  If unsure, say N.
-
-config NFS_V4_2_SSC_HELPER
-	bool
-	default y if NFS_V4_2
-
-source "net/sunrpc/Kconfig"
-source "fs/ceph/Kconfig"
-
-source "fs/smb/Kconfig"
-source "fs/coda/Kconfig"
-source "fs/afs/Kconfig"
-source "fs/9p/Kconfig"
-
-endif # NETWORK_FILESYSTEMS
-
 source "fs/nls/Kconfig"
-source "fs/dlm/Kconfig"
 source "fs/unicode/Kconfig"
 
 config IO_WQ
