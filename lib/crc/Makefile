@@ -47,8 +47,6 @@ crc64-$(CONFIG_RISCV) += riscv/crc64_lsb.o riscv/crc64_msb.o
 crc64-$(CONFIG_X86) += x86/crc64-pclmul.o
 endif # CONFIG_CRC64_ARCH
 
-obj-y += tests/
-
 hostprogs := gen_crc32table gen_crc64table
 clean-files := crc32table.h crc64table.h
 

@@ -2202,8 +2202,6 @@ config TRACEPOINTS
 
 source "kernel/Kconfig.kexec"
 
-source "kernel/liveupdate/Kconfig"
-
 endmenu		# General setup
 
 source "arch/Kconfig"

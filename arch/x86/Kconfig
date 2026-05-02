@@ -2203,8 +2203,6 @@ config CFI_AUTO_DEFAULT
 	  this is the same as booting with "cfi=auto". If disabled,
 	  this is the same as booting with "cfi=kcfi".
 
-source "kernel/livepatch/Kconfig"
-
 config X86_BUS_LOCK_DETECT
 	bool "Split Lock Detect and Bus Lock Detect support"
 	depends on CPU_SUP_INTEL || CPU_SUP_AMD

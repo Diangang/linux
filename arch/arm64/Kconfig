@@ -2458,5 +2458,3 @@ menu "CPU Power Management"
 endmenu # "CPU Power Management"
 
 source "drivers/acpi/Kconfig"
-
-source "kernel/livepatch/Kconfig"

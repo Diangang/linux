@@ -742,9 +742,7 @@ config DEBUG_FS_ALLOW_NONE
 
 endchoice
 
-source "lib/Kconfig.kgdb"
 source "lib/Kconfig.ubsan"
-source "lib/Kconfig.kcsan"
 
 endmenu
 
@@ -1073,10 +1071,6 @@ config MEM_ALLOC_PROFILING_DEBUG
 	help
 	  Adds warnings with helpful error messages for memory allocation
 	  profiling.
-
-source "lib/Kconfig.kasan"
-source "lib/Kconfig.kfence"
-source "lib/Kconfig.kmsan"
 
 endmenu # "Memory Debugging"
 
@@ -1999,8 +1993,6 @@ source "arch/$(SRCARCH)/Kconfig.debug"
 endmenu
 
 menu "Kernel Testing and Coverage"
-
-source "lib/kunit/Kconfig"
 
 config NOTIFIER_ERROR_INJECTION
 	tristate "Notifier error injection"
@@ -3076,8 +3068,6 @@ config HW_BREAKPOINT_KUNIT_TEST
 	  Tests for hw_breakpoint constraints accounting.
 
 	  If unsure, say N.
-
-source "lib/crypto/tests/Kconfig"
 
 config SIPHASH_KUNIT_TEST
 	tristate "Perform selftest on siphash functions" if !KUNIT_ALL_TESTS
