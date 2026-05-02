@@ -682,5 +682,3 @@ SYM_DATA(smpboot_control,		.long 0)
 SYM_DATA(phys_base, .quad 0x0)
 SYM_PIC_ALIAS(phys_base);
 EXPORT_SYMBOL(phys_base)
-
-#include "../xen/xen-head.S"

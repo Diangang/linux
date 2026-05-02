@@ -5,21 +5,9 @@ subdir-ccflags-$(CONFIG_TRACE_BRANCH_PROFILING) += -DDISABLE_BRANCH_PROFILING
 
 obj-y += boot/startup/
 
-obj-$(CONFIG_ARCH_HAS_CC_PLATFORM) += coco/
-
 obj-y += entry/
 
 obj-$(CONFIG_PERF_EVENTS) += events/
-
-obj-$(CONFIG_KVM) += kvm/
-
-# Xen paravirtualization support
-obj-$(CONFIG_XEN) += xen/
-
-obj-$(CONFIG_PVH) += platform/pvh/
-
-# Hyper-V paravirtualization support
-obj-$(subst m,y,$(CONFIG_HYPERV)) += hyperv/
 
 obj-y += realmode/
 obj-y += kernel/
