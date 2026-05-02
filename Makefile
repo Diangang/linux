@@ -461,11 +461,6 @@ endif
 HOSTRUSTC = rustc
 HOSTPKG_CONFIG	= pkg-config
 
-# the KERNELDOC macro needs to be exported, as scripts/Makefile.build
-# has a logic to call it
-KERNELDOC       = $(srctree)/tools/docs/kernel-doc
-export KERNELDOC
-
 KBUILD_USERHOSTCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
 			 -O2 -fomit-frame-pointer -std=gnu11
 KBUILD_USERCFLAGS  := $(KBUILD_USERHOSTCFLAGS) $(USERCFLAGS)
@@ -1555,23 +1550,6 @@ tools/%: FORCE
 	$(Q)$(MAKE) O=$(abspath $(objtree)) subdir=tools -C $(srctree)/tools/ $*
 
 # ---------------------------------------------------------------------------
-# Kernel selftest
-
-PHONY += kselftest
-kselftest: headers
-	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests run_tests
-
-kselftest-%: headers FORCE
-	$(Q)$(MAKE) -C $(srctree)/tools/testing/selftests $*
-
-PHONY += kselftest-merge
-kselftest-merge:
-	$(if $(wildcard $(objtree)/.config),, $(error No .config exists, config your kernel first!))
-	$(Q)find $(srctree)/tools/testing/selftests -name config -o -name config.$(UTS_MACHINE) | \
-		xargs $(srctree)/scripts/kconfig/merge_config.sh -y -m $(objtree)/.config
-	$(Q)$(MAKE) -f $(srctree)/Makefile olddefconfig
-
-# ---------------------------------------------------------------------------
 # Devicetree files
 
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/boot/dts/),)
@@ -1805,17 +1783,6 @@ help:
 	@echo  ''
 	@echo  'Tools:'
 	@echo  '  nsdeps          - Generate missing symbol namespace dependencies'
-	@echo  ''
-	@echo  'Kernel selftest:'
-	@echo  '  kselftest         - Build and run kernel selftest'
-	@echo  '                      Build, install, and boot kernel before'
-	@echo  '                      running kselftest on it'
-	@echo  '                      Run as root for full coverage'
-	@echo  '  kselftest-all     - Build kernel selftest'
-	@echo  '  kselftest-install - Build and install kernel selftest'
-	@echo  '  kselftest-clean   - Remove all generated kselftest files'
-	@echo  '  kselftest-merge   - Merge all the config dependencies of'
-	@echo  '		      kselftest to existing .config.'
 	@echo  ''
 	@echo  'Rust targets:'
 	@echo  '  rustavailable   - Checks whether the Rust toolchain is'

@@ -2551,13 +2551,6 @@ config FFS_KUNIT_TEST
 config TEST_KSTRTOX
 	tristate "Test kstrto*() family of functions at runtime"
 
-config TEST_BITMAP
-	tristate "Test bitmap_*() family of functions at runtime"
-	help
-	  Enable this option to test the bitmap functions at boot.
-
-	  If unsure, say N.
-
 config TEST_XARRAY
 	tristate "Test the XArray code at runtime"
 

@@ -207,43 +207,6 @@ PHONY += modules-cpio-pkg
 modules-cpio-pkg: modules-$(KERNELRELEASE)-$(ARCH).cpio
 	@:
 
-# perf-tar*-src-pkg - generate a source tarball with perf source
-# ---------------------------------------------------------------------------
-
-.tmp_perf:
-	$(Q)mkdir .tmp_perf
-
-.tmp_perf/HEAD: .tmp_HEAD | .tmp_perf
-	$(call cmd,copy)
-
-quiet_cmd_perf_version_file = GEN     $@
-      cmd_perf_version_file = cd $(srctree)/tools/perf; util/PERF-VERSION-GEN $(dir $(abspath $@))
-
-# PERF-VERSION-FILE and .tmp_HEAD are independent, but this avoids updating the
-# timestamp of PERF-VERSION-FILE.
-# The best is to fix tools/perf/util/PERF-VERSION-GEN.
-.tmp_perf/PERF-VERSION-FILE: .tmp_HEAD $(srctree)/tools/perf/util/PERF-VERSION-GEN | .tmp_perf
-	$(call cmd,perf_version_file)
-
-perf-archive-args = --add-file=$$(realpath $(word 2, $^)) \
-	--add-file=$$(realpath $(word 3, $^)) \
-	$$(cat $(word 2, $^))^{tree} $$(cat $<)
-
-
-perf-tarballs := $(addprefix perf-$(KERNELVERSION), .tar .tar.gz .tar.bz2 .tar.xz .tar.zst)
-
-targets += $(perf-tarballs)
-$(perf-tarballs): archive-args = --prefix=perf-$(KERNELVERSION)/ $(perf-archive-args)
-$(perf-tarballs): tools/perf/MANIFEST .tmp_perf/HEAD .tmp_perf/PERF-VERSION-FILE FORCE
-	$(call if_changed,archive)
-
-PHONY += perf-tar-src-pkg
-perf-tar-src-pkg: perf-$(KERNELVERSION).tar
-	@:
-
-perf-tar%-src-pkg: perf-$(KERNELVERSION).tar.% FORCE
-	@:
-
 # Help text displayed when executing 'make help'
 # ---------------------------------------------------------------------------
 PHONY += help
@@ -265,11 +228,6 @@ help:
 	@echo '  tarzst-pkg          - Build the kernel as a zstd compressed tarball'
 	@echo '  modules-cpio-pkg    - Build the kernel modules as cpio archive'
 	@echo '                        (uses INSTALL_MOD_PATH inside the archive)'
-	@echo '  perf-tar-src-pkg    - Build the perf source tarball with no compression'
-	@echo '  perf-targz-src-pkg  - Build the perf source tarball with gzip compression'
-	@echo '  perf-tarbz2-src-pkg - Build the perf source tarball with bz2 compression'
-	@echo '  perf-tarxz-src-pkg  - Build the perf source tarball with xz compression'
-	@echo '  perf-tarzst-src-pkg - Build the perf source tarball with zst compression'
 
 PHONY += FORCE
 FORCE:
