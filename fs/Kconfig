@@ -181,7 +181,6 @@ menuconfig MISC_FILESYSTEMS
 	  disabled; if unsure, say Y here.
 
 if MISC_FILESYSTEMS
-source "fs/cramfs/Kconfig"
 source "fs/minix/Kconfig"
 source "fs/pstore/Kconfig"
 

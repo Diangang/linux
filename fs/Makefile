@@ -48,7 +48,6 @@ obj-$(CONFIG_KERNFS)		+= kernfs/
 obj-$(CONFIG_SYSFS)		+= sysfs/
 
 # Do not add any filesystems before this line
-obj-$(CONFIG_CRAMFS)		+= cramfs/
 obj-y				+= ramfs/
 obj-$(CONFIG_MINIX_FS)		+= minix/
 obj-$(CONFIG_DEBUG_FS)		+= debugfs/

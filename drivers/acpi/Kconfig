@@ -479,10 +479,8 @@ config ACPI_REDUCED_HARDWARE_ONLY
 config ACPI_NHLT
 	bool
 
-source "drivers/acpi/nfit/Kconfig"
 source "drivers/acpi/numa/Kconfig"
 source "drivers/acpi/apei/Kconfig"
-source "drivers/acpi/dptf/Kconfig"
 
 config ACPI_WATCHDOG
 	bool
@@ -546,10 +544,6 @@ if ARM64
 source "drivers/acpi/arm64/Kconfig"
 endif
 
-if RISCV
-source "drivers/acpi/riscv/Kconfig"
-endif
-
 config ACPI_PPTT
 	bool
 
@@ -582,8 +576,6 @@ config ACPI_FFH
 
 config ACPI_MRRM
 	bool
-
-source "drivers/acpi/pmic/Kconfig"
 
 config ACPI_VIOT
 	bool
