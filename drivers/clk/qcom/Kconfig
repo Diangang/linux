@@ -325,6 +325,7 @@ config IPQ_APSS_PLL
 
 config IPQ_APSS_5424
 	tristate "IPQ5424 APSS Clock Controller"
+	depends on INTERCONNECT
 	select IPQ_APSS_PLL
 	default y if IPQ_GCC_5424
 	help
@@ -379,6 +380,7 @@ config IPQ_GCC_5210
 config IPQ_GCC_5332
 	tristate "IPQ5332 Global Clock Controller"
 	depends on ARM64 || COMPILE_TEST
+	depends on INTERCONNECT
 	help
 	  Support for the global clock controller on ipq5332 devices.
 	  Say Y if you want to use peripheral devices such as UART, SPI,
@@ -387,6 +389,7 @@ config IPQ_GCC_5332
 config IPQ_GCC_5424
 	tristate "IPQ5424 Global Clock Controller"
 	depends on ARM64 || COMPILE_TEST
+	depends on INTERCONNECT
 	help
 	  Support for the global clock controller on ipq5424 devices.
 	  Say Y if you want to use peripheral devices such as UART, SPI,
@@ -428,6 +431,7 @@ config IPQ_GCC_8074
 
 config IPQ_GCC_9574
 	tristate "IPQ9574 Global Clock Controller"
+	depends on INTERCONNECT
 	help
 	  Support for global clock controller on ipq9574 devices.
 	  Say Y if you want to use peripheral devices such as UART, SPI,
@@ -437,6 +441,7 @@ config IPQ_GCC_9574
 config IPQ_NSSCC_5424
 	tristate "IPQ5424 NSS Clock Controller"
 	depends on ARM64 || COMPILE_TEST
+	depends on INTERCONNECT
 	depends on IPQ_GCC_5424
 	help
 	  Support for NSS clock controller on ipq5424 devices.
@@ -446,11 +451,12 @@ config IPQ_NSSCC_5424
 	  IPQ5424 devices.
 
 config IPQ_NSSCC_9574
-        tristate "IPQ9574 NSS Clock Controller"
-        depends on ARM64 || COMPILE_TEST
-        depends on IPQ_GCC_9574
-        help
-          Support for NSS clock controller on ipq9574 devices.
+	tristate "IPQ9574 NSS Clock Controller"
+	depends on ARM64 || COMPILE_TEST
+	depends on INTERCONNECT
+	depends on IPQ_GCC_9574
+	help
+	  Support for NSS clock controller on ipq9574 devices.
 
 config IPQ_NSSCC_QCA8K
 	tristate "QCA8K(QCA8386 or QCA8084) NSS Clock Controller"

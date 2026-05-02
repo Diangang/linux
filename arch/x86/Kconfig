@@ -165,7 +165,6 @@ config X86
 	select GENERIC_CLOCKEVENTS_BROADCAST_IDLE	if GENERIC_CLOCKEVENTS_BROADCAST
 	select GENERIC_CLOCKEVENTS_COUPLED_INLINE	if X86_64
 	select GENERIC_CLOCKEVENTS_MIN_ADJUST
-	select GENERIC_CMOS_UPDATE
 	select GENERIC_CPU_AUTOPROBE
 	select GENERIC_CPU_DEVICES
 	select GENERIC_CPU_VULNERABILITIES
@@ -317,8 +316,6 @@ config X86
 	select PCI_DOMAINS			if PCI
 	select PCI_LOCKLESS_CONFIG		if PCI
 	select PERF_EVENTS
-	select RTC_LIB
-	select RTC_MC146818_LIB
 	select SPARSE_IRQ
 	select SYSCTL_EXCEPTION_TRACE
 	select THREAD_INFO_IN_TASK
@@ -2858,10 +2855,6 @@ config APM_ALLOW_INTS
 	  suspend, try setting this to Y.  Otherwise, say N.
 
 endif # APM
-
-source "drivers/cpufreq/Kconfig"
-
-source "drivers/cpuidle/Kconfig"
 
 source "drivers/idle/Kconfig"
 

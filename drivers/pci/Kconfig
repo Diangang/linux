@@ -310,8 +310,7 @@ endchoice
 
 config VGA_ARB
 	bool "VGA Arbitration" if EXPERT
-	default y
-	depends on !S390
+	depends on !S390 && !X86
 	select SCREEN_INFO if X86
 	help
 	  Some "legacy" VGA devices implemented on PCI typically have the same

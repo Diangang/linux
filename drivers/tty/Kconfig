@@ -12,8 +12,7 @@ if TTY
 
 config VT
 	bool "Virtual terminal" if EXPERT
-	select INPUT
-	default y if !UML
+	depends on INPUT
 	help
 	  If you say Y here, you will get support for terminal devices with
 	  display and keyboard devices. These are called "virtual" because you

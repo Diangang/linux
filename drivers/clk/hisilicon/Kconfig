@@ -2,7 +2,7 @@
 config COMMON_CLK_HI3516CV300
 	tristate "HI3516CV300 Clock Driver"
 	depends on ARCH_HISI || COMPILE_TEST
-	select RESET_HISI
+	select RESET_HISI if RESET_CONTROLLER
 	default ARCH_HISI
 	help
 	  Build the clock driver for hi3516cv300.
@@ -10,7 +10,7 @@ config COMMON_CLK_HI3516CV300
 config COMMON_CLK_HI3519
 	tristate "Hi3519 Clock Driver"
 	depends on ARCH_HISI || COMPILE_TEST
-	select RESET_HISI
+	select RESET_HISI if RESET_CONTROLLER
 	default ARCH_HISI
 	help
 	  Build the clock driver for hi3519.
@@ -18,7 +18,7 @@ config COMMON_CLK_HI3519
 config COMMON_CLK_HI3559A
 	bool "Hi3559A Clock Driver"
 	depends on ARCH_HISI || COMPILE_TEST
-	select RESET_HISI
+	select RESET_HISI if RESET_CONTROLLER
 	default ARCH_HISI
 	help
 	  Build the clock driver for hi3559a.
@@ -40,7 +40,7 @@ config COMMON_CLK_HI3670
 config COMMON_CLK_HI3798CV200
 	tristate "Hi3798CV200 Clock Driver"
 	depends on ARCH_HISI || COMPILE_TEST
-	select RESET_HISI
+	select RESET_HISI if RESET_CONTROLLER
 	default ARCH_HISI
 	help
 	  Build the clock driver for hi3798cv200.
@@ -55,7 +55,7 @@ config COMMON_CLK_HI6220
 config RESET_HISI
 	bool "HiSilicon Reset Controller Driver"
 	depends on ARCH_HISI || COMPILE_TEST
-	select RESET_CONTROLLER
+	depends on RESET_CONTROLLER
 	help
 	  Build reset controller driver for HiSilicon device chipsets.
 

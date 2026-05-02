@@ -310,6 +310,7 @@ config PM_TRACE_RTC
 	bool "Suspend/resume event tracing"
 	depends on PM_SLEEP_DEBUG
 	depends on X86
+	depends on RTC_MC146818_LIB
 	select PM_TRACE
 	help
 	This enables some cheesy code to save the last PM event point in the
