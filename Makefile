@@ -1614,10 +1614,6 @@ dtbs_check: dtbs
 dtbs_install:
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.dtbinst obj=$(dtstree)
 
-ifdef CONFIG_OF_EARLY_FLATTREE
-all: dtbs
-endif
-
 ifdef CONFIG_GENERIC_BUILTIN_DTB
 vmlinux: dtbs
 endif
