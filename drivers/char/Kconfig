@@ -132,8 +132,6 @@ config POWERNV_OP_PANEL
 
 	  If unsure, say M here to build it as a module called powernv-op-panel.
 
-source "drivers/char/ipmi/Kconfig"
-
 config DS1620
 	tristate "NetWinder thermometer support"
 	depends on ARCH_NETWINDER
@@ -209,16 +207,6 @@ config DTLK
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called dtlk.
-
-config XILINX_HWICAP
-	tristate "Xilinx HWICAP Support"
-	depends on MICROBLAZE
-	help
-	  This option enables support for Xilinx Internal Configuration
-	  Access Port (ICAP) driver.  The ICAP is used on Xilinx Virtex
-	  FPGA platforms to partially reconfigure the FPGA at runtime.
-
-	  If unsure, say N.
 
 config APPLICOM
 	tristate "Applicom intelligent fieldbus card support"
@@ -366,8 +354,6 @@ config UV_MMTIMER
 	  The uv_mmtimer device allows direct userspace access to the
 	  UV system timer.
 
-source "drivers/char/tpm/Kconfig"
-
 config TELCLOCK
 	tristate "Telecom clock driver for ATCA SBC"
 	depends on X86
@@ -380,8 +366,6 @@ config TELCLOCK
 	  fabric.  Upon loading, the driver exports a sysfs directory,
 	  /sys/devices/faux/telco_clock, with a number of files for
 	  controlling the behavior of this hardware.
-
-source "drivers/char/xillybus/Kconfig"
 
 config ADI
 	tristate "SPARC Privileged ADI driver"

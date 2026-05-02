@@ -2,4 +2,3 @@
 
 obj-y		+= common/
 obj-y		+= host/
-obj-y		+= target/

@@ -16,9 +16,6 @@ menuconfig BLK_DEV
 
 if BLK_DEV
 
-source "drivers/block/null_blk/Kconfig"
-source "drivers/block/rnull/Kconfig"
-
 config BLK_DEV_FD
 	tristate "Normal floppy disk support"
 	depends on ARCH_MAY_HAVE_PC_FDC
@@ -104,10 +101,6 @@ config GDROM
 	  Most users will want to say "Y" here.
 	  You can also build this as a module which will be called gdrom.
 
-source "drivers/block/mtip32xx/Kconfig"
-
-source "drivers/block/zram/Kconfig"
-
 config BLK_DEV_UBD
 	bool "Virtual block device"
 	depends on UML
@@ -190,8 +183,6 @@ config BLK_DEV_LOOP_MIN_COUNT
 	  The historic default is 8. If a late 2011 version of losetup(8)
 	  is used, it can be set to 0, since needed loop devices can be
 	  dynamically allocated with the /dev/loop-control interface.
-
-source "drivers/block/drbd/Kconfig"
 
 config BLK_DEV_NBD
 	tristate "Network block device support"
@@ -281,27 +272,6 @@ config XEN_BLKDEV_FRONTEND
 	  block device driver.  It communicates with a back-end driver
 	  in another domain which drives the actual block device.
 
-config XEN_BLKDEV_BACKEND
-	tristate "Xen block-device backend driver"
-	depends on XEN_BACKEND
-	help
-	  The block-device backend driver allows the kernel to export its
-	  block devices to other guests via a high-performance shared-memory
-	  interface.
-
-	  The corresponding Linux frontend driver is enabled by the
-	  CONFIG_XEN_BLKDEV_FRONTEND configuration option.
-
-	  The backend driver attaches itself to a any block device specified
-	  in the XenBus configuration. There are no limits to what the block
-	  device as long as it has a major and minor.
-
-	  If you are compiling a kernel to run in a Xen block backend driver
-	  domain (often this is domain 0) you should say Y here. To
-	  compile this driver as a module, chose M here: the module
-	  will be called xen-blkback.
-
-
 config VIRTIO_BLK
 	tristate "Virtio block driver"
 	depends on VIRTIO
@@ -348,8 +318,6 @@ config BLKDEV_UBLK_LEGACY_OPCODES
 	  Say N if you don't want to support legacy command opcode. It is
 	  suggested to enable N if your application(ublk server) switches to
 	  ioctl command encoding.
-
-source "drivers/block/rnbd/Kconfig"
 
 config BLK_DEV_ZONED_LOOP
 	tristate "Zoned loopback device support"

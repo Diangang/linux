@@ -39,10 +39,6 @@ if PNP
 
 comment "Protocols"
 
-source "drivers/pnp/isapnp/Kconfig"
-
-source "drivers/pnp/pnpbios/Kconfig"
-
 source "drivers/pnp/pnpacpi/Kconfig"
 
 endif # PNP
