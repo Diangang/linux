@@ -18,4 +18,3 @@ obj-y				+= bus_numa.o
 obj-$(CONFIG_AMD_NB)		+= amd_bus.o
 obj-$(CONFIG_PCI_CNB20LE_QUIRK)	+= broadcom_bus.o
 
-ccflags-$(CONFIG_PCI_DEBUG)	+= -DDEBUG

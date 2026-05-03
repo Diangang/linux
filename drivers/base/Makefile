@@ -28,7 +28,6 @@ obj-$(CONFIG_GENERIC_ARCH_TOPOLOGY) += arch_topology.o
 obj-$(CONFIG_GENERIC_ARCH_NUMA) += arch_numa.o
 obj-$(CONFIG_ACPI) += physical_location.o
 
-ccflags-$(CONFIG_DEBUG_DRIVER) := -DDEBUG
 
 # define_trace.h needs to know how to find our header
 CFLAGS_trace.o		:= -I$(src)

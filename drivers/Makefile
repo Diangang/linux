@@ -9,7 +9,6 @@
 obj-y				+= irqchip/
 obj-y				+= bus/
 
-obj-$(CONFIG_GPIOLIB)		+= gpio/
 
 obj-y				+= pci/
 

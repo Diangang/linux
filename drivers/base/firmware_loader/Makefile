@@ -7,6 +7,5 @@ firmware_class-objs := main.o
 firmware_class-$(CONFIG_FW_LOADER_USER_HELPER) += fallback.o
 firmware_class-$(CONFIG_EFI_EMBEDDED_FIRMWARE) += fallback_platform.o
 firmware_class-$(CONFIG_FW_LOADER_SYSFS) += sysfs.o
-firmware_class-$(CONFIG_FW_UPLOAD) += sysfs_upload.o
 
 obj-y += builtin/
