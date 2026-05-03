@@ -21,6 +21,5 @@ obj-y				+= vsyscall/
 obj-$(CONFIG_PREEMPTION)	+= thunk.o
 CFLAGS_entry_fred.o		+= -fno-stack-protector
 CFLAGS_REMOVE_entry_fred.o	+= -pg $(CC_FLAGS_FTRACE)
-obj-$(CONFIG_X86_FRED)		+= entry_64_fred.o entry_fred.o
 
 obj-$(CONFIG_IA32_EMULATION)	+= entry_64_compat.o syscall_32.o

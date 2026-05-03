@@ -42,24 +42,19 @@ ifeq ($(CONFIG_AMD_NB)$(CONFIG_SYSFS),yy)
 obj-y					+= amd_cache_disable.o
 endif
 obj-$(CONFIG_CPU_SUP_HYGON)		+= hygon.o
-obj-$(CONFIG_CPU_SUP_CYRIX_32)		+= cyrix.o
 obj-$(CONFIG_CPU_SUP_CENTAUR)		+= centaur.o
-obj-$(CONFIG_CPU_SUP_TRANSMETA_32)	+= transmeta.o
-obj-$(CONFIG_CPU_SUP_UMC_32)		+= umc.o
 obj-$(CONFIG_CPU_SUP_ZHAOXIN)		+= zhaoxin.o
-obj-$(CONFIG_CPU_SUP_VORTEX_32)		+= vortex.o
+
 
 obj-$(CONFIG_X86_MCE)			+= mce/
 obj-$(CONFIG_MTRR)			+= mtrr/
 obj-$(CONFIG_MICROCODE)			+= microcode/
-obj-$(CONFIG_X86_CPU_RESCTRL)		+= resctrl/
-obj-$(CONFIG_X86_SGX)			+= sgx/
+
 
 obj-$(CONFIG_X86_LOCAL_APIC)		+= perfctr-watchdog.o
 
 obj-$(CONFIG_HYPERVISOR_GUEST)		+= vmware.o hypervisor.o mshyperv.o
-obj-$(CONFIG_BHYVE_GUEST)		+= bhyve.o
-obj-$(CONFIG_ACRN_GUEST)		+= acrn.o
+
 
 obj-$(CONFIG_DEBUG_FS)			+= debugfs.o
 
