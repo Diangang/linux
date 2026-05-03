@@ -75,16 +75,6 @@ config AMBA_PL08X
 	  PL080 and PL081, Samsungs PL080 derivative and Faraday
 	  Technology's FTDMAC020 PL080 derivative.
 
-config AMCC_PPC440SPE_ADMA
-	tristate "AMCC PPC440SPe ADMA support"
-	depends on 440SPe || 440SP
-	select DMA_ENGINE
-	select DMA_ENGINE_RAID
-	select ARCH_HAS_ASYNC_TX_FIND_CHANNEL
-	select ASYNC_TX_ENABLE_CHANNEL_SWITCH
-	help
-	  Enable support for the AMCC PPC440SPe RAID engines.
-
 config APPLE_ADMAC
 	tristate "Apple ADMAC support"
 	depends on ARCH_APPLE || COMPILE_TEST
@@ -185,17 +175,6 @@ config DMA_SUN6I
 	select DMA_VIRTUAL_CHANNELS
 	help
 	  Support for the DMA engine first found in Allwinner A31 SoCs.
-
-config DW_AXI_DMAC
-	tristate "Synopsys DesignWare AXI DMA support"
-	depends on OF
-	depends on HAS_IOMEM
-	select DMA_ENGINE
-	select DMA_VIRTUAL_CHANNELS
-	help
-	  Enable support for Synopsys DesignWare AXI DMA controller.
-	  NOTE: This driver wasn't tested on 64 bit platform because
-	  of lack 64 bit platform with Synopsys DW AXI DMAC.
 
 config EP93XX_DMA
 	bool "Cirrus Logic EP93xx DMA support"
@@ -353,20 +332,6 @@ config INTEL_IDXD_PERFMON
 
 	  If unsure, say N.
 
-config INTEL_IOATDMA
-	tristate "Intel I/OAT DMA support"
-	depends on PCI && X86_64 && !UML
-	select DMA_ENGINE
-	select DMA_ENGINE_RAID
-	select DCA
-	help
-	  Enable support for the Intel(R) I/OAT DMA engine present
-	  in recent Intel Xeon chipsets.
-
-	  Say Y here if you have such a chipset.
-
-	  If unsure, say N.
-
 config K3_DMA
 	tristate "Hisilicon K3 DMA support"
 	depends on ARCH_HISI || COMPILE_TEST
@@ -448,7 +413,7 @@ config MOXART_DMA
 	select DMA_VIRTUAL_CHANNELS
 	help
 	  Enable support for the MOXA ART SoC DMA controller.
- 
+
 	  Say Y here if you enabled MMP ADMA, otherwise say N.
 
 config MPC512X_DMA
@@ -738,8 +703,6 @@ config XILINX_ZYNQMP_DPDMA
 # driver files
 source "drivers/dma/amd/Kconfig"
 
-source "drivers/dma/bestcomm/Kconfig"
-
 source "drivers/dma/mediatek/Kconfig"
 
 source "drivers/dma/qcom/Kconfig"
@@ -751,13 +714,7 @@ source "drivers/dma/dw-edma/Kconfig"
 source "drivers/dma/hsu/Kconfig"
 
 
-source "drivers/dma/sh/Kconfig"
-
 source "drivers/dma/ti/Kconfig"
-
-source "drivers/dma/fsl-dpaa2-qdma/Kconfig"
-
-source "drivers/dma/lgm/Kconfig"
 
 source "drivers/dma/loongson/Kconfig"
 
