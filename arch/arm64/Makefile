@@ -161,7 +161,7 @@ libs-$(CONFIG_EFI_STUB) += $(objtree)/drivers/firmware/efi/libstub/lib.a
 # Default target when executing plain make
 boot		:= arch/arm64/boot
 
-BOOT_TARGETS	:= Image vmlinuz.efi image.fit
+BOOT_TARGETS	:= Image vmlinuz.efi
 
 PHONY += $(BOOT_TARGETS)
 
@@ -173,24 +173,12 @@ endif
 
 all:	$(notdir $(KBUILD_IMAGE))
 
-image.fit: dtbs
-
-vmlinuz.efi image.fit: Image
+vmlinuz.efi: Image
 $(BOOT_TARGETS): vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 Image.%: Image
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
-
-ifeq ($(CONFIG_COMPRESSED_INSTALL),y)
- DEFAULT_KBUILD_IMAGE = $(KBUILD_IMAGE)
-else
- DEFAULT_KBUILD_IMAGE = $(boot)/Image
-endif
-
-install: KBUILD_IMAGE := $(DEFAULT_KBUILD_IMAGE)
-install zinstall:
-	$(call cmd,install)
 
 archprepare:
 	$(Q)$(MAKE) $(build)=arch/arm64/tools kapi
@@ -220,10 +208,4 @@ virtconfig:
 define archhelp
   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'
   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
-  echo  '  image.fit     - Flat Image Tree (arch/$(ARCH)/boot/image.fit)'
-  echo  '  install       - Install kernel (compressed if COMPRESSED_INSTALL set)'
-  echo  '  zinstall      - Install compressed kernel'
-  echo  '                  Install using (your) ~/bin/installkernel or'
-  echo  '                  (distribution) /sbin/installkernel or'
-  echo  '                  install to $$(INSTALL_PATH) and run lilo'
 endef

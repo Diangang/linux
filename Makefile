@@ -290,12 +290,12 @@ endif
 
 version_h := include/generated/uapi/linux/version.h
 
-clean-targets := %clean mrproper cleandocs
+clean-targets := %clean mrproper
 no-dot-config-targets := $(clean-targets) \
-			 cscope gtags TAGS tags help% %docs check% \
+			 help% check% \
 			 $(version_h) headers headers_% archheaders archscripts \
 			 %asm-generic kernelversion %src-pkg dt_binding_check \
-			 outputmakefile rustavailable rustfmt rustfmtcheck \
+			 outputmakefile rustfmt rustfmtcheck \
 			 run-command
 no-sync-config-targets := $(no-dot-config-targets) %install modules_sign kernelrelease \
 			  image_name
@@ -1115,7 +1115,7 @@ PHONY += prepare0
 
 ifeq ($(KBUILD_EXTMOD),)
 build-dir	:= .
-clean-dirs	:= $(sort . Documentation \
+clean-dirs	:= $(sort . \
 		     $(patsubst %/,%,$(filter %/, $(core-) \
 			$(drivers-) $(libs-))))
 
@@ -1264,11 +1264,6 @@ filechk_compile.h = $(srctree)/scripts/mkcompile_h \
 include/generated/compile.h: FORCE
 	$(call filechk,compile.h)
 
-PHONY += headerdep
-headerdep:
-	$(Q)find $(srctree)/include/ -name '*.h' | xargs --max-args 1 \
-	$(srctree)/scripts/headerdep.pl -I$(srctree)/include
-
 # ---------------------------------------------------------------------------
 # Kernel headers
 
@@ -1316,11 +1311,6 @@ scripts_gen_packed_field_checks: scripts_basic
 # Many distributions have the custom install script, /sbin/installkernel.
 # If DKMS is installed, 'make install' will eventually recurse back
 # to this Makefile to build and install external modules.
-# Cancel sub_make_done so that options such as M=, V=, etc. are parsed.
-
-quiet_cmd_install = INSTALL $(INSTALL_PATH)
-      cmd_install = unset sub_make_done; $(srctree)/scripts/install.sh
-
 # ---------------------------------------------------------------------------
 # vDSO install
 
@@ -1556,9 +1546,6 @@ help:
 	@echo  '                    (requires a recent binutils and recent build (System.map))'
 	@echo  '  dir/file.ko     - Build module including final link'
 	@echo  '  modules_prepare - Set up for building external modules'
-	@echo  '  tags/TAGS	  - Generate tags file for editors'
-	@echo  '  cscope	  - Generate cscope index'
-	@echo  '  gtags           - Generate GNU GLOBAL index'
 	@echo  '  kernelrelease	  - Output the release version string (use with make -s)'
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
@@ -1566,19 +1553,10 @@ help:
 	@echo  '  headers_install - Install sanitised kernel UAPI headers to INSTALL_HDR_PATH'; \
 	 echo  '                    (default: $(INSTALL_HDR_PATH))'; \
 	 echo  ''
-	@echo  'Static analysers:'
-	@echo  '  checkstack      - Generate a list of stack hogs and consider all functions'
-	@echo  '                    with a stack size larger than MINSTACKSIZE (default: 100)'
-	@echo  '  versioncheck    - Sanity check on version.h usage'
-	@echo  '  includecheck    - Check for duplicate included header files'
-	@echo  '  headerdep       - Detect inclusion cycles in headers'
-	@echo  ''
 	@echo  'Tools:'
 	@echo  '  nsdeps          - Generate missing symbol namespace dependencies'
 	@echo  ''
 	@echo  'Rust targets:'
-	@echo  '  rustavailable   - Checks whether the Rust toolchain is'
-	@echo  '		    available and, if not, explains why.'
 	@echo  '  rustfmt	  - Reformat all the Rust code in the kernel'
 	@echo  '  rustfmtcheck	  - Checks if all the Rust code in the kernel'
 	@echo  '		    is formatted, printing a diff otherwise.'
@@ -1586,8 +1564,6 @@ help:
 	@echo  '		    (requires kernel .config)'
 	@echo  '  rusttest        - Runs the Rust tests'
 	@echo  '                    (requires kernel .config; downloads external repos)'
-	@echo  '  rust-analyzer	  - Generate rust-project.json rust-analyzer support file'
-	@echo  '		    (requires kernel .config)'
 	@echo  '  dir/file.[os]   - Build specified target only'
 	@echo  '  dir/file.rsi    - Build macro expanded source, similar to C preprocessing.'
 	@echo  '                    Run with RUSTFMT=n to skip reformatting if needed.'
@@ -1606,9 +1582,6 @@ help:
 	@echo 'Userspace tools targets:'
 	@echo '  use "make tools/help"'
 	@echo '  or  "cd tools; make help"'
-	@echo  ''
-	@echo  'Documentation targets:'
-	@$(MAKE) -f $(srctree)/Documentation/Makefile dochelp
 	@echo  ''
 	@echo  'Architecture-specific targets ($(SRCARCH)):'
 	@$(or $(archhelp),\
@@ -1664,24 +1637,8 @@ $(help-board-dirs): help-%:
 		echo '')
 
 
-# Documentation targets
-# ---------------------------------------------------------------------------
-DOC_TARGETS := xmldocs latexdocs pdfdocs htmldocs epubdocs cleandocs \
-	       linkcheckdocs dochelp refcheckdocs texinfodocs infodocs mandocs \
-	       htmldocs-redirects
-
-PHONY += $(DOC_TARGETS)
-$(DOC_TARGETS):
-	$(Q)$(MAKE) $(build)=Documentation $@
-
-
 # Rust targets
 # ---------------------------------------------------------------------------
-
-# "Is Rust available?" target
-PHONY += rustavailable
-rustavailable:
-	+$(Q)$(CONFIG_SHELL) $(srctree)/scripts/rust_is_available.sh && echo "Rust is available!"
 
 # Documentation target
 #
@@ -1884,27 +1841,6 @@ clean: $(clean-dirs)
 		-o -name '.tmp_*' -print \
 		| xargs rm -rf
 
-# Generate tags for editors
-# ---------------------------------------------------------------------------
-quiet_cmd_tags = GEN     $@
-      cmd_tags = $(BASH) $(srctree)/scripts/tags.sh $@
-
-tags TAGS cscope gtags: FORCE
-	$(call cmd,tags)
-
-# Generate rust-project.json (a file that describes the structure of non-Cargo
-# Rust projects) for rust-analyzer (an implementation of the Language Server
-# Protocol).
-PHONY += rust-analyzer
-rust-analyzer:
-	+$(Q)$(CONFIG_SHELL) $(srctree)/scripts/rust_is_available.sh
-ifdef KBUILD_EXTMOD
-# FIXME: external modules must not descend into a sub-directory of the kernel
-	$(Q)$(MAKE) $(build)=$(objtree)/rust src=$(srctree)/rust $@
-else
-	$(Q)$(MAKE) $(build)=rust $@
-endif
-
 # Script to generate missing namespace dependencies
 # ---------------------------------------------------------------------------
 
@@ -1922,33 +1858,7 @@ quiet_cmd_gen_compile_commands = GEN     $@
 # Scripts to check various things for consistency
 # ---------------------------------------------------------------------------
 
-PHONY += includecheck versioncheck
-
-includecheck:
-	find $(srctree)/* $(RCS_FIND_IGNORE) \
-		-name '*.[hcS]' -type f -print | sort \
-		| xargs $(PERL) -w $(srctree)/scripts/checkincludes.pl
-
-versioncheck:
-	find $(srctree)/* $(RCS_FIND_IGNORE) \
-		-name '*.[hcS]' -type f -print | sort \
-		| xargs $(PERL) -w $(srctree)/scripts/checkversion.pl
-
 PHONY += checkstack kernelrelease kernelversion image_name
-
-# UML needs a little special treatment here.  It wants to use the host
-# toolchain, so needs $(SUBARCH) passed to checkstack.pl.  Everyone
-# else wants $(ARCH), including people doing cross-builds, which means
-# that $(SUBARCH) doesn't work here.
-ifeq ($(ARCH), um)
-CHECKSTACK_ARCH := $(SUBARCH)
-else
-CHECKSTACK_ARCH := $(ARCH)
-endif
-MINSTACKSIZE	?= 100
-checkstack:
-	$(OBJDUMP) -d vmlinux $$(find . -name '*.ko') | \
-	$(PERL) $(srctree)/scripts/checkstack.pl $(CHECKSTACK_ARCH) $(MINSTACKSIZE)
 
 kernelrelease:
 	@$(filechk_kernel.release)
