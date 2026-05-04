@@ -255,40 +255,6 @@ err_free_sup:
 	return -ENOMEM;
 }
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-static int
-__init_srcu_struct_common(struct srcu_struct *ssp, const char *name, struct lock_class_key *key)
-{
-	/* Don't re-initialize a lock while it is held. */
-	debug_check_no_locks_freed((void *)ssp, sizeof(*ssp));
-	lockdep_init_map(&ssp->dep_map, name, key, 0);
-	return init_srcu_struct_fields(ssp, false);
-}
-
-int __init_srcu_struct(struct srcu_struct *ssp, const char *name, struct lock_class_key *key)
-{
-	ssp->srcu_reader_flavor = 0;
-	return __init_srcu_struct_common(ssp, name, key);
-}
-EXPORT_SYMBOL_GPL(__init_srcu_struct);
-
-int __init_srcu_struct_fast(struct srcu_struct *ssp, const char *name, struct lock_class_key *key)
-{
-	ssp->srcu_reader_flavor = SRCU_READ_FLAVOR_FAST;
-	return __init_srcu_struct_common(ssp, name, key);
-}
-EXPORT_SYMBOL_GPL(__init_srcu_struct_fast);
-
-int __init_srcu_struct_fast_updown(struct srcu_struct *ssp, const char *name,
-				   struct lock_class_key *key)
-{
-	ssp->srcu_reader_flavor = SRCU_READ_FLAVOR_FAST_UPDOWN;
-	return __init_srcu_struct_common(ssp, name, key);
-}
-EXPORT_SYMBOL_GPL(__init_srcu_struct_fast_updown);
-
-#else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /**
  * init_srcu_struct - initialize a sleep-RCU structure
@@ -343,7 +309,6 @@ int init_srcu_struct_fast_updown(struct srcu_struct *ssp)
 }
 EXPORT_SYMBOL_GPL(init_srcu_struct_fast_updown);
 
-#endif /* #else #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /*
  * Initiate a transition to SRCU_SIZE_BIG with lock held.

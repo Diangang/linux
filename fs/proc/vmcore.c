@@ -52,19 +52,6 @@ static u64 vmcore_size;
 
 static struct proc_dir_entry *proc_vmcore;
 
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-struct vmcoredd_node {
-	struct list_head list;	/* List of dumps */
-	void *buf;		/* Buffer containing device's dump */
-	unsigned int size;	/* Size of the buffer */
-};
-
-/* Device Dump list and mutex to synchronize access to list */
-static LIST_HEAD(vmcoredd_list);
-
-static bool vmcoredd_disabled;
-core_param(novmcoredd, vmcoredd_disabled, bool, 0);
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 
 /* Device Dump Size */
 static size_t vmcoredd_orig_sz;
@@ -266,66 +253,6 @@ ssize_t __weak copy_oldmem_page_encrypted(struct iov_iter *iter,
 	return copy_oldmem_page(iter, pfn, csize, offset);
 }
 
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-static int vmcoredd_copy_dumps(struct iov_iter *iter, u64 start, size_t size)
-{
-	struct vmcoredd_node *dump;
-	u64 offset = 0;
-	size_t tsz;
-	char *buf;
-
-	list_for_each_entry(dump, &vmcoredd_list, list) {
-		if (start < offset + dump->size) {
-			tsz = min(offset + (u64)dump->size - start, (u64)size);
-			buf = dump->buf + start - offset;
-			if (copy_to_iter(buf, tsz, iter) < tsz)
-				return -EFAULT;
-
-			size -= tsz;
-			start += tsz;
-
-			/* Leave now if buffer filled already */
-			if (!size)
-				return 0;
-		}
-		offset += dump->size;
-	}
-
-	return 0;
-}
-
-#ifdef CONFIG_MMU
-static int vmcoredd_mmap_dumps(struct vm_area_struct *vma, unsigned long dst,
-			       u64 start, size_t size)
-{
-	struct vmcoredd_node *dump;
-	u64 offset = 0;
-	size_t tsz;
-	char *buf;
-
-	list_for_each_entry(dump, &vmcoredd_list, list) {
-		if (start < offset + dump->size) {
-			tsz = min(offset + (u64)dump->size - start, (u64)size);
-			buf = dump->buf + start - offset;
-			if (remap_vmalloc_range_partial(vma, dst, buf, 0,
-							tsz))
-				return -EFAULT;
-
-			size -= tsz;
-			start += tsz;
-			dst += tsz;
-
-			/* Leave now if buffer filled already */
-			if (!size)
-				return 0;
-		}
-		offset += dump->size;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_MMU */
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 
 /* Read from the ELF header and then the crash dump. On error, negative value is
  * returned otherwise number of bytes read are returned.
@@ -368,23 +295,6 @@ static ssize_t __read_vmcore(struct iov_iter *iter, loff_t *fpos)
 		 * the other elf notes ensure that zero-filled data can be
 		 * avoided.
 		 */
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-		/* Read device dumps */
-		if (*fpos < elfcorebuf_sz + vmcoredd_orig_sz) {
-			tsz = min(elfcorebuf_sz + vmcoredd_orig_sz -
-				  (size_t)*fpos, iov_iter_count(iter));
-			start = *fpos - elfcorebuf_sz;
-			if (vmcoredd_copy_dumps(iter, start, tsz))
-				return -EFAULT;
-
-			*fpos += tsz;
-			acc += tsz;
-
-			/* leave now if filled buffer already */
-			if (!iov_iter_count(iter))
-				return acc;
-		}
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 
 		/* Read remaining elf notes */
 		tsz = min(elfcorebuf_sz + elfnotes_sz - (size_t)*fpos,
@@ -638,27 +548,6 @@ static int mmap_vmcore(struct file *file, struct vm_area_struct *vma)
 		 * other elf notes can be properly mmaped at page aligned
 		 * address.
 		 */
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-		/* Read device dumps */
-		if (start < elfcorebuf_sz + vmcoredd_orig_sz) {
-			u64 start_off;
-
-			tsz = min(elfcorebuf_sz + vmcoredd_orig_sz -
-				  (size_t)start, size);
-			start_off = start - elfcorebuf_sz;
-			if (vmcoredd_mmap_dumps(vma, vma->vm_start + len,
-						start_off, tsz))
-				goto fail;
-
-			size -= tsz;
-			start += tsz;
-			len += tsz;
-
-			/* leave now if filled buffer already */
-			if (!size)
-				return 0;
-		}
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 
 		/* Read remaining elf notes */
 		tsz = min(elfcorebuf_sz + elfnotes_sz - (size_t)start, size);
@@ -1356,188 +1245,6 @@ static int __init parse_crash_elf_headers(void)
 	return 0;
 }
 
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-/**
- * vmcoredd_write_header - Write vmcore device dump header at the
- * beginning of the dump's buffer.
- * @buf: Output buffer where the note is written
- * @data: Dump info
- * @size: Size of the dump
- *
- * Fills beginning of the dump's buffer with vmcore device dump header.
- */
-static void vmcoredd_write_header(void *buf, struct vmcoredd_data *data,
-				  u32 size)
-{
-	struct vmcoredd_header *vdd_hdr = (struct vmcoredd_header *)buf;
-
-	vdd_hdr->n_namesz = sizeof(vdd_hdr->name);
-	vdd_hdr->n_descsz = size + sizeof(vdd_hdr->dump_name);
-	vdd_hdr->n_type = NT_VMCOREDD;
-
-	strscpy_pad(vdd_hdr->name, VMCOREDD_NOTE_NAME);
-	strscpy_pad(vdd_hdr->dump_name, data->dump_name);
-}
-
-/**
- * vmcoredd_update_program_headers - Update all ELF program headers
- * @elfptr: Pointer to elf header
- * @elfnotesz: Size of elf notes aligned to page size
- * @vmcoreddsz: Size of device dumps to be added to elf note header
- *
- * Determine type of ELF header (Elf64 or Elf32) and update the elf note size.
- * Also update the offsets of all the program headers after the elf note header.
- */
-static void vmcoredd_update_program_headers(char *elfptr, size_t elfnotesz,
-					    size_t vmcoreddsz)
-{
-	unsigned char *e_ident = (unsigned char *)elfptr;
-	u64 start, end, size;
-	loff_t vmcore_off;
-	u32 i;
-
-	vmcore_off = elfcorebuf_sz + elfnotesz;
-
-	if (e_ident[EI_CLASS] == ELFCLASS64) {
-		Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elfptr;
-		Elf64_Phdr *phdr = (Elf64_Phdr *)(elfptr + sizeof(Elf64_Ehdr));
-
-		/* Update all program headers */
-		for (i = 0; i < ehdr->e_phnum; i++, phdr++) {
-			if (phdr->p_type == PT_NOTE) {
-				/* Update note size */
-				phdr->p_memsz = elfnotes_orig_sz + vmcoreddsz;
-				phdr->p_filesz = phdr->p_memsz;
-				continue;
-			}
-
-			start = rounddown(phdr->p_offset, PAGE_SIZE);
-			end = roundup(phdr->p_offset + phdr->p_memsz,
-				      PAGE_SIZE);
-			size = end - start;
-			phdr->p_offset = vmcore_off + (phdr->p_offset - start);
-			vmcore_off += size;
-		}
-	} else {
-		Elf32_Ehdr *ehdr = (Elf32_Ehdr *)elfptr;
-		Elf32_Phdr *phdr = (Elf32_Phdr *)(elfptr + sizeof(Elf32_Ehdr));
-
-		/* Update all program headers */
-		for (i = 0; i < ehdr->e_phnum; i++, phdr++) {
-			if (phdr->p_type == PT_NOTE) {
-				/* Update note size */
-				phdr->p_memsz = elfnotes_orig_sz + vmcoreddsz;
-				phdr->p_filesz = phdr->p_memsz;
-				continue;
-			}
-
-			start = rounddown(phdr->p_offset, PAGE_SIZE);
-			end = roundup(phdr->p_offset + phdr->p_memsz,
-				      PAGE_SIZE);
-			size = end - start;
-			phdr->p_offset = vmcore_off + (phdr->p_offset - start);
-			vmcore_off += size;
-		}
-	}
-}
-
-/**
- * vmcoredd_update_size - Update the total size of the device dumps and update
- * ELF header
- * @dump_size: Size of the current device dump to be added to total size
- *
- * Update the total size of all the device dumps and update the ELF program
- * headers. Calculate the new offsets for the vmcore list and update the
- * total vmcore size.
- */
-static void vmcoredd_update_size(size_t dump_size)
-{
-	vmcoredd_orig_sz += dump_size;
-	elfnotes_sz = roundup(elfnotes_orig_sz, PAGE_SIZE) + vmcoredd_orig_sz;
-	vmcoredd_update_program_headers(elfcorebuf, elfnotes_sz,
-					vmcoredd_orig_sz);
-
-	/* Update vmcore list offsets */
-	set_vmcore_list_offsets(elfcorebuf_sz, elfnotes_sz, &vmcore_list);
-
-	vmcore_size = get_vmcore_size(elfcorebuf_sz, elfnotes_sz,
-				      &vmcore_list);
-	proc_vmcore->size = vmcore_size;
-}
-
-/**
- * vmcore_add_device_dump - Add a buffer containing device dump to vmcore
- * @data: dump info.
- *
- * Allocate a buffer and invoke the calling driver's dump collect routine.
- * Write ELF note at the beginning of the buffer to indicate vmcore device
- * dump and add the dump to global list.
- */
-int vmcore_add_device_dump(struct vmcoredd_data *data)
-{
-	struct vmcoredd_node *dump;
-	void *buf = NULL;
-	size_t data_size;
-	int ret;
-
-	if (vmcoredd_disabled) {
-		pr_err_once("Device dump is disabled\n");
-		return -EINVAL;
-	}
-
-	if (!data || !strlen(data->dump_name) ||
-	    !data->vmcoredd_callback || !data->size)
-		return -EINVAL;
-
-	dump = vzalloc(sizeof(*dump));
-	if (!dump)
-		return -ENOMEM;
-
-	/* Keep size of the buffer page aligned so that it can be mmaped */
-	data_size = roundup(sizeof(struct vmcoredd_header) + data->size,
-			    PAGE_SIZE);
-
-	/* Allocate buffer for driver's to write their dumps */
-	buf = vmcore_alloc_buf(data_size);
-	if (!buf) {
-		ret = -ENOMEM;
-		goto out_err;
-	}
-
-	vmcoredd_write_header(buf, data, data_size -
-			      sizeof(struct vmcoredd_header));
-
-	/* Invoke the driver's dump collection routing */
-	ret = data->vmcoredd_callback(data, buf +
-				      sizeof(struct vmcoredd_header));
-	if (ret)
-		goto out_err;
-
-	dump->buf = buf;
-	dump->size = data_size;
-
-	/* Add the dump to driver sysfs list and update the elfcore hdr */
-	scoped_guard(mutex, &vmcore_mutex) {
-		if (vmcore_opened)
-			pr_warn_once("Unexpected adding of device dump\n");
-		if (vmcore_open) {
-			ret = -EBUSY;
-			goto out_err;
-		}
-
-		list_add_tail(&dump->list, &vmcoredd_list);
-		vmcoredd_update_size(data_size);
-	}
-	return 0;
-
-out_err:
-	vfree(buf);
-	vfree(dump);
-
-	return ret;
-}
-EXPORT_SYMBOL(vmcore_add_device_dump);
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 
 #ifdef CONFIG_PROC_VMCORE_DEVICE_RAM
 static int vmcore_realloc_elfcore_buffer_elf64(size_t new_size)
@@ -1694,19 +1401,6 @@ static void vmcore_process_device_ram(struct vmcore_cb *cb)
 /* Free all dumps in vmcore device dump list */
 static void vmcore_free_device_dumps(void)
 {
-#ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
-	mutex_lock(&vmcore_mutex);
-	while (!list_empty(&vmcoredd_list)) {
-		struct vmcoredd_node *dump;
-
-		dump = list_first_entry(&vmcoredd_list, struct vmcoredd_node,
-					list);
-		list_del(&dump->list);
-		vfree(dump->buf);
-		vfree(dump);
-	}
-	mutex_unlock(&vmcore_mutex);
-#endif /* CONFIG_PROC_VMCORE_DEVICE_DUMP */
 }
 
 /* Init function for vmcore module. */

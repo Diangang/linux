@@ -2204,7 +2204,6 @@ struct v4l2_audioout {
 /*
  *	M P E G   S E R V I C E S
  */
-#if 1
 #define V4L2_ENC_IDX_FRAME_I    (0)
 #define V4L2_ENC_IDX_FRAME_P    (1)
 #define V4L2_ENC_IDX_FRAME_B    (2)
@@ -2294,7 +2293,6 @@ struct v4l2_decoder_cmd {
 		} raw;
 	};
 };
-#endif
 
 
 /*

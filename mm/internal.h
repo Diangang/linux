@@ -1086,11 +1086,6 @@ void init_cma_reserved_pageblock(struct page *page);
 
 struct cma;
 
-#ifdef CONFIG_CMA
-bool cma_validate_zones(struct cma *cma);
-void *cma_reserve_early(struct cma *cma, unsigned long size);
-void init_cma_pageblock(struct page *page);
-#else
 static inline bool cma_validate_zones(struct cma *cma)
 {
 	return false;
@@ -1102,7 +1097,6 @@ static inline void *cma_reserve_early(struct cma *cma, unsigned long size)
 static inline void init_cma_pageblock(struct page *page)
 {
 }
-#endif
 
 
 int find_suitable_fallback(struct free_area *area, unsigned int order,
@@ -1318,21 +1312,10 @@ static inline void vunmap_range_noflush(unsigned long start, unsigned long end)
 #endif /* !CONFIG_MMU */
 
 /* Memory initialisation debug and verification */
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-DECLARE_STATIC_KEY_TRUE(deferred_pages);
-
-static inline bool deferred_pages_enabled(void)
-{
-	return static_branch_unlikely(&deferred_pages);
-}
-
-bool __init deferred_grow_zone(struct zone *zone, unsigned int order);
-#else
 static inline bool deferred_pages_enabled(void)
 {
 	return false;
 }
-#endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
 
 void init_deferred_page(unsigned long pfn, int nid);
 

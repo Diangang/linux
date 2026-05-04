@@ -32,15 +32,6 @@ int __init numa_memblks_init(int (*init_func)(void),
 
 extern int numa_distance_cnt;
 
-#ifdef CONFIG_NUMA_EMU
-extern int emu_nid_to_phys[MAX_NUMNODES];
-int numa_emu_cmdline(char *str);
-void __init numa_emu_update_cpu_to_node(int *emu_nid_to_phys,
-					unsigned int nr_emu_nids);
-u64 __init numa_emu_dma_end(void);
-void __init numa_emulation(struct numa_meminfo *numa_meminfo,
-			   int numa_dist_cnt);
-#else
 static inline void numa_emulation(struct numa_meminfo *numa_meminfo,
 				  int numa_dist_cnt)
 { }
@@ -48,7 +39,6 @@ static inline int numa_emu_cmdline(char *str)
 {
 	return -EINVAL;
 }
-#endif /* CONFIG_NUMA_EMU */
 
 #ifdef CONFIG_NUMA_KEEP_MEMINFO
 extern int phys_to_target_node(u64 start);

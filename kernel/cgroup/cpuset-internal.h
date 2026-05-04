@@ -180,15 +180,6 @@ struct cpuset {
 	/* Handle for cpuset.cpus.partition */
 	struct cgroup_file partition_file;
 
-#ifdef CONFIG_CPUSETS_V1
-	struct fmeter fmeter;		/* memory_pressure filter */
-
-	/* for custom sched domain */
-	int relax_domain_level;
-
-	/* Used to merge intersecting subsets for generate_sched_domains */
-	struct uf_node node;
-#endif
 };
 
 extern struct cpuset top_cpuset;
@@ -317,22 +308,6 @@ void cpuset_full_unlock(void);
 /*
  * cpuset-v1.c
  */
-#ifdef CONFIG_CPUSETS_V1
-extern struct cftype cpuset1_files[];
-void cpuset1_update_task_spread_flags(struct cpuset *cs,
-					struct task_struct *tsk);
-void cpuset1_update_tasks_flags(struct cpuset *cs);
-void cpuset1_hotplug_update_tasks(struct cpuset *cs,
-			    struct cpumask *new_cpus, nodemask_t *new_mems,
-			    bool cpus_updated, bool mems_updated);
-int cpuset1_validate_change(struct cpuset *cur, struct cpuset *trial);
-bool cpuset1_cpus_excl_conflict(struct cpuset *cs1, struct cpuset *cs2);
-void cpuset1_init(struct cpuset *cs);
-void cpuset1_online_css(struct cgroup_subsys_state *css);
-int cpuset1_generate_sched_domains(cpumask_var_t **domains,
-			struct sched_domain_attr **attributes);
-
-#else
 static inline void cpuset1_update_task_spread_flags(struct cpuset *cs,
 					struct task_struct *tsk) {}
 static inline void cpuset1_update_tasks_flags(struct cpuset *cs) {}
@@ -348,6 +323,5 @@ static inline void cpuset1_online_css(struct cgroup_subsys_state *css) {}
 static inline int cpuset1_generate_sched_domains(cpumask_var_t **domains,
 			struct sched_domain_attr **attributes) { return 0; };
 
-#endif /* CONFIG_CPUSETS_V1 */
 
 #endif /* __CPUSET_INTERNAL_H */

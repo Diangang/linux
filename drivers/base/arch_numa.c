@@ -36,30 +36,7 @@ early_param("numa", numa_parse_early_param);
 cpumask_var_t node_to_cpumask_map[MAX_NUMNODES];
 EXPORT_SYMBOL(node_to_cpumask_map);
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
 
-/*
- * Returns a pointer to the bitmask of CPUs on Node 'node'.
- */
-const struct cpumask *cpumask_of_node(int node)
-{
-
-	if (node == NUMA_NO_NODE)
-		return cpu_all_mask;
-
-	if (WARN_ON(node < 0 || node >= nr_node_ids))
-		return cpu_none_mask;
-
-	if (WARN_ON(node_to_cpumask_map[node] == NULL))
-		return cpu_online_mask;
-
-	return node_to_cpumask_map[node];
-}
-EXPORT_SYMBOL(cpumask_of_node);
-
-#endif
-
-#ifndef CONFIG_NUMA_EMU
 static void numa_update_cpu(unsigned int cpu, bool remove)
 {
 	int nid = cpu_to_node(cpu);
@@ -82,7 +59,6 @@ void numa_remove_cpu(unsigned int cpu)
 {
 	numa_update_cpu(cpu, true);
 }
-#endif
 
 void numa_clear_node(unsigned int cpu)
 {
@@ -327,53 +303,3 @@ void __init arch_numa_init(void)
 	numa_init(dummy_numa_init);
 }
 
-#ifdef CONFIG_NUMA_EMU
-void __init numa_emu_update_cpu_to_node(int *emu_nid_to_phys,
-					unsigned int nr_emu_nids)
-{
-	int i, j;
-
-	/*
-	 * Transform cpu_to_node_map table to use emulated nids by
-	 * reverse-mapping phys_nid.  The maps should always exist but fall
-	 * back to zero just in case.
-	 */
-	for (i = 0; i < ARRAY_SIZE(cpu_to_node_map); i++) {
-		if (cpu_to_node_map[i] == NUMA_NO_NODE)
-			continue;
-		for (j = 0; j < nr_emu_nids; j++)
-			if (cpu_to_node_map[i] == emu_nid_to_phys[j])
-				break;
-		cpu_to_node_map[i] = j < nr_emu_nids ? j : 0;
-	}
-}
-
-u64 __init numa_emu_dma_end(void)
-{
-	return memblock_start_of_DRAM() + SZ_4G;
-}
-
-void debug_cpumask_set_cpu(unsigned int cpu, int node, bool enable)
-{
-	struct cpumask *mask;
-
-	if (node == NUMA_NO_NODE)
-		return;
-
-	mask = node_to_cpumask_map[node];
-	if (!cpumask_available(mask)) {
-		pr_err("node_to_cpumask_map[%i] NULL\n", node);
-		dump_stack();
-		return;
-	}
-
-	if (enable)
-		cpumask_set_cpu(cpu, mask);
-	else
-		cpumask_clear_cpu(cpu, mask);
-
-	pr_debug("%s cpu %d node %d: mask now %*pbl\n",
-		 enable ? "numa_add_cpu" : "numa_remove_cpu",
-		 cpu, node, cpumask_pr_args(mask));
-}
-#endif /* CONFIG_NUMA_EMU */

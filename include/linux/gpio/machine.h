@@ -78,17 +78,11 @@ static struct gpiod_lookup_table _name = {				\
 	.flags = _flags,                                                  \
 }
 
-#ifdef CONFIG_GPIOLIB
-void gpiod_add_lookup_table(struct gpiod_lookup_table *table);
-void gpiod_add_lookup_tables(struct gpiod_lookup_table **tables, size_t n);
-void gpiod_remove_lookup_table(struct gpiod_lookup_table *table);
-#else /* ! CONFIG_GPIOLIB */
 static inline
 void gpiod_add_lookup_table(struct gpiod_lookup_table *table) {}
 static inline
 void gpiod_add_lookup_tables(struct gpiod_lookup_table **tables, size_t n) {}
 static inline
 void gpiod_remove_lookup_table(struct gpiod_lookup_table *table) {}
-#endif /* CONFIG_GPIOLIB */
 
 #endif /* __LINUX_GPIO_MACHINE_H */

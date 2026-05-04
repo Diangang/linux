@@ -81,59 +81,6 @@ struct madvise_behavior {
 	bool lock_dropped;
 };
 
-#ifdef CONFIG_ANON_VMA_NAME
-static int madvise_walk_vmas(struct madvise_behavior *madv_behavior);
-
-struct anon_vma_name *anon_vma_name_alloc(const char *name)
-{
-	struct anon_vma_name *anon_name;
-	size_t count;
-
-	/* Add 1 for NUL terminator at the end of the anon_name->name */
-	count = strlen(name) + 1;
-	anon_name = kmalloc_flex(*anon_name, name, count);
-	if (anon_name) {
-		kref_init(&anon_name->kref);
-		memcpy(anon_name->name, name, count);
-	}
-
-	return anon_name;
-}
-
-void anon_vma_name_free(struct kref *kref)
-{
-	struct anon_vma_name *anon_name =
-			container_of(kref, struct anon_vma_name, kref);
-	kfree(anon_name);
-}
-
-struct anon_vma_name *anon_vma_name(struct vm_area_struct *vma)
-{
-	vma_assert_stabilised(vma);
-	return vma->anon_name;
-}
-
-/* mmap_lock should be write-locked */
-static int replace_anon_vma_name(struct vm_area_struct *vma,
-				 struct anon_vma_name *anon_name)
-{
-	struct anon_vma_name *orig_name = anon_vma_name(vma);
-
-	if (!anon_name) {
-		vma->anon_name = NULL;
-		anon_vma_name_put(orig_name);
-		return 0;
-	}
-
-	if (anon_vma_name_eq(orig_name, anon_name))
-		return 0;
-
-	vma->anon_name = anon_vma_name_reuse(anon_name);
-	anon_vma_name_put(orig_name);
-
-	return 0;
-}
-#else /* CONFIG_ANON_VMA_NAME */
 static int replace_anon_vma_name(struct vm_area_struct *vma,
 				 struct anon_vma_name *anon_name)
 {
@@ -142,7 +89,6 @@ static int replace_anon_vma_name(struct vm_area_struct *vma,
 
 	return 0;
 }
-#endif /* CONFIG_ANON_VMA_NAME */
 /*
  * Update the vm_flags or anon_name on region of a vma, splitting it or merging
  * it as necessary. Must be called with mmap_lock held for writing.
@@ -2162,87 +2108,3 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_ANON_VMA_NAME
-
-#define ANON_VMA_NAME_MAX_LEN		80
-#define ANON_VMA_NAME_INVALID_CHARS	"\\`$[]"
-
-static inline bool is_valid_name_char(char ch)
-{
-	/* printable ascii characters, excluding ANON_VMA_NAME_INVALID_CHARS */
-	return ch > 0x1f && ch < 0x7f &&
-		!strchr(ANON_VMA_NAME_INVALID_CHARS, ch);
-}
-
-static int madvise_set_anon_name(struct mm_struct *mm, unsigned long start,
-		unsigned long len_in, struct anon_vma_name *anon_name)
-{
-	unsigned long end;
-	unsigned long len;
-	int error;
-	struct madvise_behavior madv_behavior = {
-		.mm = mm,
-		.behavior = __MADV_SET_ANON_VMA_NAME,
-		.anon_name = anon_name,
-	};
-
-	if (start & ~PAGE_MASK)
-		return -EINVAL;
-	len = (len_in + ~PAGE_MASK) & PAGE_MASK;
-
-	/* Check to see whether len was rounded up from small -ve to zero */
-	if (len_in && !len)
-		return -EINVAL;
-
-	end = start + len;
-	if (end < start)
-		return -EINVAL;
-
-	if (end == start)
-		return 0;
-
-	madv_behavior.range.start = start;
-	madv_behavior.range.end = end;
-
-	error = madvise_lock(&madv_behavior);
-	if (error)
-		return error;
-	error = madvise_walk_vmas(&madv_behavior);
-	madvise_unlock(&madv_behavior);
-
-	return error;
-}
-
-int set_anon_vma_name(unsigned long addr, unsigned long size,
-		      const char __user *uname)
-{
-	struct anon_vma_name *anon_name = NULL;
-	struct mm_struct *mm = current->mm;
-	int error;
-
-	if (uname) {
-		char *name, *pch;
-
-		name = strndup_user(uname, ANON_VMA_NAME_MAX_LEN);
-		if (IS_ERR(name))
-			return PTR_ERR(name);
-
-		for (pch = name; *pch != '\0'; pch++) {
-			if (!is_valid_name_char(*pch)) {
-				kfree(name);
-				return -EINVAL;
-			}
-		}
-		/* anon_vma has its own copy */
-		anon_name = anon_vma_name_alloc(name);
-		kfree(name);
-		if (!anon_name)
-			return -ENOMEM;
-	}
-
-	error = madvise_set_anon_name(mm, addr, size, anon_name);
-	anon_vma_name_put(anon_name);
-
-	return error;
-}
-#endif

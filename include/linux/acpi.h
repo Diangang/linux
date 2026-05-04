@@ -152,17 +152,6 @@ struct acpi_debugger {
 	struct mutex lock;
 };
 
-#ifdef CONFIG_ACPI_DEBUGGER
-int __init acpi_debugger_init(void);
-int acpi_register_debugger(struct module *owner,
-			   const struct acpi_debugger_ops *ops);
-void acpi_unregister_debugger(const struct acpi_debugger_ops *ops);
-int acpi_debugger_create_thread(acpi_osd_exec_callback function, void *context);
-ssize_t acpi_debugger_write_log(const char *msg);
-ssize_t acpi_debugger_read_cmd(char *buffer, size_t buffer_length);
-int acpi_debugger_wait_command_ready(void);
-int acpi_debugger_notify_command_complete(void);
-#else
 static inline int acpi_debugger_init(void)
 {
 	return -ENODEV;
@@ -203,7 +192,6 @@ static inline int acpi_debugger_notify_command_complete(void)
 {
 	return -ENODEV;
 }
-#endif
 
 #define BAD_MADT_ENTRY(entry, end) (					    \
 		(!entry) || (unsigned long)entry + sizeof(*entry) > end ||  \
@@ -1297,18 +1285,12 @@ void __acpi_handle_debug(struct _ddebug *descriptor, acpi_handle handle, const c
 #define acpi_handle_debug(handle, fmt, ...)				\
 	acpi_handle_printk(KERN_DEBUG, handle, fmt, ##__VA_ARGS__)
 #else
-#if defined(CONFIG_DYNAMIC_DEBUG)
-#define acpi_handle_debug(handle, fmt, ...)				\
-	_dynamic_func_call(fmt, __acpi_handle_debug,			\
-			   handle, pr_fmt(fmt), ##__VA_ARGS__)
-#else
 #define acpi_handle_debug(handle, fmt, ...)				\
 ({									\
 	if (0)								\
 		acpi_handle_printk(KERN_DEBUG, handle, fmt, ##__VA_ARGS__); \
 	0;								\
 })
-#endif
 #endif
 
 #if defined(CONFIG_ACPI) && defined(CONFIG_GPIOLIB)
@@ -1617,15 +1599,7 @@ void acpi_init_pcc(void);
 static inline void acpi_init_pcc(void) { }
 #endif
 
-#ifdef CONFIG_ACPI_FFH
-void acpi_init_ffh(void);
-extern int acpi_ffh_address_space_arch_setup(void *handler_ctxt,
-					     void **region_ctxt);
-extern int acpi_ffh_address_space_arch_handler(acpi_integer *value,
-					       void *region_context);
-#else
 static inline void acpi_init_ffh(void) { }
-#endif
 
 #ifdef CONFIG_ACPI
 extern void acpi_device_notify(struct device *dev);

@@ -311,11 +311,7 @@ static inline bool dma_resv_iter_is_restarted(struct dma_resv_iter *cursor)
 #define dma_resv_held(obj) lockdep_is_held(&(obj)->lock.base)
 #define dma_resv_assert_held(obj) lockdep_assert_held(&(obj)->lock.base)
 
-#ifdef CONFIG_DEBUG_MUTEXES
-void dma_resv_reset_max_fences(struct dma_resv *obj);
-#else
 static inline void dma_resv_reset_max_fences(struct dma_resv *obj) {}
-#endif
 
 /**
  * dma_resv_lock - lock the reservation object

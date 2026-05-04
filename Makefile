@@ -797,12 +797,6 @@ endif
 CC_FLAGS_DIALECT := -std=gnu11
 # Allow including a tagged struct or union anonymously in another struct/union.
 CC_FLAGS_DIALECT += $(CONFIG_CC_MS_EXTENSIONS)
-# Clang enables warnings about GNU and Microsoft extensions by default, disable
-# them because this is expected with the above options.
-ifdef CONFIG_CC_IS_CLANG
-CC_FLAGS_DIALECT += -Wno-gnu
-CC_FLAGS_DIALECT += -Wno-microsoft-anon-tag
-endif
 export CC_FLAGS_DIALECT
 KBUILD_CFLAGS += $(CC_FLAGS_DIALECT)
 
@@ -824,11 +818,6 @@ ifdef CONFIG_CC_IS_GCC
 CFLAGS_GCOV	+= -fno-tree-loop-im
 endif
 export CFLAGS_GCOV
-
-# The arch Makefiles can override CC_FLAGS_FTRACE. We may also append it later.
-ifdef CONFIG_FUNCTION_TRACER
-  CC_FLAGS_FTRACE := -pg
-endif
 
 ifdef CONFIG_TRACEPOINTS
 # To check for unused tracepoints (tracepoints that are defined but never
@@ -940,14 +929,6 @@ KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
 endif
 
-ifdef CONFIG_READABLE_ASM
-# Disable optimizations that make assembler listings hard to read.
-# reorder blocks reorders the control in the function
-# ipa clone creates specialized cloned functions
-# partial inlining inlines only parts of functions
-KBUILD_CFLAGS += -fno-reorder-blocks -fno-ipa-cp-clone -fno-partial-inlining
-endif
-
 stackp-flags-y                                    := -fno-stack-protector
 stackp-flags-$(CONFIG_STACKPROTECTOR)             := -fstack-protector
 stackp-flags-$(CONFIG_STACKPROTECTOR_STRONG)      := -fstack-protector-strong
@@ -970,28 +951,6 @@ KBUILD_CFLAGS	+= -fomit-frame-pointer
 endif
 endif
 
-# Initialize all stack variables with a 0xAA pattern.
-ifdef CONFIG_INIT_STACK_ALL_PATTERN
-KBUILD_CFLAGS	+= -ftrivial-auto-var-init=pattern
-endif
-
-# Initialize all stack variables with a zero value.
-ifdef CONFIG_INIT_STACK_ALL_ZERO
-KBUILD_CFLAGS	+= -ftrivial-auto-var-init=zero
-ifdef CONFIG_CC_HAS_AUTO_VAR_INIT_ZERO_ENABLER
-# https://github.com/llvm/llvm-project/issues/44842
-CC_AUTO_VAR_INIT_ZERO_ENABLER := -enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang
-export CC_AUTO_VAR_INIT_ZERO_ENABLER
-KBUILD_CFLAGS	+= $(CC_AUTO_VAR_INIT_ZERO_ENABLER)
-endif
-endif
-
-ifdef CONFIG_CC_IS_CLANG
-ifdef CONFIG_CC_HAS_COUNTED_BY_PTR
-KBUILD_CFLAGS	+= -fexperimental-late-parse-attributes
-endif
-endif
-
 # Explicitly clear padding bits during variable initialization
 KBUILD_CFLAGS += $(call cc-option,-fzero-init-padding-bits=all)
 
@@ -1005,103 +964,6 @@ KBUILD_CFLAGS	+= $(call cc-option, -fdiagnostics-show-context=2)
 # Show inlining notes for __attribute__((warning/error)) call chains.
 # GCC supports this unconditionally while Clang 23+ provides a flag.
 KBUILD_CFLAGS	+= $(call cc-option, -fdiagnostics-show-inlining-chain)
-
-# Clear used registers at func exit (to reduce data lifetime and ROP gadgets).
-ifdef CONFIG_ZERO_CALL_USED_REGS
-KBUILD_CFLAGS	+= -fzero-call-used-regs=used-gpr
-endif
-
-ifdef CONFIG_FUNCTION_TRACER
-ifdef CONFIG_FTRACE_MCOUNT_USE_CC
-  CC_FLAGS_FTRACE	+= -mrecord-mcount
-  ifdef CONFIG_HAVE_NOP_MCOUNT
-    ifeq ($(call cc-option-yn, -mnop-mcount),y)
-      CC_FLAGS_FTRACE	+= -mnop-mcount
-      CC_FLAGS_USING	+= -DCC_USING_NOP_MCOUNT
-    endif
-  endif
-endif
-ifdef CONFIG_FTRACE_MCOUNT_USE_OBJTOOL
-  ifdef CONFIG_HAVE_OBJTOOL_NOP_MCOUNT
-    CC_FLAGS_USING	+= -DCC_USING_NOP_MCOUNT
-  endif
-endif
-ifdef CONFIG_FTRACE_MCOUNT_USE_RECORDMCOUNT
-  ifdef CONFIG_HAVE_C_RECORDMCOUNT
-    BUILD_C_RECORDMCOUNT := y
-    export BUILD_C_RECORDMCOUNT
-  endif
-endif
-ifdef CONFIG_HAVE_FENTRY
-  # s390-linux-gnu-gcc did not support -mfentry until gcc-9.
-  ifeq ($(call cc-option-yn, -mfentry),y)
-    CC_FLAGS_FTRACE	+= -mfentry
-    CC_FLAGS_USING	+= -DCC_USING_FENTRY
-  endif
-endif
-export CC_FLAGS_FTRACE
-KBUILD_CFLAGS	+= $(CC_FLAGS_FTRACE) $(CC_FLAGS_USING)
-KBUILD_AFLAGS	+= $(CC_FLAGS_USING)
-endif
-
-# We trigger additional mismatches with less inlining
-ifdef CONFIG_DEBUG_SECTION_MISMATCH
-KBUILD_CFLAGS += -fno-inline-functions-called-once
-endif
-
-# `rustc`'s `-Zfunction-sections` applies to data too (as of 1.59.0).
-ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
-KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
-KBUILD_RUSTFLAGS_KERNEL += -Zfunction-sections=y
-LDFLAGS_vmlinux += --gc-sections
-endif
-
-ifdef CONFIG_SHADOW_CALL_STACK
-ifndef CONFIG_DYNAMIC_SCS
-CC_FLAGS_SCS	:= -fsanitize=shadow-call-stack
-KBUILD_CFLAGS	+= $(CC_FLAGS_SCS)
-KBUILD_RUSTFLAGS += -Zsanitizer=shadow-call-stack
-endif
-export CC_FLAGS_SCS
-endif
-
-ifdef CONFIG_LTO_CLANG
-ifdef CONFIG_LTO_CLANG_THIN
-CC_FLAGS_LTO	:= -flto=thin -fsplit-lto-unit
-KBUILD_LDFLAGS += $(call ld-option,--lto-whole-program-visibility -mllvm -always-rename-promoted-locals=false)
-else
-CC_FLAGS_LTO	:= -flto
-endif
-CC_FLAGS_LTO	+= -fvisibility=hidden
-
-# Limit inlining across translation units to reduce binary size
-KBUILD_LDFLAGS += -mllvm -import-instr-limit=5
-endif
-
-ifdef CONFIG_LTO
-KBUILD_CFLAGS	+= -fno-lto $(CC_FLAGS_LTO)
-KBUILD_AFLAGS	+= -fno-lto
-export CC_FLAGS_LTO
-endif
-
-ifdef CONFIG_CFI
-CC_FLAGS_CFI	:= -fsanitize=kcfi
-ifdef CONFIG_CFI_ICALL_NORMALIZE_INTEGERS
-	CC_FLAGS_CFI	+= -fsanitize-cfi-icall-experimental-normalize-integers
-endif
-ifdef CONFIG_FINEIBT_BHI
-	CC_FLAGS_CFI	+= -fsanitize-kcfi-arity
-endif
-ifdef CONFIG_RUST
-	# Always pass -Zsanitizer-cfi-normalize-integers as CONFIG_RUST selects
-	# CONFIG_CFI_ICALL_NORMALIZE_INTEGERS.
-	RUSTC_FLAGS_CFI   := -Zsanitizer=kcfi -Zsanitizer-cfi-normalize-integers
-	KBUILD_RUSTFLAGS += $(RUSTC_FLAGS_CFI)
-	export RUSTC_FLAGS_CFI
-endif
-KBUILD_CFLAGS	+= $(CC_FLAGS_CFI)
-export CC_FLAGS_CFI
-endif
 
 # Architectures can define flags to add/remove for floating-point support
 CC_FLAGS_FPU	+= -D_LINUX_FPU_COMPILATION_UNIT
@@ -1185,15 +1047,6 @@ ifeq ($(CONFIG_LD_IS_BFD),y)
 KBUILD_LDFLAGS	+= $(call ld-option,--no-warn-rwx-segments)
 endif
 
-ifeq ($(CONFIG_STRIP_ASM_SYMS),y)
-LDFLAGS_vmlinux	+= -X
-endif
-
-ifeq ($(CONFIG_RELR),y)
-# ld.lld before 15 did not support -z pack-relative-relocs.
-LDFLAGS_vmlinux	+= $(call ld-option,--pack-dyn-relocs=relr,-z pack-relative-relocs)
-endif
-
 # We never want expected sections to be placed heuristically by the
 # linker. All sections should be explicitly named in the linker script.
 ifdef CONFIG_LD_ORPHAN_WARN
@@ -1217,11 +1070,6 @@ endif
 
 KBUILD_USERCFLAGS  += $(filter $(USERFLAGS_FROM_KERNEL), $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS))
 KBUILD_USERLDFLAGS += $(filter $(USERFLAGS_FROM_KERNEL), $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS))
-
-# userspace programs are linked via the compiler, use the correct linker
-ifdef CONFIG_CC_IS_CLANG
-KBUILD_USERLDFLAGS += --ld-path=$(LD)
-endif
 
 # make the checker run with the right architecture
 CHECKFLAGS += --arch=$(ARCH)
@@ -1271,7 +1119,6 @@ export MODLIB
 PHONY += prepare0
 
 ifeq ($(KBUILD_EXTMOD),)
-
 build-dir	:= .
 clean-dirs	:= $(sort . Documentation \
 		     $(patsubst %/,%,$(filter %/, $(core-) \
@@ -1287,12 +1134,6 @@ KBUILD_VMLINUX_LIBS := $(filter-out %/, $(libs-y))
 
 export KBUILD_VMLINUX_LIBS
 export KBUILD_LDS          := arch/$(SRCARCH)/kernel/vmlinux.lds
-
-ifdef CONFIG_TRIM_UNUSED_KSYMS
-# For the kernel to actually contain only the needed exported symbols,
-# we have to build modules as well to determine what those symbols are.
-KBUILD_MODULES := y
-endif
 
 # '$(AR) mPi' needs 'T' to workaround the bug of llvm-ar <= 14
 quiet_cmd_ar_vmlinux.a = AR      $@
@@ -1368,10 +1209,6 @@ prepare0: archprepare
 
 # All the preparing..
 prepare: prepare0
-ifdef CONFIG_RUST
-	+$(Q)$(CONFIG_SHELL) $(srctree)/scripts/rust_is_available.sh
-	$(Q)$(MAKE) $(build)=rust
-endif
 
 PHONY += remove-stale-files
 remove-stale-files:
@@ -1466,10 +1303,6 @@ else
 	$(Q)$(MAKE) $(hdr-inst)=arch/$(SRCARCH)/include/uapi
 endif
 
-ifdef CONFIG_HEADERS_INSTALL
-prepare: headers
-endif
-
 PHONY += usr_gen_init_cpio
 usr_gen_init_cpio: scripts_basic
 	$(Q)$(MAKE) $(build)=usr usr/gen_init_cpio
@@ -1506,12 +1339,6 @@ vdso_install:
 
 ifdef CONFIG_OBJTOOL
 prepare: tools/objtool
-endif
-
-ifdef CONFIG_BPF
-ifdef CONFIG_DEBUG_INFO_BTF
-prepare: tools/bpf/resolve_btfids
-endif
 endif
 
 # The tools build system is not a part of Kbuild and tends to introduce
@@ -1590,11 +1417,6 @@ dtbs_check: dtbs
 
 dtbs_install:
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.dtbinst obj=$(dtstree)
-
-ifdef CONFIG_GENERIC_BUILTIN_DTB
-vmlinux: dtbs
-endif
-
 endif
 
 PHONY += scripts_dtc
@@ -1628,19 +1450,9 @@ all: modules
 # When we're building modules with modversions, we need to consider
 # the built-in objects during the descend as well, in order to
 # make sure the checksums are up to date before we record them.
-ifdef CONFIG_MODVERSIONS
-  KBUILD_BUILTIN := y
-endif
 
 # Build modules
 #
-
-# *.ko are usually independent of vmlinux, but CONFIG_DEBUG_INFO_BTF_MODULES
-# is an exception.
-ifdef CONFIG_DEBUG_INFO_BTF_MODULES
-KBUILD_BUILTIN := y
-modules: vmlinux
-endif
 
 modules: modules_prepare
 
@@ -1937,10 +1749,6 @@ scripts_gdb: prepare0
 	$(Q)$(MAKE) $(build)=scripts/gdb
 	$(Q)ln -fsn $(abspath $(srctree)/scripts/gdb/vmlinux-gdb.py)
 
-ifdef CONFIG_GDB_SCRIPTS
-all: scripts_gdb
-endif
-
 else # KBUILD_EXTMOD
 
 filechk_kernel.release = echo $(KERNELRELEASE)
@@ -1988,16 +1796,6 @@ help:
 	@echo  '  rust-analyzer	  - generate rust-project.json rust-analyzer support file'
 	@echo  ''
 
-ifndef CONFIG_MODULES
-modules modules_install: __external_modules_error
-__external_modules_error:
-	@echo >&2 '***'
-	@echo >&2 '*** The present kernel disabled CONFIG_MODULES.'
-	@echo >&2 '*** You cannot build or install external modules.'
-	@echo >&2 '***'
-	@false
-endif
-
 endif # KBUILD_EXTMOD
 
 # ---------------------------------------------------------------------------
@@ -2009,20 +1807,14 @@ modules_install:
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst \
 	sign-only=$(if $(filter modules_install,$(MAKECMDGOALS)),,y)
 
-ifeq ($(CONFIG_MODULE_SIG),y)
 # modules_sign is a subset of modules_install.
 # 'make modules_install modules_sign' is equivalent to 'make modules_install'.
-modules_sign: modules_install
-	@:
-else
 modules_sign:
 	@echo >&2 '***'
 	@echo >&2 '*** CONFIG_MODULE_SIG is disabled. You cannot sign modules.'
 	@echo >&2 '***'
 	@false
-endif
 
-ifdef CONFIG_MODULES
 
 modules.order: $(build-dir)
 	@:
@@ -2037,15 +1829,6 @@ endif
 PHONY += modules_check
 modules_check: modules.order
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/modules-check.sh $<
-
-else # CONFIG_MODULES
-
-modules:
-	@:
-
-KBUILD_MODULES :=
-
-endif # CONFIG_MODULES
 
 PHONY += modpost
 modpost: $(if $(single-build),, $(if $(KBUILD_BUILTIN), vmlinux.o)) \
@@ -2171,18 +1954,9 @@ compile_commands.json: $(srctree)/scripts/clang-tools/gen_compile_commands.py \
 targets += compile_commands.json
 
 PHONY += clang-tidy clang-analyzer
-
-ifdef CONFIG_CC_IS_CLANG
-quiet_cmd_clang_tools = CHECK   $<
-      cmd_clang_tools = $(PYTHON3) $(srctree)/scripts/clang-tools/run-clang-tools.py $@ $<
-
-clang-tidy clang-analyzer: compile_commands.json
-	$(call cmd,clang_tools)
-else
 clang-tidy clang-analyzer:
 	@echo "$@ requires CC=clang" >&2
 	@false
-endif
 
 # Scripts to check various things for consistency
 # ---------------------------------------------------------------------------

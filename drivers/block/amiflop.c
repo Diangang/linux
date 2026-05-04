@@ -473,13 +473,7 @@ static int fd_motor_on(int nr)
 
 	if (on_attempts == 0) {
 		on_attempts = -1;
-#if 0
-		printk (KERN_ERR "motor_on failed, turning motor off\n");
-		fd_motor_off (motor_off_timer + nr);
-		return 0;
-#else
 		printk (KERN_WARNING "DSKRDY not set after 1.5 seconds - assuming drive is spinning notwithstanding\n");
-#endif
 	}
 
 	return 1;

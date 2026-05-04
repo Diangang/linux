@@ -697,70 +697,6 @@ void __meminit __init_page_from_nid(unsigned long pfn, int nid)
 				false);
 }
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-static inline void pgdat_set_deferred_range(pg_data_t *pgdat)
-{
-	pgdat->first_deferred_pfn = ULONG_MAX;
-}
-
-/* Returns true if the struct page for the pfn is initialised */
-static inline bool __meminit early_page_initialised(unsigned long pfn, int nid)
-{
-	if (node_online(nid) && pfn >= NODE_DATA(nid)->first_deferred_pfn)
-		return false;
-
-	return true;
-}
-
-/*
- * Returns true when the remaining initialisation should be deferred until
- * later in the boot cycle when it can be parallelised.
- */
-static bool __meminit
-defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
-{
-	static unsigned long prev_end_pfn, nr_initialised;
-
-	if (early_page_ext_enabled())
-		return false;
-
-	/* Always populate low zones for address-constrained allocations */
-	if (end_pfn < pgdat_end_pfn(NODE_DATA(nid)))
-		return false;
-
-	if (NODE_DATA(nid)->first_deferred_pfn != ULONG_MAX)
-		return true;
-
-	/*
-	 * prev_end_pfn static that contains the end of previous zone
-	 * No need to protect because called very early in boot before smp_init.
-	 */
-	if (prev_end_pfn != end_pfn) {
-		prev_end_pfn = end_pfn;
-		nr_initialised = 0;
-	}
-
-	/*
-	 * We start only with one section of pages, more pages are added as
-	 * needed until the rest of deferred pages are initialized.
-	 */
-	nr_initialised++;
-	if ((nr_initialised > PAGES_PER_SECTION) &&
-	    (pfn & (PAGES_PER_SECTION - 1)) == 0) {
-		NODE_DATA(nid)->first_deferred_pfn = pfn;
-		return true;
-	}
-	return false;
-}
-
-static void __meminit __init_deferred_page(unsigned long pfn, int nid)
-{
-	if (early_page_initialised(pfn, nid))
-		return;
-
-	__init_page_from_nid(pfn, nid);
-}
-#else
 static inline void pgdat_set_deferred_range(pg_data_t *pgdat) {}
 
 static inline bool early_page_initialised(unsigned long pfn, int nid)
@@ -776,7 +712,6 @@ static inline bool defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 static inline void __init_deferred_page(unsigned long pfn, int nid)
 {
 }
-#endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
 
 void __meminit init_deferred_page(unsigned long pfn, int nid)
 {
@@ -1968,284 +1903,7 @@ unsigned long __init node_map_pfn_alignment(void)
 	return ~accl_mask + 1;
 }
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-static void __init deferred_free_pages(unsigned long pfn,
-		unsigned long nr_pages)
-{
-	struct page *page;
-	unsigned long i;
 
-	if (!nr_pages)
-		return;
-
-	page = pfn_to_page(pfn);
-
-	/* Free a large naturally-aligned chunk if possible */
-	if (nr_pages == MAX_ORDER_NR_PAGES && IS_MAX_ORDER_ALIGNED(pfn)) {
-		for (i = 0; i < nr_pages; i += pageblock_nr_pages)
-			init_pageblock_migratetype(page + i, MIGRATE_MOVABLE,
-					false);
-		__free_pages_core(page, MAX_PAGE_ORDER, MEMINIT_EARLY);
-		return;
-	}
-
-	/* Accept chunks smaller than MAX_PAGE_ORDER upfront */
-	accept_memory(PFN_PHYS(pfn), nr_pages * PAGE_SIZE);
-
-	for (i = 0; i < nr_pages; i++, page++, pfn++) {
-		if (pageblock_aligned(pfn))
-			init_pageblock_migratetype(page, MIGRATE_MOVABLE,
-					false);
-		__free_pages_core(page, 0, MEMINIT_EARLY);
-	}
-}
-
-/* Completion tracking for deferred_init_memmap() threads */
-static atomic_t pgdat_init_n_undone __initdata;
-static __initdata DECLARE_COMPLETION(pgdat_init_all_done_comp);
-
-static inline void __init pgdat_init_report_one_done(void)
-{
-	if (atomic_dec_and_test(&pgdat_init_n_undone))
-		complete(&pgdat_init_all_done_comp);
-}
-
-/*
- * Initialize struct pages.  We minimize pfn page lookups and scheduler checks
- * by performing it only once every MAX_ORDER_NR_PAGES.
- * Return number of pages initialized.
- */
-static unsigned long __init deferred_init_pages(struct zone *zone,
-		unsigned long pfn, unsigned long end_pfn)
-{
-	int nid = zone_to_nid(zone);
-	unsigned long nr_pages = end_pfn - pfn;
-	int zid = zone_idx(zone);
-	struct page *page = pfn_to_page(pfn);
-
-	for (; pfn < end_pfn; pfn++, page++)
-		__init_single_page(page, pfn, zid, nid);
-	return nr_pages;
-}
-
-/*
- * Initialize and free pages.
- *
- * At this point reserved pages and struct pages that correspond to holes in
- * memblock.memory are already initialized so every free range has a valid
- * memory map around it.
- * This ensures that access of pages that are ahead of the range being
- * initialized (computing buddy page in __free_one_page()) always reads a valid
- * struct page.
- *
- * In order to try and improve CPU cache locality we have the loop broken along
- * max page order boundaries.
- */
-static unsigned long __init
-deferred_init_memmap_chunk(unsigned long start_pfn, unsigned long end_pfn,
-			   struct zone *zone, bool can_resched)
-{
-	int nid = zone_to_nid(zone);
-	unsigned long nr_pages = 0;
-	phys_addr_t start, end;
-	u64 i = 0;
-
-	for_each_free_mem_range(i, nid, 0, &start, &end, NULL) {
-		unsigned long spfn = PFN_UP(start);
-		unsigned long epfn = PFN_DOWN(end);
-
-		if (spfn >= end_pfn)
-			break;
-
-		spfn = max(spfn, start_pfn);
-		epfn = min(epfn, end_pfn);
-
-		while (spfn < epfn) {
-			unsigned long mo_pfn = ALIGN(spfn + 1, MAX_ORDER_NR_PAGES);
-			unsigned long chunk_end = min(mo_pfn, epfn);
-
-			nr_pages += deferred_init_pages(zone, spfn, chunk_end);
-			deferred_free_pages(spfn, chunk_end - spfn);
-
-			spfn = chunk_end;
-
-			if (can_resched)
-				cond_resched();
-			else
-				touch_nmi_watchdog();
-		}
-	}
-
-	return nr_pages;
-}
-
-static void __init
-deferred_init_memmap_job(unsigned long start_pfn, unsigned long end_pfn,
-			 void *arg)
-{
-	struct zone *zone = arg;
-
-	deferred_init_memmap_chunk(start_pfn, end_pfn, zone, true);
-}
-
-static unsigned int __init
-deferred_page_init_max_threads(const struct cpumask *node_cpumask)
-{
-	return max(cpumask_weight(node_cpumask), 1U);
-}
-
-/* Initialise remaining memory on a node */
-static int __init deferred_init_memmap(void *data)
-{
-	pg_data_t *pgdat = data;
-	const struct cpumask *cpumask = cpumask_of_node(pgdat->node_id);
-	int max_threads = deferred_page_init_max_threads(cpumask);
-	unsigned long first_init_pfn, last_pfn, flags;
-	unsigned long start = jiffies;
-	struct zone *zone;
-
-	/* Bind memory initialisation thread to a local node if possible */
-	if (!cpumask_empty(cpumask))
-		set_cpus_allowed_ptr(current, cpumask);
-
-	pgdat_resize_lock(pgdat, &flags);
-	first_init_pfn = pgdat->first_deferred_pfn;
-	if (first_init_pfn == ULONG_MAX) {
-		pgdat_resize_unlock(pgdat, &flags);
-		pgdat_init_report_one_done();
-		return 0;
-	}
-
-	/* Sanity check boundaries */
-	BUG_ON(pgdat->first_deferred_pfn < pgdat->node_start_pfn);
-	BUG_ON(pgdat->first_deferred_pfn > pgdat_end_pfn(pgdat));
-	pgdat->first_deferred_pfn = ULONG_MAX;
-
-	/*
-	 * Once we unlock here, the zone cannot be grown anymore, thus if an
-	 * interrupt thread must allocate this early in boot, zone must be
-	 * pre-grown prior to start of deferred page initialization.
-	 */
-	pgdat_resize_unlock(pgdat, &flags);
-
-	/* Only the highest zone is deferred */
-	zone = pgdat->node_zones + pgdat->nr_zones - 1;
-	last_pfn = SECTION_ALIGN_UP(zone_end_pfn(zone));
-
-	struct padata_mt_job job = {
-		.thread_fn   = deferred_init_memmap_job,
-		.fn_arg      = zone,
-		.start       = first_init_pfn,
-		.size        = last_pfn - first_init_pfn,
-		.align       = PAGES_PER_SECTION,
-		.min_chunk   = PAGES_PER_SECTION,
-		.max_threads = max_threads,
-		.numa_aware  = false,
-	};
-
-	padata_do_multithreaded(&job);
-
-	/* Sanity check that the next zone really is unpopulated */
-	WARN_ON(pgdat->nr_zones < MAX_NR_ZONES && populated_zone(++zone));
-
-	pr_info("node %d deferred pages initialised in %ums\n",
-		pgdat->node_id, jiffies_to_msecs(jiffies - start));
-
-	pgdat_init_report_one_done();
-	return 0;
-}
-
-/*
- * If this zone has deferred pages, try to grow it by initializing enough
- * deferred pages to satisfy the allocation specified by order, rounded up to
- * the nearest PAGES_PER_SECTION boundary.  So we're adding memory in increments
- * of SECTION_SIZE bytes by initializing struct pages in increments of
- * PAGES_PER_SECTION * sizeof(struct page) bytes.
- *
- * Return true when zone was grown, otherwise return false. We return true even
- * when we grow less than requested, to let the caller decide if there are
- * enough pages to satisfy the allocation.
- */
-bool __init deferred_grow_zone(struct zone *zone, unsigned int order)
-{
-	unsigned long nr_pages_needed = SECTION_ALIGN_UP(1 << order);
-	pg_data_t *pgdat = zone->zone_pgdat;
-	unsigned long first_deferred_pfn = pgdat->first_deferred_pfn;
-	unsigned long spfn, epfn, flags;
-	unsigned long nr_pages = 0;
-
-	/* Only the last zone may have deferred pages */
-	if (zone_end_pfn(zone) != pgdat_end_pfn(pgdat))
-		return false;
-
-	pgdat_resize_lock(pgdat, &flags);
-
-	/*
-	 * If someone grew this zone while we were waiting for spinlock, return
-	 * true, as there might be enough pages already.
-	 */
-	if (first_deferred_pfn != pgdat->first_deferred_pfn) {
-		pgdat_resize_unlock(pgdat, &flags);
-		return true;
-	}
-
-	/*
-	 * Initialize at least nr_pages_needed in section chunks.
-	 * If a section has less free memory than nr_pages_needed, the next
-	 * section will be also initialized.
-	 * Note, that it still does not guarantee that allocation of order can
-	 * be satisfied if the sections are fragmented because of memblock
-	 * allocations.
-	 */
-	for (spfn = first_deferred_pfn, epfn = SECTION_ALIGN_UP(spfn + 1);
-	     nr_pages < nr_pages_needed && spfn < zone_end_pfn(zone);
-	     spfn = epfn, epfn += PAGES_PER_SECTION) {
-		nr_pages += deferred_init_memmap_chunk(spfn, epfn, zone, false);
-	}
-
-	/*
-	 * There were no pages to initialize and free which means the zone's
-	 * memory map is completely initialized.
-	 */
-	pgdat->first_deferred_pfn = nr_pages ? spfn : ULONG_MAX;
-
-	pgdat_resize_unlock(pgdat, &flags);
-
-	return nr_pages > 0;
-}
-
-#endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
-
-#ifdef CONFIG_CMA
-void __init init_cma_reserved_pageblock(struct page *page)
-{
-	unsigned i = pageblock_nr_pages;
-	struct page *p = page;
-
-	do {
-		__ClearPageReserved(p);
-		set_page_count(p, 0);
-	} while (++p, --i);
-
-	init_pageblock_migratetype(page, MIGRATE_CMA, false);
-	set_page_refcounted(page);
-	/* pages were reserved and not allocated */
-	clear_page_tag_ref(page);
-	__free_pages(page, pageblock_order);
-
-	adjust_managed_page_count(page, pageblock_nr_pages);
-	page_zone(page)->cma_pages += pageblock_nr_pages;
-}
-/*
- * Similar to above, but only set the migrate type and stats.
- */
-void __init init_cma_pageblock(struct page *page)
-{
-	init_pageblock_migratetype(page, MIGRATE_CMA, false);
-	adjust_managed_page_count(page, pageblock_nr_pages);
-	page_zone(page)->cma_pages += pageblock_nr_pages;
-}
-#endif
 
 void set_zone_contiguous(struct zone *zone)
 {
@@ -2300,26 +1958,6 @@ void __init page_alloc_init_late(void)
 	struct zone *zone;
 	int nid;
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-
-	/* There will be num_node_state(N_MEMORY) threads */
-	atomic_set(&pgdat_init_n_undone, num_node_state(N_MEMORY));
-	for_each_node_state(nid, N_MEMORY) {
-		kthread_run(deferred_init_memmap, NODE_DATA(nid), "pgdatinit%d", nid);
-	}
-
-	/* Block until all are initialised */
-	wait_for_completion(&pgdat_init_all_done_comp);
-
-	/*
-	 * We initialized the rest of the deferred pages.  Permanently disable
-	 * on-demand struct page initialization.
-	 */
-	static_branch_disable(&deferred_pages);
-
-	/* Reinit limits that are based on free pages after the kernel is up */
-	files_maxfiles_init();
-#endif
 
 	/* Accounting of total+free memory is stable at this point. */
 	mem_init_print_info();
@@ -2529,19 +2167,6 @@ static void __init mem_debugging_and_hardening_init(void)
 	bool page_poisoning_requested = false;
 	bool want_check_pages = check_pages_enabled_early;
 
-#ifdef CONFIG_PAGE_POISONING
-	/*
-	 * Page poisoning is debug page alloc for some arches. If
-	 * either of those options are enabled, enable poisoning.
-	 */
-	if (page_poisoning_enabled() ||
-	     (!IS_ENABLED(CONFIG_ARCH_SUPPORTS_DEBUG_PAGEALLOC) &&
-	      debug_pagealloc_enabled())) {
-		static_branch_enable(&_page_poisoning_enabled);
-		page_poisoning_requested = true;
-		want_check_pages = true;
-	}
-#endif
 
 	if ((_init_on_alloc_enabled_early || _init_on_free_enabled_early) &&
 	    page_poisoning_requested) {
@@ -2569,15 +2194,6 @@ static void __init mem_debugging_and_hardening_init(void)
 	    (_init_on_alloc_enabled_early || _init_on_free_enabled_early))
 		pr_info("mem auto-init: please make sure init_on_alloc and init_on_free are disabled when running KMSAN\n");
 
-#ifdef CONFIG_DEBUG_PAGEALLOC
-	if (debug_pagealloc_enabled()) {
-		want_check_pages = true;
-		static_branch_enable(&_debug_pagealloc_enabled);
-
-		if (debug_guardpage_minorder())
-			static_branch_enable(&_debug_guardpage_enabled);
-	}
-#endif
 
 	/*
 	 * Any page debugging or hardening option also enables sanity checking

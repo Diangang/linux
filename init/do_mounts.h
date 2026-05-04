@@ -22,11 +22,7 @@ static inline __init int create_dev(char *name, dev_t dev)
 	return init_mknod(name, S_IFBLK | 0600, new_encode_dev(dev));
 }
 
-#ifdef CONFIG_BLK_DEV_RAM
-int __init rd_load_image(void);
-#else
 static inline int rd_load_image(void) { return 0; }
-#endif
 
 #ifdef CONFIG_BLK_DEV_INITRD
 void __init initrd_load(void);

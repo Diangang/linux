@@ -151,10 +151,6 @@ union swap_header {
 struct reclaim_state {
 	/* pages reclaimed outside of LRU-based reclaim */
 	unsigned long reclaimed;
-#ifdef CONFIG_LRU_GEN
-	/* per-thread mm walk data */
-	struct lru_gen_mm_walk *mm_walk;
-#endif
 };
 
 /*

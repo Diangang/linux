@@ -126,17 +126,6 @@ static DEFINE_PER_CPU(struct softirq_ctrl, softirq_ctrl) = {
 	.lock	= INIT_LOCAL_LOCK(softirq_ctrl.lock),
 };
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-static struct lock_class_key bh_lock_key;
-struct lockdep_map bh_lock_map = {
-	.name			= "local_bh",
-	.key			= &bh_lock_key,
-	.wait_type_outer	= LD_WAIT_FREE,
-	.wait_type_inner	= LD_WAIT_CONFIG, /* PREEMPT_RT makes BH preemptible. */
-	.lock_type		= LD_LOCK_PERCPU,
-};
-EXPORT_SYMBOL_GPL(bh_lock_map);
-#endif
 
 /**
  * local_bh_blocked() - Check for idle whether BH processing is blocked
@@ -391,9 +380,6 @@ void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
 	raw_local_irq_restore(flags);
 
 	if (preempt_count() == cnt) {
-#ifdef CONFIG_DEBUG_PREEMPT
-		current->preempt_disable_ip = get_lock_parent_ip();
-#endif
 		trace_preempt_off(CALLER_ADDR0, get_lock_parent_ip());
 	}
 }

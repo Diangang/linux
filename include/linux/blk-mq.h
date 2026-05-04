@@ -137,9 +137,6 @@ struct request {
 	/* Time that I/O was submitted to the device. */
 	u64 io_start_time_ns;
 
-#ifdef CONFIG_BLK_WBT
-	unsigned short wbt_flags;
-#endif
 	/*
 	 * rq sectors used for blk stats. It has the same value
 	 * with blk_rq_sectors(rq), except that it never be zeroed

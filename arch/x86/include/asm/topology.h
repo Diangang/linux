@@ -41,16 +41,6 @@
 /* Mappings between logical cpu number and node number */
 DECLARE_EARLY_PER_CPU(int, x86_cpu_to_node_map);
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-/*
- * override generic percpu implementation of cpu_to_node
- */
-extern int __cpu_to_node(int cpu);
-#define cpu_to_node __cpu_to_node
-
-extern int early_cpu_to_node(int cpu);
-
-#else	/* !CONFIG_DEBUG_PER_CPU_MAPS */
 
 /* Same function but used if called before per_cpu areas are setup */
 static inline int early_cpu_to_node(int cpu)
@@ -58,20 +48,15 @@ static inline int early_cpu_to_node(int cpu)
 	return early_per_cpu(x86_cpu_to_node_map, cpu);
 }
 
-#endif /* !CONFIG_DEBUG_PER_CPU_MAPS */
 
 /* Mappings between node number and cpus on that node. */
 extern cpumask_var_t node_to_cpumask_map[MAX_NUMNODES];
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-extern const struct cpumask *cpumask_of_node(int node);
-#else
 /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
 static inline const struct cpumask *cpumask_of_node(int node)
 {
 	return node_to_cpumask_map[node];
 }
-#endif
 
 extern void setup_node_to_cpumask_map(void);
 

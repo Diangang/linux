@@ -35,10 +35,6 @@ static inline bool task_on_scx(const struct task_struct *p)
 	return scx_enabled() && p->sched_class == &ext_sched_class;
 }
 
-#ifdef CONFIG_SCHED_CORE
-bool scx_prio_less(const struct task_struct *a, const struct task_struct *b,
-		   bool in_fi);
-#endif
 
 #else	/* CONFIG_SCHED_CLASS_EXT */
 

@@ -365,21 +365,6 @@ int set_direct_map_valid_noflush(struct page *page, unsigned nr, bool valid)
 	return set_memory_valid(addr, nr, valid);
 }
 
-#ifdef CONFIG_DEBUG_PAGEALLOC
-/*
- * This is - apart from the return value - doing the same
- * thing as the new set_direct_map_valid_noflush() function.
- *
- * Unify? Explain the conceptual differences?
- */
-void __kernel_map_pages(struct page *page, int numpages, int enable)
-{
-	if (!can_set_direct_map())
-		return;
-
-	set_memory_valid((unsigned long)page_address(page), numpages, enable);
-}
-#endif /* CONFIG_DEBUG_PAGEALLOC */
 
 /*
  * This function is used to determine if a linear map page has been marked as

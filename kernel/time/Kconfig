@@ -111,12 +111,6 @@ choice
 	prompt "Timer tick handling"
 	default NO_HZ_IDLE if NO_HZ
 
-config HZ_PERIODIC
-	bool "Periodic timer ticks (constant rate, no dynticks)"
-	help
-	  This option keeps the tick running periodically at a constant
-	  rate, even when the CPU doesn't need it.
-
 config NO_HZ_IDLE
 	bool "Idle dynticks system (tickless idle)"
 	select NO_HZ_COMMON
@@ -126,35 +120,6 @@ config NO_HZ_IDLE
 	  This is usually interesting for energy saving.
 
 	  Most of the time you want to say Y here.
-
-config NO_HZ_FULL
-	bool "Full dynticks system (tickless)"
-	# NO_HZ_COMMON dependency
-	# We need at least one periodic CPU for timekeeping
-	depends on SMP
-	depends on HAVE_CONTEXT_TRACKING_USER
-	# VIRT_CPU_ACCOUNTING_GEN dependency
-	depends on HAVE_VIRT_CPU_ACCOUNTING_GEN
-	select NO_HZ_COMMON
-	select RCU_NOCB_CPU
-	select VIRT_CPU_ACCOUNTING_GEN
-	select IRQ_WORK
-	select CPU_ISOLATION
-	help
-	 Adaptively try to shutdown the tick whenever possible, even when
-	 the CPU is running tasks. Typically this requires running a single
-	 task on the CPU. Chances for running tickless are maximized when
-	 the task mostly runs in userspace and has few kernel activity.
-
-	 You need to fill up the nohz_full boot parameter with the
-	 desired range of dynticks CPUs to use it. This is implemented at
-	 the expense of some overhead in user <-> kernel transitions:
-	 syscalls, exceptions and interrupts.
-
-	 By default, without passing the nohz_full parameter, this behaves just
-	 like NO_HZ_IDLE.
-
-	 If you're a distro say Y.
 
 endchoice
 
@@ -209,16 +174,5 @@ config HIGH_RES_TIMERS
 	  the size of the kernel image.
 
 endif
-
-config POSIX_AUX_CLOCKS
-	bool "Enable auxiliary POSIX clocks"
-	depends on POSIX_TIMERS
-	help
-	  Auxiliary POSIX clocks are clocks which can be steered
-	  independently of the core timekeeper, which controls the
-	  MONOTONIC, REALTIME, BOOTTIME and TAI clocks.  They are useful to
-	  provide e.g. lockless time accessors to independent PTP clocks
-	  and other clock domains, which are not correlated to the TAI/NTP
-	  notion of time.
 
 endmenu

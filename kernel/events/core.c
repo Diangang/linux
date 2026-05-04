@@ -5344,18 +5344,9 @@ static void unaccount_pmu_sb_event(struct perf_event *event)
 		detach_sb_event(event);
 }
 
-#ifdef CONFIG_NO_HZ_FULL
-static DEFINE_SPINLOCK(nr_freq_lock);
-#endif
 
 static void unaccount_freq_event_nohz(void)
 {
-#ifdef CONFIG_NO_HZ_FULL
-	spin_lock(&nr_freq_lock);
-	if (atomic_dec_and_test(&nr_freq_events))
-		tick_nohz_dep_clear(TICK_DEP_BIT_PERF_EVENTS);
-	spin_unlock(&nr_freq_lock);
-#endif
 }
 
 static void unaccount_freq_event(void)
@@ -13172,13 +13163,6 @@ static void account_pmu_sb_event(struct perf_event *event)
 /* Freq events need the tick to stay alive (see perf_event_task_tick). */
 static void account_freq_event_nohz(void)
 {
-#ifdef CONFIG_NO_HZ_FULL
-	/* Lock so we don't race with concurrent unaccount */
-	spin_lock(&nr_freq_lock);
-	if (atomic_inc_return(&nr_freq_events) == 1)
-		tick_nohz_dep_set(TICK_DEP_BIT_PERF_EVENTS);
-	spin_unlock(&nr_freq_lock);
-#endif
 }
 
 static void account_freq_event(void)

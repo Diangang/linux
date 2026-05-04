@@ -45,22 +45,6 @@ config PROC_VMCORE
 	help
 	  Exports the dump image of crashed kernel in ELF format.
 
-config PROC_VMCORE_DEVICE_DUMP
-	bool "Device Hardware/Firmware Log Collection"
-	depends on PROC_VMCORE
-	default n
-	help
-	  After kernel panic, device drivers can collect the device
-	  specific snapshot of their hardware or firmware before the
-	  underlying devices are initialized in crash recovery kernel.
-	  Note that the device driver must be present in the crash
-	  recovery kernel's initramfs to collect its underlying device
-	  snapshot.
-
-	  If you say Y here, the collected device dumps will be added
-	  as ELF notes to /proc/vmcore. You can still disable device
-	  dump using the kernel command line option 'novmcoredd'.
-
 config NEED_PROC_VMCORE_DEVICE_RAM
 	bool
 
@@ -108,17 +92,6 @@ config PROC_PAGE_MONITOR
 	  /proc/pid/smaps, /proc/pid/clear_refs, /proc/pid/pagemap,
 	  /proc/kpagecount, and /proc/kpageflags. Disabling these
 	  interfaces will reduce the size of the kernel by approximately 4kb.
-
-config PROC_CHILDREN
-	bool "Include /proc/<pid>/task/<tid>/children file"
-	depends on PROC_FS
-	default n
-	help
-	  Provides a fast way to retrieve first level children pids of a task. See
-	  <file:Documentation/filesystems/proc.rst> for more information.
-
-	  Say Y if you are running any user-space software which takes benefit from
-	  this interface. For example, rkt is such a piece of software.
 
 config PROC_PID_ARCH_STATUS
 	def_bool n

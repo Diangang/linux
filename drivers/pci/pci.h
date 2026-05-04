@@ -683,15 +683,9 @@ struct pci_sriov {
 	bool		drivers_autoprobe; /* Auto probing of VFs by driver */
 };
 
-#ifdef CONFIG_PCI_DOE
-void pci_doe_init(struct pci_dev *pdev);
-void pci_doe_destroy(struct pci_dev *pdev);
-void pci_doe_disconnected(struct pci_dev *pdev);
-#else
 static inline void pci_doe_init(struct pci_dev *pdev) { }
 static inline void pci_doe_destroy(struct pci_dev *pdev) { }
 static inline void pci_doe_disconnected(struct pci_dev *pdev) { }
-#endif
 
 #ifdef CONFIG_PCI_NPEM
 void pci_npem_create(struct pci_dev *dev);
@@ -720,15 +714,8 @@ static inline void pci_ide_init_host_bridge(struct pci_host_bridge *hb) { }
 static inline void pci_ide_destroy(struct pci_dev *dev) { }
 #endif
 
-#ifdef CONFIG_PCI_TSM
-void pci_tsm_init(struct pci_dev *pdev);
-void pci_tsm_destroy(struct pci_dev *pdev);
-extern const struct attribute_group pci_tsm_attr_group;
-extern const struct attribute_group pci_tsm_auth_attr_group;
-#else
 static inline void pci_tsm_init(struct pci_dev *pdev) { }
 static inline void pci_tsm_destroy(struct pci_dev *pdev) { }
-#endif
 
 /**
  * pci_dev_set_io_state - Set the new error state if possible.
@@ -1017,31 +1004,16 @@ static inline int pci_resource_num_to_vf_bar(int resno)
 }
 #endif /* CONFIG_PCI_IOV */
 
-#ifdef CONFIG_PCIE_TPH
-void pci_restore_tph_state(struct pci_dev *dev);
-void pci_save_tph_state(struct pci_dev *dev);
-void pci_no_tph(void);
-void pci_tph_init(struct pci_dev *dev);
-#else
 static inline void pci_restore_tph_state(struct pci_dev *dev) { }
 static inline void pci_save_tph_state(struct pci_dev *dev) { }
 static inline void pci_no_tph(void) { }
 static inline void pci_tph_init(struct pci_dev *dev) { }
-#endif
 
-#ifdef CONFIG_PCIE_PTM
-void pci_ptm_init(struct pci_dev *dev);
-void pci_save_ptm_state(struct pci_dev *dev);
-void pci_restore_ptm_state(struct pci_dev *dev);
-void pci_suspend_ptm(struct pci_dev *dev);
-void pci_resume_ptm(struct pci_dev *dev);
-#else
 static inline void pci_ptm_init(struct pci_dev *dev) { }
 static inline void pci_save_ptm_state(struct pci_dev *dev) { }
 static inline void pci_restore_ptm_state(struct pci_dev *dev) { }
 static inline void pci_suspend_ptm(struct pci_dev *dev) { }
 static inline void pci_resume_ptm(struct pci_dev *dev) { }
-#endif
 
 static inline resource_size_t pci_resource_alignment(struct pci_dev *dev,
 						     struct resource *res)

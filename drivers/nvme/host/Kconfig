@@ -14,28 +14,6 @@ config BLK_DEV_NVME
 	  To compile this driver as a module, choose M here: the
 	  module will be called nvme.
 
-config NVME_MULTIPATH
-	bool "NVMe multipath support"
-	depends on NVME_CORE
-	help
-	  This option controls support for multipath access to NVMe
-	  subsystems. If this option is enabled support for NVMe multipath
-	  access is included in the kernel. If this option is disabled support
-	  for NVMe multipath access is excluded from the kernel. When this
-	  option is disabled each controller/namespace receives its
-	  own /dev/nvmeXnY device entry and NVMe multipath access is
-	  not supported.
-
-	  If unsure, say Y.
-
-config NVME_VERBOSE_ERRORS
-	bool "NVMe verbose error reporting"
-	depends on NVME_CORE
-	help
-	   This option enables verbose reporting for NVMe errors. The
-	   error translation table will grow the kernel image size by
-	   about 4 KB.
-
 config NVME_HWMON
 	bool "NVMe hardware monitoring"
 	depends on (NVME_CORE=y && HWMON=y) || (NVME_CORE=m && HWMON)
@@ -58,22 +36,6 @@ config NVME_RDMA
 	  This provides support for the NVMe over Fabrics protocol using
 	  the RDMA (Infiniband, RoCE, iWarp) transport.  This allows you
 	  to use remote block devices exported using the NVMe protocol set.
-
-	  To configure a NVMe over Fabrics controller use the nvme-cli tool
-	  from https://github.com/linux-nvme/nvme-cli.
-
-	  If unsure, say N.
-
-config NVME_FC
-	tristate "NVM Express over Fabrics FC host driver"
-	depends on BLOCK
-	depends on HAS_DMA
-	select NVME_FABRICS
-	select SG_POOL
-	help
-	  This provides support for the NVMe over Fabrics protocol using
-	  the FC transport.  This allows you to use remote block devices
-	  exported using the NVMe protocol set.
 
 	  To configure a NVMe over Fabrics controller use the nvme-cli tool
 	  from https://github.com/linux-nvme/nvme-cli.
@@ -108,17 +70,6 @@ config NVME_TCP_TLS
 
 	  The TLS handshake daemon is available at
 	  https://github.com/oracle/ktls-utils.
-
-	  If unsure, say N.
-
-config NVME_HOST_AUTH
-	bool "NVMe over Fabrics In-Band Authentication in host side"
-	depends on NVME_CORE
-	select NVME_AUTH
-	select NVME_KEYRING
-	help
-	  This provides support for NVMe over Fabrics In-Band Authentication in
-	  host side.
 
 	  If unsure, say N.
 

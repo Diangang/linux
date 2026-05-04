@@ -812,23 +812,6 @@ gpio_device_get_desc(struct gpio_device *gdev, unsigned int hwnum);
 
 struct gpio_chip *gpio_device_get_chip(struct gpio_device *gdev);
 
-#ifdef CONFIG_GPIOLIB
-
-/* lock/unlock as IRQ */
-int gpiochip_lock_as_irq(struct gpio_chip *gc, unsigned int offset);
-void gpiochip_unlock_as_irq(struct gpio_chip *gc, unsigned int offset);
-
-struct gpio_chip *gpiod_to_chip(const struct gpio_desc *desc);
-struct gpio_device *gpiod_to_gpio_device(struct gpio_desc *desc);
-
-/* struct gpio_device getters */
-int gpio_device_get_base(struct gpio_device *gdev);
-const char *gpio_device_get_label(struct gpio_device *gdev);
-
-struct gpio_device *gpio_device_find_by_label(const char *label);
-struct gpio_device *gpio_device_find_by_fwnode(const struct fwnode_handle *fwnode);
-
-#else /* CONFIG_GPIOLIB */
 
 #include <asm/bug.h>
 
@@ -881,7 +864,6 @@ static inline void gpiochip_unlock_as_irq(struct gpio_chip *gc,
 {
 	WARN_ON(1);
 }
-#endif /* CONFIG_GPIOLIB */
 
 #define for_each_gpiochip_node(dev, child)					\
 	device_for_each_child_node(dev, child)					\

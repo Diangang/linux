@@ -45,12 +45,6 @@ context_lock_struct(mutex) {
 	struct optimistic_spin_queue osq; /* Spinner MCS lock */
 #endif
 	struct mutex_waiter	*first_waiter __guarded_by(&wait_lock);
-#ifdef CONFIG_DEBUG_MUTEXES
-	void			*magic;
-#endif
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map	dep_map;
-#endif
 };
 
 #else /* !CONFIG_PREEMPT_RT */
@@ -61,9 +55,6 @@ context_lock_struct(mutex) {
 
 context_lock_struct(mutex) {
 	struct rt_mutex_base	rtmutex;
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map	dep_map;
-#endif
 };
 
 #endif /* CONFIG_PREEMPT_RT */

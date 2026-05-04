@@ -1273,10 +1273,6 @@ static struct macio_driver swim3_driver =
 #ifdef CONFIG_PMAC_MEDIABAY
 	.mediabay_event	= swim3_mb_event,
 #endif
-#if 0
-	.suspend	= swim3_suspend,
-	.resume		= swim3_resume,
-#endif
 };
 
 

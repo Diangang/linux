@@ -67,28 +67,6 @@ struct debug_obj_descr {
 	bool (*fixup_assert_init)(void *addr, enum debug_obj_state state);
 };
 
-#ifdef CONFIG_DEBUG_OBJECTS
-extern void debug_object_init      (void *addr, const struct debug_obj_descr *descr);
-extern void
-debug_object_init_on_stack(void *addr, const struct debug_obj_descr *descr);
-extern int debug_object_activate  (void *addr, const struct debug_obj_descr *descr);
-extern void debug_object_deactivate(void *addr, const struct debug_obj_descr *descr);
-extern void debug_object_destroy   (void *addr, const struct debug_obj_descr *descr);
-extern void debug_object_free      (void *addr, const struct debug_obj_descr *descr);
-extern void debug_object_assert_init(void *addr, const struct debug_obj_descr *descr);
-
-/*
- * Active state:
- * - Set at 0 upon initialization.
- * - Must return to 0 before deactivation.
- */
-extern void
-debug_object_active_state(void *addr, const struct debug_obj_descr *descr,
-			  unsigned int expect, unsigned int next);
-
-extern void debug_objects_early_init(void);
-extern void debug_objects_mem_init(void);
-#else
 static inline void
 debug_object_init      (void *addr, const struct debug_obj_descr *descr) { }
 static inline void
@@ -106,7 +84,6 @@ debug_object_assert_init(void *addr, const struct debug_obj_descr *descr) { }
 
 static inline void debug_objects_early_init(void) { }
 static inline void debug_objects_mem_init(void) { }
-#endif
 
 #ifdef CONFIG_DEBUG_OBJECTS_FREE
 extern void debug_check_no_obj_freed(const void *address, unsigned long size);

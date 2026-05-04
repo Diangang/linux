@@ -636,16 +636,8 @@ void pm_stay_awake(struct device *dev)
 }
 EXPORT_SYMBOL_GPL(pm_stay_awake);
 
-#ifdef CONFIG_PM_AUTOSLEEP
-static void update_prevent_sleep_time(struct wakeup_source *ws, ktime_t now)
-{
-	ktime_t delta = ktime_sub(now, ws->start_prevent_time);
-	ws->prevent_sleep_time = ktime_add(ws->prevent_sleep_time, delta);
-}
-#else
 static inline void update_prevent_sleep_time(struct wakeup_source *ws,
 					     ktime_t now) {}
-#endif
 
 /**
  * wakeup_source_deactivate - Mark given wakeup source as inactive.
@@ -1009,34 +1001,6 @@ bool pm_save_wakeup_count(unsigned int count)
 	return events_check_enabled;
 }
 
-#ifdef CONFIG_PM_AUTOSLEEP
-/**
- * pm_wakep_autosleep_enabled - Modify autosleep_enabled for all wakeup sources.
- * @set: Whether to set or to clear the autosleep_enabled flags.
- */
-void pm_wakep_autosleep_enabled(bool set)
-{
-	struct wakeup_source *ws;
-	ktime_t now = ktime_get();
-	int srcuidx;
-
-	srcuidx = srcu_read_lock(&wakeup_srcu);
-	list_for_each_entry_rcu_locked(ws, &wakeup_sources, entry) {
-		spin_lock_irq(&ws->lock);
-		if (ws->autosleep_enabled != set) {
-			ws->autosleep_enabled = set;
-			if (ws->active) {
-				if (set)
-					ws->start_prevent_time = now;
-				else
-					update_prevent_sleep_time(ws, now);
-			}
-		}
-		spin_unlock_irq(&ws->lock);
-	}
-	srcu_read_unlock(&wakeup_srcu, srcuidx);
-}
-#endif /* CONFIG_PM_AUTOSLEEP */
 
 /**
  * print_wakeup_source_stats - Print wakeup source statistics information.

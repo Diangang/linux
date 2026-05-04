@@ -1998,11 +1998,6 @@ static void csi_DEC_hl(struct vc_data *vc, bool on_off)
 				clr_kbd(vc, decckm);
 			break;
 		case CSI_DEC_hl_132_COLUMNS:	/* unimplemented */
-#if 0
-			vc_resize(deccolm ? 132 : 80, vc->vc_rows);
-			/* this alone does not suffice; some user mode
-			   utility has to change the hardware regs */
-#endif
 			break;
 		case CSI_DEC_hl_REVERSE_VIDEO:
 			if (vc->vc_decscnm != on_off) {

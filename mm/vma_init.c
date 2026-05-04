@@ -59,9 +59,6 @@ static void vm_area_init_from(const struct vm_area_struct *src,
 	data_race(memcpy(&dest->shared, &src->shared, sizeof(dest->shared)));
 	memcpy(&dest->vm_userfaultfd_ctx, &src->vm_userfaultfd_ctx,
 	       sizeof(dest->vm_userfaultfd_ctx));
-#ifdef CONFIG_ANON_VMA_NAME
-	dest->anon_name = src->anon_name;
-#endif
 #ifdef CONFIG_SWAP
 	memcpy(&dest->swap_readahead_info, &src->swap_readahead_info,
 	       sizeof(dest->swap_readahead_info));

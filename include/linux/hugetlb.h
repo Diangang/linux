@@ -139,14 +139,6 @@ void hugetlb_show_meminfo_node(int nid);
 unsigned long hugetlb_total_pages(void);
 vm_fault_t hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
 			unsigned long address, unsigned int flags);
-#ifdef CONFIG_USERFAULTFD
-int hugetlb_mfill_atomic_pte(pte_t *dst_pte,
-			     struct vm_area_struct *dst_vma,
-			     unsigned long dst_addr,
-			     unsigned long src_addr,
-			     uffd_flags_t flags,
-			     struct folio **foliop);
-#endif /* CONFIG_USERFAULTFD */
 long hugetlb_reserve_pages(struct inode *inode, long from, long to,
 			   struct vm_area_desc *desc, vma_flags_t vma_flags);
 long hugetlb_unreserve_pages(struct inode *inode, long start, long end,
@@ -393,18 +385,6 @@ static inline int is_hugepage_only_range(struct mm_struct *mm,
 	return 0;
 }
 
-#ifdef CONFIG_USERFAULTFD
-static inline int hugetlb_mfill_atomic_pte(pte_t *dst_pte,
-					   struct vm_area_struct *dst_vma,
-					   unsigned long dst_addr,
-					   unsigned long src_addr,
-					   uffd_flags_t flags,
-					   struct folio **foliop)
-{
-	BUG();
-	return 0;
-}
-#endif /* CONFIG_USERFAULTFD */
 
 static inline pte_t *huge_pte_offset(struct mm_struct *mm, unsigned long addr,
 					unsigned long sz)

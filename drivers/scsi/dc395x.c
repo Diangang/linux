@@ -1096,41 +1096,6 @@ static void build_wdtr(struct AdapterCtlBlk *acb, struct DeviceCtlBlk *dcb,
 }
 
 
-#if 0
-/* Timer to work around chip flaw: When selecting and the bus is 
- * busy, we sometimes miss a Selection timeout IRQ */
-void selection_timeout_missed(unsigned long ptr);
-/* Sets the timer to wake us up */
-static void selto_timer(struct AdapterCtlBlk *acb)
-{
-	if (timer_pending(&acb->selto_timer))
-		return;
-	acb->selto_timer.function = selection_timeout_missed;
-	acb->selto_timer.data = (unsigned long) acb;
-	if (time_before
-	    (jiffies + HZ, acb->last_reset + HZ / 2))
-		acb->selto_timer.expires =
-		    acb->last_reset + HZ / 2 + 1;
-	else
-		acb->selto_timer.expires = jiffies + HZ + 1;
-	add_timer(&acb->selto_timer);
-}
-
-
-void selection_timeout_missed(unsigned long ptr)
-{
-	unsigned long flags;
-	struct AdapterCtlBlk *acb = (struct AdapterCtlBlk *)ptr;
-	struct ScsiReqBlk *srb;
-	if (!acb->active_dcb || !acb->active_dcb->active_srb)
-		return;
-
-	DC395x_LOCK_IO(acb->scsi_host, flags);
-	srb = acb->active_dcb->active_srb;
-	disconnect(acb);
-	DC395x_UNLOCK_IO(acb->scsi_host, flags);
-}
-#endif
 
 
 static u8 start_scsi(struct AdapterCtlBlk* acb, struct DeviceCtlBlk* dcb,
@@ -1145,7 +1110,6 @@ static u8 start_scsi(struct AdapterCtlBlk* acb, struct DeviceCtlBlk* dcb,
 	s_stat = DC395x_read8(acb, TRM_S1040_SCSI_SIGNAL);
 	s_stat2 = 0;
 	s_stat2 = DC395x_read16(acb, TRM_S1040_SCSI_STATUS);
-#if 1
 	if (s_stat & 0x20 /* s_stat2 & 0x02000 */ ) {
 		/*
 		 * Try anyway?
@@ -1160,7 +1124,6 @@ static u8 start_scsi(struct AdapterCtlBlk* acb, struct DeviceCtlBlk* dcb,
 		/*selto_timer (acb); */
 		return 1;
 	}
-#endif
 	if (acb->active_dcb)
 		return 1;
 
@@ -1428,16 +1391,7 @@ static irqreturn_t dc395x_interrupt(int irq, void *dev_id)
 	}
 	else if (dma_status & 0x20) {
 		/* Error from the DMA engine */
-#if 0
-		if (acb->active_dcb) {
-			acb->active_dcb-> flag |= ABORT_DEV_;
-			if (acb->active_dcb->active_srb)
-				enable_msgout_abort(acb, acb->active_dcb->active_srb);
-		}
-		DC395x_write8(acb, TRM_S1040_DMA_CONTROL, ABORTXFER | CLRXFIFO);
-#else
 		acb = NULL;
-#endif
 		handled = IRQ_HANDLED;
 	}
 
@@ -1756,16 +1710,6 @@ static void data_in_phase0(struct AdapterCtlBlk *acb, struct ScsiReqBlk *srb,
 		 * sent data to the FIFO in a MsgIn phase, eg.?
 		 */
 		if (!(DC395x_read8(acb, TRM_S1040_DMA_FIFOSTAT) & 0x80)) {
-#if 0
-			int ctr = 6000000;
-			/*DC395x_write8  (TRM_S1040_DMA_CONTROL, STOPDMAXFER); */
-			/*DC395x_write32 (TRM_S1040_SCSI_COUNTER, 7); */
-			/*DC395x_write8  (TRM_S1040_SCSI_COMMAND, SCMD_DMA_IN); */
-			while (!
-			       (DC395x_read16(acb, TRM_S1040_DMA_FIFOSTAT) &
-				0x80) && --ctr);
-			/*DC395x_write32 (TRM_S1040_SCSI_COUNTER, 0); */
-#endif
 		}
 		/* Now: Check remainig data: The SCSI counters should tell us ... */
 		sc = DC395x_read32(acb, TRM_S1040_SCSI_COUNTER);
@@ -1838,40 +1782,9 @@ static void data_in_phase0(struct AdapterCtlBlk *acb, struct ScsiReqBlk *srb,
 		}
 #endif				/* DC395x_LASTPIO */
 
-#if 0
-		/*
-		 * KG: This was in DATAOUT. Does it also belong here?
-		 * Nobody seems to know what counter and fifo_cnt count exactly ...
-		 */
-		if (!(scsi_status & SCSIXFERDONE)) {
-			/*
-			 * when data transfer from DMA FIFO to SCSI FIFO
-			 * if there was some data left in SCSI FIFO
-			 */
-			d_left_counter =
-			    (u32)(DC395x_read8(acb, TRM_S1040_SCSI_FIFOCNT) &
-				  0x1F);
-			if (srb->dcb->sync_period & WIDE_SYNC)
-				d_left_counter <<= 1;
-			/*
-			 * if WIDE scsi SCSI FIFOCNT unit is word !!!
-			 * so need to *= 2
-			 * KG: Seems to be correct ...
-			 */
-		}
-#endif
 		/* KG: This should not be needed any more! */
 		if (d_left_counter == 0
 		    || (scsi_status & SCSIXFERCNT_2_ZERO)) {
-#if 0
-			int ctr = 6000000;
-			u8 TempDMAstatus;
-			do {
-				TempDMAstatus =
-				    DC395x_read8(acb, TRM_S1040_DMA_STATUS);
-			} while (!(TempDMAstatus & DMAXFERCOMP) && --ctr);
-			srb->total_xfer_length = 0;
-#endif
 			srb->total_xfer_length = d_left_counter;
 		} else {	/* phase changed */
 			/*
@@ -2598,12 +2511,6 @@ static void reselect(struct AdapterCtlBlk *acb)
 static inline u8 tagq_blacklist(char *name)
 {
 #ifndef DC395x_NO_TAGQ
-#if 0
-	u8 i;
-	for (i = 0; i < BADDEVCNT; i++)
-		if (memcmp(name, DC395x_baddevname1[i], 28) == 0)
-			return 1;
-#endif
 	return 0;
 #else
 	return 1;

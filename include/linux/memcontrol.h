@@ -220,15 +220,6 @@ struct mem_cgroup {
 	/* Range enforcement for interrupt charges */
 	struct work_struct high_work;
 
-#ifdef CONFIG_ZSWAP
-	unsigned long zswap_max;
-
-	/*
-	 * Prevent pages from this memcg from being written back from zswap to
-	 * swap, and from being swapped out on zswap store failures.
-	 */
-	bool zswap_writeback;
-#endif
 
 	/* vmpressure notifications */
 	struct vmpressure vmpressure;
@@ -1450,9 +1441,6 @@ static inline int mem_cgroup_init(void) { return 0; }
 struct slabobj_ext {
 #ifdef CONFIG_MEMCG
 	struct obj_cgroup *objcg;
-#endif
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-	union codetag_ref ref;
 #endif
 } __aligned(8);
 

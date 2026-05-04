@@ -715,15 +715,8 @@ struct vm_region {
 						* this region */
 };
 
-#ifdef CONFIG_USERFAULTFD
-#define NULL_VM_UFFD_CTX ((struct vm_userfaultfd_ctx) { NULL, })
-struct vm_userfaultfd_ctx {
-	struct userfaultfd_ctx *ctx;
-};
-#else /* CONFIG_USERFAULTFD */
 #define NULL_VM_UFFD_CTX ((struct vm_userfaultfd_ctx) {})
 struct vm_userfaultfd_ctx {};
-#endif /* CONFIG_USERFAULTFD */
 
 struct anon_vma_name {
 	struct kref kref;
@@ -731,16 +724,6 @@ struct anon_vma_name {
 	char name[];
 };
 
-#ifdef CONFIG_ANON_VMA_NAME
-/*
- * mmap_lock should be read-locked when calling anon_vma_name(). Caller should
- * either keep holding the lock while using the returned pointer or it should
- * raise anon_vma_name refcount before releasing the lock.
- */
-struct anon_vma_name *anon_vma_name(struct vm_area_struct *vma);
-struct anon_vma_name *anon_vma_name_alloc(const char *name);
-void anon_vma_name_free(struct kref *kref);
-#else /* CONFIG_ANON_VMA_NAME */
 static inline struct anon_vma_name *anon_vma_name(struct vm_area_struct *vma)
 {
 	return NULL;
@@ -750,7 +733,6 @@ static inline struct anon_vma_name *anon_vma_name_alloc(const char *name)
 {
 	return NULL;
 }
-#endif
 
 /*
  * While __vma_enter_locked() is working to ensure are no read-locks held on a
@@ -1047,9 +1029,6 @@ struct vm_area_struct {
 	 * NOTE: Unstable RCU readers are allowed to read this.
 	 */
 	refcount_t vm_refcnt ____cacheline_aligned_in_smp;
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map vmlock_dep_map;
-#endif
 #endif
 	/*
 	 * For areas with an address space and backing store,
@@ -1060,14 +1039,6 @@ struct vm_area_struct {
 		struct rb_node rb;
 		unsigned long rb_subtree_last;
 	} shared;
-#ifdef CONFIG_ANON_VMA_NAME
-	/*
-	 * For private and shared anonymous mappings, a pointer to a null
-	 * terminated string containing the name given to the vma, or NULL if
-	 * unnamed. Serialized by mmap_lock. Use anon_vma_name to access.
-	 */
-	struct anon_vma_name *anon_name;
-#endif
 	struct vm_userfaultfd_ctx vm_userfaultfd_ctx;
 #ifdef __HAVE_PFNMAP_TRACKING
 	struct pfnmap_track_ctx *pfnmap_track_ctx;
@@ -1487,16 +1458,6 @@ static inline cpumask_t *mm_cpumask(struct mm_struct *mm)
 	return (struct cpumask *)&mm->flexible_array;
 }
 
-#ifdef CONFIG_LRU_GEN
-
-struct lru_gen_mm_list {
-	/* mm_struct list for page table walkers */
-	struct list_head fifo;
-	/* protects the list above */
-	spinlock_t lock;
-};
-
-#endif /* CONFIG_LRU_GEN */
 
 #ifdef CONFIG_LRU_GEN_WALKS_MMU
 

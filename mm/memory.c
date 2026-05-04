@@ -119,11 +119,7 @@ static __always_inline bool vmf_orig_pte_uffd_wp(struct vm_fault *vmf)
  *   as ancient (libc5 based) binaries can segfault. )
  */
 int randomize_va_space __read_mostly =
-#ifdef CONFIG_COMPAT_BRK
-					1;
-#else
 					2;
-#endif
 
 static const struct ctl_table mmu_sysctl_table[] = {
 	{
@@ -6617,18 +6613,6 @@ static inline void mm_account_fault(struct mm_struct *mm, struct pt_regs *regs,
 		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
 }
 
-#ifdef CONFIG_LRU_GEN
-static void lru_gen_enter_fault(struct vm_area_struct *vma)
-{
-	/* the LRU algorithm only applies to accesses with recency */
-	current->in_lru_fault = vma_has_recency(vma);
-}
-
-static void lru_gen_exit_fault(void)
-{
-	current->in_lru_fault = false;
-}
-#else
 static void lru_gen_enter_fault(struct vm_area_struct *vma)
 {
 }
@@ -6636,7 +6620,6 @@ static void lru_gen_enter_fault(struct vm_area_struct *vma)
 static void lru_gen_exit_fault(void)
 {
 }
-#endif /* CONFIG_LRU_GEN */
 
 static vm_fault_t sanitize_fault_flags(struct vm_area_struct *vma,
 				       unsigned int *flags)
@@ -7314,17 +7297,6 @@ void print_vma_addr(char *prefix, unsigned long ip)
 	mmap_read_unlock(mm);
 }
 
-#if defined(CONFIG_PROVE_LOCKING) || defined(CONFIG_DEBUG_ATOMIC_SLEEP)
-void __might_fault(const char *file, int line)
-{
-	if (pagefault_disabled())
-		return;
-	__might_sleep(file, line);
-	if (current->mm)
-		might_lock_read(&current->mm->mmap_lock);
-}
-EXPORT_SYMBOL(__might_fault);
-#endif
 
 #if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_HUGETLBFS)
 /*

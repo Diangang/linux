@@ -95,16 +95,6 @@ struct fw_sysfs *
 fw_create_instance(struct firmware *firmware, const char *fw_name,
 		   struct device *device, u32 opt_flags);
 
-#ifdef CONFIG_FW_UPLOAD
-extern struct device_attribute dev_attr_status;
-extern struct device_attribute dev_attr_error;
-extern struct device_attribute dev_attr_cancel;
-extern struct device_attribute dev_attr_remaining_size;
-
-int fw_upload_start(struct fw_sysfs *fw_sysfs);
-void fw_upload_free(struct fw_sysfs *fw_sysfs);
-umode_t fw_upload_is_visible(struct kobject *kobj, struct attribute *attr, int n);
-#else
 static inline int fw_upload_start(struct fw_sysfs *fw_sysfs)
 {
 	return 0;
@@ -113,6 +103,5 @@ static inline int fw_upload_start(struct fw_sysfs *fw_sysfs)
 static inline void fw_upload_free(struct fw_sysfs *fw_sysfs)
 {
 }
-#endif
 
 #endif /* __FIRMWARE_SYSFS_H */

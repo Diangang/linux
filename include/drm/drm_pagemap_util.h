@@ -71,17 +71,11 @@ void drm_pagemap_cache_set_pagemap(struct drm_pagemap_cache *cache, struct drm_p
 
 struct drm_pagemap *drm_pagemap_get_from_cache_if_active(struct drm_pagemap_cache *cache);
 
-#ifdef CONFIG_PROVE_LOCKING
-
-void drm_pagemap_shrinker_might_lock(struct drm_pagemap *dpagemap);
-
-#else
 
 static inline void drm_pagemap_shrinker_might_lock(struct drm_pagemap *dpagemap)
 {
 }
 
-#endif /* CONFIG_PROVE_LOCKING */
 
 void drm_pagemap_release_owner(struct drm_pagemap_peer *peer);
 

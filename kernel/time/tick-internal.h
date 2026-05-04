@@ -149,11 +149,7 @@ static inline void tick_broadcast_offline(unsigned int cpu) { }
 #endif
 
 /* NO_HZ_FULL internal */
-#ifdef CONFIG_NO_HZ_FULL
-extern void tick_nohz_init(void);
-# else
 static inline void tick_nohz_init(void) { }
-#endif
 
 #ifdef CONFIG_NO_HZ_COMMON
 extern void timers_update_nohz(void);

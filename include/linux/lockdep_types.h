@@ -140,44 +140,8 @@ struct lock_class {
 	u8				lock_type;
 	/* u8				hole; */
 
-#ifdef CONFIG_LOCK_STAT
-	unsigned long			contention_point[LOCKSTAT_POINTS];
-	unsigned long			contending_point[LOCKSTAT_POINTS];
-#endif
 } __no_randomize_layout;
 
-#ifdef CONFIG_LOCK_STAT
-struct lock_time {
-	s64				min;
-	s64				max;
-	s64				total;
-	unsigned long			nr;
-};
-
-enum bounce_type {
-	bounce_acquired_write,
-	bounce_acquired_read,
-	bounce_contended_write,
-	bounce_contended_read,
-	nr_bounce_types,
-
-	bounce_acquired = bounce_acquired_write,
-	bounce_contended = bounce_contended_write,
-};
-
-struct lock_class_stats {
-	unsigned long			contention_point[LOCKSTAT_POINTS];
-	unsigned long			contending_point[LOCKSTAT_POINTS];
-	struct lock_time		read_waittime;
-	struct lock_time		write_waittime;
-	struct lock_time		read_holdtime;
-	struct lock_time		write_holdtime;
-	unsigned long			bounces[nr_bounce_types];
-};
-
-void lock_stats(struct lock_class *class, struct lock_class_stats *stats);
-void clear_lock_stats(struct lock_class *class);
-#endif
 
 /*
  * Map the lock object (the lock instance) to the lock-class object.
@@ -191,10 +155,6 @@ struct lockdep_map {
 	u8				wait_type_inner; /* presents this context */
 	u8				lock_type;
 	/* u8				hole; */
-#ifdef CONFIG_LOCK_STAT
-	int				cpu;
-	unsigned long			ip;
-#endif
 };
 
 struct pin_cookie { unsigned int val; };
@@ -222,10 +182,6 @@ struct held_lock {
 	unsigned long			acquire_ip;
 	struct lockdep_map		*instance;
 	struct lockdep_map		*nest_lock;
-#ifdef CONFIG_LOCK_STAT
-	u64 				waittime_stamp;
-	u64				holdtime_stamp;
-#endif
 	/*
 	 * class_idx is zero-indexed; it points to the element in
 	 * lock_classes this held lock instance belongs to. class_idx is in

@@ -23,38 +23,6 @@
 
 context_lock_struct(srcu_struct, __reentrant_ctx_lock);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-int __init_srcu_struct(struct srcu_struct *ssp, const char *name, struct lock_class_key *key);
-#ifndef CONFIG_TINY_SRCU
-int __init_srcu_struct_fast(struct srcu_struct *ssp, const char *name, struct lock_class_key *key);
-int __init_srcu_struct_fast_updown(struct srcu_struct *ssp, const char *name,
-				   struct lock_class_key *key);
-#endif // #ifndef CONFIG_TINY_SRCU
-
-#define init_srcu_struct(ssp) \
-({ \
-	static struct lock_class_key __srcu_key; \
-	\
-	__init_srcu_struct((ssp), #ssp, &__srcu_key); \
-})
-
-#define init_srcu_struct_fast(ssp) \
-({ \
-	static struct lock_class_key __srcu_key; \
-	\
-	__init_srcu_struct_fast((ssp), #ssp, &__srcu_key); \
-})
-
-#define init_srcu_struct_fast_updown(ssp) \
-({ \
-	static struct lock_class_key __srcu_key; \
-	\
-	__init_srcu_struct_fast_updown((ssp), #ssp, &__srcu_key); \
-})
-
-#define __SRCU_DEP_MAP_INIT(srcu_name)	.dep_map = { .name = #srcu_name },
-#else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 int init_srcu_struct(struct srcu_struct *ssp);
 #ifndef CONFIG_TINY_SRCU
@@ -63,7 +31,6 @@ int init_srcu_struct_fast_updown(struct srcu_struct *ssp);
 #endif // #ifndef CONFIG_TINY_SRCU
 
 #define __SRCU_DEP_MAP_INIT(srcu_name)
-#endif /* #else #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /* Values for SRCU Tree srcu_data ->srcu_reader_flavor, but also used by rcutorture. */
 #define SRCU_READ_FLAVOR_NORMAL		0x1		// srcu_read_lock().
@@ -148,58 +115,6 @@ static inline void __srcu_read_unlock_nmisafe(struct srcu_struct *ssp, int idx)
 
 void srcu_init(void);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-/**
- * srcu_read_lock_held - might we be in SRCU read-side critical section?
- * @ssp: The srcu_struct structure to check
- *
- * If CONFIG_DEBUG_LOCK_ALLOC is selected, returns nonzero iff in an SRCU
- * read-side critical section.  In absence of CONFIG_DEBUG_LOCK_ALLOC,
- * this assumes we are in an SRCU read-side critical section unless it can
- * prove otherwise.
- *
- * Checks debug_lockdep_rcu_enabled() to prevent false positives during boot
- * and while lockdep is disabled.
- *
- * Note that SRCU is based on its own statemachine and it doesn't
- * relies on normal RCU, it can be called from the CPU which
- * is in the idle loop from an RCU point of view or offline.
- */
-static inline int srcu_read_lock_held(const struct srcu_struct *ssp)
-{
-	if (!debug_lockdep_rcu_enabled())
-		return 1;
-	return lock_is_held(&ssp->dep_map);
-}
-
-/*
- * Annotations provide deadlock detection for SRCU.
- *
- * Similar to other lockdep annotations, except there is an additional
- * srcu_lock_sync(), which is basically an empty *write*-side critical section,
- * see lock_sync() for more information.
- */
-
-/* Annotates a srcu_read_lock() */
-static inline void srcu_lock_acquire(struct lockdep_map *map)
-{
-	lock_map_acquire_read(map);
-}
-
-/* Annotates a srcu_read_lock() */
-static inline void srcu_lock_release(struct lockdep_map *map)
-{
-	lock_map_release(map);
-}
-
-/* Annotates a synchronize_srcu() */
-static inline void srcu_lock_sync(struct lockdep_map *map)
-{
-	lock_map_sync(map);
-}
-
-#else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 static inline int srcu_read_lock_held(const struct srcu_struct *ssp)
 {
@@ -210,7 +125,6 @@ static inline int srcu_read_lock_held(const struct srcu_struct *ssp)
 #define srcu_lock_release(m) do { } while (0)
 #define srcu_lock_sync(m) do { } while (0)
 
-#endif /* #else #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /*
  * No-op helper to denote that ssp must be held. Because SRCU-protected pointers

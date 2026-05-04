@@ -194,9 +194,6 @@ struct kernfs_elem_attr {
 struct kernfs_node {
 	atomic_t		count;
 	atomic_t		active;
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map	dep_map;
-#endif
 	/*
 	 * Use kernfs_get_parent() and kernfs_name/path() instead of
 	 * accessing the following two fields directly.  If the node is

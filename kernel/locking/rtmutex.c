@@ -218,7 +218,6 @@ fixup_rt_mutex_waiters(struct rt_mutex_base *lock, bool acquire_lock)
  * We can speed up the acquire/release, if there's no debugging state to be
  * set up.
  */
-#ifndef CONFIG_DEBUG_RT_MUTEXES
 static __always_inline bool rt_mutex_cmpxchg_acquire(struct rt_mutex_base *lock,
 						     struct task_struct *old,
 						     struct task_struct *new)
@@ -302,55 +301,6 @@ static __always_inline bool unlock_rt_mutex_safe(struct rt_mutex_base *lock,
 	return rt_mutex_cmpxchg_release(lock, owner, NULL);
 }
 
-#else
-static __always_inline bool rt_mutex_cmpxchg_acquire(struct rt_mutex_base *lock,
-						     struct task_struct *old,
-						     struct task_struct *new)
-{
-	return false;
-
-}
-
-static int __sched rt_mutex_slowtrylock(struct rt_mutex_base *lock);
-
-static __always_inline bool rt_mutex_try_acquire(struct rt_mutex_base *lock)
-{
-	/*
-	 * With debug enabled rt_mutex_cmpxchg trylock() will always fail.
-	 *
-	 * Avoid unconditionally taking the slow path by using
-	 * rt_mutex_slow_trylock() which is covered by the debug code and can
-	 * acquire a non-contended rtmutex.
-	 */
-	return rt_mutex_slowtrylock(lock);
-}
-
-static __always_inline bool rt_mutex_cmpxchg_release(struct rt_mutex_base *lock,
-						     struct task_struct *old,
-						     struct task_struct *new)
-{
-	return false;
-}
-
-static __always_inline void mark_rt_mutex_waiters(struct rt_mutex_base *lock)
-	__must_hold(&lock->wait_lock)
-{
-	lock->owner = (struct task_struct *)
-			((unsigned long)lock->owner | RT_MUTEX_HAS_WAITERS);
-}
-
-/*
- * Simple slow path only version: lock->owner is protected by lock->wait_lock.
- */
-static __always_inline bool unlock_rt_mutex_safe(struct rt_mutex_base *lock,
-						 unsigned long flags)
-	__releases(lock->wait_lock)
-{
-	lock->owner = NULL;
-	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
-	return true;
-}
-#endif
 
 static __always_inline int __waiter_prio(struct task_struct *task)
 {

@@ -245,16 +245,10 @@ static struct cftype cgroup_psi_files[];
 
 /* cgroup optional features */
 enum cgroup_opt_features {
-#ifdef CONFIG_PSI
-	OPT_FEATURE_PRESSURE,
-#endif
 	OPT_FEATURE_COUNT
 };
 
 static const char *cgroup_opt_feature_names[OPT_FEATURE_COUNT] = {
-#ifdef CONFIG_PSI
-	"pressure",
-#endif
 };
 
 static u16 cgroup_feature_disable_mask __read_mostly;
@@ -2345,78 +2339,6 @@ static struct file_system_type cgroup2_fs_type = {
 	.fs_flags		= FS_USERNS_MOUNT,
 };
 
-#ifdef CONFIG_CPUSETS_V1
-enum cpuset_param {
-	Opt_cpuset_v2_mode,
-};
-
-static const struct fs_parameter_spec cpuset_fs_parameters[] = {
-	fsparam_flag  ("cpuset_v2_mode", Opt_cpuset_v2_mode),
-	{}
-};
-
-static int cpuset_parse_param(struct fs_context *fc, struct fs_parameter *param)
-{
-	struct cgroup_fs_context *ctx = cgroup_fc2context(fc);
-	struct fs_parse_result result;
-	int opt;
-
-	opt = fs_parse(fc, cpuset_fs_parameters, param, &result);
-	if (opt < 0)
-		return opt;
-
-	switch (opt) {
-	case Opt_cpuset_v2_mode:
-		ctx->flags |= CGRP_ROOT_CPUSET_V2_MODE;
-		return 0;
-	}
-	return -EINVAL;
-}
-
-static const struct fs_context_operations cpuset_fs_context_ops = {
-	.get_tree	= cgroup1_get_tree,
-	.free		= cgroup_fs_context_free,
-	.parse_param	= cpuset_parse_param,
-};
-
-/*
- * This is ugly, but preserves the userspace API for existing cpuset
- * users. If someone tries to mount the "cpuset" filesystem, we
- * silently switch it to mount "cgroup" instead
- */
-static int cpuset_init_fs_context(struct fs_context *fc)
-{
-	char *agent = kstrdup("/sbin/cpuset_release_agent", GFP_USER);
-	struct cgroup_fs_context *ctx;
-	int err;
-
-	err = cgroup_init_fs_context(fc);
-	if (err) {
-		kfree(agent);
-		return err;
-	}
-
-	fc->ops = &cpuset_fs_context_ops;
-
-	ctx = cgroup_fc2context(fc);
-	ctx->subsys_mask = 1 << cpuset_cgrp_id;
-	ctx->flags |= CGRP_ROOT_NOPREFIX;
-	ctx->release_agent = agent;
-
-	get_filesystem(&cgroup_fs_type);
-	put_filesystem(fc->fs_type);
-	fc->fs_type = &cgroup_fs_type;
-
-	return 0;
-}
-
-static struct file_system_type cpuset_fs_type = {
-	.name			= "cpuset",
-	.init_fs_context	= cpuset_init_fs_context,
-	.parameters		= cpuset_fs_parameters,
-	.fs_flags		= FS_USERNS_MOUNT,
-};
-#endif
 
 int cgroup_path_ns_locked(struct cgroup *cgrp, char *buf, size_t buflen,
 			  struct cgroup_namespace *ns)
@@ -3908,187 +3830,11 @@ static int cpu_local_stat_show(struct seq_file *seq, void *v)
 	return ret;
 }
 
-#ifdef CONFIG_PSI
-static int cgroup_io_pressure_show(struct seq_file *seq, void *v)
-{
-	struct cgroup *cgrp = seq_css(seq)->cgroup;
-	struct psi_group *psi = cgroup_psi(cgrp);
-
-	return psi_show(seq, psi, PSI_IO);
-}
-static int cgroup_memory_pressure_show(struct seq_file *seq, void *v)
-{
-	struct cgroup *cgrp = seq_css(seq)->cgroup;
-	struct psi_group *psi = cgroup_psi(cgrp);
-
-	return psi_show(seq, psi, PSI_MEM);
-}
-static int cgroup_cpu_pressure_show(struct seq_file *seq, void *v)
-{
-	struct cgroup *cgrp = seq_css(seq)->cgroup;
-	struct psi_group *psi = cgroup_psi(cgrp);
-
-	return psi_show(seq, psi, PSI_CPU);
-}
-
-static ssize_t pressure_write(struct kernfs_open_file *of, char *buf,
-			      size_t nbytes, enum psi_res res)
-{
-	struct cgroup_file_ctx *ctx;
-	struct psi_trigger *new;
-	struct cgroup *cgrp;
-	struct psi_group *psi;
-	ssize_t ret = 0;
-
-	cgrp = cgroup_kn_lock_live(of->kn, false);
-	if (!cgrp)
-		return -ENODEV;
-
-	ctx = of->priv;
-	if (!ctx) {
-		ret = -ENODEV;
-		goto out_unlock;
-	}
-
-	/* Allow only one trigger per file descriptor */
-	if (ctx->psi.trigger) {
-		ret = -EBUSY;
-		goto out_unlock;
-	}
-
-	psi = cgroup_psi(cgrp);
-	new = psi_trigger_create(psi, buf, res, of->file, of);
-	if (IS_ERR(new)) {
-		ret = PTR_ERR(new);
-		goto out_unlock;
-	}
-
-	smp_store_release(&ctx->psi.trigger, new);
-
-out_unlock:
-	cgroup_kn_unlock(of->kn);
-	if (ret)
-		return ret;
-
-	return nbytes;
-}
-
-static ssize_t cgroup_io_pressure_write(struct kernfs_open_file *of,
-					  char *buf, size_t nbytes,
-					  loff_t off)
-{
-	return pressure_write(of, buf, nbytes, PSI_IO);
-}
-
-static ssize_t cgroup_memory_pressure_write(struct kernfs_open_file *of,
-					  char *buf, size_t nbytes,
-					  loff_t off)
-{
-	return pressure_write(of, buf, nbytes, PSI_MEM);
-}
-
-static ssize_t cgroup_cpu_pressure_write(struct kernfs_open_file *of,
-					  char *buf, size_t nbytes,
-					  loff_t off)
-{
-	return pressure_write(of, buf, nbytes, PSI_CPU);
-}
-
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-static int cgroup_irq_pressure_show(struct seq_file *seq, void *v)
-{
-	struct cgroup *cgrp = seq_css(seq)->cgroup;
-	struct psi_group *psi = cgroup_psi(cgrp);
-
-	return psi_show(seq, psi, PSI_IRQ);
-}
-
-static ssize_t cgroup_irq_pressure_write(struct kernfs_open_file *of,
-					 char *buf, size_t nbytes,
-					 loff_t off)
-{
-	return pressure_write(of, buf, nbytes, PSI_IRQ);
-}
-#endif
-
-static int cgroup_pressure_show(struct seq_file *seq, void *v)
-{
-	struct cgroup *cgrp = seq_css(seq)->cgroup;
-	struct psi_group *psi = cgroup_psi(cgrp);
-
-	seq_printf(seq, "%d\n", psi->enabled);
-
-	return 0;
-}
-
-static ssize_t cgroup_pressure_write(struct kernfs_open_file *of,
-				     char *buf, size_t nbytes,
-				     loff_t off)
-{
-	ssize_t ret;
-	int enable;
-	struct cgroup *cgrp;
-	struct psi_group *psi;
-
-	ret = kstrtoint(strstrip(buf), 0, &enable);
-	if (ret)
-		return ret;
-
-	if (enable < 0 || enable > 1)
-		return -ERANGE;
-
-	cgrp = cgroup_kn_lock_live(of->kn, false);
-	if (!cgrp)
-		return -ENOENT;
-
-	psi = cgroup_psi(cgrp);
-	if (psi->enabled != enable) {
-		int i;
-
-		/* show or hide {cpu,memory,io,irq}.pressure files */
-		for (i = 0; i < NR_PSI_RESOURCES; i++)
-			cgroup_file_show(&cgrp->psi_files[i], enable);
-
-		psi->enabled = enable;
-		if (enable)
-			psi_cgroup_restart(psi);
-	}
-
-	cgroup_kn_unlock(of->kn);
-
-	return nbytes;
-}
-
-static __poll_t cgroup_pressure_poll(struct kernfs_open_file *of,
-					  poll_table *pt)
-{
-	struct cgroup_file_ctx *ctx = of->priv;
-
-	return psi_trigger_poll(&ctx->psi.trigger, of->file, pt);
-}
-
-static void cgroup_pressure_release(struct kernfs_open_file *of)
-{
-	struct cgroup_file_ctx *ctx = of->priv;
-
-	psi_trigger_destroy(ctx->psi.trigger);
-}
-
-bool cgroup_psi_enabled(void)
-{
-	if (static_branch_likely(&psi_disabled))
-		return false;
-
-	return (cgroup_feature_disable_mask & (1 << OPT_FEATURE_PRESSURE)) == 0;
-}
-
-#else /* CONFIG_PSI */
 bool cgroup_psi_enabled(void)
 {
 	return false;
 }
 
-#endif /* CONFIG_PSI */
 
 static int cgroup_freeze_show(struct seq_file *seq, void *v)
 {
@@ -4361,9 +4107,6 @@ static int cgroup_add_file(struct cgroup_subsys_state *css, struct cgroup *cgrp,
 	struct kernfs_node *kn;
 	struct lock_class_key *key = NULL;
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	key = &cft->lockdep_key;
-#endif
 	kn = __kernfs_create_file(cgrp->kn, cgroup_file_name(cgrp, cft, name),
 				  cgroup_file_mode(cft),
 				  current_fsuid(), current_fsgid(),
@@ -5466,47 +5209,6 @@ static struct cftype cgroup_base_files[] = {
 };
 
 static struct cftype cgroup_psi_files[] = {
-#ifdef CONFIG_PSI
-	{
-		.name = "io.pressure",
-		.file_offset = offsetof(struct cgroup, psi_files[PSI_IO]),
-		.seq_show = cgroup_io_pressure_show,
-		.write = cgroup_io_pressure_write,
-		.poll = cgroup_pressure_poll,
-		.release = cgroup_pressure_release,
-	},
-	{
-		.name = "memory.pressure",
-		.file_offset = offsetof(struct cgroup, psi_files[PSI_MEM]),
-		.seq_show = cgroup_memory_pressure_show,
-		.write = cgroup_memory_pressure_write,
-		.poll = cgroup_pressure_poll,
-		.release = cgroup_pressure_release,
-	},
-	{
-		.name = "cpu.pressure",
-		.file_offset = offsetof(struct cgroup, psi_files[PSI_CPU]),
-		.seq_show = cgroup_cpu_pressure_show,
-		.write = cgroup_cpu_pressure_write,
-		.poll = cgroup_pressure_poll,
-		.release = cgroup_pressure_release,
-	},
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-	{
-		.name = "irq.pressure",
-		.file_offset = offsetof(struct cgroup, psi_files[PSI_IRQ]),
-		.seq_show = cgroup_irq_pressure_show,
-		.write = cgroup_irq_pressure_write,
-		.poll = cgroup_pressure_poll,
-		.release = cgroup_pressure_release,
-	},
-#endif
-	{
-		.name = "cgroup.pressure",
-		.seq_show = cgroup_pressure_show,
-		.write = cgroup_pressure_write,
-	},
-#endif /* CONFIG_PSI */
 	{ }	/* terminate */
 };
 
@@ -6478,9 +6180,6 @@ int __init cgroup_init(void)
 	WARN_ON(register_filesystem(&cgroup_fs_type));
 	WARN_ON(register_filesystem(&cgroup2_fs_type));
 	WARN_ON(!proc_create_single("cgroups", 0, NULL, proc_cgroupstats_show));
-#ifdef CONFIG_CPUSETS_V1
-	WARN_ON(register_filesystem(&cpuset_fs_type));
-#endif
 
 	ns_tree_add(&init_cgroup_ns);
 	return 0;

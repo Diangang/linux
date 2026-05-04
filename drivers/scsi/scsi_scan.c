@@ -91,11 +91,7 @@ module_param_named(max_luns, max_scsi_luns, ullong, S_IRUGO|S_IWUSR);
 MODULE_PARM_DESC(max_luns,
 		 "last scsi LUN (should be between 1 and 2^64-1)");
 
-#ifdef CONFIG_SCSI_SCAN_ASYNC
-#define SCSI_SCAN_TYPE_DEFAULT "async"
-#else
 #define SCSI_SCAN_TYPE_DEFAULT "sync"
-#endif
 
 static char scsi_scan_type[7] = SCSI_SCAN_TYPE_DEFAULT;
 
@@ -1130,31 +1126,6 @@ static int scsi_add_lun(struct scsi_device *sdev, unsigned char *inq_result,
 	return SCSI_SCAN_LUN_PRESENT;
 }
 
-#ifdef CONFIG_SCSI_LOGGING
-/** 
- * scsi_inq_str - print INQUIRY data from min to max index, strip trailing whitespace
- * @buf:   Output buffer with at least end-first+1 bytes of space
- * @inq:   Inquiry buffer (input)
- * @first: Offset of string into inq
- * @end:   Index after last character in inq
- */
-static unsigned char *scsi_inq_str(unsigned char *buf, unsigned char *inq,
-				   unsigned first, unsigned end)
-{
-	unsigned term = 0, idx;
-
-	for (idx = 0; idx + first < end && idx + first < inq[4] + 5; idx++) {
-		if (inq[idx+first] > ' ') {
-			buf[idx] = inq[idx+first];
-			term = idx+1;
-		} else {
-			buf[idx] = ' ';
-		}
-	}
-	buf[term] = 0;
-	return buf;
-}
-#endif
 
 /**
  * scsi_probe_and_add_lun - probe a LUN, if a LUN is found add it

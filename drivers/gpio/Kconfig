@@ -9,15 +9,6 @@ config GPIOLIB_LEGACY
 config HAVE_SHARED_GPIOS
 	bool
 
-menuconfig GPIOLIB
-	bool "GPIO Support"
-	help
-	  This enables GPIO support through the generic GPIO library.
-	  You only need to enable this if you also want to enable
-	  one or more of the GPIO drivers below.
-
-	  If unsure, say N.
-
 if GPIOLIB
 
 config GPIOLIB_FASTPATH_LIMIT

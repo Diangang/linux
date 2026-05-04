@@ -50,29 +50,6 @@ config BLK_DEV_BSG_COMMON
 config BLK_ICQ
 	bool
 
-config BLK_DEV_BSGLIB
-	bool "Block layer SG support v4 helper lib"
-	select BLK_DEV_BSG_COMMON
-	help
-	  Subsystems will normally enable this if needed. Users will not
-	  normally need to manually enable this.
-
-	  If unsure, say N.
-
-config BLK_DEV_INTEGRITY
-	bool "Block layer data integrity support"
-	select CRC_T10DIF
-	select CRC64
-	help
-	Some storage devices allow extra information to be
-	stored/retrieved to help protect the data.  The block layer
-	data integrity option provides hooks which can be used by
-	filesystems to ensure better data integrity.
-
-	Say yes here if you have a storage device that provides the
-	T10/SCSI Data Integrity Field or the T13/ATA External Path
-	Protection.  If in doubt, say N.
-
 config BLK_DEV_WRITE_MOUNTED
 	bool "Allow writing to mounted block devices"
 	default y
@@ -92,36 +69,6 @@ config BLK_DEV_WRITE_MOUNTED
 	directly submitting SCSI commands or through access to lower layers of
 	storage stack. If in doubt, say Y. The configuration can be overridden
 	with the bdev_allow_write_mounted boot option.
-
-config BLK_DEV_ZONED
-	bool "Zoned block device support"
-	help
-	Block layer zoned block device support. This option enables
-	support for ZAC/ZBC/ZNS host-managed and host-aware zoned block
-	devices.
-
-	Say yes here if you have a ZAC, ZBC, or ZNS storage device.
-
-config BLK_DEV_THROTTLING
-	bool "Block layer bio throttling support"
-	depends on BLK_CGROUP
-	select BLK_CGROUP_RWSTAT
-	help
-	Block layer bio throttling support. It can be used to limit
-	the IO rate to a device. IO rate policies are per cgroup and
-	one needs to mount and use blkio cgroup controller for creating
-	cgroups and specifying per device IO rate policies.
-
-	See Documentation/admin-guide/cgroup-v1/blkio-controller.rst for more information.
-
-config BLK_WBT
-	bool "Enable support for block device writeback throttling"
-	help
-	Enabling this option enables the block layer to throttle buffered
-	background writeback from the VM, making it more smooth and having
-	less impact on foreground operations. The throttling is done
-	dynamically on an algorithm loosely based on CoDel, factoring in
-	the realtime performance of the disk.
 
 config BLK_WBT_MQ
 	bool "Enable writeback throttling by default"

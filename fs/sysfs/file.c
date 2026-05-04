@@ -305,10 +305,6 @@ int sysfs_add_file_mode_ns(struct kernfs_node *parent,
 	if (!ops)
 		ops = &sysfs_file_kfops_empty;
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	if (!attr->ignore_lockdep)
-		key = attr->key ?: (struct lock_class_key *)&attr->skey;
-#endif
 
 	kn = __kernfs_create_file(parent, attr->name, mode & 0777, uid, gid,
 				  PAGE_SIZE, ops, (void *)attr, ns, key);
@@ -340,10 +336,6 @@ int sysfs_add_bin_file_mode_ns(struct kernfs_node *parent,
 	else
 		ops = &sysfs_file_kfops_empty;
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	if (!attr->ignore_lockdep)
-		key = attr->key ?: (struct lock_class_key *)&attr->skey;
-#endif
 
 	kn = __kernfs_create_file(parent, attr->name, mode & 0777, uid, gid,
 				  size, ops, (void *)attr, ns, key);

@@ -93,14 +93,10 @@ static inline struct nlmsghdr *nfnl_msg_put(struct sk_buff *skb, u32 portid,
 
 void nfnl_lock(__u8 subsys_id);
 void nfnl_unlock(__u8 subsys_id);
-#ifdef CONFIG_PROVE_LOCKING
-bool lockdep_nfnl_is_held(__u8 subsys_id);
-#else
 static inline bool lockdep_nfnl_is_held(__u8 subsys_id)
 {
 	return true;
 }
-#endif /* CONFIG_PROVE_LOCKING */
 
 #define MODULE_ALIAS_NFNL_SUBSYS(subsys) \
 	MODULE_ALIAS("nfnetlink-subsys-" __stringify(subsys))

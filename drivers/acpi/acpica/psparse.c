@@ -331,13 +331,6 @@ acpi_ps_next_parse_state(struct acpi_walk_state *walk_state,
 		parser_state->aml = walk_state->aml_last_while;
 		break;
 
-#if 0
-	case AE_CTRL_SKIP:
-
-		parser_state->aml = parser_state->scope->parse_scope.pkg_end;
-		status = AE_OK;
-		break;
-#endif
 
 	case AE_CTRL_TRUE:
 		/*

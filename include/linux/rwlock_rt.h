@@ -6,15 +6,10 @@
 #error Do not #include directly. Use <linux/spinlock.h>.
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-extern void __rt_rwlock_init(rwlock_t *rwlock, const char *name,
-			     struct lock_class_key *key);
-#else
 static inline void __rt_rwlock_init(rwlock_t *rwlock, char *name,
 				    struct lock_class_key *key)
 {
 }
-#endif
 
 #define rwlock_init(rwl)				\
 do {							\
@@ -92,15 +87,7 @@ static __always_inline void write_lock(rwlock_t *rwlock)
 	rt_write_lock(rwlock);
 }
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-static __always_inline void write_lock_nested(rwlock_t *rwlock, int subclass)
-	__acquires(rwlock)
-{
-	rt_write_lock_nested(rwlock, subclass);
-}
-#else
 #define write_lock_nested(lock, subclass)	rt_write_lock(((void)(subclass), (lock)))
-#endif
 
 static __always_inline void write_lock_bh(rwlock_t *rwlock)
 	__acquires(rwlock)

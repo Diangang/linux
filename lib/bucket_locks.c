@@ -17,11 +17,7 @@ int __alloc_bucket_spinlocks(spinlock_t **locks, unsigned int *locks_mask,
 {
 	spinlock_t *tlocks = NULL;
 	unsigned int i, size;
-#if defined(CONFIG_PROVE_LOCKING)
-	unsigned int nr_pcpus = 2;
-#else
 	unsigned int nr_pcpus = num_possible_cpus();
-#endif
 
 	if (cpu_mult) {
 		nr_pcpus = min_t(unsigned int, nr_pcpus, 64UL);

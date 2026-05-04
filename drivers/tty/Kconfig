@@ -314,16 +314,6 @@ config N_GSM
 	  This line discipline provides support for the GSM MUX protocol and
 	  presents the mux as a set of 61 individual tty devices.
 
-config NOZOMI
-	tristate "HSDPA Broadband Wireless Data Card - Globe Trotter"
-	depends on PCI
-	help
-	  If you have a HSDPA driver Broadband Wireless Data Card -
-	  Globe Trotter PCMCIA card, say Y here.
-
-	  To compile this driver as a module, choose M here, the module
-	  will be called nozomi.
-
 config MIPS_EJTAG_FDC_TTY
 	bool "MIPS EJTAG Fast Debug Channel TTY"
 	depends on MIPS_CDMM
@@ -370,21 +360,6 @@ config MIPS_EJTAG_FDC_KGDB_CHAN
 	default 3
 	help
 	  FDC channel number to use for KGDB.
-
-config NULL_TTY
-	tristate "NULL TTY driver"
-	help
-	  Say Y here if you want a NULL TTY which simply discards messages.
-
-	  This is useful to allow userspace applications which expect a console
-	  device to work without modifications even when no console is
-	  available or desired.
-
-	  In order to use this driver, you should redirect the console to this
-	  TTY, boot the kernel with console=ttynull, or enable
-	  NULL_TTY_DEFAULT_CONSOLE.
-
-	  If unsure, say N.
 
 config NULL_TTY_DEFAULT_CONSOLE
 	bool "Support for console on ttynull"

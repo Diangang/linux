@@ -41,11 +41,7 @@
 /* Alphabet size, use ASCII */
 #define ASIZE 256
 
-#if 0
-#define DEBUGP printk
-#else
 #define DEBUGP(args, format...)
-#endif
 
 struct ts_bm
 {

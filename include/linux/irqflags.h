@@ -21,15 +21,6 @@
 struct task_struct;
 
 /* Currently lockdep_softirqs_on/off is used only by lockdep */
-#ifdef CONFIG_PROVE_LOCKING
-  extern void lockdep_softirqs_on(unsigned long ip);
-  extern void lockdep_softirqs_off(unsigned long ip);
-  extern void lockdep_hardirqs_on_prepare(void);
-  extern void lockdep_hardirqs_on(unsigned long ip);
-  extern void lockdep_hardirqs_off(unsigned long ip);
-  extern void lockdep_cleanup_dead_cpu(unsigned int cpu,
-				       struct task_struct *idle);
-#else
   static inline void lockdep_softirqs_on(unsigned long ip) { }
   static inline void lockdep_softirqs_off(unsigned long ip) { }
   static inline void lockdep_hardirqs_on_prepare(void) { }
@@ -37,7 +28,6 @@ struct task_struct;
   static inline void lockdep_hardirqs_off(unsigned long ip) { }
   static inline void lockdep_cleanup_dead_cpu(unsigned int cpu,
 					      struct task_struct *idle) {}
-#endif
 
 #ifdef CONFIG_TRACE_IRQFLAGS
 
@@ -151,16 +141,7 @@ do {						\
 # define start_critical_timings() do { } while (0)
 #endif
 
-#ifdef CONFIG_DEBUG_IRQFLAGS
-extern void warn_bogus_irq_restore(void);
-#define raw_check_bogus_irq_restore()			\
-	do {						\
-		if (unlikely(!arch_irqs_disabled()))	\
-			warn_bogus_irq_restore();	\
-	} while (0)
-#else
 #define raw_check_bogus_irq_restore() do { } while (0)
-#endif
 
 /*
  * Wrap the arch provided IRQ routines to provide appropriate checks.

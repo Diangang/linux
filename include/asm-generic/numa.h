@@ -17,9 +17,6 @@ extern bool numa_off;
 extern cpumask_var_t node_to_cpumask_map[MAX_NUMNODES];
 void numa_clear_node(unsigned int cpu);
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-const struct cpumask *cpumask_of_node(int node);
-#else
 /* Returns a pointer to the cpumask of CPUs on Node 'node'. */
 static inline const struct cpumask *cpumask_of_node(int node)
 {
@@ -28,7 +25,6 @@ static inline const struct cpumask *cpumask_of_node(int node)
 
 	return node_to_cpumask_map[node];
 }
-#endif
 
 void __init arch_numa_init(void);
 int __init numa_add_memblk(int nodeid, u64 start, u64 end);
@@ -49,8 +45,5 @@ static inline int early_cpu_to_node(int cpu) { return 0; }
 
 #endif	/* CONFIG_NUMA */
 
-#ifdef CONFIG_NUMA_EMU
-void debug_cpumask_set_cpu(unsigned int cpu, int node, bool enable);
-#endif
 
 #endif	/* __ASM_GENERIC_NUMA_H */

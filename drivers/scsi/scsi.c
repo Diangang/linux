@@ -81,71 +81,7 @@
  * After the system is up, you may enable logging via the /proc interface.
  */
 unsigned int scsi_logging_level;
-#if defined(CONFIG_SCSI_LOGGING)
-EXPORT_SYMBOL(scsi_logging_level);
-#endif
 
-#ifdef CONFIG_SCSI_LOGGING
-void scsi_log_send(struct scsi_cmnd *cmd)
-{
-	unsigned int level;
-
-	/*
-	 * If ML QUEUE log level is greater than or equal to:
-	 *
-	 * 1: nothing (match completion)
-	 *
-	 * 2: log opcode + command of all commands + cmd address
-	 *
-	 * 3: same as 2
-	 *
-	 * 4: same as 3
-	 */
-	if (unlikely(scsi_logging_level)) {
-		level = SCSI_LOG_LEVEL(SCSI_LOG_MLQUEUE_SHIFT,
-				       SCSI_LOG_MLQUEUE_BITS);
-		if (level > 1) {
-			scmd_printk(KERN_INFO, cmd,
-				    "Send: scmd 0x%p\n", cmd);
-			scsi_print_command(cmd);
-		}
-	}
-}
-
-void scsi_log_completion(struct scsi_cmnd *cmd, int disposition)
-{
-	unsigned int level;
-
-	/*
-	 * If ML COMPLETE log level is greater than or equal to:
-	 *
-	 * 1: log disposition, result, opcode + command, and conditionally
-	 * sense data for failures or non SUCCESS dispositions.
-	 *
-	 * 2: same as 1 but for all command completions.
-	 *
-	 * 3: same as 2
-	 *
-	 * 4: same as 3 plus dump extra junk
-	 */
-	if (unlikely(scsi_logging_level)) {
-		level = SCSI_LOG_LEVEL(SCSI_LOG_MLCOMPLETE_SHIFT,
-				       SCSI_LOG_MLCOMPLETE_BITS);
-		if (((level > 0) && (cmd->result || disposition != SUCCESS)) ||
-		    (level > 1)) {
-			scsi_print_result(cmd, "Done", disposition);
-			scsi_print_command(cmd);
-			if (scsi_status_is_check_condition(cmd->result))
-				scsi_print_sense(cmd);
-			if (level > 3)
-				scmd_printk(KERN_INFO, cmd,
-					    "scsi host busy %d failed %d\n",
-					    scsi_host_busy(cmd->device->host),
-					    cmd->device->host->host_failed);
-		}
-	}
-}
-#endif
 
 /**
  * scsi_finish_command - cleanup and pass command back to upper layer

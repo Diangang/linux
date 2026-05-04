@@ -1384,10 +1384,6 @@ const char * const vmstat_text[] = {
 	[I(HTLB_BUDDY_PGALLOC)]			= "htlb_buddy_alloc_success",
 	[I(HTLB_BUDDY_PGALLOC_FAIL)]		= "htlb_buddy_alloc_fail",
 #endif
-#ifdef CONFIG_CMA
-	[I(CMA_ALLOC_SUCCESS)]			= "cma_alloc_success",
-	[I(CMA_ALLOC_FAIL)]			= "cma_alloc_fail",
-#endif
 	[I(UNEVICTABLE_PGCULLED)]		= "unevictable_pgs_culled",
 	[I(UNEVICTABLE_PGSCANNED)]		= "unevictable_pgs_scanned",
 	[I(UNEVICTABLE_PGRESCUED)]		= "unevictable_pgs_rescued",
@@ -1448,22 +1444,11 @@ const char * const vmstat_text[] = {
 #ifdef CONFIG_KSM
 	[I(COW_KSM)]				= "cow_ksm",
 #endif
-#ifdef CONFIG_ZSWAP
-	[I(ZSWPIN)]				= "zswpin",
-	[I(ZSWPOUT)]				= "zswpout",
-	[I(ZSWPWB)]				= "zswpwb",
-#endif
 #ifdef CONFIG_X86
 	[I(DIRECT_MAP_LEVEL2_SPLIT)]		= "direct_map_level2_splits",
 	[I(DIRECT_MAP_LEVEL3_SPLIT)]		= "direct_map_level3_splits",
 	[I(DIRECT_MAP_LEVEL2_COLLAPSE)]		= "direct_map_level2_collapses",
 	[I(DIRECT_MAP_LEVEL3_COLLAPSE)]		= "direct_map_level3_collapses",
-#endif
-#ifdef CONFIG_PER_VMA_LOCK_STATS
-	[I(VMA_LOCK_SUCCESS)]			= "vma_lock_success",
-	[I(VMA_LOCK_ABORT)]			= "vma_lock_abort",
-	[I(VMA_LOCK_RETRY)]			= "vma_lock_retry",
-	[I(VMA_LOCK_MISS)]			= "vma_lock_miss",
 #endif
 #ifdef CONFIG_DEBUG_STACK_USAGE
 	[I(KSTACK_1K)]				= "kstack_1k",
@@ -1683,22 +1668,6 @@ static void pagetypeinfo_showblockcount(struct seq_file *m, void *arg)
  */
 static void pagetypeinfo_showmixedcount(struct seq_file *m, pg_data_t *pgdat)
 {
-#ifdef CONFIG_PAGE_OWNER
-	int mtype;
-
-	if (!static_branch_unlikely(&page_owner_inited))
-		return;
-
-	drain_all_pages(NULL);
-
-	seq_printf(m, "\n%-23s", "Number of mixed blocks ");
-	for (mtype = 0; mtype < MIGRATE_TYPES; mtype++)
-		seq_printf(m, "%12s ", migratetype_names[mtype]);
-	seq_putc(m, '\n');
-
-	walk_zones_in_node(m, pgdat, true, true,
-		pagetypeinfo_showmixedcount_print);
-#endif /* CONFIG_PAGE_OWNER */
 }
 
 /*

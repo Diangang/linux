@@ -347,13 +347,8 @@ static inline const void *__tag_set(const void *addr, u8 tag)
 
 #define __pa_symbol_nodebug(x)	__kimg_to_phys((phys_addr_t)(x))
 
-#ifdef CONFIG_DEBUG_VIRTUAL
-extern phys_addr_t __virt_to_phys(unsigned long x);
-extern phys_addr_t __phys_addr_symbol(unsigned long x);
-#else
 #define __virt_to_phys(x)	__virt_to_phys_nodebug(x)
 #define __phys_addr_symbol(x)	__pa_symbol_nodebug(x)
-#endif /* CONFIG_DEBUG_VIRTUAL */
 
 #define __phys_to_virt(x)	((unsigned long)((x) - PHYS_OFFSET) | PAGE_OFFSET)
 #define __phys_to_kimg(x)	((unsigned long)((x) + kimage_voffset))
@@ -398,14 +393,6 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
  *  virt_addr_valid(x)	indicates whether a virtual address is valid
  */
 
-#if defined(CONFIG_DEBUG_VIRTUAL)
-#define page_to_virt(x)	({						\
-	__typeof__(x) __page = x;					\
-	void *__addr = __va(page_to_phys(__page));			\
-	(void *)__tag_set((const void *)__addr, page_kasan_tag(__page));\
-})
-#define virt_to_page(x)		pfn_to_page(virt_to_pfn(x))
-#else
 #define page_to_virt(x)	({						\
 	__typeof__(x) __page = x;					\
 	u64 __idx = ((u64)__page - VMEMMAP_START) / sizeof(struct page);\
@@ -418,7 +405,6 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
 	u64 __addr = VMEMMAP_START + (__idx * sizeof(struct page));	\
 	(struct page *)__addr;						\
 })
-#endif /* CONFIG_DEBUG_VIRTUAL */
 
 #define virt_addr_valid(addr)	({					\
 	__typeof__(addr) __addr = __tag_reset(addr);			\

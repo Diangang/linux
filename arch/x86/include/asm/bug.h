@@ -77,11 +77,7 @@ extern void __WARN_trap(struct bug_entry *bug, ...);
 	".popsection\n"							\
 	extra
 
-#ifdef CONFIG_DEBUG_BUGVERBOSE_DETAILED
-#define WARN_CONDITION_STR(cond_str) cond_str
-#else
 #define WARN_CONDITION_STR(cond_str) ""
-#endif
 
 #define _BUG_FLAGS(cond_str, ins, flags, extra)				\
 do {									\

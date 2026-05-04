@@ -58,22 +58,6 @@ void __sched rt_spin_lock(spinlock_t *lock) __acquires(RCU)
 }
 EXPORT_SYMBOL(rt_spin_lock);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void __sched rt_spin_lock_nested(spinlock_t *lock, int subclass)
-{
-	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
-	__rt_spin_lock(lock);
-}
-EXPORT_SYMBOL(rt_spin_lock_nested);
-
-void __sched rt_spin_lock_nest_lock(spinlock_t *lock,
-				    struct lockdep_map *nest_lock)
-{
-	spin_acquire_nest(&lock->dep_map, 0, 0, nest_lock, _RET_IP_);
-	__rt_spin_lock(lock);
-}
-EXPORT_SYMBOL(rt_spin_lock_nest_lock);
-#endif
 
 void __sched rt_spin_unlock(spinlock_t *lock) __releases(RCU)
 {
@@ -131,18 +115,6 @@ int __sched rt_spin_trylock_bh(spinlock_t *lock)
 }
 EXPORT_SYMBOL(rt_spin_trylock_bh);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void __rt_spin_lock_init(spinlock_t *lock, const char *name,
-			 struct lock_class_key *key, bool percpu)
-{
-	u8 type = percpu ? LD_LOCK_PERCPU : LD_LOCK_NORMAL;
-
-	debug_check_no_locks_freed((void *)lock, sizeof(*lock));
-	lockdep_init_map_type(&lock->dep_map, name, key, 0, LD_WAIT_CONFIG,
-			      LD_WAIT_INV, type);
-}
-EXPORT_SYMBOL(__rt_spin_lock_init);
-#endif
 
 /*
  * RT-specific reader/writer locks
@@ -246,17 +218,6 @@ void __sched rt_write_lock(rwlock_t *rwlock) __acquires(RCU)
 }
 EXPORT_SYMBOL(rt_write_lock);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void __sched rt_write_lock_nested(rwlock_t *rwlock, int subclass) __acquires(RCU)
-{
-	rtlock_might_resched();
-	rwlock_acquire(&rwlock->dep_map, subclass, 0, _RET_IP_);
-	rwbase_write_lock(&rwlock->rwbase, TASK_RTLOCK_WAIT);
-	rcu_read_lock();
-	migrate_disable();
-}
-EXPORT_SYMBOL(rt_write_lock_nested);
-#endif
 
 void __sched rt_read_unlock(rwlock_t *rwlock) __releases(RCU)
 {
@@ -276,12 +237,3 @@ void __sched rt_write_unlock(rwlock_t *rwlock) __releases(RCU)
 }
 EXPORT_SYMBOL(rt_write_unlock);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void __rt_rwlock_init(rwlock_t *rwlock, const char *name,
-		      struct lock_class_key *key)
-{
-	debug_check_no_locks_freed((void *)rwlock, sizeof(*rwlock));
-	lockdep_init_map_wait(&rwlock->dep_map, name, key, 0, LD_WAIT_CONFIG);
-}
-EXPORT_SYMBOL(__rt_rwlock_init);
-#endif

@@ -48,11 +48,7 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
 
 #ifdef CONFIG_LIST_HARDENED
 
-#ifdef CONFIG_DEBUG_LIST
-# define __list_valid_slowpath
-#else
 # define __list_valid_slowpath __cold __preserve_most
-#endif
 
 /*
  * Performs the full set of list corruption checks before __list_add().

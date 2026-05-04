@@ -328,11 +328,7 @@ static inline void rsa_autoconfig(struct uart_8250_port *up) {}
 static inline void rsa_reset(struct uart_8250_port *up) {}
 #endif
 
-#ifdef CONFIG_SERIAL_8250_FINTEK
-int fintek_8250_probe(struct uart_8250_port *uart);
-#else
 static inline int fintek_8250_probe(struct uart_8250_port *uart) { return 0; }
-#endif
 
 #ifdef CONFIG_ARCH_OMAP1
 #include <linux/soc/ti/omap1-soc.h>

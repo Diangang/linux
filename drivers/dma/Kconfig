@@ -14,13 +14,6 @@ menuconfig DMADEVICES
 	  DMA Device drivers supported by the configured arch, it may
 	  be empty in some cases.
 
-config DMADEVICES_DEBUG
-	bool "DMA Engine debugging"
-	depends on DMADEVICES != n
-	help
-	  This is an option for use by developers; most people should
-	  say N here.  This enables DMA engine core and driver debugging.
-
 config DMADEVICES_VDEBUG
 	bool "DMA Engine verbose debugging"
 	depends on DMADEVICES_DEBUG != n
@@ -57,13 +50,6 @@ config DMA_OF
 	select DMA_ENGINE
 
 #devices
-config ALTERA_MSGDMA
-	tristate "Altera / Intel mSGDMA Engine"
-	depends on HAS_IOMEM
-	select DMA_ENGINE
-	help
-	  Enable support for Altera / Intel mSGDMA controller.
-
 config AMBA_PL08X
 	bool "ARM PrimeCell PL080 or PL081 support"
 	depends on ARM_AMBA
@@ -264,15 +250,6 @@ config IMX_SDMA
 	help
 	  Support the i.MX SDMA engine. This engine is integrated into
 	  Freescale i.MX25/31/35/51/53/6 chips.
-
-config INTEL_IDMA64
-	tristate "Intel integrated DMA 64-bit support"
-	depends on HAS_IOMEM
-	select DMA_ENGINE
-	select DMA_VIRTUAL_CHANNELS
-	help
-	  Enable DMA support for Intel Low Power Subsystem such as found on
-	  Intel Skylake PCH.
 
 config INTEL_IDXD_BUS
 	tristate
@@ -504,15 +481,6 @@ config PXA_DMA
 	  16 to 32 channels for peripheral to memory or memory to memory
 	  transfers.
 
-config PLX_DMA
-	tristate "PLX ExpressLane PEX Switch DMA Engine Support"
-	depends on PCI
-	select DMA_ENGINE
-	help
-	  Some PLX ExpressLane PCI Switches support additional DMA engines.
-	  These are exposed via extra functions on the switch's
-	  upstream port. Each function exposes one DMA channel.
-
 config SOPHGO_CV1800B_DMAMUX
 	tristate "Sophgo CV1800/SG2000 series SoC DMA multiplexer support"
 	depends on MFD_SYSCON
@@ -551,15 +519,6 @@ config SPRD_DMA
 	select DMA_VIRTUAL_CHANNELS
 	help
 	  Enable support for the on-chip DMA controller on Spreadtrum platform.
-
-config SWITCHTEC_DMA
-	tristate "Switchtec PSX/PFX Switch DMA Engine Support"
-	depends on PCI
-	select DMA_ENGINE
-	help
-	  Some Switchtec PSX/PFX PCIe Switches support additional DMA engines.
-	  These are exposed via an extra function on the switch's upstream
-	  port.
 
 config TXX9_DMAC
 	tristate "Toshiba TXx9 SoC DMA support"
@@ -668,20 +627,6 @@ config XILINX_DMA
 	  the scatter gather interface with multiple channels independent
 	  configuration support.
 
-config XILINX_XDMA
-	tristate "Xilinx DMA/Bridge Subsystem DMA Engine"
-	depends on HAS_IOMEM
-	select DMA_ENGINE
-	select DMA_VIRTUAL_CHANNELS
-	select REGMAP_MMIO
-	help
-	  Enable support for Xilinx DMA/Bridge Subsystem DMA engine. The DMA
-	  provides high performance block data movement between Host memory
-	  and the DMA subsystem. These direct memory transfers can be both in
-	  the Host to Card (H2C) and Card to Host (C2H) transfers.
-	  The core also provides up to 16 user interrupt wires that generate
-	  interrupts to the host.
-
 config XILINX_ZYNQMP_DMA
 	tristate "Xilinx ZynqMP DMA Engine"
 	depends on ARCH_ZYNQ || MICROBLAZE || ARM64 || COMPILE_TEST
@@ -723,25 +668,6 @@ source "drivers/dma/stm32/Kconfig"
 # clients
 comment "DMA Clients"
 	depends on DMA_ENGINE
-
-config ASYNC_TX_DMA
-	bool "Async_tx: Offload support for the async_tx api"
-	depends on DMA_ENGINE
-	help
-	  This allows the async_tx api to take advantage of offload engines for
-	  memcpy, memset, xor, and raid6 p+q operations.  If your platform has
-	  a dma engine that can perform raid operations and you have enabled
-	  MD_RAID456 say Y.
-
-	  If unsure, say N.
-
-config DMATEST
-	tristate "DMA Test client"
-	depends on DMA_ENGINE
-	select DMA_ENGINE_RAID
-	help
-	  Simple DMA test client. Say N unless you're debugging a
-	  DMA Device driver.
 
 config DMA_ENGINE_RAID
 	bool

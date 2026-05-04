@@ -745,14 +745,7 @@ struct pmu_event_list {
  * safe lock, and is only held by the CPU doing the modification, having IRQs
  * disabled is sufficient since it will hold-off the IPIs.
  */
-#ifdef CONFIG_PROVE_LOCKING
-# define lockdep_assert_event_ctx(event)			\
-	WARN_ON_ONCE(__lockdep_enabled &&			\
-		     (this_cpu_read(hardirqs_enabled) &&	\
-		      lockdep_is_held(&(event)->ctx->mutex) != LOCK_STATE_HELD))
-#else
 # define lockdep_assert_event_ctx(event)
-#endif
 
 #define for_each_sibling_event(sibling, event)			\
 	lockdep_assert_event_ctx(event);			\

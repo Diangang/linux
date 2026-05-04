@@ -2024,12 +2024,6 @@ static inline bool nvme_is_fabrics(const struct nvme_command *cmd)
 	return cmd->common.opcode == nvme_fabrics_command;
 }
 
-#ifdef CONFIG_NVME_VERBOSE_ERRORS
-const char *nvme_get_error_status_str(u16 status);
-const char *nvme_get_opcode_str(u8 opcode);
-const char *nvme_get_admin_opcode_str(u8 opcode);
-const char *nvme_get_fabrics_opcode_str(u8 opcode);
-#else /* CONFIG_NVME_VERBOSE_ERRORS */
 static inline const char *nvme_get_error_status_str(u16 status)
 {
 	return "I/O Error";
@@ -2047,7 +2041,6 @@ static inline const char *nvme_get_fabrics_opcode_str(u8 opcode)
 {
 	return "Fabrics Cmd";
 }
-#endif /* CONFIG_NVME_VERBOSE_ERRORS */
 
 static inline const char *nvme_opcode_str(int qid, u8 opcode)
 {

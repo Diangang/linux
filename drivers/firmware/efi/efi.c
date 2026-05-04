@@ -49,9 +49,6 @@ struct efi __read_mostly efi = {
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	.mokvar_table		= EFI_INVALID_TABLE_ADDR,
 #endif
-#ifdef CONFIG_EFI_COCO_SECRET
-	.coco_secret		= EFI_INVALID_TABLE_ADDR,
-#endif
 #ifdef CONFIG_UNACCEPTED_MEMORY
 	.unaccepted		= EFI_INVALID_TABLE_ADDR,
 #endif
@@ -473,10 +470,6 @@ static int __init efisubsys_init(void)
 	if (efi_enabled(EFI_DBG) && efi_enabled(EFI_PRESERVE_BS_REGIONS))
 		efi_debugfs_init();
 
-#ifdef CONFIG_EFI_COCO_SECRET
-	if (efi.coco_secret != EFI_INVALID_TABLE_ADDR)
-		platform_device_register_simple("efi_secret", 0, NULL, 0);
-#endif
 
 	if (IS_ENABLED(CONFIG_OVMF_DEBUG_LOG) &&
 	    efi.ovmf_debug_log != EFI_INVALID_TABLE_ADDR)
@@ -628,17 +621,11 @@ static const efi_config_table_type_t common_tables[] __initconst = {
 	{LINUX_EFI_MEMRESERVE_TABLE_GUID,	&mem_reserve,		"MEMRESERVE"	},
 	{LINUX_EFI_INITRD_MEDIA_GUID,		&initrd,		"INITRD"	},
 	{EFI_RT_PROPERTIES_TABLE_GUID,		&rt_prop,		"RTPROP"	},
-#ifdef CONFIG_OVMF_DEBUG_LOG
-	{OVMF_MEMORY_LOG_TABLE_GUID,		&efi.ovmf_debug_log,	"OvmfDebugLog"	},
-#endif
 #ifdef CONFIG_EFI_RCI2_TABLE
 	{DELLEMC_EFI_RCI2_TABLE_GUID,		&rci2_table_phys			},
 #endif
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	{LINUX_EFI_MOK_VARIABLE_TABLE_GUID,	&efi.mokvar_table,	"MOKvar"	},
-#endif
-#ifdef CONFIG_EFI_COCO_SECRET
-	{LINUX_EFI_COCO_SECRET_AREA_GUID,	&efi.coco_secret,	"CocoSecret"	},
 #endif
 #ifdef CONFIG_UNACCEPTED_MEMORY
 	{LINUX_EFI_UNACCEPTED_MEM_TABLE_GUID,	&efi.unaccepted,	"Unaccepted"	},

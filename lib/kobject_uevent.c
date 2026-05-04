@@ -31,9 +31,6 @@
 
 
 atomic64_t uevent_seqnum;
-#ifdef CONFIG_UEVENT_HELPER
-char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
-#endif
 
 struct uevent_sock {
 	struct list_head list;
@@ -231,48 +228,6 @@ out:
 	return r;
 }
 
-#ifdef CONFIG_UEVENT_HELPER
-static int kobj_usermode_filter(struct kobject *kobj)
-{
-	const struct kobj_ns_type_operations *ops;
-
-	ops = kobj_ns_ops(kobj);
-	if (ops) {
-		const struct ns_common *init_ns, *ns;
-
-		ns = kobj->ktype->namespace(kobj);
-		init_ns = ops->initial_ns();
-		return ns != init_ns;
-	}
-
-	return 0;
-}
-
-static int init_uevent_argv(struct kobj_uevent_env *env, const char *subsystem)
-{
-	int buffer_size = sizeof(env->buf) - env->buflen;
-	int len;
-
-	len = strscpy(&env->buf[env->buflen], subsystem, buffer_size);
-	if (len < 0) {
-		pr_warn("%s: insufficient buffer space (%u left) for %s\n",
-			__func__, buffer_size, subsystem);
-		return -ENOMEM;
-	}
-
-	env->argv[0] = uevent_helper;
-	env->argv[1] = &env->buf[env->buflen];
-	env->argv[2] = NULL;
-
-	env->buflen += len + 1;
-	return 0;
-}
-
-static void cleanup_uevent_env(struct subprocess_info *info)
-{
-	kfree(info->data);
-}
-#endif
 
 #ifdef CONFIG_NET
 static struct sk_buff *alloc_uevent_skb(struct kobj_uevent_env *env,
@@ -611,32 +566,6 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	retval = kobject_uevent_net_broadcast(kobj, env, action_string,
 					      devpath);
 
-#ifdef CONFIG_UEVENT_HELPER
-	/* call uevent_helper, usually only enabled during early boot */
-	if (uevent_helper[0] && !kobj_usermode_filter(kobj)) {
-		struct subprocess_info *info;
-
-		retval = add_uevent_var(env, "HOME=/");
-		if (retval)
-			goto exit;
-		retval = add_uevent_var(env,
-					"PATH=/sbin:/bin:/usr/sbin:/usr/bin");
-		if (retval)
-			goto exit;
-		retval = init_uevent_argv(env, subsystem);
-		if (retval)
-			goto exit;
-
-		retval = -ENOMEM;
-		info = call_usermodehelper_setup(env->argv[0], env->argv,
-						 env->envp, GFP_KERNEL,
-						 NULL, cleanup_uevent_env, env);
-		if (info) {
-			retval = call_usermodehelper_exec(info, UMH_NO_WAIT);
-			env = NULL;	/* freed by cleanup_uevent_env */
-		}
-	}
-#endif
 
 exit:
 	kfree(devpath);
@@ -830,22 +759,3 @@ static int __init kobject_uevent_init(void)
 postcore_initcall(kobject_uevent_init);
 #endif
 
-#ifdef CONFIG_UEVENT_HELPER
-static const struct ctl_table uevent_helper_sysctl_table[] = {
-	{
-		.procname	= "hotplug",
-		.data		= &uevent_helper,
-		.maxlen		= UEVENT_HELPER_PATH_LEN,
-		.mode		= 0644,
-		.proc_handler	= proc_dostring,
-	},
-};
-
-static int __init init_uevent_helper_sysctl(void)
-{
-	register_sysctl_init("kernel", uevent_helper_sysctl_table);
-	return 0;
-}
-
-postcore_initcall(init_uevent_helper_sysctl);
-#endif

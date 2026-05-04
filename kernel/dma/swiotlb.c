@@ -81,22 +81,9 @@ struct io_tlb_slot {
 static bool swiotlb_force_bounce;
 static bool swiotlb_force_disable;
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-
-static void swiotlb_dyn_alloc(struct work_struct *work);
-
-static struct io_tlb_mem io_tlb_default_mem = {
-	.lock = __SPIN_LOCK_UNLOCKED(io_tlb_default_mem.lock),
-	.pools = LIST_HEAD_INIT(io_tlb_default_mem.pools),
-	.dyn_alloc = __WORK_INITIALIZER(io_tlb_default_mem.dyn_alloc,
-					swiotlb_dyn_alloc),
-};
-
-#else  /* !CONFIG_SWIOTLB_DYNAMIC */
 
 static struct io_tlb_mem io_tlb_default_mem;
 
-#endif	/* CONFIG_SWIOTLB_DYNAMIC */
 
 static unsigned long default_nslabs = IO_TLB_DEFAULT_SIZE >> IO_TLB_SHIFT;
 static unsigned long default_nareas;
@@ -304,14 +291,7 @@ static void swiotlb_init_io_tlb_pool(struct io_tlb_pool *mem, phys_addr_t start,
  */
 static void add_mem_pool(struct io_tlb_mem *mem, struct io_tlb_pool *pool)
 {
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	spin_lock(&mem->lock);
-	list_add_rcu(&pool->node, &mem->pools);
-	mem->nslabs += pool->nslabs;
-	spin_unlock(&mem->lock);
-#else
 	mem->nslabs = pool->nslabs;
-#endif
 }
 
 static void __init *swiotlb_memblock_alloc(unsigned long nslabs,
@@ -367,14 +347,6 @@ void __init swiotlb_init_remap(bool addressing_limit, unsigned int flags,
 	io_tlb_default_mem.force_bounce =
 		swiotlb_force_bounce || (flags & SWIOTLB_FORCE);
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	if (!remap)
-		io_tlb_default_mem.can_grow = true;
-	if (flags & SWIOTLB_ANY)
-		io_tlb_default_mem.phys_limit = virt_to_phys(high_memory - 1);
-	else
-		io_tlb_default_mem.phys_limit = ARCH_LOW_ADDRESS_LIMIT;
-#endif
 
 	if (!default_nareas)
 		swiotlb_adjust_nareas(num_possible_cpus());
@@ -445,16 +417,6 @@ int swiotlb_init_late(size_t size, gfp_t gfp_mask,
 
 	io_tlb_default_mem.force_bounce = swiotlb_force_bounce;
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	if (!remap)
-		io_tlb_default_mem.can_grow = true;
-	if (IS_ENABLED(CONFIG_ZONE_DMA) && (gfp_mask & __GFP_DMA))
-		io_tlb_default_mem.phys_limit = zone_dma_limit;
-	else if (IS_ENABLED(CONFIG_ZONE_DMA32) && (gfp_mask & __GFP_DMA32))
-		io_tlb_default_mem.phys_limit = max(DMA_BIT_MASK(32), zone_dma_limit);
-	else
-		io_tlb_default_mem.phys_limit = virt_to_phys(high_memory - 1);
-#endif
 
 	if (!default_nareas)
 		swiotlb_adjust_nareas(num_possible_cpus());
@@ -556,261 +518,6 @@ void __init swiotlb_exit(void)
 	memset(mem, 0, sizeof(*mem));
 }
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-
-/**
- * alloc_dma_pages() - allocate pages to be used for DMA
- * @gfp:	GFP flags for the allocation.
- * @bytes:	Size of the buffer.
- * @phys_limit:	Maximum allowed physical address of the buffer.
- *
- * Allocate pages from the buddy allocator. If successful, make the allocated
- * pages decrypted that they can be used for DMA.
- *
- * Return: Decrypted pages, %NULL on allocation failure, or ERR_PTR(-EAGAIN)
- * if the allocated physical address was above @phys_limit.
- */
-static struct page *alloc_dma_pages(gfp_t gfp, size_t bytes, u64 phys_limit)
-{
-	unsigned int order = get_order(bytes);
-	struct page *page;
-	phys_addr_t paddr;
-	void *vaddr;
-
-	page = alloc_pages(gfp, order);
-	if (!page)
-		return NULL;
-
-	paddr = page_to_phys(page);
-	if (paddr + bytes - 1 > phys_limit) {
-		__free_pages(page, order);
-		return ERR_PTR(-EAGAIN);
-	}
-
-	vaddr = phys_to_virt(paddr);
-	if (set_memory_decrypted((unsigned long)vaddr, PFN_UP(bytes)))
-		goto error;
-	return page;
-
-error:
-	/* Intentional leak if pages cannot be encrypted again. */
-	if (!set_memory_encrypted((unsigned long)vaddr, PFN_UP(bytes)))
-		__free_pages(page, order);
-	return NULL;
-}
-
-/**
- * swiotlb_alloc_tlb() - allocate a dynamic IO TLB buffer
- * @dev:	Device for which a memory pool is allocated.
- * @bytes:	Size of the buffer.
- * @phys_limit:	Maximum allowed physical address of the buffer.
- * @gfp:	GFP flags for the allocation.
- *
- * Return: Allocated pages, or %NULL on allocation failure.
- */
-static struct page *swiotlb_alloc_tlb(struct device *dev, size_t bytes,
-		u64 phys_limit, gfp_t gfp)
-{
-	struct page *page;
-
-	/*
-	 * Allocate from the atomic pools if memory is encrypted and
-	 * the allocation is atomic, because decrypting may block.
-	 */
-	if (!gfpflags_allow_blocking(gfp) && dev && force_dma_unencrypted(dev)) {
-		void *vaddr;
-
-		if (!IS_ENABLED(CONFIG_DMA_COHERENT_POOL))
-			return NULL;
-
-		return dma_alloc_from_pool(dev, bytes, &vaddr, gfp,
-					   dma_coherent_ok);
-	}
-
-	gfp &= ~GFP_ZONEMASK;
-	if (phys_limit <= zone_dma_limit)
-		gfp |= __GFP_DMA;
-	else if (phys_limit <= DMA_BIT_MASK(32))
-		gfp |= __GFP_DMA32;
-
-	while (IS_ERR(page = alloc_dma_pages(gfp, bytes, phys_limit))) {
-		if (IS_ENABLED(CONFIG_ZONE_DMA32) &&
-		    phys_limit < DMA_BIT_MASK(64) &&
-		    !(gfp & (__GFP_DMA32 | __GFP_DMA)))
-			gfp |= __GFP_DMA32;
-		else if (IS_ENABLED(CONFIG_ZONE_DMA) &&
-			 !(gfp & __GFP_DMA))
-			gfp = (gfp & ~__GFP_DMA32) | __GFP_DMA;
-		else
-			return NULL;
-	}
-
-	return page;
-}
-
-/**
- * swiotlb_free_tlb() - free a dynamically allocated IO TLB buffer
- * @vaddr:	Virtual address of the buffer.
- * @bytes:	Size of the buffer.
- */
-static void swiotlb_free_tlb(void *vaddr, size_t bytes)
-{
-	if (IS_ENABLED(CONFIG_DMA_COHERENT_POOL) &&
-	    dma_free_from_pool(NULL, vaddr, bytes))
-		return;
-
-	/* Intentional leak if pages cannot be encrypted again. */
-	if (!set_memory_encrypted((unsigned long)vaddr, PFN_UP(bytes)))
-		__free_pages(virt_to_page(vaddr), get_order(bytes));
-}
-
-/**
- * swiotlb_alloc_pool() - allocate a new IO TLB memory pool
- * @dev:	Device for which a memory pool is allocated.
- * @minslabs:	Minimum number of slabs.
- * @nslabs:	Desired (maximum) number of slabs.
- * @nareas:	Number of areas.
- * @phys_limit:	Maximum DMA buffer physical address.
- * @gfp:	GFP flags for the allocations.
- *
- * Allocate and initialize a new IO TLB memory pool. The actual number of
- * slabs may be reduced if allocation of @nslabs fails. If even
- * @minslabs cannot be allocated, this function fails.
- *
- * Return: New memory pool, or %NULL on allocation failure.
- */
-static struct io_tlb_pool *swiotlb_alloc_pool(struct device *dev,
-		unsigned long minslabs, unsigned long nslabs,
-		unsigned int nareas, u64 phys_limit, gfp_t gfp)
-{
-	struct io_tlb_pool *pool;
-	unsigned int slot_order;
-	struct page *tlb;
-	size_t pool_size;
-	size_t tlb_size;
-
-	if (nslabs > SLABS_PER_PAGE << MAX_PAGE_ORDER) {
-		nslabs = SLABS_PER_PAGE << MAX_PAGE_ORDER;
-		nareas = limit_nareas(nareas, nslabs);
-	}
-
-	pool_size = sizeof(*pool) + array_size(sizeof(*pool->areas), nareas);
-	pool = kzalloc(pool_size, gfp);
-	if (!pool)
-		goto error;
-	pool->areas = (void *)pool + sizeof(*pool);
-
-	tlb_size = nslabs << IO_TLB_SHIFT;
-	while (!(tlb = swiotlb_alloc_tlb(dev, tlb_size, phys_limit, gfp))) {
-		if (nslabs <= minslabs)
-			goto error_tlb;
-		nslabs = ALIGN(nslabs >> 1, IO_TLB_SEGSIZE);
-		nareas = limit_nareas(nareas, nslabs);
-		tlb_size = nslabs << IO_TLB_SHIFT;
-	}
-
-	slot_order = get_order(array_size(sizeof(*pool->slots), nslabs));
-	pool->slots = (struct io_tlb_slot *)
-		__get_free_pages(gfp, slot_order);
-	if (!pool->slots)
-		goto error_slots;
-
-	swiotlb_init_io_tlb_pool(pool, page_to_phys(tlb), nslabs, true, nareas);
-	return pool;
-
-error_slots:
-	swiotlb_free_tlb(page_address(tlb), tlb_size);
-error_tlb:
-	kfree(pool);
-error:
-	return NULL;
-}
-
-/**
- * swiotlb_dyn_alloc() - dynamic memory pool allocation worker
- * @work:	Pointer to dyn_alloc in struct io_tlb_mem.
- */
-static void swiotlb_dyn_alloc(struct work_struct *work)
-{
-	struct io_tlb_mem *mem =
-		container_of(work, struct io_tlb_mem, dyn_alloc);
-	struct io_tlb_pool *pool;
-
-	pool = swiotlb_alloc_pool(NULL, IO_TLB_MIN_SLABS, default_nslabs,
-				  default_nareas, mem->phys_limit, GFP_KERNEL);
-	if (!pool) {
-		pr_warn_ratelimited("Failed to allocate new pool");
-		return;
-	}
-
-	add_mem_pool(mem, pool);
-}
-
-/**
- * swiotlb_dyn_free() - RCU callback to free a memory pool
- * @rcu:	RCU head in the corresponding struct io_tlb_pool.
- */
-static void swiotlb_dyn_free(struct rcu_head *rcu)
-{
-	struct io_tlb_pool *pool = container_of(rcu, struct io_tlb_pool, rcu);
-	size_t slots_size = array_size(sizeof(*pool->slots), pool->nslabs);
-	size_t tlb_size = pool->end - pool->start;
-
-	free_pages((unsigned long)pool->slots, get_order(slots_size));
-	swiotlb_free_tlb(pool->vaddr, tlb_size);
-	kfree(pool);
-}
-
-/**
- * __swiotlb_find_pool() - find the IO TLB pool for a physical address
- * @dev:        Device which has mapped the DMA buffer.
- * @paddr:      Physical address within the DMA buffer.
- *
- * Find the IO TLB memory pool descriptor which contains the given physical
- * address, if any. This function is for use only when the dev is known to
- * be using swiotlb. Use swiotlb_find_pool() for the more general case
- * when this condition is not met.
- *
- * Return: Memory pool which contains @paddr, or %NULL if none.
- */
-struct io_tlb_pool *__swiotlb_find_pool(struct device *dev, phys_addr_t paddr)
-{
-	struct io_tlb_mem *mem = dev->dma_io_tlb_mem;
-	struct io_tlb_pool *pool;
-
-	rcu_read_lock();
-	list_for_each_entry_rcu(pool, &mem->pools, node) {
-		if (paddr >= pool->start && paddr < pool->end)
-			goto out;
-	}
-
-	list_for_each_entry_rcu(pool, &dev->dma_io_tlb_pools, node) {
-		if (paddr >= pool->start && paddr < pool->end)
-			goto out;
-	}
-	pool = NULL;
-out:
-	rcu_read_unlock();
-	return pool;
-}
-
-/**
- * swiotlb_del_pool() - remove an IO TLB pool from a device
- * @dev:	Owning device.
- * @pool:	Memory pool to be removed.
- */
-static void swiotlb_del_pool(struct device *dev, struct io_tlb_pool *pool)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(&dev->dma_io_tlb_lock, flags);
-	list_del_rcu(&pool->node);
-	spin_unlock_irqrestore(&dev->dma_io_tlb_lock, flags);
-
-	call_rcu(&pool->rcu, swiotlb_dyn_free);
-}
-
-#endif	/* CONFIG_SWIOTLB_DYNAMIC */
 
 /**
  * swiotlb_dev_init() - initialize swiotlb fields in &struct device
@@ -819,11 +526,6 @@ static void swiotlb_del_pool(struct device *dev, struct io_tlb_pool *pool)
 void swiotlb_dev_init(struct device *dev)
 {
 	dev->dma_io_tlb_mem = &io_tlb_default_mem;
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	INIT_LIST_HEAD(&dev->dma_io_tlb_pools);
-	spin_lock_init(&dev->dma_io_tlb_lock);
-	dev->dma_uses_io_tlb = false;
-#endif
 }
 
 /**
@@ -993,27 +695,6 @@ static void dec_used(struct io_tlb_mem *mem, unsigned int nslots)
 }
 #endif /* CONFIG_DEBUG_FS */
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-#ifdef CONFIG_DEBUG_FS
-static void inc_transient_used(struct io_tlb_mem *mem, unsigned int nslots)
-{
-	atomic_long_add(nslots, &mem->transient_nslabs);
-}
-
-static void dec_transient_used(struct io_tlb_mem *mem, unsigned int nslots)
-{
-	atomic_long_sub(nslots, &mem->transient_nslabs);
-}
-
-#else /* !CONFIG_DEBUG_FS */
-static void inc_transient_used(struct io_tlb_mem *mem, unsigned int nslots)
-{
-}
-static void dec_transient_used(struct io_tlb_mem *mem, unsigned int nslots)
-{
-}
-#endif /* CONFIG_DEBUG_FS */
-#endif /* CONFIG_SWIOTLB_DYNAMIC */
 
 /**
  * swiotlb_search_pool_area() - search one memory area in one pool
@@ -1138,139 +819,6 @@ found:
 	return slot_index;
 }
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-
-/**
- * swiotlb_search_area() - search one memory area in all pools
- * @dev:	Device which maps the buffer.
- * @start_cpu:	Start CPU number.
- * @cpu_offset:	Offset from @start_cpu.
- * @orig_addr:	Original (non-bounced) IO buffer address.
- * @alloc_size: Total requested size of the bounce buffer,
- *		including initial alignment padding.
- * @alloc_align_mask:	Required alignment of the allocated buffer.
- * @retpool:	Used memory pool, updated on return.
- *
- * Search one memory area in all pools for a sequence of slots that match the
- * allocation constraints.
- *
- * Return: Index of the first allocated slot, or -1 on error.
- */
-static int swiotlb_search_area(struct device *dev, int start_cpu,
-		int cpu_offset, phys_addr_t orig_addr, size_t alloc_size,
-		unsigned int alloc_align_mask, struct io_tlb_pool **retpool)
-{
-	struct io_tlb_mem *mem = dev->dma_io_tlb_mem;
-	struct io_tlb_pool *pool;
-	int area_index;
-	int index = -1;
-
-	rcu_read_lock();
-	list_for_each_entry_rcu(pool, &mem->pools, node) {
-		if (cpu_offset >= pool->nareas)
-			continue;
-		area_index = (start_cpu + cpu_offset) & (pool->nareas - 1);
-		index = swiotlb_search_pool_area(dev, pool, area_index,
-						 orig_addr, alloc_size,
-						 alloc_align_mask);
-		if (index >= 0) {
-			*retpool = pool;
-			break;
-		}
-	}
-	rcu_read_unlock();
-	return index;
-}
-
-/**
- * swiotlb_find_slots() - search for slots in the whole swiotlb
- * @dev:	Device which maps the buffer.
- * @orig_addr:	Original (non-bounced) IO buffer address.
- * @alloc_size: Total requested size of the bounce buffer,
- *		including initial alignment padding.
- * @alloc_align_mask:	Required alignment of the allocated buffer.
- * @retpool:	Used memory pool, updated on return.
- *
- * Search through the whole software IO TLB to find a sequence of slots that
- * match the allocation constraints.
- *
- * Return: Index of the first allocated slot, or -1 on error.
- */
-static int swiotlb_find_slots(struct device *dev, phys_addr_t orig_addr,
-		size_t alloc_size, unsigned int alloc_align_mask,
-		struct io_tlb_pool **retpool)
-{
-	struct io_tlb_mem *mem = dev->dma_io_tlb_mem;
-	struct io_tlb_pool *pool;
-	unsigned long nslabs;
-	unsigned long flags;
-	u64 phys_limit;
-	int cpu, i;
-	int index;
-
-	if (alloc_size > IO_TLB_SEGSIZE * IO_TLB_SIZE)
-		return -1;
-
-	cpu = raw_smp_processor_id();
-	for (i = 0; i < default_nareas; ++i) {
-		index = swiotlb_search_area(dev, cpu, i, orig_addr, alloc_size,
-					    alloc_align_mask, &pool);
-		if (index >= 0)
-			goto found;
-	}
-
-	if (!mem->can_grow)
-		return -1;
-
-	schedule_work(&mem->dyn_alloc);
-
-	nslabs = nr_slots(alloc_size);
-	phys_limit = min_not_zero(*dev->dma_mask, dev->bus_dma_limit);
-	pool = swiotlb_alloc_pool(dev, nslabs, nslabs, 1, phys_limit,
-				  GFP_NOWAIT);
-	if (!pool)
-		return -1;
-
-	index = swiotlb_search_pool_area(dev, pool, 0, orig_addr,
-					 alloc_size, alloc_align_mask);
-	if (index < 0) {
-		swiotlb_dyn_free(&pool->rcu);
-		return -1;
-	}
-
-	pool->transient = true;
-	spin_lock_irqsave(&dev->dma_io_tlb_lock, flags);
-	list_add_rcu(&pool->node, &dev->dma_io_tlb_pools);
-	spin_unlock_irqrestore(&dev->dma_io_tlb_lock, flags);
-	inc_transient_used(mem, pool->nslabs);
-
-found:
-	WRITE_ONCE(dev->dma_uses_io_tlb, true);
-
-	/*
-	 * The general barrier orders reads and writes against a presumed store
-	 * of the SWIOTLB buffer address by a device driver (to a driver private
-	 * data structure). It serves two purposes.
-	 *
-	 * First, the store to dev->dma_uses_io_tlb must be ordered before the
-	 * presumed store. This guarantees that the returned buffer address
-	 * cannot be passed to another CPU before updating dev->dma_uses_io_tlb.
-	 *
-	 * Second, the load from mem->pools must be ordered before the same
-	 * presumed store. This guarantees that the returned buffer address
-	 * cannot be observed by another CPU before an update of the RCU list
-	 * that was made by swiotlb_dyn_alloc() on a third CPU (cf. multicopy
-	 * atomicity).
-	 *
-	 * See also the comment in swiotlb_find_pool().
-	 */
-	smp_mb();
-
-	*retpool = pool;
-	return index;
-}
-
-#else  /* !CONFIG_SWIOTLB_DYNAMIC */
 
 static int swiotlb_find_slots(struct device *dev, phys_addr_t orig_addr,
 		size_t alloc_size, unsigned int alloc_align_mask,
@@ -1293,7 +841,6 @@ static int swiotlb_find_slots(struct device *dev, phys_addr_t orig_addr,
 	return -1;
 }
 
-#endif /* CONFIG_SWIOTLB_DYNAMIC */
 
 #ifdef CONFIG_DEBUG_FS
 
@@ -1342,19 +889,7 @@ static unsigned long mem_pool_used(struct io_tlb_pool *pool)
  */
 static unsigned long mem_used(struct io_tlb_mem *mem)
 {
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	struct io_tlb_pool *pool;
-	unsigned long used = 0;
-
-	rcu_read_lock();
-	list_for_each_entry_rcu(pool, &mem->pools, node)
-		used += mem_pool_used(pool);
-	rcu_read_unlock();
-
-	return used;
-#else
 	return mem_pool_used(&mem->defpool);
-#endif
 }
 
 #endif /* CONFIG_DEBUG_FS */
@@ -1512,32 +1047,6 @@ static void swiotlb_release_slots(struct device *dev, phys_addr_t tlb_addr,
 	dec_used(dev->dma_io_tlb_mem, nslots);
 }
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-
-/**
- * swiotlb_del_transient() - delete a transient memory pool
- * @dev:	Device which mapped the buffer.
- * @tlb_addr:	Physical address within a bounce buffer.
- * @pool:       Pointer to the transient memory pool to be checked and deleted.
- *
- * Check whether the address belongs to a transient SWIOTLB memory pool.
- * If yes, then delete the pool.
- *
- * Return: %true if @tlb_addr belonged to a transient pool that was released.
- */
-static bool swiotlb_del_transient(struct device *dev, phys_addr_t tlb_addr,
-		struct io_tlb_pool *pool)
-{
-	if (!pool->transient)
-		return false;
-
-	dec_used(dev->dma_io_tlb_mem, pool->nslabs);
-	swiotlb_del_pool(dev, pool);
-	dec_transient_used(dev->dma_io_tlb_mem, pool->nslabs);
-	return true;
-}
-
-#else  /* !CONFIG_SWIOTLB_DYNAMIC */
 
 static inline bool swiotlb_del_transient(struct device *dev,
 		phys_addr_t tlb_addr, struct io_tlb_pool *pool)
@@ -1545,7 +1054,6 @@ static inline bool swiotlb_del_transient(struct device *dev,
 	return false;
 }
 
-#endif	/* CONFIG_SWIOTLB_DYNAMIC */
 
 /*
  * tlb_addr is the physical address of the bounce buffer to unmap.
@@ -1660,9 +1168,6 @@ bool is_swiotlb_active(struct device *dev)
  */
 phys_addr_t default_swiotlb_base(void)
 {
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	io_tlb_default_mem.can_grow = false;
-#endif
 	return io_tlb_default_mem.defpool.start;
 }
 
@@ -1673,31 +1178,10 @@ phys_addr_t default_swiotlb_base(void)
  */
 phys_addr_t default_swiotlb_limit(void)
 {
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	return io_tlb_default_mem.phys_limit;
-#else
 	return io_tlb_default_mem.defpool.end - 1;
-#endif
 }
 
 #ifdef CONFIG_DEBUG_FS
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-static unsigned long mem_transient_used(struct io_tlb_mem *mem)
-{
-	return atomic_long_read(&mem->transient_nslabs);
-}
-
-static int io_tlb_transient_used_get(void *data, u64 *val)
-{
-	struct io_tlb_mem *mem = data;
-
-	*val = mem_transient_used(mem);
-	return 0;
-}
-
-DEFINE_DEBUGFS_ATTRIBUTE(fops_io_tlb_transient_used, io_tlb_transient_used_get,
-			 NULL, "%llu\n");
-#endif /* CONFIG_SWIOTLB_DYNAMIC */
 
 static int io_tlb_used_get(void *data, u64 *val)
 {
@@ -1743,10 +1227,6 @@ static void swiotlb_create_debugfs_files(struct io_tlb_mem *mem,
 			&fops_io_tlb_used);
 	debugfs_create_file("io_tlb_used_hiwater", 0600, mem->debugfs, mem,
 			&fops_io_tlb_hiwater);
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	debugfs_create_file("io_tlb_transient_nslabs", 0400, mem->debugfs,
-			    mem, &fops_io_tlb_transient_used);
-#endif
 }
 
 static int __init swiotlb_create_default_debugfs(void)
@@ -1855,10 +1335,6 @@ static int rmem_swiotlb_device_init(struct reserved_mem *rmem,
 					 false, nareas);
 		mem->force_bounce = true;
 		mem->for_alloc = true;
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-		spin_lock_init(&mem->lock);
-		INIT_LIST_HEAD_RCU(&mem->pools);
-#endif
 		add_mem_pool(mem, pool);
 
 		rmem->priv = mem;

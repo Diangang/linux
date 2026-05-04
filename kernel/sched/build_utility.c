@@ -85,13 +85,7 @@
 
 #include "topology.c"
 
-#ifdef CONFIG_SCHED_CORE
-# include "core_sched.c"
-#endif
 
-#ifdef CONFIG_PSI
-# include "psi.c"
-#endif
 
 #ifdef CONFIG_MEMBARRIER
 # include "membarrier.c"

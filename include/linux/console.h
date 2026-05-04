@@ -480,14 +480,10 @@ static inline void lockdep_assert_console_list_lock_held(void)
 }
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-extern bool console_srcu_read_lock_is_held(void);
-#else
 static inline bool console_srcu_read_lock_is_held(void)
 {
 	return 1;
 }
-#endif
 
 extern int console_srcu_read_lock(void);
 extern void console_srcu_read_unlock(int cookie);

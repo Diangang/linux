@@ -6,15 +6,10 @@
 #error Do not include directly. Use spinlock.h
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-extern void __rt_spin_lock_init(spinlock_t *lock, const char *name,
-				struct lock_class_key *key, bool percpu);
-#else
 static inline void __rt_spin_lock_init(spinlock_t *lock, const char *name,
 				struct lock_class_key *key, bool percpu)
 {
 }
-#endif
 
 #define __spin_lock_init(slock, name, key, percpu)		\
 do {								\

@@ -43,21 +43,16 @@ obj-y += iomem.o
 ifeq ($(CONFIG_X86_32),y)
         obj-y += atomic64_32.o
         lib-y += atomic64_cx8_32.o
-        lib-y += checksum_32.o
-        lib-y += strstr_32.o
-        lib-y += string_32.o
-        lib-y += memmove_32.o
-        lib-y += cmpxchg8b_emu.o
-ifneq ($(CONFIG_X86_CX8),y)
-        lib-y += atomic64_386_32.o
-endif
+	lib-y += checksum_32.o
+	lib-y += strstr_32.o
+	lib-y += string_32.o
+	lib-y += memmove_32.o
+	lib-y += cmpxchg8b_emu.o
 else
-ifneq ($(CONFIG_GENERIC_CSUM),y)
-        lib-y += csum-partial_64.o csum-copy_64.o csum-wrappers_64.o
-endif
-        lib-y += clear_page_64.o copy_page_64.o
-        lib-y += memmove_64.o memset_64.o
-        lib-y += copy_user_64.o copy_user_uncached_64.o
-        lib-y += cmpxchg16b_emu.o
-        lib-y += bhi.o
+	lib-y += csum-partial_64.o csum-copy_64.o csum-wrappers_64.o
+	lib-y += clear_page_64.o copy_page_64.o
+	lib-y += memmove_64.o memset_64.o
+	lib-y += copy_user_64.o copy_user_uncached_64.o
+	lib-y += cmpxchg16b_emu.o
+	lib-y += bhi.o
 endif

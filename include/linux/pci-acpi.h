@@ -93,15 +93,9 @@ static inline void pci_acpi_setup(struct device *dev, struct acpi_device *adev) 
 static inline void pci_acpi_cleanup(struct device *dev, struct acpi_device *adev) {}
 #endif
 
-#ifdef	CONFIG_ACPI_PCI_SLOT
-void acpi_pci_slot_init(void);
-void acpi_pci_slot_enumerate(struct pci_bus *bus);
-void acpi_pci_slot_remove(struct pci_bus *bus);
-#else
 static inline void acpi_pci_slot_init(void) { }
 static inline void acpi_pci_slot_enumerate(struct pci_bus *bus) { }
 static inline void acpi_pci_slot_remove(struct pci_bus *bus) { }
-#endif
 
 #ifdef	CONFIG_HOTPLUG_PCI_ACPI
 void acpiphp_init(void);

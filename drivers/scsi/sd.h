@@ -91,20 +91,6 @@ struct scsi_disk {
 	struct device	disk_dev;
 	struct gendisk	*disk;
 	struct opal_dev *opal_dev;
-#ifdef CONFIG_BLK_DEV_ZONED
-	/* Updated during revalidation before the gendisk capacity is known. */
-	struct zoned_disk_info	early_zone_info;
-	/* Updated during revalidation after the gendisk capacity is known. */
-	struct zoned_disk_info	zone_info;
-	u32		zones_optimal_open;
-	u32		zones_optimal_nonseq;
-	u32		zones_max_open;
-	/*
-	 * Either zero or a power of two. If not zero it means that the offset
-	 * between zone starting LBAs is constant.
-	 */
-	u32		zone_starting_lba_gran;
-#endif
 	atomic_t	openers;
 	sector_t	capacity;	/* size in logical blocks */
 	int		max_retries;
@@ -230,19 +216,6 @@ static inline sector_t sectors_to_logical(struct scsi_device *sdev, sector_t sec
 
 void sd_dif_config_host(struct scsi_disk *sdkp, struct queue_limits *lim);
 
-#ifdef CONFIG_BLK_DEV_ZONED
-
-int sd_zbc_read_zones(struct scsi_disk *sdkp, struct queue_limits *lim,
-		u8 buf[SD_BUF_SIZE]);
-int sd_zbc_revalidate_zones(struct scsi_disk *sdkp);
-blk_status_t sd_zbc_setup_zone_mgmt_cmnd(struct scsi_cmnd *cmd,
-					 unsigned char op, bool all);
-unsigned int sd_zbc_complete(struct scsi_cmnd *cmd, unsigned int good_bytes,
-			     struct scsi_sense_hdr *sshdr);
-int sd_zbc_report_zones(struct gendisk *disk, sector_t sector,
-		unsigned int nr_zones, struct blk_report_zones_args *args);
-
-#else /* CONFIG_BLK_DEV_ZONED */
 
 static inline int sd_zbc_read_zones(struct scsi_disk *sdkp,
 		struct queue_limits *lim, u8 buf[SD_BUF_SIZE])
@@ -270,7 +243,6 @@ static inline unsigned int sd_zbc_complete(struct scsi_cmnd *cmd,
 
 #define sd_zbc_report_zones NULL
 
-#endif /* CONFIG_BLK_DEV_ZONED */
 
 void sd_print_sense_hdr(struct scsi_disk *sdkp, struct scsi_sense_hdr *sshdr);
 void sd_print_result(const struct scsi_disk *sdkp, const char *msg, int result);

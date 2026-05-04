@@ -1211,7 +1211,6 @@ static inline void prep_byte_width_lli(struct pl08x_driver_data *pl08x,
 	(*total_bytes) += len;
 }
 
-#if 1
 static void pl08x_dump_lli(struct pl08x_driver_data *pl08x,
 			   const u32 *llis_va, int num_llis)
 {
@@ -1244,10 +1243,6 @@ static void pl08x_dump_lli(struct pl08x_driver_data *pl08x,
 		}
 	}
 }
-#else
-static inline void pl08x_dump_lli(struct pl08x_driver_data *pl08x,
-				  const u32 *llis_va, int num_llis) {}
-#endif
 
 /*
  * This fills in the table of LLIs for the transfer descriptor

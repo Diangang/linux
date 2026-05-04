@@ -199,24 +199,6 @@ enum pci_tsm_req_scope {
 	PCI_TSM_REQ_DEBUG_WRITE = 3,
 };
 
-#ifdef CONFIG_PCI_TSM
-int pci_tsm_register(struct tsm_dev *tsm_dev);
-void pci_tsm_unregister(struct tsm_dev *tsm_dev);
-int pci_tsm_link_constructor(struct pci_dev *pdev, struct pci_tsm *tsm,
-			     struct tsm_dev *tsm_dev);
-int pci_tsm_pf0_constructor(struct pci_dev *pdev, struct pci_tsm_pf0 *tsm,
-			    struct tsm_dev *tsm_dev);
-void pci_tsm_pf0_destructor(struct pci_tsm_pf0 *tsm);
-int pci_tsm_doe_transfer(struct pci_dev *pdev, u8 type, const void *req,
-			 size_t req_sz, void *resp, size_t resp_sz);
-int pci_tsm_bind(struct pci_dev *pdev, struct kvm *kvm, u32 tdi_id);
-void pci_tsm_unbind(struct pci_dev *pdev);
-void pci_tsm_tdi_constructor(struct pci_dev *pdev, struct pci_tdi *tdi,
-			     struct kvm *kvm, u32 tdi_id);
-ssize_t pci_tsm_guest_req(struct pci_dev *pdev, enum pci_tsm_req_scope scope,
-			  sockptr_t req_in, size_t in_len, sockptr_t req_out,
-			  size_t out_len, u64 *tsm_code);
-#else
 static inline int pci_tsm_register(struct tsm_dev *tsm_dev)
 {
 	return 0;
@@ -239,5 +221,4 @@ static inline ssize_t pci_tsm_guest_req(struct pci_dev *pdev,
 {
 	return -ENXIO;
 }
-#endif
 #endif /*__PCI_TSM_H */

@@ -258,11 +258,6 @@ static inline int get_boot_cpu_id(void)
 #define __smp_processor_id() raw_smp_processor_id()
 #endif
 
-#ifdef CONFIG_DEBUG_PREEMPT
-  extern unsigned int debug_smp_processor_id(void);
-# define smp_processor_id() debug_smp_processor_id()
-
-#else
 /**
  * smp_processor_id() - get the current (stable) CPU id
  *
@@ -280,7 +275,6 @@ static inline int get_boot_cpu_id(void)
  */
 
 # define smp_processor_id() __smp_processor_id()
-#endif
 
 #define get_cpu()		({ preempt_disable(); __smp_processor_id(); })
 #define put_cpu()		preempt_enable()
@@ -304,10 +298,6 @@ int smpcfd_prepare_cpu(unsigned int cpu);
 int smpcfd_dead_cpu(unsigned int cpu);
 int smpcfd_dying_cpu(unsigned int cpu);
 
-#ifdef CONFIG_CSD_LOCK_WAIT_DEBUG
-bool csd_lock_is_stuck(void);
-#else
 static inline bool csd_lock_is_stuck(void) { return false; }
-#endif
 
 #endif /* __LINUX_SMP_H */

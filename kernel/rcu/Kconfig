@@ -38,21 +38,6 @@ config TINY_RCU
 	  is not required.  This option greatly reduces the
 	  memory footprint of RCU.
 
-config RCU_EXPERT
-	bool "Make expert-level adjustments to RCU configuration"
-	default n
-	help
-	  This option needs to be enabled if you wish to make
-	  expert-level adjustments to RCU configuration.  By default,
-	  no such adjustments can be made, which has the often-beneficial
-	  side-effect of preventing "make oldconfig" from asking you all
-	  sorts of detailed questions about how you would like numerous
-	  obscure RCU options to be set up.
-
-	  Say Y if you need to make expert-level adjustments to RCU.
-
-	  Say N if you are unsure.
-
 config TINY_SRCU
 	bool
 	default y if TINY_RCU

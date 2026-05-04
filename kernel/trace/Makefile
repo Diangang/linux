@@ -8,12 +8,6 @@ ifdef CONFIG_FUNCTION_TRACER
 
 # Avoid recursion due to instrumentation.
 KCSAN_SANITIZE := n
-
-ifdef CONFIG_FTRACE_SELFTEST
-# selftest needs instrumentation
-CFLAGS_trace_selftest_dynamic.o = $(CC_FLAGS_FTRACE)
-obj-y += trace_selftest_dynamic.o
-endif
 endif
 
 # Allow some files to be function traced

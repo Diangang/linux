@@ -77,13 +77,6 @@ static unsigned long pipe_user_pages_soft = PIPE_DEF_BUFFERS * INR_OPEN_CUR;
  * -- Manfred Spraul <manfred@colorfullife.com> 2002-05-09
  */
 
-#ifdef CONFIG_PROVE_LOCKING
-static int pipe_lock_cmp_fn(const struct lockdep_map *a,
-			    const struct lockdep_map *b)
-{
-	return cmp_int((unsigned long) a, (unsigned long) b);
-}
-#endif
 
 void pipe_lock(struct pipe_inode_info *pipe)
 {
@@ -248,10 +241,6 @@ static inline unsigned int pipe_update_tail(struct pipe_inode_info *pipe,
 	 */
 	if (pipe_has_watch_queue(pipe)) {
 		spin_lock_irq(&pipe->rd_wait.lock);
-#ifdef CONFIG_WATCH_QUEUE
-		if (buf->flags & PIPE_BUF_FLAG_LOSS)
-			pipe->note_loss = true;
-#endif
 		pipe->tail = ++tail;
 		spin_unlock_irq(&pipe->rd_wait.lock);
 		return tail;
@@ -294,29 +283,6 @@ anon_pipe_read(struct kiocb *iocb, struct iov_iter *to)
 		unsigned int head = smp_load_acquire(&pipe->head);
 		unsigned int tail = pipe->tail;
 
-#ifdef CONFIG_WATCH_QUEUE
-		if (pipe->note_loss) {
-			struct watch_notification n;
-
-			if (total_len < 8) {
-				if (ret == 0)
-					ret = -ENOBUFS;
-				break;
-			}
-
-			n.type = WATCH_TYPE_META;
-			n.subtype = WATCH_META_LOSS_NOTIFICATION;
-			n.info = watch_sizeof(n);
-			if (copy_to_iter(&n, sizeof(n), to) != sizeof(n)) {
-				if (ret == 0)
-					ret = -EFAULT;
-				break;
-			}
-			ret += sizeof(n);
-			total_len -= sizeof(n);
-			pipe->note_loss = false;
-		}
-#endif
 
 		if (!pipe_empty(head, tail)) {
 			struct pipe_buffer *buf = pipe_buf(pipe, tail);
@@ -636,19 +602,6 @@ static long pipe_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 		return put_user(count, (int __user *)arg);
 
-#ifdef CONFIG_WATCH_QUEUE
-	case IOC_WATCH_QUEUE_SET_SIZE: {
-		int ret;
-		mutex_lock(&pipe->mutex);
-		ret = watch_queue_set_size(pipe, arg);
-		mutex_unlock(&pipe->mutex);
-		return ret;
-	}
-
-	case IOC_WATCH_QUEUE_SET_FILTER:
-		return watch_queue_set_filter(
-			pipe, (struct watch_notification_filter __user *)arg);
-#endif
 
 	default:
 		return -ENOIOCTLCMD;
@@ -842,10 +795,6 @@ void free_pipe_info(struct pipe_inode_info *pipe)
 {
 	unsigned int i;
 
-#ifdef CONFIG_WATCH_QUEUE
-	if (pipe->watch_queue)
-		watch_queue_clear(pipe->watch_queue);
-#endif
 
 	(void) account_pipe_buffers(pipe->user, pipe->nr_accounted, 0);
 	free_uid(pipe->user);
@@ -854,10 +803,6 @@ void free_pipe_info(struct pipe_inode_info *pipe)
 		if (buf->ops)
 			pipe_buf_release(pipe, buf);
 	}
-#ifdef CONFIG_WATCH_QUEUE
-	if (pipe->watch_queue)
-		put_watch_queue(pipe->watch_queue);
-#endif
 	for (i = 0; i < ARRAY_SIZE(pipe->tmp_page); i++) {
 		if (pipe->tmp_page[i])
 			__free_page(pipe->tmp_page[i]);

@@ -36,15 +36,7 @@
 #define PCPU_BITMAP_BLOCK_BITS		(PCPU_BITMAP_BLOCK_SIZE >>	\
 					 PCPU_MIN_ALLOC_SHIFT)
 
-#ifdef CONFIG_RANDOM_KMALLOC_CACHES
-# if defined(CONFIG_LOCKDEP) && !defined(CONFIG_PAGE_SIZE_4KB)
-# define PERCPU_DYNAMIC_SIZE_SHIFT      13
-# else
-# define PERCPU_DYNAMIC_SIZE_SHIFT      12
-#endif /* LOCKDEP and PAGE_SIZE > 4KiB */
-#else
 #define PERCPU_DYNAMIC_SIZE_SHIFT      10
-#endif
 
 /*
  * Percpu allocator can serve percpu allocations before slab is

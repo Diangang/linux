@@ -567,11 +567,6 @@ static const unsigned int memcg_vm_event_stat[] = {
 	SWPIN_ZERO,
 	SWPOUT_ZERO,
 #endif
-#ifdef CONFIG_ZSWAP
-	ZSWPIN,
-	ZSWPOUT,
-	ZSWPWB,
-#endif
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	THP_FAULT_ALLOC,
 	THP_COLLAPSE_ALLOC,
@@ -1545,11 +1540,6 @@ static const struct memory_stat memory_stats[] = {
 	{ "sock",			MEMCG_SOCK			},
 	{ "vmalloc",			NR_VMALLOC			},
 	{ "shmem",			NR_SHMEM			},
-#ifdef CONFIG_ZSWAP
-	{ "zswap",			MEMCG_ZSWAP_B			},
-	{ "zswapped",			MEMCG_ZSWAPPED			},
-	{ "zswap_incomp",		MEMCG_ZSWAP_INCOMP		},
-#endif
 	{ "file_mapped",		NR_FILE_MAPPED			},
 	{ "file_dirty",			NR_FILE_DIRTY			},
 	{ "file_writeback",		NR_WRITEBACK			},
@@ -4053,10 +4043,6 @@ mem_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
 
 	page_counter_set_high(&memcg->memory, PAGE_COUNTER_MAX);
 	memcg1_soft_limit_reset(memcg);
-#ifdef CONFIG_ZSWAP
-	memcg->zswap_max = PAGE_COUNTER_MAX;
-	WRITE_ONCE(memcg->zswap_writeback, true);
-#endif
 	page_counter_set_high(&memcg->swap, PAGE_COUNTER_MAX);
 	if (parent) {
 		WRITE_ONCE(memcg->swappiness, mem_cgroup_swappiness(parent));
@@ -4451,27 +4437,7 @@ static void mem_cgroup_exit(struct task_struct *task)
 	task->objcg = NULL;
 }
 
-#ifdef CONFIG_LRU_GEN
-static void mem_cgroup_lru_gen_attach(struct cgroup_taskset *tset)
-{
-	struct task_struct *task;
-	struct cgroup_subsys_state *css;
-
-	/* find the first leader if there is any */
-	cgroup_taskset_for_each_leader(task, css, tset)
-		break;
-
-	if (!task)
-		return;
-
-	task_lock(task);
-	if (task->mm && READ_ONCE(task->mm->owner) == task)
-		lru_gen_migrate_mm(task->mm);
-	task_unlock(task);
-}
-#else
 static void mem_cgroup_lru_gen_attach(struct cgroup_taskset *tset) {}
-#endif /* CONFIG_LRU_GEN */
 
 static void mem_cgroup_kmem_attach(struct cgroup_taskset *tset)
 {
@@ -5702,203 +5668,6 @@ static struct cftype swap_files[] = {
 	{ }	/* terminate */
 };
 
-#ifdef CONFIG_ZSWAP
-/**
- * obj_cgroup_may_zswap - check if this cgroup can zswap
- * @objcg: the object cgroup
- *
- * Check if the hierarchical zswap limit has been reached.
- *
- * This doesn't check for specific headroom, and it is not atomic
- * either. But with zswap, the size of the allocation is only known
- * once compression has occurred, and this optimistic pre-check avoids
- * spending cycles on compression when there is already no room left
- * or zswap is disabled altogether somewhere in the hierarchy.
- */
-bool obj_cgroup_may_zswap(struct obj_cgroup *objcg)
-{
-	struct mem_cgroup *memcg, *original_memcg;
-	bool ret = true;
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return true;
-
-	original_memcg = get_mem_cgroup_from_objcg(objcg);
-	for (memcg = original_memcg; !mem_cgroup_is_root(memcg);
-	     memcg = parent_mem_cgroup(memcg)) {
-		unsigned long max = READ_ONCE(memcg->zswap_max);
-		unsigned long pages;
-
-		if (max == PAGE_COUNTER_MAX)
-			continue;
-		if (max == 0) {
-			ret = false;
-			break;
-		}
-
-		/* Force flush to get accurate stats for charging */
-		__mem_cgroup_flush_stats(memcg, true);
-		pages = memcg_page_state(memcg, MEMCG_ZSWAP_B) / PAGE_SIZE;
-		if (pages < max)
-			continue;
-		ret = false;
-		break;
-	}
-	mem_cgroup_put(original_memcg);
-	return ret;
-}
-
-/**
- * obj_cgroup_charge_zswap - charge compression backend memory
- * @objcg: the object cgroup
- * @size: size of compressed object
- *
- * This forces the charge after obj_cgroup_may_zswap() allowed
- * compression and storage in zswap for this cgroup to go ahead.
- */
-void obj_cgroup_charge_zswap(struct obj_cgroup *objcg, size_t size)
-{
-	struct mem_cgroup *memcg;
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return;
-
-	if (obj_cgroup_is_root(objcg))
-		return;
-
-	VM_WARN_ON_ONCE(!(current->flags & PF_MEMALLOC));
-
-	/* PF_MEMALLOC context, charging must succeed */
-	if (obj_cgroup_charge(objcg, GFP_KERNEL, size))
-		VM_WARN_ON_ONCE(1);
-
-	rcu_read_lock();
-	memcg = obj_cgroup_memcg(objcg);
-	mod_memcg_state(memcg, MEMCG_ZSWAP_B, size);
-	mod_memcg_state(memcg, MEMCG_ZSWAPPED, 1);
-	if (size == PAGE_SIZE)
-		mod_memcg_state(memcg, MEMCG_ZSWAP_INCOMP, 1);
-	rcu_read_unlock();
-}
-
-/**
- * obj_cgroup_uncharge_zswap - uncharge compression backend memory
- * @objcg: the object cgroup
- * @size: size of compressed object
- *
- * Uncharges zswap memory on page in.
- */
-void obj_cgroup_uncharge_zswap(struct obj_cgroup *objcg, size_t size)
-{
-	struct mem_cgroup *memcg;
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return;
-
-	if (obj_cgroup_is_root(objcg))
-		return;
-
-	obj_cgroup_uncharge(objcg, size);
-
-	rcu_read_lock();
-	memcg = obj_cgroup_memcg(objcg);
-	mod_memcg_state(memcg, MEMCG_ZSWAP_B, -size);
-	mod_memcg_state(memcg, MEMCG_ZSWAPPED, -1);
-	if (size == PAGE_SIZE)
-		mod_memcg_state(memcg, MEMCG_ZSWAP_INCOMP, -1);
-	rcu_read_unlock();
-}
-
-bool mem_cgroup_zswap_writeback_enabled(struct mem_cgroup *memcg)
-{
-	/* if zswap is disabled, do not block pages going to the swapping device */
-	if (!zswap_is_enabled())
-		return true;
-
-	for (; memcg; memcg = parent_mem_cgroup(memcg))
-		if (!READ_ONCE(memcg->zswap_writeback))
-			return false;
-
-	return true;
-}
-
-static u64 zswap_current_read(struct cgroup_subsys_state *css,
-			      struct cftype *cft)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
-
-	mem_cgroup_flush_stats(memcg);
-	return memcg_page_state(memcg, MEMCG_ZSWAP_B);
-}
-
-static int zswap_max_show(struct seq_file *m, void *v)
-{
-	return seq_puts_memcg_tunable(m,
-		READ_ONCE(mem_cgroup_from_seq(m)->zswap_max));
-}
-
-static ssize_t zswap_max_write(struct kernfs_open_file *of,
-			       char *buf, size_t nbytes, loff_t off)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
-	unsigned long max;
-	int err;
-
-	buf = strstrip(buf);
-	err = page_counter_memparse(buf, "max", &max);
-	if (err)
-		return err;
-
-	xchg(&memcg->zswap_max, max);
-
-	return nbytes;
-}
-
-static int zswap_writeback_show(struct seq_file *m, void *v)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_seq(m);
-
-	seq_printf(m, "%d\n", READ_ONCE(memcg->zswap_writeback));
-	return 0;
-}
-
-static ssize_t zswap_writeback_write(struct kernfs_open_file *of,
-				char *buf, size_t nbytes, loff_t off)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
-	int zswap_writeback;
-	ssize_t parse_ret = kstrtoint(strstrip(buf), 0, &zswap_writeback);
-
-	if (parse_ret)
-		return parse_ret;
-
-	if (zswap_writeback != 0 && zswap_writeback != 1)
-		return -EINVAL;
-
-	WRITE_ONCE(memcg->zswap_writeback, zswap_writeback);
-	return nbytes;
-}
-
-static struct cftype zswap_files[] = {
-	{
-		.name = "zswap.current",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.read_u64 = zswap_current_read,
-	},
-	{
-		.name = "zswap.max",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.seq_show = zswap_max_show,
-		.write = zswap_max_write,
-	},
-	{
-		.name = "zswap.writeback",
-		.seq_show = zswap_writeback_show,
-		.write = zswap_writeback_write,
-	},
-	{ }	/* terminate */
-};
-#endif /* CONFIG_ZSWAP */
 
 static int __init mem_cgroup_swap_init(void)
 {
@@ -5908,9 +5677,6 @@ static int __init mem_cgroup_swap_init(void)
 	WARN_ON(cgroup_add_dfl_cftypes(&memory_cgrp_subsys, swap_files));
 #ifdef CONFIG_MEMCG_V1
 	WARN_ON(cgroup_add_legacy_cftypes(&memory_cgrp_subsys, memsw_files));
-#endif
-#ifdef CONFIG_ZSWAP
-	WARN_ON(cgroup_add_dfl_cftypes(&memory_cgrp_subsys, zswap_files));
 #endif
 	return 0;
 }

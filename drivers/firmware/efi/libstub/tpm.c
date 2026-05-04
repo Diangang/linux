@@ -13,39 +13,6 @@
 
 #include "efistub.h"
 
-#ifdef CONFIG_RESET_ATTACK_MITIGATION
-static const efi_char16_t efi_MemoryOverWriteRequest_name[] =
-	L"MemoryOverwriteRequestControl";
-
-#define MEMORY_ONLY_RESET_CONTROL_GUID \
-	EFI_GUID(0xe20939be, 0x32d4, 0x41be, 0xa1, 0x50, 0x89, 0x7f, 0x85, 0xd4, 0x98, 0x29)
-
-/*
- * Enable reboot attack mitigation. This requests that the firmware clear the
- * RAM on next reboot before proceeding with boot, ensuring that any secrets
- * are cleared. If userland has ensured that all secrets have been removed
- * from RAM before reboot it can simply reset this variable.
- */
-void efi_enable_reset_attack_mitigation(void)
-{
-	u8 val = 1;
-	efi_guid_t var_guid = MEMORY_ONLY_RESET_CONTROL_GUID;
-	efi_status_t status;
-	unsigned long datasize = 0;
-
-	status = get_efi_var(efi_MemoryOverWriteRequest_name, &var_guid,
-			     NULL, &datasize, NULL);
-
-	if (status == EFI_NOT_FOUND)
-		return;
-
-	set_efi_var(efi_MemoryOverWriteRequest_name, &var_guid,
-		    EFI_VARIABLE_NON_VOLATILE |
-		    EFI_VARIABLE_BOOTSERVICE_ACCESS |
-		    EFI_VARIABLE_RUNTIME_ACCESS, sizeof(val), &val);
-}
-
-#endif
 
 static void efi_retrieve_tcg2_eventlog(int version, efi_physical_addr_t log_location,
 				       efi_physical_addr_t log_last_entry,

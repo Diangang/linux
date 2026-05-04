@@ -39,9 +39,6 @@
 #		ifdef CONFIG_XZ_DEC_RISCV
 #			define XZ_DEC_RISCV
 #		endif
-#		ifdef CONFIG_XZ_DEC_MICROLZMA
-#			define XZ_DEC_MICROLZMA
-#		endif
 #		define memeq(a, b, size) (memcmp(a, b, size) == 0)
 #		define memzero(buf, size) memset(buf, 0, size)
 #	endif

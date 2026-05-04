@@ -35,9 +35,6 @@ enum _slab_flag_bits {
 	_SLAB_PANIC,
 	_SLAB_TYPESAFE_BY_RCU,
 	_SLAB_TRACE,
-#ifdef CONFIG_DEBUG_OBJECTS
-	_SLAB_DEBUG_OBJECTS,
-#endif
 	_SLAB_NOLEAKTRACE,
 	_SLAB_NO_MERGE,
 #ifdef CONFIG_FAILSLAB
@@ -166,11 +163,7 @@ enum _slab_flag_bits {
 #define SLAB_TRACE		__SLAB_FLAG_BIT(_SLAB_TRACE)
 
 /* Flag to prevent checks on free */
-#ifdef CONFIG_DEBUG_OBJECTS
-# define SLAB_DEBUG_OBJECTS	__SLAB_FLAG_BIT(_SLAB_DEBUG_OBJECTS)
-#else
 # define SLAB_DEBUG_OBJECTS	__SLAB_FLAG_UNUSED
-#endif
 
 /* Avoid kmemleak tracing */
 #define SLAB_NOLEAKTRACE	__SLAB_FLAG_BIT(_SLAB_NOLEAKTRACE)
@@ -612,11 +605,7 @@ static inline unsigned int arch_slab_minalign(void)
 #define SLAB_OBJ_MIN_SIZE      (KMALLOC_MIN_SIZE < 16 ? \
                                (KMALLOC_MIN_SIZE) : 16)
 
-#ifdef CONFIG_RANDOM_KMALLOC_CACHES
-#define RANDOM_KMALLOC_CACHES_NR	15 // # of cache copies
-#else
 #define RANDOM_KMALLOC_CACHES_NR	0
-#endif
 
 /*
  * Whenever changing this, take care of that kmalloc_type() and
@@ -671,13 +660,7 @@ static __always_inline enum kmalloc_cache_type kmalloc_type(gfp_t flags, unsigne
 	 * with a single branch for all the relevant flags.
 	 */
 	if (likely((flags & KMALLOC_NOT_NORMAL_BITS) == 0))
-#ifdef CONFIG_RANDOM_KMALLOC_CACHES
-		/* RANDOM_KMALLOC_CACHES_NR (=15) copies + the KMALLOC_NORMAL */
-		return KMALLOC_RANDOM_START + hash_64(caller ^ random_kmalloc_seed,
-						      ilog2(RANDOM_KMALLOC_CACHES_NR + 1));
-#else
 		return KMALLOC_NORMAL;
-#endif
 
 	/*
 	 * At least one of the flags has to be set. Their priorities in
@@ -848,15 +831,9 @@ unsigned int kmem_cache_sheaf_size(struct slab_sheaf *sheaf);
  * can be compiled out with CONFIG_SLAB_BUCKETS=n so that a large number of call
  * sites don't have to pass NULL.
  */
-#ifdef CONFIG_SLAB_BUCKETS
-#define DECL_BUCKET_PARAMS(_size, _b)	size_t (_size), kmem_buckets *(_b)
-#define PASS_BUCKET_PARAMS(_size, _b)	(_size), (_b)
-#define PASS_BUCKET_PARAM(_b)		(_b)
-#else
 #define DECL_BUCKET_PARAMS(_size, _b)	size_t (_size)
 #define PASS_BUCKET_PARAMS(_size, _b)	(_size)
 #define PASS_BUCKET_PARAM(_b)		NULL
-#endif
 
 /*
  * The following functions are not to be used directly and are intended only

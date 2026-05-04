@@ -1289,10 +1289,6 @@ void __init rcu_init_nohz(void)
 	const struct cpumask *cpumask = NULL;
 	struct shrinker * __maybe_unused lazy_rcu_shrinker;
 
-#if defined(CONFIG_NO_HZ_FULL)
-	if (tick_nohz_full_running && !cpumask_empty(tick_nohz_full_mask))
-		cpumask = tick_nohz_full_mask;
-#endif
 
 	if (IS_ENABLED(CONFIG_RCU_NOCB_CPU_DEFAULT_ALL) &&
 	    !rcu_state.nocb_is_setup && !cpumask)

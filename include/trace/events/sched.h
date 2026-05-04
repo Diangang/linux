@@ -609,24 +609,6 @@ TRACE_EVENT(sched_pi_setprio,
 			__entry->oldprio, __entry->newprio)
 );
 
-#ifdef CONFIG_DETECT_HUNG_TASK
-TRACE_EVENT(sched_process_hang,
-	TP_PROTO(struct task_struct *tsk),
-	TP_ARGS(tsk),
-
-	TP_STRUCT__entry(
-		__string( comm,		tsk->comm	)
-		__field(  pid_t,	pid		)
-	),
-
-	TP_fast_assign(
-		__assign_str(comm);
-		__entry->pid = tsk->pid;
-	),
-
-	TP_printk("comm=%s pid=%d", __get_str(comm), __entry->pid)
-);
-#endif /* CONFIG_DETECT_HUNG_TASK */
 
 #ifdef CONFIG_NUMA_BALANCING
 /*

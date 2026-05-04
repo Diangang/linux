@@ -135,9 +135,6 @@ static inline void sg_assign_page(struct scatterlist *sg, struct page *page)
 	 * must be aligned at a 32-bit boundary as a minimum.
 	 */
 	BUG_ON((unsigned long)page & SG_PAGE_LINK_MASK);
-#ifdef CONFIG_DEBUG_SG
-	BUG_ON(sg_is_chain(sg));
-#endif
 	sg->page_link = page_link | (unsigned long) page;
 }
 
@@ -190,9 +187,6 @@ static inline void sg_set_folio(struct scatterlist *sg, struct folio *folio,
 
 static inline struct page *sg_page(struct scatterlist *sg)
 {
-#ifdef CONFIG_DEBUG_SG
-	BUG_ON(sg_is_chain(sg));
-#endif
 	return (struct page *)((sg)->page_link & ~SG_PAGE_LINK_MASK);
 }
 
@@ -206,9 +200,6 @@ static inline struct page *sg_page(struct scatterlist *sg)
 static inline void sg_set_buf(struct scatterlist *sg, const void *buf,
 			      unsigned int buflen)
 {
-#ifdef CONFIG_DEBUG_SG
-	BUG_ON(!virt_addr_valid(buf));
-#endif
 	sg_set_page(sg, virt_to_page(buf), buflen, offset_in_page(buf));
 }
 

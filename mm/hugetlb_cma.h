@@ -2,17 +2,6 @@
 #ifndef _LINUX_HUGETLB_CMA_H
 #define _LINUX_HUGETLB_CMA_H
 
-#ifdef CONFIG_CMA
-void hugetlb_cma_free_frozen_folio(struct folio *folio);
-struct folio *hugetlb_cma_alloc_frozen_folio(int order, gfp_t gfp_mask,
-				      int nid, nodemask_t *nodemask);
-struct huge_bootmem_page *hugetlb_cma_alloc_bootmem(struct hstate *h, int *nid,
-						    bool node_exact);
-bool hugetlb_cma_exclusive_alloc(void);
-unsigned long hugetlb_cma_total_size(void);
-void hugetlb_cma_validate_params(void);
-bool hugetlb_early_cma(struct hstate *h);
-#else
 static inline void hugetlb_cma_free_frozen_folio(struct folio *folio)
 {
 }
@@ -48,5 +37,4 @@ static inline bool hugetlb_early_cma(struct hstate *h)
 {
 	return false;
 }
-#endif
 #endif

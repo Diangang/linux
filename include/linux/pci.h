@@ -518,17 +518,6 @@ struct pci_dev {
 	struct bin_attribute *res_attr[DEVICE_COUNT_RESOURCE]; /* sysfs file for resources */
 	struct bin_attribute *res_attr_wc[DEVICE_COUNT_RESOURCE]; /* sysfs file for WC mapping of resources */
 
-#ifdef CONFIG_HOTPLUG_PCI_PCIE
-	unsigned int	broken_cmd_compl:1;	/* No compl for some cmds */
-#endif
-#ifdef CONFIG_PCIE_PTM
-	u16		ptm_cap;		/* PTM Capability */
-	unsigned int	ptm_root:1;
-	unsigned int	ptm_responder:1;
-	unsigned int	ptm_requester:1;
-	atomic_t	ptm_enable_cnt;
-	u8		ptm_granularity;
-#endif
 #ifdef CONFIG_PCI_MSI
 	void __iomem	*msix_base;
 	raw_spinlock_t	msi_lock;
@@ -560,9 +549,6 @@ struct pci_dev {
 #ifdef CONFIG_PCI_P2PDMA
 	struct pci_p2pdma __rcu *p2pdma;
 #endif
-#ifdef CONFIG_PCI_DOE
-	struct xarray	doe_mbs;	/* Data Object Exchange mailboxes */
-#endif
 #ifdef CONFIG_PCI_NPEM
 	struct npem	*npem;		/* Native PCIe Enclosure Management */
 #endif
@@ -575,9 +561,6 @@ struct pci_dev {
 	unsigned int	ide_cfg:1;	/* Config cycles over IDE */
 	unsigned int	ide_tee_limit:1; /* Disallow T=0 traffic over IDE */
 #endif
-#ifdef CONFIG_PCI_TSM
-	struct pci_tsm *tsm;		/* TSM operation state */
-#endif
 	u16		acs_cap;	/* ACS Capability offset */
 	u16		acs_capabilities; /* ACS Capabilities */
 	u8		supported_speeds; /* Supported Link Speeds Vector */
@@ -588,11 +571,6 @@ struct pci_dev {
 	/* These methods index pci_reset_fn_methods[] */
 	u8 reset_methods[PCI_NUM_RESET_METHODS]; /* In priority order */
 
-#ifdef CONFIG_PCIE_TPH
-	u16		tph_cap;	/* TPH capability offset */
-	u8		tph_mode;	/* TPH mode */
-	u8		tph_req_type;	/* TPH requester type */
-#endif
 };
 
 static inline struct pci_dev *pci_physfn(struct pci_dev *dev)
@@ -1980,17 +1958,11 @@ struct pci_ptm_debugfs {
 	void *pdata;
 };
 
-#ifdef CONFIG_PCIE_PTM
-int pci_enable_ptm(struct pci_dev *dev);
-void pci_disable_ptm(struct pci_dev *dev);
-bool pcie_ptm_enabled(struct pci_dev *dev);
-#else
 static inline int pci_enable_ptm(struct pci_dev *dev)
 { return -EINVAL; }
 static inline void pci_disable_ptm(struct pci_dev *dev) { }
 static inline bool pcie_ptm_enabled(struct pci_dev *dev)
 { return false; }
-#endif
 
 #if IS_ENABLED(CONFIG_DEBUG_FS) && IS_ENABLED(CONFIG_PCIE_PTM)
 struct pci_ptm_debugfs *pcie_ptm_create_debugfs(struct device *dev, void *pdata,

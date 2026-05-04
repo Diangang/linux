@@ -211,26 +211,6 @@ config BLK_DEV_NBD
 
 	  If unsure, say N.
 
-config BLK_DEV_RAM
-	tristate "RAM block device support"
-	help
-	  Saying Y here will allow you to use a portion of your RAM memory as
-	  a block device, so that you can make file systems on it, read and
-	  write to it and do all the other things that you can do with normal
-	  block devices (such as hard drives). It is usually used to load and
-	  store a copy of a minimal root file system off of a floppy into RAM
-	  during the initial install of Linux.
-
-	  Note that the kernel command line option "ramdisk=XX" is now obsolete.
-	  For details, read <file:Documentation/admin-guide/blockdev/ramdisk.rst>.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called brd. An alias "rd" has been defined
-	  for historical reasons.
-
-	  Most normal users won't need the RAM disk functionality, and can
-	  thus say N here.
-
 config BLK_DEV_RAM_COUNT
 	int "Default number of RAM disks"
 	default "16"
@@ -292,15 +272,6 @@ config BLK_DEV_RBD
 	  More information at http://ceph.newdream.net/.
 
 	  If unsure, say N.
-
-config BLK_DEV_UBLK
-	tristate "Userspace block driver (Experimental)"
-	select IO_URING
-	help
-	  io_uring based userspace block driver. Together with ublk server, ublk
-	  has been working well, but interface with userspace or command data
-	  definition isn't finalized yet, and might change according to future
-	  requirement, so mark is as experimental now.
 
 config BLKDEV_UBLK_LEGACY_OPCODES
 	bool "Support legacy command opcode"

@@ -484,12 +484,7 @@ void nvme_complete_rq(struct request *req)
 		nvme_failover_req(req);
 		return;
 	case AUTHENTICATE:
-#ifdef CONFIG_NVME_HOST_AUTH
-		queue_work(nvme_wq, &ctrl->dhchap_auth_work);
-		nvme_retry_req(req);
-#else
 		nvme_end_req(req);
-#endif
 		return;
 	}
 }
@@ -2625,15 +2620,7 @@ static void nvme_configure_opal(struct nvme_ctrl *ctrl, bool was_suspended)
 }
 #endif /* CONFIG_BLK_SED_OPAL */
 
-#ifdef CONFIG_BLK_DEV_ZONED
-static int nvme_report_zones(struct gendisk *disk, sector_t sector,
-		unsigned int nr_zones, struct blk_report_zones_args *args)
-{
-	return nvme_ns_report_zones(disk->private_data, sector, nr_zones, args);
-}
-#else
 #define nvme_report_zones	NULL
-#endif /* CONFIG_BLK_DEV_ZONED */
 
 const struct block_device_operations nvme_bdev_ops = {
 	.owner		= THIS_MODULE,
@@ -3916,9 +3903,6 @@ static struct nvme_ns_head *nvme_alloc_ns_head(struct nvme_ctrl *ctrl,
 	size_t size = sizeof(*head);
 	int ret = -ENOMEM;
 
-#ifdef CONFIG_NVME_MULTIPATH
-	size += num_possible_nodes() * sizeof(struct nvme_ns *);
-#endif
 
 	head = kzalloc(size, GFP_KERNEL);
 	if (!head)
@@ -4082,9 +4066,6 @@ static int nvme_init_ns_head(struct nvme_ns *ns, struct nvme_ns_info *info)
 	ns->head = head;
 	mutex_unlock(&ctrl->subsys->lock);
 
-#ifdef CONFIG_NVME_MULTIPATH
-	cancel_delayed_work(&head->remove_work);
-#endif
 	return 0;
 
 out_put_ns_head:
@@ -4563,11 +4544,6 @@ static void nvme_scan_work(struct work_struct *work)
 	/* Requeue if we have missed AENs */
 	if (test_bit(NVME_AER_NOTICE_NS_CHANGED, &ctrl->events))
 		nvme_queue_scan(ctrl);
-#ifdef CONFIG_NVME_MULTIPATH
-	else if (ctrl->ana_log_buf)
-		/* Re-read the ANA log page to not miss updates */
-		queue_work(nvme_wq, &ctrl->ana_work);
-#endif
 }
 
 /*
@@ -4799,13 +4775,6 @@ static bool nvme_handle_aen_notice(struct nvme_ctrl *ctrl, u32 result)
 			queue_work(nvme_wq, &ctrl->fw_act_work);
 		}
 		break;
-#ifdef CONFIG_NVME_MULTIPATH
-	case NVME_AER_NOTICE_ANA:
-		if (!ctrl->ana_log_buf)
-			break;
-		queue_work(nvme_wq, &ctrl->ana_work);
-		break;
-#endif
 	case NVME_AER_NOTICE_DISC_CHANGED:
 		ctrl->aen_result = result;
 		break;

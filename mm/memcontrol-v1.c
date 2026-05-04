@@ -1958,23 +1958,6 @@ void memcg1_stat_format(struct mem_cgroup *memcg, struct seq_buf *s)
 			       (u64)memcg_page_state(memcg, NR_LRU_BASE + i) *
 			       PAGE_SIZE);
 
-#ifdef CONFIG_DEBUG_VM
-	{
-		pg_data_t *pgdat;
-		struct mem_cgroup_per_node *mz;
-		unsigned long anon_cost = 0;
-		unsigned long file_cost = 0;
-
-		for_each_online_pgdat(pgdat) {
-			mz = memcg->nodeinfo[pgdat->node_id];
-
-			anon_cost += mz->lruvec.anon_cost;
-			file_cost += mz->lruvec.file_cost;
-		}
-		seq_buf_printf(s, "anon_cost %lu\n", anon_cost);
-		seq_buf_printf(s, "file_cost %lu\n", file_cost);
-	}
-#endif
 }
 
 static u64 mem_cgroup_swappiness_read(struct cgroup_subsys_state *css,

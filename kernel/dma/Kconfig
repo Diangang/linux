@@ -86,19 +86,6 @@ config SWIOTLB
 	bool
 	select NEED_DMA_MAP_STATE
 
-config SWIOTLB_DYNAMIC
-	bool "Dynamic allocation of DMA bounce buffers"
-	default n
-	depends on SWIOTLB
-	help
-	  This enables dynamic resizing of the software IO TLB. The kernel
-	  starts with one memory pool at boot and it will allocate additional
-	  pools as needed. To reduce run-time kernel memory requirements, you
-	  may have to specify a smaller size of the initial pool using
-	  "swiotlb=" on the kernel command line.
-
-	  If unsure, say N.
-
 config DMA_BOUNCE_UNALIGNED_KMALLOC
 	bool
 	depends on SWIOTLB
@@ -242,20 +229,6 @@ config CMA_ALIGNMENT
 	  If unsure, leave the default value "8".
 
 endif
-
-config DMA_API_DEBUG
-	bool "Enable debugging of DMA-API usage"
-	select NEED_DMA_MAP_STATE
-	help
-	  Enable this option to debug the use of the DMA API by device drivers.
-	  With this option you will be able to detect common bugs in device
-	  drivers like double-freeing of DMA mappings or freeing mappings that
-	  were never allocated.
-
-	  This option causes a performance degradation.  Use only if you want to
-	  debug device drivers and dma interactions.
-
-	  If unsure, say N.
 
 config DMA_MAP_BENCHMARK
 	bool "Enable benchmarking of streaming DMA mapping"

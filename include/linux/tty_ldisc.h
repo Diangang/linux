@@ -20,9 +20,6 @@ struct ld_semaphore {
 	unsigned int		wait_readers;
 	struct list_head	read_wait;
 	struct list_head	write_wait;
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map	dep_map;
-#endif
 };
 
 void __init_ldsem(struct ld_semaphore *sem, const char *name,
@@ -42,17 +39,10 @@ int ldsem_down_write(struct ld_semaphore *sem, long timeout);
 void ldsem_up_read(struct ld_semaphore *sem);
 void ldsem_up_write(struct ld_semaphore *sem);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-int ldsem_down_read_nested(struct ld_semaphore *sem, int subclass,
-		long timeout);
-int ldsem_down_write_nested(struct ld_semaphore *sem, int subclass,
-		long timeout);
-#else
 # define ldsem_down_read_nested(sem, subclass, timeout)		\
 		ldsem_down_read(sem, timeout)
 # define ldsem_down_write_nested(sem, subclass, timeout)	\
 		ldsem_down_write(sem, timeout)
-#endif
 
 /**
  * struct tty_ldisc_ops - ldisc operations

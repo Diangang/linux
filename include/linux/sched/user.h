@@ -28,9 +28,6 @@ struct user_struct {
 	defined(CONFIG_VFIO_PCI_ZDEV_KVM) || IS_ENABLED(CONFIG_IOMMUFD)
 	atomic_long_t locked_vm;
 #endif
-#ifdef CONFIG_WATCH_QUEUE
-	atomic_t nr_watches;	/* The number of watches this user currently has */
-#endif
 
 	/* Miscellaneous per-user rate limit */
 	struct ratelimit_state ratelimit;

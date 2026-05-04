@@ -902,17 +902,6 @@ static inline unsigned int scsi_host_dif_capable(struct Scsi_Host *shost, unsign
 
 static inline unsigned int scsi_host_dix_capable(struct Scsi_Host *shost, unsigned int target_type)
 {
-#if defined(CONFIG_BLK_DEV_INTEGRITY)
-	static unsigned char cap[] = { SHOST_DIX_TYPE0_PROTECTION,
-				       SHOST_DIX_TYPE1_PROTECTION,
-				       SHOST_DIX_TYPE2_PROTECTION,
-				       SHOST_DIX_TYPE3_PROTECTION };
-
-	if (target_type >= ARRAY_SIZE(cap))
-		return 0;
-
-	return shost->prot_capabilities & cap[target_type];
-#endif
 	return 0;
 }
 

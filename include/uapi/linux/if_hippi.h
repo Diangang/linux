@@ -78,32 +78,7 @@ struct hipnet_statistics {
 
 
 struct hippi_fp_hdr {
-#if 0
-	__u8		ulp;				/* must contain 4 */
-#if defined (__BIG_ENDIAN_BITFIELD)
-	__u8		d1_data_present:1;		/* must be 1 */
-	__u8		start_d2_burst_boundary:1;	/* must be zero */
-	__u8		reserved:6;			/* must be zero */
-#if 0
-	__u16		reserved1:5;
-	__u16		d1_area_size:8;			/* must be 3 */
-	__u16		d2_offset:3;			/* must be zero */
-#endif
-#elif defined(__LITTLE_ENDIAN_BITFIELD)
-	__u8		reserved:6;			/* must be zero */
-	__u8	 	start_d2_burst_boundary:1;	/* must be zero */
-	__u8		d1_data_present:1;		/* must be 1 */
-#if 0
-	__u16		d2_offset:3;			/* must be zero */
-	__u16		d1_area_size:8;			/* must be 3 */
-	__u16		reserved1:5;			/* must be zero */
-#endif
-#else
-#error	"Please fix <asm/byteorder.h>"
-#endif
-#else
 	__be32		fixed;
-#endif
 	__be32		d2_size;
 } __attribute__((packed));
 

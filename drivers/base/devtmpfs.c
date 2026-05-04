@@ -31,11 +31,7 @@
 #include <uapi/linux/mount.h>
 #include "base.h"
 
-#ifdef CONFIG_DEVTMPFS_SAFE
-#define DEVTMPFS_MFLAGS       (MS_SILENT | MS_NOEXEC | MS_NOSUID)
-#else
 #define DEVTMPFS_MFLAGS       (MS_SILENT)
-#endif
 
 static struct task_struct *thread;
 
@@ -64,11 +60,7 @@ static struct vfsmount *mnt;
 
 static struct file_system_type internal_fs_type = {
 	.name = "devtmpfs",
-#ifdef CONFIG_TMPFS
-	.init_fs_context = shmem_init_fs_context,
-#else
 	.init_fs_context = ramfs_init_fs_context,
-#endif
 	.kill_sb = kill_anon_super,
 };
 
@@ -90,11 +82,7 @@ static struct fs_context_operations devtmpfs_context_ops = {};
 static int devtmpfs_init_fs_context(struct fs_context *fc)
 {
 	int ret;
-#ifdef CONFIG_TMPFS
-	ret = shmem_init_fs_context(fc);
-#else
 	ret = ramfs_init_fs_context(fc);
-#endif
 	if (ret < 0)
 		return ret;
 

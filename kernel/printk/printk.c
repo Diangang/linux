@@ -116,13 +116,6 @@ void lockdep_assert_console_list_lock_held(void)
 EXPORT_SYMBOL(lockdep_assert_console_list_lock_held);
 #endif
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-bool console_srcu_read_lock_is_held(void)
-{
-	return srcu_read_lock_held(&console_srcu);
-}
-EXPORT_SYMBOL(console_srcu_read_lock_is_held);
-#endif
 
 enum devkmsg_log_bits {
 	__DEVKMSG_LOG_BIT_ON = 0,
@@ -643,14 +636,7 @@ static ssize_t info_print_ext_header(char *buf, size_t size,
 {
 	u64 ts_usec = info->ts_nsec;
 	char caller[20];
-#ifdef CONFIG_PRINTK_CALLER
-	u32 id = info->caller_id;
-
-	snprintf(caller, sizeof(caller), ",caller=%c%u",
-		 id & 0x80000000 ? 'C' : 'T', id & ~0x80000000);
-#else
 	caller[0] = '\0';
-#endif
 
 	do_div(ts_usec, 1000);
 
@@ -1289,60 +1275,9 @@ static bool suppress_message_printing(int level)
 	return (level >= console_loglevel && !ignore_loglevel);
 }
 
-#ifdef CONFIG_BOOT_PRINTK_DELAY
-
-static int boot_delay; /* msecs delay after each printk during bootup */
-static unsigned long long loops_per_msec;	/* based on boot_delay */
-
-static int __init boot_delay_setup(char *str)
-{
-	unsigned long lpj;
-
-	lpj = preset_lpj ? preset_lpj : 1000000;	/* some guess */
-	loops_per_msec = (unsigned long long)lpj / 1000 * HZ;
-
-	get_option(&str, &boot_delay);
-	if (boot_delay > 10 * 1000)
-		boot_delay = 0;
-
-	pr_debug("boot_delay: %u, preset_lpj: %ld, lpj: %lu, "
-		"HZ: %d, loops_per_msec: %llu\n",
-		boot_delay, preset_lpj, lpj, HZ, loops_per_msec);
-	return 0;
-}
-early_param("boot_delay", boot_delay_setup);
-
-static void boot_delay_msec(int level)
-{
-	unsigned long long k;
-	unsigned long timeout;
-	bool suppress = !is_printk_force_console() &&
-			suppress_message_printing(level);
-
-	if ((boot_delay == 0 || system_state >= SYSTEM_RUNNING) || suppress)
-		return;
-
-	k = (unsigned long long)loops_per_msec * boot_delay;
-
-	timeout = jiffies + msecs_to_jiffies(boot_delay);
-	while (k) {
-		k--;
-		cpu_relax();
-		/*
-		 * use (volatile) jiffies to prevent
-		 * compiler reduction; loop termination via jiffies
-		 * is secondary and may or may not happen.
-		 */
-		if (time_after(jiffies, timeout))
-			break;
-		touch_nmi_watchdog();
-	}
-}
-#else
 static inline void boot_delay_msec(int level)
 {
 }
-#endif
 
 static bool printk_time = IS_ENABLED(CONFIG_PRINTK_TIME);
 module_param_named(time, printk_time, bool, S_IRUGO | S_IWUSR);
@@ -1360,18 +1295,7 @@ static size_t print_time(u64 ts, char *buf)
 		       (unsigned long)ts, rem_nsec / 1000);
 }
 
-#ifdef CONFIG_PRINTK_CALLER
-static size_t print_caller(u32 id, char *buf)
-{
-	char caller[12];
-
-	snprintf(caller, sizeof(caller), "%c%u",
-		 id & 0x80000000 ? 'C' : 'T', id & ~0x80000000);
-	return sprintf(buf, "[%6s]", caller);
-}
-#else
 #define print_caller(id, buf) 0
-#endif
 
 static size_t info_print_prefix(const struct printk_info  *info, bool syslog,
 				bool time, char *buf)
@@ -2406,19 +2330,6 @@ void printk_legacy_allow_panic_sync(void)
 
 bool __read_mostly debug_non_panic_cpus;
 
-#ifdef CONFIG_PRINTK_CALLER
-static int __init debug_non_panic_cpus_setup(char *str)
-{
-	debug_non_panic_cpus = true;
-	pr_info("allow messages from non-panic CPUs in panic()\n");
-
-	return 0;
-}
-early_param("debug_non_panic_cpus", debug_non_panic_cpus_setup);
-module_param(debug_non_panic_cpus, bool, 0644);
-MODULE_PARM_DESC(debug_non_panic_cpus,
-		 "allow messages from non-panic CPUs in panic()");
-#endif
 
 asmlinkage int vprintk_emit(int facility, int level,
 			    const struct dev_printk_info *dev_info,

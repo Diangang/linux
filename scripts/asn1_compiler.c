@@ -540,13 +540,6 @@ static void tokenise(char *buffer, char *end)
 	nr_tokens = tix;
 	verbose("Extracted %u tokens\n", nr_tokens);
 
-#if 0
-	{
-		int n;
-		for (n = 0; n < nr_tokens; n++)
-			debug("Token %3u: '%s'\n", n, token_list[n].content);
-	}
-#endif
 }
 
 static void build_type_list(void);
@@ -787,12 +780,6 @@ static void build_type_list(void)
 	qsort(type_index, nr, sizeof(type_index[0]), type_index_compare);
 
 	verbose("Extracted %u types\n", nr_types);
-#if 0
-	for (n = 0; n < nr_types; n++) {
-		struct type *type = type_index[n];
-		debug("- %*.*s\n", type->name->content);
-	}
-#endif
 }
 
 static struct element *parse_type(struct token **_cursor, struct token *stop,

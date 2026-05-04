@@ -166,9 +166,6 @@ struct signal_struct {
 	/* PID/PID hash table linkage. */
 	struct pid *pids[PIDTYPE_MAX];
 
-#ifdef CONFIG_NO_HZ_FULL
-	atomic_t tick_dep_mask;
-#endif
 
 	struct pid *tty_old_pgrp;
 

@@ -1375,15 +1375,6 @@ static inline void dmaengine_put(void)
 }
 #endif
 
-#ifdef CONFIG_ASYNC_TX_DMA
-#define async_dmaengine_get()	dmaengine_get()
-#define async_dmaengine_put()	dmaengine_put()
-#ifndef CONFIG_ASYNC_TX_ENABLE_CHANNEL_SWITCH
-#define async_dma_find_channel(type) dma_find_channel(DMA_ASYNC_TX)
-#else
-#define async_dma_find_channel(type) dma_find_channel(type)
-#endif /* CONFIG_ASYNC_TX_ENABLE_CHANNEL_SWITCH */
-#else
 static inline void async_dmaengine_get(void)
 {
 }
@@ -1395,7 +1386,6 @@ async_dma_find_channel(enum dma_transaction_type type)
 {
 	return NULL;
 }
-#endif /* CONFIG_ASYNC_TX_DMA */
 void dma_async_tx_descriptor_init(struct dma_async_tx_descriptor *tx,
 				  struct dma_chan *chan);
 

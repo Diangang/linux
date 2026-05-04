@@ -217,10 +217,6 @@ static inline bool rht_grow_above_max(const struct rhashtable *ht,
 	return atomic_read(&ht->nelems) >= ht->max_elems;
 }
 
-#ifdef CONFIG_PROVE_LOCKING
-int lockdep_rht_mutex_is_held(struct rhashtable *ht);
-int lockdep_rht_bucket_is_held(const struct bucket_table *tbl, u32 hash);
-#else
 static inline int lockdep_rht_mutex_is_held(struct rhashtable *ht)
 {
 	return 1;
@@ -231,7 +227,6 @@ static inline int lockdep_rht_bucket_is_held(const struct bucket_table *tbl,
 {
 	return 1;
 }
-#endif /* CONFIG_PROVE_LOCKING */
 
 void *rhashtable_insert_slow(struct rhashtable *ht, const void *key,
 			     struct rhash_head *obj);

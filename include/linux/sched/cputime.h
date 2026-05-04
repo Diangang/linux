@@ -9,11 +9,6 @@
  * cputime accounting APIs:
  */
 
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
-extern bool task_cputime(struct task_struct *t,
-			 u64 *utime, u64 *stime);
-extern u64 task_gtime(struct task_struct *t);
-#else
 static inline bool task_cputime(struct task_struct *t,
 				u64 *utime, u64 *stime)
 {
@@ -26,7 +21,6 @@ static inline u64 task_gtime(struct task_struct *t)
 {
 	return t->gtime;
 }
-#endif
 
 #ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
 static inline void task_cputime_scaled(struct task_struct *t,

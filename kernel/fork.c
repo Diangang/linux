@@ -978,9 +978,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	kmsan_task_create(tsk);
 	kmap_local_fork(tsk);
 
-#ifdef CONFIG_FAULT_INJECTION
-	tsk->fail_nth = 0;
-#endif
 
 #ifdef CONFIG_BLK_CGROUP
 	tsk->throttle_disk = NULL;
@@ -1562,10 +1559,6 @@ static int copy_mm(u64 clone_flags, struct task_struct *tsk)
 
 	tsk->min_flt = tsk->maj_flt = 0;
 	tsk->nvcsw = tsk->nivcsw = 0;
-#ifdef CONFIG_DETECT_HUNG_TASK
-	tsk->last_switch_count = tsk->nvcsw + tsk->nivcsw;
-	tsk->last_switch_time = 0;
-#endif
 
 	tsk->mm = NULL;
 	tsk->active_mm = NULL;
@@ -2117,9 +2110,6 @@ __latent_entropy struct task_struct *copy_process(
 	raw_spin_lock_init(&p->blocked_lock);
 
 	lockdep_assert_irqs_enabled();
-#ifdef CONFIG_PROVE_LOCKING
-	DEBUG_LOCKS_WARN_ON(!p->softirqs_enabled);
-#endif
 	retval = copy_creds(p, clone_flags);
 	if (retval < 0)
 		goto bad_fork_free;
@@ -2158,11 +2148,6 @@ __latent_entropy struct task_struct *copy_process(
 #endif
 	prev_cputime_init(&p->prev_cputime);
 
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
-	seqcount_init(&p->vtime.seqcount);
-	p->vtime.starttime = 0;
-	p->vtime.state = VTIME_INACTIVE;
-#endif
 
 #ifdef CONFIG_IO_URING
 	p->io_uring = NULL;
@@ -2174,9 +2159,6 @@ __latent_entropy struct task_struct *copy_process(
 
 	p->default_timer_slack_ns = current->timer_slack_ns;
 
-#ifdef CONFIG_PSI
-	p->psi_flags = 0;
-#endif
 
 	task_io_accounting_init(&p->ioac);
 	acct_clear_integrals(p);

@@ -2743,13 +2743,8 @@ static ssize_t target_store(struct device *dev, struct device_attribute *attr,
 	if (ret)
 		return ret;
 
-#ifdef CONFIG_CPU_HOTPLUG_STATE_CONTROL
-	if (target < CPUHP_OFFLINE || target > CPUHP_ONLINE)
-		return -EINVAL;
-#else
 	if (target != CPUHP_OFFLINE && target != CPUHP_ONLINE)
 		return -EINVAL;
-#endif
 
 	ret = lock_device_hotplug_sysfs();
 	if (ret)

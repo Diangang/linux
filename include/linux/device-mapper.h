@@ -102,18 +102,12 @@ typedef int (*dm_prepare_ioctl_fn) (struct dm_target *ti, struct block_device **
 				    unsigned int cmd, unsigned long arg,
 				    bool *forward);
 
-#ifdef CONFIG_BLK_DEV_ZONED
-typedef int (*dm_report_zones_fn) (struct dm_target *ti,
-				   struct dm_report_zones_args *args,
-				   unsigned int nr_zones);
-#else
 /*
  * Define dm_report_zones_fn so that targets can assign to NULL if
  * CONFIG_BLK_DEV_ZONED disabled. Otherwise each target needs to do
  * awkward #ifdefs in their target_type, etc.
  */
 typedef int (*dm_report_zones_fn) (struct dm_target *dummy);
-#endif
 
 /*
  * These iteration functions are typically used to check (and combine)
@@ -277,13 +271,8 @@ struct target_type {
  * - DM_TARGET_MIXED_ZONED_MODEL: the target supports combining multiple
  *   devices with different zoned models.
  */
-#ifdef CONFIG_BLK_DEV_ZONED
-#define DM_TARGET_ZONED_HM		0x00000040
-#define dm_target_supports_zoned_hm(type) ((type)->features & DM_TARGET_ZONED_HM)
-#else
 #define DM_TARGET_ZONED_HM		0x00000000
 #define dm_target_supports_zoned_hm(type) (false)
-#endif
 
 /*
  * A target handles REQ_NOWAIT
@@ -297,14 +286,8 @@ struct target_type {
 #define DM_TARGET_PASSES_CRYPTO		0x00000100
 #define dm_target_passes_crypto(type) ((type)->features & DM_TARGET_PASSES_CRYPTO)
 
-#ifdef CONFIG_BLK_DEV_ZONED
-#define DM_TARGET_MIXED_ZONED_MODEL	0x00000200
-#define dm_target_supports_mixed_zoned_model(type) \
-	((type)->features & DM_TARGET_MIXED_ZONED_MODEL)
-#else
 #define DM_TARGET_MIXED_ZONED_MODEL	0x00000000
 #define dm_target_supports_mixed_zoned_model(type) (false)
-#endif
 
 #define DM_TARGET_ATOMIC_WRITES		0x00000400
 #define dm_target_supports_atomic_writes(type) ((type)->features & DM_TARGET_ATOMIC_WRITES)
@@ -535,27 +518,6 @@ int dm_noflush_suspending(struct dm_target *ti);
 void dm_accept_partial_bio(struct bio *bio, unsigned int n_sectors);
 void dm_submit_bio_remap(struct bio *clone, struct bio *tgt_clone);
 
-#ifdef CONFIG_BLK_DEV_ZONED
-struct dm_report_zones_args {
-	struct dm_target *tgt;
-	struct gendisk *disk;
-	sector_t next_sector;
-
-	unsigned int zone_idx;
-
-	/* for block layer ->report_zones */
-	struct blk_report_zones_args *rep_args;
-
-	/* for internal users */
-	report_zones_cb cb;
-	void *data;
-
-	/* must be filled by ->report_zones before calling dm_report_zones_cb */
-	sector_t start;
-};
-int dm_report_zones(struct block_device *bdev, sector_t start, sector_t sector,
-		    struct dm_report_zones_args *args, unsigned int nr_zones);
-#endif /* CONFIG_BLK_DEV_ZONED */
 
 /*
  * Device mapper functions to parse and create devices specified by the

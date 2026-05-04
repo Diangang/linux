@@ -41,9 +41,6 @@
 #define ACPI_REDUCED_HARDWARE 1
 #endif
 
-#ifdef CONFIG_ACPI_DEBUGGER
-#define ACPI_DEBUGGER
-#endif
 
 #ifdef CONFIG_ACPI_DEBUG
 #define ACPI_MUTEX_DEBUG

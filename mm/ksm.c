@@ -553,9 +553,6 @@ static inline void stable_node_dup_del(struct ksm_stable_node *dup)
 		__stable_node_dup_del(dup);
 	else
 		rb_erase(&dup->node, root_stable_tree + NUMA(dup->nid));
-#ifdef CONFIG_DEBUG_VM
-	dup->head = NULL;
-#endif
 }
 
 static inline struct ksm_rmap_item *alloc_rmap_item(void)

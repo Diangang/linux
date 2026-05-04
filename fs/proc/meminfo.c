@@ -14,9 +14,6 @@
 #include <linux/vmstat.h>
 #include <linux/atomic.h>
 #include <linux/vmalloc.h>
-#ifdef CONFIG_CMA
-#include <linux/cma.h>
-#endif
 #include <linux/zswap.h>
 #include <asm/page.h>
 #include "internal.h"
@@ -88,12 +85,6 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 
 	show_val_kb(m, "SwapTotal:      ", i.totalswap);
 	show_val_kb(m, "SwapFree:       ", i.freeswap);
-#ifdef CONFIG_ZSWAP
-	show_val_kb(m, "Zswap:          ", zswap_total_pages());
-	seq_printf(m,  "Zswapped:       %8lu kB\n",
-		   (unsigned long)atomic_long_read(&zswap_stored_pages) <<
-		   (PAGE_SHIFT - 10));
-#endif
 	show_val_kb(m, "Dirty:          ",
 		    global_node_page_state(NR_FILE_DIRTY));
 	show_val_kb(m, "Writeback:      ",
@@ -151,11 +142,6 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 		    global_node_page_state(NR_FILE_PMDMAPPED));
 #endif
 
-#ifdef CONFIG_CMA
-	show_val_kb(m, "CmaTotal:       ", totalcma_pages);
-	show_val_kb(m, "CmaFree:        ",
-		    global_zone_page_state(NR_FREE_CMA_PAGES));
-#endif
 
 #ifdef CONFIG_UNACCEPTED_MEMORY
 	show_val_kb(m, "Unaccepted:     ",

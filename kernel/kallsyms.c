@@ -436,28 +436,6 @@ int lookup_symbol_name(unsigned long addr, char *symname)
 	return lookup_module_symbol_name(addr, symname);
 }
 
-#ifdef CONFIG_STACKTRACE_BUILD_ID
-
-static int append_buildid(char *buffer,  const char *modname,
-			  const unsigned char *buildid)
-{
-	if (!modname)
-		return 0;
-
-	if (!buildid) {
-		pr_warn_once("Undefined buildid for the module %s\n", modname);
-		return 0;
-	}
-
-	/* build ID should match length of sprintf */
-#ifdef CONFIG_MODULES
-	static_assert(sizeof(typeof_member(struct module, build_id)) == 20);
-#endif
-
-	return sprintf(buffer, " %20phN", buildid);
-}
-
-#else /* CONFIG_STACKTRACE_BUILD_ID */
 
 static int append_buildid(char *buffer,   const char *modname,
 			  const unsigned char *buildid)
@@ -465,7 +443,6 @@ static int append_buildid(char *buffer,   const char *modname,
 	return 0;
 }
 
-#endif /* CONFIG_STACKTRACE_BUILD_ID */
 
 /* Look up a kernel symbol and return it in a text buffer. */
 static int __sprint_symbol(char *buffer, unsigned long address,

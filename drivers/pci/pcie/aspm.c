@@ -257,15 +257,7 @@ static LIST_HEAD(link_list);
 #define POLICY_POWERSAVE 2	/* high power saving */
 #define POLICY_POWER_SUPERSAVE 3 /* possibly even more power saving */
 
-#ifdef CONFIG_PCIEASPM_PERFORMANCE
-static int aspm_policy = POLICY_PERFORMANCE;
-#elif defined CONFIG_PCIEASPM_POWERSAVE
-static int aspm_policy = POLICY_POWERSAVE;
-#elif defined CONFIG_PCIEASPM_POWER_SUPERSAVE
-static int aspm_policy = POLICY_POWER_SUPERSAVE;
-#else
 static int aspm_policy;
-#endif
 
 static const char *policy_str[] = {
 	[POLICY_DEFAULT] = "default",

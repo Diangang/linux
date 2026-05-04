@@ -623,12 +623,6 @@ static void sunsab_shutdown(struct uart_port *port)
 	 * transmitted at 9600 baud during shutdown (regardless of the
 	 * speed the chip was configured for when the port was open).
 	 */
-#if 0
-	/* Power Down */
-	tmp = readb(&up->regs->rw.ccr0);
-	tmp &= ~SAB82532_CCR0_PU;
-	writeb(tmp, &up->regs->rw.ccr0);
-#endif
 
 	uart_port_unlock_irqrestore(&up->port, flags);
 	free_irq(up->port.irq, up);

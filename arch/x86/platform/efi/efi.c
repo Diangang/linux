@@ -87,9 +87,6 @@ static const unsigned long * const efi_tables[] = {
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	&efi.mokvar_table,
 #endif
-#ifdef CONFIG_EFI_COCO_SECRET
-	&efi.coco_secret,
-#endif
 #ifdef CONFIG_UNACCEPTED_MEMORY
 	&efi.unaccepted,
 #endif

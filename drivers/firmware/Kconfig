@@ -76,17 +76,6 @@ config DMIID
 	  information from userspace through /sys/class/dmi/id/ or if you want
 	  DMI-based module auto-loading.
 
-config DMI_SYSFS
-	tristate "DMI table support in sysfs"
-	depends on SYSFS && DMI
-	default n
-	help
-	  Say Y or M here to enable the exporting of the raw DMI table
-	  data via sysfs.  This is useful for consuming the data without
-	  requiring any access to /dev/mem at all.  Tables are found
-	  under /sys/firmware/dmi when this option is enabled and
-	  loaded.
-
 config DMI_SCAN_MACHINE_NON_EFI_FALLBACK
 	bool
 
@@ -100,35 +89,12 @@ config ISCSI_IBFT_FIND
 	  is necessary for iSCSI Boot Firmware Table Attributes module to work
 	  properly.
 
-config ISCSI_IBFT
-	tristate "iSCSI Boot Firmware Table Attributes module"
-	select ISCSI_BOOT_SYSFS
-	select ISCSI_IBFT_FIND if X86
-	depends on ACPI && SCSI && SCSI_LOWLEVEL
-	default n
-	help
-	  This option enables support for detection and exposing of iSCSI
-	  Boot Firmware Table (iBFT) via sysfs to userspace. If you wish to
-	  detect iSCSI boot parameters dynamically during system boot, say Y.
-	  Otherwise, say N.
-
 config RASPBERRYPI_FIRMWARE
 	tristate "Raspberry Pi Firmware Driver"
 	depends on BCM2835_MBOX
 	help
 	  This option enables support for communicating with the firmware on the
 	  Raspberry Pi.
-
-config FW_CFG_SYSFS
-	tristate "QEMU fw_cfg device support in sysfs"
-	depends on SYSFS && (ARM || ARM64 || PARISC || PPC_PMAC || RISCV || SPARC || X86)
-	depends on HAS_IOPORT_MAP
-	default n
-	help
-	  Say Y or M here to enable the exporting of the QEMU firmware
-	  configuration (fw_cfg) file entries via sysfs. Entries are
-	  found under /sys/firmware/fw_cfg when this option is enabled
-	  and loaded.
 
 config FW_CFG_SYSFS_CMDLINE
 	bool "QEMU fw_cfg device parameter parsing"
@@ -182,34 +148,6 @@ config SYSFB
 	bool
 	select BOOT_VESA_SUPPORT
 	select SCREEN_INFO
-
-config SYSFB_SIMPLEFB
-	bool "Mark VGA/VBE/EFI FB as generic system framebuffer"
-	depends on X86 || EFI
-	select SYSFB
-	help
-	  Firmwares often provide initial graphics framebuffers so the BIOS,
-	  bootloader or kernel can show basic video-output during boot for
-	  user-guidance and debugging. Historically, x86 used the VESA BIOS
-	  Extensions and EFI-framebuffers for this, which are mostly limited
-	  to x86 BIOS or EFI systems.
-	  This option, if enabled, marks VGA/VBE/EFI framebuffers as generic
-	  framebuffers so the new generic system-framebuffer drivers can be
-	  used instead. If the framebuffer is not compatible with the generic
-	  modes, it is advertised as fallback platform framebuffer so legacy
-	  drivers like efifb, vesafb and uvesafb can pick it up.
-	  If this option is not selected, all system framebuffers are always
-	  marked as fallback platform framebuffers as usual.
-
-	  Note: Legacy fbdev drivers, including vesafb, efifb, uvesafb, will
-	  not be able to pick up generic system framebuffers if this option
-	  is selected. You are highly encouraged to enable simplefb as
-	  replacement if you select this option. simplefb can correctly deal
-	  with generic system framebuffers. But you should still keep vesafb
-	  and others enabled as fallback if a system framebuffer is
-	  incompatible with simplefb.
-
-	  If unsure, say Y.
 
 config TH1520_AON_PROTOCOL
 	tristate "Always-On firmware protocol"

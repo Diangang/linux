@@ -127,47 +127,7 @@ static void __iomem *rcar_pci_cfg_base(struct pci_bus *bus, unsigned int devfn,
 	return priv->reg + (slot >> 1) * 0x100 + where;
 }
 
-#ifdef CONFIG_PCI_DEBUG
-/* if debug enabled, then attach an error handler irq to the bridge */
-
-static irqreturn_t rcar_pci_err_irq(int irq, void *pw)
-{
-	struct rcar_pci *priv = pw;
-	struct device *dev = priv->dev;
-	u32 status = ioread32(priv->reg + RCAR_PCI_INT_STATUS_REG);
-
-	if (status & RCAR_PCI_INT_ALLERRORS) {
-		dev_err(dev, "error irq: status %08x\n", status);
-
-		/* clear the error(s) */
-		iowrite32(status & RCAR_PCI_INT_ALLERRORS,
-			  priv->reg + RCAR_PCI_INT_STATUS_REG);
-		return IRQ_HANDLED;
-	}
-
-	return IRQ_NONE;
-}
-
-static void rcar_pci_setup_errirq(struct rcar_pci *priv)
-{
-	struct device *dev = priv->dev;
-	int ret;
-	u32 val;
-
-	ret = devm_request_irq(dev, priv->irq, rcar_pci_err_irq,
-			       IRQF_SHARED, "error irq", priv);
-	if (ret) {
-		dev_err(dev, "cannot claim IRQ for error handling\n");
-		return;
-	}
-
-	val = ioread32(priv->reg + RCAR_PCI_INT_ENABLE_REG);
-	val |= RCAR_PCI_INT_ALLERRORS;
-	iowrite32(val, priv->reg + RCAR_PCI_INT_ENABLE_REG);
-}
-#else
 static inline void rcar_pci_setup_errirq(struct rcar_pci *priv) { }
-#endif
 
 /* PCI host controller setup */
 static void rcar_pci_setup(struct rcar_pci *priv)

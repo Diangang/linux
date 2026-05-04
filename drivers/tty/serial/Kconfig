@@ -510,16 +510,6 @@ config SERIAL_IMX_EARLYCON
 	  If you have enabled the earlycon on the Freescale IMX
 	  CPU you can make it the earlycon by answering Y to this option.
 
-config SERIAL_UARTLITE
-	tristate "Xilinx uartlite serial port support"
-	depends on HAS_IOMEM
-	select SERIAL_CORE
-	help
-	  Say Y here if you want to use the Xilinx uartlite serial controller.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called uartlite.
-
 config SERIAL_UARTLITE_CONSOLE
 	bool "Support for console on Xilinx uartlite serial port"
 	depends on SERIAL_UARTLITE=y
@@ -885,22 +875,6 @@ config SERIAL_TXX9_STDSERIAL
 	bool "TX39XX/49XX SIO act as standard serial"
 	depends on !SERIAL_8250 && SERIAL_TXX9
 
-config SERIAL_JSM
-	tristate "Digi International NEO and Classic PCI Support"
-	depends on PCI && HAS_IOPORT
-	select SERIAL_CORE
-	help
-	  This is a driver for Digi International's Neo and Classic series
-	  of cards which provide multiple serial ports. You would need
-	  something like this to connect more than two modems to your Linux
-	  box, for instance in order to become a dial-in server. This driver
-	  supports PCI boards only.
-
-	  If you have a card like this, say Y here, otherwise say N.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called jsm.
-
 config SERIAL_MSM
 	tristate "MSM on-chip serial port support"
 	depends on ARCH_QCOM || COMPILE_TEST
@@ -1026,14 +1000,6 @@ config SERIAL_QE
 	  This driver supports the QE serial ports on Freescale embedded
 	  PowerPC that contain a QUICC Engine.
 
-config SERIAL_SCCNXP
-	tristate "SCCNXP serial port support"
-	select SERIAL_CORE
-	help
-	  This selects support for an advanced UART from NXP (Philips).
-	  Supported ICs are SCC2681, SCC2691, SCC2692, SC28L91, SC28L92,
-	  SC28L202, SCC68681 and SCC68692.
-
 config SERIAL_SCCNXP_CONSOLE
 	bool "Console on SCCNXP serial port"
 	depends on SERIAL_SCCNXP=y
@@ -1112,12 +1078,6 @@ config SERIAL_GRLIB_GAISLER_APBUART_CONSOLE
 	help
 	Support for running a console on the GRLIB APBUART
 
-config SERIAL_ALTERA_JTAGUART
-	tristate "Altera JTAG UART support"
-	select SERIAL_CORE
-	help
-	  This driver supports the Altera JTAG UART port.
-
 config SERIAL_ALTERA_JTAGUART_CONSOLE
 	bool "Altera JTAG UART console support"
 	depends on SERIAL_ALTERA_JTAGUART=y
@@ -1133,12 +1093,6 @@ config SERIAL_ALTERA_JTAGUART_CONSOLE_BYPASS
 	help
 	  Bypass console output and keep going even if there is no
 	  JTAG terminal connection with the host.
-
-config SERIAL_ALTERA_UART
-	tristate "Altera UART support"
-	select SERIAL_CORE
-	help
-	  This driver supports the Altera softcore UART port.
 
 config SERIAL_ALTERA_UART_MAXPORTS
 	int "Maximum number of Altera UART ports"
@@ -1263,13 +1217,6 @@ config SERIAL_MPS2_UART_CONSOLE
 	select SERIAL_CORE_CONSOLE
 	select SERIAL_EARLYCON
 
-config SERIAL_ARC
-	tristate "ARC UART driver support"
-	select SERIAL_CORE
-	help
-	  Driver for on-chip UART for ARC(Synopsys) for the legacy
-	  FPGA Boards (ML50x/ARCAngel4)
-
 config SERIAL_ARC_CONSOLE
 	bool "Console on ARC UART"
 	depends on SERIAL_ARC=y
@@ -1286,22 +1233,6 @@ config SERIAL_ARC_NR_PORTS
 	help
 	  Set this to the number of serial ports you want the driver
 	  to support.
-
-config SERIAL_RP2
-	tristate "Comtrol RocketPort EXPRESS/INFINITY support"
-	depends on PCI
-	select SERIAL_CORE
-	help
-	  This driver supports the Comtrol RocketPort EXPRESS and
-	  RocketPort INFINITY families of PCI/PCIe multiport serial adapters.
-	  These adapters use a "RocketPort 2" ASIC that is not compatible
-	  with the original RocketPort driver (CONFIG_ROCKETPORT).
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called rp2.
-
-	  If you want to compile this driver into the kernel, say Y here.  If
-	  you don't have a suitable RocketPort card installed, say N.
 
 config SERIAL_RP2_NR_UARTS
 	int "Maximum number of RocketPort EXPRESS/INFINITY ports"

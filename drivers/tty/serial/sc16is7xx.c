@@ -302,10 +302,6 @@ struct sc16is7xx_one {
 struct sc16is7xx_port {
 	const struct sc16is7xx_devtype	*devtype;
 	struct clk			*clk;
-#ifdef CONFIG_GPIOLIB
-	struct gpio_chip		gpio;
-	unsigned long			gpio_valid_mask;
-#endif
 	u8				mctrl_mask;
 	struct kthread_worker		kworker;
 	struct task_struct		*kworker_task;
@@ -1250,118 +1246,6 @@ static const struct uart_ops sc16is7xx_ops = {
 	.pm		= sc16is7xx_pm,
 };
 
-#ifdef CONFIG_GPIOLIB
-static int sc16is7xx_gpio_get(struct gpio_chip *chip, unsigned offset)
-{
-	unsigned int val;
-	struct sc16is7xx_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[0].port;
-
-	val = sc16is7xx_port_read(port, SC16IS7XX_IOSTATE_REG);
-
-	return !!(val & BIT(offset));
-}
-
-static int sc16is7xx_gpio_set(struct gpio_chip *chip, unsigned int offset,
-			      int val)
-{
-	struct sc16is7xx_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[0].port;
-
-	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
-			      val ? BIT(offset) : 0);
-
-	return 0;
-}
-
-static int sc16is7xx_gpio_direction_input(struct gpio_chip *chip,
-					  unsigned offset)
-{
-	struct sc16is7xx_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[0].port;
-
-	sc16is7xx_port_update(port, SC16IS7XX_IODIR_REG, BIT(offset), 0);
-
-	return 0;
-}
-
-static int sc16is7xx_gpio_direction_output(struct gpio_chip *chip,
-					   unsigned offset, int val)
-{
-	struct sc16is7xx_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[0].port;
-	u8 state = sc16is7xx_port_read(port, SC16IS7XX_IOSTATE_REG);
-
-	if (val)
-		state |= BIT(offset);
-	else
-		state &= ~BIT(offset);
-
-	/*
-	 * If we write IOSTATE first, and then IODIR, the output value is not
-	 * transferred to the corresponding I/O pin.
-	 * The datasheet states that each register bit will be transferred to
-	 * the corresponding I/O pin programmed as output when writing to
-	 * IOSTATE. Therefore, configure direction first with IODIR, and then
-	 * set value after with IOSTATE.
-	 */
-	sc16is7xx_port_update(port, SC16IS7XX_IODIR_REG, BIT(offset),
-			      BIT(offset));
-	sc16is7xx_port_write(port, SC16IS7XX_IOSTATE_REG, state);
-
-	return 0;
-}
-
-static int sc16is7xx_gpio_init_valid_mask(struct gpio_chip *chip,
-					  unsigned long *valid_mask,
-					  unsigned int ngpios)
-{
-	struct sc16is7xx_port *s = gpiochip_get_data(chip);
-
-	*valid_mask = s->gpio_valid_mask;
-
-	return 0;
-}
-
-static int sc16is7xx_setup_gpio_chip(struct sc16is7xx_port *s)
-{
-	struct device *dev = s->p[0].port.dev;
-
-	if (!s->devtype->nr_gpio)
-		return 0;
-
-	switch (s->mctrl_mask) {
-	case 0:
-		s->gpio_valid_mask = GENMASK(7, 0);
-		break;
-	case SC16IS7XX_IOCONTROL_MODEM_A_BIT:
-		s->gpio_valid_mask = GENMASK(3, 0);
-		break;
-	case SC16IS7XX_IOCONTROL_MODEM_B_BIT:
-		s->gpio_valid_mask = GENMASK(7, 4);
-		break;
-	default:
-		break;
-	}
-
-	if (s->gpio_valid_mask == 0)
-		return 0;
-
-	s->gpio.owner		 = THIS_MODULE;
-	s->gpio.parent		 = dev;
-	s->gpio.label		 = dev_name(dev);
-	s->gpio.init_valid_mask	 = sc16is7xx_gpio_init_valid_mask;
-	s->gpio.direction_input	 = sc16is7xx_gpio_direction_input;
-	s->gpio.get		 = sc16is7xx_gpio_get;
-	s->gpio.direction_output = sc16is7xx_gpio_direction_output;
-	s->gpio.set		 = sc16is7xx_gpio_set;
-	s->gpio.base		 = -1;
-	s->gpio.ngpio		 = s->devtype->nr_gpio;
-	s->gpio.can_sleep	 = 1;
-
-	return gpiochip_add_data(&s->gpio, s);
-}
-#endif
 
 static void sc16is7xx_setup_irda_ports(struct sc16is7xx_port *s)
 {
@@ -1624,11 +1508,6 @@ int sc16is7xx_probe(struct device *dev, const struct sc16is7xx_devtype *devtype,
 	if (ret)
 		goto out_ports;
 
-#ifdef CONFIG_GPIOLIB
-	ret = sc16is7xx_setup_gpio_chip(s);
-	if (ret)
-		goto out_ports;
-#endif
 
 	if (s->polling) {
 		/* Initialize kernel thread for polling */
@@ -1655,10 +1534,6 @@ int sc16is7xx_probe(struct device *dev, const struct sc16is7xx_devtype *devtype,
 	if (!ret)
 		return 0;
 
-#ifdef CONFIG_GPIOLIB
-	if (s->gpio_valid_mask)
-		gpiochip_remove(&s->gpio);
-#endif
 
 out_ports:
 	for (i = 0; i < devtype->nr_uart; i++) {
@@ -1683,10 +1558,6 @@ void sc16is7xx_remove(struct device *dev)
 	struct sc16is7xx_port *s = dev_get_drvdata(dev);
 	int i;
 
-#ifdef CONFIG_GPIOLIB
-	if (s->gpio_valid_mask)
-		gpiochip_remove(&s->gpio);
-#endif
 
 	for (i = 0; i < s->devtype->nr_uart; i++) {
 		kthread_cancel_delayed_work_sync(&s->p[i].ms_work);

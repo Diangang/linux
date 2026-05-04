@@ -361,30 +361,3 @@ int fs_param_is_blockdev(struct p_log *log, const struct fs_parameter_spec *p,
 }
 EXPORT_SYMBOL(fs_param_is_blockdev);
 
-#ifdef CONFIG_VALIDATE_FS_PARSER
-/**
- * fs_validate_description - Validate a parameter specification array
- * @name: Owner name of the parameter specification array
- * @desc: The parameter specification array to validate.
- */
-bool fs_validate_description(const char *name,
-	const struct fs_parameter_spec *desc)
-{
-	const struct fs_parameter_spec *param, *p2;
-	bool good = true;
-
-	for (param = desc; param->name; param++) {
-		/* Check for duplicate parameter names */
-		for (p2 = desc; p2 < param; p2++) {
-			if (strcmp(param->name, p2->name) == 0) {
-				if (is_flag(param) != is_flag(p2))
-					continue;
-				pr_err("VALIDATE %s: PARAM[%s]: Duplicate\n",
-				       name, param->name);
-				good = false;
-			}
-		}
-	}
-	return good;
-}
-#endif /* CONFIG_VALIDATE_FS_PARSER */

@@ -542,9 +542,6 @@ static void cgroup_base_stat_add(struct cgroup_base_stat *dst_bstat,
 	dst_bstat->cputime.utime += src_bstat->cputime.utime;
 	dst_bstat->cputime.stime += src_bstat->cputime.stime;
 	dst_bstat->cputime.sum_exec_runtime += src_bstat->cputime.sum_exec_runtime;
-#ifdef CONFIG_SCHED_CORE
-	dst_bstat->forceidle_sum += src_bstat->forceidle_sum;
-#endif
 	dst_bstat->ntime += src_bstat->ntime;
 }
 
@@ -554,9 +551,6 @@ static void cgroup_base_stat_sub(struct cgroup_base_stat *dst_bstat,
 	dst_bstat->cputime.utime -= src_bstat->cputime.utime;
 	dst_bstat->cputime.stime -= src_bstat->cputime.stime;
 	dst_bstat->cputime.sum_exec_runtime -= src_bstat->cputime.sum_exec_runtime;
-#ifdef CONFIG_SCHED_CORE
-	dst_bstat->forceidle_sum -= src_bstat->forceidle_sum;
-#endif
 	dst_bstat->ntime -= src_bstat->ntime;
 }
 
@@ -648,11 +642,6 @@ void __cgroup_account_cputime_field(struct cgroup *cgrp,
 	case CPUTIME_SOFTIRQ:
 		rstatbc->bstat.cputime.stime += delta_exec;
 		break;
-#ifdef CONFIG_SCHED_CORE
-	case CPUTIME_FORCEIDLE:
-		rstatbc->bstat.forceidle_sum += delta_exec;
-		break;
-#endif
 	default:
 		break;
 	}
@@ -692,9 +681,6 @@ static void root_cgroup_cputime(struct cgroup_base_stat *bstat)
 		cputime->sum_exec_runtime += user;
 		cputime->sum_exec_runtime += sys;
 
-#ifdef CONFIG_SCHED_CORE
-		bstat->forceidle_sum += cpustat[CPUTIME_FORCEIDLE];
-#endif
 		bstat->ntime += cpustat[CPUTIME_NICE];
 	}
 }
@@ -702,12 +688,6 @@ static void root_cgroup_cputime(struct cgroup_base_stat *bstat)
 
 static void cgroup_force_idle_show(struct seq_file *seq, struct cgroup_base_stat *bstat)
 {
-#ifdef CONFIG_SCHED_CORE
-	u64 forceidle_time = bstat->forceidle_sum;
-
-	do_div(forceidle_time, NSEC_PER_USEC);
-	seq_printf(seq, "core_sched.force_idle_usec %llu\n", forceidle_time);
-#endif
 }
 
 void cgroup_base_stat_cputime_show(struct seq_file *seq)

@@ -9,13 +9,6 @@ menu "File systems"
 config DCACHE_WORD_ACCESS
        bool
 
-config VALIDATE_FS_PARSER
-	bool "Validate filesystem parameter description"
-	help
-	  Enable this to perform validation of the parameter description for a
-	  filesystem when it is registered.
-
-# Stackable filesystems
 config FS_STACK
 	bool
 
@@ -90,20 +83,6 @@ menu "Pseudo filesystems"
 source "fs/proc/Kconfig"
 source "fs/kernfs/Kconfig"
 source "fs/sysfs/Kconfig"
-
-config TMPFS
-	bool "Tmpfs virtual memory file system support (former shm fs)"
-	depends on SHMEM
-	select MEMFD_CREATE
-	help
-	  Tmpfs is a file system which keeps all files in virtual memory.
-
-	  Everything in tmpfs is temporary in the sense that no files will be
-	  created on your hard drive. The files live in memory and swap
-	  space. If you unmount a tmpfs instance, everything stored therein is
-	  lost.
-
-	  See <file:Documentation/filesystems/tmpfs.rst> for details.
 
 config TMPFS_POSIX_ACL
 	bool "Tmpfs POSIX Access Control Lists"

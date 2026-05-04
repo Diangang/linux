@@ -403,10 +403,6 @@ struct module {
 	/* Unique handle for this module */
 	char name[MODULE_NAME_LEN];
 
-#ifdef CONFIG_STACKTRACE_BUILD_ID
-	/* Module build ID */
-	unsigned char build_id[BUILD_ID_SIZE_MAX];
-#endif
 
 	/* Sysfs stuff. */
 	struct module_kobject mkobj;
@@ -437,10 +433,6 @@ struct module {
 	/* GPL-only exported symbols. */
 	bool using_gplonly_symbols;
 
-#ifdef CONFIG_MODULE_SIG
-	/* Signature was verified. */
-	bool sig_ok;
-#endif
 
 	bool async_probe_requested;
 
@@ -577,9 +569,6 @@ struct module {
 #ifdef CONFIG_FUNCTION_ERROR_INJECTION
 	struct error_injection_entry *ei_funcs;
 	unsigned int num_ei_funcs;
-#endif
-#ifdef CONFIG_DYNAMIC_DEBUG_CORE
-	struct _ddebug_info dyndbg_info;
 #endif
 } ____cacheline_aligned __randomize_layout;
 #ifndef MODULE_ARCH_INIT
@@ -743,11 +732,7 @@ static inline void __module_get(struct module *module)
 
 static inline const unsigned char *module_buildid(struct module *mod)
 {
-#ifdef CONFIG_STACKTRACE_BUILD_ID
-	return mod->build_id;
-#else
 	return NULL;
-#endif
 }
 
 /* Dereference module function descriptor */
@@ -918,16 +903,6 @@ static inline bool retpoline_module_ok(bool has_retpoline)
 }
 #endif
 
-#ifdef CONFIG_MODULE_SIG
-bool is_module_sig_enforced(void);
-
-void set_module_sig_enforced(void);
-
-static inline bool module_sig_ok(struct module *module)
-{
-	return module->sig_ok;
-}
-#else	/* !CONFIG_MODULE_SIG */
 static inline bool is_module_sig_enforced(void)
 {
 	return false;
@@ -941,7 +916,6 @@ static inline bool module_sig_ok(struct module *module)
 {
 	return true;
 }
-#endif	/* CONFIG_MODULE_SIG */
 
 #if defined(CONFIG_MODULES) && defined(CONFIG_KALLSYMS)
 int module_kallsyms_on_each_symbol(const char *modname,

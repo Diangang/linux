@@ -133,11 +133,6 @@ static inline size_t dma_iova_size(struct dma_iova_state *state)
 	return (size_t)(state->__size & ~DMA_IOVA_USE_SWIOTLB);
 }
 
-#ifdef CONFIG_DMA_API_DEBUG
-void debug_dma_mapping_error(struct device *dev, dma_addr_t dma_addr);
-void debug_dma_map_single(struct device *dev, const void *addr,
-		unsigned long len);
-#else
 static inline void debug_dma_mapping_error(struct device *dev,
 		dma_addr_t dma_addr)
 {
@@ -146,7 +141,6 @@ static inline void debug_dma_map_single(struct device *dev, const void *addr,
 		unsigned long len)
 {
 }
-#endif /* CONFIG_DMA_API_DEBUG */
 
 #ifdef CONFIG_HAS_DMA
 static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)

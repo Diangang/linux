@@ -1354,16 +1354,6 @@ static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos,
 	}
 
 	fl = 0;
-#if 0
-	/*
-	 * We need to debate whether we can enable this or not. The
-	 * man page documents EAGAIN return for the output at least,
-	 * and the application is arguably buggy if it doesn't expect
-	 * EAGAIN on a non-blocking file descriptor.
-	 */
-	if (fd_file(in)->f_flags & O_NONBLOCK)
-		fl = SPLICE_F_NONBLOCK;
-#endif
 	opipe = get_pipe_info(fd_file(out), true);
 	if (!opipe) {
 		retval = rw_verify_area(WRITE, fd_file(out), &out_pos, count);

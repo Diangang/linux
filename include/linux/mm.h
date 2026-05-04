@@ -867,9 +867,6 @@ struct vm_operations_struct {
 	struct page *(*find_normal_page)(struct vm_area_struct *vma,
 					 unsigned long addr);
 #endif /* CONFIG_FIND_NORMAL_PAGE */
-#ifdef CONFIG_USERFAULTFD
-	const struct vm_uffd_ops *uffd_ops;
-#endif
 };
 
 #ifdef CONFIG_NUMA_BALANCING
@@ -2685,12 +2682,6 @@ static inline bool is_zero_folio(const struct folio *folio)
 #ifdef CONFIG_MIGRATION
 static inline bool folio_is_longterm_pinnable(struct folio *folio)
 {
-#ifdef CONFIG_CMA
-	int mt = folio_migratetype(folio);
-
-	if (mt == MIGRATE_CMA || mt == MIGRATE_ISOLATE)
-		return false;
-#endif
 	/* The zero page can be "pinned" but gets special handling. */
 	if (is_zero_folio(folio))
 		return true;
@@ -4620,40 +4611,11 @@ extern int apply_to_existing_page_range(struct mm_struct *mm,
 				   unsigned long address, unsigned long size,
 				   pte_fn_t fn, void *data);
 
-#ifdef CONFIG_PAGE_POISONING
-extern void __kernel_poison_pages(struct page *page, int numpages);
-extern void __kernel_unpoison_pages(struct page *page, int numpages);
-extern bool _page_poisoning_enabled_early;
-DECLARE_STATIC_KEY_FALSE(_page_poisoning_enabled);
-static inline bool page_poisoning_enabled(void)
-{
-	return _page_poisoning_enabled_early;
-}
-/*
- * For use in fast paths after init_mem_debugging() has run, or when a
- * false negative result is not harmful when called too early.
- */
-static inline bool page_poisoning_enabled_static(void)
-{
-	return static_branch_unlikely(&_page_poisoning_enabled);
-}
-static inline void kernel_poison_pages(struct page *page, int numpages)
-{
-	if (page_poisoning_enabled_static())
-		__kernel_poison_pages(page, numpages);
-}
-static inline void kernel_unpoison_pages(struct page *page, int numpages)
-{
-	if (page_poisoning_enabled_static())
-		__kernel_unpoison_pages(page, numpages);
-}
-#else
 static inline bool page_poisoning_enabled(void) { return false; }
 static inline bool page_poisoning_enabled_static(void) { return false; }
 static inline void __kernel_poison_pages(struct page *page, int nunmpages) { }
 static inline void kernel_poison_pages(struct page *page, int numpages) { }
 static inline void kernel_unpoison_pages(struct page *page, int numpages) { }
-#endif
 
 DECLARE_STATIC_KEY_MAYBE(CONFIG_INIT_ON_ALLOC_DEFAULT_ON, init_on_alloc);
 static inline bool want_init_on_alloc(gfp_t flags)
@@ -4697,63 +4659,6 @@ static inline bool debug_pagealloc_enabled_static(void)
  * __kernel_map_pages() never fails
  */
 extern void __kernel_map_pages(struct page *page, int numpages, int enable);
-#ifdef CONFIG_DEBUG_PAGEALLOC
-static inline void debug_pagealloc_map_pages(struct page *page, int numpages)
-{
-	iommu_debug_check_unmapped(page, numpages);
-
-	if (debug_pagealloc_enabled_static())
-		__kernel_map_pages(page, numpages, 1);
-}
-
-static inline void debug_pagealloc_unmap_pages(struct page *page, int numpages)
-{
-	iommu_debug_check_unmapped(page, numpages);
-
-	if (debug_pagealloc_enabled_static())
-		__kernel_map_pages(page, numpages, 0);
-}
-
-extern unsigned int _debug_guardpage_minorder;
-DECLARE_STATIC_KEY_FALSE(_debug_guardpage_enabled);
-
-static inline unsigned int debug_guardpage_minorder(void)
-{
-	return _debug_guardpage_minorder;
-}
-
-static inline bool debug_guardpage_enabled(void)
-{
-	return static_branch_unlikely(&_debug_guardpage_enabled);
-}
-
-static inline bool page_is_guard(const struct page *page)
-{
-	if (!debug_guardpage_enabled())
-		return false;
-
-	return PageGuard(page);
-}
-
-bool __set_page_guard(struct zone *zone, struct page *page, unsigned int order);
-static inline bool set_page_guard(struct zone *zone, struct page *page,
-				  unsigned int order)
-{
-	if (!debug_guardpage_enabled())
-		return false;
-	return __set_page_guard(zone, page, order);
-}
-
-void __clear_page_guard(struct zone *zone, struct page *page, unsigned int order);
-static inline void clear_page_guard(struct zone *zone, struct page *page,
-				    unsigned int order)
-{
-	if (!debug_guardpage_enabled())
-		return;
-	__clear_page_guard(zone, page, order);
-}
-
-#else	/* CONFIG_DEBUG_PAGEALLOC */
 static inline void debug_pagealloc_map_pages(struct page *page, int numpages) {}
 static inline void debug_pagealloc_unmap_pages(struct page *page, int numpages) {}
 static inline unsigned int debug_guardpage_minorder(void) { return 0; }
@@ -4763,7 +4668,6 @@ static inline bool set_page_guard(struct zone *zone, struct page *page,
 			unsigned int order) { return false; }
 static inline void clear_page_guard(struct zone *zone, struct page *page,
 				unsigned int order) {}
-#endif	/* CONFIG_DEBUG_PAGEALLOC */
 
 #ifndef clear_pages
 /**
@@ -5097,17 +5001,12 @@ unsigned long wp_shared_mapping_range(struct address_space *mapping,
 				      pgoff_t first_index, pgoff_t nr);
 #endif
 
-#ifdef CONFIG_ANON_VMA_NAME
-int set_anon_vma_name(unsigned long addr, unsigned long size,
-		      const char __user *uname);
-#else
 static inline
 int set_anon_vma_name(unsigned long addr, unsigned long size,
 		      const char __user *uname)
 {
 	return -EINVAL;
 }
-#endif
 
 #ifdef CONFIG_UNACCEPTED_MEMORY
 

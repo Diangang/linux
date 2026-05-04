@@ -675,60 +675,6 @@ QUEUE_LIM_RW_ENTRY(queue_iostats, "iostats");
 QUEUE_LIM_RW_ENTRY(queue_add_random, "add_random");
 QUEUE_LIM_RW_ENTRY(queue_stable_writes, "stable_writes");
 
-#ifdef CONFIG_BLK_WBT
-static ssize_t queue_var_store64(s64 *var, const char *page)
-{
-	int err;
-	s64 v;
-
-	err = kstrtos64(page, 10, &v);
-	if (err < 0)
-		return err;
-
-	*var = v;
-	return 0;
-}
-
-static ssize_t queue_wb_lat_show(struct gendisk *disk, char *page)
-{
-	ssize_t ret;
-	struct request_queue *q = disk->queue;
-
-	mutex_lock(&disk->rqos_state_mutex);
-	if (!wbt_rq_qos(q)) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	if (wbt_disabled(q)) {
-		ret = sysfs_emit(page, "0\n");
-		goto out;
-	}
-
-	ret = sysfs_emit(page, "%llu\n", div_u64(wbt_get_min_lat(q), 1000));
-out:
-	mutex_unlock(&disk->rqos_state_mutex);
-	return ret;
-}
-
-static ssize_t queue_wb_lat_store(struct gendisk *disk, const char *page,
-				  size_t count)
-{
-	ssize_t ret;
-	s64 val;
-
-	ret = queue_var_store64(&val, page);
-	if (ret < 0)
-		return ret;
-	if (val < -1)
-		return -EINVAL;
-
-	ret = wbt_set_lat(disk, val);
-	return ret ? ret : count;
-}
-
-QUEUE_RW_ENTRY(queue_wb_lat, "wbt_lat_usec");
-#endif
 
 /* Common attributes for bio-based and request-based queues. */
 static const struct attribute *const queue_attrs[] = {
@@ -799,9 +745,6 @@ static const struct attribute *const blk_mq_queue_attrs[] = {
 	&elv_iosched_entry.attr,
 	&queue_requests_entry.attr,
 	&queue_async_depth_entry.attr,
-#ifdef CONFIG_BLK_WBT
-	&queue_wb_lat_entry.attr,
-#endif
 	/*
 	 * Attributes which don't require locking.
 	 */

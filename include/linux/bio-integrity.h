@@ -31,59 +31,6 @@ struct bio_integrity_payload {
 #define BIP_CLONE_FLAGS (BIP_MAPPED_INTEGRITY | BIP_IP_CHECKSUM | \
 			 BIP_CHECK_GUARD | BIP_CHECK_REFTAG | BIP_CHECK_APPTAG)
 
-#ifdef CONFIG_BLK_DEV_INTEGRITY
-
-#define bip_for_each_vec(bvl, bip, iter)				\
-	for_each_bvec(bvl, (bip)->bip_vec, iter, (bip)->bip_iter)
-
-#define bio_for_each_integrity_vec(_bvl, _bio, _iter)			\
-	for_each_bio(_bio)						\
-		bip_for_each_vec(_bvl, _bio->bi_integrity, _iter)
-
-static inline struct bio_integrity_payload *bio_integrity(struct bio *bio)
-{
-	if (bio->bi_opf & REQ_INTEGRITY)
-		return bio->bi_integrity;
-
-	return NULL;
-}
-
-static inline bool bio_integrity_flagged(struct bio *bio, enum bip_flags flag)
-{
-	struct bio_integrity_payload *bip = bio_integrity(bio);
-
-	if (bip)
-		return bip->bip_flags & flag;
-
-	return false;
-}
-
-static inline sector_t bip_get_seed(struct bio_integrity_payload *bip)
-{
-	return bip->bip_iter.bi_sector;
-}
-
-static inline void bip_set_seed(struct bio_integrity_payload *bip,
-				sector_t seed)
-{
-	bip->bip_iter.bi_sector = seed;
-}
-
-void bio_integrity_init(struct bio *bio, struct bio_integrity_payload *bip,
-		struct bio_vec *bvecs, unsigned int nr_vecs);
-struct bio_integrity_payload *bio_integrity_alloc(struct bio *bio, gfp_t gfp,
-		unsigned int nr);
-int bio_integrity_add_page(struct bio *bio, struct page *page, unsigned int len,
-		unsigned int offset);
-int bio_integrity_map_user(struct bio *bio, struct iov_iter *iter);
-int bio_integrity_map_iter(struct bio *bio, struct uio_meta *meta);
-void bio_integrity_unmap_user(struct bio *bio);
-void bio_integrity_prep(struct bio *bio, unsigned int action);
-void bio_integrity_advance(struct bio *bio, unsigned int bytes_done);
-void bio_integrity_trim(struct bio *bio);
-int bio_integrity_clone(struct bio *bio, struct bio *bio_src, gfp_t gfp_mask);
-
-#else /* CONFIG_BLK_DEV_INTEGRITY */
 
 static inline struct bio_integrity_payload *bio_integrity(struct bio *bio)
 {
@@ -139,7 +86,6 @@ static inline int bio_integrity_add_page(struct bio *bio, struct page *page,
 {
 	return 0;
 }
-#endif /* CONFIG_BLK_DEV_INTEGRITY */
 
 void bio_integrity_alloc_buf(struct bio *bio, bool zero_buffer);
 void bio_integrity_free_buf(struct bio_integrity_payload *bip);

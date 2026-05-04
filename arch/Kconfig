@@ -153,12 +153,6 @@ config JUMP_LABEL
 	  ( On 32-bit x86, the necessary options added to the compiler
 	    flags may increase the size of the kernel slightly. )
 
-config STATIC_KEYS_SELFTEST
-	bool "Static key selftest"
-	depends on JUMP_LABEL
-	help
-	  Boot time self-test of the branch patching code.
-
 config STATIC_CALL_SELFTEST
 	bool "Static call selftest"
 	depends on HAVE_STATIC_CALL
@@ -1547,14 +1541,6 @@ config RANDOMIZE_KSTACK_OFFSET
 	  of static branches (see JUMP_LABEL).
 
 	  If unsure, say Y.
-
-config RANDOMIZE_KSTACK_OFFSET_DEFAULT
-	bool "Default state of kernel stack offset randomization"
-	depends on RANDOMIZE_KSTACK_OFFSET
-	help
-	  Kernel stack offset randomization is controlled by kernel boot param
-	  "randomize_kstack_offset=on/off", and this config chooses the default
-	  boot state.
 
 config ARCH_OPTIONAL_KERNEL_RWX
 	def_bool n

@@ -41,27 +41,7 @@ static u32 head_hashfn(struct rhashtable *ht,
 	return rht_head_hashfn(ht, tbl, he, ht->p);
 }
 
-#ifdef CONFIG_PROVE_LOCKING
-#define ASSERT_RHT_MUTEX(HT) BUG_ON(!lockdep_rht_mutex_is_held(HT))
-
-int lockdep_rht_mutex_is_held(struct rhashtable *ht)
-{
-	return (debug_locks) ? lockdep_is_held(&ht->mutex) : 1;
-}
-EXPORT_SYMBOL_GPL(lockdep_rht_mutex_is_held);
-
-int lockdep_rht_bucket_is_held(const struct bucket_table *tbl, u32 hash)
-{
-	if (!debug_locks)
-		return 1;
-	if (unlikely(tbl->nest))
-		return 1;
-	return bit_spin_is_locked(0, (unsigned long *)&tbl->buckets[hash]);
-}
-EXPORT_SYMBOL_GPL(lockdep_rht_bucket_is_held);
-#else
 #define ASSERT_RHT_MUTEX(HT)
-#endif
 
 static inline union nested_table *nested_table_top(
 	const struct bucket_table *tbl)

@@ -133,16 +133,6 @@ config IOMMU_DEFAULT_DMA_LAZY
 	  If this mode is not supported by the IOMMU driver, the effective
 	  runtime default will fall back to IOMMU_DEFAULT_DMA_STRICT.
 
-config IOMMU_DEFAULT_PASSTHROUGH
-	bool "Passthrough"
-	help
-	  Trusted devices are identity-mapped, giving them unrestricted access
-	  to memory with minimal performance overhead. Equivalent to passing
-	  "iommu.passthrough=1" (historically "iommu=pt") on the command line.
-
-	  If this mode is not supported by the IOMMU driver, the effective
-	  runtime default will fall back to IOMMU_DEFAULT_DMA_STRICT.
-
 endchoice
 
 config OF_IOMMU
@@ -355,18 +345,6 @@ config HYPERV_IOMMU
 	help
 	  Stub IOMMU driver to handle IRQs to support Hyper-V Linux
 	  guest and root partitions.
-
-config VIRTIO_IOMMU
-	tristate "Virtio IOMMU driver"
-	depends on VIRTIO
-	depends on (ARM64 || X86)
-	select IOMMU_API
-	select INTERVAL_TREE
-	select ACPI_VIOT if ACPI
-	help
-	  Para-virtualised IOMMU driver with virtio.
-
-	  Say Y here if you intend to run this kernel as a guest.
 
 config SPRD_IOMMU
 	tristate "Unisoc IOMMU Support"

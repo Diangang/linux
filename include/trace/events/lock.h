@@ -73,23 +73,6 @@ DEFINE_EVENT(lock, lock_release,
 	TP_ARGS(lock, ip)
 );
 
-#ifdef CONFIG_LOCK_STAT
-
-DEFINE_EVENT(lock, lock_contended,
-
-	TP_PROTO(struct lockdep_map *lock, unsigned long ip),
-
-	TP_ARGS(lock, ip)
-);
-
-DEFINE_EVENT(lock, lock_acquired,
-
-	TP_PROTO(struct lockdep_map *lock, unsigned long ip),
-
-	TP_ARGS(lock, ip)
-);
-
-#endif /* CONFIG_LOCK_STAT */
 #endif /* CONFIG_LOCKDEP */
 
 TRACE_EVENT(contention_begin,

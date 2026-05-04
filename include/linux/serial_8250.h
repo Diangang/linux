@@ -217,12 +217,7 @@ extern int hp300_setup_serial_console(void) __init;
 static inline int hp300_setup_serial_console(void) { return 0; }
 #endif
 
-#ifdef CONFIG_SERIAL_8250_RT288X
-int rt288x_setup(struct uart_port *p);
-int au_platform_setup(struct plat_serial8250_port *p);
-#else
 static inline int rt288x_setup(struct uart_port *p) { return -ENODEV; }
 static inline int au_platform_setup(struct plat_serial8250_port *p) { return -ENODEV; }
-#endif
 
 #endif

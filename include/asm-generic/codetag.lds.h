@@ -2,11 +2,7 @@
 #ifndef __ASM_GENERIC_CODETAG_LDS_H
 #define __ASM_GENERIC_CODETAG_LDS_H
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-#define IF_MEM_ALLOC_PROFILING(...) __VA_ARGS__
-#else
 #define IF_MEM_ALLOC_PROFILING(...)
-#endif
 
 #define SECTION_WITH_BOUNDARIES(_name)	\
 	. = ALIGN(8);			\

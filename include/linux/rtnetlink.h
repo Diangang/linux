@@ -56,14 +56,10 @@ extern struct rw_semaphore net_rwsem;
 	WARN_ONCE(!rtnl_is_locked(), \
 		  "RTNL: assertion failed at %s (%d)\n", __FILE__,  __LINE__)
 
-#ifdef CONFIG_PROVE_LOCKING
-extern bool lockdep_rtnl_is_held(void);
-#else
 static inline bool lockdep_rtnl_is_held(void)
 {
 	return true;
 }
-#endif /* #ifdef CONFIG_PROVE_LOCKING */
 
 /**
  * rcu_dereference_rtnl - rcu_dereference with debug checking

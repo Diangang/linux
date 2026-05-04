@@ -83,13 +83,6 @@ void numa_set_node(int cpu, int node)
 		return;
 	}
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-	if (cpu >= nr_cpu_ids || !cpu_possible(cpu)) {
-		printk(KERN_ERR "numa_set_node: invalid cpu# (%d)\n", cpu);
-		dump_stack();
-		return;
-	}
-#endif
 	per_cpu(x86_cpu_to_node_map, cpu) = node;
 
 	set_cpu_numa_node(cpu, node);
@@ -322,9 +315,7 @@ void __init init_cpu_to_node(void)
 	}
 }
 
-#ifndef CONFIG_DEBUG_PER_CPU_MAPS
 
-# ifndef CONFIG_NUMA_EMU
 void numa_add_cpu(unsigned int cpu)
 {
 	cpumask_set_cpu(cpu, node_to_cpumask_map[early_cpu_to_node(cpu)]);
@@ -334,131 +325,5 @@ void numa_remove_cpu(unsigned int cpu)
 {
 	cpumask_clear_cpu(cpu, node_to_cpumask_map[early_cpu_to_node(cpu)]);
 }
-# endif	/* !CONFIG_NUMA_EMU */
 
-#else	/* !CONFIG_DEBUG_PER_CPU_MAPS */
 
-int __cpu_to_node(int cpu)
-{
-	if (early_per_cpu_ptr(x86_cpu_to_node_map)) {
-		printk(KERN_WARNING
-			"cpu_to_node(%d): usage too early!\n", cpu);
-		dump_stack();
-		return early_per_cpu_ptr(x86_cpu_to_node_map)[cpu];
-	}
-	return per_cpu(x86_cpu_to_node_map, cpu);
-}
-EXPORT_SYMBOL(__cpu_to_node);
-
-/*
- * Same function as cpu_to_node() but used if called before the
- * per_cpu areas are setup.
- */
-int early_cpu_to_node(int cpu)
-{
-	if (early_per_cpu_ptr(x86_cpu_to_node_map))
-		return early_per_cpu_ptr(x86_cpu_to_node_map)[cpu];
-
-	if (!cpu_possible(cpu)) {
-		printk(KERN_WARNING
-			"early_cpu_to_node(%d): no per_cpu area!\n", cpu);
-		dump_stack();
-		return NUMA_NO_NODE;
-	}
-	return per_cpu(x86_cpu_to_node_map, cpu);
-}
-
-void debug_cpumask_set_cpu(unsigned int cpu, int node, bool enable)
-{
-	struct cpumask *mask;
-
-	if (node == NUMA_NO_NODE) {
-		/* early_cpu_to_node() already emits a warning and trace */
-		return;
-	}
-	mask = node_to_cpumask_map[node];
-	if (!cpumask_available(mask)) {
-		pr_err("node_to_cpumask_map[%i] NULL\n", node);
-		dump_stack();
-		return;
-	}
-
-	if (enable)
-		cpumask_set_cpu(cpu, mask);
-	else
-		cpumask_clear_cpu(cpu, mask);
-
-	printk(KERN_DEBUG "%s cpu %d node %d: mask now %*pbl\n",
-		enable ? "numa_add_cpu" : "numa_remove_cpu",
-		cpu, node, cpumask_pr_args(mask));
-	return;
-}
-
-# ifndef CONFIG_NUMA_EMU
-static void numa_set_cpumask(int cpu, bool enable)
-{
-	debug_cpumask_set_cpu(cpu, early_cpu_to_node(cpu), enable);
-}
-
-void numa_add_cpu(unsigned int cpu)
-{
-	numa_set_cpumask(cpu, true);
-}
-
-void numa_remove_cpu(unsigned int cpu)
-{
-	numa_set_cpumask(cpu, false);
-}
-# endif	/* !CONFIG_NUMA_EMU */
-
-/*
- * Returns a pointer to the bitmask of CPUs on Node 'node'.
- */
-const struct cpumask *cpumask_of_node(int node)
-{
-	if ((unsigned)node >= nr_node_ids) {
-		printk(KERN_WARNING
-			"cpumask_of_node(%d): (unsigned)node >= nr_node_ids(%u)\n",
-			node, nr_node_ids);
-		dump_stack();
-		return cpu_none_mask;
-	}
-	if (!cpumask_available(node_to_cpumask_map[node])) {
-		printk(KERN_WARNING
-			"cpumask_of_node(%d): no node_to_cpumask_map!\n",
-			node);
-		dump_stack();
-		return cpu_online_mask;
-	}
-	return node_to_cpumask_map[node];
-}
-EXPORT_SYMBOL(cpumask_of_node);
-
-#endif	/* !CONFIG_DEBUG_PER_CPU_MAPS */
-
-#ifdef CONFIG_NUMA_EMU
-void __init numa_emu_update_cpu_to_node(int *emu_nid_to_phys,
-					unsigned int nr_emu_nids)
-{
-	int i, j;
-
-	/*
-	 * Transform __apicid_to_node table to use emulated nids by
-	 * reverse-mapping phys_nid.  The maps should always exist but fall
-	 * back to zero just in case.
-	 */
-	for (i = 0; i < ARRAY_SIZE(__apicid_to_node); i++) {
-		if (__apicid_to_node[i] == NUMA_NO_NODE)
-			continue;
-		for (j = 0; j < nr_emu_nids; j++)
-			if (__apicid_to_node[i] == emu_nid_to_phys[j])
-				break;
-		__apicid_to_node[i] = j < nr_emu_nids ? j : 0;
-	}
-}
-
-u64 __init numa_emu_dma_end(void)
-{
-	return PFN_PHYS(MAX_DMA32_PFN);
-}
-#endif /* CONFIG_NUMA_EMU */

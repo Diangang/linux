@@ -2974,11 +2974,7 @@ struct inode *find_inode_by_ino_rcu(struct super_block *sb, u64 ino);
 int insert_inode_locked4(struct inode *inode, u64 hashval,
 			 int (*test)(struct inode *, void *), void *data);
 int insert_inode_locked(struct inode *inode);
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void lockdep_annotate_inode_mutex_key(struct inode *inode);
-#else
 static inline void lockdep_annotate_inode_mutex_key(struct inode *inode) { };
-#endif
 void unlock_new_inode(struct inode *inode);
 void discard_new_inode(struct inode *inode);
 unsigned int get_next_ino(void);

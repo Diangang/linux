@@ -523,64 +523,6 @@ static int proc_pid_schedstat(struct seq_file *m, struct pid_namespace *ns,
 }
 #endif
 
-#ifdef CONFIG_LATENCYTOP
-static int lstats_show_proc(struct seq_file *m, void *v)
-{
-	int i;
-	struct inode *inode = m->private;
-	struct task_struct *task = get_proc_task(inode);
-
-	if (!task)
-		return -ESRCH;
-	seq_puts(m, "Latency Top version : v0.1\n");
-	for (i = 0; i < LT_SAVECOUNT; i++) {
-		struct latency_record *lr = &task->latency_record[i];
-		if (lr->backtrace[0]) {
-			int q;
-			seq_printf(m, "%i %li %li",
-				   lr->count, lr->time, lr->max);
-			for (q = 0; q < LT_BACKTRACEDEPTH; q++) {
-				unsigned long bt = lr->backtrace[q];
-
-				if (!bt)
-					break;
-				seq_printf(m, " %ps", (void *)bt);
-			}
-			seq_putc(m, '\n');
-		}
-
-	}
-	put_task_struct(task);
-	return 0;
-}
-
-static int lstats_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, lstats_show_proc, inode);
-}
-
-static ssize_t lstats_write(struct file *file, const char __user *buf,
-			    size_t count, loff_t *offs)
-{
-	struct task_struct *task = get_proc_task(file_inode(file));
-
-	if (!task)
-		return -ESRCH;
-	clear_tsk_latency_tracing(task);
-	put_task_struct(task);
-
-	return count;
-}
-
-static const struct file_operations proc_lstats_operations = {
-	.open		= lstats_open,
-	.read		= seq_read,
-	.write		= lstats_write,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
-
-#endif
 
 static int proc_oom_score(struct seq_file *m, struct pid_namespace *ns,
 			  struct pid *pid, struct task_struct *task)
@@ -1398,101 +1340,6 @@ static const struct file_operations proc_sessionid_operations = {
 };
 #endif
 
-#ifdef CONFIG_FAULT_INJECTION
-static ssize_t proc_fault_inject_read(struct file * file, char __user * buf,
-				      size_t count, loff_t *ppos)
-{
-	struct task_struct *task = get_proc_task(file_inode(file));
-	char buffer[PROC_NUMBUF];
-	size_t len;
-	int make_it_fail;
-
-	if (!task)
-		return -ESRCH;
-	make_it_fail = task->make_it_fail;
-	put_task_struct(task);
-
-	len = snprintf(buffer, sizeof(buffer), "%i\n", make_it_fail);
-
-	return simple_read_from_buffer(buf, count, ppos, buffer, len);
-}
-
-static ssize_t proc_fault_inject_write(struct file * file,
-			const char __user * buf, size_t count, loff_t *ppos)
-{
-	struct task_struct *task;
-	char buffer[PROC_NUMBUF] = {};
-	int make_it_fail;
-	int rv;
-
-	if (!capable(CAP_SYS_RESOURCE))
-		return -EPERM;
-
-	if (count > sizeof(buffer) - 1)
-		count = sizeof(buffer) - 1;
-	if (copy_from_user(buffer, buf, count))
-		return -EFAULT;
-	rv = kstrtoint(strstrip(buffer), 0, &make_it_fail);
-	if (rv < 0)
-		return rv;
-	if (make_it_fail < 0 || make_it_fail > 1)
-		return -EINVAL;
-
-	task = get_proc_task(file_inode(file));
-	if (!task)
-		return -ESRCH;
-	task->make_it_fail = make_it_fail;
-	put_task_struct(task);
-
-	return count;
-}
-
-static const struct file_operations proc_fault_inject_operations = {
-	.read		= proc_fault_inject_read,
-	.write		= proc_fault_inject_write,
-	.llseek		= generic_file_llseek,
-};
-
-static ssize_t proc_fail_nth_write(struct file *file, const char __user *buf,
-				   size_t count, loff_t *ppos)
-{
-	struct task_struct *task;
-	int err;
-	unsigned int n;
-
-	err = kstrtouint_from_user(buf, count, 0, &n);
-	if (err)
-		return err;
-
-	task = get_proc_task(file_inode(file));
-	if (!task)
-		return -ESRCH;
-	task->fail_nth = n;
-	put_task_struct(task);
-
-	return count;
-}
-
-static ssize_t proc_fail_nth_read(struct file *file, char __user *buf,
-				  size_t count, loff_t *ppos)
-{
-	struct task_struct *task;
-	char numbuf[PROC_NUMBUF];
-	ssize_t len;
-
-	task = get_proc_task(file_inode(file));
-	if (!task)
-		return -ESRCH;
-	len = snprintf(numbuf, sizeof(numbuf), "%u\n", task->fail_nth);
-	put_task_struct(task);
-	return simple_read_from_buffer(buf, count, ppos, numbuf, len);
-}
-
-static const struct file_operations proc_fail_nth_operations = {
-	.read		= proc_fail_nth_read,
-	.write		= proc_fail_nth_write,
-};
-#endif
 
 
 /*
@@ -3366,9 +3213,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_SCHED_INFO
 	ONE("schedstat",  S_IRUGO, proc_pid_schedstat),
 #endif
-#ifdef CONFIG_LATENCYTOP
-	REG("latency",  S_IRUGO, proc_lstats_operations),
-#endif
 #ifdef CONFIG_PROC_PID_CPUSET
 	ONE("cpuset",     S_IRUGO, proc_cpuset_show),
 #endif
@@ -3384,10 +3228,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_AUDIT
 	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
-#endif
-#ifdef CONFIG_FAULT_INJECTION
-	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-	REG("fail-nth", 0644, proc_fail_nth_operations),
 #endif
 #ifdef CONFIG_ELF_CORE
 	REG("coredump_filter", S_IRUGO|S_IWUSR, proc_coredump_filter_operations),
@@ -3680,9 +3520,6 @@ static const struct pid_entry tid_base_stuff[] = {
 	ONE("stat",      S_IRUGO, proc_tid_stat),
 	ONE("statm",     S_IRUGO, proc_pid_statm),
 	REG("maps",      S_IRUGO, proc_pid_maps_operations),
-#ifdef CONFIG_PROC_CHILDREN
-	REG("children",  S_IRUGO, proc_tid_children_operations),
-#endif
 #ifdef CONFIG_NUMA
 	REG("numa_maps", S_IRUGO, proc_pid_numa_maps_operations),
 #endif
@@ -3710,9 +3547,6 @@ static const struct pid_entry tid_base_stuff[] = {
 #ifdef CONFIG_SCHED_INFO
 	ONE("schedstat", S_IRUGO, proc_pid_schedstat),
 #endif
-#ifdef CONFIG_LATENCYTOP
-	REG("latency",  S_IRUGO, proc_lstats_operations),
-#endif
 #ifdef CONFIG_PROC_PID_CPUSET
 	ONE("cpuset",    S_IRUGO, proc_cpuset_show),
 #endif
@@ -3728,10 +3562,6 @@ static const struct pid_entry tid_base_stuff[] = {
 #ifdef CONFIG_AUDIT
 	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
 	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
-#endif
-#ifdef CONFIG_FAULT_INJECTION
-	REG("make-it-fail", S_IRUGO|S_IWUSR, proc_fault_inject_operations),
-	REG("fail-nth", 0644, proc_fail_nth_operations),
 #endif
 #ifdef CONFIG_TASK_IO_ACCOUNTING
 	ONE("io",	S_IRUSR, proc_tid_io_accounting),

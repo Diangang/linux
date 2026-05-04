@@ -202,11 +202,7 @@ enum slab_flags {
 #endif
 
 #ifdef CONFIG_SLUB_DEBUG
-#ifdef CONFIG_SLUB_DEBUG_ON
-DEFINE_STATIC_KEY_TRUE(slub_debug_enabled);
-#else
 DEFINE_STATIC_KEY_FALSE(slub_debug_enabled);
-#endif
 #endif		/* CONFIG_SLUB_DEBUG */
 
 #ifdef CONFIG_NUMA
@@ -365,29 +361,14 @@ enum stat_item {
 	NR_SLUB_STAT_ITEMS
 };
 
-#ifdef CONFIG_SLUB_STATS
-struct kmem_cache_stats {
-	unsigned int stat[NR_SLUB_STAT_ITEMS];
-};
-#endif
 
 static inline void stat(const struct kmem_cache *s, enum stat_item si)
 {
-#ifdef CONFIG_SLUB_STATS
-	/*
-	 * The rmw is racy on a preemptible kernel but this is acceptable, so
-	 * avoid this_cpu_add()'s irq-disable overhead.
-	 */
-	raw_cpu_inc(s->cpu_stats->stat[si]);
-#endif
 }
 
 static inline
 void stat_add(const struct kmem_cache *s, enum stat_item si, int v)
 {
-#ifdef CONFIG_SLUB_STATS
-	raw_cpu_add(s->cpu_stats->stat[si], v);
-#endif
 }
 
 #define MAX_FULL_SHEAVES	10
@@ -506,11 +487,7 @@ static inline freeptr_t freelist_ptr_encode(const struct kmem_cache *s,
 {
 	unsigned long encoded;
 
-#ifdef CONFIG_SLAB_FREELIST_HARDENED
-	encoded = (unsigned long)ptr ^ s->random ^ swab(ptr_addr);
-#else
 	encoded = (unsigned long)ptr;
-#endif
 	return (freeptr_t){.v = encoded};
 }
 
@@ -519,11 +496,7 @@ static inline void *freelist_ptr_decode(const struct kmem_cache *s,
 {
 	void *decoded;
 
-#ifdef CONFIG_SLAB_FREELIST_HARDENED
-	decoded = (void *)(ptr.v ^ s->random ^ swab(ptr_addr));
-#else
 	decoded = (void *)ptr.v;
-#endif
 	return decoded;
 }
 
@@ -542,9 +515,6 @@ static inline void set_freepointer(struct kmem_cache *s, void *object, void *fp)
 {
 	unsigned long freeptr_addr = (unsigned long)object + s->offset;
 
-#ifdef CONFIG_SLAB_FREELIST_HARDENED
-	BUG_ON(object == fp); /* naive detection of double free or corruption */
-#endif
 
 	freeptr_addr = (unsigned long)kasan_reset_tag((void *)freeptr_addr);
 	*(freeptr_t *)freeptr_addr = freelist_ptr_encode(s, fp, freeptr_addr);
@@ -975,11 +945,7 @@ static inline void *restore_red_left(struct kmem_cache *s, void *p)
 /*
  * Debug settings:
  */
-#if defined(CONFIG_SLUB_DEBUG_ON)
-static slab_flags_t slub_debug = DEBUG_DEFAULT_FLAGS;
-#else
 static slab_flags_t slub_debug;
-#endif
 
 static const char *slub_debug_string __ro_after_init;
 static int disable_higher_order_debug;
@@ -2335,100 +2301,6 @@ static inline void alloc_slab_obj_exts_early(struct kmem_cache *s,
 
 #endif /* CONFIG_SLAB_OBJ_EXT */
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-
-static inline unsigned long
-prepare_slab_obj_exts_hook(struct kmem_cache *s, struct slab *slab,
-			   gfp_t flags, void *p)
-{
-	if (!slab_obj_exts(slab) &&
-	    alloc_slab_obj_exts(slab, s, flags, false)) {
-		pr_warn_once("%s, %s: Failed to create slab extension vector!\n",
-			     __func__, s->name);
-		return 0;
-	}
-
-	return slab_obj_exts(slab);
-}
-
-
-/* Should be called only if mem_alloc_profiling_enabled() */
-static noinline void
-__alloc_tagging_slab_alloc_hook(struct kmem_cache *s, void *object, gfp_t flags)
-{
-	unsigned long obj_exts;
-	struct slabobj_ext *obj_ext;
-	struct slab *slab;
-
-	if (!object)
-		return;
-
-	if (s->flags & (SLAB_NO_OBJ_EXT | SLAB_NOLEAKTRACE))
-		return;
-
-	if (flags & __GFP_NO_OBJ_EXT)
-		return;
-
-	slab = virt_to_slab(object);
-	obj_exts = prepare_slab_obj_exts_hook(s, slab, flags, object);
-	/*
-	 * Currently obj_exts is used only for allocation profiling.
-	 * If other users appear then mem_alloc_profiling_enabled()
-	 * check should be added before alloc_tag_add().
-	 */
-	if (obj_exts) {
-		unsigned int obj_idx = obj_to_index(s, slab, object);
-
-		get_slab_obj_exts(obj_exts);
-		obj_ext = slab_obj_ext(slab, obj_exts, obj_idx);
-		alloc_tag_add(&obj_ext->ref, current->alloc_tag, s->size);
-		put_slab_obj_exts(obj_exts);
-	} else {
-		alloc_tag_set_inaccurate(current->alloc_tag);
-	}
-}
-
-static inline void
-alloc_tagging_slab_alloc_hook(struct kmem_cache *s, void *object, gfp_t flags)
-{
-	if (mem_alloc_profiling_enabled())
-		__alloc_tagging_slab_alloc_hook(s, object, flags);
-}
-
-/* Should be called only if mem_alloc_profiling_enabled() */
-static noinline void
-__alloc_tagging_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
-			       int objects)
-{
-	int i;
-	unsigned long obj_exts;
-
-	/* slab->obj_exts might not be NULL if it was created for MEMCG accounting. */
-	if (s->flags & (SLAB_NO_OBJ_EXT | SLAB_NOLEAKTRACE))
-		return;
-
-	obj_exts = slab_obj_exts(slab);
-	if (!obj_exts)
-		return;
-
-	get_slab_obj_exts(obj_exts);
-	for (i = 0; i < objects; i++) {
-		unsigned int off = obj_to_index(s, slab, p[i]);
-
-		alloc_tag_sub(&slab_obj_ext(slab, obj_exts, off)->ref, s->size);
-	}
-	put_slab_obj_exts(obj_exts);
-}
-
-static inline void
-alloc_tagging_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
-			     int objects)
-{
-	if (mem_alloc_profiling_enabled())
-		__alloc_tagging_slab_free_hook(s, slab, p, objects);
-}
-
-#else /* CONFIG_MEM_ALLOC_PROFILING */
 
 static inline void
 alloc_tagging_slab_alloc_hook(struct kmem_cache *s, void *object, gfp_t flags)
@@ -2441,7 +2313,6 @@ alloc_tagging_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
 {
 }
 
-#endif /* CONFIG_MEM_ALLOC_PROFILING */
 
 
 #ifdef CONFIG_MEMCG
@@ -3288,118 +3159,6 @@ static inline struct slab *alloc_slab_page(gfp_t flags, int node,
 	return slab;
 }
 
-#ifdef CONFIG_SLAB_FREELIST_RANDOM
-/* Pre-initialize the random sequence cache */
-static int init_cache_random_seq(struct kmem_cache *s)
-{
-	unsigned int count = oo_objects(s->oo);
-	int err;
-
-	/* Bailout if already initialised */
-	if (s->random_seq)
-		return 0;
-
-	err = cache_random_seq_create(s, count, GFP_KERNEL);
-	if (err) {
-		pr_err("SLUB: Unable to initialize free list for %s\n",
-			s->name);
-		return err;
-	}
-
-	/* Transform to an offset on the set of pages */
-	if (s->random_seq) {
-		unsigned int i;
-
-		for (i = 0; i < count; i++)
-			s->random_seq[i] *= s->size;
-	}
-	return 0;
-}
-
-/* Initialize each random sequence freelist per cache */
-static void __init init_freelist_randomization(void)
-{
-	struct kmem_cache *s;
-
-	mutex_lock(&slab_mutex);
-
-	list_for_each_entry(s, &slab_caches, list)
-		init_cache_random_seq(s);
-
-	mutex_unlock(&slab_mutex);
-}
-
-/* Get the next entry on the pre-computed freelist randomized */
-static void *next_freelist_entry(struct kmem_cache *s,
-				unsigned long *pos, void *start,
-				unsigned long page_limit,
-				unsigned long freelist_count)
-{
-	unsigned int idx;
-
-	/*
-	 * If the target page allocation failed, the number of objects on the
-	 * page might be smaller than the usual size defined by the cache.
-	 */
-	do {
-		idx = s->random_seq[*pos];
-		*pos += 1;
-		if (*pos >= freelist_count)
-			*pos = 0;
-	} while (unlikely(idx >= page_limit));
-
-	return (char *)start + idx;
-}
-
-static DEFINE_PER_CPU(struct rnd_state, slab_rnd_state);
-
-/* Shuffle the single linked freelist based on a random pre-computed sequence */
-static bool shuffle_freelist(struct kmem_cache *s, struct slab *slab,
-			     bool allow_spin)
-{
-	void *start;
-	void *cur;
-	void *next;
-	unsigned long idx, pos, page_limit, freelist_count;
-
-	if (slab->objects < 2 || !s->random_seq)
-		return false;
-
-	freelist_count = oo_objects(s->oo);
-	if (allow_spin) {
-		pos = get_random_u32_below(freelist_count);
-	} else {
-		struct rnd_state *state;
-
-		/*
-		 * An interrupt or NMI handler might interrupt and change
-		 * the state in the middle, but that's safe.
-		 */
-		state = &get_cpu_var(slab_rnd_state);
-		pos = prandom_u32_state(state) % freelist_count;
-		put_cpu_var(slab_rnd_state);
-	}
-
-	page_limit = slab->objects * s->size;
-	start = fixup_red_left(s, slab_address(slab));
-
-	/* First entry is used as the base of the freelist */
-	cur = next_freelist_entry(s, &pos, start, page_limit, freelist_count);
-	cur = setup_object(s, cur);
-	slab->freelist = cur;
-
-	for (idx = 1; idx < slab->objects; idx++) {
-		next = next_freelist_entry(s, &pos, start, page_limit,
-			freelist_count);
-		next = setup_object(s, next);
-		set_freepointer(s, cur, next);
-		cur = next;
-	}
-	set_freepointer(s, cur, NULL);
-
-	return true;
-}
-#else
 static inline int init_cache_random_seq(struct kmem_cache *s)
 {
 	return 0;
@@ -3410,7 +3169,6 @@ static inline bool shuffle_freelist(struct kmem_cache *s, struct slab *slab,
 {
 	return false;
 }
-#endif /* CONFIG_SLAB_FREELIST_RANDOM */
 
 static __always_inline void account_slab(struct slab *slab, int order,
 					 struct kmem_cache *s, gfp_t gfp)
@@ -7515,21 +7273,6 @@ init_kmem_cache_node(struct kmem_cache_node *n)
 #endif
 }
 
-#ifdef CONFIG_SLUB_STATS
-static inline int alloc_kmem_cache_stats(struct kmem_cache *s)
-{
-	BUILD_BUG_ON(PERCPU_DYNAMIC_EARLY_SIZE <
-			NR_KMALLOC_TYPES * KMALLOC_SHIFT_HIGH *
-			sizeof(struct kmem_cache_stats));
-
-	s->cpu_stats = alloc_percpu(struct kmem_cache_stats);
-
-	if (!s->cpu_stats)
-		return 0;
-
-	return 1;
-}
-#endif
 
 static int init_percpu_sheaves(struct kmem_cache *s)
 {
@@ -7645,9 +7388,6 @@ void __kmem_cache_release(struct kmem_cache *s)
 {
 	cache_random_seq_destroy(s);
 	pcs_destroy(s);
-#ifdef CONFIG_SLUB_STATS
-	free_percpu(s->cpu_stats);
-#endif
 	free_kmem_cache_nodes(s);
 }
 
@@ -8522,9 +8262,6 @@ void __init kmem_cache_init_late(void)
 	flushwq = alloc_workqueue("slub_flushwq", WQ_MEM_RECLAIM | WQ_PERCPU,
 				  0);
 	WARN_ON(!flushwq);
-#ifdef CONFIG_SLAB_FREELIST_RANDOM
-	prandom_init_once(&slab_rnd_state);
-#endif
 }
 
 int do_kmem_cache_create(struct kmem_cache *s, const char *name,
@@ -8537,9 +8274,6 @@ int do_kmem_cache_create(struct kmem_cache *s, const char *name,
 	s->size = s->object_size = size;
 
 	s->flags = kmem_cache_flags(flags, s->name);
-#ifdef CONFIG_SLAB_FREELIST_HARDENED
-	s->random = get_random_long();
-#endif
 	s->align = args->align;
 	s->ctor = args->ctor;
 #ifdef CONFIG_HARDENED_USERCOPY
@@ -8595,10 +8329,6 @@ int do_kmem_cache_create(struct kmem_cache *s, const char *name,
 	if (!init_kmem_cache_nodes(s))
 		goto out;
 
-#ifdef CONFIG_SLUB_STATS
-	if (!alloc_kmem_cache_stats(s))
-		goto out;
-#endif
 
 	err = init_percpu_sheaves(s);
 	if (err)
@@ -9275,89 +9005,6 @@ static ssize_t remote_node_defrag_ratio_store(struct kmem_cache *s,
 SLAB_ATTR(remote_node_defrag_ratio);
 #endif
 
-#ifdef CONFIG_SLUB_STATS
-static int show_stat(struct kmem_cache *s, char *buf, enum stat_item si)
-{
-	unsigned long sum  = 0;
-	int cpu;
-	int len = 0;
-	int *data = kmalloc_objs(int, nr_cpu_ids);
-
-	if (!data)
-		return -ENOMEM;
-
-	for_each_online_cpu(cpu) {
-		unsigned int x = per_cpu_ptr(s->cpu_stats, cpu)->stat[si];
-
-		data[cpu] = x;
-		sum += x;
-	}
-
-	len += sysfs_emit_at(buf, len, "%lu", sum);
-
-#ifdef CONFIG_SMP
-	for_each_online_cpu(cpu) {
-		if (data[cpu])
-			len += sysfs_emit_at(buf, len, " C%d=%u",
-					     cpu, data[cpu]);
-	}
-#endif
-	kfree(data);
-	len += sysfs_emit_at(buf, len, "\n");
-
-	return len;
-}
-
-static void clear_stat(struct kmem_cache *s, enum stat_item si)
-{
-	int cpu;
-
-	for_each_online_cpu(cpu)
-		per_cpu_ptr(s->cpu_stats, cpu)->stat[si] = 0;
-}
-
-#define STAT_ATTR(si, text) 					\
-static ssize_t text##_show(struct kmem_cache *s, char *buf)	\
-{								\
-	return show_stat(s, buf, si);				\
-}								\
-static ssize_t text##_store(struct kmem_cache *s,		\
-				const char *buf, size_t length)	\
-{								\
-	if (buf[0] != '0')					\
-		return -EINVAL;					\
-	clear_stat(s, si);					\
-	return length;						\
-}								\
-SLAB_ATTR(text);						\
-
-STAT_ATTR(ALLOC_FASTPATH, alloc_fastpath);
-STAT_ATTR(ALLOC_SLOWPATH, alloc_slowpath);
-STAT_ATTR(FREE_RCU_SHEAF, free_rcu_sheaf);
-STAT_ATTR(FREE_RCU_SHEAF_FAIL, free_rcu_sheaf_fail);
-STAT_ATTR(FREE_FASTPATH, free_fastpath);
-STAT_ATTR(FREE_SLOWPATH, free_slowpath);
-STAT_ATTR(FREE_ADD_PARTIAL, free_add_partial);
-STAT_ATTR(FREE_REMOVE_PARTIAL, free_remove_partial);
-STAT_ATTR(ALLOC_SLAB, alloc_slab);
-STAT_ATTR(ALLOC_NODE_MISMATCH, alloc_node_mismatch);
-STAT_ATTR(FREE_SLAB, free_slab);
-STAT_ATTR(ORDER_FALLBACK, order_fallback);
-STAT_ATTR(CMPXCHG_DOUBLE_FAIL, cmpxchg_double_fail);
-STAT_ATTR(SHEAF_FLUSH, sheaf_flush);
-STAT_ATTR(SHEAF_REFILL, sheaf_refill);
-STAT_ATTR(SHEAF_ALLOC, sheaf_alloc);
-STAT_ATTR(SHEAF_FREE, sheaf_free);
-STAT_ATTR(BARN_GET, barn_get);
-STAT_ATTR(BARN_GET_FAIL, barn_get_fail);
-STAT_ATTR(BARN_PUT, barn_put);
-STAT_ATTR(BARN_PUT_FAIL, barn_put_fail);
-STAT_ATTR(SHEAF_PREFILL_FAST, sheaf_prefill_fast);
-STAT_ATTR(SHEAF_PREFILL_SLOW, sheaf_prefill_slow);
-STAT_ATTR(SHEAF_PREFILL_OVERSIZE, sheaf_prefill_oversize);
-STAT_ATTR(SHEAF_RETURN_FAST, sheaf_return_fast);
-STAT_ATTR(SHEAF_RETURN_SLOW, sheaf_return_slow);
-#endif	/* CONFIG_SLUB_STATS */
 
 #ifdef CONFIG_KFENCE
 static ssize_t skip_kfence_show(struct kmem_cache *s, char *buf)
@@ -9417,34 +9064,6 @@ static const struct attribute *const slab_attrs[] = {
 #endif
 #ifdef CONFIG_NUMA
 	&remote_node_defrag_ratio_attr.attr,
-#endif
-#ifdef CONFIG_SLUB_STATS
-	&alloc_fastpath_attr.attr,
-	&alloc_slowpath_attr.attr,
-	&free_rcu_sheaf_attr.attr,
-	&free_rcu_sheaf_fail_attr.attr,
-	&free_fastpath_attr.attr,
-	&free_slowpath_attr.attr,
-	&free_add_partial_attr.attr,
-	&free_remove_partial_attr.attr,
-	&alloc_slab_attr.attr,
-	&alloc_node_mismatch_attr.attr,
-	&free_slab_attr.attr,
-	&order_fallback_attr.attr,
-	&cmpxchg_double_fail_attr.attr,
-	&sheaf_flush_attr.attr,
-	&sheaf_refill_attr.attr,
-	&sheaf_alloc_attr.attr,
-	&sheaf_free_attr.attr,
-	&barn_get_attr.attr,
-	&barn_get_fail_attr.attr,
-	&barn_put_attr.attr,
-	&barn_put_fail_attr.attr,
-	&sheaf_prefill_fast_attr.attr,
-	&sheaf_prefill_slow_attr.attr,
-	&sheaf_prefill_oversize_attr.attr,
-	&sheaf_return_fast_attr.attr,
-	&sheaf_return_slow_attr.attr,
 #endif
 #ifdef CONFIG_FAILSLAB
 	&failslab_attr.attr,

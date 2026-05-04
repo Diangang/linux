@@ -252,17 +252,6 @@ static inline void kmod_dup_request_announce(char *module_name, int ret)
 }
 #endif
 
-#ifdef CONFIG_MODULE_UNLOAD_TAINT_TRACKING
-struct mod_unload_taint {
-	struct list_head list;
-	char name[MODULE_NAME_LEN];
-	unsigned long taints;
-	u64 count;
-};
-
-int try_add_tainted_module(struct module *mod);
-void print_unloaded_tainted_modules(void);
-#else /* !CONFIG_MODULE_UNLOAD_TAINT_TRACKING */
 static inline int try_add_tainted_module(struct module *mod)
 {
 	return 0;
@@ -271,7 +260,6 @@ static inline int try_add_tainted_module(struct module *mod)
 static inline void print_unloaded_tainted_modules(void)
 {
 }
-#endif /* CONFIG_MODULE_UNLOAD_TAINT_TRACKING */
 
 #ifdef CONFIG_MODULE_DECOMPRESS
 int module_decompress(struct load_info *info, const void *buf, size_t size);
@@ -336,21 +324,13 @@ int module_enforce_rwx_sections(const Elf_Ehdr *hdr, const Elf_Shdr *sechdrs,
 void module_mark_ro_after_init(const Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
 			       const char *secstrings);
 
-#ifdef CONFIG_MODULE_SIG
-int module_sig_check(struct load_info *info, int flags);
-#else /* !CONFIG_MODULE_SIG */
 static inline int module_sig_check(struct load_info *info, int flags)
 {
 	return 0;
 }
-#endif /* !CONFIG_MODULE_SIG */
 
-#ifdef CONFIG_DEBUG_KMEMLEAK
-void kmemleak_load_module(const struct module *mod, const struct load_info *info);
-#else /* !CONFIG_DEBUG_KMEMLEAK */
 static inline void kmemleak_load_module(const struct module *mod,
 					const struct load_info *info) { }
-#endif /* CONFIG_DEBUG_KMEMLEAK */
 
 #ifdef CONFIG_KALLSYMS
 void init_build_id(struct module *mod, const struct load_info *info);
@@ -385,23 +365,6 @@ static inline void mod_sysfs_teardown(struct module *mod) { }
 static inline void init_param_lock(struct module *mod) { }
 #endif /* CONFIG_SYSFS */
 
-#ifdef CONFIG_MODVERSIONS
-int check_version(const struct load_info *info,
-		  const char *symname, struct module *mod, const u32 *crc);
-void module_layout(struct module *mod, struct modversion_info *ver, struct kernel_param *kp,
-		   struct kernel_symbol *ks, struct tracepoint * const *tp);
-int check_modstruct_version(const struct load_info *info, struct module *mod);
-int same_magic(const char *amagic, const char *bmagic, bool has_crcs);
-struct modversion_info_ext {
-	size_t remaining;
-	const u32 *crc;
-	const char *name;
-};
-void modversion_ext_start(const struct load_info *info, struct modversion_info_ext *ver);
-void modversion_ext_advance(struct modversion_info_ext *ver);
-#define for_each_modversion_info_ext(ver, info) \
-	for (modversion_ext_start(info, &ver); ver.remaining > 0; modversion_ext_advance(&ver))
-#else /* !CONFIG_MODVERSIONS */
 static inline int check_version(const struct load_info *info,
 				const char *symname,
 				struct module *mod,
@@ -420,4 +383,3 @@ static inline int same_magic(const char *amagic, const char *bmagic, bool has_cr
 {
 	return strcmp(amagic, bmagic) == 0;
 }
-#endif /* CONFIG_MODVERSIONS */

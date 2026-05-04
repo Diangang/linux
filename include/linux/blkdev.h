@@ -189,28 +189,6 @@ struct gendisk {
 	struct timer_rand_state *random;
 	struct disk_events *ev;
 
-#ifdef CONFIG_BLK_DEV_ZONED
-	/*
-	 * Zoned block device information. Reads of this information must be
-	 * protected with blk_queue_enter() / blk_queue_exit(). Modifying this
-	 * information is only allowed while no requests are being processed.
-	 * See also blk_mq_freeze_queue() and blk_mq_unfreeze_queue().
-	 */
-	unsigned int		nr_zones;
-	unsigned int		zone_capacity;
-	unsigned int		last_zone_capacity;
-	u8 __rcu		*zones_cond;
-	unsigned int		zone_wplugs_hash_bits;
-	atomic_t		nr_zone_wplugs;
-	spinlock_t		zone_wplugs_hash_lock;
-	struct mempool		*zone_wplugs_pool;
-	struct hlist_head	*zone_wplugs_hash;
-	struct workqueue_struct *zone_wplugs_wq;
-	spinlock_t		zone_wplugs_list_lock;
-	struct list_head	zone_wplugs_list;
-	struct task_struct	*zone_wplugs_worker;
-	struct completion	zone_wplugs_worker_bio_done;
-#endif /* CONFIG_BLK_DEV_ZONED */
 
 #if IS_ENABLED(CONFIG_CDROM)
 	struct cdrom_device_info *cdi;
@@ -621,10 +599,6 @@ struct request_queue {
 
 	int			mq_freeze_depth;
 
-#ifdef CONFIG_BLK_DEV_THROTTLING
-	/* Throttle data */
-	struct throtl_data *td;
-#endif
 	struct rcu_head		rcu_head;
 #ifdef CONFIG_LOCKDEP
 	struct task_struct	*mq_freeze_owner;
@@ -862,88 +836,6 @@ static inline u64 sb_bdev_nr_blocks(struct super_block *sb)
 		(sb->s_blocksize_bits - SECTOR_SHIFT);
 }
 
-#ifdef CONFIG_BLK_DEV_ZONED
-static inline unsigned int disk_nr_zones(struct gendisk *disk)
-{
-	return disk->nr_zones;
-}
-
-/**
- * bio_needs_zone_write_plugging - Check if a BIO needs to be handled with zone
- *				   write plugging
- * @bio: The BIO being submitted
- *
- * Return true whenever @bio execution needs to be handled through zone
- * write plugging (using blk_zone_plug_bio()). Return false otherwise.
- */
-static inline bool bio_needs_zone_write_plugging(struct bio *bio)
-{
-	enum req_op op = bio_op(bio);
-
-	/*
-	 * Only zoned block devices have a zone write plug hash table. But not
-	 * all of them have one (e.g. DM devices may not need one).
-	 */
-	if (!bio->bi_bdev->bd_disk->zone_wplugs_hash)
-		return false;
-
-	/* Only write operations need zone write plugging. */
-	if (!op_is_write(op))
-		return false;
-
-	/* Ignore empty flush */
-	if (op_is_flush(bio->bi_opf) && !bio_sectors(bio))
-		return false;
-
-	/* Ignore BIOs that already have been handled by zone write plugging. */
-	if (bio_flagged(bio, BIO_ZONE_WRITE_PLUGGING))
-		return false;
-
-	/*
-	 * All zone write operations must be handled through zone write plugging
-	 * using blk_zone_plug_bio().
-	 */
-	switch (op) {
-	case REQ_OP_ZONE_APPEND:
-	case REQ_OP_WRITE:
-	case REQ_OP_WRITE_ZEROES:
-	case REQ_OP_ZONE_FINISH:
-	case REQ_OP_ZONE_RESET:
-	case REQ_OP_ZONE_RESET_ALL:
-		return true;
-	default:
-		return false;
-	}
-}
-
-bool blk_zone_plug_bio(struct bio *bio, unsigned int nr_segs);
-
-/**
- * disk_zone_capacity - returns the zone capacity of zone containing @sector
- * @disk:	disk to work with
- * @sector:	sector number within the querying zone
- *
- * Returns the zone capacity of a zone containing @sector. @sector can be any
- * sector in the zone.
- */
-static inline unsigned int disk_zone_capacity(struct gendisk *disk,
-					      sector_t sector)
-{
-	sector_t zone_sectors = disk->queue->limits.chunk_sectors;
-
-	if (sector + zone_sectors >= get_capacity(disk))
-		return disk->last_zone_capacity;
-	return disk->zone_capacity;
-}
-static inline unsigned int bdev_zone_capacity(struct block_device *bdev,
-					      sector_t pos)
-{
-	return disk_zone_capacity(bdev->bd_disk, pos);
-}
-
-bool bdev_zone_is_seq(struct block_device *bdev, sector_t sector);
-
-#else /* CONFIG_BLK_DEV_ZONED */
 static inline unsigned int disk_nr_zones(struct gendisk *disk)
 {
 	return 0;
@@ -963,7 +855,6 @@ static inline bool blk_zone_plug_bio(struct bio *bio, unsigned int nr_segs)
 {
 	return false;
 }
-#endif /* CONFIG_BLK_DEV_ZONED */
 
 static inline unsigned int bdev_nr_zones(struct block_device *bdev)
 {

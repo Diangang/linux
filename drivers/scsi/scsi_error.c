@@ -402,51 +402,6 @@ int scsi_block_when_processing_errors(struct scsi_device *sdev)
 }
 EXPORT_SYMBOL(scsi_block_when_processing_errors);
 
-#ifdef CONFIG_SCSI_LOGGING
-/**
- * scsi_eh_prt_fail_stats - Log info on failures.
- * @shost:	scsi host being recovered.
- * @work_q:	Queue of scsi cmds to process.
- */
-static inline void scsi_eh_prt_fail_stats(struct Scsi_Host *shost,
-					  struct list_head *work_q)
-{
-	struct scsi_cmnd *scmd;
-	struct scsi_device *sdev;
-	int total_failures = 0;
-	int cmd_failed = 0;
-	int cmd_cancel = 0;
-	int devices_failed = 0;
-
-	shost_for_each_device(sdev, shost) {
-		list_for_each_entry(scmd, work_q, eh_entry) {
-			if (scmd->device == sdev) {
-				++total_failures;
-				if (scmd->eh_eflags & SCSI_EH_ABORT_SCHEDULED)
-					++cmd_cancel;
-				else
-					++cmd_failed;
-			}
-		}
-
-		if (cmd_cancel || cmd_failed) {
-			SCSI_LOG_ERROR_RECOVERY(3,
-				shost_printk(KERN_INFO, shost,
-					    "%s: cmds failed: %d, cancel: %d\n",
-					    __func__, cmd_failed,
-					    cmd_cancel));
-			cmd_cancel = 0;
-			cmd_failed = 0;
-			++devices_failed;
-		}
-	}
-
-	SCSI_LOG_ERROR_RECOVERY(2, shost_printk(KERN_INFO, shost,
-				   "Total of %d commands on %d"
-				   " devices require eh work\n",
-				   total_failures, devices_failed));
-}
-#endif
 
  /**
  * scsi_report_lun_change - Set flag on all *other* devices on the same target

@@ -163,36 +163,10 @@ struct user_event_mm;
 	((state) & (__TASK_STOPPED | __TASK_TRACED | TASK_PARKED |	\
 		    TASK_DEAD | TASK_FROZEN))
 
-#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
-# define debug_normal_state_change(state_value)				\
-	do {								\
-		WARN_ON_ONCE(is_special_task_state(state_value));	\
-		current->task_state_change = _THIS_IP_;			\
-	} while (0)
-
-# define debug_special_state_change(state_value)			\
-	do {								\
-		WARN_ON_ONCE(!is_special_task_state(state_value));	\
-		current->task_state_change = _THIS_IP_;			\
-	} while (0)
-
-# define debug_rtlock_wait_set_state()					\
-	do {								 \
-		current->saved_state_change = current->task_state_change;\
-		current->task_state_change = _THIS_IP_;			 \
-	} while (0)
-
-# define debug_rtlock_wait_restore_state()				\
-	do {								 \
-		current->task_state_change = current->saved_state_change;\
-	} while (0)
-
-#else
 # define debug_normal_state_change(cond)	do { } while (0)
 # define debug_special_state_change(cond)	do { } while (0)
 # define debug_rtlock_wait_set_state()		do { } while (0)
 # define debug_rtlock_wait_restore_state()	do { } while (0)
-#endif
 
 #define trace_set_current_state(state_value)                     \
 	do {                                                     \
@@ -566,9 +540,6 @@ struct sched_statistics {
 	u64				nr_wakeups_passive;
 	u64				nr_wakeups_idle;
 
-#ifdef CONFIG_SCHED_CORE
-	u64				core_forceidle_sum;
-#endif
 #endif /* CONFIG_SCHEDSTATS */
 } ____cacheline_aligned;
 
@@ -629,13 +600,6 @@ struct sched_rt_entity {
 	unsigned short			on_list;
 
 	struct sched_rt_entity		*back;
-#ifdef CONFIG_RT_GROUP_SCHED
-	struct sched_rt_entity		*parent;
-	/* rq on which this entity is (to be) queued: */
-	struct rt_rq			*rt_rq;
-	/* rq "owned" by this entity/group: */
-	struct rt_rq			*my_q;
-#endif
 } __randomize_layout;
 
 struct rq_flags;
@@ -842,9 +806,6 @@ struct task_struct {
 	unsigned int			flags;
 	unsigned int			ptrace;
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-	struct alloc_tag		*alloc_tag;
-#endif
 
 	int				on_cpu;
 	struct __call_single_node	wake_entry;
@@ -877,19 +838,9 @@ struct task_struct {
 #endif
 	const struct sched_class	*sched_class;
 
-#ifdef CONFIG_SCHED_CORE
-	struct rb_node			core_node;
-	unsigned long			core_cookie;
-	unsigned int			core_occupation;
-#endif
 
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group		*sched_task_group;
-#ifdef CONFIG_CFS_BANDWIDTH
-	struct callback_head		sched_throttle_work;
-	struct list_head		throttle_node;
-	bool				throttled;
-#endif
 #endif
 
 
@@ -1011,13 +962,6 @@ struct task_struct {
 #ifdef CONFIG_MEMCG_V1
 	unsigned			in_user_fault:1;
 #endif
-#ifdef CONFIG_LRU_GEN
-	/* whether the LRU algorithm may apply to this access */
-	unsigned			in_lru_fault:1;
-#endif
-#ifdef CONFIG_COMPAT_BRK
-	unsigned			brk_randomized:1;
-#endif
 #ifdef CONFIG_CGROUPS
 	/* disallow userland-initiated cgroup migration */
 	unsigned			no_cgroup_migration:1;
@@ -1026,14 +970,6 @@ struct task_struct {
 #endif
 #ifdef CONFIG_BLK_CGROUP
 	unsigned			use_memdelay:1;
-#endif
-#ifdef CONFIG_PSI
-	/* Stalled due to lack of memory */
-	unsigned			in_memstall:1;
-#endif
-#ifdef CONFIG_PAGE_OWNER
-	/* Used by page_owner=on to detect recursion in page tracking. */
-	unsigned			in_page_owner:1;
 #endif
 #ifdef CONFIG_EVENTFD
 	/* Recursion prevention for eventfd_signal() */
@@ -1116,13 +1052,7 @@ struct task_struct {
 #endif
 	u64				gtime;
 	struct prev_cputime		prev_cputime;
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
-	struct vtime			vtime;
-#endif
 
-#ifdef CONFIG_NO_HZ_FULL
-	atomic_t			tick_dep_mask;
-#endif
 	/* Context switch counts: */
 	unsigned long			nvcsw;
 	unsigned long			nivcsw;
@@ -1174,10 +1104,6 @@ struct task_struct {
 #ifdef CONFIG_SYSVIPC
 	struct sysv_sem			sysvsem;
 	struct sysv_shm			sysvshm;
-#endif
-#ifdef CONFIG_DETECT_HUNG_TASK
-	unsigned long			last_switch_count;
-	unsigned long			last_switch_time;
 #endif
 	/* Filesystem information: */
 	struct fs_struct		*fs;
@@ -1249,9 +1175,6 @@ struct task_struct {
 	unsigned long			blocker;
 #endif
 
-#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
-	int				non_block_count;
-#endif
 
 #ifdef CONFIG_TRACE_IRQFLAGS
 	struct irqtrace_events		irqtrace;
@@ -1299,10 +1222,6 @@ struct task_struct {
 	kernel_siginfo_t		*last_siginfo;
 
 	struct task_io_accounting	ioac;
-#ifdef CONFIG_PSI
-	/* Pressure stall state */
-	unsigned int			psi_flags;
-#endif
 #ifdef CONFIG_TASK_XACCT
 	/* Accumulated RSS usage: */
 	u64				acct_rss_mem1;
@@ -1347,9 +1266,6 @@ struct task_struct {
 	struct mutex			perf_event_mutex;
 	struct list_head		perf_event_list;
 	struct perf_ctx_data __rcu	*perf_ctx_data;
-#endif
-#ifdef CONFIG_DEBUG_PREEMPT
-	unsigned long			preempt_disable_ip;
 #endif
 #ifdef CONFIG_NUMA
 	/* Protected by alloc_lock: */
@@ -1426,10 +1342,6 @@ struct task_struct {
 	struct task_delay_info		*delays;
 #endif
 
-#ifdef CONFIG_FAULT_INJECTION
-	int				make_it_fail;
-	unsigned int			fail_nth;
-#endif
 	/*
 	 * When (nr_dirtied >= nr_dirtied_pause), it's time to call
 	 * balance_dirty_pages() for a dirty throttling pause:
@@ -1439,10 +1351,6 @@ struct task_struct {
 	/* Start of a write-and-pause period: */
 	unsigned long			dirty_paused_when;
 
-#ifdef CONFIG_LATENCYTOP
-	int				latency_record_count;
-	struct latency_record		latency_record[LT_SAVECOUNT];
-#endif
 	/*
 	 * Time slack values; these are used to round up poll() and
 	 * select() etc timeout values. These are in nanoseconds.
@@ -1551,12 +1459,6 @@ struct task_struct {
 	unsigned int			sequential_io_avg;
 #endif
 	struct kmap_ctrl		kmap_ctrl;
-#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
-	unsigned long			task_state_change;
-# ifdef CONFIG_PREEMPT_RT
-	unsigned long			saved_state_change;
-# endif
-#endif
 	struct rcu_head			rcu;
 	refcount_t			rcu_users;
 	int				pagefault_disabled;
@@ -2351,38 +2253,14 @@ static inline bool owner_on_cpu(struct task_struct *owner)
 /* Returns effective CPU energy utilization, as seen by the scheduler */
 unsigned long sched_cpu_util(int cpu);
 
-#ifdef CONFIG_SCHED_CORE
-extern void sched_core_free(struct task_struct *tsk);
-extern void sched_core_fork(struct task_struct *p);
-extern int sched_core_share_pid(unsigned int cmd, pid_t pid, enum pid_type type,
-				unsigned long uaddr);
-extern int sched_core_idle_cpu(int cpu);
-#else
 static inline void sched_core_free(struct task_struct *tsk) { }
 static inline void sched_core_fork(struct task_struct *p) { }
 static inline int sched_core_idle_cpu(int cpu) { return idle_cpu(cpu); }
-#endif
 
 extern void sched_set_stop_task(int cpu, struct task_struct *stop);
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-static __always_inline struct alloc_tag *alloc_tag_save(struct alloc_tag *tag)
-{
-	swap(current->alloc_tag, tag);
-	return tag;
-}
-
-static __always_inline void alloc_tag_restore(struct alloc_tag *tag, struct alloc_tag *old)
-{
-#ifdef CONFIG_MEM_ALLOC_PROFILING_DEBUG
-	WARN(current->alloc_tag != tag, "current->alloc_tag was changed:\n");
-#endif
-	current->alloc_tag = old;
-}
-#else
 #define alloc_tag_save(_tag)			NULL
 #define alloc_tag_restore(_tag, _old)		do {} while (0)
-#endif
 
 /* Avoids recursive inclusion hell */
 #ifdef CONFIG_SCHED_MM_CID
@@ -2435,14 +2313,6 @@ static inline void __migrate_enable(void)
 {
 	struct task_struct *p = current;
 
-#ifdef CONFIG_DEBUG_PREEMPT
-	/*
-	 * Check both overflow from migrate_disable() and superfluous
-	 * migrate_enable().
-	 */
-	if (WARN_ON_ONCE((s16)p->migration_disabled <= 0))
-		return;
-#endif
 
 	if (p->migration_disabled > 1) {
 		p->migration_disabled--;
@@ -2471,12 +2341,6 @@ static inline void __migrate_disable(void)
 	struct task_struct *p = current;
 
 	if (p->migration_disabled) {
-#ifdef CONFIG_DEBUG_PREEMPT
-		/*
-		 *Warn about overflow half-way through the range.
-		 */
-		WARN_ON_ONCE((s16)p->migration_disabled < 0);
-#endif
 		p->migration_disabled++;
 		return;
 	}

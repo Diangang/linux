@@ -313,18 +313,6 @@ static ssize_t housekeeping_show(struct device *dev,
 }
 static DEVICE_ATTR_RO(housekeeping);
 
-#ifdef CONFIG_NO_HZ_FULL
-static ssize_t nohz_full_show(struct device *dev,
-				    struct device_attribute *attr,
-				    char *buf)
-{
-	if (cpumask_available(tick_nohz_full_mask))
-		return sysfs_emit(buf, "%*pbl\n",
-				  cpumask_pr_args(tick_nohz_full_mask));
-	return sysfs_emit(buf, "\n");
-}
-static DEVICE_ATTR_RO(nohz_full);
-#endif
 
 #ifdef CONFIG_CRASH_HOTPLUG
 static ssize_t crash_hotplug_show(struct device *dev,
@@ -523,9 +511,6 @@ static struct attribute *cpu_root_attrs[] = {
 	&dev_attr_enabled.attr,
 	&dev_attr_isolated.attr,
 	&dev_attr_housekeeping.attr,
-#ifdef CONFIG_NO_HZ_FULL
-	&dev_attr_nohz_full.attr,
-#endif
 #ifdef CONFIG_CRASH_HOTPLUG
 	&dev_attr_crash_hotplug.attr,
 #endif

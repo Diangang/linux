@@ -100,21 +100,6 @@ config EFI_ARMSTUB_DTB_LOADER
 	  functionality for bootloaders that do not have such support
 	  this option is necessary.
 
-config EFI_BOOTLOADER_CONTROL
-	tristate "EFI Bootloader Control"
-	select UCS2_STRING
-	default n
-	help
-	  This module installs a reboot hook, such that if reboot() is
-	  invoked with a string argument NNN, "NNN" is copied to the
-	  "LoaderEntryOneShot" EFI variable, to be read by the
-	  bootloader. If the string matches one of the boot labels
-	  defined in its configuration, the bootloader will boot once
-	  to that label. The "LoaderEntryRebootReason" EFI variable is
-	  set with the reboot reason: "reboot" or "shutdown". The
-	  bootloader reads this reboot reason and takes particular
-	  action according to its policy.
-
 config EFI_CAPSULE_LOADER
 	tristate "EFI capsule loader"
 	depends on EFI
@@ -134,23 +119,6 @@ config EFI_CAPSULE_QUIRK_QUARK_CSH
 	  Add support for processing Quark X1000 EFI capsules, whose header
 	  layout deviates from the layout mandated by the UEFI specification.
 
-config EFI_TEST
-	tristate "EFI Runtime Service Tests Support"
-	depends on EFI
-	default n
-	help
-	  This driver uses the efi.<service> function pointers directly instead
-	  of going through the efivar API, because it is not trying to test the
-	  kernel subsystem, just for testing the UEFI runtime service
-	  interfaces which are provided by the firmware. This driver is used
-	  by the Firmware Test Suite (FWTS) for testing the UEFI runtime
-	  interfaces readiness of the firmware.
-	  Details for FWTS are available from:
-	  <https://wiki.ubuntu.com/FirmwareTestSuite>
-
-	  Say Y here to enable the runtime services support via /dev/efi_test.
-	  If unsure, say N.
-
 config EFI_DEV_PATH_PARSER
 	bool
 
@@ -167,19 +135,6 @@ config APPLE_PROPERTIES
 
 	  If unsure, say Y if you have a Mac.  Otherwise N.
 
-config RESET_ATTACK_MITIGATION
-	bool "Reset memory attack mitigation"
-	depends on EFI_STUB
-	help
-	  Request that the firmware clear the contents of RAM after a reboot
-	  using the TCG Platform Reset Attack Mitigation specification. This
-	  protects against an attacker forcibly rebooting the system while it
-	  still contains secrets in RAM, booting another OS and extracting the
-	  secrets. This should only be enabled when userland is configured to
-	  clear the MemoryOverwriteRequest flag on clean shutdown after secrets
-	  have been evicted, since otherwise it will trigger even on clean
-	  reboots.
-
 config EFI_RCI2_TABLE
 	bool "EFI Runtime Configuration Interface Table Version 2 Support"
 	depends on X86 || COMPILE_TEST
@@ -193,28 +148,6 @@ config EFI_RCI2_TABLE
 	  The BIOS setup page contains BIOS tokens which can be configured.
 
 	  Say Y here for Dell EMC PowerEdge systems.
-
-config EFI_DISABLE_PCI_DMA
-       bool "Clear Busmaster bit on PCI bridges during ExitBootServices()"
-       help
-	  Disable the busmaster bit in the control register on all PCI bridges
-	  while calling ExitBootServices() and passing control to the runtime
-	  kernel. System firmware may configure the IOMMU to prevent malicious
-	  PCI devices from being able to attack the OS via DMA. However, since
-	  firmware can't guarantee that the OS is IOMMU-aware, it will tear
-	  down IOMMU configuration when ExitBootServices() is called. This
-	  leaves a window between where a hostile device could still cause
-	  damage before Linux configures the IOMMU again.
-
-	  If you say Y here, the EFI stub will clear the busmaster bit on all
-	  PCI bridges before ExitBootServices() is called. This will prevent
-	  any malicious PCI devices from being able to perform DMA until the
-	  kernel reenables busmastering after configuring the IOMMU.
-
-	  This option will cause failures with some poorly behaved hardware
-	  and should not be enabled without testing. The kernel commandline
-	  options "efi=disable_early_pci_dma" or "efi=no_disable_early_pci_dma"
-	  may be used to override this option.
 
 config EFI_EARLYCON
 	def_bool y
@@ -232,45 +165,6 @@ config EFI_CUSTOM_SSDT_OVERLAYS
 
 	  See Documentation/admin-guide/acpi/ssdt-overlays.rst for more
 	  information.
-
-config EFI_DISABLE_RUNTIME
-	bool "Disable EFI runtime services support by default"
-	default y if PREEMPT_RT
-	help
-	  Allow to disable the EFI runtime services support by default. This can
-	  already be achieved by using the efi=noruntime option, but it could be
-	  useful to have this default without any kernel command line parameter.
-
-	  The EFI runtime services are disabled by default when PREEMPT_RT is
-	  enabled, because measurements have shown that some EFI functions calls
-	  might take too much time to complete, causing large latencies which is
-	  an issue for Real-Time kernels.
-
-	  This default can be overridden by using the efi=runtime option.
-
-config EFI_COCO_SECRET
-	bool "EFI Confidential Computing Secret Area Support"
-	help
-	  Confidential Computing platforms (such as AMD SEV) allow the
-	  Guest Owner to securely inject secrets during guest VM launch.
-	  The secrets are placed in a designated EFI reserved memory area.
-
-	  In order to use the secrets in the kernel, the location of the secret
-	  area (as published in the EFI config table) must be kept.
-
-	  If you say Y here, the address of the EFI secret area will be kept
-	  for usage inside the kernel.  This will allow the
-	  virt/coco/efi_secret module to access the secrets, which in turn
-	  allows userspace programs to access the injected secrets.
-
-config OVMF_DEBUG_LOG
-	bool "Expose OVMF firmware debug log via sysfs"
-	depends on EFI
-	help
-	  Recent versions of the Open Virtual Machine Firmware
-	  (edk2-stable202508 + newer) can write their debug log to a memory
-	  buffer.  This driver exposes the log content via sysfs
-	  (/sys/firmware/efi/ovmf_debug_log).
 
 config UNACCEPTED_MEMORY
 	bool

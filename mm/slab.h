@@ -220,9 +220,6 @@ struct kmem_cache {
 #ifdef CONFIG_SYSFS
 	struct kobject kobj;		/* For sysfs */
 #endif
-#ifdef CONFIG_SLAB_FREELIST_HARDENED
-	unsigned long random;
-#endif
 
 #ifdef CONFIG_NUMA
 	/*
@@ -231,9 +228,6 @@ struct kmem_cache {
 	unsigned int remote_node_defrag_ratio;
 #endif
 
-#ifdef CONFIG_SLAB_FREELIST_RANDOM
-	unsigned int *random_seq;
-#endif
 
 #ifdef CONFIG_KASAN_GENERIC
 	struct kasan_cache kasan_info;
@@ -244,9 +238,6 @@ struct kmem_cache {
 	unsigned int usersize;		/* Usercopy region size */
 #endif
 
-#ifdef CONFIG_SLUB_STATS
-	struct kmem_cache_stats __percpu *cpu_stats;
-#endif
 
 	struct kmem_cache_per_node_ptrs per_node[MAX_NUMNODES];
 };
@@ -446,11 +437,7 @@ struct slabinfo {
 void get_slabinfo(struct kmem_cache *s, struct slabinfo *sinfo);
 
 #ifdef CONFIG_SLUB_DEBUG
-#ifdef CONFIG_SLUB_DEBUG_ON
-DECLARE_STATIC_KEY_TRUE(slub_debug_enabled);
-#else
 DECLARE_STATIC_KEY_FALSE(slub_debug_enabled);
-#endif
 extern void print_tracking(struct kmem_cache *s, void *object);
 long validate_slab_cache(struct kmem_cache *s);
 static inline bool __slub_debug_enabled(void)
@@ -660,18 +647,12 @@ static inline void dump_unreclaimable_slab(void)
 
 void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr);
 
-#ifdef CONFIG_SLAB_FREELIST_RANDOM
-int cache_random_seq_create(struct kmem_cache *cachep, unsigned int count,
-			gfp_t gfp);
-void cache_random_seq_destroy(struct kmem_cache *cachep);
-#else
 static inline int cache_random_seq_create(struct kmem_cache *cachep,
 					unsigned int count, gfp_t gfp)
 {
 	return 0;
 }
 static inline void cache_random_seq_destroy(struct kmem_cache *cachep) { }
-#endif /* CONFIG_SLAB_FREELIST_RANDOM */
 
 static inline bool slab_want_init_on_alloc(gfp_t flags, struct kmem_cache *c)
 {

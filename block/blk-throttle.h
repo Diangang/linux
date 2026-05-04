@@ -145,65 +145,8 @@ static inline struct throtl_grp *blkg_to_tg(struct blkcg_gq *blkg)
 /*
  * Internal throttling interface
  */
-#ifndef CONFIG_BLK_DEV_THROTTLING
 static inline void blk_throtl_exit(struct gendisk *disk) { }
 static inline bool blk_throtl_bio(struct bio *bio) { return false; }
 static inline void blk_throtl_cancel_bios(struct gendisk *disk) { }
-#else /* CONFIG_BLK_DEV_THROTTLING */
-void blk_throtl_exit(struct gendisk *disk);
-bool __blk_throtl_bio(struct bio *bio);
-void blk_throtl_cancel_bios(struct gendisk *disk);
-
-static inline bool blk_throtl_activated(struct request_queue *q)
-{
-	/*
-	 * q->td guarantees that the blk-throttle module is already loaded,
-	 * and the plid of blk-throttle is assigned.
-	 * blkcg_policy_enabled() guarantees that the policy is activated
-	 * in the request_queue.
-	 */
-	return q->td != NULL && blkcg_policy_enabled(q, &blkcg_policy_throtl);
-}
-
-static inline bool blk_should_throtl(struct bio *bio)
-{
-	struct throtl_grp *tg;
-	int rw = bio_data_dir(bio);
-
-	if (!blk_throtl_activated(bio->bi_bdev->bd_queue))
-		return false;
-
-	tg = blkg_to_tg(bio->bi_blkg);
-	if (!cgroup_subsys_on_dfl(io_cgrp_subsys)) {
-		if (!bio_flagged(bio, BIO_CGROUP_ACCT)) {
-			bio_set_flag(bio, BIO_CGROUP_ACCT);
-			blkg_rwstat_add(&tg->stat_bytes, bio->bi_opf,
-					bio->bi_iter.bi_size);
-		}
-		blkg_rwstat_add(&tg->stat_ios, bio->bi_opf, 1);
-	}
-
-	/* iops limit is always counted */
-	if (tg->has_rules_iops[rw])
-		return true;
-
-	if (tg->has_rules_bps[rw] && !bio_flagged(bio, BIO_BPS_THROTTLED))
-		return true;
-
-	return false;
-}
-
-static inline bool blk_throtl_bio(struct bio *bio)
-{
-	/*
-	 * block throttling takes effect if the policy is activated
-	 * in the bio's request_queue.
-	 */
-	if (!blk_should_throtl(bio))
-		return false;
-
-	return __blk_throtl_bio(bio);
-}
-#endif /* CONFIG_BLK_DEV_THROTTLING */
 
 #endif

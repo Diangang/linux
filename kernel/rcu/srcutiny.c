@@ -46,19 +46,6 @@ static int init_srcu_struct_fields(struct srcu_struct *ssp)
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-int __init_srcu_struct(struct srcu_struct *ssp, const char *name,
-		       struct lock_class_key *key)
-{
-	/* Don't re-initialize a lock while it is held. */
-	debug_check_no_locks_freed((void *)ssp, sizeof(*ssp));
-	lockdep_init_map(&ssp->dep_map, name, key, 0);
-	return init_srcu_struct_fields(ssp);
-}
-EXPORT_SYMBOL_GPL(__init_srcu_struct);
-
-#else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /*
  * init_srcu_struct - initialize a sleep-RCU structure
@@ -74,7 +61,6 @@ int init_srcu_struct(struct srcu_struct *ssp)
 }
 EXPORT_SYMBOL_GPL(init_srcu_struct);
 
-#endif /* #else #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
 /*
  * cleanup_srcu_struct - deconstruct a sleep-RCU structure

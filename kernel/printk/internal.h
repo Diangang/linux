@@ -35,11 +35,7 @@ int devkmsg_sysctl_set_loglvl(const struct ctl_table *table, int write,
 
 #ifdef CONFIG_PRINTK
 
-#ifdef CONFIG_PRINTK_CALLER
-#define PRINTK_PREFIX_MAX	48
-#else
 #define PRINTK_PREFIX_MAX	32
-#endif
 
 /*
  * the maximum size of a formatted record (i.e. with prefix added

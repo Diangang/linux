@@ -63,8 +63,5 @@ static inline int num_phys_nodes(void)
 }
 #endif	/* CONFIG_NUMA */
 
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-void debug_cpumask_set_cpu(unsigned int cpu, int node, bool enable);
-#endif
 
 #endif	/* _ASM_X86_NUMA_H */

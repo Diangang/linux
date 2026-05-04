@@ -24,11 +24,7 @@
 #define LIST_BL_LOCKMASK	0UL
 #endif
 
-#ifdef CONFIG_DEBUG_LIST
-#define LIST_BL_BUG_ON(x) BUG_ON(x)
-#else
 #define LIST_BL_BUG_ON(x)
-#endif
 
 
 struct hlist_bl_head {

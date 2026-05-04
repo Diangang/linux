@@ -1535,32 +1535,6 @@ throttle:
 	if (dl_se->dl_server)
 		return;
 
-#ifdef CONFIG_RT_GROUP_SCHED
-	/*
-	 * Because -- for now -- we share the rt bandwidth, we need to
-	 * account our runtime there too, otherwise actual rt tasks
-	 * would be able to exceed the shared quota.
-	 *
-	 * Account to the root rt group for now.
-	 *
-	 * The solution we're working towards is having the RT groups scheduled
-	 * using deadline servers -- however there's a few nasties to figure
-	 * out before that can happen.
-	 */
-	if (rt_bandwidth_enabled()) {
-		struct rt_rq *rt_rq = &rq->rt;
-
-		raw_spin_lock(&rt_rq->rt_runtime_lock);
-		/*
-		 * We'll let actual RT tasks worry about the overflow here, we
-		 * have our own CBS to keep us inline; only account when RT
-		 * bandwidth is relevant.
-		 */
-		if (sched_rt_bandwidth_account(rt_rq))
-			rt_rq->rt_time += delta_exec;
-		raw_spin_unlock(&rt_rq->rt_runtime_lock);
-	}
-#endif /* CONFIG_RT_GROUP_SCHED */
 }
 
 /*
@@ -3411,12 +3385,6 @@ static void prio_changed_dl(struct rq *rq, struct task_struct *p, u64 old_deadli
 	}
 }
 
-#ifdef CONFIG_SCHED_CORE
-static int task_is_throttled_dl(struct task_struct *p, int cpu)
-{
-	return p->dl.dl_throttled;
-}
-#endif
 
 DEFINE_SCHED_CLASS(dl) = {
 	.enqueue_task		= enqueue_task_dl,
@@ -3447,9 +3415,6 @@ DEFINE_SCHED_CLASS(dl) = {
 	.switched_to		= switched_to_dl,
 
 	.update_curr		= update_curr_dl,
-#ifdef CONFIG_SCHED_CORE
-	.task_is_throttled	= task_is_throttled_dl,
-#endif
 };
 
 /*

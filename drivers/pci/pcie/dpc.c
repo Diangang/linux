@@ -77,55 +77,6 @@ void pci_restore_dpc_state(struct pci_dev *dev)
 
 static DECLARE_WAIT_QUEUE_HEAD(dpc_completed_waitqueue);
 
-#ifdef CONFIG_HOTPLUG_PCI_PCIE
-static bool dpc_completed(struct pci_dev *pdev)
-{
-	u16 status;
-
-	pci_read_config_word(pdev, pdev->dpc_cap + PCI_EXP_DPC_STATUS, &status);
-	if ((!PCI_POSSIBLE_ERROR(status)) && (status & PCI_EXP_DPC_STATUS_TRIGGER))
-		return false;
-
-	if (test_bit(PCI_DPC_RECOVERING, &pdev->priv_flags))
-		return false;
-
-	return true;
-}
-
-/**
- * pci_dpc_recovered - whether DPC triggered and has recovered successfully
- * @pdev: PCI device
- *
- * Return true if DPC was triggered for @pdev and has recovered successfully.
- * Wait for recovery if it hasn't completed yet.  Called from the PCIe hotplug
- * driver to recognize and ignore Link Down/Up events caused by DPC.
- */
-bool pci_dpc_recovered(struct pci_dev *pdev)
-{
-	struct pci_host_bridge *host;
-
-	if (!pdev->dpc_cap)
-		return false;
-
-	/*
-	 * Synchronization between hotplug and DPC is not supported
-	 * if DPC is owned by firmware and EDR is not enabled.
-	 */
-	host = pci_find_host_bridge(pdev->bus);
-	if (!host->native_dpc && !IS_ENABLED(CONFIG_PCIE_EDR))
-		return false;
-
-	/*
-	 * Need a timeout in case DPC never completes due to failure of
-	 * dpc_wait_rp_inactive().  The spec doesn't mandate a time limit,
-	 * but reports indicate that DPC completes within 4 seconds.
-	 */
-	wait_event_timeout(dpc_completed_waitqueue, dpc_completed(pdev),
-			   msecs_to_jiffies(4000));
-
-	return test_and_clear_bit(PCI_DPC_RECOVERED, &pdev->priv_flags);
-}
-#endif /* CONFIG_HOTPLUG_PCI_PCIE */
 
 static int dpc_wait_rp_inactive(struct pci_dev *pdev)
 {

@@ -121,14 +121,6 @@ config MODULE_DEBUG_AUTOLOAD_DUPS_TRACE
 
 endif # MODULE_DEBUG
 
-config MODULE_FORCE_LOAD
-	bool "Forced module loading"
-	default n
-	help
-	  Allow loading of modules without version information (ie. modprobe
-	  --force).  Forced module loading sets the 'F' (forced) taint flag and
-	  is usually a really bad idea.
-
 config MODULE_UNLOAD
 	bool "Module unloading"
 	help
@@ -146,28 +138,6 @@ config MODULE_FORCE_UNLOAD
 	  without waiting for anyone to stop using it (using the -f option to
 	  rmmod).  This is mainly for kernel developers and desperate users.
 	  If unsure, say N.
-
-config MODULE_UNLOAD_TAINT_TRACKING
-	bool "Tainted module unload tracking"
-	depends on MODULE_UNLOAD
-	select MODULE_DEBUGFS
-	help
-	  This option allows you to maintain a record of each unloaded
-	  module that tainted the kernel. In addition to displaying a
-	  list of linked (or loaded) modules e.g. on detection of a bad
-	  page (see bad_page()), the aforementioned details are also
-	  shown. If unsure, say N.
-
-config MODVERSIONS
-	bool "Module versioning support"
-	depends on !COMPILE_TEST
-	help
-	  Usually, you have to use modules compiled with your kernel.
-	  Saying Y here makes it sometimes possible to use modules
-	  compiled for different kernels, by adding enough information
-	  to the modules to (hopefully) spot any changes which would
-	  make them incompatible with the kernel you are running.  If
-	  unsure, say N.
 
 if MODVERSIONS
 
@@ -238,39 +208,6 @@ config BASIC_MODVERSIONS
 
 endif # MODVERSIONS
 
-config MODULE_SRCVERSION_ALL
-	bool "Source checksum for all modules"
-	help
-	  Modules which contain a MODULE_VERSION get an extra "srcversion"
-	  field inserted into their modinfo section, which contains a
-	  sum of the source files which made it.  This helps maintainers
-	  see exactly which source was used to build a module (since
-	  others sometimes change the module source without updating
-	  the version).  With this option, such a "srcversion" field
-	  will be created for all modules.  If unsure, say N.
-
-config MODULE_SIG
-	bool "Module signature verification"
-	select MODULE_SIG_FORMAT
-	help
-	  Check modules for valid signatures upon load: the signature
-	  is simply appended to the module. For more information see
-	  <file:Documentation/admin-guide/module-signing.rst>.
-
-	  Note that this option adds the OpenSSL development packages as a
-	  kernel build dependency so that the signing tool can use its crypto
-	  library.
-
-	  You should enable this option if you wish to use either
-	  CONFIG_SECURITY_LOCKDOWN_LSM or lockdown functionality imposed via
-	  another LSM - otherwise unsigned modules will be loadable regardless
-	  of the lockdown policy.
-
-	  !!!WARNING!!!  If you enable this option, you MUST make sure that the
-	  module DOES NOT get stripped after being signed.  This includes the
-	  debuginfo strip done by some packagers (such as rpmbuild) and
-	  inclusion into an initramfs that wants the module size reduced.
-
 config MODULE_SIG_FORCE
 	bool "Require modules to be validly signed"
 	depends on MODULE_SIG
@@ -337,21 +274,6 @@ config MODULE_SIG_HASH
 
 endif # MODULE_SIG || IMA_APPRAISE_MODSIG
 
-config MODULE_COMPRESS
-	bool "Module compression"
-	help
-	  Enable module compression to reduce on-disk size of module binaries.
-	  This is fully compatible with signed modules.
-
-	  The tool used to work with modules needs to support the selected
-	  compression type. kmod MAY support gzip, xz and zstd. Other tools
-	  might have a limited selection of the supported types.
-
-	  Note that for modules inside an initrd or initramfs, it's more
-	  efficient to compress the whole ramdisk instead.
-
-	  If unsure, say N.
-
 if MODULE_COMPRESS
 
 choice
@@ -403,19 +325,6 @@ config MODULE_DECOMPRESS
 
 endif # MODULE_COMPRESS
 
-config MODULE_ALLOW_MISSING_NAMESPACE_IMPORTS
-	bool "Allow loading of modules with missing namespace imports"
-	help
-	  Symbols exported with EXPORT_SYMBOL_NS*() are considered exported in
-	  a namespace. A module that makes use of a symbol exported with such a
-	  namespace is required to import the namespace via MODULE_IMPORT_NS("").
-	  There is no technical reason to enforce correct namespace imports,
-	  but it creates consistency between symbols defining namespaces and
-	  users importing namespaces they make use of. This option relaxes this
-	  requirement and lifts the enforcement when loading a module.
-
-	  If unsure, say N.
-
 config MODPROBE_PATH
 	string "Path to modprobe binary"
 	default "/sbin/modprobe"
@@ -427,21 +336,6 @@ config MODPROBE_PATH
 	  /proc/sys/kernel/modprobe. Setting this to the empty string
 	  removes the kernel's ability to request modules (but
 	  userspace can still load modules explicitly).
-
-config TRIM_UNUSED_KSYMS
-	bool "Trim unused exported kernel symbols"
-	help
-	  The kernel and some modules make many symbols available for
-	  other modules to use via EXPORT_SYMBOL() and variants. Depending
-	  on the set of modules being selected in your kernel configuration,
-	  many of those exported symbols might never be used.
-
-	  This option allows for unused exported symbols to be dropped from
-	  the build. In turn, this provides the compiler more opportunities
-	  (especially when using LTO) for optimizing the code and reducing
-	  binary size.  This might have some security advantages as well.
-
-	  If unsure, or if you need to build out-of-tree modules, say N.
 
 config UNUSED_KSYMS_WHITELIST
 	string "Whitelist of symbols to keep in ksymtab"

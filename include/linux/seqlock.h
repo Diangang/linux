@@ -49,37 +49,9 @@ static inline void __seqcount_init(seqcount_t *s, const char *name,
 	s->sequence = 0;
 }
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-# define SEQCOUNT_DEP_MAP_INIT(lockname)				\
-		.dep_map = { .name = #lockname }
-
-/**
- * seqcount_init() - runtime initializer for seqcount_t
- * @s: Pointer to the seqcount_t instance
- */
-# define seqcount_init(s)						\
-	do {								\
-		static struct lock_class_key __key;			\
-		__seqcount_init((s), #s, &__key);			\
-	} while (0)
-
-static inline void seqcount_lockdep_reader_access(const seqcount_t *s)
-{
-	seqcount_t *l = (seqcount_t *)s;
-	unsigned long flags;
-
-	local_irq_save(flags);
-	seqcount_acquire_read(&l->dep_map, 0, 0, _RET_IP_);
-	seqcount_release(&l->dep_map, _RET_IP_);
-	local_irq_restore(flags);
-}
-
-#else
 # define SEQCOUNT_DEP_MAP_INIT(lockname)
 # define seqcount_init(s) __seqcount_init(s, NULL, NULL)
 # define seqcount_lockdep_reader_access(x)
-#endif
 
 /**
  * SEQCNT_ZERO() - static initializer for seqcount_t

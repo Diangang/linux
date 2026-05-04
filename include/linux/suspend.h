@@ -528,11 +528,7 @@ extern bool pm_debug_messages_on;
 extern bool pm_debug_messages_should_print(void);
 static inline int pm_dyn_debug_messages_on(void)
 {
-#ifdef CONFIG_DYNAMIC_DEBUG
-	return 1;
-#else
 	return 0;
-#endif
 }
 #ifndef pr_fmt
 #define pr_fmt(fmt) "PM: " fmt
@@ -578,16 +574,9 @@ static inline int pm_dyn_debug_messages_on(void)
 #define pm_deferred_pr_dbg(fmt, ...) \
 	__pm_deferred_pr_dbg(fmt, ##__VA_ARGS__)
 
-#ifdef CONFIG_PM_AUTOSLEEP
-
-/* kernel/power/autosleep.c */
-void queue_up_suspend_work(void);
-
-#else /* !CONFIG_PM_AUTOSLEEP */
 
 static inline void queue_up_suspend_work(void) {}
 
-#endif /* !CONFIG_PM_AUTOSLEEP */
 
 enum suspend_stat_step {
 	SUSPEND_WORKING = 0,

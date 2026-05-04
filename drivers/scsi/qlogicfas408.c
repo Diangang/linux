@@ -503,10 +503,6 @@ int qlogicfas408_biosparam(struct scsi_device *disk, struct gendisk *unused,
 		ip[0] = 0xff;
 		ip[1] = 0x3f;
 		ip[2] = (unsigned long) capacity / (ip[0] * ip[1]);
-#if 0
-		if (ip[2] > 1023)
-			ip[2] = 1023;
-#endif
 	}
 	return 0;
 }

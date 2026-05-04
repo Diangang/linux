@@ -445,29 +445,6 @@ static inline u64 default_bw_period_us(void)
 #endif /* CONFIG_GROUP_SCHED_BANDWIDTH */
 
 struct cfs_bandwidth {
-#ifdef CONFIG_CFS_BANDWIDTH
-	raw_spinlock_t		lock;
-	ktime_t			period;
-	u64			quota;
-	u64			runtime;
-	u64			burst;
-	u64			runtime_snap;
-	s64			hierarchical_quota;
-
-	u8			idle;
-	u8			period_active;
-	u8			slack_started;
-	struct hrtimer		period_timer;
-	struct hrtimer		slack_timer;
-	struct list_head	throttled_cfs_rq;
-
-	/* Statistics: */
-	int			nr_periods;
-	int			nr_throttled;
-	int			nr_burst;
-	u64			throttled_time;
-	u64			burst_time;
-#endif /* CONFIG_CFS_BANDWIDTH */
 };
 
 /* Task group related information */
@@ -493,12 +470,6 @@ struct task_group {
 	atomic_long_t		load_avg ____cacheline_aligned;
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 
-#ifdef CONFIG_RT_GROUP_SCHED
-	struct sched_rt_entity	**rt_se;
-	struct rt_rq		**rt_rq;
-
-	struct rt_bandwidth	rt_bandwidth;
-#endif
 
 	struct scx_task_group	scx;
 
@@ -687,10 +658,6 @@ struct cfs_rq {
 	u64			zero_vruntime;
 	unsigned int		sum_shift;
 
-#ifdef CONFIG_SCHED_CORE
-	unsigned int		forceidle_seq;
-	u64			zero_vruntime_fi;
-#endif
 
 	struct rb_root_cached	tasks_timeline;
 
@@ -749,26 +716,6 @@ struct cfs_rq {
 	/* Locally cached copy of our task_group's idle value */
 	int			idle;
 
-# ifdef CONFIG_CFS_BANDWIDTH
-	int			runtime_enabled;
-	s64			runtime_remaining;
-
-	u64			throttled_pelt_idle;
-#  ifndef CONFIG_64BIT
-	u64                     throttled_pelt_idle_copy;
-#  endif
-	u64			throttled_clock;
-	u64			throttled_clock_pelt;
-	u64			throttled_clock_pelt_time;
-	u64			throttled_clock_self;
-	u64			throttled_clock_self_time;
-	bool			throttled:1;
-	bool			pelt_clock_throttled:1;
-	int			throttle_count;
-	struct list_head	throttled_list;
-	struct list_head	throttled_csd_list;
-	struct list_head        throttled_limbo_list;
-# endif /* CONFIG_CFS_BANDWIDTH */
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 };
 
@@ -848,17 +795,6 @@ struct rt_rq {
 
 	int			rt_queued;
 
-#ifdef CONFIG_RT_GROUP_SCHED
-	int			rt_throttled;
-	u64			rt_time; /* consumed RT time, goes up in update_curr_rt */
-	u64			rt_runtime; /* allotted RT time, "slice" from rt_bandwidth, RT sharing/balancing */
-	/* Nests inside the rq lock: */
-	raw_spinlock_t		rt_runtime_lock;
-
-	unsigned int		rt_nr_boosted;
-
-	struct rq		*rq; /* this is always top-level rq, cache? */
-#endif
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group	*tg; /* this tg has "this" rt_rq on given CPU for runnable entities */
 #endif
@@ -1283,9 +1219,6 @@ struct rq {
 #ifdef CONFIG_PARAVIRT
 	u64			prev_steal_time;
 #endif
-#ifdef CONFIG_PARAVIRT_TIME_ACCOUNTING
-	u64			prev_steal_time_rq;
-#endif
 
 	/* calc_load related fields */
 	unsigned long		calc_load_update;
@@ -1325,32 +1258,10 @@ struct rq {
 	unsigned int		push_busy;
 	struct cpu_stop_work	push_work;
 
-#ifdef CONFIG_SCHED_CORE
-	/* per rq */
-	struct rq		*core;
-	struct task_struct	*core_pick;
-	struct sched_dl_entity	*core_dl_server;
-	unsigned int		core_enabled;
-	unsigned int		core_sched_seq;
-	struct rb_root		core_tree;
-
-	/* shared state -- careful with sched_core_cpu_deactivate() */
-	unsigned int		core_task_seq;
-	unsigned int		core_pick_seq;
-	unsigned long		core_cookie;
-	unsigned int		core_forceidle_count;
-	unsigned int		core_forceidle_seq;
-	unsigned int		core_forceidle_occupation;
-	u64			core_forceidle_start;
-#endif /* CONFIG_SCHED_CORE */
 
 	/* Scratch cpumask to be temporarily used under rq_lock */
 	cpumask_var_t		scratch_mask;
 
-#ifdef CONFIG_CFS_BANDWIDTH
-	call_single_data_t	cfsb_csd;
-	struct list_head	cfsb_csd_list;
-#endif
 
 	atomic_t		nr_iowait;
 } __no_randomize_layout;
@@ -1436,117 +1347,6 @@ static inline void rq_set_donor(struct rq *rq, struct task_struct *t)
 }
 #endif
 
-#ifdef CONFIG_SCHED_CORE
-static inline struct cpumask *sched_group_span(struct sched_group *sg);
-
-DECLARE_STATIC_KEY_FALSE(__sched_core_enabled);
-
-static inline bool sched_core_enabled(struct rq *rq)
-{
-	return static_branch_unlikely(&__sched_core_enabled) && rq->core_enabled;
-}
-
-static inline bool sched_core_disabled(void)
-{
-	return !static_branch_unlikely(&__sched_core_enabled);
-}
-
-/*
- * Be careful with this function; not for general use. The return value isn't
- * stable unless you actually hold a relevant rq->__lock.
- */
-static inline raw_spinlock_t *rq_lockp(struct rq *rq)
-{
-	if (sched_core_enabled(rq))
-		return &rq->core->__lock;
-
-	return &rq->__lock;
-}
-
-static inline raw_spinlock_t *__rq_lockp(struct rq *rq)
-	__returns_ctx_lock(rq_lockp(rq)) /* alias them */
-{
-	if (rq->core_enabled)
-		return &rq->core->__lock;
-
-	return &rq->__lock;
-}
-
-extern bool
-cfs_prio_less(const struct task_struct *a, const struct task_struct *b, bool fi);
-
-extern void task_vruntime_update(struct rq *rq, struct task_struct *p, bool in_fi);
-
-/*
- * Helpers to check if the CPU's core cookie matches with the task's cookie
- * when core scheduling is enabled.
- * A special case is that the task's cookie always matches with CPU's core
- * cookie if the CPU is in an idle core.
- */
-static inline bool sched_cpu_cookie_match(struct rq *rq, struct task_struct *p)
-{
-	/* Ignore cookie match if core scheduler is not enabled on the CPU. */
-	if (!sched_core_enabled(rq))
-		return true;
-
-	return rq->core->core_cookie == p->core_cookie;
-}
-
-static inline bool sched_core_cookie_match(struct rq *rq, struct task_struct *p)
-{
-	bool idle_core = true;
-	int cpu;
-
-	/* Ignore cookie match if core scheduler is not enabled on the CPU. */
-	if (!sched_core_enabled(rq))
-		return true;
-
-	if (rq->core->core_cookie == p->core_cookie)
-		return true;
-
-	for_each_cpu(cpu, cpu_smt_mask(cpu_of(rq))) {
-		if (!available_idle_cpu(cpu)) {
-			idle_core = false;
-			break;
-		}
-	}
-
-	/*
-	 * A CPU in an idle core is always the best choice for tasks with
-	 * cookies.
-	 */
-	return idle_core;
-}
-
-static inline bool sched_group_cookie_match(struct rq *rq,
-					    struct task_struct *p,
-					    struct sched_group *group)
-{
-	int cpu;
-
-	/* Ignore cookie match if core scheduler is not enabled on the CPU. */
-	if (!sched_core_enabled(rq))
-		return true;
-
-	for_each_cpu_and(cpu, sched_group_span(group), p->cpus_ptr) {
-		if (sched_core_cookie_match(cpu_rq(cpu), p))
-			return true;
-	}
-	return false;
-}
-
-static inline bool sched_core_enqueued(struct task_struct *p)
-{
-	return !RB_EMPTY_NODE(&p->core_node);
-}
-
-extern void sched_core_enqueue(struct rq *rq, struct task_struct *p);
-extern void sched_core_dequeue(struct rq *rq, struct task_struct *p, int flags);
-
-extern void sched_core_get(void);
-extern void sched_core_put(void);
-
-#else /* !CONFIG_SCHED_CORE: */
 
 static inline bool sched_core_enabled(struct rq *rq)
 {
@@ -1586,25 +1386,8 @@ static inline bool sched_group_cookie_match(struct rq *rq,
 	return true;
 }
 
-#endif /* !CONFIG_SCHED_CORE */
 
-#ifdef CONFIG_RT_GROUP_SCHED
-# ifdef CONFIG_RT_GROUP_SCHED_DEFAULT_DISABLED
-DECLARE_STATIC_KEY_FALSE(rt_group_sched);
-static inline bool rt_group_sched_enabled(void)
-{
-	return static_branch_unlikely(&rt_group_sched);
-}
-# else /* !CONFIG_RT_GROUP_SCHED_DEFAULT_DISABLED: */
-DECLARE_STATIC_KEY_TRUE(rt_group_sched);
-static inline bool rt_group_sched_enabled(void)
-{
-	return static_branch_likely(&rt_group_sched);
-}
-# endif /* !CONFIG_RT_GROUP_SCHED_DEFAULT_DISABLED */
-#else /* !CONFIG_RT_GROUP_SCHED: */
 # define rt_group_sched_enabled()	false
-#endif /* !CONFIG_RT_GROUP_SCHED */
 
 static inline void lockdep_assert_rq_held(struct rq *rq)
 	__assumes_ctx_lock(__rq_lockp(rq))
@@ -2281,17 +2064,6 @@ static inline void set_task_rq(struct task_struct *p, unsigned int cpu)
 	p->se.depth = tg->se[cpu] ? tg->se[cpu]->depth + 1 : 0;
 #endif
 
-#ifdef CONFIG_RT_GROUP_SCHED
-	/*
-	 * p->rt.rt_rq is NULL initially and it is easier to assign
-	 * root_task_group's rt_rq than switching in rt_rq_of_se()
-	 * Clobbers tg(!)
-	 */
-	if (!rt_group_sched_enabled())
-		tg = &root_task_group;
-	p->rt.rt_rq  = tg->rt_rq[cpu];
-	p->rt.parent = tg->rt_se[cpu];
-#endif /* CONFIG_RT_GROUP_SCHED */
 }
 
 #else /* !CONFIG_CGROUP_SCHED: */
@@ -2670,13 +2442,6 @@ struct sched_class {
 	void (*task_change_group)(struct task_struct *p);
 #endif
 
-#ifdef CONFIG_SCHED_CORE
-	/*
-	 * pick_next_task: rq->lock
-	 * try_steal_cookie: rq->lock (double)
-	 */
-	int (*task_is_throttled)(struct task_struct *p, int cpu);
-#endif
 };
 
 static inline void put_prev_task(struct rq *rq, struct task_struct *prev)
@@ -2923,31 +2688,8 @@ extern u64 to_ratio(u64 period, u64 runtime);
 extern void init_entity_runnable_average(struct sched_entity *se);
 extern void post_init_entity_util_avg(struct task_struct *p);
 
-#ifdef CONFIG_NO_HZ_FULL
-extern bool sched_can_stop_tick(struct rq *rq);
-extern int __init sched_tick_offload_init(void);
-
-/*
- * Tick may be needed by tasks in the runqueue depending on their policy and
- * requirements. If tick is needed, lets send the target an IPI to kick it out of
- * nohz mode if necessary.
- */
-static inline void sched_update_tick_dependency(struct rq *rq)
-{
-	int cpu = cpu_of(rq);
-
-	if (!tick_nohz_full_cpu(cpu))
-		return;
-
-	if (sched_can_stop_tick(rq))
-		tick_nohz_dep_clear_cpu(cpu, TICK_DEP_BIT_SCHED);
-	else
-		tick_nohz_dep_set_cpu(cpu, TICK_DEP_BIT_SCHED);
-}
-#else /* !CONFIG_NO_HZ_FULL: */
 static inline int sched_tick_offload_init(void) { return 0; }
 static inline void sched_update_tick_dependency(struct rq *rq) { }
-#endif /* !CONFIG_NO_HZ_FULL */
 
 static inline void add_nr_running(struct rq *rq, unsigned count)
 {
@@ -3156,27 +2898,6 @@ static __always_inline void __class_##_name##_cleanup_ctx2(class_##_name##_t **_
 
 static inline bool rq_order_less(struct rq *rq1, struct rq *rq2)
 {
-#ifdef CONFIG_SCHED_CORE
-	/*
-	 * In order to not have {0,2},{1,3} turn into into an AB-BA,
-	 * order by core-id first and cpu-id second.
-	 *
-	 * Notably:
-	 *
-	 *	double_rq_lock(0,3); will take core-0, core-1 lock
-	 *	double_rq_lock(1,2); will take core-1, core-0 lock
-	 *
-	 * when only cpu-id is considered.
-	 */
-	if (rq1->core->cpu < rq2->core->cpu)
-		return true;
-	if (rq1->core->cpu > rq2->core->cpu)
-		return false;
-
-	/*
-	 * __sched_core_flip() relies on SMT having cpu-id lock order.
-	 */
-#endif /* CONFIG_SCHED_CORE */
 	return rq1->cpu < rq2->cpu;
 }
 

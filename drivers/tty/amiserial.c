@@ -1199,16 +1199,6 @@ static void rs_set_termios(struct tty_struct *tty, const struct ktermios *old_te
 		rs_start(tty);
 	}
 
-#if 0
-	/*
-	 * No need to wake up processes in open wait, since they
-	 * sample the CLOCAL flag once, and don't recheck it.
-	 * XXX  It's not clear whether the current behavior is correct
-	 * or not.  Hence, this may change.....
-	 */
-	if (!(old_termios->c_cflag & CLOCAL) && C_CLOCAL(tty))
-		wake_up_interruptible(&info->open_wait);
-#endif
 }
 
 /*

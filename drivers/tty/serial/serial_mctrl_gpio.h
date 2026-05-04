@@ -30,78 +30,6 @@ enum mctrl_gpio_idx {
  */
 struct mctrl_gpios;
 
-#ifdef CONFIG_GPIOLIB
-
-/*
- * Set state of the modem control output lines via GPIOs.
- */
-void mctrl_gpio_set(struct mctrl_gpios *gpios, unsigned int mctrl);
-
-/*
- * Get state of the modem control input lines from GPIOs.
- * The mctrl flags are updated and returned.
- */
-unsigned int mctrl_gpio_get(struct mctrl_gpios *gpios, unsigned int *mctrl);
-
-/*
- * Get state of the modem control output lines from GPIOs.
- * The mctrl flags are updated and returned.
- */
-unsigned int
-mctrl_gpio_get_outputs(struct mctrl_gpios *gpios, unsigned int *mctrl);
-
-/*
- * Returns the associated struct gpio_desc to the modem line gidx
- */
-struct gpio_desc *mctrl_gpio_to_gpiod(struct mctrl_gpios *gpios,
-				      enum mctrl_gpio_idx gidx);
-
-/*
- * Request and set direction of modem control line GPIOs and set up irq
- * handling.
- * devm_* functions are used, so there's no need to explicitly free.
- * Returns a pointer to the allocated mctrl structure if ok, -ENOMEM on
- * allocation error.
- */
-struct mctrl_gpios *mctrl_gpio_init(struct uart_port *port, unsigned int idx);
-
-/*
- * Request and set direction of modem control line GPIOs.
- * devm_* functions are used, so there's no need to explicitly free.
- * Returns a pointer to the allocated mctrl structure if ok, -ENOMEM on
- * allocation error.
- */
-struct mctrl_gpios *mctrl_gpio_init_noauto(struct device *dev,
-					   unsigned int idx);
-
-/*
- * Enable gpio interrupts to report status line changes.
- */
-void mctrl_gpio_enable_ms(struct mctrl_gpios *gpios);
-
-/*
- * Disable gpio interrupts to report status line changes, and block until
- * any corresponding IRQ is processed
- */
-void mctrl_gpio_disable_ms_sync(struct mctrl_gpios *gpios);
-
-/*
- * Disable gpio interrupts to report status line changes, and return
- * immediately
- */
-void mctrl_gpio_disable_ms_no_sync(struct mctrl_gpios *gpios);
-
-/*
- * Enable gpio wakeup interrupts to enable wake up source.
- */
-void mctrl_gpio_enable_irq_wake(struct mctrl_gpios *gpios);
-
-/*
- * Disable gpio wakeup interrupts to enable wake up source.
- */
-void mctrl_gpio_disable_irq_wake(struct mctrl_gpios *gpios);
-
-#else /* GPIOLIB */
 
 static inline
 void mctrl_gpio_set(struct mctrl_gpios *gpios, unsigned int mctrl)
@@ -159,6 +87,5 @@ static inline void mctrl_gpio_disable_irq_wake(struct mctrl_gpios *gpios)
 {
 }
 
-#endif /* GPIOLIB */
 
 #endif

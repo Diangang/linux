@@ -60,27 +60,6 @@ static ssize_t address_bits_show(struct kobject *kobj,
 }
 KERNEL_ATTR_RO(address_bits);
 
-#ifdef CONFIG_UEVENT_HELPER
-/* uevent helper program, used during early boot */
-static ssize_t uevent_helper_show(struct kobject *kobj,
-				  struct kobj_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%s\n", uevent_helper);
-}
-static ssize_t uevent_helper_store(struct kobject *kobj,
-				   struct kobj_attribute *attr,
-				   const char *buf, size_t count)
-{
-	if (count+1 > UEVENT_HELPER_PATH_LEN)
-		return -ENOENT;
-	memcpy(uevent_helper, buf, count);
-	uevent_helper[count] = '\0';
-	if (count && uevent_helper[count-1] == '\n')
-		uevent_helper[count-1] = '\0';
-	return count;
-}
-KERNEL_ATTR_RW(uevent_helper);
-#endif
 
 #ifdef CONFIG_PROFILING
 static ssize_t profiling_show(struct kobject *kobj,
@@ -194,9 +173,6 @@ static struct attribute * kernel_attrs[] = {
 	&uevent_seqnum_attr.attr,
 	&cpu_byteorder_attr.attr,
 	&address_bits_attr.attr,
-#ifdef CONFIG_UEVENT_HELPER
-	&uevent_helper_attr.attr,
-#endif
 #ifdef CONFIG_PROFILING
 	&profiling_attr.attr,
 #endif

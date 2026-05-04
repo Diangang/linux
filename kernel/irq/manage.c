@@ -1818,9 +1818,6 @@ mismatch:
 	if (!(new->flags & IRQF_PROBE_SHARED)) {
 		pr_err("Flags mismatch irq %d. %08x (%s) vs. %08x (%s)\n",
 		       irq, new->flags, new->name, old->flags, old->name);
-#ifdef CONFIG_DEBUG_SHIRQ
-		dump_stack();
-#endif
 	}
 	ret = -EBUSY;
 
@@ -1932,21 +1929,6 @@ static struct irqaction *__free_irq(struct irq_desc *desc, void *dev_id)
 	 */
 	__synchronize_irq(desc);
 
-#ifdef CONFIG_DEBUG_SHIRQ
-	/*
-	 * It's a shared IRQ -- the driver ought to be prepared for an IRQ
-	 * event to happen even now it's being freed, so let's make sure that
-	 * is so by doing an extra call to the handler ....
-	 *
-	 * ( We do this after actually deregistering it, to make sure that a
-	 *   'real' IRQ doesn't run in parallel with our fake. )
-	 */
-	if (action->flags & IRQF_SHARED) {
-		local_irq_save(flags);
-		action->handler(irq, dev_id);
-		local_irq_restore(flags);
-	}
-#endif
 
 	/*
 	 * The action has already been removed above, but the thread writes

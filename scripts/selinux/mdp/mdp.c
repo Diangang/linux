@@ -208,9 +208,6 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_HUGETLBFS
 	FS_USE("trans", "hugetlbfs");
 #endif
-#ifdef CONFIG_TMPFS
-	FS_USE("trans", "tmpfs");
-#endif
 #ifdef CONFIG_DEVTMPFS
 	FS_USE("trans", "devtmpfs");
 #endif

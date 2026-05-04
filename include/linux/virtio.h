@@ -182,10 +182,6 @@ struct virtio_device {
 	VIRTIO_DECLARE_FEATURES(features);
 	void *priv;
 	union virtio_map vmap;
-#ifdef CONFIG_VIRTIO_DEBUG
-	struct dentry *debugfs_dir;
-	u64 debugfs_filter_features[VIRTIO_FEATURES_U64S];
-#endif
 };
 
 #define dev_to_virtio(_dev)	container_of_const(_dev, struct virtio_device, dev)
@@ -318,13 +314,6 @@ void virtqueue_map_sync_single_range_for_device(const struct virtqueue *_vq, dma
 						unsigned long offset, size_t size,
 						enum dma_data_direction dir);
 
-#ifdef CONFIG_VIRTIO_DEBUG
-void virtio_debug_device_init(struct virtio_device *dev);
-void virtio_debug_device_exit(struct virtio_device *dev);
-void virtio_debug_device_filter_features(struct virtio_device *dev);
-void virtio_debug_init(void);
-void virtio_debug_exit(void);
-#else
 static inline void virtio_debug_device_init(struct virtio_device *dev)
 {
 }
@@ -344,6 +333,5 @@ static inline void virtio_debug_init(void)
 static inline void virtio_debug_exit(void)
 {
 }
-#endif
 
 #endif /* _LINUX_VIRTIO_H */

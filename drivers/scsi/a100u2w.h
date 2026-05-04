@@ -42,13 +42,8 @@
 
 #define inia100_REVID "Initio INI-A100U2W SCSI device driver; Revision: 1.02d"
 
-#if 1
 #define ORC_MAXQUEUE		245
 #define ORC_MAXTAGS		64
-#else
-#define ORC_MAXQUEUE		25
-#define ORC_MAXTAGS		8
-#endif
 
 #define TOTAL_SG_ENTRY		32
 #define MAX_TARGETS		16

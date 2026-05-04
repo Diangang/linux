@@ -149,11 +149,6 @@ static inline bool mmap_lock_speculate_retry(struct mm_struct *mm, unsigned int 
 
 static inline void vma_lock_init(struct vm_area_struct *vma, bool reset_refcnt)
 {
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	static struct lock_class_key lockdep_key;
-
-	lockdep_init_map(__vma_lockdep_map(vma), "vm_lock", &lockdep_key, 0);
-#endif
 	if (reset_refcnt)
 		refcount_set(&vma->vm_refcnt, 0);
 	vma->vm_lock_seq = UINT_MAX;

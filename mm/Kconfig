@@ -19,19 +19,6 @@ menuconfig SWAP
 	  used to provide more virtual memory than the actual RAM present
 	  in your computer.  If unsure say Y.
 
-config ZSWAP
-	bool "Compressed cache for swap pages"
-	depends on SWAP
-	select CRYPTO
-	select ZSMALLOC
-	help
-	  A lightweight compressed cache for swap pages.  It takes
-	  pages that are in the process of being swapped out and attempts to
-	  compress them into a dynamically allocated RAM-based memory pool.
-	  This can result in a significant I/O reduction on swap device and,
-	  in the case where decompressing from RAM is faster than swap device
-	  reads, can also improve workload performance.
-
 config ZSWAP_DEFAULT_ON
 	bool "Enable the compressed cache for swap pages by default"
 	depends on ZSWAP
@@ -201,106 +188,7 @@ config SLAB_MERGE_DEFAULT
 	  merging at runtime, "slab_nomerge" can be passed on the kernel
 	  command line.
 
-config SLAB_FREELIST_RANDOM
-	bool "Randomize slab freelist"
-	depends on !SLUB_TINY
-	help
-	  Randomizes the freelist order used on creating new pages. This
-	  security feature reduces the predictability of the kernel slab
-	  allocator against heap overflows.
-
-config SLAB_FREELIST_HARDENED
-	bool "Harden slab freelist metadata"
-	depends on !SLUB_TINY
-	help
-	  Many kernel heap attacks try to target slab cache metadata and
-	  other infrastructure. This options makes minor performance
-	  sacrifices to harden the kernel slab allocator against common
-	  freelist exploit methods.
-
-config SLAB_BUCKETS
-	bool "Support allocation from separate kmalloc buckets"
-	depends on !SLUB_TINY
-	default SLAB_FREELIST_HARDENED
-	help
-	  Kernel heap attacks frequently depend on being able to create
-	  specifically-sized allocations with user-controlled contents
-	  that will be allocated into the same kmalloc bucket as a
-	  target object. To avoid sharing these allocation buckets,
-	  provide an explicitly separated set of buckets to be used for
-	  user-controlled allocations. This may very slightly increase
-	  memory fragmentation, though in practice it's only a handful
-	  of extra pages since the bulk of user-controlled allocations
-	  are relatively long-lived.
-
-	  If unsure, say Y.
-
-config SLUB_STATS
-	default n
-	bool "Enable performance statistics"
-	depends on SYSFS && !SLUB_TINY
-	help
-	  The statistics are useful to debug slab allocation behavior in
-	  order find ways to optimize the allocator. This should never be
-	  enabled for production use since keeping statistics slows down
-	  the allocator by a few percentage points. The slabinfo command
-	  supports the determination of the most active slabs to figure
-	  out which slabs are relevant to a particular load.
-	  Try running: slabinfo -DA
-
-config RANDOM_KMALLOC_CACHES
-	default n
-	depends on !SLUB_TINY
-	bool "Randomize slab caches for normal kmalloc"
-	help
-	  A hardening feature that creates multiple copies of slab caches for
-	  normal kmalloc allocation and makes kmalloc randomly pick one based
-	  on code address, which makes the attackers more difficult to spray
-	  vulnerable memory objects on the heap for the purpose of exploiting
-	  memory vulnerabilities.
-
-	  Currently the number of copies is set to 16, a reasonably large value
-	  that effectively diverges the memory objects allocated for different
-	  subsystems or modules into different caches, at the expense of a
-	  limited degree of memory and CPU overhead that relates to hardware and
-	  system workload.
-
 endmenu # Slab allocator options
-
-config SHUFFLE_PAGE_ALLOCATOR
-	bool "Page allocator randomization"
-	default SLAB_FREELIST_RANDOM && ACPI_NUMA
-	help
-	  Randomization of the page allocator improves the average
-	  utilization of a direct-mapped memory-side-cache. See section
-	  5.2.27 Heterogeneous Memory Attribute Table (HMAT) in the ACPI
-	  6.2a specification for an example of how a platform advertises
-	  the presence of a memory-side-cache. There are also incidental
-	  security benefits as it reduces the predictability of page
-	  allocations to compliment SLAB_FREELIST_RANDOM, but the
-	  default granularity of shuffling on the MAX_PAGE_ORDER i.e, 10th
-	  order of pages is selected based on cache utilization benefits
-	  on x86.
-
-	  While the randomization improves cache utilization it may
-	  negatively impact workloads on platforms without a cache. For
-	  this reason, by default, the randomization is not enabled even
-	  if SHUFFLE_PAGE_ALLOCATOR=y. The randomization may be force enabled
-	  with the 'page_alloc.shuffle' kernel command line parameter.
-
-	  Say Y if unsure.
-
-config COMPAT_BRK
-	bool "Disable heap randomization"
-	default y
-	help
-	  Randomizing heap placement makes heap exploits harder, but it
-	  also breaks ancient binaries (including anything libc5 based).
-	  This option changes the bootup default to heap randomization
-	  disabled, and can be overridden at runtime by setting
-	  /proc/sys/kernel/randomize_va_space to 2.
-
-	  On non-ancient distros (post-2000 ones) N is usually a safe choice.
 
 config MMAP_ALLOW_UNINITIALIZED
 	bool "Allow mmapped anonymous memory to be uninitialized"
@@ -1025,21 +913,6 @@ config USE_PERCPU_NUMA_NODE_ID
 config HAVE_SETUP_PER_CPU_AREA
 	bool
 
-config CMA
-	bool "Contiguous Memory Allocator"
-	depends on MMU
-	select MIGRATION
-	select MEMORY_ISOLATION
-	help
-	  This enables the Contiguous Memory Allocator which allows other
-	  subsystems to allocate big physically-contiguous blocks of memory.
-	  CMA reserves a region of memory and allows only movable pages to
-	  be allocated from it. This way, the kernel can use the memory for
-	  pagecache and when a subsystem requests for contiguous area, the
-	  allocated pages are migrated away to serve the contiguous request.
-
-	  If unsure, say "n".
-
 config CMA_DEBUGFS
 	bool "CMA debugfs interface"
 	depends on CMA && DEBUG_FS
@@ -1127,22 +1000,6 @@ config STACK_MAX_DEFAULT_SIZE_MB
 
 	  A sane initial value is 100 MB.
 
-config DEFERRED_STRUCT_PAGE_INIT
-	bool "Defer initialisation of struct pages to kthreads"
-	depends on SPARSEMEM
-	depends on !NEED_PER_CPU_KM
-	depends on 64BIT
-	depends on !KMSAN
-	select PADATA
-	help
-	  Ordinarily all struct pages are initialised during early boot in a
-	  single thread. On very large machines this can take a considerable
-	  amount of time. If this option is set, large machines will bring up
-	  a subset of memmap at boot and then initialise the rest in parallel.
-	  This has a potential performance impact on tasks running early in the
-	  lifetime of the system until these kthreads finish the
-	  initialisation.
-
 config PAGE_IDLE_FLAG
 	bool
 	select PAGE_EXTENSION if !64BIT
@@ -1151,22 +1008,6 @@ config PAGE_IDLE_FLAG
 	  bit writers can set the state of the bit in the flags so that PTE
 	  Accessed bit readers may avoid disturbance.
 
-config IDLE_PAGE_TRACKING
-	bool "Enable idle page tracking"
-	depends on SYSFS && MMU
-	select PAGE_IDLE_FLAG
-	help
-	  This feature allows to estimate the amount of user pages that have
-	  not been touched during a given period of time. This information can
-	  be useful to tune memory cgroup limits and/or for job placement
-	  within a compute cluster.
-
-	  See Documentation/admin-guide/mm/idle_page_tracking.rst for
-	  more details.
-
-# Architectures which implement cpu_dcache_is_aliasing() to query
-# whether the data caches are aliased (VIVT or VIPT with dcache
-# aliasing) need to select this.
 config ARCH_HAS_CPU_CACHE_ALIASING
 	bool
 
@@ -1257,13 +1098,6 @@ config VM_EVENT_COUNTERS
 	  on EXPERT systems.  /proc/vmstat will only show page counts
 	  if VM event counters are disabled.
 
-config PERCPU_STATS
-	bool "Collect percpu memory statistics"
-	help
-	  This feature collects and exposes statistics via debugfs. The
-	  information includes global and per chunk statistics, which can
-	  be used to help understand percpu memory usage.
-
 config GUP_TEST
 	bool "Enable infrastructure for get_user_pages()-related unit tests"
 	depends on DEBUG_FS
@@ -1290,15 +1124,6 @@ comment "GUP_TEST needs to have DEBUG_FS enabled"
 config GUP_GET_PXX_LOW_HIGH
 	bool
 
-config DMAPOOL_TEST
-	tristate "Enable a module to run time tests on dma_pool"
-	depends on HAS_DMA
-	help
-	  Provides a test module that will allocate and free many blocks of
-	  various sizes and report how long it takes. This is intended to
-	  provide a consistent way to measure how changes to the
-	  dma_pool_alloc/free routines affect performance.
-
 config ARCH_HAS_PTE_SPECIAL
 	bool
 
@@ -1323,20 +1148,6 @@ config SECRETMEM
 	  memory areas visible only in the context of the owning process and
 	  not mapped to other processes and other kernel page tables.
 
-config ANON_VMA_NAME
-	bool "Anonymous VMA name support"
-	depends on PROC_FS && ADVISE_SYSCALLS && MMU
-
-	help
-	  Allow naming anonymous virtual memory areas.
-
-	  This feature allows assigning names to virtual memory areas. Assigned
-	  names can be later retrieved from /proc/pid/maps and /proc/pid/smaps
-	  and help identifying individual anonymous memory areas.
-	  Assigning a name to anonymous virtual memory area might prevent that
-	  area from being merged with adjacent virtual memory areas due to the
-	  difference in their name.
-
 config HAVE_ARCH_USERFAULTFD_WP
 	bool
 	help
@@ -1346,13 +1157,6 @@ config HAVE_ARCH_USERFAULTFD_MINOR
 	bool
 	help
 	  Arch has userfaultfd minor fault support
-
-menuconfig USERFAULTFD
-	bool "Enable userfaultfd() system call"
-	depends on MMU
-	help
-	  Enable the userfaultfd() system call that allows to intercept and
-	  handle page faults in userland.
 
 if USERFAULTFD
 config PTE_MARKER_UFFD_WP
@@ -1367,15 +1171,6 @@ config PTE_MARKER_UFFD_WP
 endif # USERFAULTFD
 
 # multi-gen LRU {
-config LRU_GEN
-	bool "Multi-Gen LRU"
-	depends on MMU
-	# make sure folio->flags has enough spare bits
-	depends on 64BIT || !SPARSEMEM || SPARSEMEM_VMEMMAP
-	help
-	  A high performance LRU implementation to overcommit memory. See
-	  Documentation/admin-guide/mm/multigen_lru.rst for details.
-
 config LRU_GEN_ENABLED
 	bool "Enable by default"
 	depends on LRU_GEN
@@ -1420,15 +1215,6 @@ config EXECMEM
 
 config NUMA_MEMBLKS
 	bool
-
-config NUMA_EMU
-	bool "NUMA emulation"
-	depends on NUMA_MEMBLKS
-	depends on X86 || GENERIC_ARCH_NUMA
-	help
-	  Enable NUMA emulation. A flat machine will be split
-	  into virtual nodes when booted with "numa=fake=N", where N is the
-	  number of nodes. This is only useful for debugging.
 
 config ARCH_HAS_USER_SHADOW_STACK
 	bool

@@ -185,15 +185,6 @@ static inline int request_partial_firmware_into_buf
 
 #endif
 
-#ifdef CONFIG_FW_UPLOAD
-
-struct fw_upload *
-firmware_upload_register(struct module *module, struct device *parent,
-			 const char *name, const struct fw_upload_ops *ops,
-			 void *dd_handle);
-void firmware_upload_unregister(struct fw_upload *fw_upload);
-
-#else
 
 static inline struct fw_upload *
 firmware_upload_register(struct module *module, struct device *parent,
@@ -207,7 +198,6 @@ static inline void firmware_upload_unregister(struct fw_upload *fw_upload)
 {
 }
 
-#endif
 
 int firmware_request_cache(struct device *device, const char *name);
 

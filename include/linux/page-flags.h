@@ -329,13 +329,9 @@ static inline int PagePoisoned(const struct page *page)
 	return READ_ONCE(page->flags.f) == PAGE_POISON_PATTERN;
 }
 
-#ifdef CONFIG_DEBUG_VM
-void page_init_poison(struct page *page, size_t size);
-#else
 static inline void page_init_poison(struct page *page, size_t size)
 {
 }
-#endif
 
 static const unsigned long *const_folio_flags(const struct folio *folio,
 		unsigned n)

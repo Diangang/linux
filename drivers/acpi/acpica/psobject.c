@@ -575,16 +575,6 @@ acpi_ps_complete_op(struct acpi_walk_state *walk_state,
 
 		} while (*op);
 
-#if 0
-		/*
-		 * TBD: Cleanup parse ops on error
-		 */
-		if (*op == NULL) {
-			acpi_ps_pop_scope(parser_state, op,
-					  &walk_state->arg_types,
-					  &walk_state->arg_count);
-		}
-#endif
 		walk_state->prev_op = NULL;
 		walk_state->prev_arg_types = walk_state->arg_types;
 

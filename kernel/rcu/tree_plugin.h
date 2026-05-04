@@ -1349,12 +1349,6 @@ static void rcu_spawn_one_boost_kthread(struct rcu_node *rnp)
  */
 static bool rcu_nohz_full_cpu(void)
 {
-#ifdef CONFIG_NO_HZ_FULL
-	if (tick_nohz_full_cpu(smp_processor_id()) &&
-	    (!rcu_gp_in_progress() ||
-	     time_before(jiffies, READ_ONCE(rcu_state.gp_start) + HZ)))
-		return true;
-#endif /* #ifdef CONFIG_NO_HZ_FULL */
 	return false;
 }
 

@@ -13,11 +13,7 @@
 extern void synchronize_irq(unsigned int irq);
 extern bool synchronize_hardirq(unsigned int irq);
 
-#ifdef CONFIG_NO_HZ_FULL
-void __rcu_irq_enter_check_tick(void);
-#else
 static inline void __rcu_irq_enter_check_tick(void) { }
-#endif
 
 static __always_inline void rcu_irq_enter_check_tick(void)
 {

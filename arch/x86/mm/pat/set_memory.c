@@ -2662,39 +2662,6 @@ int set_direct_map_valid_noflush(struct page *page, unsigned nr, bool valid)
 	return __set_pages_np(page, nr);
 }
 
-#ifdef CONFIG_DEBUG_PAGEALLOC
-void __kernel_map_pages(struct page *page, int numpages, int enable)
-{
-	if (PageHighMem(page))
-		return;
-	if (!enable) {
-		debug_check_no_locks_freed(page_address(page),
-					   numpages * PAGE_SIZE);
-	}
-
-	/*
-	 * The return value is ignored as the calls cannot fail.
-	 * Large pages for identity mappings are not used at boot time
-	 * and hence no memory allocations during large page split.
-	 */
-	if (enable)
-		__set_pages_p(page, numpages);
-	else
-		__set_pages_np(page, numpages);
-
-	/*
-	 * We should perform an IPI and flush all tlbs,
-	 * but that can deadlock->flush only current cpu.
-	 * Preemption needs to be disabled around __flush_tlb_all() due to
-	 * CR3 reload in __native_flush_tlb().
-	 */
-	preempt_disable();
-	__flush_tlb_all();
-	preempt_enable();
-
-	arch_flush_lazy_mmu_mode();
-}
-#endif /* CONFIG_DEBUG_PAGEALLOC */
 
 bool kernel_page_present(struct page *page)
 {

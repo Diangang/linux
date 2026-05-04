@@ -294,9 +294,6 @@ struct max310x_port {
 	const struct max310x_if_cfg *if_cfg;
 	struct regmap		*regmap;
 	struct clk		*clk;
-#ifdef CONFIG_GPIOLIB
-	struct gpio_chip	gpio;
-#endif
 	struct max310x_one	p[];
 };
 
@@ -1188,75 +1185,6 @@ static int __maybe_unused max310x_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(max310x_pm_ops, max310x_suspend, max310x_resume);
 
-#ifdef CONFIG_GPIOLIB
-static int max310x_gpio_get(struct gpio_chip *chip, unsigned int offset)
-{
-	unsigned int val;
-	struct max310x_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[offset / 4].port;
-
-	val = max310x_port_read(port, MAX310X_GPIODATA_REG);
-
-	return !!((val >> 4) & (1 << (offset % 4)));
-}
-
-static int max310x_gpio_set(struct gpio_chip *chip, unsigned int offset,
-			    int value)
-{
-	struct max310x_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[offset / 4].port;
-
-	max310x_port_update(port, MAX310X_GPIODATA_REG, 1 << (offset % 4),
-			    value ? 1 << (offset % 4) : 0);
-
-	return 0;
-}
-
-static int max310x_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
-{
-	struct max310x_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[offset / 4].port;
-
-	max310x_port_update(port, MAX310X_GPIOCFG_REG, 1 << (offset % 4), 0);
-
-	return 0;
-}
-
-static int max310x_gpio_direction_output(struct gpio_chip *chip,
-					 unsigned int offset, int value)
-{
-	struct max310x_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[offset / 4].port;
-
-	max310x_port_update(port, MAX310X_GPIODATA_REG, 1 << (offset % 4),
-			    value ? 1 << (offset % 4) : 0);
-	max310x_port_update(port, MAX310X_GPIOCFG_REG, 1 << (offset % 4),
-			    1 << (offset % 4));
-
-	return 0;
-}
-
-static int max310x_gpio_set_config(struct gpio_chip *chip, unsigned int offset,
-				   unsigned long config)
-{
-	struct max310x_port *s = gpiochip_get_data(chip);
-	struct uart_port *port = &s->p[offset / 4].port;
-
-	switch (pinconf_to_config_param(config)) {
-	case PIN_CONFIG_DRIVE_OPEN_DRAIN:
-		max310x_port_update(port, MAX310X_GPIOCFG_REG,
-				1 << ((offset % 4) + 4),
-				1 << ((offset % 4) + 4));
-		return 0;
-	case PIN_CONFIG_DRIVE_PUSH_PULL:
-		max310x_port_update(port, MAX310X_GPIOCFG_REG,
-				1 << ((offset % 4) + 4), 0);
-		return 0;
-	default:
-		return -ENOTSUPP;
-	}
-}
-#endif
 
 static const struct serial_rs485 max310x_rs485_supported = {
 	.flags = SER_RS485_ENABLED | SER_RS485_RTS_ON_SEND | SER_RS485_RX_DURING_TX,
@@ -1416,23 +1344,6 @@ static int max310x_probe(struct device *dev, const struct max310x_devtype *devty
 		max310x_power(&s->p[i].port, 0);
 	}
 
-#ifdef CONFIG_GPIOLIB
-	/* Setup GPIO controller */
-	s->gpio.owner		= THIS_MODULE;
-	s->gpio.parent		= dev;
-	s->gpio.label		= devtype->name;
-	s->gpio.direction_input	= max310x_gpio_direction_input;
-	s->gpio.get		= max310x_gpio_get;
-	s->gpio.direction_output= max310x_gpio_direction_output;
-	s->gpio.set		= max310x_gpio_set;
-	s->gpio.set_config	= max310x_gpio_set_config;
-	s->gpio.base		= -1;
-	s->gpio.ngpio		= devtype->nr * 4;
-	s->gpio.can_sleep	= 1;
-	ret = devm_gpiochip_add_data(dev, &s->gpio, s);
-	if (ret)
-		goto out_uart;
-#endif
 
 	/* Setup interrupt */
 	ret = devm_request_threaded_irq(dev, irq, NULL, max310x_ist,

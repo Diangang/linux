@@ -611,38 +611,6 @@ acpi_handle_printk(const char *level, acpi_handle handle, const char *fmt, ...)
 }
 EXPORT_SYMBOL(acpi_handle_printk);
 
-#if defined(CONFIG_DYNAMIC_DEBUG)
-/**
- * __acpi_handle_debug: pr_debug with ACPI prefix and object path
- * @descriptor: Dynamic Debug descriptor
- * @handle: ACPI device handle
- * @fmt: format string
- *
- * This function is called through acpi_handle_debug macro and debug
- * prints a message with ACPI prefix and object path. This function
- * acquires the global namespace mutex to obtain an object path.  In
- * interrupt context, it shows the object path as <n/a>.
- */
-void
-__acpi_handle_debug(struct _ddebug *descriptor, acpi_handle handle,
-		    const char *fmt, ...)
-{
-	struct va_format vaf;
-	va_list args;
-	const char *path;
-
-	va_start(args, fmt);
-	vaf.fmt = fmt;
-	vaf.va = &args;
-
-	path = acpi_handle_path(handle);
-	__dynamic_pr_debug(descriptor, "ACPI: %s: %pV", path ? path : "<n/a>", &vaf);
-
-	va_end(args);
-	kfree(path);
-}
-EXPORT_SYMBOL(__acpi_handle_debug);
-#endif
 
 /**
  * acpi_evaluation_failure_warn - Log evaluation failure warning.

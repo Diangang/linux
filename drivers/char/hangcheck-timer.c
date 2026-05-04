@@ -142,13 +142,6 @@ static void hangcheck_fire(struct timer_list *unused)
 			pr_crit("Hangcheck: hangcheck value past margin!\n");
 		}
 	}
-#if 0
-	/*
-	 * Enable to investigate delays in detail
-	 */
-	pr_debug("Hangcheck: called %lld ns since last time (%lld ns overshoot)\n",
-			tsc_diff, tsc_diff - hangcheck_tick*TIMER_FREQ);
-#endif
 	mod_timer(&hangcheck_ticktock, jiffies + (hangcheck_tick*HZ));
 	hangcheck_tsc = ktime_get_ns();
 }

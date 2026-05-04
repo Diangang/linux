@@ -22,24 +22,6 @@ config RAID6_PQ_BENCHMARK
 config LINEAR_RANGES
 	tristate
 
-config PACKING
-	bool "Generic bitfield packing and unpacking"
-	select BITREVERSE
-	default n
-	help
-	  This option provides the packing() helper function, which permits
-	  converting bitfields between a CPU-usable representation and a
-	  memory representation that can have any combination of these quirks:
-	    - Is little endian (bytes are reversed within a 32-bit group)
-	    - The least-significant 32-bit word comes first (within a 64-bit
-	      group)
-	    - The most significant bit of a byte is at its right (bit 0 of a
-	      register description is numerically 2^7).
-	  Drivers may use these helpers to match the bit indices as described
-	  in the data sheets of the peripherals they are in control of.
-
-	  When in doubt, say N.
-
 config PACKING_KUNIT_TEST
 	tristate "KUnit tests for packing library" if !KUNIT_ALL_TESTS
 	depends on PACKING && KUNIT
@@ -157,15 +139,6 @@ config AUDIT_COMPAT_GENERIC
 	depends on AUDIT_GENERIC && AUDIT_ARCH_COMPAT_GENERIC && COMPAT
 	default y
 
-config RANDOM32_SELFTEST
-	bool "PRNG perform self test on init"
-	help
-	  This option enables the 32 bit PRNG library functions to perform a
-	  self test on initialization.
-
-#
-# compression support is select'ed if needed
-#
 config 842_COMPRESS
 	select CRC32
 	tristate
@@ -449,11 +422,6 @@ config LRU_CACHE
 config CLZ_TAB
 	bool
 
-config IRQ_POLL
-	bool "IRQ polling library"
-	help
-	  Helper library to poll interrupt mitigation using polling.
-
 config MPILIB
 	tristate
 	select CLZ_TAB
@@ -586,11 +554,6 @@ config PARMAN
 
 config OBJAGG
 	tristate "objagg" if COMPILE_TEST
-
-config LWQ_TEST
-	bool "Boot-time test for lwq queuing"
-	help
-          Run boot-time test of light-weight queuing.
 
 endmenu
 

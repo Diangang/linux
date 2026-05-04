@@ -12,50 +12,6 @@ enum fault_flags {
 	FAULT_NOWARN =	1 << 0,
 };
 
-#ifdef CONFIG_FAULT_INJECTION
-
-#include <linux/atomic.h>
-#include <linux/configfs.h>
-#include <linux/ratelimit.h>
-
-/*
- * For explanation of the elements of this struct, see
- * Documentation/fault-injection/fault-injection.rst
- */
-struct fault_attr {
-	unsigned long probability;
-	unsigned long interval;
-	atomic_t times;
-	atomic_t space;
-	unsigned long verbose;
-	bool task_filter;
-	unsigned long stacktrace_depth;
-	unsigned long require_start;
-	unsigned long require_end;
-	unsigned long reject_start;
-	unsigned long reject_end;
-
-	unsigned long count;
-	struct ratelimit_state ratelimit_state;
-	struct dentry *dname;
-};
-
-#define FAULT_ATTR_INITIALIZER {					\
-		.interval = 1,						\
-		.times = ATOMIC_INIT(1),				\
-		.require_end = ULONG_MAX,				\
-		.stacktrace_depth = 32,					\
-		.ratelimit_state = RATELIMIT_STATE_INIT_DISABLED,	\
-		.verbose = 2,						\
-		.dname = NULL,						\
-	}
-
-#define DECLARE_FAULT_ATTR(name) struct fault_attr name = FAULT_ATTR_INITIALIZER
-int setup_fault_attr(struct fault_attr *attr, char *str);
-bool should_fail_ex(struct fault_attr *attr, ssize_t size, int flags);
-bool should_fail(struct fault_attr *attr, ssize_t size);
-
-#else /* CONFIG_FAULT_INJECTION */
 
 struct fault_attr {
 };
@@ -75,7 +31,6 @@ static inline bool should_fail(struct fault_attr *attr, ssize_t size)
 	return false;
 }
 
-#endif /* CONFIG_FAULT_INJECTION */
 
 #ifdef CONFIG_FAULT_INJECTION_DEBUG_FS
 

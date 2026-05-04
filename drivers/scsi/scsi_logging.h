@@ -39,22 +39,8 @@
 
 extern unsigned int scsi_logging_level;
 
-#ifdef CONFIG_SCSI_LOGGING
-
-#define SCSI_LOG_LEVEL(SHIFT, BITS)				\
-        ((scsi_logging_level >> (SHIFT)) & ((1 << (BITS)) - 1))
-
-#define SCSI_CHECK_LOGGING(SHIFT, BITS, LEVEL, CMD)		\
-do {								\
-        if (unlikely((SCSI_LOG_LEVEL(SHIFT, BITS)) > (LEVEL)))	\
-		do {						\
-			CMD;					\
-		} while (0);					\
-} while (0)
-#else
 #define SCSI_LOG_LEVEL(SHIFT, BITS) 0
 #define SCSI_CHECK_LOGGING(SHIFT, BITS, LEVEL, CMD) do { } while (0)
-#endif /* CONFIG_SCSI_LOGGING */
 
 /*
  * These are the macros that are actually used throughout the code to

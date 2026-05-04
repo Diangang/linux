@@ -2056,114 +2056,6 @@ out:
 	return error;
 }
 
-#ifdef CONFIG_CHECKPOINT_RESTORE
-static int prctl_set_mm_map(int opt, const void __user *addr, unsigned long data_size)
-{
-	struct prctl_mm_map prctl_map = { .exe_fd = (u32)-1, };
-	unsigned long user_auxv[AT_VECTOR_SIZE];
-	struct mm_struct *mm = current->mm;
-	int error;
-
-	BUILD_BUG_ON(sizeof(user_auxv) != sizeof(mm->saved_auxv));
-	BUILD_BUG_ON(sizeof(struct prctl_mm_map) > 256);
-
-	if (opt == PR_SET_MM_MAP_SIZE)
-		return put_user((unsigned int)sizeof(prctl_map),
-				(unsigned int __user *)addr);
-
-	if (data_size != sizeof(prctl_map))
-		return -EINVAL;
-
-	if (copy_from_user(&prctl_map, addr, sizeof(prctl_map)))
-		return -EFAULT;
-
-	error = validate_prctl_map_addr(&prctl_map);
-	if (error)
-		return error;
-
-	if (prctl_map.auxv_size) {
-		/*
-		 * Someone is trying to cheat the auxv vector.
-		 */
-		if (!prctl_map.auxv ||
-				prctl_map.auxv_size > sizeof(mm->saved_auxv))
-			return -EINVAL;
-
-		memset(user_auxv, 0, sizeof(user_auxv));
-		if (copy_from_user(user_auxv,
-				   (const void __user *)prctl_map.auxv,
-				   prctl_map.auxv_size))
-			return -EFAULT;
-
-		/* Last entry must be AT_NULL as specification requires */
-		user_auxv[AT_VECTOR_SIZE - 2] = AT_NULL;
-		user_auxv[AT_VECTOR_SIZE - 1] = AT_NULL;
-	}
-
-	if (prctl_map.exe_fd != (u32)-1) {
-		/*
-		 * Check if the current user is checkpoint/restore capable.
-		 * At the time of this writing, it checks for CAP_SYS_ADMIN
-		 * or CAP_CHECKPOINT_RESTORE.
-		 * Note that a user with access to ptrace can masquerade an
-		 * arbitrary program as any executable, even setuid ones.
-		 * This may have implications in the tomoyo subsystem.
-		 */
-		if (!checkpoint_restore_ns_capable(current_user_ns()))
-			return -EPERM;
-
-		error = prctl_set_mm_exe_file(mm, prctl_map.exe_fd);
-		if (error)
-			return error;
-	}
-
-	/*
-	 * arg_lock protects concurrent updates but we still need mmap_lock for
-	 * read to exclude races with sys_brk.
-	 */
-	mmap_read_lock(mm);
-
-	/*
-	 * We don't validate if these members are pointing to
-	 * real present VMAs because application may have correspond
-	 * VMAs already unmapped and kernel uses these members for statistics
-	 * output in procfs mostly, except
-	 *
-	 *  - @start_brk/@brk which are used in do_brk_flags but kernel lookups
-	 *    for VMAs when updating these members so anything wrong written
-	 *    here cause kernel to swear at userspace program but won't lead
-	 *    to any problem in kernel itself
-	 */
-
-	spin_lock(&mm->arg_lock);
-	mm->start_code	= prctl_map.start_code;
-	mm->end_code	= prctl_map.end_code;
-	mm->start_data	= prctl_map.start_data;
-	mm->end_data	= prctl_map.end_data;
-	mm->start_brk	= prctl_map.start_brk;
-	mm->brk		= prctl_map.brk;
-	mm->start_stack	= prctl_map.start_stack;
-	mm->arg_start	= prctl_map.arg_start;
-	mm->arg_end	= prctl_map.arg_end;
-	mm->env_start	= prctl_map.env_start;
-	mm->env_end	= prctl_map.env_end;
-	spin_unlock(&mm->arg_lock);
-
-	/*
-	 * Note this update of @saved_auxv is lockless thus
-	 * if someone reads this member in procfs while we're
-	 * updating -- it may get partly updated results. It's
-	 * known and acceptable trade off: we leave it as is to
-	 * not introduce additional locks here making the kernel
-	 * more complex.
-	 */
-	if (prctl_map.auxv_size)
-		memcpy(mm->saved_auxv, user_auxv, sizeof(user_auxv));
-
-	mmap_read_unlock(mm);
-	return 0;
-}
-#endif /* CONFIG_CHECKPOINT_RESTORE */
 
 static int prctl_set_auxv(struct mm_struct *mm, unsigned long addr,
 			  unsigned long len)
@@ -2212,10 +2104,6 @@ static int prctl_set_mm(int opt, unsigned long addr,
 			      opt != PR_SET_MM_MAP_SIZE)))
 		return -EINVAL;
 
-#ifdef CONFIG_CHECKPOINT_RESTORE
-	if (opt == PR_SET_MM_MAP || opt == PR_SET_MM_MAP_SIZE)
-		return prctl_set_mm_map(opt, (const void __user *)addr, arg4);
-#endif
 
 	if (!capable(CAP_SYS_RESOURCE))
 		return -EPERM;
@@ -2332,17 +2220,10 @@ out:
 	return error;
 }
 
-#ifdef CONFIG_CHECKPOINT_RESTORE
-static int prctl_get_tid_address(struct task_struct *me, int __user * __user *tid_addr)
-{
-	return put_user(me->clear_child_tid, tid_addr);
-}
-#else
 static int prctl_get_tid_address(struct task_struct *me, int __user * __user *tid_addr)
 {
 	return -EINVAL;
 }
-#endif
 
 static int propagate_has_child_subreaper(struct task_struct *p, void *data)
 {
@@ -2803,11 +2684,6 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		error = set_syscall_user_dispatch(arg2, arg3, arg4,
 						  (char __user *) arg5);
 		break;
-#ifdef CONFIG_SCHED_CORE
-	case PR_SCHED_CORE:
-		error = sched_core_share_pid(arg2, arg3, arg4, arg5);
-		break;
-#endif
 	case PR_SET_MDWE:
 		error = prctl_set_mdwe(arg2, arg3, arg4, arg5);
 		break;

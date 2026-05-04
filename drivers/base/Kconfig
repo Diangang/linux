@@ -4,20 +4,6 @@ menu "Generic Driver Options"
 config AUXILIARY_BUS
 	bool
 
-config UEVENT_HELPER
-	bool "Support for uevent helper"
-	help
-	  The uevent helper program is forked by the kernel for
-	  every uevent.
-	  Before the switch to the netlink-based uevent source, this was
-	  used to hook hotplug scripts into kernel device events. It
-	  usually pointed to a shell script at /sbin/hotplug.
-	  This should not be used today, because usual systems create
-	  many events at bootup or device discovery in a very short time
-	  frame. One forked process per event can create so many processes
-	  that it creates a high system load, or on smaller systems
-	  it is known to create out-of-memory situations during bootup.
-
 config UEVENT_HELPER_PATH
 	string "path to uevent helper"
 	depends on UEVENT_HELPER
@@ -61,17 +47,6 @@ config DEVTMPFS_MOUNT
 	  With this option enabled, it allows to bring up a system in
 	  rescue mode with init=/bin/sh, even when the /dev directory
 	  on the rootfs is completely empty.
-
-config DEVTMPFS_SAFE
-	bool "Use nosuid,noexec mount options on devtmpfs"
-	depends on DEVTMPFS
-	help
-	  This instructs the kernel to include the MS_NOEXEC and MS_NOSUID mount
-	  flags when mounting devtmpfs.
-
-	  Notice: If enabled, things like /dev/mem cannot be mmapped
-	  with the PROT_EXEC flag. This can break, for example, non-KMS
-	  video drivers.
 
 config DRIVER_DEFERRED_PROBE_TIMEOUT
 	int "Default value for deferred_probe_timeout"
@@ -136,17 +111,6 @@ config DEV_COREDUMP
 	default y if WANT_DEV_COREDUMP
 	depends on ALLOW_DEV_COREDUMP
 
-config DEBUG_DRIVER
-	bool "Driver Core verbose debug messages"
-	depends on DEBUG_KERNEL
-	help
-	  Say Y here if you want the Driver core to produce a bunch of
-	  debug messages to the system log. Select this if you are having a
-	  problem with the driver core and want to see more of what is
-	  going on.
-
-	  If you are unsure about this, say N here.
-
 config DEBUG_DEVRES
 	bool "Managed device resources verbose debug messages"
 	depends on DEBUG_KERNEL
@@ -158,18 +122,6 @@ config DEBUG_DEVRES
 	  switched on and off from sysfs node.
 
 	  If you are unsure about this, Say N here.
-
-config DEBUG_TEST_DRIVER_REMOVE
-	bool "Test driver remove calls during probe (UNSTABLE)"
-	depends on DEBUG_KERNEL
-	help
-	  Say Y here if you want the Driver core to test driver remove functions
-	  by calling probe, remove, probe. This tests the remove path without
-	  having to unbind the driver or unload the driver module.
-
-	  This option is expected to find errors and may render your system
-	  unusable. You should say N here unless you are explicitly looking to
-	  test this functionality.
 
 config PM_QOS_KUNIT_TEST
 	bool "KUnit Test for PM QoS features" if !KUNIT_ALL_TESTS
@@ -243,17 +195,5 @@ config GENERIC_ARCH_NUMA
 	help
 	  Enable support for generic NUMA implementation. Currently, RISC-V
 	  and ARM64 use it.
-
-config FW_DEVLINK_SYNC_STATE_TIMEOUT
-	bool "sync_state() behavior defaults to timeout instead of strict"
-	help
-	  This is build time equivalent of adding kernel command line parameter
-	  "fw_devlink.sync_state=timeout". Give up waiting on consumers and
-	  call sync_state() on any devices that haven't yet received their
-	  sync_state() calls after deferred_probe_timeout has expired or by
-	  late_initcall() if !CONFIG_MODULES. You should almost always want to
-	  select N here unless you have already successfully tested with the
-	  command line option on every system/board your kernel is expected to
-	  work on.
 
 endmenu

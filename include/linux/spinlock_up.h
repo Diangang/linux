@@ -23,38 +23,11 @@
  * into the locked sequence, resulting in non-atomic execution.
  */
 
-#ifdef CONFIG_DEBUG_SPINLOCK
-#define arch_spin_is_locked(x)		((x)->slock == 0)
-
-static inline void arch_spin_lock(arch_spinlock_t *lock)
-{
-	lock->slock = 0;
-	barrier();
-}
-
-static inline int arch_spin_trylock(arch_spinlock_t *lock)
-{
-	char oldval = lock->slock;
-
-	lock->slock = 0;
-	barrier();
-
-	return oldval > 0;
-}
-
-static inline void arch_spin_unlock(arch_spinlock_t *lock)
-{
-	barrier();
-	lock->slock = 1;
-}
-
-#else /* DEBUG_SPINLOCK */
 #define arch_spin_is_locked(lock)	((void)(lock), 0)
 /* for sched/core.c and kernel_lock.c: */
 # define arch_spin_lock(lock)		do { barrier(); (void)(lock); } while (0)
 # define arch_spin_unlock(lock)	do { barrier(); (void)(lock); } while (0)
 # define arch_spin_trylock(lock)	({ barrier(); (void)(lock); 1; })
-#endif /* DEBUG_SPINLOCK */
 
 #define arch_spin_is_contended(lock)	(((void)(lock), 0))
 

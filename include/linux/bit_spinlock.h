@@ -71,9 +71,6 @@ static __always_inline int bit_spin_trylock(int bitnum, unsigned long *addr)
 static __always_inline void bit_spin_unlock(int bitnum, unsigned long *addr)
 	__releases(__bitlock(bitnum, addr))
 {
-#ifdef CONFIG_DEBUG_SPINLOCK
-	BUG_ON(!test_bit(bitnum, addr));
-#endif
 #if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
 	clear_bit_unlock(bitnum, addr);
 #endif
@@ -89,9 +86,6 @@ static __always_inline void bit_spin_unlock(int bitnum, unsigned long *addr)
 static __always_inline void __bit_spin_unlock(int bitnum, unsigned long *addr)
 	__releases(__bitlock(bitnum, addr))
 {
-#ifdef CONFIG_DEBUG_SPINLOCK
-	BUG_ON(!test_bit(bitnum, addr));
-#endif
 #if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
 	__clear_bit_unlock(bitnum, addr);
 #endif

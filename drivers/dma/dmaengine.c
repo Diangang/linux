@@ -1025,10 +1025,6 @@ static bool device_has_all_tx_types(struct dma_device *device)
 	 * an async_tx channel switch event as all possible operation types can
 	 * be handled.
 	 */
-	#ifdef CONFIG_ASYNC_TX_DMA
-	if (!dma_has_cap(DMA_INTERRUPT, device->cap_mask))
-		return false;
-	#endif
 
 	#if IS_ENABLED(CONFIG_ASYNC_MEMCPY)
 	if (!dma_has_cap(DMA_MEMCPY, device->cap_mask))

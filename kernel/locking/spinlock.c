@@ -305,9 +305,7 @@ noinline void __lockfunc _raw_write_lock(rwlock_t *lock)
 }
 EXPORT_SYMBOL(_raw_write_lock);
 
-#ifndef CONFIG_DEBUG_LOCK_ALLOC
 #define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)(subclass), (lock)))
-#endif
 
 void __lockfunc _raw_write_lock_nested(rwlock_t *lock, int subclass)
 {
@@ -374,39 +372,6 @@ EXPORT_SYMBOL(_raw_write_unlock_bh);
 
 #endif /* !CONFIG_PREEMPT_RT */
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-void __lockfunc _raw_spin_lock_nested(raw_spinlock_t *lock, int subclass)
-{
-	preempt_disable();
-	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
-	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
-}
-EXPORT_SYMBOL(_raw_spin_lock_nested);
-
-unsigned long __lockfunc _raw_spin_lock_irqsave_nested(raw_spinlock_t *lock,
-						   int subclass)
-{
-	unsigned long flags;
-
-	local_irq_save(flags);
-	preempt_disable();
-	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
-	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
-	return flags;
-}
-EXPORT_SYMBOL(_raw_spin_lock_irqsave_nested);
-
-void __lockfunc _raw_spin_lock_nest_lock(raw_spinlock_t *lock,
-				     struct lockdep_map *nest_lock)
-{
-	preempt_disable();
-	spin_acquire_nest(&lock->dep_map, 0, 0, nest_lock, _RET_IP_);
-	LOCK_CONTENDED(lock, do_raw_spin_trylock, do_raw_spin_lock);
-}
-EXPORT_SYMBOL(_raw_spin_lock_nest_lock);
-
-#endif
 
 notrace int in_lock_functions(unsigned long addr)
 {

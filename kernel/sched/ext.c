@@ -1245,17 +1245,6 @@ static void touch_core_sched(struct rq *rq, struct task_struct *p)
 {
 	lockdep_assert_rq_held(rq);
 
-#ifdef CONFIG_SCHED_CORE
-	/*
-	 * It's okay to update the timestamp spuriously. Use
-	 * sched_core_disabled() which is cheaper than enabled().
-	 *
-	 * As this is used to determine ordering between tasks of sibling CPUs,
-	 * it may be better to use per-core dispatch sequence instead.
-	 */
-	if (!sched_core_disabled())
-		p->scx.core_sched_at = sched_clock_cpu(cpu_of(rq));
-#endif
 }
 
 /**
@@ -1272,10 +1261,6 @@ static void touch_core_sched_dispatch(struct rq *rq, struct task_struct *p)
 {
 	lockdep_assert_rq_held(rq);
 
-#ifdef CONFIG_SCHED_CORE
-	if (unlikely(SCX_HAS_OP(scx_root, core_sched_before)))
-		touch_core_sched(rq, p);
-#endif
 }
 
 static void update_curr_scx(struct rq *rq)
@@ -3197,46 +3182,6 @@ void ext_server_init(struct rq *rq)
 	dl_server_init(dl_se, rq, ext_server_pick_task);
 }
 
-#ifdef CONFIG_SCHED_CORE
-/**
- * scx_prio_less - Task ordering for core-sched
- * @a: task A
- * @b: task B
- * @in_fi: in forced idle state
- *
- * Core-sched is implemented as an additional scheduling layer on top of the
- * usual sched_class'es and needs to find out the expected task ordering. For
- * SCX, core-sched calls this function to interrogate the task ordering.
- *
- * Unless overridden by ops.core_sched_before(), @p->scx.core_sched_at is used
- * to implement the default task ordering. The older the timestamp, the higher
- * priority the task - the global FIFO ordering matching the default scheduling
- * behavior.
- *
- * When ops.core_sched_before() is enabled, @p->scx.core_sched_at is used to
- * implement FIFO ordering within each local DSQ. See pick_task_scx().
- */
-bool scx_prio_less(const struct task_struct *a, const struct task_struct *b,
-		   bool in_fi)
-{
-	struct scx_sched *sch_a = scx_task_sched(a);
-	struct scx_sched *sch_b = scx_task_sched(b);
-
-	/*
-	 * The const qualifiers are dropped from task_struct pointers when
-	 * calling ops.core_sched_before(). Accesses are controlled by the
-	 * verifier.
-	 */
-	if (sch_a == sch_b && SCX_HAS_OP(sch_a, core_sched_before) &&
-	    !scx_bypassing(sch_a, task_cpu(a)))
-		return SCX_CALL_OP_2TASKS_RET(sch_a, core_sched_before,
-					      task_rq(a),
-					      (struct task_struct *)a,
-					      (struct task_struct *)b);
-	else
-		return time_after64(a->scx.core_sched_at, b->scx.core_sched_at);
-}
-#endif	/* CONFIG_SCHED_CORE */
 
 static int select_task_rq_scx(struct task_struct *p, int prev_cpu, int wake_flags)
 {
@@ -4226,26 +4171,6 @@ static void run_deferred(struct rq *rq)
 		process_deferred_reenq_users(rq);
 }
 
-#ifdef CONFIG_NO_HZ_FULL
-bool scx_can_stop_tick(struct rq *rq)
-{
-	struct task_struct *p = rq->curr;
-	struct scx_sched *sch = scx_task_sched(p);
-
-	if (p->sched_class != &ext_sched_class)
-		return true;
-
-	if (scx_bypassing(sch, cpu_of(rq)))
-		return false;
-
-	/*
-	 * @rq can dispatch from different DSQs, so we can't tell whether it
-	 * needs the tick or not by looking at nr_running. Allow stopping ticks
-	 * iff the BPF scheduler indicated so. See set_next_task_scx().
-	 */
-	return rq->scx.flags & SCX_RQ_CAN_STOP_TICK;
-}
-#endif
 
 #ifdef CONFIG_EXT_GROUP_SCHED
 

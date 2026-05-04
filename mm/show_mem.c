@@ -139,9 +139,6 @@ static void show_migration_types(unsigned char type)
 		[MIGRATE_MOVABLE]	= 'M',
 		[MIGRATE_RECLAIMABLE]	= 'E',
 		[MIGRATE_HIGHATOMIC]	= 'H',
-#ifdef CONFIG_CMA
-		[MIGRATE_CMA]		= 'C',
-#endif
 #ifdef CONFIG_MEMORY_ISOLATION
 		[MIGRATE_ISOLATE]	= 'I',
 #endif
@@ -422,43 +419,7 @@ void __show_mem(unsigned int filter, nodemask_t *nodemask, int max_zone_idx)
 	printk("%lu pages RAM\n", total);
 	printk("%lu pages HighMem/MovableOnly\n", highmem);
 	printk("%lu pages reserved\n", reserved);
-#ifdef CONFIG_CMA
-	printk("%lu pages cma reserved\n", totalcma_pages);
-#endif
 #ifdef CONFIG_MEMORY_FAILURE
 	printk("%lu pages hwpoisoned\n", atomic_long_read(&num_poisoned_pages));
-#endif
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-	static DEFINE_SPINLOCK(mem_alloc_profiling_spinlock);
-
-	if (spin_trylock(&mem_alloc_profiling_spinlock)) {
-		struct codetag_bytes tags[10];
-		size_t i, nr;
-
-		nr = alloc_tag_top_users(tags, ARRAY_SIZE(tags), false);
-		if (nr) {
-			pr_notice("Memory allocations (profiling is currently turned %s):\n",
-				mem_alloc_profiling_enabled() ? "on" : "off");
-			for (i = 0; i < nr; i++) {
-				struct codetag *ct = tags[i].ct;
-				struct alloc_tag *tag = ct_to_alloc_tag(ct);
-				struct alloc_tag_counters counter = alloc_tag_read(tag);
-				char bytes[10];
-
-				string_get_size(counter.bytes, 1, STRING_UNITS_2, bytes, sizeof(bytes));
-
-				/* Same as alloc_tag_to_text() but w/o intermediate buffer */
-				if (ct->modname)
-					pr_notice("%12s %8llu %s:%u [%s] func:%s\n",
-						  bytes, counter.calls, ct->filename,
-						  ct->lineno, ct->modname, ct->function);
-				else
-					pr_notice("%12s %8llu %s:%u func:%s\n",
-						  bytes, counter.calls, ct->filename,
-						  ct->lineno, ct->function);
-			}
-		}
-		spin_unlock(&mem_alloc_profiling_spinlock);
-	}
 #endif
 }

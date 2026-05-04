@@ -6330,11 +6330,6 @@ unexpected_phase:
 	case 2:	/* COMMAND phase */
 		nxtdsp = NCB_SCRIPT_PHYS (np, dispatch);
 		break;
-#if 0
-	case 3:	/* STATUS  phase */
-		nxtdsp = NCB_SCRIPT_PHYS (np, dispatch);
-		break;
-#endif
 	case 6:	/* MSG OUT phase */
 		np->scripth->nxtdsp_go_on[0] = cpu_to_scr(dsp + 8);
 		if	(dsp == NCB_SCRIPT_PHYS (np, send_ident)) {
@@ -6346,11 +6341,6 @@ unexpected_phase:
 			nxtdsp = NCB_SCRIPTH_PHYS (np, nego_bad_phase);
 		}
 		break;
-#if 0
-	case 7:	/* MSG IN  phase */
-		nxtdsp = NCB_SCRIPT_PHYS (np, clrack);
-		break;
-#endif
 	}
 
 	if (nxtdsp) {
@@ -6934,23 +6924,6 @@ void ncr_int_sir (struct ncb *np)
 		PRINT_ADDR(cp->cmd, "IGNORE_WIDE_RESIDUE received, but not yet "
 				"implemented.\n");
 		break;
-#if 0
-	case SIR_MISSING_SAVE:
-		/*-----------------------------------------------
-		**
-		**	We received an DISCONNECT message,
-		**	but the datapointer wasn't saved before.
-		**
-		**-----------------------------------------------
-		*/
-
-		PRINT_ADDR(cp->cmd, "DISCONNECT received, but datapointer "
-				"not saved: data=%x save=%x goal=%x.\n",
-			(unsigned) INL (nc_temp),
-			(unsigned) scr_to_cpu(np->header.savep),
-			(unsigned) scr_to_cpu(np->header.goalp));
-		break;
-#endif
 	}
 
 out:
@@ -7029,13 +7002,6 @@ static struct ccb *ncr_get_ccb(struct ncb *np, struct scsi_cmnd *cmd)
 	/*
 	**	Wait until available.
 	*/
-#if 0
-	while (cp->magic) {
-		if (flags & SCSI_NOSLEEP) break;
-		if (tsleep ((caddr_t)cp, PRIBIO|PCATCH, "ncr", 0))
-			break;
-	}
-#endif
 
 	if (cp->magic)
 		return NULL;
@@ -7125,10 +7091,6 @@ static void ncr_free_ccb (struct ncb *np, struct ccb *cp)
 		cp->queued = 0;
 	}
 
-#if 0
-	if (cp == np->ccb)
-		wakeup ((caddr_t) cp);
-#endif
 }
 
 
@@ -7524,11 +7486,7 @@ static int __init ncr_regtest (struct ncb* np)
 	data = 0xffffffff;
 	OUTL_OFF(offsetof(struct ncr_reg, nc_dstat), data);
 	data = INL_OFF(offsetof(struct ncr_reg, nc_dstat));
-#if 1
 	if (data == 0xffffffff) {
-#else
-	if ((data & 0xe2f0fffd) != 0x02000080) {
-#endif
 		printk ("CACHE TEST FAILED: reg dstat-sstat2 readback %x.\n",
 			(unsigned) data);
 		return (0x10);

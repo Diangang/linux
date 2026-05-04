@@ -688,11 +688,6 @@ struct device {
 #ifdef CONFIG_SWIOTLB
 	struct io_tlb_mem *dma_io_tlb_mem;
 #endif
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	struct list_head dma_io_tlb_pools;
-	spinlock_t dma_io_tlb_lock;
-	bool dma_uses_io_tlb;
-#endif
 	/* arch specific additions */
 	struct dev_archdata	archdata;
 

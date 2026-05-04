@@ -13,19 +13,11 @@ extern void vtime_account_kernel(struct task_struct *tsk);
 extern void vtime_account_idle(struct task_struct *tsk);
 #endif /* !CONFIG_VIRT_CPU_ACCOUNTING */
 
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
-extern void vtime_user_enter(struct task_struct *tsk);
-extern void vtime_user_exit(struct task_struct *tsk);
-extern void vtime_guest_enter(struct task_struct *tsk);
-extern void vtime_guest_exit(struct task_struct *tsk);
-extern void vtime_init_idle(struct task_struct *tsk, int cpu);
-#else /* !CONFIG_VIRT_CPU_ACCOUNTING_GEN  */
 static inline void vtime_user_enter(struct task_struct *tsk) { }
 static inline void vtime_user_exit(struct task_struct *tsk) { }
 static inline void vtime_guest_enter(struct task_struct *tsk) { }
 static inline void vtime_guest_exit(struct task_struct *tsk) { }
 static inline void vtime_init_idle(struct task_struct *tsk, int cpu) { }
-#endif
 
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 extern void vtime_account_irq(struct task_struct *tsk, unsigned int offset);

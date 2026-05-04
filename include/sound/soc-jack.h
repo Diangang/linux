@@ -98,15 +98,6 @@ void snd_soc_jack_notifier_unregister(struct snd_soc_jack *jack,
 int snd_soc_jack_add_zones(struct snd_soc_jack *jack, int count,
 			   struct snd_soc_jack_zone *zones);
 int snd_soc_jack_get_type(struct snd_soc_jack *jack, int micbias_voltage);
-#ifdef CONFIG_GPIOLIB
-int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
-			   struct snd_soc_jack_gpio *gpios);
-int snd_soc_jack_add_gpiods(struct device *gpiod_dev,
-			    struct snd_soc_jack *jack,
-			    int count, struct snd_soc_jack_gpio *gpios);
-void snd_soc_jack_free_gpios(struct snd_soc_jack *jack, int count,
-			     struct snd_soc_jack_gpio *gpios);
-#else
 static inline int snd_soc_jack_add_gpios(struct snd_soc_jack *jack, int count,
 					 struct snd_soc_jack_gpio *gpios)
 {
@@ -125,6 +116,5 @@ static inline void snd_soc_jack_free_gpios(struct snd_soc_jack *jack, int count,
 					   struct snd_soc_jack_gpio *gpios)
 {
 }
-#endif
 
 #endif /* __SOC_JACK_H */

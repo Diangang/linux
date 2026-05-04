@@ -64,23 +64,6 @@ context_lock_struct(ww_acquire_ctx) {
 	struct ww_class *ww_class;
 	void *contending_lock;
 #endif
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map dep_map;
-	/**
-	 * @first_lock_dep_map: fake lockdep_map for first locked ww_mutex.
-	 *
-	 * lockdep requires the lockdep_map for the first locked ww_mutex
-	 * in a ww transaction to remain in memory until all ww_mutexes of
-	 * the transaction have been unlocked. Ensure this by keeping a
-	 * fake locked ww_mutex lockdep map between ww_acquire_init() and
-	 * ww_acquire_fini().
-	 */
-	struct lockdep_map first_lock_dep_map;
-#endif
-#ifdef CONFIG_DEBUG_WW_MUTEX_SLOWPATH
-	unsigned int deadlock_inject_interval;
-	unsigned int deadlock_inject_countdown;
-#endif
 };
 
 #define __WW_CLASS_INITIALIZER(ww_class, _is_wait_die)	    \
@@ -154,19 +137,6 @@ static inline void ww_acquire_init(struct ww_acquire_ctx *ctx,
 	ctx->done_acquire = 0;
 	ctx->contending_lock = NULL;
 #endif
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	debug_check_no_locks_freed((void *)ctx, sizeof(*ctx));
-	lockdep_init_map(&ctx->dep_map, ww_class->acquire_name,
-			 &ww_class->acquire_key, 0);
-	lockdep_init_map_wait(&ctx->first_lock_dep_map, ww_class->mutex_name,
-			      &ww_class->mutex_key, 0, LD_WAIT_SLEEP);
-	mutex_acquire(&ctx->dep_map, 0, 0, _RET_IP_);
-	mutex_acquire_nest(&ctx->first_lock_dep_map, 0, 0, &ctx->dep_map, _RET_IP_);
-#endif
-#ifdef CONFIG_DEBUG_WW_MUTEX_SLOWPATH
-	ctx->deadlock_inject_interval = 1;
-	ctx->deadlock_inject_countdown = ctx->stamp & 0xf;
-#endif
 }
 
 /**
@@ -201,10 +171,6 @@ static inline void ww_acquire_done(struct ww_acquire_ctx *ctx)
 static inline void ww_acquire_fini(struct ww_acquire_ctx *ctx)
 	__releases(ctx) __no_context_analysis
 {
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	mutex_release(&ctx->first_lock_dep_map, _THIS_IP_);
-	mutex_release(&ctx->dep_map, _THIS_IP_);
-#endif
 #ifdef DEBUG_WW_MUTEXES
 	DEBUG_LOCKS_WARN_ON(ctx->acquired);
 	if (!IS_ENABLED(CONFIG_PROVE_LOCKING))

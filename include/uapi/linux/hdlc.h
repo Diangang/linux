@@ -14,11 +14,7 @@
 
 
 #define HDLC_MAX_MTU 1500	/* Ethernet 1500 bytes */
-#if 0
-#define HDLC_MAX_MRU (HDLC_MAX_MTU + 10 + 14 + 4) /* for ETH+VLAN over FR */
-#else
 #define HDLC_MAX_MRU 1600 /* as required for FR network */
-#endif
 
 
 #endif /* _UAPI__HDLC_H */

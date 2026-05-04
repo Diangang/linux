@@ -134,9 +134,6 @@ extern cpumask_t cpus_booted_once_mask;
 
 static __always_inline void cpu_max_bits_warn(unsigned int cpu, unsigned int bits)
 {
-#ifdef CONFIG_DEBUG_PER_CPU_MAPS
-	WARN_ON_ONCE(cpu >= bits);
-#endif /* CONFIG_DEBUG_PER_CPU_MAPS */
 }
 
 /* verify cpu argument to cpumask_* operators */

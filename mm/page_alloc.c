@@ -257,9 +257,6 @@ const char * const migratetype_names[MIGRATE_TYPES] = {
 	"Movable",
 	"Reclaimable",
 	"HighAtomic",
-#ifdef CONFIG_CMA
-	"CMA",
-#endif
 #ifdef CONFIG_MEMORY_ISOLATION
 	"Isolate",
 #endif
@@ -289,31 +286,10 @@ static bool __free_unaccepted(struct page *page);
 
 int page_group_by_mobility_disabled __read_mostly;
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-/*
- * During boot we initialize deferred pages on-demand, as needed, but once
- * page_alloc_init_late() has finished, the deferred pages are all initialized,
- * and we can permanently disable that path.
- */
-DEFINE_STATIC_KEY_TRUE(deferred_pages);
-
-/*
- * deferred_grow_zone() is __init, but it is called from
- * get_page_from_freelist() during early boot until deferred_pages permanently
- * disables this call. This is why we have refdata wrapper to avoid warning,
- * and to ensure that the function body gets unloaded.
- */
-static bool __ref
-_deferred_grow_zone(struct zone *zone, unsigned int order)
-{
-	return deferred_grow_zone(zone, order);
-}
-#else
 static inline bool _deferred_grow_zone(struct zone *zone, unsigned int order)
 {
 	return false;
 }
-#endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
 
 /* Return a pointer to the bitmap storing bits affecting a block of pages */
 static inline unsigned long *get_pageblock_bitmap(const struct page *page,
@@ -556,47 +532,10 @@ void __meminit init_pageblock_migratetype(struct page *page,
 				  MIGRATETYPE_AND_ISO_MASK);
 }
 
-#ifdef CONFIG_DEBUG_VM
-static int page_outside_zone_boundaries(struct zone *zone, struct page *page)
-{
-	int ret;
-	unsigned seq;
-	unsigned long pfn = page_to_pfn(page);
-	unsigned long sp, start_pfn;
-
-	do {
-		seq = zone_span_seqbegin(zone);
-		start_pfn = zone->zone_start_pfn;
-		sp = zone->spanned_pages;
-		ret = !zone_spans_pfn(zone, pfn);
-	} while (zone_span_seqretry(zone, seq));
-
-	if (ret)
-		pr_err("page 0x%lx outside node %d zone %s [ 0x%lx - 0x%lx ]\n",
-			pfn, zone_to_nid(zone), zone->name,
-			start_pfn, start_pfn + sp);
-
-	return ret;
-}
-
-/*
- * Temporary debugging check for pages not lying within a given zone.
- */
-static bool __maybe_unused bad_range(struct zone *zone, struct page *page)
-{
-	if (page_outside_zone_boundaries(zone, page))
-		return true;
-	if (zone != page_zone(page))
-		return true;
-
-	return false;
-}
-#else
 static inline bool __maybe_unused bad_range(struct zone *zone, struct page *page)
 {
 	return false;
 }
-#endif
 
 static void bad_page(struct page *page, const char *reason)
 {
@@ -1219,86 +1158,12 @@ static void kernel_init_pages(struct page *page, int numpages)
 	kasan_enable_current();
 }
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING
-
-/* Should be called only if mem_alloc_profiling_enabled() */
-void __clear_page_tag_ref(struct page *page)
-{
-	union pgtag_ref_handle handle;
-	union codetag_ref ref;
-
-	if (get_page_tag_ref(page, &ref, &handle)) {
-		set_codetag_empty(&ref);
-		update_page_tag_ref(handle, &ref);
-		put_page_tag_ref(handle);
-	}
-}
-
-/* Should be called only if mem_alloc_profiling_enabled() */
-static noinline
-void __pgalloc_tag_add(struct page *page, struct task_struct *task,
-		       unsigned int nr)
-{
-	union pgtag_ref_handle handle;
-	union codetag_ref ref;
-
-	if (likely(get_page_tag_ref(page, &ref, &handle))) {
-		alloc_tag_add(&ref, task->alloc_tag, PAGE_SIZE * nr);
-		update_page_tag_ref(handle, &ref);
-		put_page_tag_ref(handle);
-	} else {
-		/*
-		 * page_ext is not available yet, record the pfn so we can
-		 * clear the tag ref later when page_ext is initialized.
-		 */
-		alloc_tag_add_early_pfn(page_to_pfn(page));
-		if (task->alloc_tag)
-			alloc_tag_set_inaccurate(task->alloc_tag);
-	}
-}
-
-static inline void pgalloc_tag_add(struct page *page, struct task_struct *task,
-				   unsigned int nr)
-{
-	if (mem_alloc_profiling_enabled())
-		__pgalloc_tag_add(page, task, nr);
-}
-
-/* Should be called only if mem_alloc_profiling_enabled() */
-static noinline
-void __pgalloc_tag_sub(struct page *page, unsigned int nr)
-{
-	union pgtag_ref_handle handle;
-	union codetag_ref ref;
-
-	if (get_page_tag_ref(page, &ref, &handle)) {
-		alloc_tag_sub(&ref, PAGE_SIZE * nr);
-		update_page_tag_ref(handle, &ref);
-		put_page_tag_ref(handle);
-	}
-}
-
-static inline void pgalloc_tag_sub(struct page *page, unsigned int nr)
-{
-	if (mem_alloc_profiling_enabled())
-		__pgalloc_tag_sub(page, nr);
-}
-
-/* When tag is not NULL, assuming mem_alloc_profiling_enabled */
-static inline void pgalloc_tag_sub_pages(struct alloc_tag *tag, unsigned int nr)
-{
-	if (tag)
-		this_cpu_sub(tag->counters->bytes, PAGE_SIZE * nr);
-}
-
-#else /* CONFIG_MEM_ALLOC_PROFILING */
 
 static inline void pgalloc_tag_add(struct page *page, struct task_struct *task,
 				   unsigned int nr) {}
 static inline void pgalloc_tag_sub(struct page *page, unsigned int nr) {}
 static inline void pgalloc_tag_sub_pages(struct alloc_tag *tag, unsigned int nr) {}
 
-#endif /* CONFIG_MEM_ALLOC_PROFILING */
 
 __always_inline bool __free_pages_prepare(struct page *page,
 					  unsigned int order, fpi_t fpi_flags)
@@ -1923,16 +1788,8 @@ static int fallbacks[MIGRATE_PCPTYPES][MIGRATE_PCPTYPES - 1] = {
 	[MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE   },
 };
 
-#ifdef CONFIG_CMA
-static __always_inline struct page *__rmqueue_cma_fallback(struct zone *zone,
-					unsigned int order)
-{
-	return __rmqueue_smallest(zone, order, MIGRATE_CMA);
-}
-#else
 static inline struct page *__rmqueue_cma_fallback(struct zone *zone,
 					unsigned int order) { return NULL; }
-#endif
 
 /*
  * Move all free pages of a block to new type's freelist. Caller needs to
@@ -3568,11 +3425,6 @@ static inline long __zone_watermark_unusable_free(struct zone *z,
 	if (likely(!(alloc_flags & ALLOC_RESERVES)))
 		unusable_free += READ_ONCE(z->nr_free_highatomic);
 
-#ifdef CONFIG_CMA
-	/* If allocation can't use CMA areas don't use free CMA pages */
-	if (!(alloc_flags & ALLOC_CMA))
-		unusable_free += zone_page_state(z, NR_FREE_CMA_PAGES);
-#endif
 
 	return unusable_free;
 }
@@ -3647,12 +3499,6 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 				return true;
 		}
 
-#ifdef CONFIG_CMA
-		if ((alloc_flags & ALLOC_CMA) &&
-		    !free_area_empty(area, MIGRATE_CMA)) {
-			return true;
-		}
-#endif
 		if ((alloc_flags & (ALLOC_HIGHATOMIC|ALLOC_OOM)) &&
 		    !free_area_empty(area, MIGRATE_HIGHATOMIC)) {
 			return true;
@@ -3777,10 +3623,6 @@ alloc_flags_nofragment(struct zone *zone, gfp_t gfp_mask)
 static inline unsigned int gfp_to_alloc_flags_cma(gfp_t gfp_mask,
 						  unsigned int alloc_flags)
 {
-#ifdef CONFIG_CMA
-	if (gfp_migratetype(gfp_mask) == MIGRATE_MOVABLE)
-		alloc_flags |= ALLOC_CMA;
-#endif
 	return alloc_flags;
 }
 
@@ -5076,17 +4918,6 @@ unsigned long alloc_pages_bulk_noprof(gfp_t gfp, int preferred_nid,
 	if (nr_pages - nr_populated == 1)
 		goto failed;
 
-#ifdef CONFIG_PAGE_OWNER
-	/*
-	 * PAGE_OWNER may recurse into the allocator to allocate space to
-	 * save the stack with pagesets.lock held. Releasing/reacquiring
-	 * removes much of the performance benefit of bulk allocation so
-	 * force the caller to allocate one page at a time as it'll have
-	 * similar performance to added complexity to the bulk allocator.
-	 */
-	if (static_branch_unlikely(&page_owner_inited))
-		goto failed;
-#endif
 
 	/* May set ALLOC_NOFRAGMENT, fragmentation will return 1 page. */
 	gfp &= gfp_allowed_mask;

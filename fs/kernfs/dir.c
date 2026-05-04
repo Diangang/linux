@@ -43,11 +43,7 @@ static bool kernfs_active(struct kernfs_node *kn)
 
 static bool kernfs_lockdep(struct kernfs_node *kn)
 {
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	return kn->flags & KERNFS_LOCKDEP;
-#else
 	return false;
-#endif
 }
 
 /* kernfs_node_depth - compute depth from @from to @to */

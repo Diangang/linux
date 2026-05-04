@@ -50,15 +50,10 @@ extern void scsi_exit_hosts(void);
 /* scsi.c */
 int scsi_init_sense_cache(struct Scsi_Host *shost);
 void scsi_init_command(struct scsi_device *dev, struct scsi_cmnd *cmd);
-#ifdef CONFIG_SCSI_LOGGING
-void scsi_log_send(struct scsi_cmnd *cmd);
-void scsi_log_completion(struct scsi_cmnd *cmd, int disposition);
-#else
 static inline void scsi_log_send(struct scsi_cmnd *cmd) 
 	{ };
 static inline void scsi_log_completion(struct scsi_cmnd *cmd, int disposition)
 	{ };
-#endif
 
 /* scsi_devinfo.c */
 

@@ -65,19 +65,7 @@
 #define RWSEM_NONSPINNABLE	(1UL << 1)
 #define RWSEM_OWNER_FLAGS_MASK	(RWSEM_READER_OWNED | RWSEM_NONSPINNABLE)
 
-#ifdef CONFIG_DEBUG_RWSEMS
-# define DEBUG_RWSEMS_WARN_ON(c, sem)	do {			\
-	if (!debug_locks_silent &&				\
-	    WARN_ONCE(c, "DEBUG_RWSEMS_WARN_ON(%s): count = 0x%lx, magic = 0x%lx, owner = 0x%lx, curr 0x%lx, list %sempty\n",\
-		#c, atomic_long_read(&(sem)->count),		\
-		(unsigned long) sem->magic,			\
-		atomic_long_read(&(sem)->owner), (long)current,	\
-		rwsem_is_contended(sem) ? "" : "not "))		\
-			debug_locks_off();			\
-	} while (0)
-#else
 # define DEBUG_RWSEMS_WARN_ON(c, sem)
-#endif
 
 /*
  * On 64-bit architectures, the bit definitions of the count are:
@@ -309,16 +297,6 @@ rwsem_owner_flags(struct rw_semaphore *sem, unsigned long *pflags)
 void __init_rwsem(struct rw_semaphore *sem, const char *name,
 		  struct lock_class_key *key)
 {
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	/*
-	 * Make sure we are not reinitializing a held semaphore:
-	 */
-	debug_check_no_locks_freed((void *)sem, sizeof(*sem));
-	lockdep_init_map_wait(&sem->dep_map, name, key, 0, LD_WAIT_SLEEP);
-#endif
-#ifdef CONFIG_DEBUG_RWSEMS
-	sem->magic = sem;
-#endif
 	atomic_long_set(&sem->count, RWSEM_UNLOCKED_VALUE);
 	atomic_long_set(&sem->owner, 0L);
 	scoped_guard (raw_spinlock_init, &sem->wait_lock) {
@@ -1484,10 +1462,6 @@ void __init_rwsem(struct rw_semaphore *sem, const char *name,
 {
 	init_rwbase_rt(&(sem)->rwbase);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	debug_check_no_locks_freed((void *)sem, sizeof(*sem));
-	lockdep_init_map_wait(&sem->dep_map, name, key, 0, LD_WAIT_SLEEP);
-#endif
 }
 EXPORT_SYMBOL(__init_rwsem);
 
@@ -1694,87 +1668,3 @@ void downgrade_write(struct rw_semaphore *sem)
 }
 EXPORT_SYMBOL(downgrade_write);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-
-void down_read_nested(struct rw_semaphore *sem, int subclass)
-	__no_context_analysis
-{
-	might_sleep();
-	rwsem_acquire_read(&sem->dep_map, subclass, 0, _RET_IP_);
-	LOCK_CONTENDED(sem, __down_read_trylock, __down_read);
-}
-EXPORT_SYMBOL(down_read_nested);
-
-int down_read_killable_nested(struct rw_semaphore *sem, int subclass)
-	__no_context_analysis
-{
-	might_sleep();
-	rwsem_acquire_read(&sem->dep_map, subclass, 0, _RET_IP_);
-
-	if (LOCK_CONTENDED_RETURN(sem, __down_read_trylock, __down_read_killable)) {
-		rwsem_release(&sem->dep_map, _RET_IP_);
-		return -EINTR;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(down_read_killable_nested);
-
-void _down_write_nest_lock(struct rw_semaphore *sem, struct lockdep_map *nest)
-	__no_context_analysis
-{
-	might_sleep();
-	rwsem_acquire_nest(&sem->dep_map, 0, 0, nest, _RET_IP_);
-	LOCK_CONTENDED(sem, __down_write_trylock, __down_write);
-}
-EXPORT_SYMBOL(_down_write_nest_lock);
-
-void down_read_non_owner(struct rw_semaphore *sem)
-	__no_context_analysis
-{
-	might_sleep();
-	__down_read(sem);
-	/*
-	 * The owner value for a reader-owned lock is mostly for debugging
-	 * purpose only and is not critical to the correct functioning of
-	 * rwsem. So it is perfectly fine to set it in a preempt-enabled
-	 * context here.
-	 */
-	__rwsem_set_reader_owned(sem, NULL);
-}
-EXPORT_SYMBOL(down_read_non_owner);
-
-void down_write_nested(struct rw_semaphore *sem, int subclass)
-	__no_context_analysis
-{
-	might_sleep();
-	rwsem_acquire(&sem->dep_map, subclass, 0, _RET_IP_);
-	LOCK_CONTENDED(sem, __down_write_trylock, __down_write);
-}
-EXPORT_SYMBOL(down_write_nested);
-
-int __sched down_write_killable_nested(struct rw_semaphore *sem, int subclass)
-	__no_context_analysis
-{
-	might_sleep();
-	rwsem_acquire(&sem->dep_map, subclass, 0, _RET_IP_);
-
-	if (LOCK_CONTENDED_RETURN(sem, __down_write_trylock,
-				  __down_write_killable)) {
-		rwsem_release(&sem->dep_map, _RET_IP_);
-		return -EINTR;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(down_write_killable_nested);
-
-void up_read_non_owner(struct rw_semaphore *sem)
-	__no_context_analysis
-{
-	DEBUG_RWSEMS_WARN_ON(!is_rwsem_reader_owned(sem), sem);
-	__up_read(sem);
-}
-EXPORT_SYMBOL(up_read_non_owner);
-
-#endif

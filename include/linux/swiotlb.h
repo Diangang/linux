@@ -77,11 +77,6 @@ struct io_tlb_pool {
 	unsigned int area_nslabs;
 	struct io_tlb_area *areas;
 	struct io_tlb_slot *slots;
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	struct list_head node;
-	struct rcu_head rcu;
-	bool transient;
-#endif
 };
 
 /**
@@ -111,13 +106,6 @@ struct io_tlb_mem {
 	struct dentry *debugfs;
 	bool force_bounce;
 	bool for_alloc;
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	bool can_grow;
-	u64 phys_limit;
-	spinlock_t lock;
-	struct list_head pools;
-	struct work_struct dyn_alloc;
-#endif
 #ifdef CONFIG_DEBUG_FS
 	atomic_long_t total_used;
 	atomic_long_t used_hiwater;
@@ -147,24 +135,8 @@ static inline struct io_tlb_pool *swiotlb_find_pool(struct device *dev,
 	if (!mem)
 		return NULL;
 
-#ifdef CONFIG_SWIOTLB_DYNAMIC
-	/*
-	 * All SWIOTLB buffer addresses must have been returned by
-	 * swiotlb_tbl_map_single() and passed to a device driver.
-	 * If a SWIOTLB address is checked on another CPU, then it was
-	 * presumably loaded by the device driver from an unspecified private
-	 * data structure. Make sure that this load is ordered before reading
-	 * dev->dma_uses_io_tlb here and mem->pools in __swiotlb_find_pool().
-	 *
-	 * This barrier pairs with smp_mb() in swiotlb_find_slots().
-	 */
-	smp_rmb();
-	if (READ_ONCE(dev->dma_uses_io_tlb))
-		return __swiotlb_find_pool(dev, paddr);
-#else
 	if (paddr >= mem->defpool.start && paddr < mem->defpool.end)
 		return &mem->defpool;
-#endif
 
 	return NULL;
 }

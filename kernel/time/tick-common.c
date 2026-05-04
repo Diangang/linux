@@ -49,14 +49,6 @@ ktime_t tick_next_period;
  *    procedure also covers cpu hotplug.
  */
 int tick_do_timer_cpu __read_mostly = TICK_DO_TIMER_BOOT;
-#ifdef CONFIG_NO_HZ_FULL
-/*
- * tick_do_timer_boot_cpu indicates the boot CPU temporarily owns
- * tick_do_timer_cpu and it should be taken over by an eligible secondary
- * when one comes online.
- */
-static int tick_do_timer_boot_cpu __read_mostly = -1;
-#endif
 
 /*
  * Debugging: see timer_list.c
@@ -200,28 +192,6 @@ static void tick_setup_device(struct tick_device *td,
 		if (READ_ONCE(tick_do_timer_cpu) == TICK_DO_TIMER_BOOT) {
 			WRITE_ONCE(tick_do_timer_cpu, cpu);
 			tick_next_period = ktime_get();
-#ifdef CONFIG_NO_HZ_FULL
-			/*
-			 * The boot CPU may be nohz_full, in which case the
-			 * first housekeeping secondary will take do_timer()
-			 * from it.
-			 */
-			if (tick_nohz_full_cpu(cpu))
-				tick_do_timer_boot_cpu = cpu;
-
-		} else if (tick_do_timer_boot_cpu != -1 && !tick_nohz_full_cpu(cpu)) {
-			tick_do_timer_boot_cpu = -1;
-			/*
-			 * The boot CPU will stay in periodic (NOHZ disabled)
-			 * mode until clocksource_done_booting() called after
-			 * smp_init() selects a high resolution clocksource and
-			 * timekeeping_notify() kicks the NOHZ stuff alive.
-			 *
-			 * So this WRITE_ONCE can only race with the READ_ONCE
-			 * check in tick_periodic() but this race is harmless.
-			 */
-			WRITE_ONCE(tick_do_timer_cpu, cpu);
-#endif
 		}
 
 		/*

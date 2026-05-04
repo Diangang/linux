@@ -121,22 +121,7 @@ enum migratetype {
 	MIGRATE_RECLAIMABLE,
 	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
 	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
-#ifdef CONFIG_CMA
-	/*
-	 * MIGRATE_CMA migration type is designed to mimic the way
-	 * ZONE_MOVABLE works.  Only movable pages can be allocated
-	 * from MIGRATE_CMA pageblocks and page allocator never
-	 * implicitly change migration type of MIGRATE_CMA pageblock.
-	 *
-	 * The way to use it is to change migratetype of a range of
-	 * pageblocks to MIGRATE_CMA which can be done by
-	 * __free_pageblock_cma() function.
-	 */
-	MIGRATE_CMA,
-	__MIGRATE_TYPE_END = MIGRATE_CMA,
-#else
 	__MIGRATE_TYPE_END = MIGRATE_HIGHATOMIC,
-#endif
 #ifdef CONFIG_MEMORY_ISOLATION
 	MIGRATE_ISOLATE,	/* can't allocate from here */
 #endif
@@ -146,20 +131,9 @@ enum migratetype {
 /* In mm/page_alloc.c; keep in sync also with show_migration_types() there */
 extern const char * const migratetype_names[MIGRATE_TYPES];
 
-#ifdef CONFIG_CMA
-#  define is_migrate_cma(migratetype) unlikely((migratetype) == MIGRATE_CMA)
-#  define is_migrate_cma_page(_page) (get_pageblock_migratetype(_page) == MIGRATE_CMA)
-/*
- * __dump_folio() in mm/debug.c passes a folio pointer to on-stack struct folio,
- * so folio_pfn() cannot be used and pfn is needed.
- */
-#  define is_migrate_cma_folio(folio, pfn) \
-	(get_pfnblock_migratetype(&folio->page, pfn) == MIGRATE_CMA)
-#else
 #  define is_migrate_cma(migratetype) false
 #  define is_migrate_cma_page(_page) false
 #  define is_migrate_cma_folio(folio, pfn) false
-#endif
 
 static inline bool is_migrate_movable(int mt)
 {
@@ -521,184 +495,6 @@ enum lruvec_flags {
 struct lruvec;
 struct page_vma_mapped_walk;
 
-#ifdef CONFIG_LRU_GEN
-
-enum {
-	LRU_GEN_ANON,
-	LRU_GEN_FILE,
-};
-
-enum {
-	LRU_GEN_CORE,
-	LRU_GEN_MM_WALK,
-	LRU_GEN_NONLEAF_YOUNG,
-	NR_LRU_GEN_CAPS
-};
-
-#define MIN_LRU_BATCH		BITS_PER_LONG
-#define MAX_LRU_BATCH		(MIN_LRU_BATCH * 64)
-
-/* whether to keep historical stats from evicted generations */
-#ifdef CONFIG_LRU_GEN_STATS
-#define NR_HIST_GENS		MAX_NR_GENS
-#else
-#define NR_HIST_GENS		1U
-#endif
-
-/*
- * The youngest generation number is stored in max_seq for both anon and file
- * types as they are aged on an equal footing. The oldest generation numbers are
- * stored in min_seq[] separately for anon and file types so that they can be
- * incremented independently. Ideally min_seq[] are kept in sync when both anon
- * and file types are evictable. However, to adapt to situations like extreme
- * swappiness, they are allowed to be out of sync by at most
- * MAX_NR_GENS-MIN_NR_GENS-1.
- *
- * The number of pages in each generation is eventually consistent and therefore
- * can be transiently negative when reset_batch_size() is pending.
- */
-struct lru_gen_folio {
-	/* the aging increments the youngest generation number */
-	unsigned long max_seq;
-	/* the eviction increments the oldest generation numbers */
-	unsigned long min_seq[ANON_AND_FILE];
-	/* the birth time of each generation in jiffies */
-	unsigned long timestamps[MAX_NR_GENS];
-	/* the multi-gen LRU lists, lazily sorted on eviction */
-	struct list_head folios[MAX_NR_GENS][ANON_AND_FILE][MAX_NR_ZONES];
-	/* the multi-gen LRU sizes, eventually consistent */
-	long nr_pages[MAX_NR_GENS][ANON_AND_FILE][MAX_NR_ZONES];
-	/* the exponential moving average of refaulted */
-	unsigned long avg_refaulted[ANON_AND_FILE][MAX_NR_TIERS];
-	/* the exponential moving average of evicted+protected */
-	unsigned long avg_total[ANON_AND_FILE][MAX_NR_TIERS];
-	/* can only be modified under the LRU lock */
-	unsigned long protected[NR_HIST_GENS][ANON_AND_FILE][MAX_NR_TIERS];
-	/* can be modified without holding the LRU lock */
-	atomic_long_t evicted[NR_HIST_GENS][ANON_AND_FILE][MAX_NR_TIERS];
-	atomic_long_t refaulted[NR_HIST_GENS][ANON_AND_FILE][MAX_NR_TIERS];
-	/* whether the multi-gen LRU is enabled */
-	bool enabled;
-	/* the memcg generation this lru_gen_folio belongs to */
-	u8 gen;
-	/* the list segment this lru_gen_folio belongs to */
-	u8 seg;
-	/* per-node lru_gen_folio list for global reclaim */
-	struct hlist_nulls_node list;
-};
-
-enum {
-	MM_LEAF_TOTAL,		/* total leaf entries */
-	MM_LEAF_YOUNG,		/* young leaf entries */
-	MM_NONLEAF_FOUND,	/* non-leaf entries found in Bloom filters */
-	MM_NONLEAF_ADDED,	/* non-leaf entries added to Bloom filters */
-	NR_MM_STATS
-};
-
-/* double-buffering Bloom filters */
-#define NR_BLOOM_FILTERS	2
-
-struct lru_gen_mm_state {
-	/* synced with max_seq after each iteration */
-	unsigned long seq;
-	/* where the current iteration continues after */
-	struct list_head *head;
-	/* where the last iteration ended before */
-	struct list_head *tail;
-	/* Bloom filters flip after each iteration */
-	unsigned long *filters[NR_BLOOM_FILTERS];
-	/* the mm stats for debugging */
-	unsigned long stats[NR_HIST_GENS][NR_MM_STATS];
-};
-
-struct lru_gen_mm_walk {
-	/* the lruvec under reclaim */
-	struct lruvec *lruvec;
-	/* max_seq from lru_gen_folio: can be out of date */
-	unsigned long seq;
-	/* the next address within an mm to scan */
-	unsigned long next_addr;
-	/* to batch promoted pages */
-	int nr_pages[MAX_NR_GENS][ANON_AND_FILE][MAX_NR_ZONES];
-	/* to batch the mm stats */
-	int mm_stats[NR_MM_STATS];
-	/* total batched items */
-	int batched;
-	int swappiness;
-	bool force_scan;
-};
-
-/*
- * For each node, memcgs are divided into two generations: the old and the
- * young. For each generation, memcgs are randomly sharded into multiple bins
- * to improve scalability. For each bin, the hlist_nulls is virtually divided
- * into three segments: the head, the tail and the default.
- *
- * An onlining memcg is added to the tail of a random bin in the old generation.
- * The eviction starts at the head of a random bin in the old generation. The
- * per-node memcg generation counter, whose reminder (mod MEMCG_NR_GENS) indexes
- * the old generation, is incremented when all its bins become empty.
- *
- * There are four operations:
- * 1. MEMCG_LRU_HEAD, which moves a memcg to the head of a random bin in its
- *    current generation (old or young) and updates its "seg" to "head";
- * 2. MEMCG_LRU_TAIL, which moves a memcg to the tail of a random bin in its
- *    current generation (old or young) and updates its "seg" to "tail";
- * 3. MEMCG_LRU_OLD, which moves a memcg to the head of a random bin in the old
- *    generation, updates its "gen" to "old" and resets its "seg" to "default";
- * 4. MEMCG_LRU_YOUNG, which moves a memcg to the tail of a random bin in the
- *    young generation, updates its "gen" to "young" and resets its "seg" to
- *    "default".
- *
- * The events that trigger the above operations are:
- * 1. Exceeding the soft limit, which triggers MEMCG_LRU_HEAD;
- * 2. The first attempt to reclaim a memcg below low, which triggers
- *    MEMCG_LRU_TAIL;
- * 3. The first attempt to reclaim a memcg offlined or below reclaimable size
- *    threshold, which triggers MEMCG_LRU_TAIL;
- * 4. The second attempt to reclaim a memcg offlined or below reclaimable size
- *    threshold, which triggers MEMCG_LRU_YOUNG;
- * 5. Attempting to reclaim a memcg below min, which triggers MEMCG_LRU_YOUNG;
- * 6. Finishing the aging on the eviction path, which triggers MEMCG_LRU_YOUNG;
- * 7. Offlining a memcg, which triggers MEMCG_LRU_OLD.
- *
- * Notes:
- * 1. Memcg LRU only applies to global reclaim, and the round-robin incrementing
- *    of their max_seq counters ensures the eventual fairness to all eligible
- *    memcgs. For memcg reclaim, it still relies on mem_cgroup_iter().
- * 2. There are only two valid generations: old (seq) and young (seq+1).
- *    MEMCG_NR_GENS is set to three so that when reading the generation counter
- *    locklessly, a stale value (seq-1) does not wraparound to young.
- */
-#define MEMCG_NR_GENS	3
-#define MEMCG_NR_BINS	8
-
-struct lru_gen_memcg {
-	/* the per-node memcg generation counter */
-	unsigned long seq;
-	/* each memcg has one lru_gen_folio per node */
-	unsigned long nr_memcgs[MEMCG_NR_GENS];
-	/* per-node lru_gen_folio list for global reclaim */
-	struct hlist_nulls_head	fifo[MEMCG_NR_GENS][MEMCG_NR_BINS];
-	/* protects the above */
-	spinlock_t lock;
-};
-
-void lru_gen_init_pgdat(struct pglist_data *pgdat);
-void lru_gen_init_lruvec(struct lruvec *lruvec);
-bool lru_gen_look_around(struct page_vma_mapped_walk *pvmw, unsigned int nr);
-
-void lru_gen_init_memcg(struct mem_cgroup *memcg);
-void lru_gen_exit_memcg(struct mem_cgroup *memcg);
-void lru_gen_online_memcg(struct mem_cgroup *memcg);
-void lru_gen_offline_memcg(struct mem_cgroup *memcg);
-void lru_gen_release_memcg(struct mem_cgroup *memcg);
-void lru_gen_soft_reclaim(struct mem_cgroup *memcg, int nid);
-void max_lru_gen_memcg(struct mem_cgroup *memcg, int nid);
-bool recheck_lru_gen_max_memcg(struct mem_cgroup *memcg, int nid);
-void lru_gen_reparent_memcg(struct mem_cgroup *memcg, struct mem_cgroup *parent, int nid);
-
-#else /* !CONFIG_LRU_GEN */
 
 static inline void lru_gen_init_pgdat(struct pglist_data *pgdat)
 {
@@ -752,7 +548,6 @@ void lru_gen_reparent_memcg(struct mem_cgroup *memcg, struct mem_cgroup *parent,
 {
 }
 
-#endif /* CONFIG_LRU_GEN */
 
 struct lruvec {
 	struct list_head		lists[NR_LRU_LISTS];
@@ -771,14 +566,6 @@ struct lruvec {
 	unsigned long			refaults[ANON_AND_FILE];
 	/* Various lruvec state flags (enum lruvec_flags) */
 	unsigned long			flags;
-#ifdef CONFIG_LRU_GEN
-	/* evictable pages divided into generations */
-	struct lru_gen_folio		lrugen;
-#ifdef CONFIG_LRU_GEN_WALKS_MMU
-	/* to concurrently iterate lru_gen_mm_list */
-	struct lru_gen_mm_state		mm_state;
-#endif
-#endif /* CONFIG_LRU_GEN */
 #ifdef CONFIG_MEMCG
 	struct pglist_data *pgdat;
 #endif
@@ -1058,9 +845,6 @@ struct zone {
 #if defined(CONFIG_MEMORY_HOTPLUG)
 	unsigned long		present_early_pages;
 #endif
-#ifdef CONFIG_CMA
-	unsigned long		cma_pages;
-#endif
 
 	const char		*name;
 
@@ -1198,11 +982,7 @@ static inline unsigned long zone_managed_pages(const struct zone *zone)
 
 static inline unsigned long zone_cma_pages(struct zone *zone)
 {
-#ifdef CONFIG_CMA
-	return zone->cma_pages;
-#else
 	return 0;
-#endif
 }
 
 static inline unsigned long zone_end_pfn(const struct zone *zone)
@@ -1487,9 +1267,6 @@ typedef struct pglist_data {
 	int nr_zones; /* number of populated zones in this node */
 #ifdef CONFIG_FLATMEM	/* means !SPARSEMEM */
 	struct page *node_mem_map;
-#ifdef CONFIG_PAGE_EXTENSION
-	struct page_ext *node_page_ext;
-#endif
 #endif
 #if defined(CONFIG_MEMORY_HOTPLUG) || defined(CONFIG_DEFERRED_STRUCT_PAGE_INIT)
 	/*
@@ -1553,13 +1330,6 @@ typedef struct pglist_data {
 	/* Write-intensive fields used by page reclaim */
 	CACHELINE_PADDING(_pad1_);
 
-#ifdef CONFIG_DEFERRED_STRUCT_PAGE_INIT
-	/*
-	 * If memory initialisation on large machines is deferred then this
-	 * is the first PFN that needs to be initialised.
-	 */
-	unsigned long first_deferred_pfn;
-#endif /* CONFIG_DEFERRED_STRUCT_PAGE_INIT */
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
 	struct deferred_split deferred_split_queue;
@@ -1591,12 +1361,6 @@ typedef struct pglist_data {
 
 	unsigned long		flags;
 
-#ifdef CONFIG_LRU_GEN
-	/* kswap mm walk data */
-	struct lru_gen_mm_walk mm_walk;
-	/* lru_gen_folio list */
-	struct lru_gen_memcg memcg_lru;
-#endif
 
 	CACHELINE_PADDING(_pad2_);
 
@@ -2019,14 +1783,6 @@ struct mem_section {
 	unsigned long section_mem_map;
 
 	struct mem_section_usage *usage;
-#ifdef CONFIG_PAGE_EXTENSION
-	/*
-	 * If SPARSEMEM, pgdat doesn't have page_ext pointer. We use
-	 * section. (see page_ext.h about this.)
-	 */
-	struct page_ext *page_ext;
-	unsigned long pad;
-#endif
 	/*
 	 * WARNING: mem_section must be a power-of-2 in size for the
 	 * calculation and use of SECTION_ROOT_MASK to make sense.

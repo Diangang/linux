@@ -160,13 +160,8 @@ else
 	# Use -mskip-rax-setup if supported.
 	KBUILD_CFLAGS += -mskip-rax-setup
 
-ifdef CONFIG_X86_NATIVE_CPU
-        KBUILD_CFLAGS += -march=native
-        KBUILD_RUSTFLAGS += -Ctarget-cpu=native
-else
         KBUILD_CFLAGS += -march=x86-64 -mtune=generic
         KBUILD_RUSTFLAGS += -Ctarget-cpu=x86-64 -Ztune-cpu=generic
-endif
 
         KBUILD_CFLAGS += -mno-red-zone
         KBUILD_CFLAGS += -mcmodel=kernel
@@ -177,7 +172,7 @@ endif
 endif
 
 ifeq ($(CONFIG_STACKPROTECTOR),y)
-    ifeq ($(CONFIG_SMP),y)
+	ifeq ($(CONFIG_SMP),y)
 	KBUILD_CFLAGS += -mstack-protector-guard-reg=$(percpu_seg)
 	KBUILD_CFLAGS += -mstack-protector-guard-symbol=__ref_stack_chk_guard
     else
@@ -190,12 +185,6 @@ endif
 # '-maccumulate-outgoing-args' is needed to prevent a GCC bug
 # (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=42109)
 #
-ifdef CONFIG_FUNCTION_GRAPH_TRACER
-  ifndef CONFIG_HAVE_FENTRY
-	ACCUMULATE_OUTGOING_ARGS := 1
-  endif
-endif
-
 ifeq ($(ACCUMULATE_OUTGOING_ARGS), 1)
 	# This compiler flag is not supported by Clang:
 	KBUILD_CFLAGS += $(call cc-option,-maccumulate-outgoing-args,)
@@ -216,9 +205,7 @@ ifdef CONFIG_MITIGATION_RETPOLINE
   # retpoline builds, however, gcc does not for x86. This has
   # only been fixed starting from gcc stable version 8.4.0 and
   # onwards, but not for older ones. See gcc bug #86952.
-  ifndef CONFIG_CC_IS_CLANG
-    KBUILD_CFLAGS += -fno-jump-tables
-  endif
+  KBUILD_CFLAGS += -fno-jump-tables
 endif
 
 ifdef CONFIG_MITIGATION_SLS

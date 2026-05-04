@@ -39,16 +39,6 @@ static inline void lockup_detector_retry_init(void) { }
 static inline void lockup_detector_soft_poweroff(void) { }
 #endif /* !CONFIG_LOCKUP_DETECTOR */
 
-#ifdef CONFIG_SOFTLOCKUP_DETECTOR
-extern void touch_softlockup_watchdog_sched(void);
-extern void touch_softlockup_watchdog(void);
-extern void touch_softlockup_watchdog_sync(void);
-extern void touch_all_softlockup_watchdogs(void);
-extern unsigned int  softlockup_panic;
-
-extern int lockup_detector_online_cpu(unsigned int cpu);
-extern int lockup_detector_offline_cpu(unsigned int cpu);
-#else /* CONFIG_SOFTLOCKUP_DETECTOR */
 static inline void touch_softlockup_watchdog_sched(void) { }
 static inline void touch_softlockup_watchdog(void) { }
 static inline void touch_softlockup_watchdog_sync(void) { }
@@ -56,13 +46,8 @@ static inline void touch_all_softlockup_watchdogs(void) { }
 
 #define lockup_detector_online_cpu	NULL
 #define lockup_detector_offline_cpu	NULL
-#endif /* CONFIG_SOFTLOCKUP_DETECTOR */
 
-#ifdef CONFIG_DETECT_HUNG_TASK
-void reset_hung_task_detector(void);
-#else
 static inline void reset_hung_task_detector(void) { }
-#endif
 
 /*
  * The run state of the lockup detectors is controlled by the content of the
@@ -81,13 +66,7 @@ static inline void reset_hung_task_detector(void) { }
 #define WATCHDOG_HARDLOCKUP_ENABLED     (1 << WATCHDOG_HARDLOCKUP_ENABLED_BIT)
 #define WATCHDOG_SOFTOCKUP_ENABLED      (1 << WATCHDOG_SOFTOCKUP_ENABLED_BIT)
 
-#if defined(CONFIG_HARDLOCKUP_DETECTOR)
-extern void hardlockup_detector_disable(void);
-extern unsigned int hardlockup_panic;
-extern unsigned long hardlockup_si_mask;
-#else
 static inline void hardlockup_detector_disable(void) {}
-#endif
 
 /* Sparc64 has special implemetantion that is always enabled. */
 #if defined(CONFIG_HARDLOCKUP_DETECTOR) || defined(CONFIG_HARDLOCKUP_DETECTOR_SPARC64)

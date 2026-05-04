@@ -282,39 +282,6 @@ void zap_pid_ns_processes(struct pid_namespace *pid_ns)
 	return;
 }
 
-#ifdef CONFIG_CHECKPOINT_RESTORE
-static int pid_ns_ctl_handler(const struct ctl_table *table, int write,
-		void *buffer, size_t *lenp, loff_t *ppos)
-{
-	struct pid_namespace *pid_ns = task_active_pid_ns(current);
-	struct ctl_table tmp = *table;
-	int ret, next;
-
-	if (write && !checkpoint_restore_ns_capable(pid_ns->user_ns))
-		return -EPERM;
-
-	next = idr_get_cursor(&pid_ns->idr) - 1;
-
-	tmp.data = &next;
-	tmp.extra2 = &pid_ns->pid_max;
-	ret = proc_dointvec_minmax(&tmp, write, buffer, lenp, ppos);
-	if (!ret && write)
-		idr_set_cursor(&pid_ns->idr, next + 1);
-
-	return ret;
-}
-
-static const struct ctl_table pid_ns_ctl_table[] = {
-	{
-		.procname = "ns_last_pid",
-		.maxlen = sizeof(int),
-		.mode = 0666, /* permissions are checked in the handler */
-		.proc_handler = pid_ns_ctl_handler,
-		.extra1 = SYSCTL_ZERO,
-		.extra2 = &init_pid_ns.pid_max,
-	},
-};
-#endif	/* CONFIG_CHECKPOINT_RESTORE */
 
 int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd)
 {
@@ -461,9 +428,6 @@ static __init int pid_namespaces_init(void)
 {
 	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC | SLAB_ACCOUNT);
 
-#ifdef CONFIG_CHECKPOINT_RESTORE
-	register_sysctl_init("kernel", pid_ns_ctl_table);
-#endif
 
 	register_pid_ns_sysctl_table_vm();
 	ns_tree_add(&init_pid_ns);

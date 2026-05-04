@@ -222,16 +222,8 @@ static inline int plist_node_empty(const struct plist_node *node)
  * @type:	the type of the struct this is embedded in
  * @member:	the name of the list_head within the struct
  */
-#ifdef CONFIG_DEBUG_PLIST
-# define plist_first_entry(head, type, member)	\
-({ \
-	WARN_ON(plist_head_empty(head)); \
-	container_of(plist_first(head), type, member); \
-})
-#else
 # define plist_first_entry(head, type, member)	\
 	container_of(plist_first(head), type, member)
-#endif
 
 /**
  * plist_last_entry - get the struct for the last entry
@@ -239,16 +231,8 @@ static inline int plist_node_empty(const struct plist_node *node)
  * @type:	the type of the struct this is embedded in
  * @member:	the name of the list_head within the struct
  */
-#ifdef CONFIG_DEBUG_PLIST
-# define plist_last_entry(head, type, member)	\
-({ \
-	WARN_ON(plist_head_empty(head)); \
-	container_of(plist_last(head), type, member); \
-})
-#else
 # define plist_last_entry(head, type, member)	\
 	container_of(plist_last(head), type, member)
-#endif
 
 /**
  * plist_next - get the next entry in list

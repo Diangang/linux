@@ -329,11 +329,7 @@ static __maybe_unused void *any_section_objs(const struct load_info *info,
 	return (void *)info->sechdrs[sec].sh_addr;
 }
 
-#ifndef CONFIG_MODVERSIONS
 #define symversion(base, idx) NULL
-#else
-#define symversion(base, idx) ((base != NULL) ? ((base) + (idx)) : NULL)
-#endif
 
 static const char *kernel_symbol_name(const struct kernel_symbol *sym)
 {
@@ -1106,14 +1102,7 @@ static const char vermagic[] = VERMAGIC_STRING;
 
 int try_to_force_load(struct module *mod, const char *reason)
 {
-#ifdef CONFIG_MODULE_FORCE_LOAD
-	if (!test_taint(TAINT_FORCED_MODULE))
-		pr_warn("%s: %s: kernel tainted.\n", mod->name, reason);
-	add_taint_module(mod, TAINT_FORCED_MODULE, LOCKDEP_NOW_UNRELIABLE);
-	return 0;
-#else
 	return -ENOEXEC;
-#endif
 }
 
 /* Parse tag=value strings from .modinfo section */
@@ -1223,16 +1212,10 @@ static int verify_namespace_is_imported(const struct load_info *info,
 			if (strcmp(namespace, imported_namespace) == 0)
 				return 0;
 		}
-#ifdef CONFIG_MODULE_ALLOW_MISSING_NAMESPACE_IMPORTS
-		pr_warn(
-#else
 		pr_err(
-#endif
 			"%s: module uses symbol (%s) from namespace %s, but does not import it.\n",
 			mod->name, kernel_symbol_name(sym), namespace);
-#ifndef CONFIG_MODULE_ALLOW_MISSING_NAMESPACE_IMPORTS
 		return -EINVAL;
-#endif
 	}
 	return 0;
 }
@@ -2601,15 +2584,6 @@ static void module_augment_kernel_taints(struct module *mod, struct load_info *i
 				mod->name);
 		add_taint_module(mod, TAINT_TEST, LOCKDEP_STILL_OK);
 	}
-#ifdef CONFIG_MODULE_SIG
-	mod->sig_ok = info->sig_ok;
-	if (!mod->sig_ok) {
-		pr_notice_once("%s: module verification failed: signature "
-			       "and/or required key missing - tainting "
-			       "kernel\n", mod->name);
-		add_taint_module(mod, TAINT_UNSIGNED_MODULE, LOCKDEP_STILL_OK);
-	}
-#endif
 
 	/*
 	 * ndiswrapper is under GPL by itself, but loads proprietary modules.
@@ -2773,14 +2747,6 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 	if (section_addr(info, "__obsparm"))
 		pr_warn("%s: Ignoring obsolete parameters\n", mod->name);
 
-#ifdef CONFIG_DYNAMIC_DEBUG_CORE
-	mod->dyndbg_info.descs = section_objs(info, "__dyndbg",
-					      sizeof(*mod->dyndbg_info.descs),
-					      &mod->dyndbg_info.num_descs);
-	mod->dyndbg_info.classes = section_objs(info, "__dyndbg_classes",
-						sizeof(*mod->dyndbg_info.classes),
-						&mod->dyndbg_info.num_classes);
-#endif
 
 	return 0;
 }
@@ -2880,12 +2846,6 @@ static int check_export_symbol_sections(struct module *mod)
 		pr_err("%s: no flags for exported symbols\n", mod->name);
 		return -ENOEXEC;
 	}
-#ifdef CONFIG_MODVERSIONS
-	if (mod->num_syms && !mod->crcs) {
-		return try_to_force_load(mod,
-					 "no versions for exported symbols");
-	}
-#endif
 	return 0;
 }
 

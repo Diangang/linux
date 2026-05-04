@@ -805,24 +805,6 @@ void switch_mm_irqs_off(struct mm_struct *unused, struct mm_struct *next,
 	 * Only do this check if CONFIG_DEBUG_VM=y because __read_cr3()
 	 * isn't free.
 	 */
-#ifdef CONFIG_DEBUG_VM
-	if (WARN_ON_ONCE(__read_cr3() != build_cr3(prev->pgd, prev_asid,
-						   tlbstate_lam_cr3_mask()))) {
-		/*
-		 * If we were to BUG here, we'd be very likely to kill
-		 * the system so hard that we don't see the call trace.
-		 * Try to recover instead by ignoring the error and doing
-		 * a global flush to minimize the chance of corruption.
-		 *
-		 * (This is far from being a fully correct recovery.
-		 *  Architecturally, the CPU could prefetch something
-		 *  back into an incorrect ASID slot and leave it there
-		 *  to cause trouble down the road.  It's better than
-		 *  nothing, though.)
-		 */
-		__flush_tlb_all();
-	}
-#endif
 	if (was_lazy)
 		this_cpu_write(cpu_tlbstate_shared.is_lazy, false);
 
@@ -1375,9 +1357,6 @@ unsigned long tlb_single_page_flush_ceiling __read_mostly = 33;
 
 static DEFINE_PER_CPU_SHARED_ALIGNED(struct flush_tlb_info, flush_tlb_info);
 
-#ifdef CONFIG_DEBUG_VM
-static DEFINE_PER_CPU(unsigned int, flush_tlb_info_idx);
-#endif
 
 static struct flush_tlb_info *get_flush_tlb_info(struct mm_struct *mm,
 			unsigned long start, unsigned long end,
@@ -1386,14 +1365,6 @@ static struct flush_tlb_info *get_flush_tlb_info(struct mm_struct *mm,
 {
 	struct flush_tlb_info *info = this_cpu_ptr(&flush_tlb_info);
 
-#ifdef CONFIG_DEBUG_VM
-	/*
-	 * Ensure that the following code is non-reentrant and flush_tlb_info
-	 * is not overwritten. This means no TLB flushing is initiated by
-	 * interrupt handlers and machine-check exception handlers.
-	 */
-	BUG_ON(this_cpu_inc_return(flush_tlb_info_idx) != 1);
-#endif
 
 	/*
 	 * If the number of flushes is so large that a full flush
@@ -1418,11 +1389,6 @@ static struct flush_tlb_info *get_flush_tlb_info(struct mm_struct *mm,
 
 static void put_flush_tlb_info(void)
 {
-#ifdef CONFIG_DEBUG_VM
-	/* Complete reentrancy prevention checks */
-	barrier();
-	this_cpu_dec(flush_tlb_info_idx);
-#endif
 }
 
 void flush_tlb_mm_range(struct mm_struct *mm, unsigned long start,

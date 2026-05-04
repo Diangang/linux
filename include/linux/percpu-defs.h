@@ -246,15 +246,7 @@ do {									\
 	arch_raw_cpu_ptr(ptr);						\
 })
 
-#ifdef CONFIG_DEBUG_PREEMPT
-#define this_cpu_ptr(ptr)						\
-({									\
-	__verify_pcpu_ptr(ptr);						\
-	SHIFT_PERCPU_PTR(ptr, my_cpu_offset);				\
-})
-#else
 #define this_cpu_ptr(ptr) raw_cpu_ptr(ptr)
-#endif
 
 #else	/* CONFIG_SMP */
 
@@ -311,11 +303,7 @@ do {									\
 
 extern void __bad_size_call_parameter(void);
 
-#ifdef CONFIG_DEBUG_PREEMPT
-extern void __this_cpu_preempt_check(const char *op);
-#else
 static __always_inline void __this_cpu_preempt_check(const char *op) { }
-#endif
 
 #define __pcpu_size_call_return(stem, variable)				\
 ({									\

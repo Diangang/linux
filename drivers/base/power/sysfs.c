@@ -510,28 +510,6 @@ static ssize_t wakeup_last_time_ms_show(struct device *dev,
 
 static DEVICE_ATTR_RO(wakeup_last_time_ms);
 
-#ifdef CONFIG_PM_AUTOSLEEP
-static ssize_t wakeup_prevent_sleep_time_ms_show(struct device *dev,
-						 struct device_attribute *attr,
-						 char *buf)
-{
-	s64 msec;
-	bool enabled = false;
-
-	spin_lock_irq(&dev->power.lock);
-	if (dev->power.wakeup) {
-		msec = ktime_to_ms(dev->power.wakeup->prevent_sleep_time);
-		enabled = true;
-	}
-	spin_unlock_irq(&dev->power.lock);
-
-	if (!enabled)
-		return sysfs_emit(buf, "\n");
-	return sysfs_emit(buf, "%lld\n", msec);
-}
-
-static DEVICE_ATTR_RO(wakeup_prevent_sleep_time_ms);
-#endif /* CONFIG_PM_AUTOSLEEP */
 
 static inline int dpm_sysfs_wakeup_change_owner(struct device *dev, kuid_t kuid,
 						kgid_t kgid)
@@ -632,9 +610,6 @@ static struct attribute *wakeup_attrs[] = {
 	&dev_attr_wakeup_total_time_ms.attr,
 	&dev_attr_wakeup_max_time_ms.attr,
 	&dev_attr_wakeup_last_time_ms.attr,
-#ifdef CONFIG_PM_AUTOSLEEP
-	&dev_attr_wakeup_prevent_sleep_time_ms.attr,
-#endif
 #endif
 	NULL,
 };

@@ -17,14 +17,6 @@ extern void __scsi_print_sense(const struct scsi_device *, const char *name,
 			       int sense_len);
 extern void scsi_print_result(struct scsi_cmnd *, const char *, int);
 
-#ifdef CONFIG_SCSI_CONSTANTS
-extern bool scsi_opcode_sa_name(int, int, const char **, const char **);
-extern const char *scsi_sense_key_string(unsigned char);
-extern const char *scsi_extd_sense_format(unsigned char, unsigned char,
-					  const char **);
-extern const char *scsi_mlreturn_string(int);
-extern const char *scsi_hostbyte_string(int);
-#else
 static inline bool
 scsi_opcode_sa_name(int cmd, int sa,
 		    const char **cdb_name, const char **sa_name)
@@ -75,6 +67,5 @@ scsi_hostbyte_string(int result)
 	return NULL;
 }
 
-#endif
 
 #endif /* _SCSI_SCSI_DBG_H */

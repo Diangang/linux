@@ -10,9 +10,6 @@
 #define PIPE_BUF_FLAG_PACKET	0x08	/* read() as a packet */
 #define PIPE_BUF_FLAG_CAN_MERGE	0x10	/* can merge buffers */
 #define PIPE_BUF_FLAG_WHOLE	0x20	/* read() must return entire buffer or error */
-#ifdef CONFIG_WATCH_QUEUE
-#define PIPE_BUF_FLAG_LOSS	0x40	/* Message loss happened after this buffer */
-#endif
 
 /**
  *	struct pipe_buffer - a linux kernel pipe buffer
@@ -96,17 +93,11 @@ struct pipe_inode_info {
 	unsigned int r_counter;
 	unsigned int w_counter;
 	bool poll_usage;
-#ifdef CONFIG_WATCH_QUEUE
-	bool note_loss;
-#endif
 	struct page *tmp_page[2];
 	struct fasync_struct *fasync_readers;
 	struct fasync_struct *fasync_writers;
 	struct pipe_buffer *bufs;
 	struct user_struct *user;
-#ifdef CONFIG_WATCH_QUEUE
-	struct watch_queue *watch_queue;
-#endif
 };
 
 /*
@@ -160,11 +151,7 @@ struct pipe_buf_operations {
  */
 static inline bool pipe_has_watch_queue(const struct pipe_inode_info *pipe)
 {
-#ifdef CONFIG_WATCH_QUEUE
-	return pipe->watch_queue != NULL;
-#else
 	return false;
-#endif
 }
 
 /**

@@ -33,11 +33,7 @@ int pcie_aer_init(void);
 static inline int pcie_aer_init(void) { return 0; }
 #endif
 
-#ifdef CONFIG_HOTPLUG_PCI_PCIE
-int pcie_hp_init(void);
-#else
 static inline int pcie_hp_init(void) { return 0; }
-#endif
 
 #ifdef CONFIG_PCIE_PME
 int pcie_pme_init(void);

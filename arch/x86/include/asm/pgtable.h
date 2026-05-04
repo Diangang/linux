@@ -715,14 +715,6 @@ static inline pgprotval_t check_pgprot(pgprot_t pgprot)
 	pgprotval_t massaged_val = massage_pgprot(pgprot);
 
 	/* mmdebug.h can not be included here because of dependencies */
-#ifdef CONFIG_DEBUG_VM
-	WARN_ONCE(pgprot_val(pgprot) != massaged_val,
-		  "attempted to set unsupported pgprot: %016llx "
-		  "bits: %016llx supported: %016llx\n",
-		  (u64)pgprot_val(pgprot),
-		  (u64)pgprot_val(pgprot) ^ massaged_val,
-		  (u64)__supported_pte_mask);
-#endif
 
 	return massaged_val;
 }
@@ -1671,22 +1663,6 @@ static inline bool arch_has_hw_nonleaf_pmd_young(void)
 }
 #endif
 
-#ifdef CONFIG_PAGE_TABLE_CHECK
-static inline bool pte_user_accessible_page(struct mm_struct *mm, unsigned long addr, pte_t pte)
-{
-	return (pte_val(pte) & _PAGE_PRESENT) && (pte_val(pte) & _PAGE_USER);
-}
-
-static inline bool pmd_user_accessible_page(struct mm_struct *mm, unsigned long addr, pmd_t pmd)
-{
-	return pmd_leaf(pmd) && (pmd_val(pmd) & _PAGE_PRESENT) && (pmd_val(pmd) & _PAGE_USER);
-}
-
-static inline bool pud_user_accessible_page(struct mm_struct *mm, unsigned long addr, pud_t pud)
-{
-	return pud_leaf(pud) && (pud_val(pud) & _PAGE_PRESENT) && (pud_val(pud) & _PAGE_USER);
-}
-#endif
 
 #ifdef CONFIG_X86_SGX
 int arch_memory_failure(unsigned long pfn, int flags);

@@ -1183,25 +1183,6 @@ struct inode *new_inode(struct super_block *sb)
 }
 EXPORT_SYMBOL(new_inode);
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-void lockdep_annotate_inode_mutex_key(struct inode *inode)
-{
-	if (S_ISDIR(inode->i_mode)) {
-		struct file_system_type *type = inode->i_sb->s_type;
-
-		/* Set new key only if filesystem hasn't already changed it */
-		if (lockdep_match_class(&inode->i_rwsem, &type->i_mutex_key)) {
-			/*
-			 * ensure nobody is actually holding i_rwsem
-			 */
-			init_rwsem(&inode->i_rwsem);
-			lockdep_set_class(&inode->i_rwsem,
-					  &type->i_mutex_dir_key);
-		}
-	}
-}
-EXPORT_SYMBOL(lockdep_annotate_inode_mutex_key);
-#endif
 
 /**
  * unlock_new_inode - clear the I_NEW state and wake up any waiters
@@ -3010,46 +2991,3 @@ umode_t mode_strip_sgid(struct mnt_idmap *idmap,
 }
 EXPORT_SYMBOL(mode_strip_sgid);
 
-#ifdef CONFIG_DEBUG_VFS
-/**
- * dump_inode - dump an inode.
- * @inode: inode to dump
- * @reason: reason for dumping
- *
- * If inode is an invalid pointer, we don't want to crash accessing it,
- * so probe everything depending on it carefully with get_kernel_nofault().
- */
-void dump_inode(struct inode *inode, const char *reason)
-{
-	struct super_block *sb;
-	struct file_system_type *s_type;
-	const char *fs_name_ptr;
-	char fs_name[32] = {};
-	umode_t mode;
-	unsigned short opflags;
-	unsigned int flags;
-	unsigned int state;
-	int count;
-
-	if (get_kernel_nofault(sb, &inode->i_sb) ||
-	    get_kernel_nofault(mode, &inode->i_mode) ||
-	    get_kernel_nofault(opflags, &inode->i_opflags) ||
-	    get_kernel_nofault(flags, &inode->i_flags)) {
-		pr_warn("%s: unreadable inode:%px\n", reason, inode);
-		return;
-	}
-
-	state = inode_state_read_once(inode);
-	count = atomic_read(&inode->i_count);
-
-	if (!sb ||
-	    get_kernel_nofault(s_type, &sb->s_type) || !s_type ||
-	    get_kernel_nofault(fs_name_ptr, &s_type->name) || !fs_name_ptr ||
-	    strncpy_from_kernel_nofault(fs_name, fs_name_ptr, sizeof(fs_name) - 1) < 0)
-		strscpy(fs_name, "<unknown, sb unreadable>");
-
-	pr_warn("%s: inode:%px fs:%s mode:%ho opflags:%#x flags:%#x state:%#x count:%d\n",
-		reason, inode, fs_name, mode, opflags, flags, state, count);
-}
-EXPORT_SYMBOL(dump_inode);
-#endif

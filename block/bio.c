@@ -244,9 +244,6 @@ void bio_init(struct bio *bio, struct block_device *bdev, struct bio_vec *table,
 #ifdef CONFIG_BLK_INLINE_ENCRYPTION
 	bio->bi_crypt_context = NULL;
 #endif
-#ifdef CONFIG_BLK_DEV_INTEGRITY
-	bio->bi_integrity = NULL;
-#endif
 	bio->bi_vcnt = 0;
 
 	atomic_set(&bio->__bi_remaining, 1);
