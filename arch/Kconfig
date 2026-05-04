@@ -1780,8 +1780,6 @@ config ARCH_VMLINUX_NEEDS_RELOCS
 config HAVE_GENERIC_TIF_BITS
        bool
 
-source "scripts/gcc-plugins/Kconfig"
-
 config FUNCTION_ALIGNMENT_4B
 	bool
 

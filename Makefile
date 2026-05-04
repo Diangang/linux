@@ -292,7 +292,7 @@ version_h := include/generated/uapi/linux/version.h
 
 clean-targets := %clean mrproper cleandocs
 no-dot-config-targets := $(clean-targets) \
-			 cscope gtags TAGS tags help% %docs check% coccicheck \
+			 cscope gtags TAGS tags help% %docs check% \
 			 $(version_h) headers headers_% archheaders archscripts \
 			 %asm-generic kernelversion %src-pkg dt_binding_check \
 			 outputmakefile rustavailable rustfmt rustfmtcheck \
@@ -1025,13 +1025,8 @@ include-$(CONFIG_KSTACK_ERASE)	+= scripts/Makefile.kstack_erase
 include-$(CONFIG_AUTOFDO_CLANG)	+= scripts/Makefile.autofdo
 include-$(CONFIG_PROPELLER_CLANG)	+= scripts/Makefile.propeller
 include-$(CONFIG_WARN_CONTEXT_ANALYSIS) += scripts/Makefile.context-analysis
-include-$(CONFIG_GCC_PLUGINS)	+= scripts/Makefile.gcc-plugins
 
 include $(addprefix $(srctree)/, $(include-y))
-
-# scripts/Makefile.gcc-plugins is intentionally included last.
-# Do not add $(call cc-option,...) below this line. When you build the kernel
-# from the clean source tree, the GCC plugins do not exist at this point.
 
 # Add user supplied CPPFLAGS, AFLAGS, CFLAGS and RUSTFLAGS as the last assignments
 KBUILD_CPPFLAGS += $(KCPPFLAGS)
@@ -1485,7 +1480,6 @@ MRPROPER_FILES += include/config include/generated          \
 		  Module.symvers \
 		  certs/signing_key.pem \
 		  certs/x509.genkey \
-		  vmlinux-gdb.py \
 		  rpmbuild \
 		  rust/libmacros.so rust/libmacros.dylib \
 		  rust/libpin_init_internal.so rust/libpin_init_internal.dylib
@@ -1529,16 +1523,6 @@ distclean: mrproper
 		-o -name GPATH -o -name GRTAGS -o -name GSYMS -o -name GTAGS \) \
 		-type f -print | xargs rm -f
 
-
-# Packaging of the kernel to various formats
-# ---------------------------------------------------------------------------
-
-modules-cpio-pkg: usr_gen_init_cpio
-
-%src-pkg: FORCE
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.package $@
-%pkg: include/config/kernel.release FORCE
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.package $@
 
 # Brief documentation of the typical targets used
 # ---------------------------------------------------------------------------
@@ -1588,9 +1572,6 @@ help:
 	@echo  '  versioncheck    - Sanity check on version.h usage'
 	@echo  '  includecheck    - Check for duplicate included header files'
 	@echo  '  headerdep       - Detect inclusion cycles in headers'
-	@echo  '  coccicheck      - Check with Coccinelle'
-	@echo  '  clang-analyzer  - Check with clang static analyzer'
-	@echo  '  clang-tidy      - Check with clang-tidy'
 	@echo  ''
 	@echo  'Tools:'
 	@echo  '  nsdeps          - Generate missing symbol namespace dependencies'
@@ -1625,9 +1606,6 @@ help:
 	@echo 'Userspace tools targets:'
 	@echo '  use "make tools/help"'
 	@echo '  or  "cd tools; make help"'
-	@echo  ''
-	@echo  'Kernel packaging:'
-	@$(MAKE) -f $(srctree)/scripts/Makefile.package help
 	@echo  ''
 	@echo  'Documentation targets:'
 	@$(MAKE) -f $(srctree)/Documentation/Makefile dochelp
@@ -1743,11 +1721,6 @@ misc-check:
 	$(Q)$(srctree)/scripts/misc-check
 
 all: misc-check
-
-PHONY += scripts_gdb
-scripts_gdb: prepare0
-	$(Q)$(MAKE) $(build)=scripts/gdb
-	$(Q)ln -fsn $(abspath $(srctree)/scripts/gdb/vmlinux-gdb.py)
 
 else # KBUILD_EXTMOD
 
@@ -1946,22 +1919,10 @@ nsdeps: modules
 quiet_cmd_gen_compile_commands = GEN     $@
       cmd_gen_compile_commands = $(PYTHON3) $< -a $(AR) -o $@ $(filter-out $<, $(real-prereqs))
 
-compile_commands.json: $(srctree)/scripts/clang-tools/gen_compile_commands.py \
-	$(if $(KBUILD_EXTMOD),, vmlinux.a $(KBUILD_VMLINUX_LIBS)) \
-	$(if $(CONFIG_MODULES), modules.order) FORCE
-	$(call if_changed,gen_compile_commands)
-
-targets += compile_commands.json
-
-PHONY += clang-tidy clang-analyzer
-clang-tidy clang-analyzer:
-	@echo "$@ requires CC=clang" >&2
-	@false
-
 # Scripts to check various things for consistency
 # ---------------------------------------------------------------------------
 
-PHONY += includecheck versioncheck coccicheck
+PHONY += includecheck versioncheck
 
 includecheck:
 	find $(srctree)/* $(RCS_FIND_IGNORE) \
@@ -1972,9 +1933,6 @@ versioncheck:
 	find $(srctree)/* $(RCS_FIND_IGNORE) \
 		-name '*.[hcS]' -type f -print | sort \
 		| xargs $(PERL) -w $(srctree)/scripts/checkversion.pl
-
-coccicheck:
-	$(Q)$(BASH) $(srctree)/scripts/$@
 
 PHONY += checkstack kernelrelease kernelversion image_name
 
