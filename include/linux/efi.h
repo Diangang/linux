@@ -1139,11 +1139,7 @@ enum efi_secureboot_mode efi_get_secureboot_mode(efi_get_variable_t *get_var)
 	return efi_secureboot_mode_enabled;
 }
 
-#ifdef CONFIG_EFI_EMBEDDED_FIRMWARE
-void efi_check_for_embedded_firmwares(void);
-#else
 static inline void efi_check_for_embedded_firmwares(void) { }
-#endif
 
 #define arch_efi_call_virt(p, f, args...)	((p)->f(args))
 

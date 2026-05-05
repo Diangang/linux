@@ -150,10 +150,6 @@ config UNACCEPTED_MEMORY
 	   This option adds support for unaccepted memory and makes such memory
 	   usable by the kernel.
 
-config EFI_EMBEDDED_FIRMWARE
-	bool
-	select CRYPTO_LIB_SHA256
-
 config EFI_SBAT
        def_bool y if EFI_SBAT_FILE!=""
 
