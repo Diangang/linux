@@ -42,7 +42,6 @@ struct efi __read_mostly efi = {
 	.acpi20			= EFI_INVALID_TABLE_ADDR,
 	.smbios			= EFI_INVALID_TABLE_ADDR,
 	.smbios3		= EFI_INVALID_TABLE_ADDR,
-	.esrt			= EFI_INVALID_TABLE_ADDR,
 	.tpm_log		= EFI_INVALID_TABLE_ADDR,
 	.tpm_final_log		= EFI_INVALID_TABLE_ADDR,
 	.ovmf_debug_log         = EFI_INVALID_TABLE_ADDR,
@@ -583,8 +582,7 @@ void __init __weak efi_arch_mem_reserve(phys_addr_t addr, u64 size) {}
  * prevent it being released by efi_free_boot_services().
  *
  * This function should be called drivers once they've parsed EFI
- * configuration tables to figure out where their data lives, e.g.
- * efi_esrt_init().
+ * configuration tables to figure out where their data lives.
  */
 void __init efi_mem_reserve(phys_addr_t addr, u64 size)
 {
@@ -612,7 +610,6 @@ static const efi_config_table_type_t common_tables[] __initconst = {
 	{ACPI_TABLE_GUID,			&efi.acpi,		"ACPI"		},
 	{SMBIOS_TABLE_GUID,			&efi.smbios,		"SMBIOS"	},
 	{SMBIOS3_TABLE_GUID,			&efi.smbios3,		"SMBIOS 3.0"	},
-	{EFI_SYSTEM_RESOURCE_TABLE_GUID,	&efi.esrt,		"ESRT"		},
 	{EFI_MEMORY_ATTRIBUTES_TABLE_GUID,	&efi_mem_attr_table,	"MEMATTR"	},
 	{LINUX_EFI_RANDOM_SEED_TABLE_GUID,	&efi_rng_seed,		"RNG"		},
 	{LINUX_EFI_TPM_EVENT_LOG_GUID,		&efi.tpm_log,		"TPMEventLog"	},

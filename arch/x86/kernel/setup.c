@@ -1081,7 +1081,6 @@ void __init setup_arch(char **cmdline_p)
 	cc_random_init();
 
 	efi_find_mirror();
-	efi_esrt_init();
 	efi_mokvar_table_init();
 
 	/*

@@ -2,11 +2,6 @@
 menu "EFI (Extensible Firmware Interface) Support"
 	depends on EFI
 
-config EFI_ESRT
-	bool
-	depends on EFI
-	default y
-
 config EFI_VARS_PSTORE
 	tristate "Register efivars backend for pstore"
 	depends on PSTORE

@@ -76,7 +76,6 @@ static const unsigned long * const efi_tables[] = {
 	&efi_fw_vendor,
 	&efi_runtime,
 	&efi_config_table,
-	&efi.esrt,
 	&efi_mem_attr_table,
 #ifdef CONFIG_EFI_RCI2_TABLE
 	&rci2_table_phys,

@@ -265,7 +265,6 @@ void __init efi_init(void)
 	 */
 	early_init_dt_check_for_usable_mem_range();
 	efi_find_mirror();
-	efi_esrt_init();
 	efi_mokvar_table_init();
 
 	memblock_reserve(data.phys_map & PAGE_MASK,
