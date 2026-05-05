@@ -205,22 +205,6 @@ struct efi_image_auth {
 #define EFI_CAPSULE_POPULATE_SYSTEM_TABLE	0x00020000
 #define EFI_CAPSULE_INITIATE_RESET		0x00040000
 
-struct capsule_info {
-	efi_capsule_header_t	header;
-	efi_capsule_header_t	*capsule;
-	int			reset_type;
-	long			index;
-	size_t			count;
-	size_t			total_size;
-	struct page		**pages;
-	phys_addr_t		*phys;
-	size_t			page_bytes_remain;
-};
-
-int efi_capsule_setup_info(struct capsule_info *cap_info, void *kbuff,
-                           size_t hdr_bytes);
-int __efi_capsule_setup_info(struct capsule_info *cap_info);
-
 /*
  * Types and defines for Time Services
  */
@@ -1087,17 +1071,7 @@ efi_status_t efivar_query_variable_info(u32 attr, u64 *storage_space,
 					u64 *remaining_space,
 					u64 *max_variable_size);
 
-#if IS_ENABLED(CONFIG_EFI_CAPSULE_LOADER)
-extern bool efi_capsule_pending(int *reset_type);
-
-extern int efi_capsule_supported(efi_guid_t guid, u32 flags,
-				 size_t size, int *reset);
-
-extern int efi_capsule_update(efi_capsule_header_t *capsule,
-			      phys_addr_t *pages);
-#else
 static inline bool efi_capsule_pending(int *reset_type) { return false; }
-#endif
 
 #ifdef CONFIG_EFI
 extern bool efi_runtime_disabled(void);
