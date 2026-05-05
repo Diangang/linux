@@ -604,47 +604,6 @@ config XGENE_DMA
 	help
 	  Enable support for the APM X-Gene SoC DMA engine.
 
-config XILINX_DMA
-	tristate "Xilinx AXI DMAS Engine"
-	depends on HAS_IOMEM
-	select DMA_ENGINE
-	help
-	  Enable support for Xilinx AXI VDMA Soft IP.
-
-	  AXI VDMA engine provides high-bandwidth direct memory access
-	  between memory and AXI4-Stream video type target
-	  peripherals including peripherals which support AXI4-
-	  Stream Video Protocol.  It has two stream interfaces/
-	  channels, Memory Mapped to Stream (MM2S) and Stream to
-	  Memory Mapped (S2MM) for the data transfers.
-	  AXI CDMA engine provides high-bandwidth direct memory access
-	  between a memory-mapped source address and a memory-mapped
-	  destination address.
-	  AXI DMA engine provides high-bandwidth one dimensional direct
-	  memory access between memory and AXI4-Stream target peripherals.
-	  AXI MCDMA engine provides high-bandwidth direct memory access
-	  between memory and AXI4-Stream target peripherals. It provides
-	  the scatter gather interface with multiple channels independent
-	  configuration support.
-
-config XILINX_ZYNQMP_DMA
-	tristate "Xilinx ZynqMP DMA Engine"
-	depends on ARCH_ZYNQ || MICROBLAZE || ARM64 || COMPILE_TEST
-	select DMA_ENGINE
-	help
-	  Enable support for Xilinx ZynqMP DMA controller.
-
-config XILINX_ZYNQMP_DPDMA
-	tristate "Xilinx DPDMA Engine"
-	depends on HAS_IOMEM && OF
-	select DMA_ENGINE
-	select DMA_VIRTUAL_CHANNELS
-	help
-	  Enable support for Xilinx ZynqMP DisplayPort DMA. Choose this option
-	  if you have a Xilinx ZynqMP SoC with a DisplayPort subsystem. The
-	  driver provides the dmaengine required by the DisplayPort subsystem
-	  display driver.
-
 # driver files
 source "drivers/dma/amd/Kconfig"
 
@@ -653,8 +612,6 @@ source "drivers/dma/mediatek/Kconfig"
 source "drivers/dma/qcom/Kconfig"
 
 source "drivers/dma/dw/Kconfig"
-
-source "drivers/dma/dw-edma/Kconfig"
 
 source "drivers/dma/hsu/Kconfig"
 

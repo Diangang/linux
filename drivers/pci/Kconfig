@@ -282,6 +282,5 @@ config VGA_ARB_MAX_GPUS
 source "drivers/pci/hotplug/Kconfig"
 source "drivers/pci/controller/Kconfig"
 source "drivers/pci/endpoint/Kconfig"
-source "drivers/pci/pwrctrl/Kconfig"
 
 endif # PCI
