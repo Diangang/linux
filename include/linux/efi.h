@@ -626,8 +626,6 @@ extern struct efi {
 	unsigned long			acpi20;			/* ACPI table  (ACPI 2.0) */
 	unsigned long			smbios;			/* SMBIOS table (32 bit entry point) */
 	unsigned long			smbios3;		/* SMBIOS table (64 bit entry point) */
-	unsigned long			tpm_log;		/* TPM2 Event Log table */
-	unsigned long			tpm_final_log;		/* TPM2 Final Events Log table */
 	unsigned long                   ovmf_debug_log;
 	unsigned long			mokvar_table;		/* MOK variable config table */
 	unsigned long			coco_secret;		/* Confidential computing secret table */
@@ -1150,21 +1148,11 @@ struct linux_efi_random_seed {
 	u8	bits[];
 };
 
-struct linux_efi_tpm_eventlog {
-	u32	size;
-	u32	final_events_preboot_size;
-	u8	version;
-	u8	log[];
-};
-
-extern int efi_tpm_eventlog_init(void);
-
 struct efi_tcg2_final_events_table {
 	u64 version;
 	u64 nr_events;
 	u8 events[];
 };
-extern int efi_tpm_final_log_size;
 
 extern unsigned long rci2_table_phys;
 

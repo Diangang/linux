@@ -164,8 +164,6 @@ efi_status_t efi_stub_common(efi_handle_t handle,
 
 	dpy = setup_primary_display();
 
-	efi_retrieve_eventlog();
-
 	/* Ask the firmware to clear memory on unclean shutdown */
 	efi_enable_reset_attack_mitigation();
 

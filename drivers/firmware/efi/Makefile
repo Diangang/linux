@@ -10,7 +10,7 @@
 #
 KASAN_SANITIZE_runtime-wrappers.o	:= n
 
-obj-$(CONFIG_EFI)			+= efi.o vars.o reboot.o memattr.o tpm.o
+obj-$(CONFIG_EFI)			+= efi.o vars.o reboot.o memattr.o
 obj-$(CONFIG_EFI)			+= memmap.o
 obj-$(CONFIG_EFI_PARAMS_FROM_FDT)	+= fdtparams.o
 obj-$(CONFIG_UEFI_CPER)			+= cper.o

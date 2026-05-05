@@ -1170,8 +1170,6 @@ enum efi_secureboot_mode efi_get_secureboot(void);
 static inline void
 efi_enable_reset_attack_mitigation(void) { }
 
-void efi_retrieve_eventlog(void);
-
 struct sysfb_display_info *alloc_primary_display(void);
 struct sysfb_display_info *__alloc_primary_display(void);
 void free_primary_display(struct sysfb_display_info *dpy);

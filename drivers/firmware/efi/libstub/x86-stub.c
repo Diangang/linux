@@ -1013,8 +1013,6 @@ void __noreturn efi_stub_entry(efi_handle_t handle,
 
 	efi_random_get_seed();
 
-	efi_retrieve_eventlog();
-
 	setup_graphics(boot_params);
 
 	setup_efi_pci(boot_params);

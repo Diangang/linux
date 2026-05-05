@@ -79,8 +79,6 @@ static const unsigned long * const efi_tables[] = {
 #ifdef CONFIG_EFI_RCI2_TABLE
 	&rci2_table_phys,
 #endif
-	&efi.tpm_log,
-	&efi.tpm_final_log,
 	&efi_rng_seed,
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	&efi.mokvar_table,
