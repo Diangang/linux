@@ -115,7 +115,6 @@ obj-y					+= analogbits/
 obj-y					+= aspeed/
 obj-y					+= bcm/
 obj-y					+= imgtec/
-obj-y					+= imx/
 obj-y					+= ingenic/
 obj-y					+= keystone/
 obj-y					+= microchip/
