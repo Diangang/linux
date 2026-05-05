@@ -1021,7 +1021,6 @@ CONFIG_BLK_DEV_BSG=y
 # end of SCSI Transports
 
 CONFIG_SCSI_LOWLEVEL=y
-# CONFIG_VMWARE_PVSCSI is not set
 # CONFIG_SCSI_ISCI is not set
 CONFIG_SCSI_VIRTIO=y
 # end of SCSI device support
