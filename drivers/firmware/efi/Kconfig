@@ -82,12 +82,6 @@ config EFI_ARMSTUB_DTB_LOADER
 	  functionality for bootloaders that do not have such support
 	  this option is necessary.
 
-config EFI_EARLYCON
-	def_bool y
-	depends on SERIAL_EARLYCON && !ARM
-	select FONT_SUPPORT
-	select ARCH_USE_MEMREMAP_PROT
-
 config EFI_CUSTOM_SSDT_OVERLAYS
 	bool "Load custom ACPI SSDT overlay from an EFI variable"
 	depends on ACPI

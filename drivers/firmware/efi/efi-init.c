@@ -60,7 +60,7 @@ extern __weak const efi_config_table_type_t efi_arch_tables[];
  * x86 defines its own instance of sysfb_primary_display and uses
  * it even without EFI, everything else can get them from here.
  */
-#if !defined(CONFIG_X86) && (defined(CONFIG_EFI_EARLYCON) || defined(CONFIG_FIRMWARE_EDID))
+#if !defined(CONFIG_X86) && defined(CONFIG_FIRMWARE_EDID)
 struct sysfb_display_info sysfb_primary_display __section(".data");
 EXPORT_SYMBOL_GPL(sysfb_primary_display);
 #endif
@@ -83,8 +83,6 @@ static void __init init_primary_display(void)
 			memblock_mark_nomap(sysfb_primary_display.screen.lfb_base,
 					    sysfb_primary_display.screen.lfb_size);
 
-		if (IS_ENABLED(CONFIG_EFI_EARLYCON))
-			efi_earlycon_reprobe();
 	}
 }
 
@@ -270,7 +268,6 @@ void __init efi_init(void)
 	memblock_reserve(data.phys_map & PAGE_MASK,
 			 PAGE_ALIGN(data.size + (data.phys_map & ~PAGE_MASK)));
 
-	if (IS_ENABLED(CONFIG_X86) ||
-	    IS_ENABLED(CONFIG_EFI_EARLYCON))
+	if (IS_ENABLED(CONFIG_X86))
 		init_primary_display();
 }
