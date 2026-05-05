@@ -341,15 +341,6 @@ config ACPI_HED
 	  which is used to report some hardware errors notified via
 	  SCI, mainly the corrected errors.
 
-config ACPI_BGRT
-	bool "Boottime Graphics Resource Table support"
-	depends on EFI
-	help
-	  This driver adds support for exposing the ACPI Boottime Graphics
-	  Resource Table, which allows the operating system to obtain
-	  data from the firmware boot splash. It will appear under
-	  /sys/firmware/acpi/bgrt/ .
-
 config ACPI_REDUCED_HARDWARE_ONLY
 	bool "Hardware-reduced ACPI support only" if EXPERT
 	help
