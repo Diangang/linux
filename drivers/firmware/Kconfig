@@ -47,11 +47,6 @@ config FW_CFG_SYSFS_CMDLINE
 	  WARNING: Using incorrect parameters (base address in particular)
 	  may crash your system.
 
-config SYSFB
-	bool
-	select BOOT_VESA_SUPPORT
-	select SCREEN_INFO
-
 source "drivers/firmware/efi/Kconfig"
 source "drivers/firmware/psci/Kconfig"
 source "drivers/firmware/smccc/Kconfig"

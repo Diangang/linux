@@ -6,7 +6,6 @@ obj-$(CONFIG_ARM_SDE_INTERFACE)	+= arm_sdei.o
 obj-$(CONFIG_DMI)		+= dmi_scan.o
 obj-$(CONFIG_DMIID)		+= dmi-id.o
 obj-$(CONFIG_FIRMWARE_MEMMAP)	+= memmap.o
-obj-$(CONFIG_SYSFB)		+= sysfb.o
 
 obj-y				+= arm_scmi/
 obj-y				+= efi/

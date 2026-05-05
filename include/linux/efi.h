@@ -1266,8 +1266,6 @@ static inline struct efi_mokvar_table_entry *efi_mokvar_entry_find(
 }
 #endif
 
-extern void efifb_setup_from_dmi(struct screen_info *si, const char *opt);
-
 struct linux_efi_coco_secret_area {
 	u64	base_pa;
 	u64	size;
