@@ -98,9 +98,6 @@ efi_status_t efi_parse_options(char const *cmdline)
 				efi_disable_pci_dma = false;
 			if (parse_option_str(val, "debug"))
 				efi_loglevel = CONSOLE_LOGLEVEL_DEBUG;
-		} else if (!strcmp(param, "video") &&
-			   val && strstarts(val, "efifb:")) {
-			efi_parse_option_graphics(val + strlen("efifb:"));
 		}
 	}
 	return EFI_SUCCESS;

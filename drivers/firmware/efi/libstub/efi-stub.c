@@ -10,7 +10,6 @@
  */
 
 #include <linux/efi.h>
-#include <linux/sysfb.h>
 #include <asm/efi.h>
 
 #include "efistub.h"
@@ -47,35 +46,6 @@
 
 static u64 virtmap_base = EFI_RT_VIRTUAL_BASE;
 static bool flat_va_mapping = (EFI_RT_VIRTUAL_OFFSET != 0);
-
-void __weak free_primary_display(struct sysfb_display_info *dpy)
-{ }
-
-static struct sysfb_display_info *setup_primary_display(void)
-{
-	struct sysfb_display_info *dpy;
-	struct screen_info *screen = NULL;
-	struct edid_info *edid = NULL;
-	efi_status_t status;
-
-	dpy = alloc_primary_display();
-	if (!dpy)
-		return NULL;
-	screen = &dpy->screen;
-#if defined(CONFIG_FIRMWARE_EDID)
-	edid = &dpy->edid;
-#endif
-
-	status = efi_setup_graphics(screen, edid);
-	if (status != EFI_SUCCESS)
-		goto err_free_primary_display;
-
-	return dpy;
-
-err_free_primary_display:
-	free_primary_display(dpy);
-	return NULL;
-}
 
 static void install_memreserve_table(void)
 {
@@ -155,14 +125,11 @@ efi_status_t efi_stub_common(efi_handle_t handle,
 			     unsigned long image_addr,
 			     char *cmdline_ptr)
 {
-	struct sysfb_display_info *dpy;
 	efi_status_t status;
 
 	status = check_platform_features();
 	if (status != EFI_SUCCESS)
 		return status;
-
-	dpy = setup_primary_display();
 
 	/* Ask the firmware to clear memory on unclean shutdown */
 	efi_enable_reset_attack_mitigation();
@@ -179,8 +146,6 @@ efi_status_t efi_stub_common(efi_handle_t handle,
 	install_memreserve_table();
 
 	status = efi_boot_kernel(handle, image, image_addr, cmdline_ptr);
-
-	free_primary_display(dpy);
 
 	return status;
 }

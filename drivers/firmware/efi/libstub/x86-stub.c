@@ -484,14 +484,6 @@ static void setup_quirks(struct boot_params *boot_params)
 	}
 }
 
-static void setup_graphics(struct boot_params *boot_params)
-{
-	struct screen_info *si = memset(&boot_params->screen_info, 0, sizeof(*si));
-	struct edid_info *edid = memset(&boot_params->edid_info, 0, sizeof(*edid));
-
-	efi_setup_graphics(si, edid);
-}
-
 static void __noreturn efi_exit(efi_handle_t handle, efi_status_t status)
 {
 	efi_bs_call(exit, handle, status, 0, NULL);
@@ -1012,8 +1004,6 @@ void __noreturn efi_stub_entry(efi_handle_t handle,
 	efi_enable_reset_attack_mitigation();
 
 	efi_random_get_seed();
-
-	setup_graphics(boot_params);
 
 	setup_efi_pci(boot_params);
 

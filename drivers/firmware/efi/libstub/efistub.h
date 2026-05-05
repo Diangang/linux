@@ -1113,10 +1113,6 @@ efi_status_t efi_relocate_kernel(unsigned long *image_addr,
 
 efi_status_t efi_parse_options(char const *cmdline);
 
-void efi_parse_option_graphics(char *option);
-
-efi_status_t efi_setup_graphics(struct screen_info *si, struct edid_info *edid);
-
 efi_status_t handle_cmdline_files(efi_loaded_image_t *image,
 				  const efi_char16_t *optstr,
 				  int optstr_size,
