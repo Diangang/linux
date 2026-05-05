@@ -2,25 +2,6 @@
 menu "EFI (Extensible Firmware Interface) Support"
 	depends on EFI
 
-config EFI_VARS_PSTORE
-	tristate "Register efivars backend for pstore"
-	depends on PSTORE
-	select UCS2_STRING
-	default y
-	help
-	  Say Y here to enable use efivars as a backend to pstore. This
-	  will allow writing console messages, crash dumps, or anything
-	  else supported by pstore to EFI variables.
-
-config EFI_VARS_PSTORE_DEFAULT_DISABLE
-	bool "Disable using efivars as a pstore backend by default"
-	depends on EFI_VARS_PSTORE
-	default n
-	help
-	  Saying Y here will disable the use of efivars as a storage
-	  backend for pstore by default. This setting can be overridden
-	  using the efivars module's pstore_disable parameter.
-
 config EFI_SOFT_RESERVE
 	bool "Reserve EFI Specific Purpose Memory"
 	depends on EFI && EFI_STUB && ACPI_HMAT
