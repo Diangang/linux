@@ -1206,17 +1206,7 @@ CONFIG_HAVE_CLK=y
 CONFIG_HAVE_CLK_PREPARE=y
 CONFIG_COMMON_CLK=y
 
-#
-# Clock driver for ARM Reference designs
-#
-# CONFIG_CLK_ICST is not set
-# CONFIG_CLK_SP810 is not set
-# end of Clock driver for ARM Reference designs
-
 CONFIG_COMMON_CLK_SCMI=y
-# CONFIG_COMMON_CLK_AXI_CLKGEN is not set
-# CONFIG_COMMON_CLK_XGENE is not set
-# CONFIG_COMMON_CLK_FIXED_MMIO is not set
 
 #
 # Clock Source drivers
