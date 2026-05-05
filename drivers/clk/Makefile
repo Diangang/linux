@@ -127,7 +127,6 @@ obj-y					+= spacemit/
 obj-y					+= sprd/
 obj-y					+= starfive/
 obj-y					+= tenstorrent/
-obj-y					+= ti/
 obj-y					+= versatile/
 ifeq ($(CONFIG_COMMON_CLK), y)
 obj-$(CONFIG_X86)			+= x86/
