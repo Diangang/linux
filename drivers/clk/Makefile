@@ -118,7 +118,6 @@ obj-y					+= imgtec/
 obj-y					+= imx/
 obj-y					+= ingenic/
 obj-y					+= keystone/
-obj-y					+= mediatek/
 obj-y					+= microchip/
 obj-y					+= mstar/
 obj-y					+= mvebu/
