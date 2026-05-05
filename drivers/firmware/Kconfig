@@ -14,16 +14,6 @@ config ARM_SDE_INTERFACE
 	  standard for registering callbacks from the platform firmware
 	  into the OS. This is typically used to implement RAS notifications.
 
-config FIRMWARE_MEMMAP
-    bool "Add firmware-provided memory map to sysfs" if EXPERT
-    default X86
-    help
-      Add the firmware-provided (unmodified) memory map to /sys/firmware/memmap.
-      That memory map is used for example by kexec to set up parameter area
-      for the next kernel, but can also be used for debugging purposes.
-
-      See also Documentation/ABI/testing/sysfs-firmware-memmap.
-
 config DMI_SCAN_MACHINE_NON_EFI_FALLBACK
 	bool
 
