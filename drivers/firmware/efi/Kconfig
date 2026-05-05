@@ -116,8 +116,3 @@ endmenu
 
 config UEFI_CPER
 	bool
-
-config UEFI_CPER_ARM
-	bool
-	depends on UEFI_CPER && ( ARM || ARM64 )
-	default y

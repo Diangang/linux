@@ -657,17 +657,6 @@ cper_estatus_print_section(const char *pfx, struct acpi_hest_generic_data *gdata
 			cper_print_pcie(newpfx, pcie, gdata);
 		else
 			goto err_section_too_small;
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM)
-	} else if (guid_equal(sec_type, &CPER_SEC_PROC_ARM)) {
-		struct cper_sec_proc_arm *arm_err = acpi_hest_get_payload(gdata);
-
-		printk("%ssection_type: ARM processor error\n", newpfx);
-		if (gdata->error_data_length >= sizeof(*arm_err))
-			cper_print_proc_arm(newpfx, arm_err,
-					    gdata->error_data_length);
-		else
-			goto err_section_too_small;
-#endif
 	} else if (guid_equal(sec_type, &CPER_SEC_FW_ERR_REC_REF)) {
 		struct cper_sec_fw_err_rec_ref *fw_err = acpi_hest_get_payload(gdata);
 
