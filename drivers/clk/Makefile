@@ -128,7 +128,6 @@ obj-y					+= sophgo/
 obj-y					+= spacemit/
 obj-y					+= sprd/
 obj-y					+= starfive/
-obj-y					+= sunxi-ng/
 obj-y					+= tenstorrent/
 obj-y					+= ti/
 obj-y					+= versatile/
