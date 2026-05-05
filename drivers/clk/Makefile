@@ -122,7 +122,6 @@ obj-y					+= mvebu/
 obj-y					+= ralink/
 obj-y					+= socfpga/
 obj-y					+= spacemit/
-obj-y					+= sprd/
 obj-y					+= starfive/
 obj-y					+= tenstorrent/
 obj-y					+= versatile/
