@@ -49,6 +49,5 @@ obj-$(CONFIG_SYSFS)		+= sysfs/
 # Do not add any filesystems before this line
 obj-y				+= ramfs/
 obj-$(CONFIG_MINIX_FS)		+= minix/
-obj-$(CONFIG_DEBUG_FS)		+= debugfs/
 obj-$(CONFIG_PSTORE)		+= pstore/
 obj-$(CONFIG_BPF_LSM)		+= bpf_fs_kfuncs.o
