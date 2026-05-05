@@ -146,8 +146,3 @@ config UEFI_CPER_ARM
 	bool
 	depends on UEFI_CPER && ( ARM || ARM64 )
 	default y
-
-config UEFI_CPER_X86
-	bool
-	depends on UEFI_CPER && X86
-	default y
