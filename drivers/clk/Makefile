@@ -113,7 +113,6 @@ obj-$(CONFIG_COMMON_CLK_XGENE)		+= clk-xgene.o
 obj-y					+= actions/
 obj-y					+= analogbits/
 obj-y					+= aspeed/
-obj-y					+= bcm/
 obj-y					+= imgtec/
 obj-y					+= ingenic/
 obj-y					+= keystone/
