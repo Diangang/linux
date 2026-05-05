@@ -23,21 +23,6 @@ enum mpam_class_types {
 
 #define MPAM_CLASS_ID_DEFAULT	255
 
-#ifdef CONFIG_ACPI_MPAM
-int acpi_mpam_parse_resources(struct mpam_msc *msc,
-			      struct acpi_mpam_msc_node *tbl_msc);
-
-int acpi_mpam_count_msc(void);
-#else
-static inline int acpi_mpam_parse_resources(struct mpam_msc *msc,
-					    struct acpi_mpam_msc_node *tbl_msc)
-{
-	return -EINVAL;
-}
-
-static inline int acpi_mpam_count_msc(void) { return -EINVAL; }
-#endif
-
 #ifdef CONFIG_ARM64_MPAM_DRIVER
 int mpam_ris_create(struct mpam_msc *msc, u8 ris_idx,
 		    enum mpam_class_types type, u8 class_id, int component_id);

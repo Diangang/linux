@@ -14,7 +14,6 @@
 #include <linux/acpi.h>
 #include <linux/acpi_iort.h>
 #include <linux/acpi_rimt.h>
-#include <linux/acpi_viot.h>
 #include <linux/iommu.h>
 #include <linux/signal.h>
 #include <linux/kthread.h>
@@ -1625,8 +1624,6 @@ static int acpi_iommu_configure_id(struct device *dev, const u32 *id_in)
 	err = iort_iommu_configure_id(dev, id_in);
 	if (err && err != -EPROBE_DEFER)
 		err = rimt_iommu_configure_id(dev, id_in);
-	if (err && err != -EPROBE_DEFER)
-		err = viot_iommu_configure(dev);
 
 	mutex_unlock(&iommu_probe_device_lock);
 
@@ -2830,7 +2827,6 @@ void __init acpi_scan_init(void)
 	acpi_cmos_rtc_init();
 	acpi_container_init();
 	acpi_memory_hotplug_init();
-	acpi_watchdog_init();
 	acpi_pnp_init();
 	acpi_power_resources_init();
 	acpi_init_lpit();

@@ -61,18 +61,10 @@ acpi-$(CONFIG_DEBUG_FS)		+= debugfs.o
 acpi-y				+= acpi_lpat.o
 acpi-$(CONFIG_ACPI_LPIT)	+= acpi_lpit.o
 acpi-$(CONFIG_ACPI_GENERIC_GSI) += irq.o
-acpi-$(CONFIG_ACPI_WATCHDOG)	+= acpi_watchdog.o
 acpi-$(CONFIG_ACPI_PRMT)	+= prmt.o
-acpi-$(CONFIG_ACPI_PCC)		+= acpi_pcc.o
 acpi-$(CONFIG_ACPI_MRRM)	+= acpi_mrrm.o
 
-# Address translation
-acpi-$(CONFIG_ACPI_ADXL)	+= acpi_adxl.o
-
 # These are (potentially) separate modules
-
-# IPMI may be used by other drivers, so it has to initialise before them
-obj-$(CONFIG_ACPI_IPMI)		+= acpi_ipmi.o
 
 obj-$(CONFIG_ACPI_AC) 		+= ac.o
 obj-$(CONFIG_ACPI_BUTTON)	+= button.o
@@ -92,14 +84,10 @@ obj-$(CONFIG_ACPI_NUMA)		+= numa/
 obj-$(CONFIG_ACPI)		+= acpi_memhotplug.o
 obj-$(CONFIG_ACPI_HOTPLUG_IOAPIC) += ioapic.o
 obj-$(CONFIG_ACPI_BATTERY)	+= battery.o
-obj-$(CONFIG_ACPI_SBS)		+= sbshc.o
-obj-$(CONFIG_ACPI_SBS)		+= sbs.o
 obj-$(CONFIG_ACPI_HED)		+= hed.o
-obj-$(CONFIG_ACPI_EC_DEBUGFS)	+= ec_sys.o
 obj-$(CONFIG_ACPI_BGRT)		+= bgrt.o
 obj-$(CONFIG_ACPI_CPPC_LIB)	+= cppc_acpi.o
 obj-$(CONFIG_ACPI_SPCR_TABLE)	+= spcr.o
-obj-$(CONFIG_ACPI_DEBUGGER_USER) += acpi_dbg.o
 obj-$(CONFIG_ACPI_PPTT) 	+= pptt.o
 
 # processor has its own "processor." module_param namespace
@@ -108,18 +96,10 @@ processor-$(CONFIG_ACPI_PROCESSOR_IDLE) += processor_idle.o
 processor-$(CONFIG_ACPI_CPU_FREQ_PSS)	+= processor_throttling.o
 processor-$(CONFIG_CPU_FREQ)	+= processor_perflib.o
 
-obj-$(CONFIG_ACPI_PROCESSOR_AGGREGATOR) += acpi_pad.o
-
 obj-$(CONFIG_ACPI_APEI)		+= apei/
-
-obj-$(CONFIG_ACPI_EXTLOG)	+= acpi_extlog.o
-
-obj-$(CONFIG_ACPI_CONFIGFS)	+= acpi_configfs.o
 
 video-objs			+= acpi_video.o video_detect.o
 
 obj-$(CONFIG_ARM64)		+= arm64/
-
-obj-$(CONFIG_ACPI_VIOT)		+= viot.o
 
 obj-$(CONFIG_X86)		+= x86/

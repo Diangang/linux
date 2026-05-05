@@ -85,7 +85,6 @@ acpi-y +=		\
 	hwxfsleep.o
 
 acpi-$(CONFIG_PCI) += hwpci.o
-acpi-$(ACPI_FUTURE_USAGE) += hwtimer.o
 
 acpi-y +=		\
 	nsaccess.o	\
@@ -109,8 +108,6 @@ acpi-y +=		\
 	nsxfeval.o	\
 	nsxfname.o	\
 	nsxfobj.o
-
-acpi-$(ACPI_FUTURE_USAGE) += nsdumpdv.o
 
 acpi-y +=		\
 	psargs.o	\
@@ -187,5 +184,4 @@ acpi-y +=		\
 	utxfinit.o	\
 	utxferror.o	\
 	utxfmutex.o
-
 

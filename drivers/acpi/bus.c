@@ -26,7 +26,6 @@
 #include <asm/mpspec.h>
 #include <linux/dmi.h>
 #endif
-#include <linux/acpi_viot.h>
 #include <linux/pci.h>
 #include <acpi/apei.h>
 #include <linux/suspend.h>
@@ -463,9 +462,6 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 		if (IS_ENABLED(CONFIG_SCHED_MC_PRIO))
 			feature_mask |= OSC_SB_CPC_DIVERSE_HIGH_SUPPORT;
 	}
-
-	if (IS_ENABLED(CONFIG_ACPI_PROCESSOR_AGGREGATOR))
-		feature_mask |= OSC_SB_PAD_SUPPORT;
 
 	if (IS_ENABLED(CONFIG_ACPI_PROCESSOR))
 		feature_mask |= OSC_SB_PPC_OST_SUPPORT;
@@ -1506,7 +1502,6 @@ static int __init acpi_init(void)
 	}
 
 	init_prmt();
-	acpi_init_pcc();
 	result = acpi_bus_init();
 	if (result) {
 		kobject_put(acpi_kobj);
@@ -1516,7 +1511,6 @@ static int __init acpi_init(void)
 	acpi_init_ffh();
 
 	pci_mmcfg_late_init();
-	acpi_viot_early_init();
 	acpi_hest_init();
 	acpi_ghes_init();
 	acpi_arch_init();
@@ -1527,7 +1521,6 @@ static int __init acpi_init(void)
 	acpi_wakeup_device_init();
 	acpi_debugger_init();
 	acpi_setup_sb_notify_handler();
-	acpi_viot_init();
 	return 0;
 }
 

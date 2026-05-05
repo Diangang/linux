@@ -311,16 +311,6 @@ void acpi_extract_apple_properties(struct acpi_device *adev);
 static inline void acpi_extract_apple_properties(struct acpi_device *adev) {}
 #endif
 
-/*--------------------------------------------------------------------------
-				Watchdog
-  -------------------------------------------------------------------------- */
-
-#ifdef CONFIG_ACPI_WATCHDOG
-void acpi_watchdog_init(void);
-#else
-static inline void acpi_watchdog_init(void) {}
-#endif
-
 #ifdef CONFIG_ACPI_LPIT
 void acpi_init_lpit(void);
 #else

@@ -66,17 +66,6 @@ config ACPI_THERMAL_LIB
        depends on THERMAL
        bool
 
-if ACPI_DEBUGGER
-
-config ACPI_DEBUGGER_USER
-	tristate "Userspace debugger accessibility"
-	depends on DEBUG_FS
-	help
-	  Export /sys/kernel/debug/acpi/acpidbg for userspace utilities
-	  to access the debugger functionalities.
-
-endif
-
 config ACPI_SPCR_TABLE
 	bool "ACPI Serial Port Console Redirection Support"
 	default y if X86
@@ -123,24 +112,6 @@ config ACPI_EC
 	help
 	  This driver handles communication with the microcontroller
 	  on many x86/LoongArch laptops and other machines.
-
-config ACPI_EC_DEBUGFS
-	tristate "EC read/write access through /sys/kernel/debug/ec"
-	depends on ACPI_EC
-	help
-	  Say N to disable Embedded Controller /sys/kernel/debug interface
-
-	  Be aware that using this interface can confuse your Embedded
-	  Controller in a way that a normal reboot is not enough. You then
-	  have to power off your system, and remove the laptop battery for
-	  some seconds.
-	  An Embedded Controller typically is available on laptops and reads
-	  sensor values like battery state and temperature.
-	  The kernel accesses the EC through ACPI parsed code provided by BIOS
-	  tables. This option allows to access the EC directly without ACPI
-	  code being involved.
-	  Thus this option is a debug option that helps to write ACPI drivers
-	  and can be used to identify ACPI code or EC firmware bugs.
 
 config ACPI_AC
 	tristate "AC Adapter"
@@ -262,32 +233,10 @@ config ACPI_PROCESSOR
 	  To compile this driver as a module, choose M here:
 	  the module will be called processor.
 
-config ACPI_IPMI
-	tristate "IPMI"
-	depends on IPMI_HANDLER
-	help
-	  This driver enables the ACPI to access the BMC controller. And it
-	  uses the IPMI request/response message to communicate with BMC
-	  controller, which can be found on the server.
-
-	  To compile this driver as a module, choose M here:
-	  the module will be called as acpi_ipmi.
-
 config ACPI_HOTPLUG_CPU
 	bool
 	depends on ACPI_PROCESSOR && HOTPLUG_CPU
 	select ACPI_CONTAINER
-
-config ACPI_PROCESSOR_AGGREGATOR
-	tristate "Processor Aggregator"
-	depends on ACPI_PROCESSOR
-	depends on X86
-	help
-	  ACPI 4.0 defines processor Aggregator, which enables OS to perform
-	  specific processor configuration and control that applies to all
-	  processors in the platform. Currently only logical processor idling
-	  is defined, which is to reduce power consumption. This driver
-	  supports the new device.
 
 config ACPI_THERMAL
 	tristate "Thermal Zone"
@@ -385,17 +334,6 @@ config ACPI_HOTPLUG_IOAPIC
 	depends on X86_IO_APIC
 	default y
 
-config ACPI_SBS
-	tristate "Smart Battery System"
-	depends on X86 && ACPI_EC
-	depends on POWER_SUPPLY
-	help
-	  This driver supports the Smart Battery System, another
-	  type of access to battery information, found on some laptops.
-
-	  To compile this driver as a module, choose M here:
-	  the modules will be called sbs and sbshc.
-
 config ACPI_HED
 	bool "Hardware Error Device"
 	help
@@ -429,42 +367,6 @@ config ACPI_NHLT
 source "drivers/acpi/numa/Kconfig"
 source "drivers/acpi/apei/Kconfig"
 
-config ACPI_WATCHDOG
-	bool
-
-config ACPI_EXTLOG
-	tristate "Extended Error Log support"
-	depends on X86_MCE && X86_LOCAL_APIC && EDAC
-	select UEFI_CPER
-	select ACPI_APEI
-	select ACPI_APEI_GHES
-	help
-	  Certain usages such as Predictive Failure Analysis (PFA) require
-	  more information about the error than what can be described in
-	  processor machine check banks. Most server processors log
-	  additional information about the error in processor uncore
-	  registers. Since the addresses and layout of these registers vary
-	  widely from one processor to another, system software cannot
-	  readily make use of them. To complicate matters further, some of
-	  the additional error information cannot be constructed without
-	  detailed knowledge about platform topology.
-
-	  Enhanced MCA Logging allows firmware to provide additional error
-	  information to system software, synchronous with MCE or CMCI. This
-	  driver adds support for that functionality with corresponding
-	  tracepoint which carries that information to userspace.
-
-config ACPI_ADXL
-	bool
-
-config ACPI_CONFIGFS
-	tristate "ACPI configfs support"
-	depends on CONFIGFS_FS
-	help
-	  Select this option to enable support for ACPI configuration from
-	  userspace. The configurable ACPI groups will be visible under
-	  /config/acpi, assuming configfs is mounted under /config.
-
 if ARM64
 source "drivers/acpi/arm64/Kconfig"
 endif
@@ -472,27 +374,7 @@ endif
 config ACPI_PPTT
 	bool
 
-config ACPI_PCC
-	bool "ACPI PCC Address Space"
-	depends on PCC
-	default y
-	help
-	  The PCC Address Space also referred as PCC Operation Region pertains
-	  to the region of PCC subspace that succeeds the PCC signature.
-
-	  The PCC Operation Region works in conjunction with the PCC Table
-	  (Platform Communications Channel Table). PCC subspaces that are
-	  marked for use as PCC Operation Regions must not be used as PCC
-	  subspaces for the standard ACPI features such as CPPC, RASF, PDTT and
-	  MPST. These standard features must always use the PCC Table instead.
-
-	  Enable this feature if you want to set up and install the PCC Address
-	  Space handler to handle PCC OpRegion in the firmware.
-
 config ACPI_MRRM
-	bool
-
-config ACPI_VIOT
 	bool
 
 config ACPI_PRMT

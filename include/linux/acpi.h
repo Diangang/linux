@@ -1497,12 +1497,6 @@ void acpi_table_upgrade(void);
 static inline void acpi_table_upgrade(void) { }
 #endif
 
-#if defined(CONFIG_ACPI) && defined(CONFIG_ACPI_WATCHDOG)
-extern bool acpi_has_watchdog(void);
-#else
-static inline bool acpi_has_watchdog(void) { return false; }
-#endif
-
 #ifdef CONFIG_ACPI_SPCR_TABLE
 extern bool qdf2400_e44_present;
 int acpi_parse_spcr(bool enable_earlycon, bool enable_console);
@@ -1592,12 +1586,6 @@ static inline int acpi_pptt_get_cpumask_from_cache_id(u32 cache_id,
 #endif
 
 void acpi_arch_init(void);
-
-#ifdef CONFIG_ACPI_PCC
-void acpi_init_pcc(void);
-#else
-static inline void acpi_init_pcc(void) { }
-#endif
 
 static inline void acpi_init_ffh(void) { }
 
