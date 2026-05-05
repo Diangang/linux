@@ -3,12 +3,6 @@
 config DMAR_TABLE
 	bool
 
-config DMAR_PERF
-	bool
-
-config DMAR_DEBUG
-	bool
-
 config INTEL_IOMMU
 	bool "Support for Intel IOMMU using DMA Remapping Devices"
 	depends on PCI_MSI && ACPI && X86
@@ -34,31 +28,6 @@ config INTEL_IOMMU
 	  remapping devices.
 
 if INTEL_IOMMU
-
-config INTEL_IOMMU_DEBUGFS
-	bool "Export Intel IOMMU internals in Debugfs"
-	depends on IOMMU_DEBUGFS
-	select DMAR_PERF
-	select DMAR_DEBUG
-	help
-	  !!!WARNING!!!
-
-	  DO NOT ENABLE THIS OPTION UNLESS YOU REALLY KNOW WHAT YOU ARE DOING!!!
-
-	  Expose Intel IOMMU internals in Debugfs.
-
-	  This option is -NOT- intended for production environments, and should
-	  only be enabled for debugging Intel IOMMU.
-
-config INTEL_IOMMU_SVM
-	bool "Support for Shared Virtual Memory with Intel IOMMU"
-	depends on X86_64
-	select MMU_NOTIFIER
-	select IOMMU_SVA
-	help
-	  Shared Virtual Memory (SVM) provides a facility for devices
-	  to access DMA resources through process address space by
-	  means of a Process Address Space ID (PASID).
 
 config INTEL_IOMMU_DEFAULT_ON
 	bool "Enable Intel DMA Remapping Devices by default"
