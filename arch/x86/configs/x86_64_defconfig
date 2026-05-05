@@ -1092,7 +1092,6 @@ CONFIG_HPET=y
 # CONFIG_TELCLOCK is not set
 # end of Character devices
 
-CONFIG_GPIOLIB_LEGACY=y
 CONFIG_DMADEVICES=y
 
 #

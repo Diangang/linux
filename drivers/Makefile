@@ -12,8 +12,6 @@ obj-y				+= bus/
 
 obj-y				+= pci/
 
-obj-y				+= idle/
-
 obj-$(CONFIG_ACPI)		+= acpi/
 
 # PnP must come after ACPI since it will eventually need to check if acpi

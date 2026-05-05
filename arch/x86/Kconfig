@@ -2693,8 +2693,6 @@ config APM_ALLOW_INTS
 
 endif # APM
 
-source "drivers/idle/Kconfig"
-
 endmenu
 
 menu "Bus options (PCI etc.)"

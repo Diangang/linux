@@ -31,8 +31,6 @@ source "drivers/scsi/Kconfig"
 
 source "drivers/char/Kconfig"
 
-source "drivers/gpio/Kconfig"
-
 source "drivers/dma/Kconfig"
 
 source "drivers/virtio/Kconfig"
