@@ -700,7 +700,6 @@ static int __init psci_probe(void)
 		psci_init_system_suspend();
 		psci_init_system_reset2();
 		psci_init_system_off2();
-		kvm_init_hyp_services();
 	}
 
 	return 0;
