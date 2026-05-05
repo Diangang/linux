@@ -169,8 +169,7 @@ static int __init arm_dmi_init(void)
 {
 	/*
 	 * On arm64/ARM, DMI depends on UEFI, and dmi_setup() needs to
-	 * be called early because dmi_id_init(), which is an arch_initcall
-	 * itself, depends on dmi_scan_machine() having been called already.
+	 * be called early so DMI table data is available to later users.
 	 */
 	dmi_setup();
 	return 0;
