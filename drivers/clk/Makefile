@@ -122,7 +122,6 @@ obj-y					+= microchip/
 obj-y					+= mstar/
 obj-y					+= mvebu/
 obj-y					+= ralink/
-obj-y					+= renesas/
 obj-y					+= socfpga/
 obj-y					+= sophgo/
 obj-y					+= spacemit/
