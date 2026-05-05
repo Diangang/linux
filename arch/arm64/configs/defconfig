@@ -993,18 +993,11 @@ CONFIG_ARM_SCMI_TRANSPORT_SMC=y
 # CONFIG_ARM_SCMI_TRANSPORT_VIRTIO is not set
 # end of SCMI Transport Drivers
 
-#
-# ARM SCMI NXP i.MX Vendor Protocols
-#
-# CONFIG_IMX_SCMI_BBM_EXT is not set
-# end of ARM SCMI NXP i.MX Vendor Protocols
-
 # CONFIG_ARM_SCMI_POWER_CONTROL is not set
 # end of ARM System Control and Management Interface Protocol
 
 CONFIG_ARM_SDE_INTERFACE=y
 CONFIG_DMIID=y
-# CONFIG_ARM_FFA_TRANSPORT is not set
 # CONFIG_GOOGLE_FRAMEBUFFER_COREBOOT is not set
 # CONFIG_GOOGLE_MEMCONSOLE_COREBOOT is not set
 # CONFIG_GOOGLE_VPD is not set

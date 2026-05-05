@@ -83,8 +83,6 @@ config ARM_SCMI_QUIRKS
 	  compatibles.
 
 source "drivers/firmware/arm_scmi/transports/Kconfig"
-source "drivers/firmware/arm_scmi/vendors/imx/Kconfig"
-
 endif #ARM_SCMI_PROTOCOL
 
 config ARM_SCMI_POWER_CONTROL
