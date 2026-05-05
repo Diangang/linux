@@ -121,7 +121,6 @@ obj-y					+= mstar/
 obj-y					+= mvebu/
 obj-y					+= ralink/
 obj-y					+= socfpga/
-obj-y					+= sophgo/
 obj-y					+= spacemit/
 obj-y					+= sprd/
 obj-y					+= starfive/
