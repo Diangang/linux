@@ -19,7 +19,7 @@
 
 set -e
 
-if [ "$(basename $2)" = "Image.gz" ] || [ "$(basename $2)" = "vmlinuz.efi" ]
+if [ "$(basename $2)" = "Image.gz" ]
 then
 # Compressed install
   echo "Installing compressed kernel"

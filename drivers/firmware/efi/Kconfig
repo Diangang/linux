@@ -72,19 +72,6 @@ config EFI_RUNTIME_WRAPPERS
 config EFI_GENERIC_STUB
 	bool
 
-config EFI_ZBOOT
-	bool "Enable the generic EFI decompressor"
-	depends on EFI_GENERIC_STUB && !ARM
-	select HAVE_KERNEL_GZIP
-	select HAVE_KERNEL_ZSTD
-	help
-	  Create the bootable image as an EFI application that carries the
-	  actual kernel image in compressed form, and decompresses it into
-	  memory before executing it. For compatibility with non-EFI loaders,
-	  the payload can be decompressed and executed by the loader as well,
-	  provided that the loader implements the decompression algorithm.
-	  (The compression algorithm used is described in the zboot header)
-
 config EFI_ARMSTUB_DTB_LOADER
 	bool "Enable the DTB loader"
 	depends on EFI_GENERIC_STUB && !RISCV && !LOONGARCH
@@ -155,7 +142,7 @@ config EFI_SBAT
 
 config EFI_SBAT_FILE
 	string "Embedded SBAT section file path"
-	depends on EFI_ZBOOT || (EFI_STUB && X86)
+	depends on EFI_STUB && X86
 	help
 	  SBAT section provides a way to improve SecureBoot revocations of UEFI
 	  binaries by introducing a generation-based mechanism. With SBAT, older

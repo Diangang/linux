@@ -18,8 +18,7 @@
  *
  * The latter is preferred because it makes the EFIFB earlycon available very
  * early, but it only works if the EFI stub is part of the core kernel image
- * itself. The zboot decompressor can only use the configuration table
- * approach.
+ * itself.
  */
 
 static efi_guid_t primary_display_guid = LINUX_EFI_PRIMARY_DISPLAY_TABLE_GUID;
