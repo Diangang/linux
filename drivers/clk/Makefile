@@ -14,5 +14,3 @@ obj-$(CONFIG_COMMON_CLK)	+= clk-gpio.o
 ifeq ($(CONFIG_OF), y)
 obj-$(CONFIG_COMMON_CLK)	+= clk-conf.o
 endif
-
-obj-$(CONFIG_COMMON_CLK_SCMI)	+= clk-scmi.o

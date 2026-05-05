@@ -7,7 +7,6 @@ obj-$(CONFIG_DMI)		+= dmi_scan.o
 obj-$(CONFIG_DMIID)		+= dmi-id.o
 obj-$(CONFIG_FIRMWARE_MEMMAP)	+= memmap.o
 
-obj-y				+= arm_scmi/
 obj-y				+= efi/
 obj-y				+= psci/
 obj-y				+= smccc/
