@@ -44,9 +44,6 @@ config BLK_CGROUP_RWSTAT
 config BLK_CGROUP_PUNT_BIO
 	bool
 
-config BLK_DEV_BSG_COMMON
-	tristate
-
 config BLK_ICQ
 	bool
 
@@ -115,18 +112,6 @@ config BLK_CGROUP_IOPRIO
 	requests. The I/O priority class affects the order in which an I/O
 	scheduler and block devices process requests. Only some I/O schedulers
 	and some block devices support I/O priorities.
-
-config BLK_DEBUG_FS
-	bool "Block layer debugging information in debugfs"
-	default y
-	depends on DEBUG_FS
-	help
-	Include block layer debugging information in debugfs. This information
-	is mostly useful for kernel developers, but it doesn't incur any cost
-	at runtime.
-
-	Unless you are building a kernel for a tiny system, you should
-	say Y here.
 
 config BLK_SED_OPAL
 	bool "Logic for interfacing with Opal enabled SEDs"

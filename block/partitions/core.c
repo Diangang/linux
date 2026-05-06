@@ -15,77 +15,11 @@
 #include "check.h"
 
 static int (*const check_part[])(struct parsed_partitions *) = {
-	/*
-	 * Probe partition formats with tables at disk address 0
-	 * that also have an ADFS boot block at 0xdc0.
-	 */
-#ifdef CONFIG_ACORN_PARTITION_ICS
-	adfspart_check_ICS,
-#endif
-#ifdef CONFIG_ACORN_PARTITION_POWERTEC
-	adfspart_check_POWERTEC,
-#endif
-#ifdef CONFIG_ACORN_PARTITION_EESOX
-	adfspart_check_EESOX,
-#endif
-
-	/*
-	 * Now move on to formats that only have partition info at
-	 * disk address 0xdc0.  Since these may also have stale
-	 * PC/BIOS partition tables, they need to come before
-	 * the msdos entry.
-	 */
-#ifdef CONFIG_ACORN_PARTITION_CUMANA
-	adfspart_check_CUMANA,
-#endif
-#ifdef CONFIG_ACORN_PARTITION_ADFS
-	adfspart_check_ADFS,
-#endif
-
-#ifdef CONFIG_CMDLINE_PARTITION
-	cmdline_partition,
-#endif
-#ifdef CONFIG_OF_PARTITION
-	of_partition,		/* cmdline have priority to OF */
-#endif
 #ifdef CONFIG_EFI_PARTITION
 	efi_partition,		/* this must come before msdos */
 #endif
-#ifdef CONFIG_SGI_PARTITION
-	sgi_partition,
-#endif
-#ifdef CONFIG_LDM_PARTITION
-	ldm_partition,		/* this must come before msdos */
-#endif
 #ifdef CONFIG_MSDOS_PARTITION
 	msdos_partition,
-#endif
-#ifdef CONFIG_OSF_PARTITION
-	osf_partition,
-#endif
-#ifdef CONFIG_SUN_PARTITION
-	sun_partition,
-#endif
-#ifdef CONFIG_AMIGA_PARTITION
-	amiga_partition,
-#endif
-#ifdef CONFIG_ATARI_PARTITION
-	atari_partition,
-#endif
-#ifdef CONFIG_MAC_PARTITION
-	mac_partition,
-#endif
-#ifdef CONFIG_ULTRIX_PARTITION
-	ultrix_partition,
-#endif
-#ifdef CONFIG_IBM_PARTITION
-	ibm_partition,
-#endif
-#ifdef CONFIG_KARMA_PARTITION
-	karma_partition,
-#endif
-#ifdef CONFIG_SYSV68_PARTITION
-	sysv68_partition,
 #endif
 	NULL
 };
