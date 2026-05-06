@@ -383,8 +383,6 @@ config VCC
 	help
 	  Support for Sun logical domain consoles.
 
-source "drivers/tty/hvc/Kconfig"
-
 config RPMSG_TTY
 	tristate "RPMSG tty driver"
 	depends on RPMSG
