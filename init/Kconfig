@@ -526,7 +526,6 @@ config AUDITSYSCALL
 
 source "kernel/irq/Kconfig"
 source "kernel/time/Kconfig"
-source "kernel/bpf/Kconfig"
 source "kernel/Kconfig.preempt"
 
 menu "CPU/Task time and stats accounting"
@@ -1207,20 +1206,6 @@ config CGROUP_PERF
 	  so that it can monitor performance events among cgroups.
 
 	  Say N if unsure.
-
-config CGROUP_BPF
-	bool "Support for eBPF programs attached to cgroups"
-	depends on BPF_SYSCALL
-	depends on BROKEN
-	select SOCK_CGROUP_DATA
-	help
-	  Allow attaching eBPF programs to a cgroup using the bpf(2)
-	  syscall command BPF_PROG_ATTACH.
-
-	  In which context these programs are accessed depends on the type
-	  of attachment. For instance, programs that are attached using
-	  BPF_CGROUP_INET_INGRESS will be executed on the ingress path of
-	  inet sockets.
 
 config CGROUP_MISC
 	bool "Misc resource controller"
