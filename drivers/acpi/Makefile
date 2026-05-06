@@ -66,26 +66,12 @@ acpi-$(CONFIG_ACPI_MRRM)	+= acpi_mrrm.o
 
 # These are (potentially) separate modules
 
-obj-$(CONFIG_ACPI_AC) 		+= ac.o
-obj-$(CONFIG_ACPI_BUTTON)	+= button.o
-obj-$(CONFIG_ACPI_FAN)		+= fan.o
-fan-objs			:= fan_core.o
-fan-objs			+= fan_attr.o
-fan-$(CONFIG_HWMON)		+= fan_hwmon.o
-
-obj-$(CONFIG_ACPI_VIDEO)	+= video.o
 obj-$(CONFIG_ACPI_PROCESSOR)	+= processor.o
 obj-$(CONFIG_ACPI)		+= container.o
-obj-$(CONFIG_ACPI_THERMAL_LIB)	+= thermal_lib.o
-obj-$(CONFIG_ACPI_THERMAL)	+= thermal.o
-obj-$(CONFIG_ACPI_PLATFORM_PROFILE) 	+= platform_profile.o
-obj-$(CONFIG_ACPI_NHLT)		+= nhlt.o
 obj-$(CONFIG_ACPI_NUMA)		+= numa/
 obj-$(CONFIG_ACPI)		+= acpi_memhotplug.o
 obj-$(CONFIG_ACPI_HOTPLUG_IOAPIC) += ioapic.o
-obj-$(CONFIG_ACPI_BATTERY)	+= battery.o
 obj-$(CONFIG_ACPI_HED)		+= hed.o
-obj-$(CONFIG_ACPI_CPPC_LIB)	+= cppc_acpi.o
 obj-$(CONFIG_ACPI_SPCR_TABLE)	+= spcr.o
 obj-$(CONFIG_ACPI_PPTT) 	+= pptt.o
 
@@ -96,8 +82,6 @@ processor-$(CONFIG_ACPI_CPU_FREQ_PSS)	+= processor_throttling.o
 processor-$(CONFIG_CPU_FREQ)	+= processor_perflib.o
 
 obj-$(CONFIG_ACPI_APEI)		+= apei/
-
-video-objs			+= acpi_video.o video_detect.o
 
 obj-$(CONFIG_ARM64)		+= arm64/
 
