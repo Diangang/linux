@@ -27,10 +27,8 @@ scsi_mod-y			+= scsi.o hosts.o scsi_ioctl.o \
 scsi_mod-$(CONFIG_SCSI_DMA)	+= scsi_lib_dma.o
 scsi_mod-y			+= scsi_scan.o scsi_sysfs.o scsi_devinfo.o
 scsi_mod-$(CONFIG_SYSCTL)	+= scsi_sysctl.o
-scsi_mod-$(CONFIG_SCSI_PROC_FS)	+= scsi_proc.o
 scsi_mod-y			+= scsi_trace.o scsi_logging.o
 scsi_mod-$(CONFIG_PM)		+= scsi_pm.o
-scsi_mod-$(CONFIG_BLK_DEV_BSG)	+= scsi_bsg.o
 
 sd_mod-objs	:= sd.o
 

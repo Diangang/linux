@@ -1441,17 +1441,6 @@ int scsi_sysfs_add_sdev(struct scsi_device *sdev)
 	transport_add_device(&sdev->sdev_gendev);
 	sdev->is_visible = 1;
 
-	if (IS_ENABLED(CONFIG_BLK_DEV_BSG)) {
-		sdev->bsg_dev = scsi_bsg_register_queue(sdev);
-		if (IS_ERR(sdev->bsg_dev)) {
-			error = PTR_ERR(sdev->bsg_dev);
-			sdev_printk(KERN_INFO, sdev,
-				    "Failed to register bsg queue, errno=%d\n",
-				    error);
-			sdev->bsg_dev = NULL;
-		}
-	}
-
 	scsi_autopm_put_device(sdev);
 	return error;
 }
@@ -1491,8 +1480,6 @@ void __scsi_remove_device(struct scsi_device *sdev)
 		if (res != 0)
 			return;
 
-		if (IS_ENABLED(CONFIG_BLK_DEV_BSG) && sdev->bsg_dev)
-			bsg_unregister_queue(sdev->bsg_dev);
 		device_unregister(&sdev->sdev_dev);
 		transport_remove_device(dev);
 		device_del(dev);

@@ -5,8 +5,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#include <linux/proc_fs.h>
-#include <linux/seq_file.h>
 #include <linux/slab.h>
 
 #include <scsi/scsi_device.h>
@@ -589,137 +587,6 @@ blist_flags_t scsi_get_device_flags_keyed(struct scsi_device *sdev,
 }
 EXPORT_SYMBOL(scsi_get_device_flags_keyed);
 
-#ifdef CONFIG_SCSI_PROC_FS
-struct double_list {
-	struct list_head *top;
-	struct list_head *bottom;
-};
-
-static int devinfo_seq_show(struct seq_file *m, void *v)
-{
-	struct double_list *dl = v;
-	struct scsi_dev_info_list_table *devinfo_table =
-		list_entry(dl->top, struct scsi_dev_info_list_table, node);
-	struct scsi_dev_info_list *devinfo =
-		list_entry(dl->bottom, struct scsi_dev_info_list,
-			   dev_info_list);
-
-	if (devinfo_table->scsi_dev_info_list.next == dl->bottom &&
-	    devinfo_table->name)
-		seq_printf(m, "[%s]:\n", devinfo_table->name);
-
-	seq_printf(m, "'%.8s' '%.16s' 0x%llx\n",
-		   devinfo->vendor, devinfo->model, devinfo->flags);
-	return 0;
-}
-
-static void *devinfo_seq_start(struct seq_file *m, loff_t *ppos)
-{
-	struct double_list *dl = kmalloc_obj(*dl);
-	loff_t pos = *ppos;
-
-	if (!dl)
-		return NULL;
-
-	list_for_each(dl->top, &scsi_dev_info_list) {
-		struct scsi_dev_info_list_table *devinfo_table =
-			list_entry(dl->top, struct scsi_dev_info_list_table,
-				   node);
-		list_for_each(dl->bottom, &devinfo_table->scsi_dev_info_list)
-			if (pos-- == 0)
-				return dl;
-	}
-
-	kfree(dl);
-	return NULL;
-}
-
-static void *devinfo_seq_next(struct seq_file *m, void *v, loff_t *ppos)
-{
-	struct double_list *dl = v;
-	struct scsi_dev_info_list_table *devinfo_table =
-		list_entry(dl->top, struct scsi_dev_info_list_table, node);
-
-	++*ppos;
-	dl->bottom = dl->bottom->next;
-	while (&devinfo_table->scsi_dev_info_list == dl->bottom) {
-		dl->top = dl->top->next;
-		if (dl->top == &scsi_dev_info_list) {
-			kfree(dl);
-			return NULL;
-		}
-		devinfo_table = list_entry(dl->top,
-					   struct scsi_dev_info_list_table,
-					   node);
-		dl->bottom = devinfo_table->scsi_dev_info_list.next;
-	}
-
-	return dl;
-}
-
-static void devinfo_seq_stop(struct seq_file *m, void *v)
-{
-	kfree(v);
-}
-
-static const struct seq_operations scsi_devinfo_seq_ops = {
-	.start	= devinfo_seq_start,
-	.next	= devinfo_seq_next,
-	.stop	= devinfo_seq_stop,
-	.show	= devinfo_seq_show,
-};
-
-static int proc_scsi_devinfo_open(struct inode *inode, struct file *file)
-{
-	return seq_open(file, &scsi_devinfo_seq_ops);
-}
-
-/*
- * proc_scsi_dev_info_write - allow additions to scsi_dev_info_list via /proc.
- *
- * Description: Adds a black/white list entry for vendor and model with an
- * integer value of flag to the scsi device info list.
- * To use, echo "vendor:model:flag" > /proc/scsi/device_info
- */
-static ssize_t proc_scsi_devinfo_write(struct file *file,
-				       const char __user *buf,
-				       size_t length, loff_t *ppos)
-{
-	char *buffer;
-	ssize_t err = length;
-
-	if (!buf || length>PAGE_SIZE)
-		return -EINVAL;
-	if (!(buffer = (char *) __get_free_page(GFP_KERNEL)))
-		return -ENOMEM;
-	if (copy_from_user(buffer, buf, length)) {
-		err =-EFAULT;
-		goto out;
-	}
-
-	if (length < PAGE_SIZE)
-		buffer[length] = '\0';
-	else if (buffer[PAGE_SIZE-1]) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	scsi_dev_info_list_add_str(buffer);
-
-out:
-	free_page((unsigned long)buffer);
-	return err;
-}
-
-static const struct proc_ops scsi_devinfo_proc_ops = {
-	.proc_open	= proc_scsi_devinfo_open,
-	.proc_read	= seq_read,
-	.proc_write	= proc_scsi_devinfo_write,
-	.proc_lseek	= seq_lseek,
-	.proc_release	= seq_release,
-};
-#endif /* CONFIG_SCSI_PROC_FS */
-
 module_param_string(dev_flags, scsi_dev_flags, sizeof(scsi_dev_flags), 0);
 MODULE_PARM_DESC(dev_flags,
 	 "Given scsi_dev_flags=vendor:model:flags[,v:m:f] add black/white"
@@ -735,10 +602,6 @@ MODULE_PARM_DESC(default_dev_flags,
  **/
 void scsi_exit_devinfo(void)
 {
-#ifdef CONFIG_SCSI_PROC_FS
-	remove_proc_entry("scsi/device_info", NULL);
-#endif
-
 	scsi_dev_info_remove_list(SCSI_DEVINFO_GLOBAL);
 }
 
@@ -817,9 +680,6 @@ EXPORT_SYMBOL(scsi_dev_info_remove_list);
  */
 int __init scsi_init_devinfo(void)
 {
-#ifdef CONFIG_SCSI_PROC_FS
-	struct proc_dir_entry *p;
-#endif
 	int error, i;
 
 	error = scsi_dev_info_add_list(SCSI_DEVINFO_GLOBAL, NULL);
@@ -839,14 +699,6 @@ int __init scsi_init_devinfo(void)
 		if (error)
 			goto out;
 	}
-
-#ifdef CONFIG_SCSI_PROC_FS
-	p = proc_create("scsi/device_info", 0, NULL, &scsi_devinfo_proc_ops);
-	if (!p) {
-		error = -ENOMEM;
-		goto out;
-	}
-#endif /* CONFIG_SCSI_PROC_FS */
 
  out:
 	if (error)

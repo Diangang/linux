@@ -6,7 +6,6 @@
 #include <scsi/scsi_device.h>
 #include <linux/sbitmap.h>
 
-struct bsg_device;
 struct request_queue;
 struct request;
 struct scsi_cmnd;
@@ -108,22 +107,12 @@ extern void scsi_mq_free_tags(struct kref *kref);
 extern void scsi_exit_queue(void);
 extern void scsi_evt_thread(struct work_struct *work);
 
-/* scsi_proc.c */
-#ifdef CONFIG_SCSI_PROC_FS
-extern int scsi_proc_hostdir_add(const struct scsi_host_template *);
-extern void scsi_proc_hostdir_rm(const struct scsi_host_template *);
-extern void scsi_proc_host_add(struct Scsi_Host *);
-extern void scsi_proc_host_rm(struct Scsi_Host *);
-extern int scsi_init_procfs(void);
-extern void scsi_exit_procfs(void);
-#else
 # define scsi_proc_hostdir_add(sht)	0
 # define scsi_proc_hostdir_rm(sht)	do { } while (0)
 # define scsi_proc_host_add(shost)	do { } while (0)
 # define scsi_proc_host_rm(shost)	do { } while (0)
 # define scsi_init_procfs()		(0)
 # define scsi_exit_procfs()		do { } while (0)
-#endif /* CONFIG_PROC_FS */
 
 /* scsi_scan.c */
 void scsi_enable_async_suspend(struct device *dev);
@@ -187,8 +176,6 @@ void scsi_dh_release_device(struct scsi_device *sdev);
 static inline void scsi_dh_add_device(struct scsi_device *sdev) { }
 static inline void scsi_dh_release_device(struct scsi_device *sdev) { }
 #endif
-
-struct bsg_device *scsi_bsg_register_queue(struct scsi_device *sdev);
 
 extern int scsi_device_max_queue_depth(struct scsi_device *sdev);
 
