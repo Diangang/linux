@@ -15,12 +15,6 @@ config REGMAP
 
 	  If unsure, say N.
 
-config REGMAP_KUNIT
-	tristate "KUnit tests for regmap"
-	depends on KUNIT && REGMAP
-	default KUNIT_ALL_TESTS
-	select REGMAP_RAM
-
 config REGMAP_BUILD
 	bool "Enable regmap build"
 	depends on KUNIT
