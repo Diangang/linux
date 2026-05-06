@@ -3,7 +3,7 @@
 # Branch profiling isn't noinstr-safe
 subdir-ccflags-$(CONFIG_TRACE_BRANCH_PROFILING) += -DDISABLE_BRANCH_PROFILING
 
-obj-y			+= kernel/ mm/ net/
+obj-y			+= kernel/ mm/
 
 # for cleaning
 subdir- += boot

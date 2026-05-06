@@ -88,7 +88,6 @@ config ARM64
 	select ARCH_SUPPORTS_SCHED_MC
 	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH
 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION if COMPAT
-	select ARCH_WANT_DEFAULT_BPF_JIT
 	select ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT
 	select ARCH_WANT_FRAME_POINTERS
 	select ARCH_WANT_HUGE_PMD_SHARE if ARM64_4K_PAGES || (ARM64_16K_PAGES && !ARM64_VA_BITS_36)
@@ -176,7 +175,6 @@ config ARM64
 	select HAVE_ARCH_VMAP_STACK
 	select HAVE_ARM_SMCCC
 	select HAVE_ASM_MODVERSIONS
-	select HAVE_EBPF_JIT
 	select HAVE_C_RECORDMCOUNT
 	select HAVE_CMPXCHG_DOUBLE
 	select HAVE_CMPXCHG_LOCAL
@@ -228,7 +226,6 @@ config ARM64
 	select HAVE_STACKPROTECTOR
 	select HAVE_STATIC_CALL if CFI
 	select HAVE_SYSCALL_TRACEPOINTS
-	select HAVE_KPROBES
 	select HAVE_KRETPROBES
 	select HAVE_GENERIC_VDSO
 	select HOTPLUG_CORE_SYNC_DEAD if HOTPLUG_CPU
@@ -1569,23 +1566,6 @@ config PARAVIRT
 config ARCH_SUPPORTS_KEXEC
 	def_bool PM_SLEEP_SMP
 
-config ARCH_SUPPORTS_KEXEC_FILE
-	def_bool y
-
-config ARCH_SELECTS_KEXEC_FILE
-	def_bool y
-	depends on KEXEC_FILE
-	select HAVE_IMA_KEXEC if IMA
-
-config ARCH_SUPPORTS_KEXEC_SIG
-	def_bool y
-
-config ARCH_SUPPORTS_KEXEC_IMAGE_VERIFY_SIG
-	def_bool y
-
-config ARCH_DEFAULT_KEXEC_IMAGE_VERIFY_SIG
-	def_bool y
-
 config ARCH_SUPPORTS_KEXEC_HANDOVER
 	def_bool y
 
@@ -1718,27 +1698,6 @@ config KUSER_HELPERS
 
 	  Say N here only if you are absolutely certain that you do not
 	  need these helpers; otherwise, the safe option is to say Y.
-
-config COMPAT_VDSO
-	bool "Enable vDSO for 32-bit applications"
-	depends on !CPU_BIG_ENDIAN
-	depends on (CC_IS_CLANG && LD_IS_LLD) || "$(CROSS_COMPILE_COMPAT)" != ""
-	default y
-	help
-	  Place in the process address space of 32-bit applications an
-	  ELF shared object providing fast implementations of gettimeofday
-	  and clock_gettime.
-
-	  You must have a 32-bit build of glibc 2.22 or later for programs
-	  to seamlessly take advantage of this.
-
-config THUMB2_COMPAT_VDSO
-	bool "Compile the 32-bit vDSO for Thumb-2 mode" if EXPERT
-	depends on COMPAT_VDSO
-	default y
-	help
-	  Compile the compat vDSO with '-mthumb -fomit-frame-pointer' if y,
-	  otherwise with '-marm'.
 
 config COMPAT_ALIGNMENT_FIXUPS
 	bool "Fix up misaligned multi-word loads and stores in user space"

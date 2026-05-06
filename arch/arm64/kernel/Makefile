@@ -54,9 +54,6 @@ obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr.o
 obj-$(CONFIG_ELF_CORE)			+= elfcore.o
 obj-$(CONFIG_KEXEC_CORE)		+= machine_kexec.o relocate_kernel.o	\
 					   cpu-reset.o
-obj-$(CONFIG_KEXEC_FILE)		+= machine_kexec_file.o kexec_image.o
-obj-$(CONFIG_ARM64_RELOC_TEST)		+= arm64-reloc-test.o
-arm64-reloc-test-y := reloc_test_core.o reloc_test_syms.o
 obj-$(CONFIG_CRASH_DUMP)		+= crash_dump.o
 obj-$(CONFIG_VMCORE_INFO)		+= vmcore_info.o
 obj-$(CONFIG_ARM_SDE_INTERFACE)		+= sdei.o
@@ -65,9 +62,7 @@ obj-y					+= vdso-wrap.o
 
 # Force dependency (vdso*-wrap.S includes vdso.so through incbin)
 $(obj)/vdso-wrap.o: $(obj)/vdso/vdso.so
-$(obj)/vdso32-wrap.o: $(obj)/vdso32/vdso.so
 
-obj-y					+= probes/
 obj-y					+= head.o
 always-$(KBUILD_BUILTIN)		+= vmlinux.lds
 
@@ -76,4 +71,4 @@ AFLAGS_head.o += -DVMLINUX_PATH="\"$(abspath vmlinux)\""
 endif
 
 # for cleaning
-subdir- += vdso vdso32
+subdir- += vdso

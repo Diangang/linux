@@ -192,7 +192,6 @@ vdso_prepare: prepare0
 endif
 
 vdso-install-y				+= arch/arm64/kernel/vdso/vdso.so.dbg
-vdso-install-$(CONFIG_COMPAT_VDSO)	+= arch/arm64/kernel/vdso32/vdso32.so.dbg
 
 include $(srctree)/scripts/Makefile.defconf
 

@@ -15,7 +15,3 @@ config DEBUG_EFI
 	  Enable this option to include EFI specific debugging features into
 	  the kernel that are only useful when using a debug build of the
 	  UEFI firmware
-
-config ARM64_RELOC_TEST
-	depends on m
-	tristate "Relocation testing module"
