@@ -27,8 +27,6 @@ obj-y				+= virtio/
 obj-y				+= tty/
 obj-y				+= char/
 
-obj-y				+= iommu/
-
 obj-y				+= base/
 obj-y				+= scsi/
 obj-y				+= nvme/

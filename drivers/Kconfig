@@ -35,8 +35,6 @@ source "drivers/clk/Kconfig"
 
 source "drivers/clocksource/Kconfig"
 
-source "drivers/iommu/Kconfig"
-
 source "drivers/irqchip/Kconfig"
 
 endmenu
