@@ -8,17 +8,6 @@ config BINARY_PRINTF
 
 menu "Library routines"
 
-config RAID6_PQ
-	tristate
-
-config RAID6_PQ_BENCHMARK
-	bool "Automatically choose fastest RAID6 PQ functions"
-	depends on RAID6_PQ
-	default y
-	help
-	  Benchmark all available RAID6 PQ functions on init and choose the
-	  fastest one.
-
 config LINEAR_RANGES
 	tristate
 
@@ -120,7 +109,6 @@ config TRACE_MMIO_ACCESS
 
 source "lib/crc/Kconfig"
 source "lib/crypto/Kconfig"
-source "lib/raid/Kconfig"
 
 config XXHASH
 	tristate
@@ -139,27 +127,12 @@ config AUDIT_COMPAT_GENERIC
 	depends on AUDIT_GENERIC && AUDIT_ARCH_COMPAT_GENERIC && COMPAT
 	default y
 
-config 842_COMPRESS
-	select CRC32
-	tristate
-
-config 842_DECOMPRESS
-	select CRC32
-	tristate
-
 config ZLIB_INFLATE
 	tristate
 
 config ZLIB_DEFLATE
 	tristate
 	select BITREVERSE
-
-config ZLIB_DFLTCC
-	def_bool y
-	depends on S390
-	prompt "Enable s390x DEFLATE CONVERSION CALL support for kernel zlib"
-	help
-	 Enable s390x hardware support for zlib in the kernel.
 
 config LZO_COMPRESS
 	tristate
@@ -224,24 +197,6 @@ config DECOMPRESS_ZSTD
 # Generic allocator support is selected if needed
 #
 config GENERIC_ALLOCATOR
-	bool
-
-#
-# reed solomon support is select'ed if needed
-#
-config REED_SOLOMON
-	tristate
-	
-config REED_SOLOMON_ENC8
-	bool
-
-config REED_SOLOMON_DEC8
-	bool
-
-config REED_SOLOMON_ENC16
-	bool
-
-config REED_SOLOMON_DEC16
 	bool
 
 #
@@ -422,31 +377,6 @@ config LRU_CACHE
 config CLZ_TAB
 	bool
 
-config MPILIB
-	tristate
-	select CLZ_TAB
-	help
-	  Multiprecision maths library from GnuPG.
-	  It is used to implement RSA digital signature verification,
-	  which is used by IMA/EVM digital signature extension.
-
-config SIGNATURE
-	tristate
-	depends on KEYS
-	select CRYPTO_LIB_SHA1
-	select MPILIB
-	help
-	  Digital signature verification. Currently only RSA is supported.
-	  Implementation is done using GnuPG MPI library
-
-config DIMLIB
-	tristate
-	depends on NET
-	help
-	  Dynamic Interrupt Moderation library.
-	  Implements an algorithm for dynamically changing CQ moderation values
-	  according to run time performance.
-
 #
 # libfdt files, only selected if needed.
 #
@@ -465,8 +395,6 @@ config UCS2_STRING
 # generic vdso
 #
 source "lib/vdso/Kconfig"
-
-source "lib/fonts/Kconfig"
 
 config SG_SPLIT
 	def_bool n
@@ -580,11 +508,6 @@ config GENERIC_LIB_UCMPDI2
 
 config GENERIC_LIB_DEVMEM_IS_ALLOWED
 	bool
-
-config PLDMFW
-	bool
-	select CRC32
-	default n
 
 config ASN1_ENCODER
        tristate
