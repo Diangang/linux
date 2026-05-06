@@ -33,7 +33,7 @@ obj-y				+= char/
 
 obj-y				+= iommu/
 
-obj-y				+= base/ block/
+obj-y				+= base/
 obj-y				+= scsi/
 obj-y				+= nvme/
 obj-y				+= firmware/

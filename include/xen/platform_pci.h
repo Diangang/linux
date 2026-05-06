@@ -38,13 +38,7 @@ static inline int xen_must_unplug_nics(void) {
 }
 
 static inline int xen_must_unplug_disks(void) {
-#if (defined(CONFIG_XEN_BLKDEV_FRONTEND) || \
-		defined(CONFIG_XEN_BLKDEV_FRONTEND_MODULE)) && \
-		defined(CONFIG_XEN_PVHVM)
-        return 1;
-#else
         return 0;
-#endif
 }
 
 #if defined(CONFIG_XEN_PVHVM)

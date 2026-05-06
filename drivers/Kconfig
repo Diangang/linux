@@ -23,8 +23,6 @@ source "drivers/of/Kconfig"
 
 source "drivers/pnp/Kconfig"
 
-source "drivers/block/Kconfig"
-
 source "drivers/nvme/Kconfig"
 
 source "drivers/scsi/Kconfig"
