@@ -13,14 +13,7 @@ obj-y += realmode/
 obj-y += kernel/
 obj-y += mm/
 
-obj-y += crypto/
-
-obj-$(CONFIG_IA32_EMULATION) += ia32/
-
 obj-y += platform/
-obj-y += net/
-
-obj-$(CONFIG_KEXEC_FILE) += purgatory/
 
 obj-y += virt/
 

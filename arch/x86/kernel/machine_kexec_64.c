@@ -24,7 +24,6 @@
 #include <asm/mmu_context.h>
 #include <asm/io_apic.h>
 #include <asm/debugreg.h>
-#include <asm/kexec-bzimage64.h>
 #include <asm/setup.h>
 #include <asm/set_memory.h>
 #include <asm/cpu.h>
