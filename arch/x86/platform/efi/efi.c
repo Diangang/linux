@@ -83,9 +83,6 @@ static const unsigned long * const efi_tables[] = {
 #ifdef CONFIG_LOAD_UEFI_KEYS
 	&efi.mokvar_table,
 #endif
-#ifdef CONFIG_UNACCEPTED_MEMORY
-	&efi.unaccepted,
-#endif
 };
 
 u64 efi_setup;		/* efi setup_data physical address */

@@ -20,4 +20,3 @@ subdir-$(CONFIG_EFI_STUB)		+= libstub
 arm-obj-$(CONFIG_EFI)			:= efi-init.o arm-runtime.o
 obj-$(CONFIG_ARM)			+= $(arm-obj-y)
 obj-$(CONFIG_ARM64)			+= $(arm-obj-y)
-obj-$(CONFIG_UNACCEPTED_MEMORY)		+= unaccepted_memory.o

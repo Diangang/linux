@@ -28,17 +28,6 @@ const efi_dxe_services_table_t *efi_dxe_table;
 static efi_loaded_image_t *image = NULL;
 static efi_memory_attribute_protocol_t *memattr;
 
-typedef union sev_memory_acceptance_protocol sev_memory_acceptance_protocol_t;
-union sev_memory_acceptance_protocol {
-	struct {
-		efi_status_t (__efiapi * allow_unaccepted_memory)(
-			sev_memory_acceptance_protocol_t *);
-	};
-	struct {
-		u32 allow_unaccepted_memory;
-	} mixed_mode;
-};
-
 static efi_status_t
 preserve_pci_rom_image(efi_pci_io_protocol_t *pci, struct pci_setup_rom **__rom)
 {
@@ -442,29 +431,6 @@ efi_status_t efi_adjust_memory_range_protection(unsigned long start,
 	return EFI_SUCCESS;
 }
 
-static void setup_unaccepted_memory(void)
-{
-	efi_guid_t mem_acceptance_proto = OVMF_SEV_MEMORY_ACCEPTANCE_PROTOCOL_GUID;
-	sev_memory_acceptance_protocol_t *proto;
-	efi_status_t status;
-
-	if (!IS_ENABLED(CONFIG_UNACCEPTED_MEMORY))
-		return;
-
-	/*
-	 * Enable unaccepted memory before calling exit boot services in order
-	 * for the UEFI to not accept all memory on EBS.
-	 */
-	status = efi_bs_call(locate_protocol, &mem_acceptance_proto, NULL,
-			     (void **)&proto);
-	if (status != EFI_SUCCESS)
-		return;
-
-	status = efi_call_proto(proto, allow_unaccepted_memory);
-	if (status != EFI_SUCCESS)
-		efi_err("Memory acceptance protocol failed\n");
-}
-
 static efi_char16_t *efistub_fw_vendor(void)
 {
 	unsigned long vendor = efi_table_attr(efi_system_table, fw_vendor);
@@ -621,13 +587,6 @@ setup_e820(struct boot_params *params, struct setup_data *e820ext, u32 e820ext_s
 			e820_type = E820_TYPE_PMEM;
 			break;
 
-		case EFI_UNACCEPTED_MEMORY:
-			if (!IS_ENABLED(CONFIG_UNACCEPTED_MEMORY))
-				continue;
-			e820_type = E820_TYPE_RAM;
-			process_unaccepted_memory(d->phys_addr,
-						  d->phys_addr + PAGE_SIZE * d->num_pages);
-			break;
 		default:
 			continue;
 		}
@@ -713,9 +672,6 @@ static efi_status_t allocate_e820(struct boot_params *params,
 		if (status != EFI_SUCCESS)
 			return status;
 	}
-
-	if (IS_ENABLED(CONFIG_UNACCEPTED_MEMORY))
-		return allocate_unaccepted_bitmap(nr_desc, map);
 
 	return EFI_SUCCESS;
 }
@@ -1008,8 +964,6 @@ void __noreturn efi_stub_entry(efi_handle_t handle,
 	setup_efi_pci(boot_params);
 
 	setup_quirks(boot_params);
-
-	setup_unaccepted_memory();
 
 	status = exit_boot(boot_params, handle);
 	if (status != EFI_SUCCESS) {

@@ -1245,10 +1245,4 @@ efi_status_t efi_kaslr_relocate_kernel(unsigned long *image_addr,
 				       u32 phys_seed);
 u32 efi_kaslr_get_phys_seed(efi_handle_t image_handle);
 
-efi_status_t allocate_unaccepted_bitmap(__u32 nr_desc,
-					struct efi_boot_memmap *map);
-void process_unaccepted_memory(u64 start, u64 end);
-void accept_memory(phys_addr_t start, unsigned long size);
-void arch_accept_memory(phys_addr_t start, phys_addr_t end);
-
 #endif
