@@ -874,8 +874,6 @@ CONFIG_PCI_LOCKLESS_CONFIG=y
 CONFIG_PCI_PRI=y
 CONFIG_PCI_PASID=y
 CONFIG_PCI_LABEL=y
-CONFIG_HOTPLUG_PCI=y
-# CONFIG_HOTPLUG_PCI_ACPI is not set
 
 #
 # PCI controller drivers
@@ -901,7 +899,6 @@ CONFIG_HOTPLUG_PCI=y
 #
 # PCI Endpoint
 #
-# CONFIG_PCI_ENDPOINT is not set
 # end of PCI Endpoint
 
 
