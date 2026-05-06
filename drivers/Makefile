@@ -20,10 +20,6 @@ obj-$(CONFIG_PNP)		+= pnp/
 obj-y				+= amba/
 
 obj-y				+= clk/
-# Many drivers will want to use DMA so this has to be made available
-# really early.
-obj-$(CONFIG_DMADEVICES)	+= dma/
-
 obj-y				+= virtio/
 
 # tty/ comes before char/ so that the VT console is the boot-time

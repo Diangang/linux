@@ -92,14 +92,6 @@ config SERIAL_8250_PARISC
 	depends on SERIAL_8250 && PARISC
 	default SERIAL_8250
 
-config SERIAL_8250_DMA
-	bool "DMA support for 16550 compatible UART controllers" if EXPERT
-	depends on SERIAL_8250 && DMADEVICES=y
-	default SERIAL_8250
-	help
-	  This builds DMA support that can be used with 8250/16650
-	  compatible UART controllers that support DMA signaling.
-
 config SERIAL_8250_PCILIB
 	bool
 	depends on SERIAL_8250 && PCI
@@ -478,8 +470,6 @@ config SERIAL_8250_LPSS
 	depends on SERIAL_8250 && PCI
 	depends on X86 || COMPILE_TEST
 	select SERIAL_8250_DWLIB
-	select DW_DMAC_CORE if SERIAL_8250_DMA
-	select DW_DMAC_PCI if (SERIAL_8250_DMA && X86_INTEL_LPSS)
 	select RATIONAL
 	help
 	  Selecting this option will enable handling of the UART found on
@@ -494,8 +484,6 @@ config SERIAL_8250_MID
 	default SERIAL_8250
 	depends on SERIAL_8250 && PCI
 	depends on X86 || COMPILE_TEST
-	select HSU_DMA if SERIAL_8250_DMA
-	select HSU_DMA_PCI if (HSU_DMA && X86_INTEL_MID)
 	select RATIONAL
 	help
 	  Selecting this option will enable handling of the UART found on

@@ -168,8 +168,7 @@ static int ehl_serial_setup(struct lpss8250 *lpss, struct uart_port *port)
 
 	/*
 	 * This simply makes the checks in the 8250_port to try the DMA
-	 * channel request which in turn uses the magic of ACPI tables
-	 * parsing (see drivers/dma/acpi-dma.c for the details) and
+	 * channel request which in turn uses the magic of ACPI tables and
 	 * matching with the registered General Purpose DMA controllers.
 	 */
 	up->dma = dma;
