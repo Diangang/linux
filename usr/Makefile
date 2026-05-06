@@ -81,5 +81,3 @@ $(obj)/initramfs_inc_data: $(cpio-data) FORCE
 	$(call if_changed,$(compress-y))
 
 targets += initramfs_data.cpio initramfs_inc_data
-
-subdir-$(CONFIG_UAPI_HEADER_TEST) += include

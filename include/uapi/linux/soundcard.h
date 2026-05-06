@@ -1051,8 +1051,7 @@ typedef struct mixer_vol_table {
  *	the GPL version of OSS-4.x and build against that version
  *	of the header.
  *
- *	We redefine the extern keyword so that usr/include/headers_check.pl
- *	does not complain about SEQ_USE_EXTBUF.
+ *	We redefine the extern keyword for standalone UAPI header builds.
  */
 #define SEQ_DECLAREBUF()		SEQ_USE_EXTBUF()
 
