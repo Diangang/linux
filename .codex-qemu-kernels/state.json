@@ -1,0 +1,1403 @@
+{
+  "schema_version": 1,
+  "task": "linux-minimal-core-long-run",
+  "mode": "recoverable-long-task",
+  "supervisor": {
+    "enabled": true,
+    "script": ".codex-qemu-kernels/scripts/codex-supervisor.sh",
+    "prompt": ".codex-qemu-kernels/codex-kernel-trim-supervisor-prompt.md",
+    "bugfix_prompt": ".codex-qemu-kernels/codex-kernel-trim-bugfix-prompt.md",
+    "log_dir": ".codex-qemu-kernels/logs/agent-runs",
+    "note": "The .codex-qemu-kernels directory is the recovery/control workspace and is not committed.",
+    "codex_args_default": "exec --dangerously-bypass-approvals-and-sandbox",
+    "sandbox_note": "Default child Codex rounds bypass Codex's bwrap sandbox because this host's packaged bubblewrap does not support the --perms option; override CODEX_ARGS on hosts with a compatible bwrap."
+  },
+  "run_control": {
+    "status": "needs_user",
+    "phase": "paused",
+    "active_step": "paused after external Codex usage-limit failure; source progress updated through EFI unaccepted memory deletion",
+    "stop_condition": "codex_process_failed",
+    "last_error": "Codex remote compaction and follow-up bugfix rounds failed because the account hit its usage limit; latest source validation had already passed, so no kernel logic change was indicated.",
+    "last_exit": "exit_1",
+    "last_round": 5,
+    "last_log": ".codex-qemu-kernels/logs/agent-runs/bugfix-round-20260505-230414-5.log",
+    "heartbeat": "2026-05-06T01:44:26Z",
+    "budgets": {
+      "max_rounds": 0,
+      "max_failures": 3,
+      "failures": 0
+    },
+    "bugfix": {
+      "enabled": true,
+      "status": "not_applicable_external_failure",
+      "attempts": 3,
+      "max_attempts": 3,
+      "trigger_condition": "codex_process_failed",
+      "last_log": ".codex-qemu-kernels/logs/agent-runs/bugfix-round-20260505-230414-5.log",
+      "bugfixable_stop_conditions": [
+        "validation_failure",
+        "review_findings",
+        "codex_process_failed"
+      ]
+    },
+    "allowed_stop_conditions": [
+      "validation_failure",
+      "review_findings",
+      "logic_change_required",
+      "dependency_unclear",
+      "core_functionality_regression",
+      "destructive_operation",
+      "dirty_worktree_conflict",
+      "no_safe_next_patch",
+      "needs_human_decision",
+      "budget_exhausted",
+      "codex_process_failed"
+    ],
+    "non_stop_checkpoints": [
+      "clean_commit",
+      "successful_validation",
+      "clean_review",
+      "stage_transition",
+      "clean_worktree",
+      "codex_final_response",
+      "context_compaction",
+      "turn_boundary"
+    ]
+  },
+  "resume": {
+    "status": "ready",
+    "new_terminal_entry": "Read .codex-qemu-kernels/state.json resume.startup_instruction and execute it. Do not ask the user to paste full instructions.",
+    "source_of_truth": [
+      ".codex-qemu-kernels/state.json",
+      ".codex-qemu-kernels/Kernel-Minimal-Roadmap.md",
+      ".codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md",
+      ".codex-qemu-kernels/reviews/"
+    ],
+    "startup_instruction": "Use linux-storage and karpathy-guidelines skills. Read .codex-qemu-kernels/state.json, .codex-qemu-kernels/Kernel-Minimal-Roadmap.md, and .codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md. Continue linux-minimal-core-long-run from clean HEAD e8492b4d13ff. The current task model is module_directory_proof_pass. Continue the drivers/firmware proof pass for remaining safe whole-file buckets. The previous supervisor stop was an external Codex usage-limit/remote-compaction failure after successful EFI unaccepted-memory validation, not a kernel validation or logic failure. Do not commit before the selected-directory review is complete, do not split one selected module directory into many commits, and do not bundle unrelated module directories. Keep fs/pstore and pstore_ram. Do not commit .codex-qemu-kernels.",
+    "last_updated": "2026-05-05"
+  },
+  "boundaries": {
+    "roadmap": ".codex-qemu-kernels/Kernel-Minimal-Roadmap.md",
+    "active_stage": "Stage 6: Whole-File Stragglers",
+    "workspace_policy": {
+      "control_workspace": ".codex-qemu-kernels",
+      "commit_policy": "Commit kernel source changes only. Do not commit .codex-qemu-kernels files.",
+      "generated_files": "QEMU images, build outputs, initramfs images, logs, prompts, reviews, configs, and task state live under .codex-qemu-kernels."
+    },
+    "source_modification_policy": {
+      "deletion_first": true,
+      "coarse_first": true,
+      "priority_order": [
+        "whole_directory_delete",
+        "whole_file_delete",
+        "file_internal_delete"
+      ],
+      "allowed_patch_classes": [
+        "pure_delete",
+        "delete_plus_build_wiring",
+        "move_only"
+      ],
+      "disallowed_patch_class": "logic_change",
+      "logic_change_stop_condition": "logic_change_required",
+      "no_stubs": true,
+      "no_runtime_semantics_change": true,
+      "defer_file_internal_trimming_until": "No safe whole directory or whole source-file deletion targets remain in the active broad area.",
+      "remove_empty_feature_directories": true,
+      "empty_directory_rule": "When deleting all files under a feature directory, remove the now-empty directory from the working tree in the same workflow step and verify the directory is gone or intentionally non-empty.",
+      "directory_task_method": "module_directory_proof_pass",
+      "module_directory_rule": "Use the irqchip-style workflow for future trimming: choose one specific module directory, recursively inventory it, classify every subdirectory/file against the fixed x86_64+arm64 QEMU Minix storage contract, accumulate all confirmed-safe whole-file/whole-directory deletions in that same module task, then validate and commit once.",
+      "do_not_split_selected_directory": "Within one selected module directory, continue analyzing sibling files/subdirectories before committing; bundle all confirmed-safe deletions from that same module task into one commit."
+    },
+    "behavioral_skills": {
+      "required": [
+        "linux-storage",
+        "karpathy-guidelines"
+      ],
+      "karpathy_guidelines_application": [
+        "state assumptions before selecting a trimming target",
+        "prefer the largest safe directory-level deletion target first",
+        "prefer whole-file deletion before file-internal trimming",
+        "avoid speculative cleanup and drive-by refactoring",
+        "touch only lines directly required by the selected removal",
+        "remove source directories left empty by the selected removal",
+        "define validation and review checks before looping"
+      ]
+    },
+    "validation_contract": {
+      "architecture_scope": [
+        "x86_64",
+        "arm64"
+      ],
+      "other_architectures": "out_of_scope_unless_shared_files_directly_affect_x86_64_or_arm64",
+      "required": [
+        "build_x86_64",
+        "build_arm64",
+        "build_initramfs_x86_64",
+        "build_initramfs_arm64",
+        "qemu_minix_nvme_x86_64",
+        "qemu_minix_scsi_hdd_x86_64",
+        "qemu_minix_nvme_arm64",
+        "qemu_minix_scsi_hdd_arm64"
+      ],
+      "filesystem": "minix",
+      "mkfs_command": "mkfs.minix -3",
+      "root_environment": "generated initramfs via rdinit=/init",
+      "forbidden_root_dependency": "Debian qcow2 rootfs and virtio-blk root device",
+      "required_devices": [
+        "/dev/nvme0n1",
+        "/dev/sda"
+      ],
+      "required_io": [
+        "mount",
+        "write",
+        "read",
+        "sync",
+        "umount"
+      ]
+    },
+    "default_trim_candidates": {
+      "filesystems": "All filesystems except Minix and required VFS/core helpers.",
+      "block_drivers": "All block/storage drivers except NVMe, SCSI core, SCSI disk, and required QEMU bus/PCI/interrupt dependencies."
+    },
+    "single_patch_scope": true,
+    "commit_policy": {
+      "one_commit_per": "one selected module-directory proof pass when deletions are found; finish recursively analyzing that directory and all relevant children before committing",
+      "may_bundle_tightly_coupled_deletions": true,
+      "may_bundle_same_task_confirmed_deletions": true,
+      "bundle_same_task_rule": "Within one selected module directory, continue analyzing sibling files/subdirectories before committing; bundle all confirmed-safe deletions from that same module task into one commit.",
+      "must_not_bundle_unrelated_subsystems": true,
+      "cross_task_bundle_policy": "Do not combine two selected module directories in one source commit unless they are mechanically inseparable build fallout from the same deletion proof.",
+      "must_not_leave_half_removed_feature": true,
+      "must_not_start_file_internal_cleanup_while_directory_or_whole_file_targets_remain": true,
+      "message_must_include": [
+        "removed module or feature",
+        "why it is outside the fixed validation contract",
+        "x86_64 validation result",
+        "arm64 validation result"
+      ],
+      "directory_task_no_delete_result": "If a selected module directory is fully analyzed and no safe whole-directory or whole-file deletion is found, record the ledger in .codex-qemu-kernels and continue to the next queued module without a source commit."
+    },
+    "ask_before": [
+      "logic_change_required",
+      "destructive_operation",
+      "dependency_unclear",
+      "core_functionality_regression"
+    ],
+    "execution_loop": {
+      "type": "mandatory_continuation",
+      "after_review_clean": "Immediately select the next coarse directory-level or whole-file trimming target and continue.",
+      "clean_checkpoint_action": "Clean build, QEMU storage validation, commit, and review are recovery checkpoints, not completion conditions.",
+      "final_answer_allowed_only_if": "An allowed stop condition is hit, or the latest user message explicitly asks to pause/stop/report-only."
+    }
+  },
+  "temporary_compatibility_ledger": [
+    {
+      "date": "2026-05-01",
+      "trigger": "Manual root directory deletion: certs crypto io_uring net rust security sound ipc samples COPYING CREDITS MAINTAINERS.",
+      "entries": [
+        {
+          "path": "kernel/capability.c",
+          "reason": "Temporary core-side replacements for removed security/commoncap.c and security/min_addr.c symbols.",
+          "remove_when": "Remove when remaining syscall, xattr, VFS, and mm callers no longer require cap_* hooks or mmap_min_addr exports."
+        },
+        {
+          "path": "kernel/sched/core.c",
+          "reason": "Removed io_uring io-wq worker callbacks after deleting io_uring/.",
+          "remove_when": "No restore unless io_uring support returns."
+        },
+        {
+          "path": "init/Kconfig",
+          "reason": "SYSVIPC, CGROUP_DEVICE, and CGROUP_BPF forced behind BROKEN after deleting ipc/, security/device_cgroup.c, and net/BPF support.",
+          "remove_when": "Delete these remaining Kconfig entries when their callers are removed."
+        },
+        {
+          "path": "kernel/power/Kconfig",
+          "reason": "HIBERNATION forced behind BROKEN and crypto selects removed after deleting crypto/.",
+          "remove_when": "Delete hibernation support in a later power-management trimming pass if it stays outside the validation contract."
+        },
+        {
+          "path": "fs/Kconfig",
+          "reason": "Removed IO_WQ after deleting io_uring/.",
+          "remove_when": "Drop any remaining IO_WQ references when found."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "Manual drivers directory deletion pass removing non-validation driver subsystems.",
+      "entries": [
+        {
+          "path": "arch/x86/kernel/rtc.c",
+          "reason": "Dropped x86 persistent CMOS wallclock helpers after deleting drivers/rtc and disabling x86 RTC library selection.",
+          "remove_when": "Revisit during timekeeping/platform cleanup; delete remaining RTC compatibility surface once no fixed-storage validation path references it."
+        },
+        {
+          "path": "arch/x86/kernel/x86_init.c",
+          "reason": "Switched default wallclock hooks to existing no-op RTC accessors after removing the RTC driver stack.",
+          "remove_when": "Revisit with arch/x86 platform init cleanup once RTC wallclock support is proven unnecessary."
+        },
+        {
+          "path": "drivers/Makefile",
+          "reason": "Removed build wiring for deleted drivers/* directories.",
+          "remove_when": "Expected permanent for the fixed-storage target; keep recorded because it is mechanical fallout rather than pure directory deletion."
+        },
+        {
+          "path": "drivers/Kconfig and dependent kept Kconfig files",
+          "reason": "Removed stale source entries and converted removed-subsystem selects to dependencies so defconfig does not force deleted driver subsystems back on.",
+          "remove_when": "Revisit as remaining kept driver directories are trimmed; many entries should disappear with their containing drivers."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "Manual drivers subdirectory deletion pass removing unused block, char, NVMe target/test, OF unittest, and legacy PnP subtrees.",
+      "entries": [
+        {
+          "path": "drivers/block/Kconfig and drivers/block/Makefile",
+          "reason": "Removed stale config/build wiring for deleted block driver subdirectories.",
+          "remove_when": "Expected permanent for the fixed NVMe plus SCSI HDD validation target; revisit only if a removed block driver family is intentionally restored."
+        },
+        {
+          "path": "drivers/char/Kconfig and drivers/char/Makefile",
+          "reason": "Removed stale config/build wiring for deleted AGP, IPMI, TPM, Xilinx HWICAP, and Xillybus subdirectories.",
+          "remove_when": "Expected permanent; revisit only if one of those character driver families becomes required again."
+        },
+        {
+          "path": "drivers/nvme/Kconfig, drivers/nvme/Makefile, drivers/nvme/common/Kconfig, and drivers/nvme/common/Makefile",
+          "reason": "Removed stale target and common KUnit test wiring after deleting NVMe target and common test code while keeping NVMe host.",
+          "remove_when": "Expected permanent while the fixed contract requires only NVMe host-side block access."
+        },
+        {
+          "path": "drivers/of/Kconfig and drivers/of/Makefile",
+          "reason": "Removed OF runtime unittest build/config wiring after deleting unittest-data and the now-unbuilt unittest source file.",
+          "remove_when": "Expected permanent; revisit only if OF runtime unittest support is restored."
+        },
+        {
+          "path": "drivers/pnp/Kconfig and drivers/pnp/Makefile",
+          "reason": "Removed stale ISA PnP and PNPBIOS wiring after deleting those legacy PnP protocol subdirectories.",
+          "remove_when": "Expected permanent for x86_64/arm64 QEMU validation; ACPI PnP remains separately wired."
+        },
+        {
+          "path": "arch/arm64/configs/defconfig and kernel/configs/xen.config",
+          "reason": "Dropped config requests for deleted TPM and Xen block backend implementations.",
+          "remove_when": "Config-only fallout; keep aligned with deleted implementation directories."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "Manual arch subdirectory deletion pass removing non-validation virtualization, platform, DTS, crypto, UML, and config subtrees.",
+      "entries": [
+        {
+          "path": "arch/x86/Kbuild, arch/x86/Makefile, arch/x86/platform/Makefile, arch/x86/pci/Makefile, and arch/x86/kernel/apic/Makefile",
+          "reason": "Removed stale build wiring for deleted x86 KVM, Xen, Hyper-V, CoCo, UML, math emulation, video, and platform-specific directories.",
+          "remove_when": "Expected permanent for the x86_64 fixed QEMU storage target; revisit only if one of those removed platform or virtualization families is restored."
+        },
+        {
+          "path": "arch/x86/Kconfig, arch/x86/Kconfig.debug, and arch/x86/Kconfig.cpufeatures",
+          "reason": "Removed stale config entries and dependencies for deleted x86 Xen/KVM, PVH, math emulation, and platform-specific support.",
+          "remove_when": "Expected permanent while the fixed target is x86_64 QEMU storage without guest hypervisor or legacy platform feature support."
+        },
+        {
+          "path": "arch/x86/kernel/head_64.S",
+          "reason": "Removed the unconditional include of deleted arch/x86/xen/xen-head.S.",
+          "remove_when": "Expected permanent after deleting x86 Xen support."
+        },
+        {
+          "path": "arch/arm64/Kbuild and arch/arm64/Kconfig",
+          "reason": "Removed stale build/config wiring for deleted arm64 KVM, Xen, Hyper-V, and arch crypto directories.",
+          "remove_when": "Expected permanent for the arm64 fixed QEMU storage target without guest hypervisor support."
+        },
+        {
+          "path": "arch/arm64/configs/defconfig",
+          "reason": "Dropped dead config requests for deleted arm64 Xen and arch crypto implementations.",
+          "remove_when": "Config-only fallout; keep aligned with deleted implementation directories."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "Manual tools directory deletion pass removing user-space tools while retaining kernel-build tools.",
+      "entries": [
+        {
+          "path": "tools/Makefile",
+          "reason": "Reduced top-level tools targets to retained objtool and bpf/resolve_btfids build-tool entry points after deleting most user-space tools.",
+          "remove_when": "Expected permanent while tools/ only retains kernel-build host tools."
+        },
+        {
+          "path": "tools/bpf/Makefile",
+          "reason": "Removed stale bpftool build/install/clean wiring after deleting tools/bpf/bpftool/ while retaining resolve_btfids.",
+          "remove_when": "Expected permanent unless bpftool support returns."
+        },
+        {
+          "path": "Makefile",
+          "reason": "Removed kselftest targets and KERNELDOC export after deleting tools/testing/selftests/ and tools/docs/kernel-doc.",
+          "remove_when": "Expected permanent while selftests and tools kernel-doc are outside the fixed storage validation contract."
+        },
+        {
+          "path": "scripts/Makefile.build and include/drm/Makefile",
+          "reason": "Removed kernel-doc command hooks after deleting tools/docs/kernel-doc.",
+          "remove_when": "Expected permanent unless tools/docs/kernel-doc is restored."
+        },
+        {
+          "path": "scripts/Makefile.package and scripts/bash-completion/make",
+          "reason": "Removed perf source package targets and completion entries after deleting tools/perf/.",
+          "remove_when": "Expected permanent unless perf tooling is restored."
+        },
+        {
+          "path": "lib/test_bitmap.c, lib/Kconfig.debug, and lib/Makefile",
+          "reason": "Removed bitmap runtime test source and wiring because it directly depended on deleted tools/testing/selftests/kselftest_module.h.",
+          "remove_when": "Expected permanent with selftests removed; revisit only if the runtime bitmap test is restored with an in-tree helper."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "lib/kernel/mm first coarse directory deletion pass removing debug, test, sanitizer, livepatch/liveupdate, DAMON, and KUnit implementation directories.",
+      "entries": [
+        {
+          "path": "arch/arm64/kernel/entry-common.c",
+          "reason": "Added an explicit asm/debug-monitors.h include after deleting livepatch Kconfig wiring exposed the existing try_step_suspended_breakpoints() declaration dependency during arm64 clean build.",
+          "remove_when": "Remove this include if a later perf/hw-breakpoint or arm64 debug-monitor trimming pass removes all try_step_suspended_breakpoints() calls from entry-common.c."
+        },
+        {
+          "path": "arch/Kconfig, arch/x86/Kconfig, arch/arm64/Kconfig, init/Kconfig, kernel/Makefile, lib/Kconfig.debug, lib/Makefile, lib/crc/Makefile, lib/crypto/Makefile, lib/math/Makefile, lib/raid/xor/Makefile, mm/Kconfig, and mm/Makefile",
+          "reason": "Removed stale build and Kconfig wiring for deleted debug/test/sanitizer/livepatch/liveupdate/DAMON/KUnit directories.",
+          "remove_when": "Expected permanent for the fixed QEMU storage target; revisit only if one of the removed debug/test/sanitizer/livepatch/DAMON/KUnit feature families is restored."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "include directory deletion pass removing unused math-emu, UFS, RTC, vendor NIC, QAT, lockd, CIFS, and NFSD header directories.",
+      "entries": [
+        {
+          "path": "none",
+          "reason": "This pass was pure header-directory deletion and did not add or modify non-config source compatibility code.",
+          "remove_when": "No rollback item for this pass; keep as an explicit audit marker for the user's temporary-change ledger."
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "trigger": "Whole-tree coarse directory scan pass removing CRAMFS, root virt/KVM host common code, driver tests, non-validation bus/ACPI/PCI/IOMMU subtrees, and non-QEMU SCSI HBA/service directories.",
+      "entries": [
+        {
+          "path": "Kbuild, fs/Kconfig, fs/Makefile, drivers/base/Kconfig, drivers/base/Makefile, drivers/bus/Kconfig, drivers/bus/Makefile, drivers/acpi/Kconfig, drivers/acpi/Makefile, drivers/pci/Kconfig, drivers/pci/Makefile, drivers/iommu/Kconfig, drivers/iommu/Makefile, drivers/scsi/Kconfig, drivers/scsi/Makefile, and arch/arm64/configs/defconfig",
+          "reason": "Removed stale build/config wiring for the deleted CRAMFS, virt, driver test, bus, ACPI, PCI switch, IOMMUFD/RISC-V IOMMU, and non-QEMU SCSI driver directories.",
+          "remove_when": "Expected permanent for the fixed x86_64/arm64 QEMU NVMe plus SCSI HDD Minix validation target; revisit only if one of the deleted feature directories is intentionally restored."
+        },
+        {
+          "path": "none",
+          "reason": "This pass did not add or modify non-config source compatibility code; it is deletion plus Kconfig/Makefile/defconfig cleanup only.",
+          "remove_when": "No rollback item for this pass; keep as an explicit audit marker for the user's temporary-change ledger."
+        }
+      ]
+    }
+  ],
+  "stage_plan": [
+    {
+      "stage": 0,
+      "name": "Control Plane",
+      "status": "done"
+    },
+    {
+      "stage": 1,
+      "name": "Automated Fixed Validation",
+      "status": "done"
+    },
+    {
+      "stage": 2,
+      "name": "fs/ Directory Pass",
+      "status": "partial",
+      "directories": [
+        "fs/cramfs/",
+        "fs/debugfs/",
+        "fs/kernfs/",
+        "fs/minix/",
+        "fs/proc/",
+        "fs/pstore/",
+        "fs/ramfs/",
+        "fs/sysfs/"
+      ],
+      "keep": [
+        "fs/minix/",
+        "fs/pstore/"
+      ],
+      "evaluate_late": [
+        "fs/kernfs/",
+        "fs/proc/",
+        "fs/pstore/",
+        "fs/ramfs/",
+        "fs/sysfs/"
+      ],
+      "next_candidates": [],
+      "removed": [
+        "fs/cramfs/",
+        "fs/debugfs/"
+      ],
+      "note": "fs/cramfs was removed in the 2026-05-02 whole-tree coarse directory scan pass. fs/debugfs was removed in commit 1bda875da9de after disabling DEBUG_FS and BLK_DEBUG_FS for the fixed arm64 config. Keep fs/pstore for panic log persistence/debuggability."
+    },
+    {
+      "stage": 3,
+      "name": "drivers/ Directory Pass",
+      "status": "partial",
+      "directories": [
+        "drivers/acpi/",
+        "drivers/amba/",
+        "drivers/base/",
+        "drivers/block/",
+        "drivers/bus/",
+        "drivers/char/",
+        "drivers/clk/",
+        "drivers/clocksource/",
+        "drivers/dma/",
+        "drivers/firmware/",
+        "drivers/gpio/",
+        "drivers/idle/",
+        "drivers/iommu/",
+        "drivers/irqchip/",
+        "drivers/nvme/",
+        "drivers/of/",
+        "drivers/pci/",
+        "drivers/pnp/",
+        "drivers/scsi/",
+        "drivers/tty/",
+        "drivers/virtio/"
+      ],
+      "evaluate_late": [
+        "drivers/acpi/",
+        "drivers/amba/",
+        "drivers/base/",
+        "drivers/block/",
+        "drivers/bus/",
+        "drivers/char/",
+        "drivers/clk/",
+        "drivers/clocksource/",
+        "drivers/dma/",
+        "drivers/firmware/",
+        "drivers/gpio/",
+        "drivers/idle/",
+        "drivers/iommu/",
+        "drivers/nvme/",
+        "drivers/of/",
+        "drivers/pci/",
+        "drivers/pnp/",
+        "drivers/scsi/",
+        "drivers/tty/",
+        "drivers/virtio/"
+      ],
+      "removed": [
+        "drivers/accel/",
+        "drivers/accessibility/",
+        "drivers/android/",
+        "drivers/ata/",
+        "drivers/atm/",
+        "drivers/auxdisplay/",
+        "drivers/bcma/",
+        "drivers/bluetooth/",
+        "drivers/cache/",
+        "drivers/cdrom/",
+        "drivers/cdx/",
+        "drivers/comedi/",
+        "drivers/connector/",
+        "drivers/counter/",
+        "drivers/cpufreq/",
+        "drivers/cpuidle/",
+        "drivers/crypto/",
+        "drivers/cxl/",
+        "drivers/dax/",
+        "drivers/dca/",
+        "drivers/devfreq/",
+        "drivers/dibs/",
+        "drivers/dio/",
+        "drivers/dma-buf/",
+        "drivers/dpll/",
+        "drivers/edac/",
+        "drivers/eisa/",
+        "drivers/extcon/",
+        "drivers/firewire/",
+        "drivers/fpga/",
+        "drivers/fsi/",
+        "drivers/fwctl/",
+        "drivers/gnss/",
+        "drivers/gpib/",
+        "drivers/gpu/",
+        "drivers/greybus/",
+        "drivers/hid/",
+        "drivers/hsi/",
+        "drivers/hte/",
+        "drivers/hv/",
+        "drivers/hwmon/",
+        "drivers/hwspinlock/",
+        "drivers/hwtracing/",
+        "drivers/i2c/",
+        "drivers/i3c/",
+        "drivers/iio/",
+        "drivers/infiniband/",
+        "drivers/input/",
+        "drivers/interconnect/",
+        "drivers/ipack/",
+        "drivers/leds/",
+        "drivers/macintosh/",
+        "drivers/mailbox/",
+        "drivers/mcb/",
+        "drivers/md/",
+        "drivers/media/",
+        "drivers/memory/",
+        "drivers/memstick/",
+        "drivers/message/",
+        "drivers/mfd/",
+        "drivers/misc/",
+        "drivers/mmc/",
+        "drivers/most/",
+        "drivers/mtd/",
+        "drivers/mux/",
+        "drivers/net/",
+        "drivers/nfc/",
+        "drivers/ntb/",
+        "drivers/nubus/",
+        "drivers/nvdimm/",
+        "drivers/nvmem/",
+        "drivers/opp/",
+        "drivers/parisc/",
+        "drivers/parport/",
+        "drivers/pcmcia/",
+        "drivers/peci/",
+        "drivers/perf/",
+        "drivers/phy/",
+        "drivers/pinctrl/",
+        "drivers/platform/",
+        "drivers/pmdomain/",
+        "drivers/power/",
+        "drivers/powercap/",
+        "drivers/pps/",
+        "drivers/ps3/",
+        "drivers/ptp/",
+        "drivers/pwm/",
+        "drivers/rapidio/",
+        "drivers/ras/",
+        "drivers/regulator/",
+        "drivers/remoteproc/",
+        "drivers/resctrl/",
+        "drivers/reset/",
+        "drivers/rpmsg/",
+        "drivers/rtc/",
+        "drivers/s390/",
+        "drivers/sbus/",
+        "drivers/sh/",
+        "drivers/siox/",
+        "drivers/slimbus/",
+        "drivers/soc/",
+        "drivers/soundwire/",
+        "drivers/spi/",
+        "drivers/spmi/",
+        "drivers/ssb/",
+        "drivers/staging/",
+        "drivers/target/",
+        "drivers/tc/",
+        "drivers/tee/",
+        "drivers/thermal/",
+        "drivers/thunderbolt/",
+        "drivers/ufs/",
+        "drivers/uio/",
+        "drivers/usb/",
+        "drivers/vdpa/",
+        "drivers/vfio/",
+        "drivers/vhost/",
+        "drivers/video/",
+        "drivers/virt/",
+        "drivers/w1/",
+        "drivers/watchdog/",
+        "drivers/xen/",
+        "drivers/zorro/",
+        "drivers/irqchip/"
+      ],
+      "removed_files": [
+        "drivers/gpio/Kconfig",
+        "drivers/idle/Kconfig",
+        "drivers/idle/Makefile",
+        "drivers/idle/intel_idle.c"
+      ],
+      "removed_subdirectories": [
+        "drivers/acpi/dptf/",
+        "drivers/acpi/nfit/",
+        "drivers/acpi/pmic/",
+        "drivers/acpi/riscv/",
+        "drivers/base/test/",
+        "drivers/block/aoe/",
+        "drivers/block/drbd/",
+        "drivers/block/mtip32xx/",
+        "drivers/block/null_blk/",
+        "drivers/block/rnbd/",
+        "drivers/block/rnull/",
+        "drivers/block/xen-blkback/",
+        "drivers/block/zram/",
+        "drivers/char/agp/",
+        "drivers/char/ipmi/",
+        "drivers/char/tpm/",
+        "drivers/char/xilinx_hwicap/",
+        "drivers/char/xillybus/",
+        "drivers/bus/fsl-mc/",
+        "drivers/bus/mhi/",
+        "drivers/iommu/iommufd/",
+        "drivers/iommu/riscv/",
+        "drivers/clk/mediatek/",
+        "drivers/nvme/common/tests/",
+        "drivers/nvme/target/",
+        "drivers/of/unittest-data/",
+        "drivers/pci/switch/",
+        "drivers/pnp/isapnp/",
+        "drivers/pnp/pnpbios/",
+        "drivers/scsi/aacraid/",
+        "drivers/scsi/aic7xxx/",
+        "drivers/scsi/aic94xx/",
+        "drivers/scsi/arcmsr/",
+        "drivers/scsi/arm/",
+        "drivers/scsi/be2iscsi/",
+        "drivers/scsi/bfa/",
+        "drivers/scsi/bnx2fc/",
+        "drivers/scsi/bnx2i/",
+        "drivers/scsi/csiostor/",
+        "drivers/scsi/cxgbi/",
+        "drivers/scsi/device_handler/",
+        "drivers/scsi/elx/",
+        "drivers/scsi/esas2r/",
+        "drivers/scsi/fcoe/",
+        "drivers/scsi/fnic/",
+        "drivers/scsi/hisi_sas/",
+        "drivers/scsi/ibmvscsi/",
+        "drivers/scsi/ibmvscsi_tgt/",
+        "drivers/scsi/isci/",
+        "drivers/scsi/libfc/",
+        "drivers/scsi/libsas/",
+        "drivers/scsi/lpfc/",
+        "drivers/scsi/megaraid/",
+        "drivers/scsi/mpi3mr/",
+        "drivers/scsi/mpt3sas/",
+        "drivers/scsi/mvsas/",
+        "drivers/scsi/pcmcia/",
+        "drivers/scsi/pm8001/",
+        "drivers/scsi/qedf/",
+        "drivers/scsi/qedi/",
+        "drivers/scsi/qla2xxx/",
+        "drivers/scsi/qla4xxx/",
+        "drivers/scsi/smartpqi/",
+        "drivers/scsi/snic/",
+        "drivers/scsi/sym53c8xx_2/",
+        "drivers/firmware/efi/stmm/",
+        "drivers/clk/mediatek/",
+        "drivers/clk/sunxi-ng/",
+        "drivers/clk/renesas/",
+        "drivers/clk/imx/",
+        "drivers/clk/ti/",
+        "drivers/clk/bcm/",
+        "drivers/clk/sophgo/",
+        "drivers/clk/sprd/"
+      ],
+      "next_candidates": [
+        "whole subdirectories inside remaining drivers/ trees",
+        "whole unneeded source files inside remaining drivers/ trees"
+      ],
+      "note": "Broad non-validation drivers directory deletion pass and follow-up remaining-drivers subdirectory passes are validated. Recent clock-provider leaves removed include EFI STMM, Mediatek, Sunxi, Renesas, i.MX, TI, Broadcom, Sophgo, and the current in-progress Spreadtrum patch; Spreadtrum fixed-contract validation passed before commit. drivers/irqchip was trimmed in commit 296296eeb810 to the fixed x86_64 irq-msi-lib and arm64 GIC/ITS/Xilinx INTC paths."
+    },
+    {
+      "stage": 4,
+      "name": "arch/ Directory Pass",
+      "status": "done",
+      "directories": [
+        "arch/arm64/",
+        "arch/x86/"
+      ],
+      "keep": [
+        "arch/arm64/",
+        "arch/x86/"
+      ],
+      "delete_candidates": [],
+      "removed": [
+        "arch/alpha/",
+        "arch/arc/",
+        "arch/arm/",
+        "arch/csky/",
+        "arch/hexagon/",
+        "arch/loongarch/",
+        "arch/m68k/",
+        "arch/microblaze/",
+        "arch/mips/",
+        "arch/nios2/",
+        "arch/openrisc/",
+        "arch/parisc/",
+        "arch/powerpc/",
+        "arch/riscv/",
+        "arch/s390/",
+        "arch/sh/",
+        "arch/sparc/",
+        "arch/um/",
+        "arch/xtensa/"
+      ],
+      "removed_subdirectories": [
+        "arch/x86/kvm/",
+        "arch/x86/xen/",
+        "arch/x86/hyperv/",
+        "arch/x86/um/",
+        "arch/x86/coco/",
+        "arch/x86/math-emu/",
+        "arch/x86/video/",
+        "arch/x86/platform/atom/",
+        "arch/x86/platform/ce4100/",
+        "arch/x86/platform/geode/",
+        "arch/x86/platform/intel/",
+        "arch/x86/platform/intel-mid/",
+        "arch/x86/platform/intel-quark/",
+        "arch/x86/platform/iris/",
+        "arch/x86/platform/olpc/",
+        "arch/x86/platform/pvh/",
+        "arch/x86/platform/scx200/",
+        "arch/x86/platform/ts5500/",
+        "arch/x86/platform/uv/",
+        "arch/arm64/kvm/",
+        "arch/arm64/xen/",
+        "arch/arm64/hyperv/",
+        "arch/arm64/crypto/",
+        "arch/arm64/boot/dts/"
+      ],
+      "removed_configs": [
+        "arch/x86/configs/hardening.config",
+        "arch/x86/configs/i386_defconfig",
+        "arch/x86/configs/tiny.config",
+        "arch/x86/configs/xen.config",
+        "arch/arm64/configs/hardening.config",
+        "arch/arm64/configs/virt.config"
+      ],
+      "note": "Validated after removing non-target architectures and the first x86/arm64 subdirectory pass. Current reassessment still sees possible arch whole-directory candidates, but none are immediate pure deletes: arch/x86/purgatory is tied to KEXEC/KEXEC_FILE surface, arch/arm64/kernel/vdso32 is wired from arch/arm64/kernel/Makefile, and arch/x86/ras is Kconfig-only. Treat these as config-backed proof-pass targets, not ready deletions."
+    },
+    {
+      "stage": 5,
+      "name": "Root Directory Pass",
+      "status": "partial",
+      "directories": [
+        ".codex-qemu-kernels/",
+        ".git/",
+        "arch/",
+        "block/",
+        "drivers/",
+        "fs/",
+        "include/",
+        "init/",
+        "kernel/",
+        "lib/",
+        "mm/",
+        "scripts/",
+        "tools/",
+        "usr/"
+      ],
+      "never_delete": [
+        ".git/",
+        ".codex-qemu-kernels/"
+      ],
+      "evaluate_late": [
+        "arch/",
+        "block/",
+        "drivers/",
+        "fs/",
+        "include/",
+        "init/",
+        "kernel/",
+        "lib/",
+        "mm/",
+        "scripts/",
+        "usr/"
+      ],
+      "delete_candidates": [],
+      "removed": [
+        "certs/",
+        "crypto/",
+        "Documentation/",
+        "io_uring/",
+        "ipc/",
+        "LICENSES/",
+        "net/",
+        "rust/",
+        "samples/",
+        "security/",
+        "sound/",
+        "virt/"
+      ],
+      "trimmed": [
+        "tools/",
+        "include/",
+        "scripts/"
+      ],
+      "note": "Root-level Documentation, LICENSES, and README have now been removed. No root-level directory deletion target is currently recorded as ready; continue with remaining coarse subdirectory candidates or whole-file stragglers."
+    },
+    {
+      "stage": 6,
+      "name": "Whole-File Stragglers",
+      "status": "active",
+      "validated_commits": [
+        "dff75dbf8937",
+        "782165823d03",
+        "fdfb64fdfba2",
+        "9393f7091534",
+        "494f4eb2c704",
+        "36c6699e5513",
+        "8fbc4f70277a",
+        "f3cd46a37c00",
+        "74211db942e2",
+        "ac031758aaa4",
+        "1bda875da9de",
+        "eb39b20a24b9",
+        "0527da1f93e8",
+        "fb96a84b588c",
+        "59cfa6e652f5",
+        "3a93d1b043e9",
+        "d933fa94026c",
+        "3b1e02fd3cd5",
+        "fed63ab9146c",
+        "8dc47a76fbcc",
+        "e97c7400d823",
+        "6e953cfc9d81",
+        "efab4bfe8426",
+        "1da1cc115c8d",
+        "9e9d7d8585fe",
+        "e82001716298",
+        "e2f1634a0b87",
+        "296296eeb810",
+        "2e58c2ba9bd6",
+        "371fcc338db9",
+        "f19e961c1978",
+        "6dba022ee751",
+        "8b9960aa5f2a",
+        "35656b41107b",
+        "1bf8e2455999",
+        "37883b9a8c96",
+        "e90cdd7deb57",
+        "d911d4927e5f",
+        "c0b5e47bb8f3",
+        "8848c86aae3c",
+        "d8375d4d1b1d",
+        "59c7455b3cb4",
+        "85b925ca9164",
+        "161535340c85",
+        "4ee8cb2de8b9",
+        "e25ffb33664d",
+        "705a4808d321",
+        "fb31ba88764f",
+        "a2a213885ad2",
+        "37cb377a9332",
+        "f6b444d66c33",
+        "15a05bf1f797",
+        "59c8fc9b8a86",
+        "bd173f022734",
+        "ec2913c3c795",
+        "e3eba7d12ad8",
+        "e8492b4d13ff"
+      ],
+      "note": "Whole-file/support-tree trimming is active. Current HEAD e8492b4d13ff is validated after deleting EFI unaccepted memory support. Continue the drivers/firmware module-directory proof pass for remaining safe whole-file buckets.",
+      "task_method": "module_directory_proof_pass"
+    },
+    {
+      "stage": 7,
+      "name": "File-Internal Surface Reduction",
+      "status": "pending"
+    }
+  ],
+  "current_patch": {
+    "commit": "e8492b4d13ff",
+    "summary": "refactor(裁剪firmware): 删除EFI unaccepted memory支持",
+    "scope": "EFI unaccepted memory core/libstub files and direct Kconfig/Makefile/declaration/callsite fallout",
+    "validation": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh"
+  },
+  "validation": {
+    "status": "passed",
+    "command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
+    "logs": [
+      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260505-230346-attempt1.log",
+      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260505-230350-attempt1.log"
+    ],
+    "metrics": ".codex-qemu-kernels/metrics/metrics-20260505-230351.txt"
+  },
+  "review": {
+    "status": "clean",
+    "record": ".codex-qemu-kernels/reviews/stage6-efi-unaccepted-memory-ledger-20260505.md"
+  },
+  "current_reassessment": {
+    "date": "2026-05-05",
+    "head": "296296eeb810",
+    "basis": [
+      "find arch block drivers fs init kernel lib mm scripts tools usr -type f",
+      "find .codex-qemu-kernels/build-x86_64 .codex-qemu-kernels/build-arm64 for .o, .ko, and built-in.a",
+      "rg over generated .*.cmd files for host-tool and source dependencies",
+      "current fixed x86_64 and arm64 .config files",
+      ".codex-qemu-kernels/metrics/metrics-20260505-190459.txt"
+    ],
+    "inventory_counts": {
+      "source_files_total": 6514,
+      "built_artifacts_total": 2053,
+      "source_files_by_top": {
+        "arch": 1453,
+        "block": 73,
+        "drivers": 2773,
+        "fs": 157,
+        "init": 16,
+        "kernel": 630,
+        "lib": 706,
+        "mm": 133,
+        "scripts": 212,
+        "tools": 338,
+        "usr": 23
+      },
+      "built_artifacts_by_top": {
+        "arch": 515,
+        "block": 48,
+        "drivers": 765,
+        "fs": 124,
+        "init": 9,
+        "kernel": 251,
+        "lib": 178,
+        "mm": 85,
+        "scripts": 37,
+        "tools": 32,
+        "usr": 2
+      },
+      "cmd_dependency_files": 3554
+    },
+    "current_conclusion": "Future work should be driven by module-directory proof passes rather than broad mixed-area buckets. The irqchip pass is the model: recursively classify one selected directory, aggregate confirmed safe deletions from that directory, validate once, and commit once.",
+    "explicit_keep": [
+      "fs/pstore/ and CONFIG_PSTORE_RAM: kept by user decision for panic log persistence/debuggability; arm64 also keeps REED_SOLOMON because pstore_ram/ramoops selects it.",
+      "drivers/of/: keep for arm64 boot/devicetree path unless a focused redesign proves a narrower replacement.",
+      "drivers/iommu/: broad deletion deferred because it is built and tied to DMA/IOMMU boot policy.",
+      "drivers/pci/, drivers/nvme/, drivers/scsi/, block/, fs/minix/, fs/ramfs/, fs/kernfs/, fs/sysfs/, init/, usr/: required or likely required by the fixed storage validation path.",
+      "scripts/basic, scripts/kconfig, scripts/dtc, scripts/mod, scripts/link-vmlinux.sh, scripts/kallsyms.c, scripts/module-common.c, tools/objtool, tools/build, tools/include, and tools/lib paths observed in .cmd dependencies or required host build flow."
+    ],
+    "empty_directories_observed": [
+      "arch/x86/kernel/cpu/resctrl",
+      "arch/x86/kernel/cpu/sgx",
+      "arch/x86/virt/vmx/tdx"
+    ],
+    "proof_candidates": [
+      {
+        "area": "scripts/tools",
+        "examples": [
+          "remaining bash helpers not present in .cmd dependencies",
+          "unused optional Makefile fragments after fixed config review",
+          "tools subtrees outside objtool/build/include/lib if no include/reference edge remains"
+        ],
+        "status": "proof_required",
+        "risk": "Host build uses scripts/tools extensively; current scan shows direct dependencies on link-vmlinux.sh, modpost, module-common.c, objtool, and generated syscall/head-object helper flow."
+      },
+      {
+        "area": "drivers leaf directories",
+        "examples": [
+          "drivers/clk/x86",
+          "drivers/firmware/efi/stmm",
+          "selected one-ref platform leaf directories under drivers/clk, drivers/firmware, and drivers/dma"
+        ],
+        "status": "proof_required",
+        "risk": "Many leaf directories only show built-in.a or Kconfig/Makefile edges, but parent directories are built and arch/platform selects may still keep them reachable."
+      },
+      {
+        "area": "arch leaves",
+        "examples": [
+          "arch/arm64/kernel/vdso32",
+          "arch/x86/purgatory",
+          "arch/x86/ras",
+          "arch/x86/entry/vdso/common"
+        ],
+        "status": "proof_required",
+        "risk": "arch/arm64 vdso32 has explicit Makefile wiring; x86 purgatory is tied to KEXEC support; x86_64 keeps IA32_EMULATION and KEXEC enabled in current config."
+      },
+      {
+        "area": "kernel optional leaves",
+        "examples": [
+          "kernel/bpf/preload",
+          "kernel/trace/rv"
+        ],
+        "status": "proof_required",
+        "risk": "BPF preload is currently disabled but kernel/bpf/inode.c includes preload headers; runtime verification and build wiring cleanup are required before deletion."
+      },
+      {
+        "area": "lib optional compression/crypto leaves",
+        "examples": [
+          "lib/842",
+          "lib/crypto/mpi",
+          "lib/raid6",
+          "lib/zstd/compress",
+          "cross-arch crc/crypto assembly-only leaves"
+        ],
+        "status": "proof_required",
+        "risk": "Some are not fixed-runtime storage features, but compression, firmware loading, decompressor, pstore, or generated-table paths can select shared lib code."
+      }
+    ],
+    "task_model": "module_directory_proof_pass"
+  },
+  "next_patch": {
+    "status": "ready",
+    "task_model": "module_directory_proof_pass",
+    "candidate": "drivers/firmware/",
+    "selection_rule": "Continue the drivers/firmware module-directory proof pass. Select the next largest coherent safe whole-file firmware bucket; do not bundle unrelated firmware feature families. SCMI raw_mode requires separate care because driver.c still compiles dead-branch references.",
+    "required_validation": [
+      "git status --porcelain=v1 -uall -- ':!/.codex-qemu-kernels' before and after source changes",
+      "git diff --check before commit or git show --check after commit",
+      "find affected module directory -type d -empty -print to confirm no empty source directories remain",
+      "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
+      "confirm x86_64 and arm64 QEMU Minix tests pass for /dev/nvme0n1 and /dev/sda"
+    ]
+  },
+  "module_directory_task_method": {
+    "name": "module_directory_proof_pass",
+    "description": "Use the irqchip-style workflow for future trimming: choose one specific module directory, recursively inventory it, classify every subdirectory/file against the fixed x86_64+arm64 QEMU Minix storage contract, accumulate all confirmed-safe whole-file/whole-directory deletions in that same module task, then validate and commit once.",
+    "task_unit": "one specific module directory and its recursive children, such as drivers/scsi, drivers/acpi, scripts, tools, kernel/trace, or lib/zstd",
+    "per_task_steps": [
+      "Record current source status excluding .codex-qemu-kernels and stop on dirty source conflicts.",
+      "Inventory the selected module directory recursively: files, subdirectories, Kconfig symbols, Makefile objects, fixed .config state, generated .cmd source/object dependencies, include/reference edges, and current build artifacts for x86_64 and arm64.",
+      "Classify each child as keep, delete_candidate, already_removed, or defer, with a short reason tied to the fixed validation contract.",
+      "Do not delete after the first confirmed file. Finish the full module-directory pass first, then delete the whole confirmed-safe bucket from that module in one change set.",
+      "Prefer whole subdirectory deletion, then whole-file deletion. Do not do file-internal trimming unless it is strictly mechanical fallout from deleting a file/directory.",
+      "Remove stale Kconfig/Makefile/defconfig references only as mechanical fallout for the same module task.",
+      "Verify no empty source directories remain for the affected module task.",
+      "Run git diff --check before commit and the fixed storage validation command before accepting the change.",
+      "Create one source commit for the module task if validation passes; do not commit .codex-qemu-kernels.",
+      "Update state.json and add a local review note with evidence, validation logs, and the next module-directory task."
+    ],
+    "commit_granularity": "one commit per completed module-directory proof pass when deletions are found; if a directory pass finds nothing safe to delete, update state/review only and move to the next directory without a source commit.",
+    "hard_stops": [
+      "logic_change_required",
+      "dependency_unclear",
+      "core_functionality_regression",
+      "dirty_worktree_conflict",
+      "validation_failure",
+      "review_findings"
+    ],
+    "validation_command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
+    "fixed_scope": [
+      "x86_64",
+      "arm64",
+      "QEMU NVMe /dev/nvme0n1",
+      "QEMU SCSI HDD /dev/sda",
+      "Minix mkfs/mount/write/read/sync/umount"
+    ],
+    "do_not_split_rule": "Within one selected module directory, continue analyzing sibling files/subdirectories before committing; bundle all confirmed-safe deletions from that same module task into one commit.",
+    "plain_rule_zh": "和刚才 drivers/irqchip 的方式一样：先完整梳理当前选定模块目录里需要删除的文件/子目录，形成可删集合；确认后统一删除；验证通过后只做一个源码 commit。",
+    "commit_flow_zh": [
+      "先梳理：递归审视当前模块目录，确认哪些文件/子目录对固定 x86_64+arm64 QEMU Minix 存储目标无用。",
+      "再删除：同一个模块目录内确认可删的内容一次性删除，并清理对应 Kconfig/Makefile/defconfig 死引用。",
+      "一个 commit：固定合约验证通过后，该模块目录任务只形成一个源码 commit；不要按单个文件或单个子模块拆多个 commit。"
+    ],
+    "do_not_commit_before_full_directory_review": true,
+    "one_commit_after_delete_and_validation": true
+  },
+  "module_directory_task_queue": [
+    {
+      "rank": 1,
+      "target": "scripts/",
+      "status": "done_current_pass",
+      "scope": "recursive scripts directory pass completed",
+      "reason": "Deleted scripts/atomic and scripts/dummy-tools while preserving fixed build host helpers and generated-header/link/modpost/DTC paths.",
+      "commit_scope": "one scripts commit if the full recursive pass finds confirmed no-edge files",
+      "required_evidence": [
+        ".cmd host-tool/script dependencies",
+        "top-level and scripts Makefile includes",
+        "Kconfig build flow",
+        "generated-header/syscall/modpost/link-vmlinux dependencies"
+      ],
+      "keep_bias": "Keep scripts/basic, scripts/kconfig, scripts/dtc, scripts/mod, link-vmlinux, kallsyms, module-common, and any script observed in fixed build .cmd files.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "2e58c2ba9bd6",
+      "next_action": "No immediate further scripts deletion without a new config/build-goal proof."
+    },
+    {
+      "rank": 2,
+      "target": "tools/",
+      "status": "done_no_source_patch",
+      "scope": "recursive host-tool directory pass completed with no safe standalone deletion",
+      "reason": "Objtool/build/include/subcmd/x86 host-tool paths are fixed-build dependencies; resolve_btfids/libbpf leftovers require a separate BTF config-and-wiring proof.",
+      "commit_scope": "one tools commit if confirmed unused tool files/directories remain",
+      "required_evidence": [
+        "objtool .cmd dependencies",
+        "tools/build includes",
+        "resolve_btfids path use",
+        "tools/include and tools/lib include edges"
+      ],
+      "keep_bias": "Keep objtool, tools/build, tools/include, tools/arch/x86, tools/lib paths, tools/scripts, and tools/bpf/resolve_btfids unless proven unreferenced by fixed builds.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "next_action": "No tools source commit from this pass."
+    },
+    {
+      "rank": 3,
+      "target": "drivers/acpi/",
+      "status": "done_current_pass",
+      "scope": "recursive ACPI driver directory pass",
+      "reason": "Deleted confirmed non-target ACPI optional debug/configfs/error-injection/platform leaves and stale build/config/include wiring while preserving fixed x86_64 and arm64 QEMU NVMe/SCSI Minix storage validation.",
+      "commit_scope": "one drivers/acpi commit for confirmed non-target ACPI leaves",
+      "required_evidence": [
+        "fixed configs",
+        "drivers/acpi Makefile/Kconfig",
+        "ACPI table/PCI/PNP/storage boot references",
+        ".cmd built objects"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "371fcc338db9",
+      "next_action": "No immediate further drivers/acpi deletion without a new per-file proof for deferred leaves."
+    },
+    {
+      "rank": 4,
+      "target": "drivers/firmware/",
+      "status": "in_progress_current_pass",
+      "scope": "recursive firmware driver directory pass",
+      "reason": "Firmware pass is in progress. Deleted non-target EFI libstub architecture files, the PSCI checker self-test, SCMI optional message transports, disabled SCMI power-control, disabled EFI x86 vendor table/property support, the unused EFI MOK variable table, out-of-scope EFI RISC-V runtime support, disabled EFI embedded firmware fallback support, disabled EFI zboot decompressor support, EFI capsule loader/update submission support, EFI ESRT firmware-update resource table support, EFI CPER CXL protocol-error pretty-print support, EFI x86 CPER IA32/x64 processor-error pretty-print support, EFI/ACPI BGRT boot graphics support, SYSFB platform framebuffer support, SMCCC SOC_ID device/sysfs support, the ARM SCMI protocol stack plus SCMI clock client, EFI framebuffer earlycon support, the EFI-variable pstore backend, the ARM CPER processor-error pretty-printer, EFI TPM/CC event-log retrieval/reservation, the EFI libstub primary-display table helper, the EFI libstub GOP graphics helper, SMCCC KVM guest hypervisor services, the DMI ID sysfs exporter, the firmware memmap sysfs exporter, and EFI unaccepted memory support while preserving x86_64 and arm64 fixed storage validation; continue with remaining firmware buckets only after separate proof.",
+      "commit_scope": "one drivers/firmware commit for confirmed non-target firmware leaves",
+      "required_evidence": [
+        "EFI/libstub build dependencies",
+        "arm64 firmware boot dependencies",
+        "pstore/EFI interactions",
+        ".cmd built objects"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "e8492b4d13ff",
+      "next_action": "Continue drivers/firmware proof pass. EFI unaccepted memory support is now removed after fixed x86_64 and arm64 storage validation; evaluate the next safe firmware whole-file bucket with a separate dependency ledger."
+    },
+    {
+      "rank": 5,
+      "target": "drivers/scsi/",
+      "status": "proof_required",
+      "scope": "recursive SCSI directory pass",
+      "reason": "SCSI core, virtio_scsi, sd, and required helpers are part of /dev/sda validation; remaining non-QEMU transport/HBA/service files should be evaluated as one module pass.",
+      "commit_scope": "one drivers/scsi commit for confirmed non-target SCSI files/directories",
+      "required_evidence": [
+        "fixed SCSI configs",
+        "built objects in build-x86_64/build-arm64",
+        "virtio_scsi/sd/scsi core references",
+        "Kconfig/Makefile edges"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 6,
+      "target": "drivers/pci/",
+      "status": "proof_required",
+      "scope": "recursive PCI directory pass",
+      "reason": "NVMe and virtio-scsi are PCI-backed in both QEMU targets; only non-target PCI services/leaves can be removed after full directory proof.",
+      "commit_scope": "one drivers/pci commit for confirmed non-target PCI leaves",
+      "required_evidence": [
+        "MSI/MSI-X requirements",
+        "host bridge and ECAM paths",
+        "NVMe/virtio PCI dependencies",
+        ".cmd built objects"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 7,
+      "target": "drivers/clk/",
+      "status": "proof_required",
+      "scope": "recursive clock driver directory pass",
+      "reason": "Several clk leaves were already removed individually; convert future clk work to one full directory pass before another clk commit.",
+      "commit_scope": "one drivers/clk commit if additional confirmed-safe clk leaves remain",
+      "required_evidence": [
+        "fixed arm64 clock config/object dependencies",
+        "OF/firmware references",
+        "Makefile/Kconfig edges"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 8,
+      "target": "drivers/clocksource/",
+      "status": "proof_required",
+      "scope": "recursive clocksource/timer directory pass",
+      "reason": "Timer/clocksource is boot-critical; only platform-specific non-target sources should be removed after full proof.",
+      "commit_scope": "one drivers/clocksource commit for confirmed non-target timer leaves",
+      "required_evidence": [
+        "x86 hpet/apic timer path",
+        "arm64 arch_timer path",
+        "fixed built objects",
+        "Kconfig/Makefile edges"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 9,
+      "target": "drivers/dma/",
+      "status": "proof_required",
+      "scope": "recursive DMA directory pass",
+      "reason": "A DMA pass was validated, but remaining DMA directory should be treated as a whole module for any further cleanup.",
+      "commit_scope": "one drivers/dma commit if additional confirmed-safe DMA leaves remain",
+      "required_evidence": [
+        "DMA core/virt-dma dependencies",
+        "PCI/storage DMA users",
+        "arm64 platform DMA objects",
+        ".cmd built objects"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 10,
+      "target": "drivers/iommu/",
+      "status": "proof_required",
+      "scope": "recursive IOMMU directory pass",
+      "reason": "IOMMU core is built and tied to DMA/PCI boot policy; only further file-level trimming after full directory evidence.",
+      "commit_scope": "one drivers/iommu commit if confirmed-safe leftovers remain",
+      "required_evidence": [
+        "x86 AMD/Intel IOMMU and IRQ remap objects",
+        "arm64 SMMU/SMMUv3/LPAE objects",
+        "DMA domain boot logs",
+        "Kconfig/Makefile edges"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 11,
+      "target": "drivers/irqchip/",
+      "status": "done_current_pass",
+      "commit": "296296eeb810",
+      "scope": "recursive irqchip directory pass completed in irqchip style",
+      "reason": "Non-target interrupt controller implementations were deleted while preserving x86_64 irq-msi-lib and arm64 GIC/ITS/Xilinx INTC fixed paths.",
+      "next_action": "No immediate further irqchip pass unless later configs prove newly dead retained GIC/Xilinx/MSI files.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 12,
+      "target": "drivers/of/",
+      "status": "defer_keep_until_redesign_or_stronger_proof",
+      "scope": "recursive OF directory pass",
+      "reason": "arm64 boot and empty_root.dtb currently use OF. Do not broadly delete; only evaluate narrow whole-file candidates after boot dependency ledger.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 13,
+      "target": "drivers/nvme/",
+      "status": "keep_core_proof_optional",
+      "scope": "recursive NVMe directory pass",
+      "reason": "NVMe host path is required for /dev/nvme0n1. Only non-host or test/common leftovers may be considered after proving no host dependency.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 14,
+      "target": "drivers/block/",
+      "status": "proof_required",
+      "scope": "recursive block driver directory pass",
+      "reason": "Most non-target block drivers were removed; re-evaluate remaining files as one module before further deletion.",
+      "commit_scope": "one drivers/block commit if confirmed-safe block-driver leftovers remain",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 15,
+      "target": "drivers/base/",
+      "status": "defer_high_risk_core",
+      "scope": "recursive driver core directory pass",
+      "reason": "Driver core, sysfs/devtmpfs/platform/firmware node handling are boot-critical; only late, evidence-backed whole-file deletion.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 16,
+      "target": "drivers/tty/",
+      "status": "defer_console_required",
+      "scope": "recursive TTY/serial directory pass",
+      "reason": "Serial console is required by validation logs; evaluate only non-console leaves after full ledger.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 17,
+      "target": "drivers/virtio/",
+      "status": "defer_storage_required",
+      "scope": "recursive virtio directory pass",
+      "reason": "virtio-scsi PCI device path requires virtio core; trim only unrelated virtio leaves after proof.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 18,
+      "target": "drivers/amba/",
+      "status": "defer_arm64_console_bus",
+      "scope": "recursive AMBA directory pass",
+      "reason": "arm64 PL011 console uses AMBA-style platform paths; evaluate only after serial/arm64 boot proof.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 19,
+      "target": "drivers/bus/",
+      "status": "proof_required",
+      "scope": "recursive bus directory pass",
+      "reason": "Some simple/platform bus pieces are boot-support; non-target bus leaves require full directory proof.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 20,
+      "target": "drivers/char/",
+      "status": "proof_required",
+      "scope": "recursive char directory pass",
+      "reason": "Core misc/random/console-adjacent char files may remain; evaluate whole directory before deletion.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 21,
+      "target": "fs/",
+      "status": "mixed_keep_and_proof_required",
+      "scope": "recursive filesystem directory pass by child filesystem/module",
+      "reason": "Minix is required and pstore is user-kept; kernfs/proc/ramfs/sysfs are boot/runtime support and need ledgers before any deletion.",
+      "commit_scope": "one fs child-module commit per selected fs child directory, not one cross-filesystem mega-commit",
+      "known_keep": [
+        "fs/minix/",
+        "fs/pstore/"
+      ],
+      "defer": [
+        "fs/kernfs/",
+        "fs/proc/",
+        "fs/ramfs/",
+        "fs/sysfs/"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 22,
+      "target": "arch/x86/ and arch/arm64/",
+      "status": "proof_required",
+      "scope": "per architecture subdirectory proof pass",
+      "reason": "Only x86_64 and arm64 are in scope, but remaining optional arch leaves such as compat, purgatory, power, events, and net paths need config-backed proof.",
+      "commit_scope": "one arch commit per architecture pass or tightly-coupled x86_64+arm64 config-backed pass",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 23,
+      "target": "kernel/",
+      "status": "proof_required",
+      "scope": "per kernel child directory proof pass",
+      "reason": "Core kernel is high risk; optional BPF/trace/power/config/module leaves should be evaluated one child directory at a time.",
+      "commit_scope": "one kernel child-module commit, e.g. kernel/trace or kernel/bpf, after full child pass",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 24,
+      "target": "lib/",
+      "status": "proof_required",
+      "scope": "per lib child directory proof pass",
+      "reason": "Compression/crypto/checksum libraries may be shared by boot, firmware, initramfs, pstore, or decompressor paths; evaluate child directories separately.",
+      "commit_scope": "one lib child-module commit after full proof; preserve lib/reed_solomon while pstore_ram is kept",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 25,
+      "target": "block/",
+      "status": "defer_storage_core",
+      "scope": "recursive block core directory pass",
+      "reason": "Block core and partitions are central to NVMe/SCSI/Minix validation; only late whole-file candidates after storage path proof.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 26,
+      "target": "mm/",
+      "status": "defer_core_runtime",
+      "scope": "recursive memory-management directory pass",
+      "reason": "MM is core runtime; current work should stay at child whole-directory/whole-file proof, no file-internal minimization yet.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    },
+    {
+      "rank": 27,
+      "target": "init/ and usr/",
+      "status": "defer_boot_initramfs_required",
+      "scope": "boot/initramfs support directory pass",
+      "reason": "init and usr/initramfs generation are required by rdinit validation; trim only after exact generated-initramfs dependency proof.",
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Generated build trees and disposable validation images.
+/build-*/
+/*.raw
+/init-*
+/initramfs-*.cpio
+/rootfs-*/
+
+# Logs are generated evidence. They can be large and contain raw console output
+# with whitespace that should not be rewritten for source-control checks.
+/logs/
