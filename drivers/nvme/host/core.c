@@ -26,7 +26,6 @@
 
 #include "nvme.h"
 #include "fabrics.h"
-#include <linux/nvme-auth.h>
 
 #define CREATE_TRACE_POINTS
 #include "trace.h"
@@ -3723,16 +3722,6 @@ int nvme_init_ctrl_finish(struct nvme_ctrl *ctrl, bool was_suspended)
 
 	nvme_configure_opal(ctrl, was_suspended);
 
-	if (!ctrl->identified && !nvme_discovery_ctrl(ctrl)) {
-		/*
-		 * Do not return errors unless we are in a controller reset,
-		 * the controller works perfectly fine without hwmon.
-		 */
-		ret = nvme_hwmon_init(ctrl);
-		if (ret == -EINTR)
-			return ret;
-	}
-
 	clear_bit(NVME_CTRL_DIRTY_CAPABILITY, &ctrl->flags);
 	ctrl->identified = true;
 
@@ -4192,7 +4181,6 @@ static void nvme_alloc_ns(struct nvme_ctrl *ctrl, struct nvme_ns_info *info)
 		nvme_add_ns_cdev(ns);
 
 	nvme_mpath_add_disk(ns, info->anagrpid);
-	nvme_fault_inject_init(&ns->fault_inject, ns->disk->disk_name);
 
 	return;
 
@@ -4237,7 +4225,6 @@ static void nvme_ns_remove(struct nvme_ns *ns)
 
 	clear_bit(NVME_NS_READY, &ns->flags);
 	set_capacity(ns->disk, 0);
-	nvme_fault_inject_fini(&ns->fault_inject);
 
 	/*
 	 * Ensure that !NVME_NS_READY is seen by other threads to prevent
@@ -5012,8 +4999,6 @@ EXPORT_SYMBOL_GPL(nvme_start_ctrl);
 void nvme_uninit_ctrl(struct nvme_ctrl *ctrl)
 {
 	nvme_stop_keep_alive(ctrl);
-	nvme_hwmon_exit(ctrl);
-	nvme_fault_inject_fini(&ctrl->fault_inject);
 	dev_pm_qos_hide_latency_tolerance(ctrl->device);
 	cdev_device_del(&ctrl->cdev, ctrl->device);
 	nvme_put_ctrl(ctrl);
@@ -5176,7 +5161,6 @@ int nvme_add_ctrl(struct nvme_ctrl *ctrl)
 	dev_pm_qos_update_user_latency_tolerance(ctrl->device,
 		min(default_ps_max_latency_us, (unsigned long)S32_MAX));
 
-	nvme_fault_inject_init(&ctrl->fault_inject, dev_name(ctrl->device));
 	nvme_get_ctrl(ctrl);
 
 	return 0;

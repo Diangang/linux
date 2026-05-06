@@ -309,15 +309,6 @@ enum nvme_ctrl_state {
 	NVME_CTRL_DEAD,
 };
 
-struct nvme_fault_inject {
-#ifdef CONFIG_FAULT_INJECTION_DEBUG_FS
-	struct fault_attr attr;
-	struct dentry *parent;
-	bool dont_retry;	/* DNR, do not retry */
-	u16 status;		/* status code */
-#endif
-};
-
 enum nvme_ctrl_flags {
 	NVME_CTRL_FAILFAST_EXPIRED	= 0,
 	NVME_CTRL_ADMIN_Q_STOPPED	= 1,
@@ -349,9 +340,6 @@ struct nvme_ctrl {
 	struct srcu_struct srcu;
 	struct device ctrl_device;
 	struct device *device;	/* char device */
-#ifdef CONFIG_NVME_HWMON
-	struct device *hwmon_device;
-#endif
 	struct cdev cdev;
 	struct work_struct reset_work;
 	struct work_struct delete_work;
@@ -432,8 +420,6 @@ struct nvme_ctrl {
 
 	struct page *discard_page;
 	unsigned long discard_page_busy;
-
-	struct nvme_fault_inject fault_inject;
 
 	enum nvme_ctrl_type cntrltype;
 	enum nvme_dctype dctype;
@@ -554,7 +540,6 @@ struct nvme_ns {
 	struct cdev		cdev;
 	struct device		cdev_device;
 
-	struct nvme_fault_inject fault_inject;
 };
 
 /* NVMe ns supports metadata actions by the controller (generate/strip) */
@@ -662,21 +647,7 @@ static inline void nvme_print_device_info(struct nvme_ctrl *ctrl)
 		subsys->firmware_rev);
 }
 
-#ifdef CONFIG_FAULT_INJECTION_DEBUG_FS
-void nvme_fault_inject_init(struct nvme_fault_inject *fault_inj,
-			    const char *dev_name);
-void nvme_fault_inject_fini(struct nvme_fault_inject *fault_inject);
-void nvme_should_fail(struct request *req);
-#else
-static inline void nvme_fault_inject_init(struct nvme_fault_inject *fault_inj,
-					  const char *dev_name)
-{
-}
-static inline void nvme_fault_inject_fini(struct nvme_fault_inject *fault_inj)
-{
-}
 static inline void nvme_should_fail(struct request *req) {}
-#endif
 
 bool nvme_wait_reset(struct nvme_ctrl *ctrl);
 int nvme_try_sched_reset(struct nvme_ctrl *ctrl);
@@ -1088,20 +1059,6 @@ static inline struct nvme_ns *nvme_get_ns_from_dev(struct device *dev)
 	WARN_ON(nvme_disk_is_ns_head(disk));
 	return disk->private_data;
 }
-
-#ifdef CONFIG_NVME_HWMON
-int nvme_hwmon_init(struct nvme_ctrl *ctrl);
-void nvme_hwmon_exit(struct nvme_ctrl *ctrl);
-#else
-static inline int nvme_hwmon_init(struct nvme_ctrl *ctrl)
-{
-	return 0;
-}
-
-static inline void nvme_hwmon_exit(struct nvme_ctrl *ctrl)
-{
-}
-#endif
 
 static inline void nvme_start_request(struct request *rq)
 {

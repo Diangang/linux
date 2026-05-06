@@ -5,8 +5,6 @@
  * Copyright (c) 2011-2014, Intel Corporation.
  */
 
-#include <linux/nvme-auth.h>
-
 #include "nvme.h"
 #include "fabrics.h"
 
@@ -615,120 +613,8 @@ const struct attribute_group nvme_dev_attrs_group = {
 };
 EXPORT_SYMBOL_GPL(nvme_dev_attrs_group);
 
-#ifdef CONFIG_NVME_TCP_TLS
-static ssize_t tls_key_show(struct device *dev,
-			    struct device_attribute *attr, char *buf)
-{
-	struct nvme_ctrl *ctrl = dev_get_drvdata(dev);
-
-	if (!ctrl->tls_pskid)
-		return 0;
-	return sysfs_emit(buf, "%08x\n", ctrl->tls_pskid);
-}
-static DEVICE_ATTR_RO(tls_key);
-
-static ssize_t tls_configured_key_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct nvme_ctrl *ctrl = dev_get_drvdata(dev);
-	struct key *key = ctrl->opts->tls_key;
-
-	return sysfs_emit(buf, "%08x\n", key_serial(key));
-}
-
-static ssize_t tls_configured_key_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
-{
-	struct nvme_ctrl *ctrl = dev_get_drvdata(dev);
-	int error, qid;
-
-	error = kstrtoint(buf, 10, &qid);
-	if (error)
-		return error;
-
-	/*
-	 * We currently only allow userspace to write a `0` indicating
-	 * generate a new key.
-	 */
-	if (qid)
-		return -EINVAL;
-
-	if (!ctrl->opts || !ctrl->opts->concat)
-		return -EOPNOTSUPP;
-
-	error = nvme_auth_negotiate(ctrl, 0);
-	if (error < 0) {
-		nvme_reset_ctrl(ctrl);
-		return error;
-	}
-
-	error = nvme_auth_wait(ctrl, 0);
-	if (error < 0) {
-		nvme_reset_ctrl(ctrl);
-		return error;
-	}
-
-	/*
-	 * We need to reset the TLS connection, so let's just
-	 * reset the controller.
-	 */
-	nvme_reset_ctrl(ctrl);
-
-	return count;
-}
-static DEVICE_ATTR_RW(tls_configured_key);
-
-static ssize_t tls_keyring_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct nvme_ctrl *ctrl = dev_get_drvdata(dev);
-	struct key *keyring = ctrl->opts->keyring;
-
-	return sysfs_emit(buf, "%s\n", keyring->description);
-}
-static DEVICE_ATTR_RO(tls_keyring);
-
-static struct attribute *nvme_tls_attrs[] = {
-	&dev_attr_tls_key.attr,
-	&dev_attr_tls_configured_key.attr,
-	&dev_attr_tls_keyring.attr,
-	NULL,
-};
-
-static umode_t nvme_tls_attrs_are_visible(struct kobject *kobj,
-		struct attribute *a, int n)
-{
-	struct device *dev = container_of(kobj, struct device, kobj);
-	struct nvme_ctrl *ctrl = dev_get_drvdata(dev);
-
-	if (!ctrl->opts || strcmp(ctrl->opts->transport, "tcp"))
-		return 0;
-
-	if (a == &dev_attr_tls_key.attr &&
-	    !ctrl->opts->tls && !ctrl->opts->concat)
-		return 0;
-	if (a == &dev_attr_tls_configured_key.attr &&
-	    !ctrl->opts->concat)
-		return 0;
-	if (a == &dev_attr_tls_keyring.attr &&
-	    !ctrl->opts->keyring)
-		return 0;
-
-	return a->mode;
-}
-
-static const struct attribute_group nvme_tls_attrs_group = {
-	.attrs		= nvme_tls_attrs,
-	.is_visible	= nvme_tls_attrs_are_visible,
-};
-#endif
-
 const struct attribute_group *nvme_dev_attr_groups[] = {
 	&nvme_dev_attrs_group,
-#ifdef CONFIG_NVME_TCP_TLS
-	&nvme_tls_attrs_group,
-#endif
 	NULL,
 };
 
