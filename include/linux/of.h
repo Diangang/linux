@@ -33,9 +33,6 @@ struct property {
 #if defined(CONFIG_OF_DYNAMIC) || defined(CONFIG_SPARC)
 	unsigned long _flags;
 #endif
-#if defined(CONFIG_OF_PROMTREE)
-	unsigned int unique_id;
-#endif
 #if defined(CONFIG_OF_KOBJ)
 	struct bin_attribute attr;
 #endif

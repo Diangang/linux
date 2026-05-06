@@ -18,15 +18,6 @@ menuconfig OF
 
 if OF
 
-config OF_KUNIT_TEST
-	tristate "Devicetree KUnit Test" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This option builds KUnit unit tests for device tree infrastructure.
-
-	  If unsure, say N here, but this option is safe to enable.
-
 config OF_ALL_DTBS
 	bool "Build all Device Tree Blobs"
 	depends on COMPILE_TEST
@@ -47,9 +38,6 @@ config OF_EARLY_FLATTREE
 	def_bool OF && !(SPARC || ALPHA || HEXAGON || M68K || PARISC || S390)
 	select DMA_DECLARE_COHERENT if HAS_DMA && HAS_IOMEM
 	select OF_FLATTREE
-
-config OF_PROMTREE
-	bool
 
 config OF_KOBJ
 	def_bool SYSFS
@@ -88,16 +76,6 @@ config OF_OVERLAY
 	  device tree with dynamically loaded data.
 	  While this option is selected automatically when needed, you can
 	  enable it manually to improve device tree unit test coverage.
-
-config OF_OVERLAY_KUNIT_TEST
-	tristate "Device Tree overlay KUnit tests" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	select DTC
-	help
-	  This option builds KUnit unit tests for the device tree overlay code.
-
-	  If unsure, say N here, but this option is safe to enable.
 
 config OF_NUMA
 	bool
