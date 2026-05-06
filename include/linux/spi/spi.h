@@ -34,8 +34,6 @@ struct spi_transfer;
 struct spi_controller_mem_ops;
 struct spi_controller_mem_caps;
 struct spi_message;
-struct spi_offload;
-struct spi_offload_config;
 
 /*
  * INTERFACES between SPI controller-side drivers and SPI target protocol handlers,
@@ -512,10 +510,6 @@ extern struct spi_device *devm_spi_new_ancillary_device(struct spi_device *spi, 
  * @mem_ops: optimized/dedicated operations for interactions with SPI memory.
  *	     This field is optional and should only be implemented if the
  *	     controller has native support for memory like operations.
- * @get_offload: callback for controllers with offload support to get matching
- *	offload instance. Implementations should return -ENODEV if no match is
- *	found.
- * @put_offload: release the offload instance acquired by @get_offload.
  * @mem_caps: controller capabilities for the handling of memory operations.
  * @dtr_caps: true if controller has dtr(single/dual transfer rate) capability.
  *	QSPI based controller should fill this based on controller's capability.
@@ -773,10 +767,6 @@ struct spi_controller {
 	/* SPI or QSPI controller can set to true if supports SDR/DDR transfer rate */
 	bool			dtr_caps;
 
-	struct spi_offload *(*get_offload)(struct spi_device *spi,
-					   const struct spi_offload_config *config);
-	void (*put_offload)(struct spi_offload *offload);
-
 	/* GPIO chip select */
 	struct gpio_desc	**cs_gpiods;
 	bool			use_gpio_descriptors;
@@ -1011,8 +1001,6 @@ struct spi_res {
  * @rx_sg_mapped: If true, the @rx_sg is mapped for DMA
  * @tx_sg: Scatterlist for transmit, currently not for client use
  * @rx_sg: Scatterlist for receive, currently not for client use
- * @offload_flags: Flags that are only applicable to specialized SPI offload
- *	transfers. See %SPI_OFFLOAD_XFER_* in spi-offload.h.
  * @ptp_sts_word_pre: The word (subject to bits_per_word semantics) offset
  *	within @tx_buf for which the SPI device is requesting that the time
  *	snapshot for this transfer begins. Upon completing the SPI transfer,
@@ -1144,9 +1132,6 @@ struct spi_transfer {
 
 	u32		effective_speed_hz;
 
-	/* Use %SPI_OFFLOAD_XFER_* from spi-offload.h */
-	unsigned int	offload_flags;
-
 	unsigned int	ptp_sts_word_pre;
 	unsigned int	ptp_sts_word_post;
 
@@ -1232,12 +1217,6 @@ struct spi_message {
 	 * __spi_optimize_message() and __spi_unoptimize_message().
 	 */
 	void			*opt_state;
-
-	/*
-	 * Optional offload instance used by this message. This must be set
-	 * by the peripheral driver before calling spi_optimize_message().
-	 */
-	struct spi_offload	*offload;
 
 	/* List of spi_res resources when the SPI message is processed */
 	struct list_head        resources;

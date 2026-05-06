@@ -27,7 +27,6 @@ struct device;
 struct device_node;
 struct fsi_device;
 struct i2c_client;
-struct i3c_device;
 struct irq_domain;
 struct mdio_device;
 struct slim_device;
@@ -518,32 +517,6 @@ struct regmap_range_cfg {
 	unsigned int window_len;
 };
 
-/**
- * struct regmap_sdw_mbq_cfg - Configuration for Multi-Byte Quantities
- *
- * @mbq_size: Callback returning the actual size of the given register.
- * @deferrable: Callback returning true if the hardware can defer
- *              transactions to the given register. Deferral should
- *              only be used by SDCA parts and typically which controls
- *              are deferrable will be specified in either as a hard
- *              coded list or from the DisCo tables in the platform
- *              firmware.
- *
- * @timeout_us: The time in microseconds after which waiting for a deferred
- *              transaction should time out.
- * @retry_us: The time in microseconds between polls of the function busy
- *            status whilst waiting for an opportunity to retry a deferred
- *            transaction.
- *
- * Provides additional configuration required for SoundWire MBQ register maps.
- */
-struct regmap_sdw_mbq_cfg {
-	int (*mbq_size)(struct device *dev, unsigned int reg);
-	bool (*deferrable)(struct device *dev, unsigned int reg);
-	unsigned long timeout_us;
-	unsigned long retry_us;
-};
-
 struct regmap_async;
 
 typedef int (*regmap_hw_write)(void *context, const void *data,
@@ -684,19 +657,6 @@ struct regmap *__regmap_init_ac97(struct snd_ac97 *ac97,
 				  const struct regmap_config *config,
 				  struct lock_class_key *lock_key,
 				  const char *lock_name);
-struct regmap *__regmap_init_sdw(struct sdw_slave *sdw,
-				 const struct regmap_config *config,
-				 struct lock_class_key *lock_key,
-				 const char *lock_name);
-struct regmap *__regmap_init_sdw_mbq(struct device *dev, struct sdw_slave *sdw,
-				     const struct regmap_config *config,
-				     const struct regmap_sdw_mbq_cfg *mbq_config,
-				     struct lock_class_key *lock_key,
-				     const char *lock_name);
-struct regmap *__regmap_init_i3c(struct i3c_device *i3c,
-				 const struct regmap_config *config,
-				 struct lock_class_key *lock_key,
-				 const char *lock_name);
 struct regmap *__regmap_init_spi_avmm(struct spi_device *spi,
 				      const struct regmap_config *config,
 				      struct lock_class_key *lock_key,
@@ -750,20 +710,7 @@ struct regmap *__devm_regmap_init_ac97(struct snd_ac97 *ac97,
 				       const struct regmap_config *config,
 				       struct lock_class_key *lock_key,
 				       const char *lock_name);
-struct regmap *__devm_regmap_init_sdw(struct sdw_slave *sdw,
-				 const struct regmap_config *config,
-				 struct lock_class_key *lock_key,
-				 const char *lock_name);
-struct regmap *__devm_regmap_init_sdw_mbq(struct device *dev, struct sdw_slave *sdw,
-					  const struct regmap_config *config,
-					  const struct regmap_sdw_mbq_cfg *mbq_config,
-					  struct lock_class_key *lock_key,
-					  const char *lock_name);
 struct regmap *__devm_regmap_init_slimbus(struct slim_device *slimbus,
-				 const struct regmap_config *config,
-				 struct lock_class_key *lock_key,
-				 const char *lock_name);
-struct regmap *__devm_regmap_init_i3c(struct i3c_device *i3c,
 				 const struct regmap_config *config,
 				 struct lock_class_key *lock_key,
 				 const char *lock_name);
@@ -963,60 +910,6 @@ int regmap_attach_dev(struct device *dev, struct regmap *map,
 bool regmap_ac97_default_volatile(struct device *dev, unsigned int reg);
 
 /**
- * regmap_init_sdw() - Initialise register map
- *
- * @sdw: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer to
- * a struct regmap.
- */
-#define regmap_init_sdw(sdw, config)					\
-	__regmap_lockdep_wrapper(__regmap_init_sdw, #config,		\
-				sdw, config)
-
-/**
- * regmap_init_sdw_mbq() - Initialise register map
- *
- * @sdw: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer to
- * a struct regmap.
- */
-#define regmap_init_sdw_mbq(sdw, config)					\
-	__regmap_lockdep_wrapper(__regmap_init_sdw_mbq, #config,		\
-				&sdw->dev, sdw, config, NULL)
-
-/**
- * regmap_init_sdw_mbq_cfg() - Initialise MBQ SDW register map with config
- *
- * @sdw: Device that will be interacted with
- * @config: Configuration for register map
- * @mbq_config: Properties for the MBQ registers
- *
- * The return value will be an ERR_PTR() on error or a valid pointer
- * to a struct regmap. The regmap will be automatically freed by the
- * device management code.
- */
-#define regmap_init_sdw_mbq_cfg(dev, sdw, config, mbq_config)		\
-	__regmap_lockdep_wrapper(__regmap_init_sdw_mbq, #config,	\
-				dev, sdw, config, mbq_config)
-
-/**
- * regmap_init_i3c() - Initialise register map
- *
- * @i3c: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer to
- * a struct regmap.
- */
-#define regmap_init_i3c(i3c, config)					\
-	__regmap_lockdep_wrapper(__regmap_init_i3c, #config,		\
-				i3c, config)
-
-/**
  * regmap_init_spi_avmm() - Initialize register map for Intel SPI Slave
  * to AVMM Bus Bridge
  *
@@ -1202,50 +1095,6 @@ bool regmap_ac97_default_volatile(struct device *dev, unsigned int reg);
 				ac97, config)
 
 /**
- * devm_regmap_init_sdw() - Initialise managed register map
- *
- * @sdw: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer
- * to a struct regmap. The regmap will be automatically freed by the
- * device management code.
- */
-#define devm_regmap_init_sdw(sdw, config)				\
-	__regmap_lockdep_wrapper(__devm_regmap_init_sdw, #config,	\
-				sdw, config)
-
-/**
- * devm_regmap_init_sdw_mbq() - Initialise managed register map
- *
- * @sdw: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer
- * to a struct regmap. The regmap will be automatically freed by the
- * device management code.
- */
-#define devm_regmap_init_sdw_mbq(sdw, config)			\
-	__regmap_lockdep_wrapper(__devm_regmap_init_sdw_mbq, #config,   \
-				&sdw->dev, sdw, config, NULL)
-
-/**
- * devm_regmap_init_sdw_mbq_cfg() - Initialise managed MBQ SDW register map with config
- *
- * @dev: Device that will be interacted with
- * @sdw: SoundWire Device that will be interacted with
- * @config: Configuration for register map
- * @mbq_config: Properties for the MBQ registers
- *
- * The return value will be an ERR_PTR() on error or a valid pointer
- * to a struct regmap. The regmap will be automatically freed by the
- * device management code.
- */
-#define devm_regmap_init_sdw_mbq_cfg(dev, sdw, config, mbq_config)	\
-	__regmap_lockdep_wrapper(__devm_regmap_init_sdw_mbq,		\
-				#config, dev, sdw, config, mbq_config)
-
-/**
  * devm_regmap_init_slimbus() - Initialise managed register map
  *
  * @slimbus: Device that will be interacted with
@@ -1258,20 +1107,6 @@ bool regmap_ac97_default_volatile(struct device *dev, unsigned int reg);
 #define devm_regmap_init_slimbus(slimbus, config)			\
 	__regmap_lockdep_wrapper(__devm_regmap_init_slimbus, #config,	\
 				slimbus, config)
-
-/**
- * devm_regmap_init_i3c() - Initialise managed register map
- *
- * @i3c: Device that will be interacted with
- * @config: Configuration for register map
- *
- * The return value will be an ERR_PTR() on error or a valid pointer
- * to a struct regmap.  The regmap will be automatically freed by the
- * device management code.
- */
-#define devm_regmap_init_i3c(i3c, config)				\
-	__regmap_lockdep_wrapper(__devm_regmap_init_i3c, #config,	\
-				i3c, config)
 
 /**
  * devm_regmap_init_spi_avmm() - Initialize register map for Intel SPI Slave

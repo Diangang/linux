@@ -1,11 +1,12 @@
 You are in bugfix mode for `linux-minimal-core-long-run`.
 
-Use the linux-storage and karpathy-guidelines skills.
+Use the workflow skill as the single entrypoint.
 
-Apply karpathy-guidelines during bugfix work: surface uncertainty instead of
+Apply workflow routing during bugfix work: surface uncertainty instead of
 guessing, make the smallest mechanical fix that addresses the observed fallout,
 do not broaden scope into unrelated cleanup, and verify the fix with explicit
-checks before returning to normal continuation.
+checks before returning to normal continuation. Deep-read workflow-managed
+external references only when the selected bugfix needs them.
 
 Read:
 

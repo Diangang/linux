@@ -1,12 +1,13 @@
 You are running the recoverable long task `linux-minimal-core-long-run`.
 
-Use the linux-storage and karpathy-guidelines skills.
+Use the workflow skill as the single entrypoint.
 
-Apply karpathy-guidelines to all code-changing decisions: state assumptions
-before selecting a target, prefer coarse directory and whole-file deletion
-before file-internal trimming, avoid speculative cleanup or drive-by
-refactoring, touch only lines directly required by the selected removal, and
-define verification before looping.
+Apply workflow routing before code-changing decisions: state assumptions before
+selecting a target, prefer coarse directory and whole-file deletion before
+file-internal trimming, avoid speculative cleanup or drive-by refactoring, touch
+only lines directly required by the selected removal, and define verification
+before looping. Deep-read workflow-managed external references only when the
+selected task needs them.
 
 Read these files before acting:
 

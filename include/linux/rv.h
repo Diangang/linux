@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Runtime Verification.
- *
- * For futher information, see: kernel/trace/rv/rv.c.
+ * Runtime Verification compatibility definitions.
  */
 #ifndef _LINUX_RV_H
 #define _LINUX_RV_H

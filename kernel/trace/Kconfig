@@ -1272,8 +1272,6 @@ config HIST_TRIGGERS_DEBUG
 
           If unsure, say N.
 
-source "kernel/trace/rv/Kconfig"
-
 config TRACE_REMOTE
 	bool
 

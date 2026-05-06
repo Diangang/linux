@@ -13,15 +13,15 @@
     "sandbox_note": "Default child Codex rounds bypass Codex's bwrap sandbox because this host's packaged bubblewrap does not support the --perms option; override CODEX_ARGS on hosts with a compatible bwrap."
   },
   "run_control": {
-    "status": "needs_user",
-    "phase": "paused",
-    "active_step": "paused after external Codex usage-limit failure; source progress updated through EFI unaccepted memory deletion",
-    "stop_condition": "codex_process_failed",
-    "last_error": "Codex remote compaction and follow-up bugfix rounds failed because the account hit its usage limit; latest source validation had already passed, so no kernel logic change was indicated.",
-    "last_exit": "exit_1",
-    "last_round": 5,
+    "status": "ready",
+    "phase": "ready_to_continue",
+    "active_step": "validated and committed residual zero-dependency SCSI header deletion; continue current-tree module/file proof passes",
+    "stop_condition": null,
+    "last_error": null,
+    "last_exit": "clean_commit",
+    "last_round": 112,
     "last_log": ".codex-qemu-kernels/logs/agent-runs/bugfix-round-20260505-230414-5.log",
-    "heartbeat": "2026-05-06T01:44:26Z",
+    "heartbeat": "2026-05-07T01:03:23Z",
     "budgets": {
       "max_rounds": 0,
       "max_failures": 3,
@@ -29,10 +29,10 @@
     },
     "bugfix": {
       "enabled": true,
-      "status": "not_applicable_external_failure",
-      "attempts": 3,
+      "status": "not_applicable",
+      "attempts": 0,
       "max_attempts": 3,
-      "trigger_condition": "codex_process_failed",
+      "trigger_condition": null,
       "last_log": ".codex-qemu-kernels/logs/agent-runs/bugfix-round-20260505-230414-5.log",
       "bugfixable_stop_conditions": [
         "validation_failure",
@@ -73,8 +73,8 @@
       ".codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md",
       ".codex-qemu-kernels/reviews/"
     ],
-    "startup_instruction": "Use linux-storage and karpathy-guidelines skills. Read .codex-qemu-kernels/state.json, .codex-qemu-kernels/Kernel-Minimal-Roadmap.md, and .codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md. Continue linux-minimal-core-long-run from clean HEAD e8492b4d13ff. The current task model is module_directory_proof_pass. Continue the drivers/firmware proof pass for remaining safe whole-file buckets. The previous supervisor stop was an external Codex usage-limit/remote-compaction failure after successful EFI unaccepted-memory validation, not a kernel validation or logic failure. Do not commit before the selected-directory review is complete, do not split one selected module directory into many commits, and do not bundle unrelated module directories. Keep fs/pstore and pstore_ram. Do not commit .codex-qemu-kernels.",
-    "last_updated": "2026-05-05"
+    "startup_instruction": "Resume from clean source HEAD 069efd8ed1b6 after validated residual zero-dependency SCSI header deletion. Continue current-tree module/file proof passes; prefer whole directories or tightly-coupled file families before single-file and file-internal trimming. Keep dependency-retained headers such as hidden, compiler-version, highmem-internal, time32, virtio, NFS/netfs, quota, LSM, TTY/console, extcon, nvmem, wwan, and pstore unless a later proof removes their retained users.",
+    "last_updated": "2026-05-07"
   },
   "boundaries": {
     "roadmap": ".codex-qemu-kernels/Kernel-Minimal-Roadmap.md",
@@ -110,10 +110,11 @@
     },
     "behavioral_skills": {
       "required": [
-        "linux-storage",
-        "karpathy-guidelines"
+        "workflow"
       ],
-      "karpathy_guidelines_application": [
+      "workflow_application": [
+        "route every substantive kernel trimming task through workflow/router.md",
+        "use specialized kernel/storage guidance only through workflow when needed",
         "state assumptions before selecting a trimming target",
         "prefer the largest safe directory-level deletion target first",
         "prefer whole-file deletion before file-internal trimming",
@@ -891,9 +892,139 @@
         "bd173f022734",
         "ec2913c3c795",
         "e3eba7d12ad8",
-        "e8492b4d13ff"
+        "e8492b4d13ff",
+        "8926549c6cb5",
+        "17357f509ffe",
+        "302f0f34791d",
+        "1c00a77564e1",
+        "8058c5d4f79c",
+        "5bb009036052",
+        "5be1a4a08b76",
+        "4b5c8f8cf28e",
+        "f23ffb900543",
+        "e5159dd11ab5",
+        "690c439ebdbb",
+        "99e5d23b1fe7",
+        "5fb81871c34a",
+        "aad41b0a6a34",
+        "40873a30668f",
+        "0931023c96dd",
+        "5af24005e903",
+        "356ede1b5f3e",
+        "f3d8d92acfaf",
+        "0e1a4dea5ee9",
+        "50af0c25dabf",
+        "aecce9cf45eb",
+        "8a2c4e5a596f",
+        "d72f4fa8f801",
+        "32bbdffde87e",
+        "2e0732b4f654",
+        "01c908deba35",
+        "8f2f1d3196fe",
+        "e18f98b205a1",
+        "9a15c938e4cf",
+        "7c86c4654011",
+        "7a88196a0076",
+        "c98f0a85d0ce",
+        "baad0b2bd8be",
+        "d53c157bda7e",
+        "aecf16fdc47c",
+        "db4c4a83e65d",
+        "374f3bf51d9b",
+        "8bad31e138cb",
+        "10a291238f83",
+        "672494b5996d",
+        "12cef37551f0",
+        "fb472a02edd9",
+        "bff493a27b99",
+        "ceed04e6b85a",
+        "64ef0973fd06",
+        "5cf68c2d7309",
+        "4e9272a5691f",
+        "a66214eb4b75",
+        "bca8cfb4d0bc",
+        "e32df753cabe",
+        "d3f8b1125658",
+        "643c62751a73",
+        "553bf4f16f00",
+        "da3d6daa0c71",
+        "35f5f09ec195",
+        "94780002e25c",
+        "bdcac9c773c1",
+        "4d04f6b58461",
+        "4fcae3bbeac7",
+        "f2b78ce3f765",
+        "a91855d118bc",
+        "7e384a216a3f",
+        "80edf1e6ef69",
+        "5ca7658bcb75",
+        "935e391b6b9e",
+        "4f50b163b8e5",
+        "6c05c17a9786",
+        "73622967902c",
+        "37aecd356ae7",
+        "a87303bda5ad",
+        "01eb04bcd610",
+        "e5386970ee3d",
+        "5e24c3c39a1a",
+        "01514212fb29",
+        "cf9b0c30024b",
+        "e35fb0cbfaa8",
+        "b1b28b7ef5ee",
+        "7c7ed06cf99a",
+        "344efe822374",
+        "9c827834dde2",
+        "8ae0c4e0bb08",
+        "a8e428ed3b06",
+        "1513dda8ae75",
+        "979b29e883cb",
+        "994d508ecd54",
+        "291abda58059",
+        "4be3d3c0b633",
+        "ff5c346a2deb",
+        "96f0700bac1a",
+        "d4bd1bdba2e5",
+        "088a4c0ae66b",
+        "92eae2a1bdf9",
+        "f72224f1fe13",
+        "10fe355e238e",
+        "3cca50f376df",
+        "8223c9a40373",
+        "bc15c6a89d26",
+        "a1d971e0c1bc",
+        "2439de33359f",
+        "cbbc7bf6f40a",
+        "eaccd8aedf5f",
+        "c9bd8bd5ca71",
+        "683c05d6ccaf",
+        "223a2fffd510",
+        "a99cd0b7ebed",
+        "57c315691caf",
+        "4a42eebb3a33",
+        "b7ac5e612756",
+        "9557bc2622b5",
+        "4f94a551b1ae",
+        "a3b95c9bceda",
+        "7c754806aa4c",
+        "c931ab11abfb",
+        "0a9e0df647fd",
+        "b72ad9f51fb0",
+        "05e3c6297e7e",
+        "88345213e1eb",
+        "73d4ada230fa",
+        "21da8d6d48af",
+        "03b38d6fce0e",
+        "39dd292cb903",
+        "22035d8cc825",
+        "6c52033fc509",
+    "d4af0e8c77f7",
+    "9de5664f88c0",
+    "08e7dda4eafe",
+    "efe7759cc0f4",
+    "e105d0078882",
+    "069efd8ed1b6"
       ],
-      "note": "Whole-file/support-tree trimming is active. Current HEAD e8492b4d13ff is validated after deleting EFI unaccepted memory support. Continue the drivers/firmware module-directory proof pass for remaining safe whole-file buckets.",
+  "note": "Whole-file/support-tree trimming is active. Current HEAD 069efd8ed1b6 is validated after deleting residual zero-dependency SCSI headers. Continue whole-directory and file-family proof passes before file-internal trimming.",
       "task_method": "module_directory_proof_pass"
     },
     {
@@ -903,27 +1034,27 @@
     }
   ],
   "current_patch": {
-    "commit": "e8492b4d13ff",
-    "summary": "refactor(裁剪firmware): 删除EFI unaccepted memory支持",
-    "scope": "EFI unaccepted memory core/libstub files and direct Kconfig/Makefile/declaration/callsite fallout",
+    "commit": "069efd8ed1b6",
+    "summary": "refactor(裁剪include): 删除残留无依赖SCSI头文件",
+    "scope": "residual zero-dependency SCSI header deletion",
     "validation": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh"
   },
   "validation": {
     "status": "passed",
     "command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
     "logs": [
-      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260505-230346-attempt1.log",
-      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260505-230350-attempt1.log"
+      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260507-080929-attempt1.log",
+      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260507-080932-attempt1.log"
     ],
-    "metrics": ".codex-qemu-kernels/metrics/metrics-20260505-230351.txt"
+    "metrics": ".codex-qemu-kernels/metrics/metrics-20260507-080933.txt"
   },
   "review": {
     "status": "clean",
-    "record": ".codex-qemu-kernels/reviews/stage6-efi-unaccepted-memory-ledger-20260505.md"
+    "record": ".codex-qemu-kernels/reviews/stage6-scsi-residual-header-deletion-20260507.md"
   },
   "current_reassessment": {
-    "date": "2026-05-05",
-    "head": "296296eeb810",
+    "date": "2026-05-06",
+    "head": "32bbdffde87e",
     "basis": [
       "find arch block drivers fs init kernel lib mm scripts tools usr -type f",
       "find .codex-qemu-kernels/build-x86_64 .codex-qemu-kernels/build-arm64 for .o, .ko, and built-in.a",
@@ -962,7 +1093,7 @@
       },
       "cmd_dependency_files": 3554
     },
-    "current_conclusion": "Future work should be driven by module-directory proof passes rather than broad mixed-area buckets. The irqchip pass is the model: recursively classify one selected directory, aggregate confirmed safe deletions from that directory, validate once, and commit once.",
+    "current_conclusion": "Control records were refreshed after git history advanced beyond the stale e8492b4d13ff firmware checkpoint. Future work must start with a fresh current-tree inventory and then continue module-directory proof passes; do not continue from the old drivers/firmware next_patch assumption.",
     "explicit_keep": [
       "fs/pstore/ and CONFIG_PSTORE_RAM: kept by user decision for panic log persistence/debuggability; arm64 also keeps REED_SOLOMON because pstore_ram/ramoops selects it.",
       "drivers/of/: keep for arm64 boot/devicetree path unless a focused redesign proves a narrower replacement.",
@@ -1032,10 +1163,10 @@
     "task_model": "module_directory_proof_pass"
   },
   "next_patch": {
-    "status": "ready",
+    "status": "reassessment_required",
     "task_model": "module_directory_proof_pass",
-    "candidate": "drivers/firmware/",
-    "selection_rule": "Continue the drivers/firmware module-directory proof pass. Select the next largest coherent safe whole-file firmware bucket; do not bundle unrelated firmware feature families. SCMI raw_mode requires separate care because driver.c still compiles dead-branch references.",
+    "candidate": "next current-tree module directory or header-family proof target",
+    "selection_rule": "Continue from clean HEAD 069efd8ed1b6; reassess remaining current-tree zero-dependency include/header candidates and prefer whole directories or tightly-coupled file families before single-file or file-internal trimming.",
     "required_validation": [
       "git status --porcelain=v1 -uall -- ':!/.codex-qemu-kernels' before and after source changes",
       "git diff --check before commit or git show --check after commit",
@@ -1143,7 +1274,7 @@
     {
       "rank": 4,
       "target": "drivers/firmware/",
-      "status": "in_progress_current_pass",
+      "status": "done_current_pass",
       "scope": "recursive firmware driver directory pass",
       "reason": "Firmware pass is in progress. Deleted non-target EFI libstub architecture files, the PSCI checker self-test, SCMI optional message transports, disabled SCMI power-control, disabled EFI x86 vendor table/property support, the unused EFI MOK variable table, out-of-scope EFI RISC-V runtime support, disabled EFI embedded firmware fallback support, disabled EFI zboot decompressor support, EFI capsule loader/update submission support, EFI ESRT firmware-update resource table support, EFI CPER CXL protocol-error pretty-print support, EFI x86 CPER IA32/x64 processor-error pretty-print support, EFI/ACPI BGRT boot graphics support, SYSFB platform framebuffer support, SMCCC SOC_ID device/sysfs support, the ARM SCMI protocol stack plus SCMI clock client, EFI framebuffer earlycon support, the EFI-variable pstore backend, the ARM CPER processor-error pretty-printer, EFI TPM/CC event-log retrieval/reservation, the EFI libstub primary-display table helper, the EFI libstub GOP graphics helper, SMCCC KVM guest hypervisor services, the DMI ID sysfs exporter, the firmware memmap sysfs exporter, and EFI unaccepted memory support while preserving x86_64 and arm64 fixed storage validation; continue with remaining firmware buckets only after separate proof.",
       "commit_scope": "one drivers/firmware commit for confirmed non-target firmware leaves",
@@ -1155,12 +1286,12 @@
       ],
       "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
       "commit": "e8492b4d13ff",
-      "next_action": "Continue drivers/firmware proof pass. EFI unaccepted memory support is now removed after fixed x86_64 and arm64 storage validation; evaluate the next safe firmware whole-file bucket with a separate dependency ledger."
+      "next_action": "Firmware pass is complete for recorded safe buckets through EFI unaccepted memory; reassess current tree before reopening firmware."
     },
     {
       "rank": 5,
       "target": "drivers/scsi/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive SCSI directory pass",
       "reason": "SCSI core, virtio_scsi, sd, and required helpers are part of /dev/sda validation; remaining non-QEMU transport/HBA/service files should be evaluated as one module pass.",
       "commit_scope": "one drivers/scsi commit for confirmed non-target SCSI files/directories",
@@ -1170,12 +1301,13 @@
         "virtio_scsi/sd/scsi core references",
         "Kconfig/Makefile edges"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "1c00a77564e1"
     },
     {
       "rank": 6,
       "target": "drivers/pci/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive PCI directory pass",
       "reason": "NVMe and virtio-scsi are PCI-backed in both QEMU targets; only non-target PCI services/leaves can be removed after full directory proof.",
       "commit_scope": "one drivers/pci commit for confirmed non-target PCI leaves",
@@ -1185,12 +1317,13 @@
         "NVMe/virtio PCI dependencies",
         ".cmd built objects"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "8058c5d4f79c"
     },
     {
       "rank": 7,
       "target": "drivers/clk/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive clock driver directory pass",
       "reason": "Several clk leaves were already removed individually; convert future clk work to one full directory pass before another clk commit.",
       "commit_scope": "one drivers/clk commit if additional confirmed-safe clk leaves remain",
@@ -1199,12 +1332,13 @@
         "OF/firmware references",
         "Makefile/Kconfig edges"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "5bb009036052"
     },
     {
       "rank": 8,
       "target": "drivers/clocksource/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive clocksource/timer directory pass",
       "reason": "Timer/clocksource is boot-critical; only platform-specific non-target sources should be removed after full proof.",
       "commit_scope": "one drivers/clocksource commit for confirmed non-target timer leaves",
@@ -1214,12 +1348,13 @@
         "fixed built objects",
         "Kconfig/Makefile edges"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "5be1a4a08b76"
     },
     {
       "rank": 9,
       "target": "drivers/dma/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive DMA directory pass",
       "reason": "A DMA pass was validated, but remaining DMA directory should be treated as a whole module for any further cleanup.",
       "commit_scope": "one drivers/dma commit if additional confirmed-safe DMA leaves remain",
@@ -1229,12 +1364,13 @@
         "arm64 platform DMA objects",
         ".cmd built objects"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "4b5c8f8cf28e"
     },
     {
       "rank": 10,
       "target": "drivers/iommu/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive IOMMU directory pass",
       "reason": "IOMMU core is built and tied to DMA/PCI boot policy; only further file-level trimming after full directory evidence.",
       "commit_scope": "one drivers/iommu commit if confirmed-safe leftovers remain",
@@ -1244,7 +1380,8 @@
         "DMA domain boot logs",
         "Kconfig/Makefile edges"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "f23ffb900543"
     },
     {
       "rank": 11,
@@ -1259,80 +1396,90 @@
     {
       "rank": 12,
       "target": "drivers/of/",
-      "status": "defer_keep_until_redesign_or_stronger_proof",
+      "status": "done_current_pass",
       "scope": "recursive OF directory pass",
       "reason": "arm64 boot and empty_root.dtb currently use OF. Do not broadly delete; only evaluate narrow whole-file candidates after boot dependency ledger.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "8926549c6cb5"
     },
     {
       "rank": 13,
       "target": "drivers/nvme/",
-      "status": "keep_core_proof_optional",
+      "status": "done_current_pass",
       "scope": "recursive NVMe directory pass",
       "reason": "NVMe host path is required for /dev/nvme0n1. Only non-host or test/common leftovers may be considered after proving no host dependency.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "302f0f34791d"
     },
     {
       "rank": 14,
       "target": "drivers/block/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive block driver directory pass",
       "reason": "Most non-target block drivers were removed; re-evaluate remaining files as one module before further deletion.",
       "commit_scope": "one drivers/block commit if confirmed-safe block-driver leftovers remain",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "17357f509ffe"
     },
     {
       "rank": 15,
       "target": "drivers/base/",
-      "status": "defer_high_risk_core",
+      "status": "done_current_pass",
       "scope": "recursive driver core directory pass",
       "reason": "Driver core, sysfs/devtmpfs/platform/firmware node handling are boot-critical; only late, evidence-backed whole-file deletion.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "8a2c4e5a596f"
     },
     {
       "rank": 16,
       "target": "drivers/tty/",
-      "status": "defer_console_required",
+      "status": "done_current_pass",
       "scope": "recursive TTY/serial directory pass",
       "reason": "Serial console is required by validation logs; evaluate only non-console leaves after full ledger.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "d72f4fa8f801"
     },
     {
       "rank": 17,
       "target": "drivers/virtio/",
-      "status": "defer_storage_required",
+      "status": "done_current_pass",
       "scope": "recursive virtio directory pass",
       "reason": "virtio-scsi PCI device path requires virtio core; trim only unrelated virtio leaves after proof.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "32bbdffde87e",
+      "next_action": "Virtio leaf-driver pass is validated; preserve virtio core/PCI/ring and virtio-scsi dependencies unless a later proof shows further safe whole-file deletion."
     },
     {
       "rank": 18,
       "target": "drivers/amba/",
-      "status": "defer_arm64_console_bus",
+      "status": "done_current_pass",
       "scope": "recursive AMBA directory pass",
       "reason": "arm64 PL011 console uses AMBA-style platform paths; evaluate only after serial/arm64 boot proof.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "aecce9cf45eb"
     },
     {
       "rank": 19,
       "target": "drivers/bus/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive bus directory pass",
       "reason": "Some simple/platform bus pieces are boot-support; non-target bus leaves require full directory proof.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "e5159dd11ab5"
     },
     {
       "rank": 20,
       "target": "drivers/char/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "recursive char directory pass",
       "reason": "Core misc/random/console-adjacent char files may remain; evaluate whole directory before deletion.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "690c439ebdbb"
     },
     {
       "rank": 21,
       "target": "fs/",
-      "status": "mixed_keep_and_proof_required",
+      "status": "mixed_keep_and_done_current_pass",
       "scope": "recursive filesystem directory pass by child filesystem/module",
       "reason": "Minix is required and pstore is user-kept; kernfs/proc/ramfs/sysfs are boot/runtime support and need ledgers before any deletion.",
       "commit_scope": "one fs child-module commit per selected fs child directory, not one cross-filesystem mega-commit",
@@ -1346,58 +1493,76 @@
         "fs/ramfs/",
         "fs/sysfs/"
       ],
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "99e5d23b1fe7"
     },
     {
       "rank": 22,
       "target": "arch/x86/ and arch/arm64/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "per architecture subdirectory proof pass",
       "reason": "Only x86_64 and arm64 are in scope, but remaining optional arch leaves such as compat, purgatory, power, events, and net paths need config-backed proof.",
       "commit_scope": "one arch commit per architecture pass or tightly-coupled x86_64+arm64 config-backed pass",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "5fb81871c34a,aad41b0a6a34"
     },
     {
       "rank": 23,
       "target": "kernel/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "per kernel child directory proof pass",
       "reason": "Core kernel is high risk; optional BPF/trace/power/config/module leaves should be evaluated one child directory at a time.",
       "commit_scope": "one kernel child-module commit, e.g. kernel/trace or kernel/bpf, after full child pass",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "40873a30668f"
     },
     {
       "rank": 24,
       "target": "lib/",
-      "status": "proof_required",
+      "status": "done_current_pass",
       "scope": "per lib child directory proof pass",
       "reason": "Compression/crypto/checksum libraries may be shared by boot, firmware, initramfs, pstore, or decompressor paths; evaluate child directories separately.",
       "commit_scope": "one lib child-module commit after full proof; preserve lib/reed_solomon while pstore_ram is kept",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "0931023c96dd"
     },
     {
       "rank": 25,
       "target": "block/",
-      "status": "defer_storage_core",
+      "status": "done_current_pass",
       "scope": "recursive block core directory pass",
       "reason": "Block core and partitions are central to NVMe/SCSI/Minix validation; only late whole-file candidates after storage path proof.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "5af24005e903"
     },
     {
       "rank": 26,
       "target": "mm/",
-      "status": "defer_core_runtime",
+      "status": "done_current_pass",
       "scope": "recursive memory-management directory pass",
       "reason": "MM is core runtime; current work should stay at child whole-directory/whole-file proof, no file-internal minimization yet.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "356ede1b5f3e"
     },
     {
       "rank": 27,
       "target": "init/ and usr/",
-      "status": "defer_boot_initramfs_required",
+      "status": "done_current_pass",
       "scope": "boot/initramfs support directory pass",
       "reason": "init and usr/initramfs generation are required by rdinit validation; trim only after exact generated-initramfs dependency proof.",
-      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。"
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "f3d8d92acfaf,0e1a4dea5ee9"
     }
-  ]
+  ],
+  "active_step": "validated and committed residual zero-dependency SCSI header deletion; continue current-tree module/file proof passes",
+  "last_validation": {
+    "status": "passed",
+    "command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
+    "logs": [
+      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260507-090259-attempt1.log",
+      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260507-090302-attempt1.log"
+    ],
+    "metrics": ".codex-qemu-kernels/metrics/metrics-20260507-090303.txt",
+    "commit": "069efd8ed1b6"
+  }
 }
