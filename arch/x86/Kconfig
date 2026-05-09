@@ -826,9 +826,9 @@ config DMI
 
 config GART_IOMMU
 	bool "Old AMD GART IOMMU support"
-	select IOMMU_HELPER
 	select SWIOTLB
 	depends on X86_64 && PCI && AMD_NB
+	depends on BROKEN
 	help
 	  Provides a driver for older AMD Athlon64/Opteron/Turion/Sempron
 	  GART based hardware IOMMUs.
@@ -1362,12 +1362,12 @@ config AMD_MEM_ENCRYPT
 	bool "AMD Secure Memory Encryption (SME) support"
 	depends on X86_64 && CPU_SUP_AMD
 	depends on EFI_STUB
+	depends on BROKEN
 	select DMA_COHERENT_POOL
 	select ARCH_USE_MEMREMAP_PROT
 	select INSTRUCTION_DECODER
 	select ARCH_HAS_CC_PLATFORM
 	select X86_MEM_ENCRYPT
-	select CRYPTO_LIB_AESGCM
 	help
 	  Say yes to enable support for the encryption of system memory.
 	  This requires an AMD processor that supports Secure Memory

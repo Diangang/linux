@@ -1118,19 +1118,6 @@ config DEBUG_KOBJECT_RELEASE
 config HAVE_DEBUG_BUGVERBOSE
 	bool
 
-menu "Debug kernel data structures"
-
-config DEBUG_CLOSURES
-	bool "Debug closures (bcache async widgits)"
-	depends on CLOSURES
-	select DEBUG_FS
-	help
-	  Keeps all active closures in a linked list and provides a debugfs
-	  interface to list them, which makes it possible to see asynchronous
-	  operations that get stuck.
-
-endmenu
-
 source "kernel/rcu/Kconfig.debug"
 
 config DEBUG_CGROUP_REF
@@ -1615,41 +1602,6 @@ config TEST_MISC_MINOR
 
 	  If unsure, say N.
 
-config TEST_PARMAN
-	tristate "Perform selftest on priority array manager"
-	depends on PARMAN
-	help
-	  Enable this option to test priority array manager on boot
-	  (or module load).
-
-	  If unsure, say N.
-
-config TEST_BPF
-	tristate "Test BPF filter functionality"
-	depends on m && NET
-	help
-	  This builds the "test_bpf" module that runs various test vectors
-	  against the BPF interpreter or BPF JIT compiler depending on the
-	  current setting. This is in particular useful for BPF JIT compiler
-	  development, but also to run regression tests against changes in
-	  the interpreter code. It also enables test stubs for eBPF maps and
-	  verifier used by user space verifier testsuite.
-
-	  If unsure, say N.
-
-config FIND_BIT_BENCHMARK_RUST
-	tristate "Test find_bit functions in Rust"
-	depends on RUST
-	help
-	  This builds the "find_bit_benchmark_rust" module. It is a micro
-          benchmark that measures the performance of Rust functions that
-          correspond to the find_*_bit() operations in C. It follows the
-          FIND_BIT_BENCHMARK closely but will in general not yield same
-          numbers due to extra bounds checks and overhead of foreign
-          function calls.
-
-	  If unsure, say N.
-
 config BITOPS_KUNIT
 	tristate "KUnit test for bitops" if !KUNIT_ALL_TESTS
 	depends on KUNIT
@@ -1942,17 +1894,6 @@ config MEMCPY_KUNIT_TEST
 
 	  If unsure, say N.
 
-config MIN_HEAP_KUNIT_TEST
-	tristate "Min heap test" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This option enables the KUnit test suite for the min heap library
-	  which provides functions for creating and managing min heaps.
-	  The test suite checks the functionality of the min heap library.
-
-	  If unsure, say N
-
 config IS_SIGNED_TYPE_KUNIT_TEST
 	tristate "Test is_signed_type() macro" if !KUNIT_ALL_TESTS
 	depends on KUNIT
@@ -2055,16 +1996,6 @@ config BLACKHOLE_DEV_KUNIT_TEST
 
 	  If unsure, say N.
 
-config TEST_DYNAMIC_DEBUG
-	tristate "Test DYNAMIC_DEBUG"
-	depends on DYNAMIC_DEBUG
-	help
-	  This module registers a tracer callback to count enabled
-	  pr_debugs in a 'do_debugging' function, then alters their
-	  enablements, calls the function, and compares counts.
-
-	  If unsure, say N.
-
 config TEST_RUNTIME
 	bool
 
@@ -2141,37 +2072,6 @@ config TEST_KALLSYMS_SCALE_FACTOR
 
 endif # TEST_KALLSYMS
 
-config TEST_DEBUG_VIRTUAL
-	tristate "Test CONFIG_DEBUG_VIRTUAL feature"
-	depends on DEBUG_VIRTUAL
-	help
-	  Test the kernel's ability to detect incorrect calls to
-	  virt_to_phys() done against the non-linear part of the
-	  kernel's virtual address map.
-
-	  If unsure, say N.
-
-config TEST_OBJAGG
-	tristate "Perform selftest on object aggreration manager"
-	default n
-	depends on OBJAGG
-	help
-	  Enable this option to test object aggregation manager on boot
-	  (or module load).
-
-config TEST_HMM
-	tristate "Test HMM (Heterogeneous Memory Management)"
-	depends on TRANSPARENT_HUGEPAGE
-	depends on DEVICE_PRIVATE
-	select HMM_MIRROR
-	select MMU_NOTIFIER
-	help
-	  This is a pseudo device driver solely for testing HMM.
-	  Say M here if you want to build the HMM test module.
-	  Doing so will allow you to run tools/testing/selftest/vm/hmm-tests.
-
-	  If unsure, say N.
-
 config TEST_CLOCKSOURCE_WATCHDOG
 	tristate "Test clocksource watchdog in kernel space"
 	depends on CLOCKSOURCE_WATCHDOG
@@ -2181,26 +2081,6 @@ config TEST_CLOCKSOURCE_WATCHDOG
 	  via modprobe or insmod in which case it will run upon being
 	  loaded, or it may be built in, in which case it will run
 	  shortly after boot.
-
-	  If unsure, say N.
-
-config TEST_KEXEC_HANDOVER
-	bool "Test for Kexec HandOver"
-	default n
-	depends on KEXEC_HANDOVER
-	help
-	  This option enables test for Kexec HandOver (KHO).
-	  The test consists of two parts: saving kernel data before kexec and
-	  restoring the data after kexec and verifying that it was properly
-	  handed over. This test module creates and saves data on the boot of
-	  the first kernel and restores and verifies the data on the boot of
-	  kexec'ed kernel.
-
-	  For detailed documentation about KHO, see Documentation/core-api/kho.
-
-	  To run the test run:
-
-	  tools/testing/selftests/kho/vmtest.sh -h
 
 	  If unsure, say N.
 
@@ -2277,33 +2157,6 @@ config GCD_KUNIT_TEST
 	  which computes the greatest common divisor of two numbers.
 
 	  This test suite verifies the correctness of gcd() across various
-	  scenarios, including edge cases.
-
-	  If unsure, say N
-
-config PRIME_NUMBERS_KUNIT_TEST
-	tristate "Prime number generator test" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	depends on PRIME_NUMBERS
-	default KUNIT_ALL_TESTS
-	help
-	  This option enables the KUnit test suite for the {is,next}_prime_number
-	  functions.
-
-	  Enabling this option will include tests that compare the prime number
-	  generator functions against a brute force implementation.
-
-	  If unsure, say N
-
-config GLOB_KUNIT_TEST
-	tristate "Glob matching test" if !KUNIT_ALL_TESTS
-	depends on GLOB
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable this option to test the glob functions at runtime.
-
-	  This test suite verifies the correctness of glob_match() across various
 	  scenarios, including edge cases.
 
 	  If unsure, say N

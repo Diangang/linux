@@ -5,20 +5,11 @@
 
 ccflags-remove-$(CONFIG_FUNCTION_TRACER) += $(CC_FLAGS_FTRACE)
 
-# Branch profiling isn't noinstr-safe
-ifdef CONFIG_TRACE_BRANCH_PROFILING
-CFLAGS_smp_processor_id.o += -DDISABLE_BRANCH_PROFILING
-endif
-
 # These files are disabled because they produce lots of non-interesting and/or
 # flaky coverage that is not a function of syscall inputs. For example,
 # rbtree can be global and individual rotations don't correlate with inputs.
 KCOV_INSTRUMENT_string.o := n
 KCOV_INSTRUMENT_rbtree.o := n
-KCOV_INSTRUMENT_list_debug.o := n
-KCOV_INSTRUMENT_debugobjects.o := n
-KCOV_INSTRUMENT_dynamic_debug.o := n
-KCOV_INSTRUMENT_fault-inject.o := n
 KCOV_INSTRUMENT_find_bit.o := n
 
 # string.o implements standard library functions like memset/memcpy etc.
@@ -45,7 +36,6 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
 lib-$(CONFIG_UNION_FIND) += union_find.o
 lib-$(CONFIG_PRINTK) += dump_stack.o
 lib-$(CONFIG_SMP) += cpumask.o
-lib-$(CONFIG_MIN_HEAP) += min_heap.o
 
 lib-y	+= kobject.o klist.o
 obj-y	+= lockref.o
@@ -79,10 +69,6 @@ obj-$(CONFIG_HAS_IOMEM) += iomap_copy.o devres.o
 obj-$(CONFIG_GENERIC_CPU_CACHE_MAINTENANCE) += cache_maint.o
 
 lib-y += logic_pio.o
-
-lib-$(CONFIG_INDIRECT_IOMEM) += logic_iomem.o
-
-obj-$(CONFIG_TRACE_MMIO_ACCESS) += trace_readwrite.o
 
 obj-$(CONFIG_GENERIC_HWEIGHT) += hweight.o
 
@@ -139,15 +125,6 @@ libfdt_files = fdt.o fdt_ro.o fdt_wip.o fdt_rw.o fdt_sw.o fdt_strerror.o \
 $(foreach file, $(libfdt_files), \
 	$(eval CFLAGS_$(file) = -I $(srctree)/scripts/dtc/libfdt))
 lib-$(CONFIG_LIBFDT) += $(libfdt_files)
-
-obj-$(CONFIG_BOOT_CONFIG_EMBED) += bootconfig-data.o
-
-$(obj)/bootconfig-data.o: $(obj)/default.bconf
-
-targets += default.bconf
-filechk_defbconf = cat $(or $(real-prereqs), /dev/null)
-$(obj)/default.bconf: $(CONFIG_BOOT_CONFIG_EMBED_FILE) FORCE
-	$(call filechk,defbconf)
 
 obj-$(CONFIG_UCS2_STRING) += ucs2_string.o
 

@@ -148,7 +148,6 @@ config RING_BUFFER
 
 config EVENT_TRACING
 	select CONTEXT_SWITCH_TRACER
-	select GLOB
 	bool
 
 config CONTEXT_SWITCH_TRACER
@@ -178,6 +177,7 @@ config PREEMPTIRQ_TRACEPOINTS
 
 config TRACING
 	bool
+	depends on BROKEN
 	select RING_BUFFER
 	select STACKTRACE if STACKTRACE_SUPPORT
 	select TRACEPOINTS
@@ -231,7 +231,6 @@ config FUNCTION_TRACER
 	select KALLSYMS
 	select GENERIC_TRACER
 	select CONTEXT_SWITCH_TRACER
-	select GLOB
 	select NEED_TASKS_RCU
 	select TASKS_RUDE_RCU
 	help

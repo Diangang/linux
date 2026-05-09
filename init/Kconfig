@@ -1334,7 +1334,6 @@ endif
 config BOOT_CONFIG_FORCE
 	bool "Force unconditional bootconfig processing"
 	depends on BOOT_CONFIG
-	default y if BOOT_CONFIG_EMBED
 	help
 	  With this Kconfig option set, BOOT_CONFIG processing is carried
 	  out even when the "bootconfig" kernel-boot parameter is omitted.
@@ -1343,25 +1342,6 @@ config BOOT_CONFIG_FORCE
 	  parameters.
 
 	  If unsure, say N.
-
-config BOOT_CONFIG_EMBED
-	bool "Embed bootconfig file in the kernel"
-	depends on BOOT_CONFIG
-	help
-	  Embed a bootconfig file given by BOOT_CONFIG_EMBED_FILE in the
-	  kernel. Usually, the bootconfig file is loaded with the initrd
-	  image. But if the system doesn't support initrd, this option will
-	  help you by embedding a bootconfig file while building the kernel.
-
-	  If unsure, say N.
-
-config BOOT_CONFIG_EMBED_FILE
-	string "Embedded bootconfig file path"
-	depends on BOOT_CONFIG_EMBED
-	help
-	  Specify a bootconfig file which will be embedded to the kernel.
-	  This bootconfig will be used if there is no initrd or no other
-	  bootconfig in the initrd.
 
 config CMDLINE_LOG_WRAP_IDEAL_LEN
 	int "Length to try to wrap the cmdline when logged at boot"
@@ -1880,16 +1860,8 @@ endmenu
 
 config SYSTEM_DATA_VERIFICATION
 	def_bool n
-	select SYSTEM_TRUSTED_KEYRING
-	select KEYS
 	select CRYPTO
-	select CRYPTO_RSA
-	select ASYMMETRIC_KEY_TYPE
-	select ASYMMETRIC_PUBLIC_KEY_SUBTYPE
-	select ASN1
-	select OID_REGISTRY
-	select X509_CERTIFICATE_PARSER
-	select PKCS7_MESSAGE_PARSER
+	depends on BROKEN
 	help
 	  Provide PKCS#7 message verification using the contents of the system
 	  trusted keyring to provide public keys.  This then can be used for
@@ -1980,14 +1952,6 @@ config PREEMPT_NOTIFIERS
 config PADATA
 	depends on SMP
 	bool
-
-config ASN1
-	tristate
-	help
-	  Build a simple ASN.1 grammar compiler that produces a bytecode output
-	  that can be interpreted by the ASN.1 stream decoder and used to
-	  inform it as to what tags are to be expected in a stream and what
-	  functions to call on what tags.
 
 source "kernel/Kconfig.locks"
 
