@@ -62,22 +62,6 @@ obj-y += bcd.o sort.o parser.o debug_locks.o random32.o \
 obj-y += string_helpers.o
 obj-y += hexdump.o
 obj-y += kstrtox.o
-obj-$(CONFIG_FIND_BIT_BENCHMARK_RUST) += find_bit_benchmark_rust.o
-obj-$(CONFIG_TEST_BPF) += test_bpf.o
-CFLAGS_test_bitops.o += -Werror
-obj-$(CONFIG_TEST_UBSAN) += test_ubsan.o
-CFLAGS_test_ubsan.o += $(call cc-disable-warning, unused-but-set-variable)
-UBSAN_SANITIZE_test_ubsan.o := y
-obj-$(CONFIG_TEST_DYNAMIC_DEBUG) += test_dynamic_debug.o
-
-obj-$(CONFIG_TEST_PARMAN) += test_parman.o
-obj-$(CONFIG_TEST_DEBUG_VIRTUAL) += test_debug_virtual.o
-obj-$(CONFIG_TEST_OBJAGG) += test_objagg.o
-obj-$(CONFIG_TEST_HMM) += test_hmm.o
-obj-$(CONFIG_TEST_KEXEC_HANDOVER) += test_kho.o
-
-CFLAGS_test_fpu_impl.o += $(CC_FLAGS_FPU)
-CFLAGS_REMOVE_test_fpu_impl.o += $(CC_FLAGS_NO_FPU)
 
 ifeq ($(CONFIG_DEBUG_KOBJECT),y)
 CFLAGS_kobject.o += -DDEBUG
@@ -91,7 +75,6 @@ obj-y += math/ crc/ crypto/ vdso/
 
 obj-$(CONFIG_GENERIC_IOMAP) += iomap.o
 obj-$(CONFIG_HAS_IOMEM) += iomap_copy.o devres.o
-obj-$(CONFIG_CHECK_SIGNATURE) += check_signature.o
 
 obj-$(CONFIG_GENERIC_CPU_CACHE_MAINTENANCE) += cache_maint.o
 
@@ -103,26 +86,16 @@ obj-$(CONFIG_TRACE_MMIO_ACCESS) += trace_readwrite.o
 
 obj-$(CONFIG_GENERIC_HWEIGHT) += hweight.o
 
-obj-$(CONFIG_BTREE) += btree.o
 obj-$(CONFIG_INTERVAL_TREE) += interval_tree.o
-obj-$(CONFIG_ASSOCIATIVE_ARRAY) += assoc_array.o
-obj-$(CONFIG_LIST_HARDENED) += list_debug.o
 
 obj-$(CONFIG_BITREVERSE) += bitrev.o
-obj-$(CONFIG_LINEAR_RANGES) += linear_ranges.o
-obj-$(CONFIG_PACKING_KUNIT_TEST) += packing_test.o
 obj-$(CONFIG_XXHASH)	+= xxhash.o
 obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
 
 obj-$(CONFIG_ZLIB_INFLATE) += zlib_inflate/
 obj-$(CONFIG_ZLIB_DEFLATE) += zlib_deflate/
-obj-$(CONFIG_BCH) += bch.o
-obj-$(CONFIG_LZO_COMPRESS) += lzo/
 obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
-obj-$(CONFIG_LZ4_COMPRESS) += lz4/
-obj-$(CONFIG_LZ4HC_COMPRESS) += lz4/
 obj-$(CONFIG_LZ4_DECOMPRESS) += lz4/
-obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
 obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
 obj-$(CONFIG_XZ_DEC) += xz/
 lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
@@ -133,63 +106,21 @@ lib-$(CONFIG_DECOMPRESS_LZO) += decompress_unlzo.o
 lib-$(CONFIG_DECOMPRESS_LZ4) += decompress_unlz4.o
 lib-$(CONFIG_DECOMPRESS_ZSTD) += decompress_unzstd.o
 
-obj-$(CONFIG_TEXTSEARCH) += textsearch.o
-obj-$(CONFIG_TEXTSEARCH_KMP) += ts_kmp.o
-obj-$(CONFIG_TEXTSEARCH_BM) += ts_bm.o
-obj-$(CONFIG_TEXTSEARCH_FSM) += ts_fsm.o
 obj-$(CONFIG_SMP) += percpu_counter.o
-obj-$(CONFIG_AUDIT_GENERIC) += audit.o
-obj-$(CONFIG_AUDIT_COMPAT_GENERIC) += compat_audit.o
-
-obj-$(CONFIG_IOMMU_HELPER) += iommu-helper.o
-obj-$(CONFIG_FAULT_INJECTION_USERCOPY) += fault-inject-usercopy.o
-obj-$(CONFIG_PM_NOTIFIER_ERROR_INJECT) += pm-notifier-error-inject.o
-obj-$(CONFIG_NETDEV_NOTIFIER_ERROR_INJECT) += netdev-notifier-error-inject.o
-obj-$(CONFIG_MEMORY_NOTIFIER_ERROR_INJECT) += memory-notifier-error-inject.o
-obj-$(CONFIG_OF_RECONFIG_NOTIFIER_ERROR_INJECT) += \
-	of-reconfig-notifier-error-inject.o
-obj-$(CONFIG_FUNCTION_ERROR_INJECTION) += error-inject.o
-
-obj-$(CONFIG_CODE_TAGGING) += codetag.o
 
 lib-$(CONFIG_GENERIC_BUG) += bug.o
 
 obj-$(CONFIG_HAVE_ARCH_TRACEHOOK) += syscall.o
-obj-$(CONFIG_ARCH_NEED_CMPXCHG_1_EMU) += cmpxchg-emu.o
-
-#ensure exported functions have prototypes
-CFLAGS_dynamic_debug.o := -DDYNAMIC_DEBUG_MODULE
 
 obj-$(CONFIG_SYMBOLIC_ERRNAME) += errname.o
 
-obj-$(CONFIG_NLATTR) += nlattr.o
-
-obj-$(CONFIG_LRU_CACHE) += lru_cache.o
-
 obj-$(CONFIG_GENERIC_CSUM) += checksum.o
-
-obj-$(CONFIG_GENERIC_ATOMIC64) += atomic64.o
-
-
-obj-$(CONFIG_CPU_RMAP) += cpu_rmap.o
-
-obj-$(CONFIG_CLOSURES) += closure.o
-
-obj-$(CONFIG_DQL) += dynamic_queue_limits.o
-
-obj-$(CONFIG_GLOB) += glob.o
-
-lib-$(CONFIG_CLZ_TAB) += clz_tab.o
 
 obj-$(CONFIG_GENERIC_STRNCPY_FROM_USER) += strncpy_from_user.o
 obj-$(CONFIG_GENERIC_STRNLEN_USER) += strnlen_user.o
 
-obj-$(CONFIG_GENERIC_NET_UTILS) += net_utils.o
-
-obj-$(CONFIG_SG_SPLIT) += sg_split.o
 obj-$(CONFIG_SG_POOL) += sg_pool.o
 obj-$(CONFIG_MEMREGION) += memregion.o
-obj-$(CONFIG_STMP_DEVICE) += stmp_device.o
 
 # stackdepot.c should not be instrumented or call instrumented functions.
 # Prevent the compiler from calling builtins like memcmp() or bcmp() from this
@@ -202,8 +133,6 @@ KASAN_SANITIZE_stackdepot.o := n
 # recursion.
 KMSAN_SANITIZE_stackdepot.o := n
 KCOV_INSTRUMENT_stackdepot.o := n
-
-obj-$(CONFIG_REF_TRACKER) += ref_tracker.o
 
 libfdt_files = fdt.o fdt_ro.o fdt_wip.o fdt_rw.o fdt_sw.o fdt_strerror.o \
 	       fdt_empty_tree.o fdt_addresses.o
@@ -220,52 +149,12 @@ filechk_defbconf = cat $(or $(real-prereqs), /dev/null)
 $(obj)/default.bconf: $(CONFIG_BOOT_CONFIG_EMBED_FILE) FORCE
 	$(call filechk,defbconf)
 
-
-obj-$(CONFIG_ASN1) += asn1_decoder.o
-obj-$(CONFIG_ASN1_ENCODER) += asn1_encoder.o
-
-#
-# Build a fast OID lookip registry from include/linux/oid_registry.h
-#
-obj-$(CONFIG_OID_REGISTRY) += oid_registry.o
-
-$(obj)/oid_registry.o: $(obj)/oid_registry_data.c
-
-$(obj)/oid_registry_data.c: $(srctree)/include/linux/oid_registry.h \
-			    $(src)/build_OID_registry
-	$(call cmd,build_OID_registry)
-
-quiet_cmd_build_OID_registry = GEN     $@
-      cmd_build_OID_registry = perl $(src)/build_OID_registry $< $@
-
-clean-files	+= oid_registry_data.c
-
 obj-$(CONFIG_UCS2_STRING) += ucs2_string.o
-
-UBSAN_SANITIZE_ubsan.o := n
-KASAN_SANITIZE_ubsan.o := n
-KCSAN_SANITIZE_ubsan.o := n
-KMSAN_SANITIZE_ubsan.o := n
-CFLAGS_ubsan.o := -fno-stack-protector $(DISABLE_KSTACK_ERASE)
 
 obj-$(CONFIG_SBITMAP) += sbitmap.o
 
-obj-$(CONFIG_PARMAN) += parman.o
-
 obj-y += group_cpus.o
-
-# GCC library routines
-obj-$(CONFIG_GENERIC_LIB_ASHLDI3) += ashldi3.o
-obj-$(CONFIG_GENERIC_LIB_ASHRDI3) += ashrdi3.o
-obj-$(CONFIG_GENERIC_LIB_LSHRDI3) += lshrdi3.o
-obj-$(CONFIG_GENERIC_LIB_MULDI3) += muldi3.o
-obj-$(CONFIG_GENERIC_LIB_CMPDI2) += cmpdi2.o
-obj-$(CONFIG_GENERIC_LIB_UCMPDI2) += ucmpdi2.o
-obj-$(CONFIG_OBJAGG) += objagg.o
 
 obj-$(CONFIG_GENERIC_LIB_DEVMEM_IS_ALLOWED) += devmem_is_allowed.o
 
 obj-$(CONFIG_FIRMWARE_TABLE) += fw_table.o
-
-CONTEXT_ANALYSIS_test_context-analysis.o := y
-obj-$(CONFIG_CONTEXT_ANALYSIS_TEST) += test_context-analysis.o
