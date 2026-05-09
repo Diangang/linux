@@ -755,39 +755,3 @@ void for_each_kernel_tracepoint(void (*fct)(struct tracepoint *tp, void *priv),
 		__stop___tracepoints_ptrs, fct, priv);
 }
 EXPORT_SYMBOL_GPL(for_each_kernel_tracepoint);
-
-#ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
-
-/* NB: reg/unreg are called while guarded with the tracepoints_mutex */
-static int sys_tracepoint_refcount;
-
-int syscall_regfunc(void)
-{
-	struct task_struct *p, *t;
-
-	if (!sys_tracepoint_refcount) {
-		read_lock(&tasklist_lock);
-		for_each_process_thread(p, t) {
-			set_task_syscall_work(t, SYSCALL_TRACEPOINT);
-		}
-		read_unlock(&tasklist_lock);
-	}
-	sys_tracepoint_refcount++;
-
-	return 0;
-}
-
-void syscall_unregfunc(void)
-{
-	struct task_struct *p, *t;
-
-	sys_tracepoint_refcount--;
-	if (!sys_tracepoint_refcount) {
-		read_lock(&tasklist_lock);
-		for_each_process_thread(p, t) {
-			clear_task_syscall_work(t, SYSCALL_TRACEPOINT);
-		}
-		read_unlock(&tasklist_lock);
-	}
-}
-#endif

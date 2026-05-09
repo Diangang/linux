@@ -7,19 +7,6 @@ always-$(KBUILD_BUILTIN)	+= vmlinux.lds
 
 CPPFLAGS_vmlinux.lds += -U$(UTS_MACHINE)
 
-ifdef CONFIG_FUNCTION_TRACER
-# Do not profile debug and lowlevel utilities
-CFLAGS_REMOVE_tsc.o = -pg
-CFLAGS_REMOVE_paravirt-spinlocks.o = -pg
-CFLAGS_REMOVE_pvclock.o = -pg
-CFLAGS_REMOVE_kvmclock.o = -pg
-CFLAGS_REMOVE_ftrace.o = -pg
-CFLAGS_REMOVE_early_printk.o = -pg
-CFLAGS_REMOVE_head64.o = -pg
-CFLAGS_REMOVE_head32.o = -pg
-CFLAGS_REMOVE_rethook.o = -pg
-endif
-
 KASAN_SANITIZE_head$(BITS).o				:= n
 KASAN_SANITIZE_dumpstack.o				:= n
 KASAN_SANITIZE_dumpstack_$(BITS).o			:= n
@@ -110,12 +97,7 @@ obj-$(CONFIG_X86_TSC)		+= tsc_sync.o
 obj-$(CONFIG_SMP)		+= setup_percpu.o
 obj-$(CONFIG_X86_MPPARSE)	+= mpparse.o
 obj-y				+= apic/
-obj-$(CONFIG_DYNAMIC_FTRACE)	+= ftrace.o
-obj-$(CONFIG_FUNCTION_TRACER)	+= ftrace_$(BITS).o
-obj-$(CONFIG_FUNCTION_GRAPH_TRACER) += ftrace.o
-obj-$(CONFIG_FTRACE_SYSCALLS)	+= ftrace.o
 obj-$(CONFIG_X86_TSC)		+= trace_clock.o
-obj-$(CONFIG_TRACING)		+= trace.o
 obj-$(CONFIG_RETHOOK)		+= rethook.o
 obj-$(CONFIG_VMCORE_INFO)	+= vmcore_info_$(BITS).o
 obj-$(CONFIG_KEXEC_CORE)	+= machine_kexec_$(BITS).o

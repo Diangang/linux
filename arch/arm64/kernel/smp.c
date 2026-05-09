@@ -53,8 +53,6 @@
 #include <asm/ptrace.h>
 #include <asm/virt.h>
 
-#include <trace/events/ipi.h>
-
 /*
  * as from 2.5, kernels no longer have an init_tasks structure
  * so we need some other way of telling a new secondary core
@@ -813,7 +811,7 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 	}
 }
 
-static const char *ipi_types[MAX_IPI] __tracepoint_string = {
+static const char *ipi_types[MAX_IPI] = {
 	[IPI_RESCHEDULE]	= "Rescheduling interrupts",
 	[IPI_CALL_FUNC]		= "Function call interrupts",
 	[IPI_CPU_STOP]		= "CPU stop interrupts",
@@ -959,9 +957,6 @@ static void do_handle_IPI(int ipinr)
 {
 	unsigned int cpu = smp_processor_id();
 
-	if ((unsigned)ipinr < NR_IPI)
-		trace_ipi_entry(ipi_types[ipinr]);
-
 	switch (ipinr) {
 	case IPI_RESCHEDULE:
 		scheduler_ipi();
@@ -1010,8 +1005,6 @@ static void do_handle_IPI(int ipinr)
 		break;
 	}
 
-	if ((unsigned)ipinr < NR_IPI)
-		trace_ipi_exit(ipi_types[ipinr]);
 }
 
 static irqreturn_t ipi_handler(int irq, void *data)
@@ -1024,7 +1017,6 @@ static irqreturn_t ipi_handler(int irq, void *data)
 
 static void smp_cross_call(const struct cpumask *target, unsigned int ipinr)
 {
-	trace_ipi_raise(target, ipi_types[ipinr]);
 	arm64_send_ipi(target, ipinr);
 }
 

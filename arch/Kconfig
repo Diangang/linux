@@ -164,15 +164,6 @@ config OPTPROBES
 	depends on KPROBES && HAVE_OPTPROBES
 	select NEED_TASKS_RCU
 
-config KPROBES_ON_FTRACE
-	def_bool y
-	depends on KPROBES && HAVE_KPROBES_ON_FTRACE
-	depends on DYNAMIC_FTRACE_WITH_REGS
-	help
-	  If function tracer is enabled and the arch supports full
-	  passing of pt_regs to function tracing, then kprobes can
-	  optimize on top of function tracing.
-
 config UPROBES
 	def_bool n
 	depends on ARCH_SUPPORTS_UPROBES
@@ -266,9 +257,6 @@ config HAVE_KRETPROBES
 	bool
 
 config HAVE_OPTPROBES
-	bool
-
-config HAVE_KPROBES_ON_FTRACE
 	bool
 
 config ARCH_CORRECT_STACKTRACE_ON_KRETPROBE
@@ -744,7 +732,6 @@ config ARCH_SUPPORTS_SHADOW_CALL_STACK
 config SHADOW_CALL_STACK
 	bool "Shadow Call Stack"
 	depends on ARCH_SUPPORTS_SHADOW_CALL_STACK
-	depends on DYNAMIC_FTRACE_WITH_ARGS || DYNAMIC_FTRACE_WITH_REGS || !FUNCTION_GRAPH_TRACER
 	depends on MMU
 	help
 	  This option enables the compiler's Shadow Call Stack, which
@@ -799,7 +786,6 @@ config HAS_LTO_CLANG
 	depends on $(success,$(NM) --help | head -n 1 | grep -qi llvm)
 	depends on $(success,$(AR) --help | head -n 1 | grep -qi llvm)
 	depends on ARCH_SUPPORTS_LTO_CLANG
-	depends on !FTRACE_MCOUNT_USE_RECORDMCOUNT
 	# https://github.com/ClangBuiltLinux/linux/issues/1721
 	depends on (!KASAN || KASAN_HW_TAGS || CLANG_VERSION >= 170000) || !DEBUG_INFO
 	depends on (!KCOV || CLANG_VERSION >= 170000) || !DEBUG_INFO

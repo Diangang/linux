@@ -15,11 +15,6 @@ obj-y     = fork.o exec_domain.o panic.o \
 obj-$(CONFIG_MULTIUSER) += groups.o
 obj-$(CONFIG_VHOST_TASK) += vhost_task.o
 
-ifdef CONFIG_FUNCTION_TRACER
-# Do not trace internal ftrace files
-CFLAGS_REMOVE_irq_work.o = $(CC_FLAGS_FTRACE)
-endif
-
 # Branch profiling isn't noinstr-safe
 ifdef CONFIG_TRACE_BRANCH_PROFILING
 CFLAGS_context_tracking.o += -DDISABLE_BRANCH_PROFILING
@@ -101,10 +96,7 @@ obj-$(CONFIG_SYSCTL) += utsname_sysctl.o
 obj-$(CONFIG_TASK_DELAY_ACCT) += delayacct.o
 obj-$(CONFIG_TASKSTATS) += taskstats.o tsacct.o
 obj-$(CONFIG_TRACEPOINTS) += tracepoint.o
-obj-$(CONFIG_FUNCTION_TRACER) += trace/
-obj-$(CONFIG_TRACING) += trace/
 obj-$(CONFIG_TRACE_CLOCK) += trace/
-obj-$(CONFIG_RING_BUFFER) += trace/
 obj-$(CONFIG_TRACEPOINTS) += trace/
 obj-$(CONFIG_RETHOOK) += trace/
 obj-$(CONFIG_IRQ_WORK) += irq_work.o

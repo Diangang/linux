@@ -21,7 +21,6 @@
  * SYSCALL_WORK flags handled in syscall_enter_from_user_mode()
  */
 #define SYSCALL_WORK_ENTER	(SYSCALL_WORK_SECCOMP |			\
-				 SYSCALL_WORK_SYSCALL_TRACEPOINT |	\
 				 SYSCALL_WORK_SYSCALL_TRACE |		\
 				 SYSCALL_WORK_SYSCALL_EMU |		\
 				 SYSCALL_WORK_SYSCALL_AUDIT |		\
@@ -30,8 +29,7 @@
 /*
  * SYSCALL_WORK flags handled in syscall_exit_to_user_mode()
  */
-#define SYSCALL_WORK_EXIT	(SYSCALL_WORK_SYSCALL_TRACEPOINT |	\
-				 SYSCALL_WORK_SYSCALL_TRACE |		\
+#define SYSCALL_WORK_EXIT	(SYSCALL_WORK_SYSCALL_TRACE |		\
 				 SYSCALL_WORK_SYSCALL_AUDIT |		\
 				 SYSCALL_WORK_SYSCALL_USER_DISPATCH |	\
 				 SYSCALL_WORK_SYSCALL_EXIT_TRAP)
@@ -56,8 +54,6 @@ static __always_inline int arch_ptrace_report_syscall_entry(struct pt_regs *regs
 #endif
 
 bool syscall_user_dispatch(struct pt_regs *regs);
-long trace_syscall_enter(struct pt_regs *regs, long syscall);
-void trace_syscall_exit(struct pt_regs *regs, long ret);
 
 static inline void syscall_enter_audit(struct pt_regs *regs, long syscall)
 {
@@ -108,9 +104,6 @@ static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned l
 	/* Either of the above might have changed the syscall number */
 	syscall = syscall_get_nr(current, regs);
 
-	if (unlikely(work & SYSCALL_WORK_SYSCALL_TRACEPOINT))
-		syscall = trace_syscall_enter(regs, syscall);
-
 	syscall_enter_audit(regs, syscall);
 
 	return ret ? : syscall;
@@ -136,7 +129,7 @@ static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned l
  * It handles the following work items:
  *
  *  1) syscall_work flag dependent invocations of
- *     ptrace_report_syscall_entry(), __secure_computing(), trace_sys_enter()
+ *     ptrace_report_syscall_entry() and __secure_computing()
  *  2) Invocation of audit_syscall_entry()
  */
 static __always_inline long syscall_enter_from_user_mode_work(struct pt_regs *regs, long syscall)
@@ -239,9 +232,6 @@ static __always_inline void syscall_exit_work(struct pt_regs *regs, unsigned lon
 	}
 
 	audit_syscall_exit(regs);
-
-	if (work & SYSCALL_WORK_SYSCALL_TRACEPOINT)
-		trace_syscall_exit(regs, syscall_get_return_value(current, regs));
 
 	step = report_single_step(work);
 	if (step || work & SYSCALL_WORK_SYSCALL_TRACE)

@@ -8,11 +8,6 @@ KCOV_INSTRUMENT_delay.o	:= n
 
 # KCSAN uses udelay for introducing watchpoint delay; avoid recursion.
 KCSAN_SANITIZE_delay.o := n
-ifdef CONFIG_KCSAN
-# In case KCSAN+lockdep+ftrace are enabled, disable ftrace for delay.o to avoid
-# lockdep -> [other libs] -> KCSAN -> udelay -> ftrace -> lockdep recursion.
-CFLAGS_REMOVE_delay.o = $(CC_FLAGS_FTRACE)
-endif
 
 inat_tables_script = $(srctree)/arch/x86/tools/gen-insn-attr-x86.awk
 inat_tables_maps = $(srctree)/arch/x86/lib/x86-opcode-map.txt

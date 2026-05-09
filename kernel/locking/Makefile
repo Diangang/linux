@@ -14,12 +14,6 @@ obj-y += mutex.o semaphore.o rwsem.o percpu-rwsem.o
 KASAN_SANITIZE_lockdep.o := n
 KCSAN_SANITIZE_lockdep.o := n
 
-ifdef CONFIG_FUNCTION_TRACER
-CFLAGS_REMOVE_lockdep.o = $(CC_FLAGS_FTRACE)
-CFLAGS_REMOVE_lockdep_proc.o = $(CC_FLAGS_FTRACE)
-CFLAGS_REMOVE_mutex-debug.o = $(CC_FLAGS_FTRACE)
-endif
-
 obj-$(CONFIG_LOCKDEP) += lockdep.o
 ifeq ($(CONFIG_PROC_FS),y)
 obj-$(CONFIG_LOCKDEP) += lockdep_proc.o

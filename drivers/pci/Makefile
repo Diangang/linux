@@ -36,7 +36,3 @@ obj-$(CONFIG_PCI_NPEM)		+= npem.o
 obj-$(CONFIG_CARDBUS)		+= setup-cardbus.o
 
 obj-y				+= controller/
-
-
-CFLAGS_trace.o := -I$(src)
-obj-$(CONFIG_TRACING)		+= trace.o

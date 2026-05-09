@@ -13,10 +13,6 @@ KCSAN_SANITIZE := n
 # Avoid recursion by not calling KMSAN hooks for CEA code.
 KMSAN_SANITIZE_cpu_entry_area.o := n
 
-ifdef CONFIG_FUNCTION_TRACER
-CFLAGS_REMOVE_pgprot.o			= -pg
-endif
-
 obj-y				:=  init.o init_$(BITS).o fault.o ioremap.o extable.o mmap.o \
 				    pgtable.o physaddr.o tlb.o cpu_entry_area.o maccess.o pgprot.o
 

@@ -43,7 +43,6 @@
 #include <asm/system_misc.h>
 
 #define CREATE_TRACE_POINTS
-#include <trace/events/syscalls.h>
 
 struct pt_regs_offset {
 	const char *name;
@@ -2281,9 +2280,6 @@ int syscall_trace_enter(struct pt_regs *regs)
 	if (secure_computing() == -1)
 		return NO_SYSCALL;
 
-	if (test_thread_flag(TIF_SYSCALL_TRACEPOINT))
-		trace_sys_enter(regs, regs->syscallno);
-
 	audit_syscall_entry(regs->syscallno, regs->orig_x0, regs->regs[1],
 			    regs->regs[2], regs->regs[3]);
 
@@ -2295,9 +2291,6 @@ void syscall_trace_exit(struct pt_regs *regs)
 	unsigned long flags = read_thread_flags();
 
 	audit_syscall_exit(regs);
-
-	if (flags & _TIF_SYSCALL_TRACEPOINT)
-		trace_sys_exit(regs, syscall_get_return_value(current, regs));
 
 	if (flags & (_TIF_SYSCALL_TRACE | _TIF_SINGLESTEP))
 		report_syscall_exit(regs);

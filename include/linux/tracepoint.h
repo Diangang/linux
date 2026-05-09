@@ -151,11 +151,6 @@ static inline void call_tracepoint_unregister_syscall(struct rcu_head *rcu, rcu_
 {  }
 #endif
 
-#ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
-extern int syscall_regfunc(void);
-extern void syscall_unregfunc(void);
-#endif /* CONFIG_HAVE_SYSCALL_TRACEPOINTS */
-
 #ifndef PARAMS
 #define PARAMS(args...) args
 #endif

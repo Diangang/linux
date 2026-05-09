@@ -166,7 +166,7 @@
  * often happens at runtime)
  */
 
-#ifndef CONFIG_HAVE_DYNAMIC_FTRACE_NO_PATCHABLE
+#if defined(CONFIG_DYNAMIC_FTRACE) && !defined(CONFIG_HAVE_DYNAMIC_FTRACE_NO_PATCHABLE)
 #define KEEP_PATCHABLE		KEEP(*(__patchable_function_entries))
 #define PATCHABLE_DISCARDS
 #else

@@ -7,9 +7,6 @@ KASAN_SANITIZE := n
 UBSAN_SANITIZE := n
 KCOV_INSTRUMENT := n
 
-CFLAGS_REMOVE_syscall_32.o	= $(CC_FLAGS_FTRACE)
-CFLAGS_REMOVE_syscall_64.o	= $(CC_FLAGS_FTRACE)
-
 CFLAGS_syscall_32.o		+= -fno-stack-protector
 CFLAGS_syscall_64.o		+= -fno-stack-protector
 
@@ -20,6 +17,6 @@ obj-y				+= vsyscall/
 
 obj-$(CONFIG_PREEMPTION)	+= thunk.o
 CFLAGS_entry_fred.o		+= -fno-stack-protector
-CFLAGS_REMOVE_entry_fred.o	+= -pg $(CC_FLAGS_FTRACE)
+CFLAGS_REMOVE_entry_fred.o	+= -pg
 
 obj-$(CONFIG_IA32_EMULATION)	+= entry_64_compat.o syscall_32.o
