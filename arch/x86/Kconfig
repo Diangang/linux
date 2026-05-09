@@ -81,7 +81,7 @@ config X86
 	select ARCH_HAS_DEBUG_VIRTUAL
 	select ARCH_HAS_DEBUG_VM_PGTABLE	if !X86_PAE
 	select ARCH_HAS_DEVMEM_IS_ALLOWED
-	select ARCH_HAS_DMA_OPS			if GART_IOMMU || XEN
+	select ARCH_HAS_DMA_OPS			if XEN
 	select ARCH_HAS_EARLY_DEBUG		if KGDB
 	select ARCH_HAS_ELF_RANDOMIZE
 	select ARCH_HAS_EXECMEM_ROX		if X86_64 && STRICT_MODULE_RWX
@@ -476,19 +476,6 @@ config X86_X2APIC
 
 	  If in doubt, say Y.
 
-config AMD_SECURE_AVIC
-	bool "AMD Secure AVIC"
-	depends on AMD_MEM_ENCRYPT && X86_X2APIC
-	help
-	  Enable this to get AMD Secure AVIC support on guests that have this feature.
-
-	  AMD Secure AVIC provides hardware acceleration for performance sensitive
-	  APIC accesses and support for managing guest owned APIC state for SEV-SNP
-	  guests. Secure AVIC does not support xAPIC mode. It has functional
-	  dependency on x2apic being enabled in the guest.
-
-	  If you don't know what to do here, say N.
-
 config X86_POSTED_MSI
 	bool "Enable MSI and MSI-x delivery by posted interrupts"
 	depends on X86_64 && IRQ_REMAP
@@ -823,28 +810,6 @@ config DMI
 	  here unless you have verified that your setup is not
 	  affected by entries in the DMI blacklist. Required by PNP
 	  BIOS code.
-
-config GART_IOMMU
-	bool "Old AMD GART IOMMU support"
-	select SWIOTLB
-	depends on X86_64 && PCI && AMD_NB
-	depends on BROKEN
-	help
-	  Provides a driver for older AMD Athlon64/Opteron/Turion/Sempron
-	  GART based hardware IOMMUs.
-
-	  The GART supports full DMA access for devices with 32-bit access
-	  limitations, on systems with more than 3 GB. This is usually needed
-	  for USB, sound, many IDE/SATA chipsets and some other devices.
-
-	  Newer systems typically have a modern AMD IOMMU, supported via
-	  the CONFIG_AMD_IOMMU=y config option.
-
-	  In normal configurations this driver is only active when needed:
-	  there's more than 3 GB of memory and the system contains a
-	  32-bit limited device.
-
-	  If unsure, say Y.
 
 config BOOT_VESA_SUPPORT
 	bool
@@ -1357,21 +1322,6 @@ config X86_MEM_ENCRYPT
 	select ARCH_HAS_FORCE_DMA_UNENCRYPTED
 	select DYNAMIC_PHYSICAL_MASK
 	def_bool n
-
-config AMD_MEM_ENCRYPT
-	bool "AMD Secure Memory Encryption (SME) support"
-	depends on X86_64 && CPU_SUP_AMD
-	depends on EFI_STUB
-	depends on BROKEN
-	select DMA_COHERENT_POOL
-	select ARCH_USE_MEMREMAP_PROT
-	select INSTRUCTION_DECODER
-	select ARCH_HAS_CC_PLATFORM
-	select X86_MEM_ENCRYPT
-	help
-	  Say yes to enable support for the encryption of system memory.
-	  This requires an AMD processor that supports Secure Memory
-	  Encryption (SME).
 
 # Common NUMA Features
 config NUMA

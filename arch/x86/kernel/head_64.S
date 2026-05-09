@@ -420,7 +420,6 @@ SYM_INNER_LABEL(common_startup_64, SYM_L_LOCAL)
 SYM_CODE_END(secondary_startup_64)
 
 #include "verify_cpu.S"
-#include "sev_verify_cbit.S"
 
 #if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_AMD_MEM_ENCRYPT)
 /*

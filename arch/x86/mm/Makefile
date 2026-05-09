@@ -1,14 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0
-# Kernel does not boot with instrumentation of tlb.c and mem_encrypt*.c
+# Kernel does not boot with instrumentation of tlb.c.
 KCOV_INSTRUMENT_tlb.o			:= n
-KCOV_INSTRUMENT_mem_encrypt.o		:= n
-KCOV_INSTRUMENT_mem_encrypt_amd.o	:= n
 KCOV_INSTRUMENT_pgprot.o		:= n
 # See the "Disable KCOV" comment in arch/x86/kernel/Makefile.
 KCOV_INSTRUMENT_physaddr.o		:= n
 
-KASAN_SANITIZE_mem_encrypt.o		:= n
-KASAN_SANITIZE_mem_encrypt_amd.o	:= n
 KASAN_SANITIZE_pgprot.o		:= n
 
 # Disable KCSAN entirely, because otherwise we get warnings that some functions
@@ -18,8 +14,6 @@ KCSAN_SANITIZE := n
 KMSAN_SANITIZE_cpu_entry_area.o := n
 
 ifdef CONFIG_FUNCTION_TRACER
-CFLAGS_REMOVE_mem_encrypt.o		= -pg
-CFLAGS_REMOVE_mem_encrypt_amd.o		= -pg
 CFLAGS_REMOVE_pgprot.o			= -pg
 endif
 

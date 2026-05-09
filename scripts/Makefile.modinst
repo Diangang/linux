@@ -95,34 +95,12 @@ quiet_cmd_strip =
 
 endif
 
-#
-# Signing
-# Don't stop modules_install even if we can't sign external modules.
-#
-ifeq ($(filter pkcs11:%, $(CONFIG_MODULE_SIG_KEY)),)
-sig-key := $(if $(wildcard $(CONFIG_MODULE_SIG_KEY)),,$(objtree)/)$(CONFIG_MODULE_SIG_KEY)
-else
-sig-key := $(CONFIG_MODULE_SIG_KEY)
-endif
-quiet_cmd_sign = SIGN    $@
-      cmd_sign = $(objtree)/scripts/sign-file $(CONFIG_MODULE_SIG_HASH) "$(sig-key)" $(objtree)/certs/signing_key.x509 $@ \
-                 $(if $(KBUILD_EXTMOD),|| true)
-
-ifeq ($(sign-only),)
-
-# During modules_install, modules are signed only when CONFIG_MODULE_SIG_ALL=y.
-ifndef CONFIG_MODULE_SIG_ALL
-quiet_cmd_sign :=
-      cmd_sign := :
-endif
-
 # Create necessary directories
 $(foreach dir, $(sort $(dir $(install-y))), $(shell mkdir -p $(dir)))
 
 $(dst)/%.ko: %.ko FORCE
 	$(call cmd,install)
 	$(call cmd,strip)
-	$(call cmd,sign)
 
 ifdef CONFIG_MODULES
 __modinst: depmod
@@ -133,13 +111,6 @@ depmod: $(install-y)
 
 quiet_cmd_depmod = DEPMOD  $(MODLIB)
       cmd_depmod = $(srctree)/scripts/depmod.sh $(KERNELRELEASE)
-endif
-
-else
-
-$(dst)/%.ko: FORCE
-	$(call cmd,sign)
-
 endif
 
 #
