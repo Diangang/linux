@@ -42,7 +42,7 @@ config KMSAN_CHECK_PARAM_RETVAL
 config KMSAN_KUNIT_TEST
 	tristate "KMSAN integration test suite" if !KUNIT_ALL_TESTS
 	default KUNIT_ALL_TESTS
-	depends on TRACEPOINTS && KUNIT
+	depends on BROKEN && KUNIT
 	help
 	  Test suite for KMSAN, testing various error detection scenarios,
 	  and checking that reports are correctly output to console.

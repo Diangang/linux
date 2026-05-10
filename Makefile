@@ -819,25 +819,6 @@ CFLAGS_GCOV	+= -fno-tree-loop-im
 endif
 export CFLAGS_GCOV
 
-ifdef CONFIG_TRACEPOINTS
-# To check for unused tracepoints (tracepoints that are defined but never
-# called), run with:
-#
-# make UT=1
-#
-# Each unused tracepoints can take up to 5KB of memory in the running kernel.
-# It is best to remove any that are not used.
-#
-# This command line option will be removed when all current unused
-# tracepoints are removed.
-
-ifeq ("$(origin UT)", "command line")
-  WARN_ON_UNUSED_TRACEPOINTS := $(UT)
-endif
-endif # CONFIG_TRACEPOINTS
-
-export WARN_ON_UNUSED_TRACEPOINTS
-
 # Per-version Rust flags. These are like `rust_common_flags`, but may
 # depend on the Rust compiler version (e.g. using `rustc-min-version`).
 #

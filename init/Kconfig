@@ -1889,14 +1889,6 @@ config BINDGEN_VERSION_TEXT
 	depends on RUST
 	default "$(shell,$(BINDGEN) --version 2>/dev/null)"
 
-#
-# Place an empty function call at each tracepoint site. Can be
-# dynamically changed for a probe function.
-#
-config TRACEPOINTS
-	bool
-	select TASKS_TRACE_RCU
-
 source "kernel/Kconfig.kexec"
 
 endmenu		# General setup

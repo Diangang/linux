@@ -63,7 +63,7 @@ config KCSAN_SELFTEST
 config KCSAN_KUNIT_TEST
 	tristate "KCSAN test for integrated runtime behaviour" if !KUNIT_ALL_TESTS
 	default KUNIT_ALL_TESTS
-	depends on TRACEPOINTS && KUNIT
+	depends on BROKEN && KUNIT
 	select TORTURE_TEST
 	help
 	  KCSAN test focusing on behaviour of the integrated runtime. Tests

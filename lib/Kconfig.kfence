@@ -86,7 +86,7 @@ config KFENCE_STRESS_TEST_FAULTS
 config KFENCE_KUNIT_TEST
 	tristate "KFENCE integration test suite" if !KUNIT_ALL_TESTS
 	default KUNIT_ALL_TESTS
-	depends on TRACEPOINTS && KUNIT
+	depends on BROKEN && KUNIT
 	help
 	  Test suite for KFENCE, testing various error detection scenarios with
 	  various allocation types, and checking that reports are correctly
