@@ -3,7 +3,6 @@
 #include <linux/rwsem.h>
 #include <linux/shrinker.h>
 #include <linux/rculist.h>
-#include <trace/events/vmscan.h>
 
 #include "internal.h"
 
@@ -407,9 +406,6 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	total_scan += delta;
 	total_scan = min(total_scan, (2 * freeable));
 
-	trace_mm_shrink_slab_start(shrinker, shrinkctl, nr,
-				   freeable, delta, total_scan, priority,
-				   shrinkctl->memcg);
 
 	/*
 	 * Normally, we should not scan less than batch_size objects in one
@@ -460,8 +456,6 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	 */
 	new_nr = add_nr_deferred(next_deferred, shrinker, shrinkctl);
 
-	trace_mm_shrink_slab_end(shrinker, shrinkctl->nid, freed, nr, new_nr, total_scan,
-				 shrinkctl->memcg);
 	return freed;
 }
 

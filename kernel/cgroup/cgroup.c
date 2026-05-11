@@ -59,10 +59,6 @@
 #include <linux/nstree.h>
 #include <linux/irq_work.h>
 #include <net/sock.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/cgroup.h>
-
 #define CGROUP_FILE_NAME_MAX		(MAX_CGROUP_TYPE_NAMELEN +	\
 					 MAX_CFTYPE_NAME + 2)
 /* let's not notify more than 100 times per second */
@@ -89,8 +85,6 @@ EXPORT_SYMBOL_GPL(css_set_lock);
 struct blocking_notifier_head cgroup_lifetime_notifier =
 	BLOCKING_NOTIFIER_INIT(cgroup_lifetime_notifier);
 
-DEFINE_SPINLOCK(trace_cgroup_path_lock);
-char trace_cgroup_path[TRACE_CGROUP_PATH_LEN];
 static bool cgroup_debug __read_mostly;
 
 /*
@@ -1323,7 +1317,6 @@ static void cgroup_destroy_root(struct cgroup_root *root)
 	struct cgrp_cset_link *link, *tmp_link;
 	int ret;
 
-	trace_cgroup_destroy_root(root);
 
 	cgroup_lock_and_drain_offline(&cgrp_dfl_root.cgrp);
 
@@ -2146,7 +2139,6 @@ int cgroup_setup_root(struct cgroup_root *root, u32 ss_mask)
 					   CGROUP_LIFETIME_ONLINE, root_cgrp);
 	WARN_ON_ONCE(notifier_to_errno(ret));
 
-	trace_cgroup_setup_root(root);
 
 	/*
 	 * There must be no failure case after here, since rebinding takes

@@ -53,10 +53,6 @@
 
 #include "tick-internal.h"
 #include "timer_migration.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/timer.h>
-
 __visible u64 jiffies_64 __cacheline_aligned_in_smp = INITIAL_JIFFIES;
 
 EXPORT_SYMBOL(jiffies_64);
@@ -617,7 +613,6 @@ static void enqueue_timer(struct timer_base *base, struct timer_list *timer,
 	__set_bit(idx, base->pending_map);
 	timer_set_idx(timer, idx);
 
-	trace_timer_start(timer, bucket_expiry);
 
 	/*
 	 * Check whether this is the new first expiring timer. The
@@ -834,13 +829,11 @@ static inline void debug_timer_assert_init(struct timer_list *timer) { }
 static inline void debug_init(struct timer_list *timer)
 {
 	debug_timer_init(timer);
-	trace_timer_init(timer);
 }
 
 static inline void debug_deactivate(struct timer_list *timer)
 {
 	debug_timer_deactivate(timer);
-	trace_timer_cancel(timer);
 }
 
 static inline void debug_assert_init(struct timer_list *timer)
@@ -1744,9 +1737,7 @@ static void call_timer_fn(struct timer_list *timer,
 	 */
 	lock_map_acquire(&lockdep_map);
 
-	trace_timer_expire_entry(timer, baseclk);
 	fn(timer);
-	trace_timer_expire_exit(timer);
 
 	lock_map_release(&lockdep_map);
 
@@ -2255,7 +2246,6 @@ static inline u64 __get_next_timer_interrupt(unsigned long basej, u64 basem,
 			 */
 			if (tick_nohz_full_cpu(base_local->cpu))
 				base_global->is_idle = true;
-			trace_timer_base_idle(true, base_local->cpu);
 		}
 		*idle = base_local->is_idle;
 
@@ -2330,7 +2320,6 @@ void timer_clear_idle(void)
 	__this_cpu_write(timer_bases[BASE_LOCAL].is_idle, false);
 	if (tick_nohz_full_cpu(this_cpu))
 		__this_cpu_write(timer_bases[BASE_GLOBAL].is_idle, false);
-	trace_timer_base_idle(false, this_cpu);
 
 	/* Activate without holding the timer_base->lock */
 	tmigr_cpu_activate();

@@ -13,7 +13,6 @@
 
 #include <asm/sigframe.h>
 #include <asm/trapnr.h>
-#include <asm/trace/fpu.h>
 
 #include "context.h"
 #include "internal.h"
@@ -49,7 +48,6 @@ static inline bool check_xstate_in_sigframe(struct fxregs_state __user *fxbuf,
 	if (likely(magic2 == FP_XSTATE_MAGIC2))
 		return true;
 setfx:
-	trace_x86_fpu_xstate_check_failed(x86_task_fpu(current));
 
 	/* Set the parameters for fx only state */
 	fx_sw->magic1 = 0;

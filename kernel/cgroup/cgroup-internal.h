@@ -9,35 +9,9 @@
 #include <linux/refcount.h>
 #include <linux/fs_parser.h>
 
-#define TRACE_CGROUP_PATH_LEN 1024
-extern spinlock_t trace_cgroup_path_lock;
-extern char trace_cgroup_path[TRACE_CGROUP_PATH_LEN];
 extern void __init enable_debug_cgroup(void);
 
-/*
- * cgroup_path() takes a spin lock. It is good practice not to take
- * spin locks within trace point handlers, as they are mostly hidden
- * from normal view. As cgroup_path() can take the kernfs_rename_lock
- * spin lock, it is best to not call that function from the trace event
- * handler.
- *
- * Note: trace_cgroup_##type##_enabled() is a static branch that will only
- *       be set when the trace event is enabled.
- */
-#define TRACE_CGROUP_PATH(type, cgrp, ...)				\
-	do {								\
-		if (trace_cgroup_##type##_enabled()) {			\
-			unsigned long flags;				\
-			spin_lock_irqsave(&trace_cgroup_path_lock,	\
-					  flags);			\
-			cgroup_path(cgrp, trace_cgroup_path,		\
-				    TRACE_CGROUP_PATH_LEN);		\
-			trace_cgroup_##type(cgrp, trace_cgroup_path,	\
-					    ##__VA_ARGS__);		\
-			spin_unlock_irqrestore(&trace_cgroup_path_lock, \
-					       flags);			\
-		}							\
-	} while (0)
+#define TRACE_CGROUP_PATH(type, cgrp, ...) do { } while (0)
 
 /*
  * The cgroup filesystem superblock creation/mount context.

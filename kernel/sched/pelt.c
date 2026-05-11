@@ -297,7 +297,6 @@ int __update_load_avg_blocked_se(u64 now, struct sched_entity *se)
 {
 	if (___update_load_sum(now, &se->avg, 0, 0, 0)) {
 		___update_load_avg(&se->avg, se_weight(se));
-		trace_pelt_se_tp(se);
 		return 1;
 	}
 
@@ -311,7 +310,6 @@ int __update_load_avg_se(u64 now, struct cfs_rq *cfs_rq, struct sched_entity *se
 
 		___update_load_avg(&se->avg, se_weight(se));
 		cfs_se_util_change(&se->avg);
-		trace_pelt_se_tp(se);
 		return 1;
 	}
 
@@ -326,7 +324,6 @@ int __update_load_avg_cfs_rq(u64 now, struct cfs_rq *cfs_rq)
 				cfs_rq->curr != NULL)) {
 
 		___update_load_avg(&cfs_rq->avg, 1);
-		trace_pelt_cfs_tp(cfs_rq);
 		return 1;
 	}
 
@@ -352,7 +349,6 @@ int update_rt_rq_load_avg(u64 now, struct rq *rq, int running)
 				running)) {
 
 		___update_load_avg(&rq->avg_rt, 1);
-		trace_pelt_rt_tp(rq);
 		return 1;
 	}
 
@@ -378,7 +374,6 @@ int update_dl_rq_load_avg(u64 now, struct rq *rq, int running)
 				running)) {
 
 		___update_load_avg(&rq->avg_dl, 1);
-		trace_pelt_dl_tp(rq);
 		return 1;
 	}
 
@@ -408,7 +403,6 @@ int update_hw_load_avg(u64 now, struct rq *rq, u64 capacity)
 			       capacity,
 			       capacity)) {
 		___update_load_avg(&rq->avg_hw, 1);
-		trace_pelt_hw_tp(rq);
 		return 1;
 	}
 
@@ -462,7 +456,6 @@ int update_irq_load_avg(struct rq *rq, u64 running)
 
 	if (ret) {
 		___update_load_avg(&rq->avg_irq, 1);
-		trace_pelt_irq_tp(rq);
 	}
 
 	return ret;

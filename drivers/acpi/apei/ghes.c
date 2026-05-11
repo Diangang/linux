@@ -53,7 +53,6 @@
 #include <asm/fixmap.h>
 #include <asm/tlbflush.h>
 #include <cxl/event.h>
-#include <ras/ras_event.h>
 
 #include "apei-internal.h"
 

@@ -29,8 +29,6 @@
 #include <linux/initrd.h>
 #include <linux/freezer.h>
 
-#include <trace/events/module.h>
-
 static kernel_cap_t usermodehelper_bset = CAP_FULL_SET;
 static kernel_cap_t usermodehelper_inheritable = CAP_FULL_SET;
 static DEFINE_SPINLOCK(umh_sysctl_lock);

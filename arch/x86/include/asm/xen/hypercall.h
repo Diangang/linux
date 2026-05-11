@@ -41,8 +41,6 @@
 #include <linux/pgtable.h>
 #include <linux/instrumentation.h>
 
-#include <trace/events/xen.h>
-
 #include <asm/alternative.h>
 #include <asm/page.h>
 #include <asm/smap.h>
@@ -325,7 +323,6 @@ MULTI_fpu_taskswitch(struct multicall_entry *mcl, int set)
 	mcl->op = __HYPERVISOR_fpu_taskswitch;
 	mcl->args[0] = set;
 
-	trace_xen_mc_entry(mcl, 1);
 }
 
 static inline void
@@ -337,7 +334,6 @@ MULTI_update_va_mapping(struct multicall_entry *mcl, unsigned long va,
 	mcl->args[1] = new_val.pte;
 	mcl->args[2] = flags;
 
-	trace_xen_mc_entry(mcl, 3);
 }
 
 static inline void
@@ -348,7 +344,6 @@ MULTI_update_descriptor(struct multicall_entry *mcl, u64 maddr,
 	mcl->args[0] = maddr;
 	mcl->args[1] = *(unsigned long *)&desc;
 
-	trace_xen_mc_entry(mcl, 2);
 }
 
 static inline void
@@ -361,7 +356,6 @@ MULTI_mmu_update(struct multicall_entry *mcl, struct mmu_update *req,
 	mcl->args[2] = (unsigned long)success_count;
 	mcl->args[3] = domid;
 
-	trace_xen_mc_entry(mcl, 4);
 }
 
 static inline void
@@ -374,7 +368,6 @@ MULTI_mmuext_op(struct multicall_entry *mcl, struct mmuext_op *op, int count,
 	mcl->args[2] = (unsigned long)success_count;
 	mcl->args[3] = domid;
 
-	trace_xen_mc_entry(mcl, 4);
 }
 
 static inline void
@@ -385,7 +378,6 @@ MULTI_stack_switch(struct multicall_entry *mcl,
 	mcl->args[0] = ss;
 	mcl->args[1] = esp;
 
-	trace_xen_mc_entry(mcl, 2);
 }
 #endif
 

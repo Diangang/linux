@@ -61,10 +61,6 @@
 #include <linux/pagewalk.h>
 #include <linux/shmem_fs.h>
 #include <linux/sysctl.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/memory-failure.h>
-
 #include "swap.h"
 #include "internal.h"
 
@@ -1288,7 +1284,6 @@ static void update_per_node_mf_stats(unsigned long pfn,
 static int action_result(unsigned long pfn, enum mf_action_page_type type,
 			 enum mf_result result)
 {
-	trace_memory_failure_event(pfn, type, result);
 
 	if (type != MF_MSG_ALREADY_POISONED && type != MF_MSG_PFN_MAP) {
 		num_poisoned_pages_inc(pfn);

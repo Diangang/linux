@@ -51,6 +51,18 @@ struct movable_operations {
 /* Defined in mm/debug.c: */
 extern const char *migrate_reason_names[MR_TYPES];
 
+#define MIGRATE_REASON							\
+	EM( MR_COMPACTION,		"compaction")			\
+	EM( MR_MEMORY_FAILURE,	"memory_failure")		\
+	EM( MR_MEMORY_HOTPLUG,	"memory_hotplug")			\
+	EM( MR_SYSCALL,		"syscall_or_cpuset")		\
+	EM( MR_MEMPOLICY_MBIND,	"mempolicy_mbind")		\
+	EM( MR_NUMA_MISPLACED,	"numa_misplaced")		\
+	EM( MR_CONTIG_RANGE,		"contig_range")			\
+	EM( MR_LONGTERM_PIN,	"longterm_pin")			\
+	EM( MR_DEMOTION,		"demotion")			\
+	EMe(MR_DAMON,		"damon")
+
 #ifdef CONFIG_MIGRATION
 
 void putback_movable_pages(struct list_head *l);

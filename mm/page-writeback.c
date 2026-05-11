@@ -39,7 +39,6 @@
 #include <linux/sched/signal.h>
 #include <linux/mm_inline.h>
 #include <linux/shmem_fs.h>
-#include <trace/events/writeback.h>
 
 #include "internal.h"
 
@@ -404,9 +403,6 @@ static void domain_dirty_limits(struct dirty_throttle_control *dtc)
 	dtc->thresh = thresh;
 	dtc->bg_thresh = bg_thresh;
 
-	/* we should eventually report the domain in the TP */
-	if (!gdtc)
-		trace_global_dirty_state(bg_thresh, thresh);
 }
 
 /**
@@ -1475,7 +1471,6 @@ static void wb_update_dirty_ratelimit(struct dirty_throttle_control *dtc,
 	WRITE_ONCE(wb->dirty_ratelimit, max(dirty_ratelimit, 1UL));
 	wb->balanced_dirty_ratelimit = balanced_dirty_ratelimit;
 
-	trace_bdi_dirty_ratelimit(wb, dirty_rate, task_ratelimit);
 }
 
 static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
@@ -1818,7 +1813,6 @@ static int balance_dirty_pages(struct bdi_writeback *wb,
 	unsigned long dirty_ratelimit;
 	struct backing_dev_info *bdi = wb->bdi;
 	bool strictlimit = bdi->capabilities & BDI_CAP_STRICTLIMIT;
-	unsigned long start_time = jiffies;
 	int ret = 0;
 
 	for (;;) {
@@ -1936,14 +1930,6 @@ free_running:
 		 * do a reset, as it may be a light dirtier.
 		 */
 		if (pause < min_pause) {
-			trace_balance_dirty_pages(wb,
-						  sdtc,
-						  dirty_ratelimit,
-						  task_ratelimit,
-						  pages_dirtied,
-						  period,
-						  min(pause, 0L),
-						  start_time);
 			if (pause < -HZ) {
 				current->dirty_paused_when = now;
 				current->nr_dirtied = 0;
@@ -1961,14 +1947,6 @@ free_running:
 		}
 
 pause:
-		trace_balance_dirty_pages(wb,
-					  sdtc,
-					  dirty_ratelimit,
-					  task_ratelimit,
-					  pages_dirtied,
-					  period,
-					  pause,
-					  start_time);
 		if (flags & BDP_ASYNC) {
 			ret = -EAGAIN;
 			break;
@@ -2442,7 +2420,6 @@ retry:
 		goto retry;
 	}
 
-	trace_wbc_writepage(wbc, inode_to_bdi(mapping->host));
 	return folio;
 }
 
@@ -2620,7 +2597,6 @@ static void folio_account_dirtied(struct folio *folio,
 {
 	struct inode *inode = mapping->host;
 
-	trace_writeback_dirty_folio(folio, mapping);
 
 	if (mapping_can_writeback(mapping)) {
 		struct bdi_writeback *wb;
@@ -3062,7 +3038,6 @@ EXPORT_SYMBOL(__folio_start_writeback);
 void folio_wait_writeback(struct folio *folio)
 {
 	while (folio_test_writeback(folio)) {
-		trace_folio_wait_writeback(folio, folio_mapping(folio));
 		folio_wait_bit(folio, PG_writeback);
 	}
 }
@@ -3084,7 +3059,6 @@ EXPORT_SYMBOL_GPL(folio_wait_writeback);
 int folio_wait_writeback_killable(struct folio *folio)
 {
 	while (folio_test_writeback(folio)) {
-		trace_folio_wait_writeback(folio, folio_mapping(folio));
 		if (folio_wait_bit_killable(folio, PG_writeback))
 			return -EINTR;
 	}

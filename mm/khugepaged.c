@@ -62,10 +62,6 @@ enum scan_result {
 	SCAN_PAGE_FILLED,
 	SCAN_PAGE_DIRTY_OR_WRITEBACK,
 };
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/huge_memory.h>
-
 static struct task_struct *khugepaged_thread __read_mostly;
 static DEFINE_MUTEX(khugepaged_mutex);
 
@@ -674,14 +670,10 @@ next:
 		result = SCAN_LACK_REFERENCED_PAGE;
 	} else {
 		result = SCAN_SUCCEED;
-		trace_mm_collapse_huge_page_isolate(folio, none_or_zero,
-						    referenced, result);
 		return result;
 	}
 out:
 	release_pte_pages(pte, _pte, compound_pagelist);
-	trace_mm_collapse_huge_page_isolate(folio, none_or_zero,
-					    referenced, result);
 	return result;
 }
 
@@ -1061,7 +1053,6 @@ static enum scan_result __collapse_huge_page_swapin(struct mm_struct *mm,
 
 	result = SCAN_SUCCEED;
 out:
-	trace_mm_collapse_huge_page_swapin(mm, swapped_in, referenced, result);
 	return result;
 }
 
@@ -1244,7 +1235,6 @@ out_up_write:
 out_nolock:
 	if (folio)
 		folio_put(folio);
-	trace_mm_collapse_huge_page(mm, result == SCAN_SUCCEED, result);
 	return result;
 }
 
@@ -1428,8 +1418,6 @@ out_unmap:
 		*lock_dropped = true;
 	}
 out:
-	trace_mm_khugepaged_scan_pmd(mm, folio, referenced,
-				     none_or_zero, result, unmapped);
 	return result;
 }
 
@@ -2306,7 +2294,6 @@ rollback:
 	folio_put(new_folio);
 out:
 	VM_BUG_ON(!list_empty(&pagelist));
-	trace_mm_khugepaged_collapse_file(mm, new_folio, index, addr, is_shmem, file, HPAGE_PMD_NR, result);
 	return result;
 }
 
@@ -2413,7 +2400,6 @@ static enum scan_result collapse_scan_file(struct mm_struct *mm,
 		}
 	}
 
-	trace_mm_khugepaged_scan_file(mm, folio, file, present, swap, result);
 	return result;
 }
 
@@ -2487,7 +2473,6 @@ static void collapse_scan_mm_slot(unsigned int progress_max,
 	struct mm_slot *slot;
 	struct mm_struct *mm;
 	struct vm_area_struct *vma;
-	unsigned int progress_prev = cc->progress;
 
 	lockdep_assert_held(&khugepaged_mm_lock);
 	*result = SCAN_FAIL;
@@ -2593,8 +2578,6 @@ breakouterloop_mmap_lock:
 		collect_mm_slot(slot);
 	}
 
-	trace_mm_khugepaged_scan(mm, cc->progress - progress_prev,
-				 khugepaged_scan.mm_slot == NULL);
 }
 
 static int khugepaged_has_work(void)

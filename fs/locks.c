@@ -63,10 +63,6 @@
 #include <linux/hashtable.h>
 #include <linux/percpu.h>
 #include <linux/sysctl.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/filelock.h>
-
 #include <linux/uaccess.h>
 
 static struct file_lock *file_lock(struct file_lock_core *flc)
@@ -211,7 +207,6 @@ locks_get_lock_context(struct inode *inode, int type)
 		ctx = locks_inode_context(inode);
 	}
 out:
-	trace_locks_get_lock_context(inode, type, ctx);
 	return ctx;
 }
 
@@ -1198,7 +1193,6 @@ out:
 	if (new_fl)
 		locks_free_lock(new_fl);
 	locks_dispose_list(&dispose);
-	trace_flock_lock_inode(inode, request, error);
 	return error;
 }
 
@@ -1426,7 +1420,6 @@ retry:
 		locks_wake_up_blocks(&left->c);
 	}
  out:
-	trace_posix_lock_inode(inode, request, error);
 	spin_unlock(&ctx->flc_lock);
 	percpu_up_read(&file_rwsem);
 	/*
@@ -1539,7 +1532,6 @@ static void time_out_leases(struct inode *inode, struct list_head *dispose)
 	lockdep_assert_held(&ctx->flc_lock);
 
 	list_for_each_entry_safe(fl, tmp, &ctx->flc_lease, c.flc_list) {
-		trace_time_out_leases(inode, fl);
 		if (past_time(fl->fl_downgrade_time))
 			lease_modify(fl, F_RDLCK, dispose);
 
@@ -1562,23 +1554,16 @@ static bool leases_conflict(struct file_lock_core *lc, struct file_lock_core *bc
 {
 	bool rc;
 	struct file_lease *lease = file_lease(lc);
-	struct file_lease *breaker = file_lease(bc);
 
 	if (lease->fl_lmops->lm_breaker_owns_lease
 			&& lease->fl_lmops->lm_breaker_owns_lease(lease))
 		return false;
-	if ((bc->flc_flags & FL_LAYOUT) != (lc->flc_flags & FL_LAYOUT)) {
-		rc = false;
-		goto trace;
-	}
-	if ((bc->flc_flags & FL_DELEG) && (lc->flc_flags & FL_LEASE)) {
-		rc = false;
-		goto trace;
-	}
+	if ((bc->flc_flags & FL_LAYOUT) != (lc->flc_flags & FL_LAYOUT))
+		return false;
+	if ((bc->flc_flags & FL_DELEG) && (lc->flc_flags & FL_LEASE))
+		return false;
 
 	rc = locks_conflict(bc, lc);
-trace:
-	trace_leases_conflict(rc, lease, breaker);
 	return rc;
 }
 
@@ -1674,7 +1659,6 @@ int __break_lease(struct inode *inode, unsigned int flags)
 		goto out;
 
 	if (flags & LEASE_BREAK_NONBLOCK) {
-		trace_break_lease_noblock(inode, new_fl);
 		error = -EWOULDBLOCK;
 		goto out;
 	}
@@ -1691,7 +1675,6 @@ restart:
 	} else
 		break_time++;
 	locks_insert_block(&fl->c, &new_fl->c, leases_conflict);
-	trace_break_lease_block(inode, new_fl);
 	spin_unlock(&ctx->flc_lock);
 	percpu_up_read(&file_rwsem);
 
@@ -1702,7 +1685,6 @@ restart:
 
 	percpu_down_read(&file_rwsem);
 	spin_lock(&ctx->flc_lock);
-	trace_break_lease_unblock(inode, new_fl);
 	__locks_delete_block(&new_fl->c);
 	if (error >= 0) {
 		/*
@@ -1831,7 +1813,6 @@ generic_add_lease(struct file *filp, int arg, struct file_lease **flp, void **pr
 	LIST_HEAD(dispose);
 
 	lease = *flp;
-	trace_generic_add_lease(inode, lease);
 
 	error = file_f_owner_allocate(filp);
 	if (error)
@@ -1943,7 +1924,6 @@ static int generic_delete_lease(struct file *filp, void *owner)
 
 	ctx = locks_inode_context(inode);
 	if (!ctx) {
-		trace_generic_delete_lease(inode, NULL);
 		return error;
 	}
 
@@ -1956,7 +1936,6 @@ static int generic_delete_lease(struct file *filp, void *owner)
 			break;
 		}
 	}
-	trace_generic_delete_lease(inode, victim);
 	if (victim)
 		error = fl->fl_lmops->lm_change(victim, F_UNLCK, &dispose);
 	spin_unlock(&ctx->flc_lock);
@@ -2500,7 +2479,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
 		struct flock *flock)
 {
 	struct file_lock *file_lock = locks_alloc_lock();
-	struct inode *inode = file_inode(filp);
 	struct file *f;
 	int error;
 
@@ -2567,7 +2545,6 @@ int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
 		}
 	}
 out:
-	trace_fcntl_setlk(inode, file_lock, error);
 	locks_free_lock(file_lock);
 	return error;
 }
@@ -2730,7 +2707,6 @@ void locks_remove_posix(struct file *filp, fl_owner_t owner)
 
 	if (lock.fl_ops && lock.fl_ops->fl_release_private)
 		lock.fl_ops->fl_release_private(&lock);
-	trace_locks_remove_posix(inode, &lock, error);
 }
 EXPORT_SYMBOL(locks_remove_posix);
 

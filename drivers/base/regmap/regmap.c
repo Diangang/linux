@@ -18,10 +18,6 @@
 #include <linux/log2.h>
 #include <linux/hwspinlock.h>
 #include <linux/unaligned.h>
-
-#define CREATE_TRACE_POINTS
-#include "trace.h"
-
 #include "internal.h"
 
 /*
@@ -1731,7 +1727,6 @@ static int _regmap_raw_write_impl(struct regmap *map, unsigned int reg,
 	if (map->async && map->bus && map->bus->async_write) {
 		struct regmap_async *async;
 
-		trace_regmap_async_write_start(map, reg, val_len);
 
 		spin_lock_irqsave(&map->async_lock, flags);
 		async = list_first_entry_or_null(&map->async_free,
@@ -1789,7 +1784,6 @@ static int _regmap_raw_write_impl(struct regmap *map, unsigned int reg,
 		return ret;
 	}
 
-	trace_regmap_hw_write_start(map, reg, val_len / map->format.val_bytes);
 
 	/* If we're doing a single register write we can probably just
 	 * send the work_buf directly, otherwise try to do a gather
@@ -1829,7 +1823,6 @@ static int _regmap_raw_write_impl(struct regmap *map, unsigned int reg,
 			map->cache_ops->drop(map, reg, reg + 1);
 	}
 
-	trace_regmap_hw_write_done(map, reg, val_len / map->format.val_bytes);
 
 	return ret;
 }
@@ -1886,11 +1879,9 @@ static int _regmap_bus_formatted_write(void *context, unsigned int reg,
 	reg = regmap_reg_addr(map, reg);
 	map->format.format_write(map, reg, val);
 
-	trace_regmap_hw_write_start(map, reg, 1);
 
 	ret = map->write(map->bus_context, map->work_buf, map->format.buf_size);
 
-	trace_regmap_hw_write_done(map, reg, 1);
 
 	return ret;
 }
@@ -1959,7 +1950,6 @@ int _regmap_write(struct regmap *map, unsigned int reg,
 		if (regmap_should_log(map))
 			dev_info(map->dev, "%x <= %x\n", reg, val);
 
-		trace_regmap_reg_write(map, reg, val);
 	}
 
 	return ret;
@@ -2399,9 +2389,6 @@ out:
 		kfree(wval);
 	}
 
-	if (!ret)
-		trace_regmap_bulk_write(map, reg, val, val_bytes * val_count);
-
 	return ret;
 }
 EXPORT_SYMBOL_GPL(regmap_bulk_write);
@@ -2441,7 +2428,6 @@ static int _regmap_raw_multi_reg_write(struct regmap *map,
 	for (i = 0; i < num_regs; i++) {
 		unsigned int reg = regs[i].reg;
 		unsigned int val = regs[i].def;
-		trace_regmap_hw_write_start(map, reg, 1);
 		reg = regmap_reg_addr(map, reg);
 		map->format.format_reg(u8, reg, map->reg_shift);
 		u8 += reg_bytes + pad_bytes;
@@ -2455,10 +2441,6 @@ static int _regmap_raw_multi_reg_write(struct regmap *map,
 
 	kfree(buf);
 
-	for (i = 0; i < num_regs; i++) {
-		int reg = regs[i].reg;
-		trace_regmap_hw_write_done(map, reg, 1);
-	}
 	return ret;
 }
 
@@ -2772,13 +2754,11 @@ static int _regmap_raw_read(struct regmap *map, unsigned int reg, void *val,
 	map->format.format_reg(map->work_buf, reg, map->reg_shift);
 	regmap_set_work_buf_flag_mask(map, map->format.reg_bytes,
 				      map->read_flag_mask);
-	trace_regmap_hw_read_start(map, reg, val_len / map->format.val_bytes);
 
 	ret = map->read(map->bus_context, map->work_buf,
 			map->format.reg_bytes + map->format.pad_bytes,
 			val, val_len);
 
-	trace_regmap_hw_read_done(map, reg, val_len / map->format.val_bytes);
 
 	return ret;
 }
@@ -2842,7 +2822,6 @@ static int _regmap_read(struct regmap *map, unsigned int reg,
 		if (regmap_should_log(map))
 			dev_info(map->dev, "%x => %x\n", reg, *val);
 
-		trace_regmap_reg_read(map, reg, *val);
 
 		if (!map->cache_bypass)
 			regcache_write(map, reg, *val);
@@ -3219,8 +3198,6 @@ int regmap_bulk_read(struct regmap *map, unsigned int reg, void *val,
 	} else {
 		ret = _regmap_bulk_read(map, reg, NULL, val, val_count);
 	}
-	if (!ret)
-		trace_regmap_bulk_read(map, reg, val, val_bytes * val_count);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(regmap_bulk_read);
@@ -3350,7 +3327,6 @@ void regmap_async_complete_cb(struct regmap_async *async, int ret)
 	struct regmap *map = async->map;
 	bool wake;
 
-	trace_regmap_async_io_complete(map);
 
 	spin_lock(&map->async_lock);
 	list_move(&async->list, &map->async_free);
@@ -3395,7 +3371,6 @@ int regmap_async_complete(struct regmap *map)
 	if (!map->bus || !map->bus->async_write)
 		return 0;
 
-	trace_regmap_async_complete_start(map);
 
 	wait_event(map->async_waitq, regmap_async_is_done(map));
 
@@ -3404,7 +3379,6 @@ int regmap_async_complete(struct regmap *map)
 	map->async_ret = 0;
 	spin_unlock_irqrestore(&map->async_lock, flags);
 
-	trace_regmap_async_complete_done(map);
 
 	return ret;
 }

@@ -46,8 +46,6 @@
 
 #include <asm/tlbflush.h>
 
-#include <trace/events/migrate.h>
-
 #include "internal.h"
 #include "swap.h"
 
@@ -438,8 +436,6 @@ static bool remove_migration_pte(struct folio *folio,
 		if (READ_ONCE(vma->vm_flags) & VM_LOCKED)
 			mlock_drain_local();
 
-		trace_remove_migration_pte(pvmw.address, pte_val(pte),
-					   compound_order(new));
 
 		/* No need to invalidate - it was non-present before */
 		update_mmu_cache(vma, pvmw.address, pvmw.pte);
@@ -2100,7 +2096,6 @@ int migrate_pages(struct list_head *from, new_folio_t get_new_folio,
 	LIST_HEAD(split_folios);
 	struct migrate_pages_stats stats;
 
-	trace_mm_migrate_pages_start(mode, reason);
 
 	memset(&stats, 0, sizeof(stats));
 
@@ -2174,10 +2169,6 @@ out:
 	count_vm_events(THP_MIGRATION_SUCCESS, stats.nr_thp_succeeded);
 	count_vm_events(THP_MIGRATION_FAIL, stats.nr_thp_failed);
 	count_vm_events(THP_MIGRATION_SPLIT, stats.nr_thp_split);
-	trace_mm_migrate_pages(stats.nr_succeeded, stats.nr_failed_pages,
-			       stats.nr_thp_succeeded, stats.nr_thp_failed,
-			       stats.nr_thp_split, stats.nr_split, mode,
-			       reason);
 
 	if (ret_succeeded)
 		*ret_succeeded = stats.nr_succeeded;

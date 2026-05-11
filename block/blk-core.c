@@ -40,10 +40,6 @@
 #include <linux/part_stat.h>
 #include <linux/sched/sysctl.h>
 #include <linux/blk-crypto.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/block.h>
-
 #include "blk.h"
 #include "blk-mq-sched.h"
 #include "blk-pm.h"
@@ -52,14 +48,6 @@
 #include "blk-ioprio.h"
 
 struct dentry *blk_debugfs_root;
-
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_remap);
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_rq_remap);
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_bio_complete);
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_split);
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_unplug);
-EXPORT_TRACEPOINT_SYMBOL_GPL(block_rq_insert);
-
 static DEFINE_IDA(blk_queue_ida);
 
 /*
@@ -583,9 +571,6 @@ static int blk_partition_remap(struct bio *bio)
 		return -EIO;
 	if (bio_sectors(bio)) {
 		bio->bi_iter.bi_sector += p->bd_start_sect;
-		trace_block_bio_remap(bio, p->bd_dev,
-				      bio->bi_iter.bi_sector -
-				      p->bd_start_sect);
 	}
 	bio_set_flag(bio, BIO_REMAPPED);
 	return 0;
@@ -730,7 +715,6 @@ void submit_bio_noacct_nocheck(struct bio *bio, bool split)
 	blk_cgroup_bio_start(bio);
 
 	if (!bio_flagged(bio, BIO_TRACE_COMPLETION)) {
-		trace_block_bio_queue(bio);
 		/*
 		 * Now that enqueuing has been traced, we need to trace
 		 * completion as well.

@@ -46,8 +46,6 @@
 #include "scsi_logging.h"
 #include "scsi_transport_api.h"
 
-#include <trace/events/scsi.h>
-
 #include <linux/unaligned.h>
 
 /*
@@ -66,7 +64,6 @@ void scsi_eh_wakeup(struct Scsi_Host *shost, unsigned int busy)
 	lockdep_assert_held(shost->host_lock);
 
 	if (busy == shost->host_failed) {
-		trace_scsi_eh_wakeup(shost);
 		wake_up_process(shost->ehandler);
 		SCSI_LOG_ERROR_RECOVERY(5, shost_printk(KERN_INFO, shost,
 			"Waking error handler thread\n"));
@@ -346,7 +343,6 @@ enum blk_eh_timer_return scsi_timeout(struct request *req)
 	struct scsi_cmnd *scmd = blk_mq_rq_to_pdu(req);
 	struct Scsi_Host *host = scmd->device->host;
 
-	trace_scsi_dispatch_cmd_timeout(scmd);
 	scsi_log_completion(scmd, TIMEOUT_ERROR);
 
 	atomic_inc(&scmd->device->iotmo_cnt);

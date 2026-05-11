@@ -105,6 +105,11 @@ static inline bool is_dl_boosted(struct sched_dl_entity *dl_se)
 }
 #endif /* !CONFIG_RT_MUTEXES */
 
+#define DL_OTHER	0
+#define DL_TASK		1
+#define DL_SERVER_FAIR	2
+#define DL_SERVER_EXT	3
+
 static inline u8 dl_get_type(struct sched_dl_entity *dl_se, struct rq *rq)
 {
 	if (!dl_server(dl_se))
@@ -736,7 +741,6 @@ static inline void replenish_dl_new_period(struct sched_dl_entity *dl_se,
 		dl_se->dl_throttled = 1;
 		dl_se->dl_defer_armed = 1;
 	}
-	trace_sched_dl_replenish_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 }
 
 /*
@@ -852,7 +856,6 @@ static void replenish_dl_entity(struct sched_dl_entity *dl_se)
 	if (dl_se->dl_throttled)
 		dl_se->dl_throttled = 0;
 
-	trace_sched_dl_replenish_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 
 	/*
 	 * If this is the replenishment of a deferred reservation,
@@ -1335,7 +1338,6 @@ static inline void dl_check_constrained_dl(struct sched_dl_entity *dl_se)
 	    dl_time_before(rq_clock(rq), dl_next_period(dl_se))) {
 		if (unlikely(is_dl_boosted(dl_se) || !start_dl_timer(dl_se)))
 			return;
-		trace_sched_dl_throttle_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 		dl_se->dl_throttled = 1;
 		if (dl_se->runtime > 0)
 			dl_se->runtime = 0;
@@ -1499,7 +1501,6 @@ static void update_curr_dl_se(struct rq *rq, struct sched_dl_entity *dl_se, s64 
 
 throttle:
 	if (dl_runtime_exceeded(dl_se) || dl_se->dl_yielded) {
-		trace_sched_dl_throttle_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 		dl_se->dl_throttled = 1;
 
 		/* If requested, inform the user about runtime overruns. */
@@ -1525,7 +1526,6 @@ throttle:
 		if (!is_leftmost(dl_se, &rq->dl))
 			resched_curr(rq);
 	} else {
-		trace_sched_dl_update_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 	}
 
 	/*
@@ -1778,7 +1778,6 @@ void dl_server_start(struct sched_dl_entity *dl_se)
 	if (WARN_ON_ONCE(!cpu_online(cpu_of(rq))))
 		return;
 
-	trace_sched_dl_server_start_tp(dl_se, cpu_of(rq), dl_get_type(dl_se, rq));
 	dl_se->dl_server_active = 1;
 	enqueue_dl_entity(dl_se, ENQUEUE_WAKEUP);
 	if (!dl_task(dl_se->rq->curr) || dl_entity_preempt(dl_se, &rq->curr->dl))
@@ -1790,8 +1789,6 @@ void dl_server_stop(struct sched_dl_entity *dl_se)
 	if (!dl_server(dl_se) || !dl_server_active(dl_se))
 		return;
 
-	trace_sched_dl_server_stop_tp(dl_se, cpu_of(dl_se->rq),
-				      dl_get_type(dl_se, dl_se->rq));
 	dequeue_dl_entity(dl_se, DEQUEUE_SLEEP);
 	hrtimer_try_to_cancel(&dl_se->dl_timer);
 	dl_se->dl_defer_armed = 0;

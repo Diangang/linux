@@ -42,8 +42,6 @@
 #include <asm/traps.h>
 #include <asm/system_misc.h>
 
-#define CREATE_TRACE_POINTS
-
 struct pt_regs_offset {
 	const char *name;
 	int offset;

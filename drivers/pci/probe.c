@@ -23,7 +23,6 @@
 #include <linux/irqdomain.h>
 #include <linux/pm_runtime.h>
 #include <linux/bitfield.h>
-#include <trace/events/pci.h>
 #include "pci.h"
 
 static struct resource busn_resource = {

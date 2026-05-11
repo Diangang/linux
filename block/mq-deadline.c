@@ -16,8 +16,6 @@
 #include <linux/rbtree.h>
 #include <linux/sbitmap.h>
 
-#include <trace/events/block.h>
-
 #include "elevator.h"
 #include "blk.h"
 #include "blk-mq.h"
@@ -642,7 +640,6 @@ static void dd_insert_request(struct blk_mq_hw_ctx *hctx, struct request *rq,
 	if (blk_mq_sched_try_insert_merge(q, rq, free))
 		return;
 
-	trace_block_rq_insert(rq);
 
 	if (flags & BLK_MQ_INSERT_AT_HEAD) {
 		list_add(&rq->queuelist, &dd->dispatch);

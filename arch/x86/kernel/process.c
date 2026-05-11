@@ -26,7 +26,6 @@
 #include <linux/acpi.h>
 #include <linux/elf-randomize.h>
 #include <linux/static_call.h>
-#include <trace/events/power.h>
 #include <linux/hw_breakpoint.h>
 #include <linux/entry-common.h>
 #include <asm/cpu.h>

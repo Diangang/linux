@@ -5,19 +5,15 @@
  * Copyright(C) 2022 linutronix GmbH
  */
 #include <linux/cpuhotplug.h>
+#include <linux/cpuhplock.h>
 #include <linux/slab.h>
 #include <linux/smp.h>
 #include <linux/spinlock.h>
 #include <linux/timerqueue.h>
-#include <trace/events/ipi.h>
 #include <linux/sched/isolation.h>
 
 #include "timer_migration.h"
 #include "tick-internal.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/timer_migration.h>
-
 /*
  * The timer migration mechanism is built on a hierarchy of groups. The
  * lowest level group contains CPUs, the next level groups of CPU groups
@@ -689,7 +685,6 @@ static bool tmigr_active_up(struct tmigr_group *group,
 
 	} while (!atomic_try_cmpxchg(&group->migr_state, &curstate.state, newstate.state));
 
-	trace_tmigr_group_set_cpu_active(group, newstate, childmask);
 
 	/*
 	 * The group is active (again). The group event might be still queued
@@ -714,7 +709,6 @@ static void __tmigr_cpu_activate(struct tmigr_cpu *tmc)
 
 	data.childmask = tmc->groupmask;
 
-	trace_tmigr_cpu_active(tmc);
 
 	tmc->cpuevt.ignore = true;
 	WRITE_ONCE(tmc->wakeup, KTIME_MAX);
@@ -892,8 +886,6 @@ check_toplvl:
 		data->firstexp = tmigr_next_groupevt_expires(group);
 	}
 
-	trace_tmigr_update_events(child, group, childstate, groupstate,
-				  nextexp);
 
 unlock:
 	raw_spin_unlock(&group->lock);
@@ -927,7 +919,6 @@ static u64 tmigr_new_timer(struct tmigr_cpu *tmc, u64 nextexp)
 	if (tmc->remote)
 		return KTIME_MAX;
 
-	trace_tmigr_cpu_new_timer(tmc);
 
 	tmc->cpuevt.ignore = false;
 	data.remote = false;
@@ -970,7 +961,6 @@ static void tmigr_handle_remote_cpu(unsigned int cpu, u64 now,
 		return;
 	}
 
-	trace_tmigr_handle_remote_cpu(tmc);
 
 	tmc->remote = true;
 	WRITE_ONCE(tmc->wakeup, KTIME_MAX);
@@ -1051,7 +1041,6 @@ static bool tmigr_handle_remote_up(struct tmigr_group *group,
 
 	childmask = data->childmask;
 
-	trace_tmigr_handle_remote(group);
 again:
 	/*
 	 * Handle the group only if @childmask is the migrator or if the
@@ -1264,7 +1253,6 @@ u64 tmigr_cpu_new_timer(u64 nextexp)
 			WRITE_ONCE(tmc->wakeup, ret);
 		}
 	}
-	trace_tmigr_cpu_new_timer_idle(tmc, nextexp);
 	raw_spin_unlock(&tmc->lock);
 	return ret;
 }
@@ -1325,7 +1313,6 @@ static bool tmigr_inactive_up(struct tmigr_group *group,
 		WARN_ON_ONCE((newstate.migrator != TMIGR_NONE) && !(newstate.active));
 
 		if (atomic_try_cmpxchg(&group->migr_state, &curstate.state, newstate.state)) {
-			trace_tmigr_group_set_cpu_inactive(group, newstate, childmask);
 			break;
 		}
 
@@ -1395,7 +1382,6 @@ u64 tmigr_cpu_deactivate(u64 nextexp)
 	 */
 	WRITE_ONCE(tmc->wakeup, ret);
 
-	trace_tmigr_cpu_idle(tmc, nextexp);
 	raw_spin_unlock(&tmc->lock);
 	return ret;
 }
@@ -1485,7 +1471,6 @@ static int tmigr_clear_cpu_available(unsigned int cpu)
 		 * offline; Therefore nextevt value is set to KTIME_MAX
 		 */
 		firstexp = __tmigr_cpu_deactivate(tmc, KTIME_MAX);
-		trace_tmigr_cpu_unavailable(tmc);
 	}
 
 	if (firstexp != KTIME_MAX) {
@@ -1510,7 +1495,6 @@ static int __tmigr_set_cpu_available(unsigned int cpu)
 	scoped_guard(raw_spinlock_irq, &tmc->lock) {
 		if (tmc->available)
 			return 0;
-		trace_tmigr_cpu_available(tmc);
 		tmc->idle = timer_base_is_idle();
 		if (!tmc->idle)
 			__tmigr_cpu_activate(tmc);
@@ -1695,7 +1679,6 @@ static struct tmigr_group *tmigr_get_group(int node, unsigned int lvl)
 
 	/* Setup successful. Add it to the hierarchy */
 	list_add(&group->list, &tmigr_level_list[lvl]);
-	trace_tmigr_group_set(group);
 	return group;
 }
 
@@ -1754,7 +1737,6 @@ static void tmigr_connect_child_parent(struct tmigr_group *child,
 	 */
 	smp_store_release(&child->parent, parent);
 
-	trace_tmigr_connect_child_parent(child);
 }
 
 static int tmigr_setup_groups(unsigned int cpu, unsigned int node,
@@ -1829,7 +1811,6 @@ static int tmigr_setup_groups(unsigned int cpu, unsigned int node,
 
 			tmigr_init_root(group, activate);
 
-			trace_tmigr_connect_cpu_parent(tmc);
 
 			/* There are no children that need to be connected */
 			continue;

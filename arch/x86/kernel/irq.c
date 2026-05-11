@@ -27,8 +27,6 @@
 #include <asm/irq_remapping.h>
 
 #if defined(CONFIG_X86_LOCAL_APIC) || defined(CONFIG_X86_THERMAL_VECTOR)
-#define CREATE_TRACE_POINTS
-#include <asm/trace/irq_vectors.h>
 #endif
 
 DEFINE_PER_CPU_SHARED_ALIGNED(irq_cpustat_t, irq_stat);
@@ -347,11 +345,9 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_x86_platform_ipi)
 	struct pt_regs *old_regs = set_irq_regs(regs);
 
 	apic_eoi();
-	trace_x86_platform_ipi_entry(X86_PLATFORM_IPI_VECTOR);
 	inc_irq_stat(x86_platform_ipis);
 	if (x86_platform_ipi_callback)
 		x86_platform_ipi_callback();
-	trace_x86_platform_ipi_exit(X86_PLATFORM_IPI_VECTOR);
 	set_irq_regs(old_regs);
 }
 #endif
@@ -576,10 +572,8 @@ static void smp_thermal_vector(void)
 
 DEFINE_IDTENTRY_SYSVEC(sysvec_thermal)
 {
-	trace_thermal_apic_entry(THERMAL_APIC_VECTOR);
 	inc_irq_stat(irq_thermal_count);
 	smp_thermal_vector();
-	trace_thermal_apic_exit(THERMAL_APIC_VECTOR);
 	apic_eoi();
 }
 #endif

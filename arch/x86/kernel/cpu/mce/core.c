@@ -61,10 +61,6 @@
 
 /* sysfs synchronization */
 static DEFINE_MUTEX(mce_sysfs_mutex);
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/mce.h>
-
 #define SPINUNIT		100	/* 100ns */
 
 DEFINE_PER_CPU(unsigned, mce_exception_count);
@@ -616,7 +612,6 @@ static int mce_early_notifier(struct notifier_block *nb, unsigned long val,
 		return NOTIFY_DONE;
 
 	/* Emit the trace record: */
-	trace_mce_record(err);
 
 	set_bit(0, &mce_need_notify);
 

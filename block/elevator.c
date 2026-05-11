@@ -36,8 +36,6 @@
 #include <linux/uaccess.h>
 #include <linux/pm_runtime.h>
 
-#include <trace/events/block.h>
-
 #include "elevator.h"
 #include "blk.h"
 #include "blk-mq-sched.h"

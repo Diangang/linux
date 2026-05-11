@@ -37,10 +37,6 @@
 #include <asm/unistd.h>
 #include <asm/fixmap.h>
 #include <asm/traps.h>
-
-#define CREATE_TRACE_POINTS
-#include "vsyscall_trace.h"
-
 static enum { EMULATE, XONLY, NONE } vsyscall_mode __ro_after_init =
 #ifdef CONFIG_LEGACY_VSYSCALL_NONE
 	NONE;
@@ -135,7 +131,6 @@ static bool __emulate_vsyscall(struct pt_regs *regs, unsigned long address)
 
 	vsyscall_nr = addr_to_vsyscall_nr(address);
 
-	trace_emulate_vsyscall(vsyscall_nr);
 
 	if (vsyscall_nr < 0) {
 		warn_bad_vsyscall(KERN_WARNING, regs,

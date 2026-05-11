@@ -17,6 +17,7 @@
 #include <linux/completion.h>
 #include <linux/err.h>
 #include <linux/cgroup.h>
+#include <linux/cpuhotplug.h>
 #include <linux/cpuset.h>
 #include <linux/unistd.h>
 #include <linux/file.h>
@@ -28,7 +29,6 @@
 #include <linux/uaccess.h>
 #include <linux/numa.h>
 #include <linux/sched/isolation.h>
-#include <trace/events/sched.h>
 
 
 static DEFINE_SPINLOCK(kthread_create_lock);
@@ -749,7 +749,6 @@ int kthread_stop(struct task_struct *k)
 	struct kthread *kthread;
 	int ret;
 
-	trace_sched_kthread_stop(k);
 
 	get_task_struct(k);
 	kthread = to_kthread(k);
@@ -761,7 +760,6 @@ int kthread_stop(struct task_struct *k)
 	ret = kthread->result;
 	put_task_struct(k);
 
-	trace_sched_kthread_stop_ret(ret);
 	return ret;
 }
 EXPORT_SYMBOL(kthread_stop);
@@ -1019,15 +1017,8 @@ repeat:
 	raw_spin_unlock_irq(&worker->lock);
 
 	if (work) {
-		kthread_work_func_t func = work->func;
 		__set_current_state(TASK_RUNNING);
-		trace_sched_kthread_work_execute_start(work);
 		work->func(work);
-		/*
-		 * Avoid dereferencing work after this point.  The trace
-		 * event only cares about the address.
-		 */
-		trace_sched_kthread_work_execute_end(work, func);
 	} else if (!freezing(current)) {
 		schedule();
 	} else {
@@ -1176,7 +1167,6 @@ static void kthread_insert_work(struct kthread_worker *worker,
 {
 	kthread_insert_work_sanity_check(worker, work);
 
-	trace_sched_kthread_work_queue_work(worker, work);
 
 	list_add_tail(&work->node, pos);
 	work->worker = worker;

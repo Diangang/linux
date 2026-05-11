@@ -932,12 +932,10 @@ reload_tlb:
 		this_cpu_write(cpu_tlbstate.ctxs[ns.asid].tlb_gen, next_tlb_gen);
 		load_new_mm_cr3(next->pgd, ns.asid, new_lam, true);
 
-		trace_tlb_flush(TLB_FLUSH_ON_TASK_SWITCH, TLB_FLUSH_ALL);
 	} else {
 		/* The new ASID is already up to date. */
 		load_new_mm_cr3(next->pgd, ns.asid, new_lam, false);
 
-		trace_tlb_flush(TLB_FLUSH_ON_TASK_SWITCH, 0);
 	}
 
 	/* Make sure we write CR3 before loaded_mm. */
@@ -1112,7 +1110,6 @@ static void flush_tlb_func(void *info)
 	/* The CPU was left in the mm_cpumask of the target mm. Clear it. */
 	if (f->mm && f->mm != loaded_mm) {
 		cpumask_clear_cpu(raw_smp_processor_id(), mm_cpumask(f->mm));
-		trace_tlb_flush(TLB_REMOTE_WRONG_CPU, 0);
 		return;
 	}
 
@@ -1249,10 +1246,7 @@ static void flush_tlb_func(void *info)
 
 	/* Tracing is done in a unified manner to reduce the code size */
 done:
-	trace_tlb_flush(!local ? TLB_REMOTE_SHOOTDOWN :
-				(f->mm == NULL) ? TLB_LOCAL_SHOOTDOWN :
-						  TLB_LOCAL_MM_SHOOTDOWN,
-			nr_invalidate);
+	return;
 }
 
 static bool should_flush_tlb(int cpu, void *data)
@@ -1314,11 +1308,6 @@ STATIC_NOPV void native_flush_tlb_multi(const struct cpumask *cpumask,
 	 * would not happen.
 	 */
 	count_vm_tlb_event(NR_TLB_REMOTE_FLUSH);
-	if (info->end == TLB_FLUSH_ALL)
-		trace_tlb_flush(TLB_REMOTE_SEND_IPI, TLB_FLUSH_ALL);
-	else
-		trace_tlb_flush(TLB_REMOTE_SEND_IPI,
-				(info->end - info->start) >> PAGE_SHIFT);
 
 	/*
 	 * If no page tables were freed, we can skip sending IPIs to

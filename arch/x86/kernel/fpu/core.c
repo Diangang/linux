@@ -26,10 +26,6 @@
 #include "internal.h"
 #include "legacy.h"
 #include "xstate.h"
-
-#define CREATE_TRACE_POINTS
-#include <asm/trace/fpu.h>
-
 #ifdef CONFIG_X86_64
 DEFINE_STATIC_KEY_FALSE(__fpu_state_size_dynamic);
 DEFINE_PER_CPU(u64, xfd_state);
@@ -516,12 +512,10 @@ void fpu_sync_fpstate(struct fpu *fpu)
 	WARN_ON_FPU(fpu != x86_task_fpu(current));
 
 	fpregs_lock();
-	trace_x86_fpu_before_save(fpu);
 
 	if (!test_thread_flag(TIF_NEED_FPU_LOAD))
 		save_fpregs_to_fpstate(fpu);
 
-	trace_x86_fpu_after_save(fpu);
 	fpregs_unlock();
 }
 
@@ -733,7 +727,6 @@ int fpu_clone(struct task_struct *dst, u64 clone_flags, bool minimal,
 	if (update_fpu_shstk(dst, ssp))
 		return 1;
 
-	trace_x86_fpu_copy_dst(dst_fpu);
 
 	return 0;
 }
@@ -780,7 +773,6 @@ void fpu__drop(struct task_struct *tsk)
 		fpregs_deactivate(fpu);
 	}
 
-	trace_x86_fpu_dropped(fpu);
 
 	preempt_enable();
 }

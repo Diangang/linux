@@ -9,6 +9,7 @@
 #include <linux/debugfs.h>
 #include <linux/nmi.h>
 #include <linux/log2.h>
+#include <linux/sched/numa_balancing.h>
 #include "sched.h"
 
 /*

@@ -21,7 +21,6 @@
 #include <linux/module.h>
 #include <linux/syscore_ops.h>
 #include <asm/io.h>
-#include <trace/events/power.h>
 
 #include "internal.h"
 #include "sleep.h"
@@ -601,7 +600,6 @@ static int acpi_suspend_enter(suspend_state_t pm_state)
 	u32 acpi_state = acpi_target_sleep_state;
 	int error;
 
-	trace_suspend_resume(TPS("acpi_suspend"), acpi_state, true);
 	switch (acpi_state) {
 	case ACPI_STATE_S1:
 		barrier();
@@ -618,7 +616,6 @@ static int acpi_suspend_enter(suspend_state_t pm_state)
 		pm_set_resume_via_firmware();
 		break;
 	}
-	trace_suspend_resume(TPS("acpi_suspend"), acpi_state, false);
 
 	/* This violates the spec but is required for bug compatibility. */
 	acpi_write_bit_register(ACPI_BITREG_SCI_ENABLE, 1);

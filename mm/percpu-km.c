@@ -79,7 +79,6 @@ static struct pcpu_chunk *pcpu_create_chunk(gfp_t gfp)
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 
 	pcpu_stats_chunk_alloc();
-	trace_percpu_create_chunk(chunk->base_addr);
 
 	return chunk;
 }
@@ -92,7 +91,6 @@ static void pcpu_destroy_chunk(struct pcpu_chunk *chunk)
 		return;
 
 	pcpu_stats_chunk_dealloc();
-	trace_percpu_destroy_chunk(chunk->base_addr);
 
 	if (chunk->data)
 		__free_pages(chunk->data, order_base_2(nr_pages));

@@ -16,8 +16,6 @@
 
 #include <asm/irq_regs.h>
 
-#include <trace/events/irq.h>
-
 #include "internals.h"
 
 #ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER
@@ -198,7 +196,6 @@ irqreturn_t __handle_irq_event_percpu(struct irq_desc *desc)
 		    !(action->flags & (IRQF_NO_THREAD | IRQF_PERCPU | IRQF_ONESHOT)))
 			lockdep_hardirq_threaded();
 
-		trace_irq_handler_entry(irq, action);
 
 		if (static_branch_unlikely(&irqhandler_duration_check_enabled)) {
 			u64 ts_start = local_clock();
@@ -209,7 +206,6 @@ irqreturn_t __handle_irq_event_percpu(struct irq_desc *desc)
 			res = action->handler(irq, action->dev_id);
 		}
 
-		trace_irq_handler_exit(irq, action, res);
 
 		if (WARN_ONCE(!irqs_disabled(),"irq %u handler %pS enabled interrupts\n",
 			      irq, action->handler))

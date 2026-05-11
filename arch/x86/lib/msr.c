@@ -4,9 +4,6 @@
 #include <linux/percpu.h>
 #include <linux/preempt.h>
 #include <asm/msr.h>
-#define CREATE_TRACE_POINTS
-#include <asm/msr-trace.h>
-
 struct msr __percpu *msrs_alloc(void)
 {
 	struct msr __percpu *msrs = NULL;
@@ -125,23 +122,14 @@ EXPORT_SYMBOL_FOR_KVM(msr_clear_bit);
 #ifdef CONFIG_TRACEPOINTS
 void do_trace_write_msr(u32 msr, u64 val, int failed)
 {
-	trace_write_msr(msr, val, failed);
 }
 EXPORT_SYMBOL(do_trace_write_msr);
-EXPORT_TRACEPOINT_SYMBOL(write_msr);
-
 void do_trace_read_msr(u32 msr, u64 val, int failed)
 {
-	trace_read_msr(msr, val, failed);
 }
 EXPORT_SYMBOL(do_trace_read_msr);
-EXPORT_TRACEPOINT_SYMBOL(read_msr);
-
 void do_trace_rdpmc(u32 msr, u64 val, int failed)
 {
-	trace_rdpmc(msr, val, failed);
 }
 EXPORT_SYMBOL(do_trace_rdpmc);
-EXPORT_TRACEPOINT_SYMBOL(rdpmc);
-
 #endif

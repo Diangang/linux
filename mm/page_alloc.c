@@ -37,8 +37,6 @@
 #include <linux/vmstat.h>
 #include <linux/fault-inject.h>
 #include <linux/compaction.h>
-#include <trace/events/kmem.h>
-#include <trace/events/oom.h>
 #include <linux/prefetch.h>
 #include <linux/mm_inline.h>
 #include <linux/mmu_notifier.h>
@@ -685,8 +683,6 @@ compaction_capture(struct capture_control *capc, struct page *page,
 		return false;
 
 	if (migratetype != capc->cc->migratetype)
-		trace_mm_page_alloc_extfrag(page, capc->cc->order, order,
-					    capc->cc->migratetype, migratetype);
 
 	capc->page = page;
 	return true;
@@ -1176,7 +1172,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 
 	VM_BUG_ON_PAGE(PageTail(page), page);
 
-	trace_mm_page_free(page, order);
 	kmsan_free_page(page, order);
 
 	if (memcg_kmem_online() && PageMemcgKmem(page))
@@ -1363,7 +1358,6 @@ static void free_pcppages_bulk(struct zone *zone, int count,
 			pcp->count -= nr_pages;
 
 			__free_one_page(page, pfn, zone, order, mt, FPI_NONE);
-			trace_mm_page_pcpu_drain(page, order, mt);
 		} while (count > 0 && !list_empty(list));
 	}
 
@@ -1766,9 +1760,6 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 
 		page_del_and_expand(zone, page, order, current_order,
 				    migratetype);
-		trace_mm_page_alloc_zone_locked(page, order, migratetype,
-				pcp_allowed_order(order) &&
-				migratetype < MIGRATE_PCPTYPES);
 		return page;
 	}
 
@@ -2251,8 +2242,6 @@ __rmqueue_claim(struct zone *zone, int order, int start_migratetype,
 					  start_migratetype, fallback_mt,
 					  alloc_flags);
 		if (page) {
-			trace_mm_page_alloc_extfrag(page, order, current_order,
-						    start_migratetype, fallback_mt);
 			return page;
 		}
 	}
@@ -2281,8 +2270,6 @@ __rmqueue_steal(struct zone *zone, int order, int start_migratetype)
 
 		page = get_page_from_free_area(area, fallback_mt);
 		page_del_and_expand(zone, page, order, current_order, fallback_mt);
-		trace_mm_page_alloc_extfrag(page, order, current_order,
-					    start_migratetype, fallback_mt);
 		return page;
 	}
 
@@ -2925,7 +2912,6 @@ void free_unref_folios(struct folio_batch *folios)
 		if (unlikely(migratetype >= MIGRATE_PCPTYPES))
 			migratetype = MIGRATE_MOVABLE;
 
-		trace_mm_page_free_batched(&folio->page);
 		if (!free_frozen_page_commit(zone, pcp, &folio->page,
 				migratetype, order, FPI_NONE)) {
 			pcp = NULL;
@@ -4048,8 +4034,6 @@ should_compact_retry(struct alloc_context *ac, int order, int alloc_flags,
 	int max_retries = MAX_COMPACT_RETRIES;
 	int min_priority;
 	bool ret = false;
-	int retries = *compaction_retries;
-	enum compact_priority priority = *compact_priority;
 
 	if (!order)
 		return false;
@@ -4101,7 +4085,6 @@ should_compact_retry(struct alloc_context *ac, int order, int alloc_flags,
 		ret = true;
 	}
 out:
-	trace_compact_retry(order, priority, compact_result, retries, max_retries, ret);
 	return ret;
 }
 #else
@@ -4465,8 +4448,6 @@ should_reclaim_retry(gfp_t gfp_mask, unsigned order,
 		 */
 		wmark = __zone_watermark_ok(zone, order, min_wmark,
 				ac->highest_zoneidx, alloc_flags, available);
-		trace_reclaim_retry_zone(z, order, reclaimable,
-				available, min_wmark, *no_progress_loops, wmark);
 		if (wmark) {
 			ret = true;
 			break;
@@ -5076,7 +5057,6 @@ out:
 		page = NULL;
 	}
 
-	trace_mm_page_alloc(page, order, alloc_gfp, ac.migratetype);
 	kmsan_alloc_page(page, order, alloc_gfp);
 
 	return page;
@@ -6146,7 +6126,6 @@ static void calculate_totalreserve_pages(void)
 		}
 	}
 	totalreserve_pages = reserve_pages;
-	trace_mm_calculate_totalreserve_pages(totalreserve_pages);
 }
 
 /*
@@ -6190,8 +6169,6 @@ static void setup_per_zone_lowmem_reserve(void)
 					zone->lowmem_reserve[j] = 0;
 				else
 					zone->lowmem_reserve[j] = managed_pages / ratio;
-				trace_mm_setup_per_zone_lowmem_reserve(zone, upper_zone,
-								       zone->lowmem_reserve[j]);
 			}
 		}
 	}
@@ -6255,7 +6232,6 @@ static void __setup_per_zone_wmarks(void)
 		zone->_watermark[WMARK_LOW]  = min_wmark_pages(zone) + tmp;
 		zone->_watermark[WMARK_HIGH] = low_wmark_pages(zone) + tmp;
 		zone->_watermark[WMARK_PROMO] = high_wmark_pages(zone) + tmp;
-		trace_mm_setup_per_zone_wmarks(zone);
 
 		spin_unlock_irqrestore(&zone->lock, flags);
 	}
@@ -7594,7 +7570,6 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
 		__free_frozen_pages(page, order, FPI_TRYLOCK);
 		page = NULL;
 	}
-	trace_mm_page_alloc(page, order, alloc_gfp, ac.migratetype);
 	kmsan_alloc_page(page, order, alloc_gfp);
 	return page;
 }

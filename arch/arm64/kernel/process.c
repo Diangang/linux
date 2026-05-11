@@ -37,7 +37,6 @@
 #include <linux/hw_breakpoint.h>
 #include <linux/personality.h>
 #include <linux/notifier.h>
-#include <trace/events/power.h>
 #include <linux/percpu.h>
 #include <linux/thread_info.h>
 #include <linux/prctl.h>

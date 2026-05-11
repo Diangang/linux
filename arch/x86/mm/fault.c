@@ -35,10 +35,6 @@
 #include <asm/irq_stack.h>
 #include <asm/fred.h>
 #include <asm/sev.h>			/* snp_dump_hva_rmpentry()	*/
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/exceptions.h>
-
 /*
  * Returns 0 if mmiotrace is disabled, or if the fault is not
  * handled by mmiotrace:
@@ -1449,20 +1445,9 @@ done:
 NOKPROBE_SYMBOL(do_user_addr_fault);
 
 static __always_inline void
-trace_page_fault_entries(struct pt_regs *regs, unsigned long error_code,
-			 unsigned long address)
-{
-	if (user_mode(regs))
-		trace_page_fault_user(address, regs, error_code);
-	else
-		trace_page_fault_kernel(address, regs, error_code);
-}
-
-static __always_inline void
 handle_page_fault(struct pt_regs *regs, unsigned long error_code,
 			      unsigned long address)
 {
-	trace_page_fault_entries(regs, error_code, address);
 
 	if (unlikely(kmmio_fault(regs, address)))
 		return;

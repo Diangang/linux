@@ -16,8 +16,6 @@
 #include <linux/irqdomain.h>
 #include <linux/random.h>
 
-#include <trace/events/irq.h>
-
 #include "internals.h"
 
 static irqreturn_t bad_chained_irq(int irq, void *dev_id)
@@ -795,12 +793,10 @@ void handle_fasteoi_nmi(struct irq_desc *desc)
 
 	__kstat_incr_irqs_this_cpu(desc);
 
-	trace_irq_handler_entry(irq, action);
 	/*
 	 * NMIs cannot be shared, there is only one action.
 	 */
 	res = action->handler(irq, action->dev_id);
-	trace_irq_handler_exit(irq, action, res);
 
 	if (chip->irq_eoi)
 		chip->irq_eoi(&desc->irq_data);
@@ -917,9 +913,7 @@ void handle_percpu_devid_irq(struct irq_desc *desc)
 			break;
 
 	if (likely(action)) {
-		trace_irq_handler_entry(irq, action);
 		res = action->handler(irq, raw_cpu_ptr(action->percpu_dev_id));
-		trace_irq_handler_exit(irq, action, res);
 	} else {
 		bool enabled = cpumask_test_cpu(cpu, desc->percpu_enabled);
 

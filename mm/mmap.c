@@ -53,10 +53,6 @@
 #include <asm/cacheflush.h>
 #include <asm/tlb.h>
 #include <asm/mmu_context.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/mmap.h>
-
 #include "internal.h"
 
 #ifndef arch_mmap_check
@@ -662,7 +658,6 @@ unsigned long vm_unmapped_area(struct vm_unmapped_area_info *info)
 	else
 		addr = unmapped_area(info);
 
-	trace_vm_unmapped_area(addr, info);
 	return addr;
 }
 
@@ -1312,7 +1307,6 @@ void exit_mmap(struct mm_struct *mm)
 
 destroy:
 	__mt_destroy(&mm->mm_mt);
-	trace_exit_mmap(mm);
 	mmap_write_unlock(mm);
 	vm_unacct_memory(nr_accounted);
 }

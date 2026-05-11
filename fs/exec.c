@@ -72,11 +72,7 @@
 #include <linux/uaccess.h>
 #include <asm/mmu_context.h>
 #include <asm/tlb.h>
-
-#include <trace/events/task.h>
 #include "internal.h"
-
-#include <trace/events/sched.h>
 
 /* For vma exec functions. */
 #include "../mm/internal.h"
@@ -1076,7 +1072,6 @@ void __set_task_comm(struct task_struct *tsk, const char *buf, bool exec)
 {
 	size_t len = strnlen(buf, sizeof(tsk->comm) - 1);
 
-	trace_task_rename(tsk, buf);
 	memcpy(tsk->comm, buf, len);
 	memset(&tsk->comm[len], 0, sizeof(tsk->comm) - len);
 	perf_event_comm(tsk, exec);
@@ -1104,7 +1099,6 @@ int begin_new_exec(struct linux_binprm * bprm)
 	 * no return). The later "sched_process_exec" tracepoint is called after
 	 * the current task has successfully switched to the new exec.
 	 */
-	trace_sched_prepare_exec(current, bprm);
 
 	/*
 	 * Ensure all future errors are fatal.
@@ -1715,7 +1709,6 @@ static int exec_binprm(struct linux_binprm *bprm)
 	}
 
 	audit_bprm(bprm);
-	trace_sched_process_exec(current, old_pid, bprm);
 	ptrace_event(PTRACE_EVENT_EXEC, old_vpid);
 	proc_exec_connector(current);
 	return 0;

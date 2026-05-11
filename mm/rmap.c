@@ -77,10 +77,6 @@
 #include <linux/oom.h>
 
 #include <asm/tlb.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/migrate.h>
-
 #include "internal.h"
 #include "swap.h"
 
@@ -2704,8 +2700,6 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
 						hsz);
 			else
 				set_pte_at(mm, address, pvmw.pte, swp_pte);
-			trace_set_migration_pte(address, pte_val(swp_pte),
-						folio_order(folio));
 			/*
 			 * No need to invalidate here it will synchronize on
 			 * against the special swap migration pte.

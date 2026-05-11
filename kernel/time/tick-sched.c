@@ -32,8 +32,6 @@
 
 #include "tick-internal.h"
 
-#include <trace/events/timer.h>
-
 /*
  * Per-CPU nohz control structure
  */
@@ -730,7 +728,6 @@ static void tick_nohz_stop_tick(struct tick_sched *ts, int cpu)
 
 		ts->last_tick = hrtimer_get_expires(&ts->sched_timer);
 		tick_sched_flag_set(ts, TS_FLAG_STOPPED);
-		trace_tick_stop(1, TICK_DEP_MASK_NONE);
 	}
 
 	ts->next_tick = expires;

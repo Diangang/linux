@@ -542,10 +542,6 @@ static int worker_thread(void *__worker);
 static void workqueue_sysfs_unregister(struct workqueue_struct *wq);
 static void show_pwq(struct pool_workqueue *pwq);
 static void show_one_worker_pool(struct worker_pool *pool);
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/workqueue.h>
-
 #define assert_rcu_or_pool_mutex()					\
 	RCU_LOCKDEP_WARN(!rcu_read_lock_any_held() &&			\
 			 !lockdep_is_held(&wq_pool_mutex),		\
@@ -1608,7 +1604,6 @@ static void __pwq_activate_work(struct pool_workqueue *pwq,
 	unsigned long *wdb = work_data_bits(work);
 
 	WARN_ON_ONCE(!(*wdb & WORK_STRUCT_INACTIVE));
-	trace_workqueue_activate_work(work);
 	if (list_empty(&pwq->pool->worklist))
 		pwq->pool->last_progress_ts = jiffies;
 	move_linked_works(work, &pwq->pool->worklist, NULL);
@@ -2258,7 +2253,6 @@ retry:
 	}
 
 	/* pwq determined, queue */
-	trace_workqueue_queue_work(req_cpu, pwq, work);
 
 	if (WARN_ON(!list_empty(&work->entry)))
 		goto out;
@@ -2275,7 +2269,6 @@ retry:
 		if (list_empty(&pool->worklist))
 			pool->last_progress_ts = jiffies;
 
-		trace_workqueue_activate_work(work);
 		insert_work(pwq, work, &pool->worklist, work_flags);
 		kick_pool(pool);
 	} else {
@@ -3196,13 +3189,11 @@ __acquires(&pool->lock)
 	 * workqueues), so hiding them isn't a problem.
 	 */
 	lockdep_invariant_state(true);
-	trace_workqueue_execute_start(work);
 	worker->current_func(work);
 	/*
 	 * While we must be careful to not use "work" after this, the trace
 	 * point will only record its address.
 	 */
-	trace_workqueue_execute_end(work, worker->current_func);
 
 	lock_map_release(&lockdep_map);
 	if (!bh_draining)

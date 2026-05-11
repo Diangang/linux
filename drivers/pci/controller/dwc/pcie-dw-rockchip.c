@@ -23,7 +23,6 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/workqueue.h>
-#include <trace/events/pci_controller.h>
 
 #include "../../pci.h"
 #include "pcie-designware.h"
@@ -235,7 +234,7 @@ static void rockchip_pcie_ltssm_trace_work(struct work_struct *work)
 	enum dw_pcie_ltssm state;
 	u32 i, l1ss, prev_val = DW_PCIE_LTSSM_UNKNOWN, rate, val;
 
-	if (!trace_pcie_ltssm_state_transition_enabled())
+	if (!false)
 		goto skip_trace;
 
 	for (i = 0; i < PCIE_DBG_LTSSM_HISTORY_CNT; i++) {
@@ -268,10 +267,6 @@ static void rockchip_pcie_ltssm_trace_work(struct work_struct *work)
 				state = DW_PCIE_LTSSM_L1_1;
 		}
 
-		trace_pcie_ltssm_state_transition(dev_name(pci->dev),
-				dw_pcie_ltssm_status_string(state),
-				((rate + 1) > pci->max_link_speed) ?
-				PCI_SPEED_UNKNOWN : PCIE_SPEED_2_5GT + rate);
 	}
 
 skip_trace:

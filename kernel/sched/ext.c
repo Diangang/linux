@@ -190,10 +190,6 @@ module_param_cb(bypass_lb_intv_us, &bypass_lb_intv_us_param_ops, &scx_bypass_lb_
 MODULE_PARM_DESC(bypass_lb_intv_us, "bypass load balance interval in microseconds (0 (disable) to 10s)");
 
 #undef MODULE_PARAM_PREFIX
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/sched_ext.h>
-
 static void run_deferred(struct rq *rq);
 static bool task_dead_and_done(struct task_struct *p);
 static void scx_kick_cpu(struct scx_sched *sch, s32 cpu, u64 flags);
@@ -948,7 +944,6 @@ static struct task_struct *scx_task_iter_next_locked(struct scx_task_iter *iter)
  */
 #define scx_add_event(sch, name, cnt) do {					\
 	this_cpu_add((sch)->pcpu->event_stats.name, (cnt));			\
-	trace_sched_ext_event(#name, (cnt));					\
 } while(0)
 
 /**
@@ -961,7 +956,6 @@ static struct task_struct *scx_task_iter_next_locked(struct scx_task_iter *iter)
  */
 #define __scx_add_event(sch, name, cnt) do {					\
 	__this_cpu_add((sch)->pcpu->event_stats.name, (cnt));			\
-	trace_sched_ext_event(#name, cnt);					\
 } while(0)
 
 /**
@@ -5146,8 +5140,6 @@ static void bypass_lb_node(struct scx_sched *sch, int node)
 
 	}
 
-	trace_sched_ext_bypass_lb(node, nr_cpus, nr_tasks, nr_balanced,
-				  before_min, before_max, after_min, after_max);
 }
 
 /*
@@ -5975,7 +5967,6 @@ static void scx_flush_disable_work(struct scx_sched *sch)
 
 static void dump_newline(struct seq_buf *s)
 {
-	trace_sched_ext_dump("");
 
 	/* @s may be zero sized and seq_buf triggers WARN if so */
 	if (s->size)
@@ -5986,18 +5977,6 @@ static __printf(2, 3) void dump_line(struct seq_buf *s, const char *fmt, ...)
 {
 	va_list args;
 
-#ifdef CONFIG_TRACEPOINTS
-	if (trace_sched_ext_dump_enabled()) {
-		/* protected by scx_dump_lock */
-		static char line_buf[SCX_EXIT_MSG_LEN];
-
-		va_start(args, fmt);
-		vscnprintf(line_buf, sizeof(line_buf), fmt, args);
-		va_end(args);
-
-		trace_call__sched_ext_dump(line_buf);
-	}
-#endif
 	/* @s may be zero sized and seq_buf triggers WARN if so */
 	if (s->size) {
 		va_start(args, fmt);

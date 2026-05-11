@@ -26,12 +26,6 @@
 #include <linux/sched/debug.h>
 #include <linux/jump_label.h>
 #include <linux/string_choices.h>
-
-#include <trace/events/ipi.h>
-#define CREATE_TRACE_POINTS
-#include <trace/events/csd.h>
-#undef CREATE_TRACE_POINTS
-
 #include "smpboot.h"
 #include "sched/smp.h"
 
@@ -115,8 +109,6 @@ static __always_inline void
 send_call_function_single_ipi(int cpu)
 {
 	if (call_function_single_prep_ipi(cpu)) {
-		trace_ipi_send_cpu(cpu, _RET_IP_,
-				   generic_smp_call_function_single_interrupt);
 		arch_send_call_function_single_ipi(cpu);
 	}
 }
@@ -124,17 +116,13 @@ send_call_function_single_ipi(int cpu)
 static __always_inline void
 send_call_function_ipi_mask(struct cpumask *mask)
 {
-	trace_ipi_send_cpumask(mask, _RET_IP_,
-			       generic_smp_call_function_single_interrupt);
 	arch_send_call_function_ipi_mask(mask);
 }
 
 static __always_inline void
 csd_do_func(smp_call_func_t func, void *info, call_single_data_t *csd)
 {
-	trace_csd_function_entry(func, csd);
 	func(info);
-	trace_csd_function_exit(func, csd);
 }
 
 static void csd_lock_record(call_single_data_t *csd)
@@ -185,17 +173,6 @@ void __smp_call_single_queue(int cpu, struct llist_node *node)
 	 * even if we haven't sent the smp_call IPI yet (e.g. the stopper
 	 * executes migration_cpu_stop() on the remote CPU).
 	 */
-	if (trace_csd_queue_cpu_enabled()) {
-		call_single_data_t *csd;
-		smp_call_func_t func;
-
-		csd = container_of(node, call_single_data_t, node.llist);
-		func = CSD_TYPE(csd) == CSD_TYPE_TTWU ?
-			sched_ttwu_pending : csd->func;
-
-		trace_call__csd_queue_cpu(cpu, _RET_IP_, func, csd);
-	}
-
 	/*
 	 * The list addition should be visible to the target CPU when it pops
 	 * the head of the list to pull the entry off it in the IPI handler
@@ -627,7 +604,6 @@ static void smp_call_function_many_cond(const struct cpumask *mask,
 				csd->node.u_flags |= CSD_TYPE_SYNC;
 			csd->func = func;
 			csd->info = info;
-			trace_csd_queue_cpu(cpu, _RET_IP_, func, csd);
 
 			/*
 			 * Kick the remote CPU if this is the first work

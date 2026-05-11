@@ -50,7 +50,6 @@
 #include <linux/irq_work.h>
 #include <linux/kprobes.h>
 #include <linux/debugfs.h>
-#include <trace/events/kmem.h>
 
 #include "internal.h"
 
@@ -4663,7 +4662,6 @@ void *kmem_cache_alloc_noprof(struct kmem_cache *s, gfp_t gfpflags)
 	void *ret = slab_alloc_node(s, NULL, gfpflags, NUMA_NO_NODE, _RET_IP_,
 				    s->object_size);
 
-	trace_kmem_cache_alloc(_RET_IP_, ret, s, gfpflags, NUMA_NO_NODE);
 
 	return ret;
 }
@@ -4675,7 +4673,6 @@ void *kmem_cache_alloc_lru_noprof(struct kmem_cache *s, struct list_lru *lru,
 	void *ret = slab_alloc_node(s, lru, gfpflags, NUMA_NO_NODE, _RET_IP_,
 				    s->object_size);
 
-	trace_kmem_cache_alloc(_RET_IP_, ret, s, gfpflags, NUMA_NO_NODE);
 
 	return ret;
 }
@@ -4707,7 +4704,6 @@ void *kmem_cache_alloc_node_noprof(struct kmem_cache *s, gfp_t gfpflags, int nod
 {
 	void *ret = slab_alloc_node(s, NULL, gfpflags, node, _RET_IP_, s->object_size);
 
-	trace_kmem_cache_alloc(_RET_IP_, ret, s, gfpflags, node);
 
 	return ret;
 }
@@ -4965,7 +4961,6 @@ kmem_cache_alloc_from_sheaf_noprof(struct kmem_cache *s, gfp_t gfp,
 	/* add __GFP_NOFAIL to force successful memcg charging */
 	slab_post_alloc_hook(s, NULL, gfp | __GFP_NOFAIL, 1, &ret, init, s->object_size);
 out:
-	trace_kmem_cache_alloc(_RET_IP_, ret, s, gfp, NUMA_NO_NODE);
 
 	return ret;
 }
@@ -5014,8 +5009,6 @@ void *__kmalloc_large_noprof(size_t size, gfp_t flags)
 {
 	void *ret = ___kmalloc_large_node(size, flags, NUMA_NO_NODE);
 
-	trace_kmalloc(_RET_IP_, ret, size, PAGE_SIZE << get_order(size),
-		      flags, NUMA_NO_NODE);
 	return ret;
 }
 EXPORT_SYMBOL(__kmalloc_large_noprof);
@@ -5024,8 +5017,6 @@ void *__kmalloc_large_node_noprof(size_t size, gfp_t flags, int node)
 {
 	void *ret = ___kmalloc_large_node(size, flags, node);
 
-	trace_kmalloc(_RET_IP_, ret, size, PAGE_SIZE << get_order(size),
-		      flags, node);
 	return ret;
 }
 EXPORT_SYMBOL(__kmalloc_large_node_noprof);
@@ -5039,8 +5030,6 @@ void *__do_kmalloc_node(size_t size, kmem_buckets *b, gfp_t flags, int node,
 
 	if (unlikely(size > KMALLOC_MAX_CACHE_SIZE)) {
 		ret = __kmalloc_large_node_noprof(size, flags, node);
-		trace_kmalloc(caller, ret, size,
-			      PAGE_SIZE << get_order(size), flags, node);
 		return ret;
 	}
 
@@ -5051,7 +5040,6 @@ void *__do_kmalloc_node(size_t size, kmem_buckets *b, gfp_t flags, int node,
 
 	ret = slab_alloc_node(s, NULL, flags, node, caller, size);
 	ret = kasan_kmalloc(s, ret, size, flags);
-	trace_kmalloc(caller, ret, size, s->size, flags, node);
 	return ret;
 }
 void *__kmalloc_node_noprof(DECL_BUCKET_PARAMS(size, b), gfp_t flags, int node)
@@ -5168,7 +5156,6 @@ void *__kmalloc_cache_noprof(struct kmem_cache *s, gfp_t gfpflags, size_t size)
 	void *ret = slab_alloc_node(s, NULL, gfpflags, NUMA_NO_NODE,
 					    _RET_IP_, size);
 
-	trace_kmalloc(_RET_IP_, ret, size, s->size, gfpflags, NUMA_NO_NODE);
 
 	ret = kasan_kmalloc(s, ret, size, gfpflags);
 	return ret;
@@ -5180,7 +5167,6 @@ void *__kmalloc_cache_node_noprof(struct kmem_cache *s, gfp_t gfpflags,
 {
 	void *ret = slab_alloc_node(s, NULL, gfpflags, node, _RET_IP_, size);
 
-	trace_kmalloc(_RET_IP_, ret, size, s->size, gfpflags, node);
 
 	ret = kasan_kmalloc(s, ret, size, gfpflags);
 	return ret;
@@ -6127,7 +6113,6 @@ void kmem_cache_free(struct kmem_cache *s, void *x)
 		}
 	}
 
-	trace_kmem_cache_free(_RET_IP_, x, s);
 	slab_free(s, slab, x, _RET_IP_);
 }
 EXPORT_SYMBOL(kmem_cache_free);
@@ -6302,7 +6287,6 @@ void kfree(const void *object)
 	struct kmem_cache *s;
 	void *x = (void *)object;
 
-	trace_kfree(_RET_IP_, object);
 
 	if (unlikely(ZERO_OR_NULL_PTR(object)))
 		return;

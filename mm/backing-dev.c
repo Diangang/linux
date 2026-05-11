@@ -15,7 +15,6 @@
 #include <linux/module.h>
 #include <linux/writeback.h>
 #include <linux/device.h>
-#include <trace/events/writeback.h>
 #include "internal.h"
 
 struct backing_dev_info noop_backing_dev_info;
@@ -1118,7 +1117,6 @@ int bdi_register_va(struct backing_dev_info *bdi, const char *fmt, va_list args)
 
 	spin_unlock_bh(&bdi_lock);
 
-	trace_writeback_bdi_register(bdi);
 	return 0;
 }
 

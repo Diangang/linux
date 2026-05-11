@@ -113,10 +113,6 @@
 #include <asm/setup.h>
 #include <asm/sections.h>
 #include <asm/cacheflush.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/initcall.h>
-
 #include <kunit/test.h>
 
 static int kernel_init(void *);
@@ -659,13 +655,9 @@ void __init __weak trap_init(void) { }
 bool initcall_debug;
 core_param(initcall_debug, initcall_debug, bool, 0644);
 
-#ifdef TRACEPOINTS_ENABLED
-static void __init initcall_debug_enable(void);
-#else
 static inline void initcall_debug_enable(void)
 {
 }
-#endif
 
 #ifdef CONFIG_RANDOMIZE_KSTACK_OFFSET
 DEFINE_STATIC_KEY_MAYBE_RO(CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT,
@@ -1178,22 +1170,6 @@ trace_initcall_level_cb(void *data, const char *level)
 
 static ktime_t initcall_calltime;
 
-#ifdef TRACEPOINTS_ENABLED
-static void __init initcall_debug_enable(void)
-{
-	int ret;
-
-	ret = register_trace_initcall_start(trace_initcall_start_cb,
-					    &initcall_calltime);
-	ret |= register_trace_initcall_finish(trace_initcall_finish_cb,
-					      &initcall_calltime);
-	ret |= register_trace_initcall_level(trace_initcall_level_cb, NULL);
-	WARN(ret, "Failed to register initcall tracepoints\n");
-}
-# define do_trace_initcall_start	trace_initcall_start
-# define do_trace_initcall_finish	trace_initcall_finish
-# define do_trace_initcall_level	trace_initcall_level
-#else
 static inline void do_trace_initcall_start(initcall_t fn)
 {
 	if (!initcall_debug)
@@ -1212,7 +1188,6 @@ static inline void do_trace_initcall_level(const char *level)
 		return;
 	trace_initcall_level_cb(NULL, level);
 }
-#endif /* !TRACEPOINTS_ENABLED */
 
 int __init_or_module do_one_initcall(initcall_t fn)
 {

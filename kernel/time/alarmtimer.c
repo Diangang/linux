@@ -29,10 +29,6 @@
 #include <linux/time_namespace.h>
 
 #include "posix-timers.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/alarmtimer.h>
-
 /**
  * struct alarm_base - Alarm timer bases
  * @lock:		Lock for synchronized access to the base
@@ -194,7 +190,6 @@ static enum hrtimer_restart alarmtimer_fired(struct hrtimer *timer)
 	if (alarm->function)
 		alarm->function(alarm, base->get_ktime());
 
-	trace_alarmtimer_fired(alarm, base->get_ktime());
 	return HRTIMER_NORESTART;
 }
 
@@ -263,7 +258,6 @@ static int alarmtimer_suspend(struct device *dev)
 		return -EBUSY;
 	}
 
-	trace_alarmtimer_suspend(expires, type);
 
 	/* Setup an rtc timer to fire that far in the future */
 	rtc_timer_cancel(rtc, &rtctimer);
@@ -351,7 +345,6 @@ void alarm_start(struct alarm *alarm, ktime_t start)
 		hrtimer_start(&alarm->timer, alarm->node.expires, HRTIMER_MODE_ABS);
 	}
 
-	trace_alarmtimer_start(alarm, base->get_ktime());
 }
 EXPORT_SYMBOL_GPL(alarm_start);
 
@@ -398,7 +391,6 @@ int alarm_try_to_cancel(struct alarm *alarm)
 			alarmtimer_dequeue(base, alarm);
 	}
 
-	trace_alarmtimer_cancel(alarm, base->get_ktime());
 	return ret;
 }
 EXPORT_SYMBOL_GPL(alarm_try_to_cancel);

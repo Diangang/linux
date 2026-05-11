@@ -24,10 +24,6 @@
 #include <linux/iomap.h>
 #include <linux/rmap.h>
 #include <linux/pgalloc.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/fs_dax.h>
-
 /* We choose 4096 entries - same as per-zone page wait tables */
 #define DAX_WAIT_TABLE_BITS 12
 #define DAX_WAIT_TABLE_ENTRIES (1 << DAX_WAIT_TABLE_BITS)
@@ -1220,7 +1216,6 @@ static int dax_writeback_one(struct xa_state *xas, struct dax_device *dax_dev,
 	xas_clear_mark(xas, PAGECACHE_TAG_DIRTY);
 	dax_wake_entry(xas, entry, WAKE_NEXT);
 
-	trace_dax_writeback_one(mapping->host, index, count);
 	return ret;
 
  put_unlocked:
@@ -1249,7 +1244,6 @@ int dax_writeback_mapping_range(struct address_space *mapping,
 	if (mapping_empty(mapping) || wbc->sync_mode != WB_SYNC_ALL)
 		return 0;
 
-	trace_dax_writeback_range(inode, xas.xa_index, end_index);
 
 	tag_pages_for_writeback(mapping, xas.xa_index, end_index);
 
@@ -1269,7 +1263,6 @@ int dax_writeback_mapping_range(struct address_space *mapping,
 		xas_lock_irq(&xas);
 	}
 	xas_unlock_irq(&xas);
-	trace_dax_writeback_range_done(inode, xas.xa_index, end_index);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(dax_writeback_mapping_range);
@@ -1403,7 +1396,6 @@ static vm_fault_t dax_load_hole(struct xa_state *xas, struct vm_fault *vmf,
 	*entry = dax_insert_entry(xas, vmf, iter, *entry, pfn, DAX_ZERO_PAGE);
 
 	ret = vmf_insert_page_mkwrite(vmf, pfn_to_page(pfn), false);
-	trace_dax_load_hole(inode, vmf, ret);
 	return ret;
 }
 
@@ -1419,7 +1411,6 @@ static vm_fault_t dax_pmd_load_hole(struct xa_state *xas, struct vm_fault *vmf,
 	zero_folio = mm_get_huge_zero_folio(vmf->vma->vm_mm);
 
 	if (unlikely(!zero_folio)) {
-		trace_dax_pmd_load_hole_fallback(inode, vmf, zero_folio, *entry);
 		return VM_FAULT_FALLBACK;
 	}
 
@@ -1428,7 +1419,6 @@ static vm_fault_t dax_pmd_load_hole(struct xa_state *xas, struct vm_fault *vmf,
 
 	ret = vmf_insert_folio_pmd(vmf, zero_folio, false);
 	if (ret == VM_FAULT_NOPAGE)
-		trace_dax_pmd_load_hole(inode, vmf, zero_folio, *entry);
 	return ret;
 }
 #else
@@ -1911,7 +1901,6 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, unsigned long *pfnp,
 	void *entry;
 	int error;
 
-	trace_dax_pte_fault(iter.inode, vmf, ret);
 	/*
 	 * Check whether offset isn't beyond end of file now. Caller is supposed
 	 * to hold locks serializing us with truncate / punch hole so this is
@@ -1968,7 +1957,6 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, unsigned long *pfnp,
 unlock_entry:
 	dax_unlock_entry(&xas, entry);
 out:
-	trace_dax_pte_fault_done(iter.inode, vmf, ret);
 	return ret;
 }
 
@@ -2030,7 +2018,6 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, unsigned long *pfnp,
 	 */
 	max_pgoff = DIV_ROUND_UP(i_size_read(iter.inode), PAGE_SIZE);
 
-	trace_dax_pmd_fault(iter.inode, vmf, max_pgoff, 0);
 
 	if (xas.xa_index >= max_pgoff) {
 		ret = VM_FAULT_SIGBUS;
@@ -2081,7 +2068,6 @@ fallback:
 		count_vm_event(THP_FAULT_FALLBACK);
 	}
 out:
-	trace_dax_pmd_fault_done(iter.inode, vmf, max_pgoff, ret);
 	return ret;
 }
 #else
@@ -2143,8 +2129,6 @@ static vm_fault_t dax_insert_pfn_mkwrite(struct vm_fault *vmf,
 	    (order == 0 && !dax_is_pte_entry(entry))) {
 		put_unlocked_entry(&xas, entry, WAKE_NEXT);
 		xas_unlock_irq(&xas);
-		trace_dax_insert_pfn_mkwrite_no_entry(mapping->host, vmf,
-						      VM_FAULT_NOPAGE);
 		return VM_FAULT_NOPAGE;
 	}
 	xas_set_mark(&xas, PAGECACHE_TAG_DIRTY);
@@ -2162,7 +2146,6 @@ static vm_fault_t dax_insert_pfn_mkwrite(struct vm_fault *vmf,
 		ret = VM_FAULT_FALLBACK;
 	folio_put(folio);
 	dax_unlock_entry(&xas, entry);
-	trace_dax_insert_pfn_mkwrite(mapping->host, vmf, ret);
 	return ret;
 }
 

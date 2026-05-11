@@ -746,10 +746,6 @@ static void iocg_unlock(struct ioc_gq *iocg, bool unlock_ioc, unsigned long *fla
 		spin_unlock_irqrestore(&iocg->waitq.lock, *flags);
 	}
 }
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/iocost.h>
-
 static void ioc_refresh_margins(struct ioc *ioc)
 {
 	struct ioc_margins *margins = &ioc->margins;
@@ -999,9 +995,6 @@ static void ioc_adjust_base_vrate(struct ioc *ioc, u32 rq_wait_pct,
 
 	if (!ioc->busy_level || (ioc->busy_level < 0 && nr_lagging)) {
 		if (ioc->busy_level != prev_busy_level || nr_lagging)
-			trace_iocost_ioc_vrate_adj(ioc, vrate,
-						   missed_ppm, rq_wait_pct,
-						   nr_lagging, nr_shortages);
 
 		return;
 	}
@@ -1031,8 +1024,6 @@ static void ioc_adjust_base_vrate(struct ioc *ioc, u32 rq_wait_pct,
 			      vrate_min, vrate_max);
 	}
 
-	trace_iocost_ioc_vrate_adj(ioc, vrate, missed_ppm, rq_wait_pct,
-				   nr_lagging, nr_shortages);
 
 	ioc->vtime_base_rate = vrate;
 	ioc_refresh_margins(ioc);

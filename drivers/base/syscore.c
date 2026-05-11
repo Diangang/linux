@@ -9,7 +9,6 @@
 #include <linux/mutex.h>
 #include <linux/module.h>
 #include <linux/suspend.h>
-#include <trace/events/power.h>
 
 static LIST_HEAD(syscore_list);
 static DEFINE_MUTEX(syscore_lock);
@@ -49,7 +48,6 @@ int syscore_suspend(void)
 	struct syscore *syscore;
 	int ret = 0;
 
-	trace_suspend_resume(TPS("syscore_suspend"), 0, true);
 	pm_pr_dbg("Checking wakeup interrupts\n");
 
 	/* Return error code if there are any wakeup interrupts pending. */
@@ -70,7 +68,6 @@ int syscore_suspend(void)
 				syscore->ops->suspend);
 		}
 
-	trace_suspend_resume(TPS("syscore_suspend"), 0, false);
 	return 0;
 
  err_out:
@@ -94,7 +91,6 @@ void syscore_resume(void)
 {
 	struct syscore *syscore;
 
-	trace_suspend_resume(TPS("syscore_resume"), 0, true);
 	WARN_ONCE(!irqs_disabled(),
 		"Interrupts enabled before system core resume.\n");
 
@@ -106,7 +102,6 @@ void syscore_resume(void)
 				"Interrupts enabled after %pS\n",
 				syscore->ops->resume);
 		}
-	trace_suspend_resume(TPS("syscore_resume"), 0, false);
 }
 EXPORT_SYMBOL_GPL(syscore_resume);
 #endif /* CONFIG_PM_SLEEP */

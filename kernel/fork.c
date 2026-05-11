@@ -118,12 +118,6 @@
 
 /* For dup_mmap(). */
 #include "../mm/internal.h"
-
-#include <trace/events/sched.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/task.h>
-
 #include <kunit/visibility.h>
 
 /*
@@ -2509,7 +2503,6 @@ __latent_entropy struct task_struct *copy_process(
 	sched_post_fork(p);
 	perf_event_fork(p);
 
-	trace_task_newtask(p, clone_flags);
 	uprobe_copy_process(p, clone_flags);
 	user_events_fork(p, clone_flags);
 
@@ -2712,7 +2705,6 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	 * Do this prior waking up the new thread - the thread pointer
 	 * might get invalid after that point, if the thread exits quickly.
 	 */
-	trace_sched_process_fork(current, p);
 
 	pid = get_task_pid(p, PIDTYPE_PID);
 	nr = pid_vnr(pid);

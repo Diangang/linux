@@ -23,7 +23,6 @@
 #include <linux/hardirq.h>
 #include <linux/export.h>
 #include <linux/kprobes.h>
-#include <trace/events/rcu.h>
 
 
 DEFINE_PER_CPU(struct context_tracking, context_tracking) = {
@@ -116,7 +115,6 @@ static void noinstr ct_kernel_exit(bool user, int offset)
 
 	instrumentation_begin();
 	lockdep_assert_irqs_disabled();
-	trace_rcu_watching(TPS("End"), ct_nesting(), 0, ct_rcu_watching());
 	WARN_ON_ONCE(IS_ENABLED(CONFIG_RCU_EQS_DEBUG) && !user && !is_idle_task(current));
 	rcu_preempt_deferred_qs(current);
 
@@ -161,7 +159,6 @@ static void noinstr ct_kernel_enter(bool user, int offset)
 	// instrumentation for the noinstr ct_kernel_enter_state()
 	instrument_atomic_write(&ct->state, sizeof(ct->state));
 
-	trace_rcu_watching(TPS("Start"), ct_nesting(), 1, ct_rcu_watching());
 	WARN_ON_ONCE(IS_ENABLED(CONFIG_RCU_EQS_DEBUG) && !user && !is_idle_task(current));
 	WRITE_ONCE(ct->nesting, 1);
 	WARN_ON_ONCE(ct_nmi_nesting());
@@ -198,8 +195,6 @@ void noinstr ct_nmi_exit(void)
 	 * leave it in non-RCU-idle state.
 	 */
 	if (ct_nmi_nesting() != 1) {
-		trace_rcu_watching(TPS("--="), ct_nmi_nesting(), ct_nmi_nesting() - 2,
-				  ct_rcu_watching());
 		WRITE_ONCE(ct->nmi_nesting, /* No store tearing. */
 			   ct_nmi_nesting() - 2);
 		instrumentation_end();
@@ -207,7 +202,6 @@ void noinstr ct_nmi_exit(void)
 	}
 
 	/* This NMI interrupted an RCU-idle CPU, restore RCU-idleness. */
-	trace_rcu_watching(TPS("Endirq"), ct_nmi_nesting(), 0, ct_rcu_watching());
 	WRITE_ONCE(ct->nmi_nesting, 0); /* Avoid store tearing. */
 
 	// instrumentation for the noinstr ct_kernel_exit_state()
@@ -273,9 +267,6 @@ void noinstr ct_nmi_enter(void)
 		instrumentation_begin();
 	}
 
-	trace_rcu_watching(incby == 1 ? TPS("Startirq") : TPS("++="),
-			  ct_nmi_nesting(),
-			  ct_nmi_nesting() + incby, ct_rcu_watching());
 	instrumentation_end();
 	WRITE_ONCE(ct->nmi_nesting, /* Prevent store tearing. */
 		   ct_nmi_nesting() + incby);
@@ -407,10 +398,6 @@ static __always_inline void ct_kernel_enter(bool user, int offset) { }
 #endif /* #ifdef CONFIG_CONTEXT_TRACKING_IDLE */
 
 #ifdef CONFIG_CONTEXT_TRACKING_USER
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/context_tracking.h>
-
 DEFINE_STATIC_KEY_FALSE_RO(context_tracking_key);
 EXPORT_SYMBOL_GPL(context_tracking_key);
 
@@ -466,7 +453,6 @@ void noinstr __ct_user_enter(enum ctx_state state)
 			 */
 			if (state == CT_STATE_USER) {
 				instrumentation_begin();
-				trace_user_enter(0);
 				vtime_user_enter(current);
 				instrumentation_end();
 			}
@@ -603,7 +589,6 @@ void noinstr __ct_user_exit(enum ctx_state state)
 			if (state == CT_STATE_USER) {
 				instrumentation_begin();
 				vtime_user_exit(current);
-				trace_user_exit(0);
 				instrumentation_end();
 			}
 

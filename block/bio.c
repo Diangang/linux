@@ -17,10 +17,9 @@
 #include <linux/cgroup.h>
 #include <linux/highmem.h>
 #include <linux/blk-crypto.h>
+#include <linux/cpuhotplug.h>
 #include <linux/xarray.h>
 #include <linux/kmemleak.h>
-
-#include <trace/events/block.h>
 #include "blk.h"
 #include "blk-rq-qos.h"
 #include "blk-cgroup.h"
@@ -1759,7 +1758,6 @@ again:
 	rq_qos_done_bio(bio);
 
 	if (bio->bi_bdev && bio_flagged(bio, BIO_TRACE_COMPLETION)) {
-		trace_block_bio_complete(bdev_get_queue(bio->bi_bdev), bio);
 		bio_clear_flag(bio, BIO_TRACE_COMPLETION);
 	}
 

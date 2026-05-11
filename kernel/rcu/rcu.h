@@ -11,7 +11,6 @@
 #define __LINUX_RCU_H
 
 #include <linux/slab.h>
-#include <trace/events/rcu.h>
 
 /*
  * Grace-period counter management.

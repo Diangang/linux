@@ -37,6 +37,7 @@
 #include <linux/sched/cputime.h>
 #include <linux/sched/isolation.h>
 #include <linux/sched/nohz.h>
+#include <linux/sched/numa_balancing.h>
 #include <linux/sched/prio.h>
 
 #include <linux/cpuidle.h>
@@ -1318,7 +1319,6 @@ static s64 update_se(struct rq *rq, struct sched_entity *se)
 		running->se.exec_start = now;
 		running->se.sum_exec_runtime += delta_exec;
 
-		trace_sched_stat_runtime(running, delta_exec);
 		account_group_exec_runtime(running, delta_exec);
 
 		/* cgroup time is always accounted against the donor */
@@ -2741,7 +2741,6 @@ static int task_numa_migrate(struct task_struct *p)
 
 	/* No better CPU than the current one was found. */
 	if (env.best_cpu == -1) {
-		trace_sched_stick_numa(p, env.src_cpu, NULL, -1);
 		return -EAGAIN;
 	}
 
@@ -2750,7 +2749,6 @@ static int task_numa_migrate(struct task_struct *p)
 		ret = migrate_task_to(p, env.best_cpu);
 		WRITE_ONCE(best_rq->numa_migrate_on, 0);
 		if (ret != 0)
-			trace_sched_stick_numa(p, env.src_cpu, NULL, env.best_cpu);
 		return ret;
 	}
 
@@ -2758,7 +2756,6 @@ static int task_numa_migrate(struct task_struct *p)
 	WRITE_ONCE(best_rq->numa_migrate_on, 0);
 
 	if (ret != 0)
-		trace_sched_stick_numa(p, env.src_cpu, env.best_task, env.best_cpu);
 	put_task_struct(env.best_task);
 	return ret;
 }
@@ -3407,7 +3404,6 @@ static bool vma_is_accessed(struct mm_struct *mm, struct vm_area_struct *vma)
 	 * some VMAs may never be scanned in multi-threaded applications:
 	 */
 	if (mm->numa_scan_offset > vma->vm_start) {
-		trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_IGNORE_PID);
 		return true;
 	}
 
@@ -3462,7 +3458,6 @@ static void task_numa_work(struct callback_head *work)
 	 * no page can be migrated.
 	 */
 	if (cpusets_enabled() && nodes_weight(cpuset_current_mems_allowed) == 1) {
-		trace_sched_skip_cpuset_numa(current, &cpuset_current_mems_allowed);
 		return;
 	}
 
@@ -3524,7 +3519,6 @@ retry_pids:
 	for (; vma; vma = vma_next(&vmi)) {
 		if (!vma_migratable(vma) || !vma_policy_mof(vma) ||
 			is_vm_hugetlb_page(vma) || (vma->vm_flags & VM_MIXEDMAP)) {
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_UNSUITABLE);
 			continue;
 		}
 
@@ -3536,7 +3530,6 @@ retry_pids:
 		 */
 		if (!vma->vm_mm ||
 		    (vma->vm_file && (vma->vm_flags & (VM_READ|VM_WRITE)) == (VM_READ))) {
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_SHARED_RO);
 			continue;
 		}
 
@@ -3545,7 +3538,6 @@ retry_pids:
 		 * PROT_NONE and NUMA hinting PTEs
 		 */
 		if (!vma_is_accessible(vma)) {
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_INACCESSIBLE);
 			continue;
 		}
 
@@ -3585,7 +3577,6 @@ retry_pids:
 		 */
 		if (mm->numa_scan_seq && time_before(jiffies,
 						vma->numab_state->next_scan)) {
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_SCAN_DELAY);
 			continue;
 		}
 
@@ -3601,7 +3592,6 @@ retry_pids:
 		/* Do not rescan VMAs twice within the same sequence. */
 		if (vma->numab_state->prev_scan_seq == mm->numa_scan_seq) {
 			mm->numa_scan_offset = vma->vm_end;
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_SEQ_COMPLETED);
 			continue;
 		}
 
@@ -3611,7 +3601,6 @@ retry_pids:
 		 */
 		if (!vma_pids_forced && !vma_is_accessed(mm, vma)) {
 			vma_pids_skipped = true;
-			trace_sched_skip_vma_numa(mm, vma, NUMAB_SKIP_PID_INACTIVE);
 			continue;
 		}
 
@@ -4638,8 +4627,6 @@ static inline int propagate_entity_load_avg(struct sched_entity *se)
 	update_tg_cfs_runnable(cfs_rq, se, gcfs_rq);
 	update_tg_cfs_load(cfs_rq, se, gcfs_rq);
 
-	trace_pelt_cfs_tp(cfs_rq);
-	trace_pelt_se_tp(se);
 
 	return 1;
 }
@@ -4877,7 +4864,6 @@ static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 
 	cfs_rq_util_change(cfs_rq, 0);
 
-	trace_pelt_cfs_tp(cfs_rq);
 }
 
 /**
@@ -4898,7 +4884,6 @@ static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 
 	cfs_rq_util_change(cfs_rq, 0);
 
-	trace_pelt_cfs_tp(cfs_rq);
 }
 
 /*
@@ -5036,7 +5021,6 @@ static inline void util_est_enqueue(struct cfs_rq *cfs_rq,
 	enqueued += _task_util_est(p);
 	WRITE_ONCE(cfs_rq->avg.util_est, enqueued);
 
-	trace_sched_util_est_cfs_tp(cfs_rq);
 }
 
 static inline void util_est_dequeue(struct cfs_rq *cfs_rq,
@@ -5052,7 +5036,6 @@ static inline void util_est_dequeue(struct cfs_rq *cfs_rq,
 	enqueued -= min_t(unsigned int, enqueued, _task_util_est(p));
 	WRITE_ONCE(cfs_rq->avg.util_est, enqueued);
 
-	trace_sched_util_est_cfs_tp(cfs_rq);
 }
 
 #define UTIL_EST_MARGIN (SCHED_CAPACITY_SCALE / 100)
@@ -5134,7 +5117,6 @@ done:
 	ewma |= UTIL_AVG_UNCHANGED;
 	WRITE_ONCE(p->se.avg.util_est, ewma);
 
-	trace_sched_util_est_se_tp(&p->se);
 }
 
 static inline unsigned long get_actual_cpu_capacity(int cpu)
@@ -5920,7 +5902,6 @@ static inline void set_rd_overutilized(struct root_domain *rd, bool flag)
 		return;
 
 	WRITE_ONCE(rd->overutilized, flag);
-	trace_sched_overutilized_tp(rd, flag);
 }
 
 static inline void check_update_overutilized_status(struct rq *rq)
@@ -7384,7 +7365,6 @@ compute_energy(struct energy_env *eenv, struct perf_domain *pd,
 
 	energy = em_cpu_energy(pd->em_pd, max_util, busy_time, eenv->cpu_cap);
 
-	trace_sched_compute_energy_tp(p, dst_cpu, energy, max_util, busy_time);
 
 	return energy;
 }
@@ -9136,7 +9116,6 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 		capacity = 1;
 
 	cpu_rq(cpu)->cpu_capacity = capacity;
-	trace_sched_cpu_capacity_tp(cpu_rq(cpu));
 
 	sdg->sgc->capacity = capacity;
 	sdg->sgc->min_capacity = capacity;

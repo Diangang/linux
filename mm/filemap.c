@@ -52,10 +52,6 @@
 
 #include <asm/tlbflush.h>
 #include "internal.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/filemap.h>
-
 /*
  * FIXME: remove all knowledge of the buffer layer from the core VM
  */
@@ -223,7 +219,6 @@ void __filemap_remove_folio(struct folio *folio, void *shadow)
 {
 	struct address_space *mapping = folio->mapping;
 
-	trace_mm_filemap_delete_from_page_cache(folio);
 	filemap_unaccount_folio(mapping, folio);
 	page_cache_delete(mapping, folio, shadow);
 }
@@ -331,7 +326,6 @@ void delete_from_page_cache_batch(struct address_space *mapping,
 	for (i = 0; i < folio_batch_count(fbatch); i++) {
 		struct folio *folio = fbatch->folios[i];
 
-		trace_mm_filemap_delete_from_page_cache(folio);
 		filemap_unaccount_folio(mapping, folio);
 	}
 	page_cache_delete_batch(mapping, fbatch);
@@ -701,9 +695,7 @@ EXPORT_SYMBOL(filemap_write_and_wait_range);
 
 void __filemap_set_wb_err(struct address_space *mapping, int err)
 {
-	errseq_t eseq = errseq_set(&mapping->wb_err, err);
-
-	trace_filemap_set_wb_err(mapping, eseq);
+	errseq_set(&mapping->wb_err, err);
 }
 EXPORT_SYMBOL(__filemap_set_wb_err);
 
@@ -744,7 +736,6 @@ int file_check_and_advance_wb_err(struct file *file)
 		old = file->f_wb_err;
 		err = errseq_check_and_advance(&mapping->wb_err,
 						&file->f_wb_err);
-		trace_file_check_and_advance_wb_err(file, old);
 		spin_unlock(&file->f_lock);
 	}
 
@@ -937,7 +928,6 @@ unlock:
 	if (xas_error(&xas))
 		goto error;
 
-	trace_mm_filemap_add_to_page_cache(folio);
 	return 0;
 error:
 	folio->mapping = NULL;
@@ -2722,7 +2712,6 @@ retry:
 			goto err;
 	}
 
-	trace_mm_filemap_get_pages(mapping, index, last_index - 1);
 	return 0;
 err:
 	if (err < 0)
@@ -3526,7 +3515,6 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
 	if (unlikely(index >= max_idx))
 		return VM_FAULT_SIGBUS;
 
-	trace_mm_filemap_fault(mapping, index);
 
 	/*
 	 * Do we have something in the page cache already?
@@ -3940,7 +3928,6 @@ vm_fault_t filemap_map_pages(struct vm_fault *vmf,
 	} while ((folio = next_uptodate_folio(&xas, mapping, end_pgoff)) != NULL);
 	add_mm_counter(vma->vm_mm, folio_type, rss);
 	pte_unmap_unlock(vmf->pte, vmf->ptl);
-	trace_mm_filemap_map_pages(mapping, start_pgoff, end_pgoff);
 out:
 	rcu_read_unlock();
 

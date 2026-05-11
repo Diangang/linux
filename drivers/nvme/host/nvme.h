@@ -18,8 +18,6 @@
 #include <linux/t10-pi.h>
 #include <linux/ratelimit_types.h>
 
-#include <trace/events/block.h>
-
 extern const struct pr_ops nvme_pr_ops;
 
 extern unsigned int nvme_io_timeout;

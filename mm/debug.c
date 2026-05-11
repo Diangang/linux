@@ -10,18 +10,14 @@
 #include <linux/mm.h>
 #include <linux/trace_events.h>
 #include <linux/memcontrol.h>
-#include <trace/events/mmflags.h>
 #include <linux/migrate.h>
+#include <linux/mmflag_names.h>
 #include <linux/page_owner.h>
 #include <linux/ctype.h>
 
 #include "internal.h"
-#include <trace/events/migrate.h>
 
-/*
- * Define EM() and EMe() so that MIGRATE_REASON from trace/events/migrate.h can
- * be used to populate migrate_reason_names[].
- */
+/* Define EM() and EMe() so MIGRATE_REASON can populate migrate_reason_names[]. */
 #undef EM
 #undef EMe
 #define EM(a, b)	b,
@@ -149,4 +145,3 @@ void dump_page(const struct page *page, const char *reason)
 	dump_page_owner(page);
 }
 EXPORT_SYMBOL(dump_page);
-

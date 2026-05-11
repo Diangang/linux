@@ -57,7 +57,6 @@ __setup("hlt", cpu_idle_nopoll_setup);
 static noinline int __cpuidle cpu_idle_poll(void)
 {
 	instrumentation_begin();
-	trace_cpu_idle(0, smp_processor_id());
 	stop_critical_timings();
 	ct_cpuidle_enter();
 
@@ -69,7 +68,6 @@ static noinline int __cpuidle cpu_idle_poll(void)
 
 	ct_cpuidle_exit();
 	start_critical_timings();
-	trace_cpu_idle(PWR_EVENT_EXIT, smp_processor_id());
 	local_irq_enable();
 	instrumentation_end();
 
@@ -115,7 +113,6 @@ void __cpuidle default_idle_call(void)
 	instrumentation_begin();
 	if (!current_clr_polling_and_test()) {
 		cond_tick_broadcast_enter();
-		trace_cpu_idle(1, smp_processor_id());
 		stop_critical_timings();
 
 		ct_cpuidle_enter();
@@ -123,7 +120,6 @@ void __cpuidle default_idle_call(void)
 		ct_cpuidle_exit();
 
 		start_critical_timings();
-		trace_cpu_idle(PWR_EVENT_EXIT, smp_processor_id());
 		cond_tick_broadcast_exit();
 	}
 	local_irq_enable();

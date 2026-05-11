@@ -37,7 +37,6 @@
 
 #include <linux/uaccess.h>
 #include <linux/export.h>
-#include <trace/events/power.h>
 
 /*
  * locking rule: all changes to constraints or notifiers lists
@@ -134,7 +133,6 @@ int pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
 
 	spin_unlock_irqrestore(&pm_qos_lock, flags);
 
-	trace_pm_qos_update_target(action, prev_value, curr_value);
 
 	if (prev_value == curr_value)
 		return 0;
@@ -204,7 +202,6 @@ bool pm_qos_update_flags(struct pm_qos_flags *pqf,
 
 	spin_unlock_irqrestore(&pm_qos_lock, irqflags);
 
-	trace_pm_qos_update_flags(action, prev_value, curr_value);
 
 	return prev_value != curr_value;
 }
@@ -276,7 +273,6 @@ void cpu_latency_qos_add_request(struct pm_qos_request *req, s32 value)
 		return;
 	}
 
-	trace_pm_qos_add_request(value);
 
 	req->qos = &cpu_latency_constraints;
 	cpu_latency_qos_apply(req, PM_QOS_ADD_REQ, value);
@@ -302,7 +298,6 @@ void cpu_latency_qos_update_request(struct pm_qos_request *req, s32 new_value)
 		return;
 	}
 
-	trace_pm_qos_update_request(new_value);
 
 	if (new_value == req->node.prio)
 		return;
@@ -328,7 +323,6 @@ void cpu_latency_qos_remove_request(struct pm_qos_request *req)
 		return;
 	}
 
-	trace_pm_qos_remove_request(PM_QOS_DEFAULT_VALUE);
 
 	cpu_latency_qos_apply(req, PM_QOS_REMOVE_REQ, PM_QOS_DEFAULT_VALUE);
 	memset(req, 0, sizeof(*req));

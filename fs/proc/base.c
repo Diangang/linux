@@ -98,7 +98,6 @@
 #include <linux/cn_proc.h>
 #include <linux/ksm.h>
 #include <uapi/linux/lsm.h>
-#include <trace/events/oom.h>
 #include "internal.h"
 #include "fd.h"
 
@@ -1116,7 +1115,6 @@ static int __set_oom_adj(struct file *file, int oom_adj, bool legacy)
 	task->signal->oom_score_adj = oom_adj;
 	if (!legacy && has_capability_noaudit(current, CAP_SYS_RESOURCE))
 		task->signal->oom_score_adj_min = (short)oom_adj;
-	trace_oom_score_adj_update(task);
 
 	if (mm) {
 		struct task_struct *p;

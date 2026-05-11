@@ -82,10 +82,6 @@
 #include <linux/types.h>
 #include <linux/rseq.h>
 #include <asm/ptrace.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/rseq.h>
-
 DEFINE_STATIC_KEY_MAYBE(CONFIG_RSEQ_DEBUG_DEFAULT_ENABLE, rseq_debug_enabled);
 
 static inline void rseq_control_debug(bool on)
@@ -114,13 +110,11 @@ __setup("rseq_debug=", rseq_setup_debug);
  */
 void __rseq_trace_update(struct task_struct *t)
 {
-	trace_rseq_update(t);
 }
 
 void __rseq_trace_ip_fixup(unsigned long ip, unsigned long start_ip,
 			   unsigned long offset, unsigned long abort_ip)
 {
-	trace_rseq_ip_fixup(ip, start_ip, offset, abort_ip);
 }
 #endif /* CONFIG_TRACEPOINTS */
 

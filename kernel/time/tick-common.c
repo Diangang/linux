@@ -17,7 +17,6 @@
 #include <linux/profile.h>
 #include <linux/sched.h>
 #include <linux/module.h>
-#include <trace/events/power.h>
 
 #include <asm/irq_regs.h>
 
@@ -492,8 +491,6 @@ void tick_freeze(void)
 
 	tick_freeze_depth++;
 	if (tick_freeze_depth == num_online_cpus()) {
-		trace_suspend_resume(TPS("timekeeping_freeze"),
-				     smp_processor_id(), true);
 		/*
 		 * All other CPUs have their interrupts disabled and are
 		 * suspended to idle. Other tasks have been frozen so there
@@ -542,8 +539,6 @@ void tick_unfreeze(void)
 		lock_map_release(&tick_freeze_map);
 
 		system_state = SYSTEM_RUNNING;
-		trace_suspend_resume(TPS("timekeeping_freeze"),
-				     smp_processor_id(), false);
 	} else {
 		touch_softlockup_watchdog();
 		tick_resume_local();

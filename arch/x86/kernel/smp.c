@@ -32,7 +32,6 @@
 #include <asm/idtentry.h>
 #include <asm/nmi.h>
 #include <asm/mce.h>
-#include <asm/trace/irq_vectors.h>
 #include <asm/kexec.h>
 #include <asm/reboot.h>
 #include <asm/virt.h>
@@ -249,28 +248,22 @@ static void native_stop_other_cpus(int wait)
 DEFINE_IDTENTRY_SYSVEC_SIMPLE(sysvec_reschedule_ipi)
 {
 	apic_eoi();
-	trace_reschedule_entry(RESCHEDULE_VECTOR);
 	inc_irq_stat(irq_resched_count);
 	scheduler_ipi();
-	trace_reschedule_exit(RESCHEDULE_VECTOR);
 }
 
 DEFINE_IDTENTRY_SYSVEC(sysvec_call_function)
 {
 	apic_eoi();
-	trace_call_function_entry(CALL_FUNCTION_VECTOR);
 	inc_irq_stat(irq_call_count);
 	generic_smp_call_function_interrupt();
-	trace_call_function_exit(CALL_FUNCTION_VECTOR);
 }
 
 DEFINE_IDTENTRY_SYSVEC(sysvec_call_function_single)
 {
 	apic_eoi();
-	trace_call_function_single_entry(CALL_FUNCTION_SINGLE_VECTOR);
 	inc_irq_stat(irq_call_count);
 	generic_smp_call_function_single_interrupt();
-	trace_call_function_single_exit(CALL_FUNCTION_SINGLE_VECTOR);
 }
 
 static int __init nonmi_ipi_setup(char *str)

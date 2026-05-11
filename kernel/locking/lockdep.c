@@ -64,8 +64,6 @@
 #include "lockdep_internals.h"
 #include "lock_events.h"
 
-#include <trace/events/lock.h>
-
 #define prove_locking 0
 
 #define lock_stat 0
@@ -2020,7 +2018,6 @@ void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 {
 	unsigned long flags;
 
-	trace_lock_acquire(lock, subclass, trylock, read, check, nest_lock, ip);
 
 	if (!debug_locks)
 		return;
@@ -2068,7 +2065,6 @@ void lock_release(struct lockdep_map *lock, unsigned long ip)
 {
 	unsigned long flags;
 
-	trace_lock_release(lock, ip);
 
 	if (unlikely(!lockdep_enabled() ||
 		     lock->key == &__lockdep_no_track__))

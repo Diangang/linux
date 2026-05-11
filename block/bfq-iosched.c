@@ -124,8 +124,6 @@
 #include <linux/delay.h>
 #include <linux/backing-dev.h>
 
-#include <trace/events/block.h>
-
 #include "elevator.h"
 #include "blk.h"
 #include "blk-mq.h"
@@ -6255,7 +6253,6 @@ static void bfq_insert_request(struct blk_mq_hw_ctx *hctx, struct request *rq,
 		return;
 	}
 
-	trace_block_rq_insert(rq);
 
 	if (flags & BLK_MQ_INSERT_AT_HEAD) {
 		list_add(&rq->queuelist, &bfqd->dispatch);

@@ -44,10 +44,6 @@
 #include <asm/tlb.h>
 #include "internal.h"
 #include "swap.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/thp.h>
-
 /*
  * By default, transparent hugepage support is disabled in order to avoid
  * risking an increased memory footprint for applications that are not
@@ -4902,7 +4898,6 @@ int set_pmd_migration_entry(struct page_vma_mapped_walk *pvmw,
 	set_pmd_at(mm, address, pvmw->pmd, pmdswp);
 	folio_remove_rmap_pmd(folio, page, vma);
 	folio_put(folio);
-	trace_set_migration_pmd(address, pmd_val(pmdswp));
 
 	return 0;
 }
@@ -4968,6 +4963,5 @@ void remove_migration_pmd(struct page_vma_mapped_walk *pvmw, struct page *new)
 
 	/* No need to invalidate - it was non-present before */
 	update_mmu_cache_pmd(vma, address, pvmw->pmd);
-	trace_remove_migration_pmd(address, pmd_val(pmde));
 }
 #endif

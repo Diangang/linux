@@ -11,17 +11,11 @@
 #include <linux/module.h>
 #include <linux/sbitmap.h>
 
-#include <trace/events/block.h>
-
 #include "elevator.h"
 #include "blk.h"
 #include "blk-mq.h"
 #include "blk-mq-debugfs.h"
 #include "blk-mq-sched.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/kyber.h>
-
 /*
  * Scheduling domains: the device is divided into multiple domains based on the
  * request type.
@@ -34,12 +28,14 @@ enum {
 	KYBER_NUM_DOMAINS,
 };
 
+#ifdef CONFIG_BLK_DEBUG_FS
 static const char *kyber_domain_names[] = {
 	[KYBER_READ] = "READ",
 	[KYBER_WRITE] = "WRITE",
 	[KYBER_DISCARD] = "DISCARD",
 	[KYBER_OTHER] = "OTHER",
 };
+#endif
 
 enum {
 	/*
@@ -118,11 +114,6 @@ enum {
 enum {
 	KYBER_TOTAL_LATENCY,
 	KYBER_IO_LATENCY,
-};
-
-static const char *kyber_latency_type_names[] = {
-	[KYBER_TOTAL_LATENCY] = "total",
-	[KYBER_IO_LATENCY] = "I/O",
 };
 
 /*
@@ -249,9 +240,6 @@ static int calculate_percentile(struct kyber_queue_data *kqd,
 	}
 	memset(buckets, 0, sizeof(kqd->latency_buckets[sched_domain][type]));
 
-	trace_kyber_latency(kqd->dev, kyber_domain_names[sched_domain],
-			    kyber_latency_type_names[type], percentile,
-			    bucket + 1, 1 << KYBER_LATENCY_SHIFT, samples);
 
 	return bucket;
 }
@@ -262,8 +250,6 @@ static void kyber_resize_domain(struct kyber_queue_data *kqd,
 	depth = clamp(depth, 1U, kyber_depth[sched_domain]);
 	if (depth != kqd->domain_tokens[sched_domain].sb.depth) {
 		sbitmap_queue_resize(&kqd->domain_tokens[sched_domain], depth);
-		trace_kyber_adjust(kqd->dev, kyber_domain_names[sched_domain],
-				   depth);
 	}
 }
 
@@ -586,7 +572,6 @@ static void kyber_insert_requests(struct blk_mq_hw_ctx *hctx,
 		struct list_head *head = &kcq->rq_list[sched_domain];
 
 		spin_lock(&kcq->lock);
-		trace_block_rq_insert(rq);
 		if (flags & BLK_MQ_INSERT_AT_HEAD)
 			list_move(&rq->queuelist, head);
 		else
@@ -764,8 +749,6 @@ kyber_dispatch_cur_domain(struct kyber_queue_data *kqd,
 			list_del_init(&rq->queuelist);
 			return rq;
 		} else {
-			trace_kyber_throttled(kqd->dev,
-					      kyber_domain_names[khd->cur_domain]);
 		}
 	} else if (sbitmap_any_bit_set(&khd->kcq_map[khd->cur_domain])) {
 		nr = kyber_get_domain_token(kqd, khd, hctx);
@@ -777,8 +760,6 @@ kyber_dispatch_cur_domain(struct kyber_queue_data *kqd,
 			list_del_init(&rq->queuelist);
 			return rq;
 		} else {
-			trace_kyber_throttled(kqd->dev,
-					      kyber_domain_names[khd->cur_domain]);
 		}
 	}
 

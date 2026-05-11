@@ -10,7 +10,6 @@
 #include <linux/math64.h>
 #include <linux/uaccess.h>
 #include <linux/kernel_stat.h>
-#include <trace/events/timer.h>
 #include <linux/tick.h>
 #include <linux/workqueue.h>
 #include <linux/compat.h>
@@ -924,9 +923,6 @@ static void check_cpu_itimer(struct task_struct *tsk, struct cpu_itimer *it,
 		else
 			it->expires = 0;
 
-		trace_itimer_expire(signo == SIGPROF ?
-				    ITIMER_PROF : ITIMER_VIRTUAL,
-				    task_tgid(tsk), cur_time);
 		send_signal_locked(signo, SEND_SIG_PRIV, tsk, PIDTYPE_TGID);
 	}
 

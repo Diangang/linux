@@ -72,7 +72,6 @@
 #include <linux/memcontrol.h>
 #include <linux/sched/loadavg.h>
 #include <linux/sched/signal.h>
-#include <trace/events/block.h>
 #include <linux/blk-mq.h>
 #include "blk-rq-qos.h"
 #include "blk-stat.h"

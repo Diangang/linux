@@ -39,8 +39,6 @@
 #include <linux/kvm_types.h>
 
 #include <xen/xen.h>
-
-#include <asm/trace/irq_vectors.h>
 #include <asm/irq_remapping.h>
 #include <asm/pc-conf-reg.h>
 #include <asm/perf_event.h>
@@ -1063,9 +1061,7 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_apic_timer_interrupt)
 	struct pt_regs *old_regs = set_irq_regs(regs);
 
 	apic_eoi();
-	trace_local_timer_entry(LOCAL_TIMER_VECTOR);
 	local_apic_timer_interrupt();
-	trace_local_timer_exit(LOCAL_TIMER_VECTOR);
 
 	set_irq_regs(old_regs);
 }
@@ -2112,7 +2108,6 @@ static noinline void handle_spurious_interrupt(u8 vector)
 {
 	u32 v;
 
-	trace_spurious_apic_entry(vector);
 
 	inc_irq_stat(irq_spurious_count);
 
@@ -2140,7 +2135,7 @@ static noinline void handle_spurious_interrupt(u8 vector)
 			vector, smp_processor_id());
 	}
 out:
-	trace_spurious_apic_exit(vector);
+	return;
 }
 
 /**
@@ -2179,7 +2174,6 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_error_interrupt)
 	};
 	u32 v, i = 0;
 
-	trace_error_apic_entry(ERROR_APIC_VECTOR);
 
 	/* First tickle the hardware, only then report what went on. -- REW */
 	if (lapic_get_maxlvt() > 3)	/* Due to the Pentium erratum 3AP. */
@@ -2200,7 +2194,6 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_error_interrupt)
 
 	apic_pr_debug_cont("\n");
 
-	trace_error_apic_exit(ERROR_APIC_VECTOR);
 }
 
 /**

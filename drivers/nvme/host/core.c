@@ -26,10 +26,6 @@
 
 #include "nvme.h"
 #include "fabrics.h"
-
-#define CREATE_TRACE_POINTS
-#include "trace.h"
-
 #define NVME_MINORS		(1U << MINORBITS)
 
 struct nvme_ns_info {
@@ -440,7 +436,6 @@ static inline void __nvme_end_req(struct request *req)
 			nvme_log_error(req);
 	}
 	nvme_end_req_zoned(req);
-	nvme_trace_bio_complete(req);
 	if (req->cmd_flags & REQ_NVME_MPATH)
 		nvme_mpath_end_request(req);
 }
@@ -457,7 +452,6 @@ void nvme_complete_rq(struct request *req)
 {
 	struct nvme_ctrl *ctrl = nvme_req(req)->ctrl;
 
-	trace_nvme_complete_rq(req);
 	nvme_cleanup_cmd(req);
 
 	/*
@@ -491,7 +485,6 @@ EXPORT_SYMBOL_GPL(nvme_complete_rq);
 
 void nvme_complete_batch_req(struct request *req)
 {
-	trace_nvme_complete_rq(req);
 	nvme_cleanup_cmd(req);
 	__nvme_end_req(req);
 }
@@ -1122,7 +1115,6 @@ blk_status_t nvme_setup_cmd(struct nvme_ns *ns, struct request *req)
 	}
 
 	cmd->common.command_id = nvme_cid(req);
-	trace_nvme_setup_cmd(req, cmd);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(nvme_setup_cmd);
@@ -4789,7 +4781,6 @@ void nvme_complete_async_event(struct nvme_ctrl *ctrl, __le16 status,
 	if (le16_to_cpu(status) >> 1 != NVME_SC_SUCCESS)
 		return;
 
-	trace_nvme_async_event(ctrl, result);
 	switch (aer_type) {
 	case NVME_AER_NOTICE:
 		requeue = nvme_handle_aen_notice(ctrl, result);

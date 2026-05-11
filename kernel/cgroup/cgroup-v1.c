@@ -17,8 +17,6 @@
 #include <linux/cgroupstats.h>
 #include <linux/fs_parser.h>
 
-#include <trace/events/cgroup.h>
-
 /*
  * pidlists linger the following amount before being destroyed.  The goal
  * is avoiding frequent destruction in the middle of consecutive read calls
@@ -847,7 +845,6 @@ out_free:
 static int cgroup1_rename(struct kernfs_node *kn, struct kernfs_node *new_parent,
 			  const char *new_name_str)
 {
-	struct cgroup *cgrp = kn->priv;
 	int ret;
 
 	/* do not accept '\n' to prevent making /proc/<pid>/cgroup unparsable */
@@ -1138,7 +1135,6 @@ int cgroup1_reconfigure(struct fs_context *fc)
 		spin_unlock(&release_agent_path_lock);
 	}
 
-	trace_cgroup_remount(root);
 
  out_unlock:
 	cgroup_unlock();

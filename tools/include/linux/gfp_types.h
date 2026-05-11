@@ -8,7 +8,7 @@
 
 /*
  * In case of changes, please don't forget to update
- * include/trace/events/mmflags.h and tools/perf/builtin-kmem.c
+ * include/linux/mmflag_names.h and tools/perf/builtin-kmem.c
  */
 
 enum {

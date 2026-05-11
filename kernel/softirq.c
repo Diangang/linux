@@ -30,10 +30,6 @@
 #include <linux/workqueue.h>
 
 #include <asm/softirq_stack.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/irq.h>
-
 /*
    - No shared variables, all the data are CPU local.
    - If a softirq needs serialization, let it serialize itself
@@ -604,9 +600,7 @@ restart:
 
 		kstat_incr_softirqs_this_cpu(vec_nr);
 
-		trace_softirq_entry(vec_nr);
 		h->action();
-		trace_softirq_exit(vec_nr);
 		if (unlikely(prev_count != preempt_count())) {
 			pr_err("huh, entered softirq %u %s %p with preempt_count %08x, exited with %08x?\n",
 			       vec_nr, softirq_to_name[vec_nr], h->action,
@@ -785,7 +779,6 @@ void raise_softirq(unsigned int nr)
 void __raise_softirq_irqoff(unsigned int nr)
 {
 	lockdep_assert_irqs_disabled();
-	trace_softirq_raise(nr);
 	or_softirq_pending(1UL << nr);
 }
 
@@ -920,13 +913,9 @@ static void tasklet_action_common(struct tasklet_head *tl_head,
 			if (!atomic_read(&t->count)) {
 				if (tasklet_clear_sched(t)) {
 					if (t->use_callback) {
-						trace_tasklet_entry(t, t->callback);
 						t->callback(t);
-						trace_tasklet_exit(t, t->callback);
 					} else {
-						trace_tasklet_entry(t, t->func);
 						t->func(t->data);
-						trace_tasklet_exit(t, t->func);
 					}
 				}
 				tasklet_unlock(t);
@@ -1120,7 +1109,6 @@ static int ktimerd_should_run(unsigned int cpu)
 
 void raise_ktimers_thread(unsigned int nr)
 {
-	trace_softirq_raise(nr);
 	__this_cpu_or(pending_timer_softirq, BIT(nr));
 }
 

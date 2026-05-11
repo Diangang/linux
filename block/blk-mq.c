@@ -31,8 +31,6 @@
 #include <linux/part_stat.h>
 #include <linux/sched/isolation.h>
 
-#include <trace/events/block.h>
-
 #include <linux/t10-pi.h>
 #include "blk.h"
 #include "blk-mq.h"
@@ -888,7 +886,6 @@ static void blk_complete_request(struct request *req)
 	int total_bytes = blk_rq_bytes(req);
 	struct bio *bio = req->bio;
 
-	trace_block_rq_complete(req, BLK_STS_OK, total_bytes);
 
 	if (!bio)
 		return;
@@ -958,7 +955,6 @@ bool blk_update_request(struct request *req, blk_status_t error,
 	bool quiet = req->rq_flags & RQF_QUIET;
 	int total_bytes;
 
-	trace_block_rq_complete(req, error, nr_bytes);
 
 	if (!req->bio)
 		return false;
@@ -977,7 +973,6 @@ bool blk_update_request(struct request *req, blk_status_t error,
 	if (unlikely(error && !blk_rq_is_passthrough(req) && !quiet) &&
 	    !test_bit(GD_DEAD, &req->q->disk->state)) {
 		blk_print_req_error(req, error);
-		trace_block_rq_error(req, error, nr_bytes);
 	}
 
 	blk_account_io_completion(req, nr_bytes);
@@ -1068,7 +1063,6 @@ EXPORT_SYMBOL_GPL(blk_update_request);
 
 static inline void blk_account_io_done(struct request *req, u64 now)
 {
-	trace_block_io_done(req);
 
 	/*
 	 * Account IO completion.  flush_rq isn't accounted as a
@@ -1120,7 +1114,6 @@ static inline bool blk_rq_passthrough_stats(struct request *req)
 
 static inline void blk_account_io_start(struct request *req)
 {
-	trace_block_io_start(req);
 
 	if (!blk_queue_io_stat(req->q))
 		return;
@@ -1369,7 +1362,6 @@ void blk_mq_start_request(struct request *rq)
 {
 	struct request_queue *q = rq->q;
 
-	trace_block_rq_issue(rq);
 
 	if (test_bit(QUEUE_FLAG_STATS, &q->queue_flags) &&
 	    !blk_rq_is_passthrough(rq)) {
@@ -1410,13 +1402,11 @@ static void blk_add_rq_to_plug(struct blk_plug *plug, struct request *rq)
 	struct request *last = rq_list_peek(&plug->mq_list);
 
 	if (!plug->rq_count) {
-		trace_block_plug(rq->q);
 	} else if (plug->rq_count >= blk_plug_max_rq_count(plug) ||
 		   (!blk_queue_nomerges(rq->q) &&
 		    blk_rq_bytes(last) >= BLK_PLUG_FLUSH_SIZE)) {
 		blk_mq_flush_plug_list(plug, false);
 		last = NULL;
-		trace_block_plug(rq->q);
 	}
 
 	if (!plug->multiple_queues && last && last->q != rq->q)
@@ -1537,7 +1527,6 @@ static void __blk_mq_requeue_request(struct request *rq)
 
 	blk_mq_put_driver_tag(rq);
 
-	trace_block_rq_requeue(rq);
 	rq_qos_requeue(q, rq);
 
 	if (blk_mq_request_started(rq)) {
@@ -2105,7 +2094,6 @@ static void blk_mq_commit_rqs(struct blk_mq_hw_ctx *hctx, int queued,
 			      bool from_schedule)
 {
 	if (hctx->queue->mq_ops->commit_rqs && queued) {
-		trace_block_unplug(hctx->queue, queued, !from_schedule);
 		hctx->queue->mq_ops->commit_rqs(hctx);
 	}
 }
@@ -2607,7 +2595,6 @@ static void blk_mq_insert_requests(struct blk_mq_hw_ctx *hctx,
 	 */
 	list_for_each_entry(rq, list, queuelist) {
 		BUG_ON(rq->mq_ctx != ctx);
-		trace_block_rq_insert(rq);
 		if (rq->cmd_flags & REQ_NOWAIT)
 			run_queue_async = true;
 	}
@@ -2669,7 +2656,6 @@ static void blk_mq_insert_request(struct request *rq, blk_insert_t flags)
 		list_add(&rq->queuelist, &list);
 		q->elevator->type->ops.insert_requests(hctx, &list, flags);
 	} else {
-		trace_block_rq_insert(rq);
 
 		spin_lock(&ctx->lock);
 		if (flags & BLK_MQ_INSERT_AT_HEAD)
@@ -2891,7 +2877,6 @@ static void blk_mq_dispatch_queue_requests(struct rq_list *rqs, unsigned depth)
 {
 	struct request_queue *q = rq_list_peek(rqs)->q;
 
-	trace_block_unplug(q, depth, true);
 
 	/*
 	 * Peek first request and see if we have a ->queue_rqs() hook.
@@ -2934,7 +2919,6 @@ static void blk_mq_dispatch_list(struct rq_list *rqs, bool from_sched)
 	} while (!rq_list_empty(rqs));
 
 	*rqs = requeue_list;
-	trace_block_unplug(this_hctx->queue, depth, !from_sched);
 
 	percpu_ref_get(&this_hctx->queue->q_usage_counter);
 	/* passthrough requests should never be issued to the I/O scheduler */
@@ -3221,7 +3205,6 @@ new_request:
 		}
 	}
 
-	trace_block_getrq(bio);
 
 	rq_qos_track(q, rq, bio);
 

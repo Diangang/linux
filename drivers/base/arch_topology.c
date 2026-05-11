@@ -22,10 +22,6 @@
 #include <linux/rcupdate.h>
 #include <linux/sched.h>
 #include <linux/units.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/hw_pressure.h>
-
 static DEFINE_PER_CPU(struct scale_freq_data __rcu *, sft_data);
 static struct cpumask scale_freq_counters_mask;
 static bool scale_freq_invariant;
@@ -199,7 +195,6 @@ void topology_update_hw_pressure(const struct cpumask *cpus,
 
 	pressure = max_capacity - capacity;
 
-	trace_hw_pressure_update(cpu, pressure);
 
 	for_each_cpu(cpu, cpus)
 		WRITE_ONCE(per_cpu(hw_pressure, cpu), pressure);

@@ -10,8 +10,6 @@
 #include <linux/part_stat.h>
 #include <linux/blk-cgroup.h>
 
-#include <trace/events/block.h>
-
 #include "blk.h"
 #include "blk-mq-sched.h"
 #include "blk-rq-qos.h"
@@ -128,7 +126,6 @@ struct bio *bio_submit_split_bioset(struct bio *bio, unsigned int split_sectors,
 	}
 
 	bio_chain(split, bio);
-	trace_block_split(split, bio->bi_iter.bi_sector);
 	WARN_ON_ONCE(bio_zone_write_plugging(bio));
 
 	if (should_fail_bio(bio))
@@ -852,7 +849,6 @@ static struct request *attempt_merge(struct request_queue *q,
 	 */
 	blk_account_io_merge_request(next);
 
-	trace_block_rq_merge(next);
 
 	/*
 	 * ownership of bio passed from next to req, return 'next' for
@@ -949,7 +945,6 @@ enum bio_merge_status bio_attempt_back_merge(struct request *req,
 	if (!ll_back_merge_fn(req, bio, nr_segs))
 		return BIO_MERGE_FAILED;
 
-	trace_block_bio_backmerge(bio);
 	rq_qos_merge(req->q, req, bio);
 
 	if ((req->cmd_flags & REQ_FAILFAST_MASK) != ff)
@@ -988,7 +983,6 @@ static enum bio_merge_status bio_attempt_front_merge(struct request *req,
 	if (!ll_front_merge_fn(req, bio, nr_segs))
 		return BIO_MERGE_FAILED;
 
-	trace_block_bio_frontmerge(bio);
 	rq_qos_merge(req->q, req, bio);
 
 	if ((req->cmd_flags & REQ_FAILFAST_MASK) != ff)

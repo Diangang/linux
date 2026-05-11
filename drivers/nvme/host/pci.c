@@ -27,8 +27,6 @@
 #include <linux/io-64-nonatomic-lo-hi.h>
 #include <linux/io-64-nonatomic-hi-lo.h>
 #include <linux/sed-opal.h>
-
-#include "trace.h"
 #include "nvme.h"
 
 #define SQ_SIZE(q)	((q)->q_depth << (q)->sqes)
@@ -1555,7 +1553,6 @@ static inline void nvme_handle_cqe(struct nvme_queue *nvmeq,
 		return;
 	}
 
-	trace_nvme_sq(req, cqe->sq_head, nvmeq->sq_tail);
 	if (!nvme_try_complete_req(req, cqe->status, cqe->result) &&
 	    !blk_mq_add_to_batch(req, iob,
 				 nvme_req(req)->status != NVME_SC_SUCCESS,

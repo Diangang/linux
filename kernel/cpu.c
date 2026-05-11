@@ -37,11 +37,7 @@
 #include <linux/random.h>
 #include <linux/cc_platform.h>
 #include <linux/parser.h>
-
-#include <trace/events/power.h>
-#define CREATE_TRACE_POINTS
-#include <trace/events/cpuhp.h>
-
+#include <linux/perf_event.h>
 #include "smpboot.h"
 
 /**
@@ -190,9 +186,7 @@ static int cpuhp_invoke_callback(unsigned int cpu, enum cpuhp_state state,
 		WARN_ON_ONCE(lastp && *lastp);
 		cb = bringup ? step->startup.single : step->teardown.single;
 
-		trace_cpuhp_enter(cpu, st->target, state, cb);
 		ret = cb(cpu);
-		trace_cpuhp_exit(cpu, st->state, state, ret);
 		return ret;
 	}
 	cbm = bringup ? step->startup.multi : step->teardown.multi;
@@ -200,9 +194,7 @@ static int cpuhp_invoke_callback(unsigned int cpu, enum cpuhp_state state,
 	/* Single invocation for instance add/remove */
 	if (node) {
 		WARN_ON_ONCE(lastp && *lastp);
-		trace_cpuhp_multi_enter(cpu, st->target, state, cbm, node);
 		ret = cbm(cpu, node);
-		trace_cpuhp_exit(cpu, st->state, state, ret);
 		return ret;
 	}
 
@@ -212,9 +204,7 @@ static int cpuhp_invoke_callback(unsigned int cpu, enum cpuhp_state state,
 		if (lastp && node == *lastp)
 			break;
 
-		trace_cpuhp_multi_enter(cpu, st->target, state, cbm, node);
 		ret = cbm(cpu, node);
-		trace_cpuhp_exit(cpu, st->state, state, ret);
 		if (ret) {
 			if (!lastp)
 				goto err;
@@ -237,9 +227,7 @@ err:
 		if (!cnt--)
 			break;
 
-		trace_cpuhp_multi_enter(cpu, st->target, state, cbm, node);
 		ret = cbm(cpu, node);
-		trace_cpuhp_exit(cpu, st->state, state, ret);
 		/*
 		 * Rollback must not fail,
 		 */
@@ -1182,7 +1170,6 @@ cpuhp_invoke_ap_callback(int cpu, enum cpuhp_state state, bool bringup,
 static int cpuhp_kick_ap_work(unsigned int cpu)
 {
 	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
-	enum cpuhp_state prev_state = st->state;
 	int ret;
 
 	cpuhp_lock_acquire(false);
@@ -1191,9 +1178,7 @@ static int cpuhp_kick_ap_work(unsigned int cpu)
 	cpuhp_lock_acquire(true);
 	cpuhp_lock_release(true);
 
-	trace_cpuhp_enter(cpu, st->target, prev_state, cpuhp_kick_ap_work);
 	ret = cpuhp_kick_ap(cpu, st, st->target);
-	trace_cpuhp_exit(cpu, st->state, prev_state, ret);
 
 	return ret;
 }
@@ -1914,9 +1899,7 @@ int freeze_secondary_cpus(int primary)
 			break;
 		}
 
-		trace_suspend_resume(TPS("CPU_OFF"), cpu, true);
 		error = _cpu_down(cpu, 1, CPUHP_OFFLINE);
-		trace_suspend_resume(TPS("CPU_OFF"), cpu, false);
 		if (!error)
 			cpumask_set_cpu(cpu, frozen_cpus);
 		else {
@@ -1964,9 +1947,7 @@ void thaw_secondary_cpus(void)
 	arch_thaw_secondary_cpus_begin();
 
 	for_each_cpu(cpu, frozen_cpus) {
-		trace_suspend_resume(TPS("CPU_ON"), cpu, true);
 		error = _cpu_up(cpu, 1, CPUHP_ONLINE);
-		trace_suspend_resume(TPS("CPU_ON"), cpu, false);
 		if (!error) {
 			pr_info("CPU%d is up\n", cpu);
 			continue;

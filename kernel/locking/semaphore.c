@@ -33,7 +33,6 @@
 #include <linux/semaphore.h>
 #include <linux/spinlock.h>
 #include <linux/ftrace.h>
-#include <trace/events/lock.h>
 #include <linux/hung_task.h>
 
 static noinline void __down(struct semaphore *sem);
@@ -310,9 +309,7 @@ static inline int __sched __down_common(struct semaphore *sem, long state,
 
 	hung_task_set_blocker(sem, BLOCKER_TYPE_SEM);
 
-	trace_contention_begin(sem, 0);
 	ret = ___down_common(sem, state, timeout);
-	trace_contention_end(sem, ret);
 
 	hung_task_clear_blocker();
 

@@ -39,10 +39,6 @@
 #include <linux/buffer_head.h>
 
 #include "internal.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/pagemap.h>
-
 /* How many pages do we try to swap or page in/out together? As a power of 2 */
 int page_cluster;
 static const int page_cluster_max = 31;
@@ -152,7 +148,6 @@ static void lru_add(struct lruvec *lruvec, struct folio *folio)
 	}
 
 	lruvec_add_folio(lruvec, folio);
-	trace_mm_lru_insertion(folio);
 }
 
 static void folio_batch_move_lru(struct folio_batch *fbatch, move_fn_t move_fn)
@@ -315,7 +310,6 @@ static void lru_activate(struct lruvec *lruvec, struct folio *folio)
 	lruvec_del_folio(lruvec, folio);
 	folio_set_active(folio);
 	lruvec_add_folio(lruvec, folio);
-	trace_mm_lru_activate(folio);
 
 	__count_vm_events(PGACTIVATE, nr_pages);
 	count_memcg_events(lruvec_memcg(lruvec), PGACTIVATE, nr_pages);

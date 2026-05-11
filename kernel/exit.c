@@ -53,7 +53,6 @@
 #include <linux/fs_struct.h>
 #include <linux/init_task.h>
 #include <linux/perf_event.h>
-#include <trace/events/sched.h>
 #include <linux/hw_breakpoint.h>
 #include <linux/oom.h>
 #include <linux/writeback.h>
@@ -227,7 +226,6 @@ static void delayed_put_task_struct(struct rcu_head *rhp)
 	kprobe_flush_task(tsk);
 	rethook_flush_task(tsk);
 	perf_event_delayed_put(tsk);
-	trace_sched_process_free(tsk);
 	put_task_struct(tsk);
 }
 
@@ -943,7 +941,6 @@ void __noreturn do_exit(long code)
 
 	tsk->exit_code = code;
 	taskstats_exit(tsk, group_dead);
-	trace_sched_process_exit(tsk, group_dead);
 
 	/*
 	 * Since sampling can touch ->mm, make sure to stop everything before we
@@ -1710,7 +1707,6 @@ static long do_wait(struct wait_opts *wo)
 {
 	int retval;
 
-	trace_sched_process_wait(wo->wo_pid);
 
 	init_waitqueue_func_entry(&wo->child_wait, child_wait_callback);
 	wo->child_wait.private = current;

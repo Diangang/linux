@@ -67,10 +67,6 @@
 
 #include "internal.h"
 #include "swap.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/vmscan.h>
-
 struct scan_control {
 	/* How many pages shrink_list() should reclaim */
 	unsigned long nr_to_reclaim;
@@ -571,9 +567,6 @@ void reclaim_throttle(pg_data_t *pgdat, enum vmscan_throttle_state reason)
 	if (reason == VMSCAN_THROTTLE_WRITEBACK)
 		atomic_dec(&pgdat->nr_writeback_throttled);
 
-	trace_mm_vmscan_throttled(pgdat->node_id, jiffies_to_usecs(timeout),
-				jiffies_to_usecs(timeout - ret),
-				reason);
 }
 
 /*
@@ -642,7 +635,6 @@ static pageout_t writeout(struct folio *folio, struct address_space *mapping,
 	if (!folio_test_writeback(folio))
 		folio_clear_reclaim(folio);
 
-	trace_mm_vmscan_write_folio(folio);
 	node_stat_add_folio(folio, NR_VMSCAN_WRITE);
 	return PAGE_SUCCESS;
 }
@@ -1750,8 +1742,6 @@ move:
 		}
 	}
 	*nr_scanned = total_scan;
-	trace_mm_vmscan_lru_isolate(sc->reclaim_idx, sc->order, nr_to_scan,
-				    total_scan, skipped, nr_taken, lru);
 	update_lru_sizes(lruvec, lru, nr_zone_taken);
 	return nr_taken;
 }
@@ -2023,8 +2013,6 @@ static unsigned long shrink_inactive_list(unsigned long nr_to_scan,
 	if (file)
 		sc->nr.file_taken += nr_taken;
 
-	trace_mm_vmscan_lru_shrink_inactive(pgdat->node_id,
-			nr_scanned, nr_reclaimed, &stat, sc->priority, file);
 	return nr_reclaimed;
 }
 
@@ -2130,8 +2118,6 @@ static void shrink_active_list(unsigned long nr_to_scan,
 
 	lruvec_lock_irq(lruvec);
 	lru_note_cost_unlock_irq(lruvec, file, 0, nr_rotated);
-	trace_mm_vmscan_lru_shrink_active(pgdat->node_id, nr_taken, nr_activate,
-			nr_deactivate, nr_rotated, sc->priority, file);
 }
 
 static unsigned int reclaim_folio_list(struct list_head *folio_list,
@@ -2154,7 +2140,6 @@ static unsigned int reclaim_folio_list(struct list_head *folio_list,
 		list_del(&folio->lru);
 		folio_putback_lru(folio);
 	}
-	trace_mm_vmscan_reclaim_pages(pgdat->node_id, sc.nr_scanned, nr_reclaimed, &stat);
 
 	return nr_reclaimed;
 }
@@ -3452,11 +3437,9 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		return 1;
 
 	set_task_reclaim_state(current, &sc.reclaim_state);
-	trace_mm_vmscan_direct_reclaim_begin(sc.gfp_mask, order, 0);
 
 	nr_reclaimed = do_try_to_free_pages(zonelist, &sc);
 
-	trace_mm_vmscan_direct_reclaim_end(nr_reclaimed, 0);
 	set_task_reclaim_state(current, NULL);
 
 	return nr_reclaimed;
@@ -3485,9 +3468,6 @@ unsigned long mem_cgroup_shrink_node(struct mem_cgroup *memcg,
 	sc.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
 			(GFP_HIGHUSER_MOVABLE & ~GFP_RECLAIM_MASK);
 
-	trace_mm_vmscan_memcg_softlimit_reclaim_begin(sc.gfp_mask,
-						      sc.order,
-						      memcg);
 
 	/*
 	 * NOTE: Although we can get the priority field, using it
@@ -3498,7 +3478,6 @@ unsigned long mem_cgroup_shrink_node(struct mem_cgroup *memcg,
 	 */
 	shrink_lruvec(lruvec, &sc);
 
-	trace_mm_vmscan_memcg_softlimit_reclaim_end(sc.nr_reclaimed, memcg);
 
 	*nr_scanned = sc.nr_scanned;
 
@@ -3534,13 +3513,11 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
 	struct zonelist *zonelist = node_zonelist(numa_node_id(), sc.gfp_mask);
 
 	set_task_reclaim_state(current, &sc.reclaim_state);
-	trace_mm_vmscan_memcg_reclaim_begin(sc.gfp_mask, 0, memcg);
 	noreclaim_flag = memalloc_noreclaim_save();
 
 	nr_reclaimed = do_try_to_free_pages(zonelist, &sc);
 
 	memalloc_noreclaim_restore(noreclaim_flag);
-	trace_mm_vmscan_memcg_reclaim_end(nr_reclaimed, memcg);
 	set_task_reclaim_state(current, NULL);
 
 	return nr_reclaimed;
@@ -3981,9 +3958,7 @@ restart:
 	 * failure count to prevent the kswapd thread from stopping.
 	 */
 	if (!sc.nr_reclaimed && !boosted) {
-		int fail_cnt = atomic_inc_return(&pgdat->kswapd_failures);
-		/* kswapd context, low overhead to trace every failure */
-		trace_mm_vmscan_kswapd_reclaim_fail(pgdat->node_id, fail_cnt);
+		atomic_inc_return(&pgdat->kswapd_failures);
 	}
 
 out:
@@ -4099,7 +4074,6 @@ static void kswapd_try_to_sleep(pg_data_t *pgdat, int alloc_order, int reclaim_o
 	 */
 	if (!remaining &&
 	    prepare_kswapd_sleep(pgdat, reclaim_order, highest_zoneidx)) {
-		trace_mm_vmscan_kswapd_sleep(pgdat->node_id);
 
 		/*
 		 * vmstat counters are not perfectly accurate and the estimated
@@ -4198,8 +4172,6 @@ kswapd_try_sleep:
 		 * but kcompactd is woken to compact for the original
 		 * request (alloc_order).
 		 */
-		trace_mm_vmscan_kswapd_wake(pgdat->node_id, highest_zoneidx,
-						alloc_order);
 		reclaim_order = balance_pgdat(pgdat, alloc_order,
 						highest_zoneidx);
 		if (reclaim_order < alloc_order)
@@ -4258,16 +4230,13 @@ void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,
 		return;
 	}
 
-	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, highest_zoneidx, order,
-				      gfp_flags);
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }
 
 void kswapd_clear_hopeless(pg_data_t *pgdat, enum kswapd_clear_hopeless_reason reason)
 {
 	/* Only trace actual resets, not redundant zero-to-zero */
-	if (atomic_xchg(&pgdat->kswapd_failures, 0))
-		trace_mm_vmscan_kswapd_clear_hopeless(pgdat->node_id, reason);
+	atomic_xchg(&pgdat->kswapd_failures, 0);
 }
 
 /*
@@ -4487,8 +4456,6 @@ static unsigned long __node_reclaim(struct pglist_data *pgdat, gfp_t gfp_mask,
 	unsigned int noreclaim_flag;
 	unsigned long pflags;
 
-	trace_mm_vmscan_node_reclaim_begin(pgdat->node_id, sc->order,
-					   sc->gfp_mask);
 
 	cond_resched();
 	psi_memstall_enter(&pflags);
@@ -4517,7 +4484,6 @@ static unsigned long __node_reclaim(struct pglist_data *pgdat, gfp_t gfp_mask,
 	delayacct_freepages_end();
 	psi_memstall_leave(&pflags);
 
-	trace_mm_vmscan_node_reclaim_end(sc->nr_reclaimed, 0);
 
 	return sc->nr_reclaimed;
 }

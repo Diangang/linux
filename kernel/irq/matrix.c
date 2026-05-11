@@ -33,10 +33,6 @@ struct irq_matrix {
 	unsigned long		*system_map;
 	unsigned long		scratch_map[];
 };
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/irq_matrix.h>
-
 /**
  * irq_alloc_matrix - Allocate a irq_matrix structure and initialize it
  * @matrix_bits:	Number of matrix bits
@@ -95,7 +91,6 @@ void irq_matrix_online(struct irq_matrix *m)
 	m->global_available += cm->available;
 	cm->online = true;
 	m->online_maps++;
-	trace_irq_matrix_online(m);
 }
 
 /**
@@ -110,7 +105,6 @@ void irq_matrix_offline(struct irq_matrix *m)
 	m->global_available -= cm->available;
 	cm->online = false;
 	m->online_maps--;
-	trace_irq_matrix_offline(m);
 }
 
 static unsigned int matrix_alloc_area(struct irq_matrix *m, struct cpumap *cm,
@@ -201,7 +195,6 @@ void irq_matrix_assign_system(struct irq_matrix *m, unsigned int bit,
 	if (bit >= m->alloc_start && bit < m->alloc_end)
 		m->systembits_inalloc++;
 
-	trace_irq_matrix_assign_system(bit, m);
 }
 
 /**
@@ -229,7 +222,6 @@ int irq_matrix_reserve_managed(struct irq_matrix *m, const struct cpumask *msk)
 			cm->available--;
 			m->global_available--;
 		}
-		trace_irq_matrix_reserve_managed(bit, cpu, m, cm);
 	}
 	return 0;
 cleanup:
@@ -279,7 +271,6 @@ void irq_matrix_remove_managed(struct irq_matrix *m, const struct cpumask *msk)
 			cm->available++;
 			m->global_available++;
 		}
-		trace_irq_matrix_remove_managed(bit, cpu, m, cm);
 	}
 }
 
@@ -314,7 +305,6 @@ int irq_matrix_alloc_managed(struct irq_matrix *m, const struct cpumask *msk,
 	cm->managed_allocated++;
 	m->total_allocated++;
 	*mapped_cpu = cpu;
-	trace_irq_matrix_alloc_managed(bit, cpu, m, cm);
 	return bit;
 }
 
@@ -337,7 +327,6 @@ void irq_matrix_assign(struct irq_matrix *m, unsigned int bit)
 	m->total_allocated++;
 	cm->available--;
 	m->global_available--;
-	trace_irq_matrix_assign(bit, smp_processor_id(), m, cm);
 }
 
 /**
@@ -355,7 +344,6 @@ void irq_matrix_reserve(struct irq_matrix *m)
 		pr_warn("Interrupt reservation exceeds available resources\n");
 
 	m->global_reserved++;
-	trace_irq_matrix_reserve(m);
 }
 
 /**
@@ -370,7 +358,6 @@ void irq_matrix_reserve(struct irq_matrix *m)
 void irq_matrix_remove_reserved(struct irq_matrix *m)
 {
 	m->global_reserved--;
-	trace_irq_matrix_remove_reserved(m);
 }
 
 /**
@@ -408,7 +395,6 @@ int irq_matrix_alloc(struct irq_matrix *m, const struct cpumask *msk,
 	if (reserved)
 		m->global_reserved--;
 	*mapped_cpu = cpu;
-	trace_irq_matrix_alloc(bit, cpu, m, cm);
 	return bit;
 
 }
@@ -444,7 +430,6 @@ void irq_matrix_free(struct irq_matrix *m, unsigned int cpu,
 		if (cm->online)
 			m->global_available++;
 	}
-	trace_irq_matrix_free(bit, cpu, m, cm);
 }
 
 /**

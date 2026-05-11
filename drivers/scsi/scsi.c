@@ -68,10 +68,6 @@
 
 #include "scsi_priv.h"
 #include "scsi_logging.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/scsi.h>
-
 /*
  * Definitions and constants.
  */

@@ -52,11 +52,6 @@
 
 #include <linux/uaccess.h>
 #include <asm/sections.h>
-
-#include <trace/events/initcall.h>
-#define CREATE_TRACE_POINTS
-#include <trace/events/printk.h>
-
 #include "printk_ringbuffer.h"
 #include "console_cmdline.h"
 #include "braille.h"
@@ -72,9 +67,6 @@ EXPORT_SYMBOL_GPL(console_printk);
 
 atomic_t ignore_console_lock_warning __read_mostly = ATOMIC_INIT(0);
 EXPORT_SYMBOL(ignore_console_lock_warning);
-
-EXPORT_TRACEPOINT_SYMBOL_GPL(console);
-
 /*
  * Low level drivers may need that to know if they can schedule in
  * their unblank() callback or not. So let's export it.
@@ -2162,7 +2154,6 @@ static u16 printk_sprint(char *text, u16 size, int facility,
 		}
 	}
 
-	trace_console(text, text_len);
 
 	return text_len;
 }
@@ -4311,12 +4302,9 @@ void __init console_init(void)
 	 * inform about problems etc..
 	 */
 	ce = __con_initcall_start;
-	trace_initcall_level("console");
 	while (ce < __con_initcall_end) {
 		call = initcall_from_entry(ce);
-		trace_initcall_start(call);
 		ret = call();
-		trace_initcall_finish(call, ret);
 		ce++;
 	}
 }

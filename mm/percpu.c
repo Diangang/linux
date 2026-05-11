@@ -92,10 +92,6 @@
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
 #include <asm/io.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/percpu.h>
-
 #include "percpu-internal.h"
 
 /*
@@ -1878,9 +1874,6 @@ area_found:
 	ptr = __addr_to_pcpu_ptr(chunk->base_addr + off);
 	kmemleak_alloc_percpu(ptr, size, gfp);
 
-	trace_percpu_alloc_percpu(_RET_IP_, reserved, is_atomic, size, align,
-				  chunk->base_addr, off, ptr,
-				  pcpu_obj_full_size(size), gfp);
 
 	pcpu_memcg_post_alloc_hook(objcg, chunk, off, size);
 
@@ -1891,7 +1884,6 @@ area_found:
 fail_unlock:
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 fail:
-	trace_percpu_alloc_percpu_fail(reserved, is_atomic, size, align);
 
 	if (do_warn) {
 		int remaining = atomic_dec_if_positive(&warn_limit);
@@ -2261,7 +2253,6 @@ void free_percpu(void __percpu *ptr)
 		need_balance = true;
 	}
 
-	trace_percpu_free_percpu(chunk->base_addr, off, ptr);
 
 	spin_unlock_irqrestore(&pcpu_lock, flags);
 
@@ -2709,7 +2700,6 @@ void __init pcpu_setup_first_chunk(const struct pcpu_alloc_info *ai,
 	pcpu_nr_populated += PFN_DOWN(size_sum);
 
 	pcpu_stats_chunk_alloc();
-	trace_percpu_create_chunk(base_addr);
 
 	/* we're done */
 	pcpu_base_addr = base_addr;

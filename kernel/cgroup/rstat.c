@@ -7,8 +7,6 @@
 #include <linux/btf.h>
 #include <linux/btf_ids.h>
 
-#include <trace/events/cgroup.h>
-
 static DEFINE_SPINLOCK(rstat_base_lock);
 static DEFINE_PER_CPU(struct llist_head, rstat_backlog_list);
 
@@ -359,28 +357,23 @@ static inline void __css_rstat_lock(struct cgroup_subsys_state *css,
 		int cpu_in_loop)
 	__acquires(ss_rstat_lock(css->ss))
 {
-	struct cgroup *cgrp = css->cgroup;
 	spinlock_t *lock;
 	bool contended;
 
 	lock = ss_rstat_lock(css->ss);
 	contended = !spin_trylock_irq(lock);
 	if (contended) {
-		trace_cgroup_rstat_lock_contended(cgrp, cpu_in_loop, contended);
 		spin_lock_irq(lock);
 	}
-	trace_cgroup_rstat_locked(cgrp, cpu_in_loop, contended);
 }
 
 static inline void __css_rstat_unlock(struct cgroup_subsys_state *css,
 				      int cpu_in_loop)
 	__releases(ss_rstat_lock(css->ss))
 {
-	struct cgroup *cgrp = css->cgroup;
 	spinlock_t *lock;
 
 	lock = ss_rstat_lock(css->ss);
-	trace_cgroup_rstat_unlock(cgrp, cpu_in_loop, false);
 	spin_unlock_irq(lock);
 }
 

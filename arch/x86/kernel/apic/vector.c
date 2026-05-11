@@ -21,8 +21,6 @@
 #include <asm/desc.h>
 #include <asm/irq_remapping.h>
 
-#include <asm/trace/irq_vectors.h>
-
 struct apic_chip_data {
 	struct irq_cfg		hw_irq_cfg;
 	unsigned int		vector;
@@ -138,7 +136,6 @@ static void apic_update_irq_cfg(struct irq_data *irqd, unsigned int vector,
 	apic_update_vector(cpu, vector, true);
 
 	irq_data_update_effective_affinity(irqd, cpumask_of(cpu));
-	trace_vector_config(irqd->irq, vector, cpu, apicd->hw_irq_cfg.dest_apicid);
 }
 
 static void apic_free_vector(unsigned int cpu, unsigned int vector, bool managed)
@@ -155,8 +152,6 @@ static void chip_data_update(struct irq_data *irqd, unsigned int newvec, unsigne
 
 	lockdep_assert_held(&vector_lock);
 
-	trace_vector_update(irqd->irq, newvec, newcpu, apicd->vector,
-			    apicd->cpu);
 
 	/*
 	 * If there is no vector associated or if the associated vector is
@@ -210,7 +205,6 @@ static int reserve_managed_vector(struct irq_data *irqd)
 	apicd->is_managed = true;
 	ret = irq_matrix_reserve_managed(vector_matrix, affmsk);
 	raw_spin_unlock_irqrestore(&vector_lock, flags);
-	trace_vector_reserve_managed(irqd->irq, ret);
 	return ret;
 }
 
@@ -222,7 +216,6 @@ static void reserve_irq_vector_locked(struct irq_data *irqd)
 	apicd->can_reserve = true;
 	apicd->has_reserved = true;
 	irqd_set_can_reserve(irqd);
-	trace_vector_reserve(irqd->irq, 0);
 	vector_assign_managed_shutdown(irqd);
 }
 
@@ -264,7 +257,6 @@ assign_vector_locked(struct irq_data *irqd, const struct cpumask *dest)
 		return -EBUSY;
 
 	vector = irq_matrix_alloc(vector_matrix, dest, resvd, &cpu);
-	trace_vector_alloc(irqd->irq, vector, resvd, vector);
 	if (vector < 0)
 		return vector;
 	chip_data_update(irqd, vector, cpu);
@@ -340,7 +332,6 @@ assign_managed_vector(struct irq_data *irqd, const struct cpumask *dest)
 		return 0;
 	vector = irq_matrix_alloc_managed(vector_matrix, vector_searchmask,
 					  &cpu);
-	trace_vector_alloc_managed(irqd->irq, vector, vector);
 	if (vector < 0)
 		return vector;
 	chip_data_update(irqd, vector, cpu);
@@ -359,8 +350,6 @@ static void clear_irq_vector(struct irq_data *irqd)
 	if (!vector)
 		return;
 
-	trace_vector_clear(irqd->irq, vector, apicd->cpu, apicd->prev_vector,
-			   apicd->prev_cpu);
 
 	per_cpu(vector_irq, apicd->cpu)[vector] = VECTOR_SHUTDOWN;
 	apic_free_vector(apicd->cpu, vector, managed);
@@ -383,8 +372,6 @@ static void x86_vector_deactivate(struct irq_domain *dom, struct irq_data *irqd)
 	struct apic_chip_data *apicd = apic_chip_data(irqd);
 	unsigned long flags;
 
-	trace_vector_deactivate(irqd->irq, apicd->is_managed,
-				apicd->can_reserve, false);
 
 	/* Regular fixed assigned interrupt */
 	if (!apicd->is_managed && !apicd->can_reserve)
@@ -465,8 +452,6 @@ static int x86_vector_activate(struct irq_domain *dom, struct irq_data *irqd,
 	unsigned long flags;
 	int ret = 0;
 
-	trace_vector_activate(irqd->irq, apicd->is_managed,
-			      apicd->can_reserve, reserve);
 
 	raw_spin_lock_irqsave(&vector_lock, flags);
 	if (!apicd->can_reserve && !apicd->is_managed)
@@ -486,8 +471,6 @@ static void vector_free_reserved_and_managed(struct irq_data *irqd)
 	const struct cpumask *dest = irq_data_get_affinity_mask(irqd);
 	struct apic_chip_data *apicd = apic_chip_data(irqd);
 
-	trace_vector_teardown(irqd->irq, apicd->is_managed,
-			      apicd->has_reserved);
 
 	if (apicd->has_reserved)
 		irq_matrix_remove_reserved(vector_matrix);
@@ -532,7 +515,6 @@ static bool vector_configure_legacy(unsigned int virq, struct irq_data *irqd,
 	 * position. That's usually the timer interrupt (0).
 	 */
 	if (irqd_is_activated(irqd)) {
-		trace_vector_setup(virq, true, 0);
 		apic_update_irq_cfg(irqd, apicd->vector, apicd->cpu);
 	} else {
 		/* Release the vector */
@@ -603,7 +585,6 @@ static int x86_vector_alloc_irqs(struct irq_domain *domain, unsigned int virq,
 		}
 
 		err = assign_irq_vector_policy(irqd, info);
-		trace_vector_setup(virq + i, false, err);
 		if (err) {
 			irqd->chip_data = NULL;
 			free_apic_chip_data(apicd);
@@ -910,7 +891,6 @@ static void free_moved_vector(struct apic_chip_data *apicd)
 	 *    a non-isolated CPU which is in the calculated
 	 *    affinity mask comes online.
 	 */
-	trace_vector_free_moved(apicd->irq, cpu, vector, managed);
 	apic_free_vector(cpu, vector, managed);
 	per_cpu(vector_irq, cpu)[vector] = VECTOR_UNUSED;
 	hlist_del_init(&apicd->clist);

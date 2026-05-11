@@ -70,13 +70,6 @@
 #include "memcontrol-v1.h"
 
 #include <linux/uaccess.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/memcg.h>
-#undef CREATE_TRACE_POINTS
-
-#include <trace/events/vmscan.h>
-
 struct cgroup_subsys memory_cgrp_subsys __read_mostly;
 EXPORT_SYMBOL(memory_cgrp_subsys);
 
@@ -700,8 +693,6 @@ static void __mem_cgroup_flush_stats(struct mem_cgroup *memcg, bool force)
 {
 	bool needs_flush = memcg_vmstats_needs_flush(memcg->vmstats);
 
-	trace_memcg_flush_stats(memcg, atomic_long_read(&memcg->vmstats->stats_updates),
-		force, needs_flush);
 
 	if (!force && !needs_flush)
 		return;
@@ -846,7 +837,6 @@ static void __mod_memcg_state(struct mem_cgroup *memcg,
 	val = memcg_state_val_in_pages(idx, val);
 	memcg_rstat_updated(memcg, val, cpu);
 
-	trace_mod_memcg_state(memcg, idx, val);
 
 	put_cpu();
 }
@@ -916,7 +906,6 @@ static void __mod_memcg_lruvec_state(struct mem_cgroup_per_node *pn,
 
 	val = memcg_state_val_in_pages(idx, val);
 	memcg_rstat_updated(memcg, val, cpu);
-	trace_mod_memcg_lruvec_state(memcg, idx, val);
 
 	put_cpu();
 }
@@ -1027,7 +1016,6 @@ void count_memcg_events(struct mem_cgroup *memcg, enum vm_event_item idx,
 
 	this_cpu_add(memcg->vmstats_percpu->events[i], count);
 	memcg_rstat_updated(memcg, count, cpu);
-	trace_count_memcg_events(memcg, idx, count);
 
 	put_cpu();
 }
@@ -3583,8 +3571,6 @@ static void memcg_offline_kmem(struct mem_cgroup *memcg)
 
 #ifdef CONFIG_CGROUP_WRITEBACK
 
-#include <trace/events/writeback.h>
-
 static int memcg_wb_domain_init(struct mem_cgroup *memcg, gfp_t gfp)
 {
 	return wb_domain_init(&memcg->cgwb_domain, gfp);
@@ -3707,7 +3693,6 @@ void mem_cgroup_track_foreign_dirty_slowpath(struct folio *folio,
 	int oldest = -1;
 	int i;
 
-	trace_track_foreign_dirty(folio, wb);
 
 	/*
 	 * Pick the slot to use.  If there is already a slot for @wb, keep
@@ -3769,7 +3754,6 @@ void mem_cgroup_flush_foreign(struct bdi_writeback *wb)
 		if (time_after64(frn->at, now - intv) &&
 		    atomic_read(&frn->done.cnt) == 1) {
 			frn->at = 0;
-			trace_flush_foreign(wb, frn->bdi_id, frn->memcg_id);
 			cgroup_writeback_by_id(frn->bdi_id, frn->memcg_id,
 					       WB_REASON_FOREIGN_FLUSH,
 					       &frn->done);

@@ -79,8 +79,6 @@
 #include <linux/pgalloc.h>
 #include <linux/uaccess.h>
 
-#include <trace/events/kmem.h>
-
 #include <asm/io.h>
 #include <asm/mmu_context.h>
 #include <asm/tlb.h>
@@ -162,7 +160,6 @@ unsigned long highest_memmap_pfn __read_mostly;
 
 void mm_trace_rss_stat(struct mm_struct *mm, int member)
 {
-	trace_rss_stat(mm, member);
 }
 
 /*

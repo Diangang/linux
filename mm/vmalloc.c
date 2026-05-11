@@ -43,10 +43,6 @@
 #include <asm/tlbflush.h>
 #include <asm/shmparam.h>
 #include <linux/page_owner.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/vmalloc.h>
-
 #include "internal.h"
 #include "pgalloc-track.h"
 
@@ -2082,7 +2078,6 @@ retry:
 			cond_resched();
 	}
 
-	trace_alloc_vmap_area(addr, size, align, vstart, vend, IS_ERR_VALUE(addr));
 
 	/*
 	 * If an allocation fails, the error value is
@@ -2408,7 +2403,6 @@ static bool __purge_vmap_area_lazy(unsigned long start, unsigned long end,
 		}
 	}
 
-	trace_purge_vmap_area_lazy(start, end, nr_purged_areas);
 	return nr_purged_areas > 0;
 }
 
@@ -2439,7 +2433,6 @@ static void drain_vmap_area_work(struct work_struct *work)
 static void free_vmap_area_noflush(struct vmap_area *va)
 {
 	unsigned long nr_lazy_max = lazy_max_pages();
-	unsigned long va_start = va->va_start;
 	unsigned int vn_id = decode_vn_id(va->flags);
 	struct vmap_node *vn;
 	unsigned long nr_lazy;
@@ -2461,7 +2454,6 @@ static void free_vmap_area_noflush(struct vmap_area *va)
 	insert_vmap_area(va, &vn->lazy.root, &vn->lazy.head);
 	spin_unlock(&vn->lazy.lock);
 
-	trace_free_vmap_area_noflush(va_start, nr_lazy, nr_lazy_max);
 
 	/* After this point, we may free va at any time */
 	if (unlikely(nr_lazy > nr_lazy_max))

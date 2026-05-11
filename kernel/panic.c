@@ -37,7 +37,6 @@
 #include <linux/context_tracking.h>
 #include <linux/seq_buf.h>
 #include <linux/sys_info.h>
-#include <trace/events/error_report.h>
 #include <asm/sections.h>
 
 #define PANIC_TIMER_STEP 100
@@ -1108,7 +1107,6 @@ void __warn(const char *file, int line, void *caller, unsigned taint,
 	print_irqtrace_events(current);
 
 	print_oops_end_marker();
-	trace_error_report_end(ERROR_DETECTOR_WARN, (unsigned long)caller);
 
 	/* Just a warning, don't kill lockdep. */
 	add_taint(taint, LOCKDEP_STILL_OK);

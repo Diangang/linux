@@ -30,10 +30,6 @@
 #include <linux/debug_locks.h>
 #include <linux/osq_lock.h>
 #include <linux/hung_task.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/lock.h>
-
 #ifndef CONFIG_PREEMPT_RT
 #include "mutex.h"
 
@@ -619,14 +615,12 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 	preempt_disable();
 	mutex_acquire_nest(&lock->dep_map, subclass, 0, nest_lock, ip);
 
-	trace_contention_begin(lock, LCB_F_MUTEX | LCB_F_SPIN);
 	if (__mutex_trylock(lock) ||
 	    mutex_optimistic_spin(lock, ww_ctx, NULL)) {
 		/* got the lock, yay! */
 		lock_acquired(&lock->dep_map, ip);
 		if (ww_ctx)
 			ww_mutex_set_context_fastpath(ww, ww_ctx);
-		trace_contention_end(lock, 0);
 		preempt_enable();
 		return 0;
 	}
@@ -665,7 +659,6 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 	raw_spin_lock(&current->blocked_lock);
 	__set_task_blocked_on(current, lock);
 	set_current_state(state);
-	trace_contention_begin(lock, LCB_F_MUTEX);
 	for (;;) {
 		bool first;
 
@@ -731,7 +724,6 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 			raw_spin_unlock(&current->blocked_lock);
 			raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
 
-			trace_contention_begin(lock, LCB_F_MUTEX | LCB_F_SPIN);
 			opt_acquired = mutex_optimistic_spin(lock, ww_ctx, &waiter);
 
 			raw_spin_lock_irqsave(&lock->wait_lock, flags);
@@ -740,7 +732,6 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 
 			if (opt_acquired)
 				break;
-			trace_contention_begin(lock, LCB_F_MUTEX);
 		}
 	}
 	__clear_task_blocked_on(current, lock);
@@ -763,7 +754,6 @@ __mutex_lock_common(struct mutex *lock, unsigned int state, unsigned int subclas
 skip_wait:
 	/* got the lock - cleanup and rejoice! */
 	lock_acquired(&lock->dep_map, ip);
-	trace_contention_end(lock, 0);
 
 	if (ww_ctx)
 		ww_mutex_lock_acquired(ww, ww_ctx);
@@ -778,7 +768,6 @@ err:
 	__mutex_remove_waiter(lock, &waiter);
 err_early_kill:
 	WARN_ON(get_task_blocked_on(current));
-	trace_contention_end(lock, ret);
 	raw_spin_unlock_irqrestore_wake(&lock->wait_lock, flags, &wake_q);
 	debug_mutex_free_waiter(&waiter);
 	mutex_release(&lock->dep_map, ip);
@@ -1065,10 +1054,6 @@ ww_mutex_lock_interruptible(struct ww_mutex *lock, struct ww_acquire_ctx *ctx)
 EXPORT_SYMBOL(ww_mutex_lock_interruptible);
 
 #endif /* !CONFIG_PREEMPT_RT */
-
-EXPORT_TRACEPOINT_SYMBOL_GPL(contention_begin);
-EXPORT_TRACEPOINT_SYMBOL_GPL(contention_end);
-
 /**
  * atomic_dec_and_mutex_lock - return holding mutex if we dec to 0
  * @cnt: the atomic which we are to dec

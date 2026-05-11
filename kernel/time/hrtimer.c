@@ -45,8 +45,6 @@
 
 #include <linux/uaccess.h>
 
-#include <trace/events/timer.h>
-
 #include "tick-internal.h"
 
 /*
@@ -513,20 +511,17 @@ static inline void debug_hrtimer_assert_init(struct hrtimer *timer) { }
 static inline void debug_setup(struct hrtimer *timer, clockid_t clockid, enum hrtimer_mode mode)
 {
 	debug_hrtimer_init(timer);
-	trace_hrtimer_setup(timer, clockid, mode);
 }
 
 static inline void debug_setup_on_stack(struct hrtimer *timer, clockid_t clockid,
 					enum hrtimer_mode mode)
 {
 	debug_hrtimer_init_on_stack(timer);
-	trace_hrtimer_setup(timer, clockid, mode);
 }
 
 static inline void debug_activate(struct hrtimer *timer, enum hrtimer_mode mode, bool was_armed)
 {
 	debug_hrtimer_activate(timer, mode);
-	trace_hrtimer_start(timer, mode, was_armed);
 }
 
 #define for_each_active_base(base, cpu_base, active)					\
@@ -703,7 +698,6 @@ static inline int hrtimer_hres_active(struct hrtimer_cpu_base *cpu_base)
 
 static inline void hrtimer_rearm_event(ktime_t expires_next, bool deferred)
 {
-	trace_hrtimer_rearm(expires_next, deferred);
 	tick_program_event(expires_next, 1);
 }
 
@@ -1243,7 +1237,6 @@ remove_and_enqueue_same_base(struct hrtimer *timer, struct hrtimer_clock_base *b
 		/* Try to update in place to avoid the de/enqueue dance */
 		if (hrtimer_can_update_in_place(timer, base, expires)) {
 			hrtimer_set_expires_range_ns(timer, expires, delta_ns);
-			trace_hrtimer_start(timer, mode, true);
 			if (was_first)
 				base->expires_next = expires;
 			return was_first;
@@ -1525,8 +1518,6 @@ int hrtimer_try_to_cancel(struct hrtimer *timer)
 
 	if (!hrtimer_callback_running(timer)) {
 		ret = remove_hrtimer(timer, base, HRTIMER_STATE_INACTIVE);
-		if (ret)
-			trace_hrtimer_cancel(timer);
 	}
 
 	unlock_hrtimer_base(timer, &flags);
@@ -1924,13 +1915,11 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base, struct hrtimer_cloc
 	 * is dropped.
 	 */
 	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
-	trace_hrtimer_expire_entry(timer, now);
 	expires_in_hardirq = lockdep_hrtimer_enter(timer);
 
 	restart = fn(timer);
 
 	lockdep_hrtimer_exit(expires_in_hardirq);
-	trace_hrtimer_expire_exit(timer);
 	raw_spin_lock_irq(&cpu_base->lock);
 
 	/*

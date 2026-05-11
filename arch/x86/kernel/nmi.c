@@ -37,10 +37,6 @@
 #include <asm/microcode.h>
 #include <asm/sev.h>
 #include <asm/fred.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/nmi.h>
-
 /*
  * An emergency handler can be set in any context including NMI
  */
@@ -163,7 +159,6 @@ static int nmi_handle(unsigned int type, struct pt_regs *regs)
 		thishandled = a->handler(type, regs);
 		handled += thishandled;
 		delta = sched_clock() - delta;
-		trace_nmi_handler(a->handler, (int)delta, thishandled);
 
 		nmi_check_duration(a, delta);
 	}

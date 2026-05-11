@@ -75,9 +75,6 @@
 #include <linux/delayacct.h>
 #include <linux/mmu_context.h>
 
-#include <trace/events/power.h>
-#include <trace/events/sched.h>
-
 #include "../workqueue_internal.h"
 
 struct rq;
@@ -106,8 +103,6 @@ extern atomic_long_t calc_load_tasks;
 
 extern void calc_global_load_tick(struct rq *this_rq);
 extern long calc_load_fold_active(struct rq *this_rq, long adjust);
-
-extern void call_trace_sched_update_nr_running(struct rq *rq, int count);
 
 extern int sysctl_sched_rt_period;
 extern int sysctl_sched_rt_runtime;
@@ -2696,9 +2691,6 @@ static inline void add_nr_running(struct rq *rq, unsigned count)
 	unsigned prev_nr = rq->nr_running;
 
 	rq->nr_running = prev_nr + count;
-	if (trace_sched_update_nr_running_tp_enabled()) {
-		call_trace_sched_update_nr_running(rq, count);
-	}
 
 	if (prev_nr < 2 && rq->nr_running >= 2)
 		set_rd_overloaded(rq->rd, 1);
@@ -2709,9 +2701,6 @@ static inline void add_nr_running(struct rq *rq, unsigned count)
 static inline void sub_nr_running(struct rq *rq, unsigned count)
 {
 	rq->nr_running -= count;
-	if (trace_sched_update_nr_running_tp_enabled()) {
-		call_trace_sched_update_nr_running(rq, -count);
-	}
 
 	/* Check if we still need preemption */
 	sched_update_tick_dependency(rq);

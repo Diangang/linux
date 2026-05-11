@@ -35,7 +35,6 @@ void __update_stats_wait_end(struct rq *rq, struct task_struct *p,
 			return;
 		}
 
-		trace_sched_stat_wait(p, delta);
 	}
 
 	__schedstat_set(stats->wait_max,
@@ -67,7 +66,6 @@ void __update_stats_enqueue_sleeper(struct rq *rq, struct task_struct *p,
 
 		if (p) {
 			account_scheduler_latency(p, delta >> 10, 1);
-			trace_sched_stat_sleep(p, delta);
 		}
 	}
 
@@ -88,10 +86,8 @@ void __update_stats_enqueue_sleeper(struct rq *rq, struct task_struct *p,
 			if (p->in_iowait) {
 				__schedstat_add(stats->iowait_sum, delta);
 				__schedstat_inc(stats->iowait_count);
-				trace_sched_stat_iowait(p, delta);
 			}
 
-			trace_sched_stat_blocked(p, delta);
 
 			account_scheduler_latency(p, delta >> 10, 0);
 		}

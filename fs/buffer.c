@@ -47,7 +47,6 @@
 #include <linux/bit_spinlock.h>
 #include <linux/folio_batch.h>
 #include <linux/sched/mm.h>
-#include <trace/events/block.h>
 #include <linux/fscrypt.h>
 #include <linux/fsverity.h>
 #include <linux/sched/isolation.h>
@@ -61,7 +60,6 @@ static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
 
 inline void touch_buffer(struct buffer_head *bh)
 {
-	trace_block_touch_buffer(bh);
 	folio_mark_accessed(bh->b_folio);
 }
 EXPORT_SYMBOL(touch_buffer);
@@ -1086,7 +1084,6 @@ void mark_buffer_dirty(struct buffer_head *bh)
 {
 	WARN_ON_ONCE(!buffer_uptodate(bh));
 
-	trace_block_dirty_buffer(bh);
 
 	/*
 	 * Very *carefully* optimize the it-is-already-dirty case.

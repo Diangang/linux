@@ -17,7 +17,6 @@ enum compact_priority {
 };
 
 /* Return values for compact_zone() and try_to_compact_pages() */
-/* When adding new states, please adjust include/trace/events/compaction.h */
 enum compact_result {
 	/* For more detailed tracepoint output - internal to compaction */
 	COMPACT_NOT_SUITABLE_ZONE,

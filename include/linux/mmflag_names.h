@@ -1,4 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+#ifndef _LINUX_MMFLAG_NAMES_H
+#define _LINUX_MMFLAG_NAMES_H
+
 #include <linux/node.h>
 #include <linux/mmzone.h>
 #include <linux/compaction.h>
@@ -335,3 +338,5 @@ LRU_NAMES
 #undef EMe
 #define EM(a, b)	{a, b},
 #define EMe(a, b)	{a, b}
+
+#endif /* _LINUX_MMFLAG_NAMES_H */

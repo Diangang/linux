@@ -44,10 +44,6 @@
 #include <asm/tlbflush.h>
 #include "internal.h"
 #include "mm_slot.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/ksm.h>
-
 #ifdef CONFIG_NUMA
 #define NUMA(x)		(x)
 #define DO_NUMA(x)	do { (x); } while (0)
@@ -457,7 +453,6 @@ static void scan_time_advisor(void)
 	advisor_ctx.cpu_time = cpu_time;
 
 	ksm_thread_pages_to_scan = pages;
-	trace_ksm_advisor(scan_time, pages, cpu_percent);
 }
 
 static void advisor_stop_scan(void)
@@ -886,7 +881,6 @@ static void remove_node_from_stable_tree(struct ksm_stable_node *stable_node)
 	hlist_for_each_entry(rmap_item, &stable_node->hlist, hlist) {
 		if (rmap_item->hlist.next) {
 			ksm_pages_sharing--;
-			trace_ksm_remove_rmap_item(stable_node->kpfn, rmap_item, rmap_item->mm);
 		} else {
 			ksm_pages_shared--;
 		}
@@ -910,7 +904,6 @@ static void remove_node_from_stable_tree(struct ksm_stable_node *stable_node)
 	BUILD_BUG_ON(STABLE_NODE_DUP_HEAD <= &migrate_nodes);
 	BUILD_BUG_ON(STABLE_NODE_DUP_HEAD >= &migrate_nodes + 1);
 
-	trace_ksm_remove_ksm_page(stable_node->kpfn);
 	if (stable_node->head == &migrate_nodes)
 		list_del(&stable_node->list);
 	else
@@ -1554,9 +1547,6 @@ static int try_to_merge_with_zero_page(struct ksm_rmap_item *rmap_item,
 		if (vma) {
 			err = try_to_merge_one_page(vma, page,
 					ZERO_PAGE(rmap_item->address));
-			trace_ksm_merge_one_page(
-				page_to_pfn(ZERO_PAGE(rmap_item->address)),
-				rmap_item, mm, err);
 		} else {
 			/*
 			 * If the vma is out of date, we do not need to
@@ -1600,8 +1590,6 @@ static int try_to_merge_with_ksm_page(struct ksm_rmap_item *rmap_item,
 	get_anon_vma(vma->anon_vma);
 out:
 	mmap_read_unlock(mm);
-	trace_ksm_merge_with_ksm_page(kpage, page_to_pfn(kpage ? kpage : page),
-				rmap_item, mm, err);
 	return err;
 }
 
@@ -2587,7 +2575,6 @@ static struct ksm_rmap_item *scan_get_next_rmap_item(struct page **page)
 	mm_slot = ksm_scan.mm_slot;
 	if (mm_slot == &ksm_mm_head) {
 		advisor_start_scan();
-		trace_ksm_start_scan(ksm_scan.seqnr, ksm_rmap_items);
 
 		/*
 		 * A number of pages can hang around indefinitely in per-cpu
@@ -2768,7 +2755,6 @@ no_vmas:
 
 	advisor_stop_scan();
 
-	trace_ksm_stop_scan(ksm_scan.seqnr, ksm_rmap_items);
 	ksm_scan.seqnr++;
 	return NULL;
 }
@@ -3051,7 +3037,6 @@ int __ksm_enter(struct mm_struct *mm)
 	if (needs_wakeup)
 		wake_up_interruptible(&ksm_thread_wait);
 
-	trace_ksm_enter(mm);
 	return 0;
 }
 
@@ -3098,7 +3083,6 @@ unlock:
 		mmap_write_unlock(mm);
 	}
 
-	trace_ksm_exit(mm);
 }
 
 struct folio *ksm_might_need_to_copy(struct folio *folio,

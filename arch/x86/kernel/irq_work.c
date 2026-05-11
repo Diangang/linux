@@ -10,17 +10,14 @@
 #include <linux/hardirq.h>
 #include <asm/apic.h>
 #include <asm/idtentry.h>
-#include <asm/trace/irq_vectors.h>
 #include <linux/interrupt.h>
 
 #ifdef CONFIG_X86_LOCAL_APIC
 DEFINE_IDTENTRY_SYSVEC(sysvec_irq_work)
 {
 	apic_eoi();
-	trace_irq_work_entry(IRQ_WORK_VECTOR);
 	inc_irq_stat(apic_irq_work_irqs);
 	irq_work_run();
-	trace_irq_work_exit(IRQ_WORK_VECTOR);
 }
 
 void arch_irq_work_raise(void)

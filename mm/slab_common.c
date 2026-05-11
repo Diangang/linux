@@ -28,15 +28,10 @@
 #include <asm/page.h>
 #include <linux/memcontrol.h>
 #include <linux/stackdepot.h>
-#include <trace/events/rcu.h>
 
 #include "../kernel/rcu/rcu.h"
 #include "internal.h"
 #include "slab.h"
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/kmem.h>
-
 enum slab_state slab_state;
 LIST_HEAD(slab_caches);
 DEFINE_MUTEX(slab_mutex);
@@ -1156,11 +1151,6 @@ __bpf_kfunc_end_defs();
 #endif /* CONFIG_BPF_SYSCALL */
 
 /* Tracepoints definitions. */
-EXPORT_TRACEPOINT_SYMBOL(kmalloc);
-EXPORT_TRACEPOINT_SYMBOL(kmem_cache_alloc);
-EXPORT_TRACEPOINT_SYMBOL(kfree);
-EXPORT_TRACEPOINT_SYMBOL(kmem_cache_free);
-
 #ifndef CONFIG_KVFREE_RCU_BATCHED
 
 void kvfree_call_rcu(struct rcu_head *head, void *ptr)
@@ -1393,15 +1383,10 @@ kvfree_rcu_bulk(struct kfree_rcu_cpu *krcp,
 		debug_rcu_bhead_unqueue(bnode);
 		rcu_lock_acquire(&rcu_callback_map);
 		if (idx == 0) { // kmalloc() / kfree().
-			trace_rcu_invoke_kfree_bulk_callback(
-				"slab", bnode->nr_records,
-				bnode->records);
 
 			kfree_bulk(bnode->nr_records, bnode->records);
 		} else { // vmalloc() / vfree().
 			for (i = 0; i < bnode->nr_records; i++) {
-				trace_rcu_invoke_kvfree_callback(
-					"slab", bnode->records[i], 0);
 
 				vfree(bnode->records[i]);
 			}
@@ -1427,12 +1412,10 @@ kvfree_rcu_list(struct rcu_head *head)
 
 	for (; head; head = next) {
 		void *ptr = (void *) head->func;
-		unsigned long offset = (void *) head - ptr;
 
 		next = head->next;
 		debug_rcu_head_unqueue((struct rcu_head *)ptr);
 		rcu_lock_acquire(&rcu_callback_map);
-		trace_rcu_invoke_kvfree_callback("slab", head, offset);
 
 		kvfree(ptr);
 

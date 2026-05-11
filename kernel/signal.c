@@ -48,10 +48,6 @@
 #include <linux/audit.h>
 #include <linux/sysctl.h>
 #include <uapi/linux/pidfd.h>
-
-#define CREATE_TRACE_POINTS
-#include <trace/events/signal.h>
-
 #include <asm/param.h>
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
@@ -1043,11 +1039,10 @@ static int __send_signal_locked(int sig, struct kernel_siginfo *info,
 	struct sigpending *pending;
 	struct sigqueue *q;
 	int override_rlimit;
-	int ret = 0, result;
+	int ret = 0;
 
 	lockdep_assert_held(&t->sighand->siglock);
 
-	result = TRACE_SIGNAL_IGNORED;
 	if (!prepare_signal(sig, t, force))
 		goto ret;
 
@@ -1057,11 +1052,9 @@ static int __send_signal_locked(int sig, struct kernel_siginfo *info,
 	 * exactly one non-rt signal, so that we can get more
 	 * detailed information about the cause of the signal.
 	 */
-	result = TRACE_SIGNAL_ALREADY_PENDING;
 	if (legacy_queue(pending, sig))
 		goto ret;
 
-	result = TRACE_SIGNAL_DELIVERED;
 	/*
 	 * Skip useless siginfo allocation for SIGKILL and kernel threads.
 	 */
@@ -1119,7 +1112,6 @@ static int __send_signal_locked(int sig, struct kernel_siginfo *info,
 		 * signal was rt and sent by user using something
 		 * other than kill().
 		 */
-		result = TRACE_SIGNAL_OVERFLOW_FAIL;
 		ret = -EAGAIN;
 		goto ret;
 	} else {
@@ -1127,7 +1119,6 @@ static int __send_signal_locked(int sig, struct kernel_siginfo *info,
 		 * This is a silent loss of information.  We still
 		 * send the signal, but the *info bits are lost.
 		 */
-		result = TRACE_SIGNAL_LOSE_INFO;
 	}
 
 out_set:
@@ -1150,7 +1141,6 @@ out_set:
 
 	complete_signal(sig, t, type);
 ret:
-	trace_signal_generate(sig, info, t, type != PIDTYPE_PID, result);
 	return ret;
 }
 
@@ -1977,7 +1967,6 @@ void posixtimer_send_sigqueue(struct k_itimer *tmr)
 	int sig = q->info.si_signo;
 	struct task_struct *t;
 	unsigned long flags;
-	int result;
 
 	guard(rcu)();
 
@@ -2002,8 +1991,6 @@ void posixtimer_send_sigqueue(struct k_itimer *tmr)
 	tmr->it_sig_periodic = tmr->it_status == POSIX_TIMER_REQUEUE_PENDING;
 
 	if (!prepare_signal(sig, t, false)) {
-		result = TRACE_SIGNAL_IGNORED;
-
 		if (!list_empty(&q->list)) {
 			/*
 			 * The signal was ignored and blocked. The timer
@@ -2058,7 +2045,6 @@ void posixtimer_send_sigqueue(struct k_itimer *tmr)
 
 	if (unlikely(!list_empty(&q->list))) {
 		/* This holds a reference count already */
-		result = TRACE_SIGNAL_ALREADY_PENDING;
 		goto out;
 	}
 
@@ -2076,9 +2062,7 @@ void posixtimer_send_sigqueue(struct k_itimer *tmr)
 		hlist_del_init(&tmr->ignored_list);
 
 	posixtimer_queue_sigqueue(q, t, tmr->it_pid_type);
-	result = TRACE_SIGNAL_DELIVERED;
 out:
-	trace_signal_generate(sig, &q->info, t, tmr->it_pid_type != PIDTYPE_PID, result);
 	unlock_task_sighand(t, &flags);
 }
 
@@ -2870,8 +2854,6 @@ relock:
 		     signal->group_exec_task) {
 			signr = SIGKILL;
 			sigdelset(&current->pending.signal, SIGKILL);
-			trace_signal_deliver(SIGKILL, SEND_SIG_NOINFO,
-					     &sighand->action[SIGKILL-1]);
 			recalc_sigpending();
 			/*
 			 * implies do_group_exit() or return to PF_USER_WORKER,
@@ -2929,7 +2911,6 @@ relock:
 		ka = &sighand->action[signr-1];
 
 		/* Trace actually delivered signals. */
-		trace_signal_deliver(signr, &ksig->info, ka);
 
 		if (ka->sa.sa_handler == SIG_IGN) /* Do nothing.  */
 			continue;

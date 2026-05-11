@@ -6,8 +6,6 @@
 
 #include "cgroup-internal.h"
 
-#include <trace/events/cgroup.h>
-
 /*
  * Update CGRP_FROZEN of cgroup.flag
  * Return true if flags is updated; false if flags has no change

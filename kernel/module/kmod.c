@@ -28,8 +28,6 @@
 #include <linux/ptrace.h>
 #include <linux/async.h>
 #include <linux/uaccess.h>
-
-#include <trace/events/module.h>
 #include "internal.h"
 
 /*
@@ -163,7 +161,6 @@ int __request_module(bool wait, const char *fmt, ...)
 		return ret;
 	}
 
-	trace_module_request(module_name, wait, _RET_IP_);
 
 	if (kmod_dup_request_exists_wait(module_name, wait, &dup_ret)) {
 		ret = dup_ret;

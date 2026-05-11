@@ -14,7 +14,6 @@
 #include <asm/sections.h>
 
 #include "base.h"
-#include "trace.h"
 
 struct devres {
 	struct devres_node		node;
@@ -75,7 +74,6 @@ static void devres_dbg(struct device *dev, struct devres_node *node,
 static void devres_log(struct device *dev, struct devres_node *node,
 		       const char *op)
 {
-	trace_devres_log(dev, op, node, node->name, node->size);
 	devres_dbg(dev, node, op);
 }
 

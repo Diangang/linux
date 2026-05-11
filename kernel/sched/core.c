@@ -81,13 +81,7 @@
 #include <asm/irq_regs.h>
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
-
-#define CREATE_TRACE_POINTS
 #include <linux/sched/rseq_api.h>
-#include <trace/events/sched.h>
-#include <trace/events/ipi.h>
-#undef CREATE_TRACE_POINTS
-
 #include "sched.h"
 #include "stats.h"
 
@@ -98,35 +92,10 @@
 #include "../workqueue_internal.h"
 #include "../smpboot.h"
 #include "../locking/mutex.h"
-
-EXPORT_TRACEPOINT_SYMBOL_GPL(ipi_send_cpu);
-EXPORT_TRACEPOINT_SYMBOL_GPL(ipi_send_cpumask);
-
 /*
  * Export tracepoints that act as a bare tracehook (ie: have no trace event
  * associated with them) to allow external modules to probe them.
  */
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_cfs_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_rt_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_dl_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_irq_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_se_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(pelt_hw_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_cpu_capacity_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_overutilized_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_util_est_cfs_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_util_est_se_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_update_nr_running_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_compute_energy_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_entry_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_exit_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_set_need_resched_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_dl_throttle_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_dl_replenish_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_dl_update_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_dl_server_start_tp);
-EXPORT_TRACEPOINT_SYMBOL_GPL(sched_dl_server_stop_tp);
-
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 DEFINE_PER_CPU(struct rnd_state, sched_rnd_state);
 
@@ -198,12 +167,9 @@ sched_core_dequeue(struct rq *rq, struct task_struct *p, int flags) { }
 
 
 /* need a wrapper since we may need to trace from modules */
-EXPORT_TRACEPOINT_SYMBOL(sched_set_state_tp);
-
 /* Call via the helper macro trace_set_current_state. */
 void __trace_set_current_state(int state_value)
 {
-	trace_sched_set_state_tp(current, state_value);
 }
 EXPORT_SYMBOL(__trace_set_current_state);
 
@@ -836,7 +802,6 @@ static void __resched_curr(struct rq *rq, int tif)
 
 	cpu = cpu_of(rq);
 
-	trace_sched_set_need_resched_tp(curr, cpu, tif);
 	if (cpu == smp_processor_id()) {
 		set_ti_thread_flag(cti, tif);
 		if (tif == TIF_NEED_RESCHED)
@@ -848,13 +813,11 @@ static void __resched_curr(struct rq *rq, int tif)
 		if (tif == TIF_NEED_RESCHED)
 			smp_send_reschedule(cpu);
 	} else {
-		trace_sched_wake_idle_without_ipi(cpu);
 	}
 }
 
 void __trace_set_need_resched(struct task_struct *curr, int tif)
 {
-	trace_sched_set_need_resched_tp(curr, smp_processor_id(), tif);
 }
 EXPORT_SYMBOL_GPL(__trace_set_need_resched);
 
@@ -982,8 +945,6 @@ static void wake_up_idle_cpu(int cpu)
 	 */
 	if (set_nr_and_not_polling(task_thread_info(rq->idle), TIF_NEED_RESCHED))
 		smp_send_reschedule(cpu);
-	else
-		trace_sched_wake_idle_without_ipi(cpu);
 }
 
 static bool wake_up_full_nohz_cpu(int cpu)
@@ -1926,7 +1887,6 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
 		 */
 		if (p->se.sched_delayed)
 			dequeue_task(rq, p, DEQUEUE_SLEEP | DEQUEUE_DELAYED);
-		trace_sched_wait_task(p);
 		running = task_on_cpu(rq, p);
 		queued = task_on_rq_queued(p);
 		ncsw = 0;
@@ -2919,7 +2879,6 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 
 	WARN_ON_ONCE(is_migration_disabled(p));
 
-	trace_sched_migrate_task(p, new_cpu);
 
 	if (task_cpu(p) != new_cpu) {
 		if (p->sched_class->migrate_task_rq)
@@ -3030,7 +2989,6 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
 	if (!cpumask_test_cpu(arg.src_cpu, arg.dst_task->cpus_ptr))
 		goto out;
 
-	trace_sched_swap_numa(cur, arg.src_cpu, p, arg.dst_cpu);
 	ret = stop_two_cpus(arg.dst_cpu, arg.src_cpu, migrate_swap_stop, &arg);
 
 out:
@@ -3267,7 +3225,6 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 static inline void ttwu_do_wakeup(struct task_struct *p)
 {
 	WRITE_ONCE(p->__state, TASK_RUNNING);
-	trace_sched_wakeup(p);
 }
 
 void update_rq_avg_idle(struct rq *rq)
@@ -3416,7 +3373,6 @@ void sched_ttwu_pending(void *arg)
 bool call_function_single_prep_ipi(int cpu)
 {
 	if (set_nr_if_polling(cpu_rq(cpu)->idle)) {
-		trace_sched_wake_idle_without_ipi(cpu);
 		return false;
 	}
 
@@ -3757,7 +3713,6 @@ int try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		if (!ttwu_state_match(p, state, &success))
 			goto out;
 
-		trace_sched_waking(p);
 		ttwu_do_wakeup(p);
 		goto out;
 	}
@@ -3773,7 +3728,6 @@ int try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 		if (!ttwu_state_match(p, state, &success))
 			break;
 
-		trace_sched_waking(p);
 
 		/*
 		 * Ensure we load p->on_rq _after_ p->state, otherwise it would
@@ -4422,7 +4376,6 @@ void wake_up_new_task(struct task_struct *p)
 	post_init_entity_util_avg(p);
 
 	activate_task(rq, p, ENQUEUE_NOCLOCK | ENQUEUE_INITIAL);
-	trace_sched_wakeup_new(p);
 	wakeup_preempt(rq, p, wake_flags);
 	if (p->sched_class->task_woken) {
 		/*
@@ -4886,7 +4839,6 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
 	 * switched the context for the first time. It is returning from
 	 * schedule for the first time in this path.
 	 */
-	trace_sched_exit_tp(true);
 	preempt_enable();
 
 	if (current->set_child_tid)
@@ -5921,7 +5873,6 @@ static void __sched notrace __schedule(int sched_mode)
 	int cpu;
 
 	/* Trace preemptions consistently with task switches */
-	trace_sched_entry_tp(sched_mode == SM_PREEMPT);
 
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
@@ -6074,7 +6025,6 @@ keep_resched:
 		psi_sched_switch(prev, next, !task_on_rq_queued(prev) ||
 					     prev->se.sched_delayed);
 
-		trace_sched_switch(preempt, prev, next, prev_state);
 
 		/* Also unlocks the rq: */
 		rq = context_switch(rq, prev, next, &rf);
@@ -6084,7 +6034,6 @@ keep_resched:
 		hrtick_schedule_exit(rq);
 		raw_spin_rq_unlock_irq(rq);
 	}
-	trace_sched_exit_tp(is_switch);
 }
 
 void __noreturn do_task_dead(void)
@@ -6523,7 +6472,6 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
 		goto out_unlock;
 	}
 
-	trace_sched_pi_setprio(p, pi_task);
 	oldprio = p->prio;
 
 	if (oldprio == prio && !dl_prio(prio))
@@ -7200,7 +7148,6 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
 
 	/* TODO: This is not properly updating schedstats */
 
-	trace_sched_move_numa(p, curr_cpu, target_cpu);
 	return stop_one_cpu(curr_cpu, migration_cpu_stop, &arg);
 }
 
@@ -8912,11 +8859,6 @@ const u32 sched_prio_to_wmult[40] = {
  /*  10 */  39045157,  49367440,  61356676,  76695844,  95443717,
  /*  15 */ 119304647, 148102320, 186737708, 238609294, 286331153,
 };
-
-void call_trace_sched_update_nr_running(struct rq *rq, int count)
-{
-        trace_sched_update_nr_running_tp(rq, count);
-}
 
 #ifdef CONFIG_SCHED_MM_CID
 /*

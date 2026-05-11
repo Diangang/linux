@@ -36,8 +36,6 @@
 #include <scsi/scsi_transport.h> /* scsi_init_limits() */
 #include <scsi/scsi_dh.h>
 
-#include <trace/events/scsi.h>
-
 #include "scsi_debugfs.h"
 #include "scsi_priv.h"
 #include "scsi_logging.h"
@@ -1644,11 +1642,9 @@ static enum scsi_qc_status scsi_dispatch_cmd(struct scsi_cmnd *cmd)
 
 	}
 
-	trace_scsi_dispatch_cmd_start(cmd);
 	rtn = host->hostt->queuecommand(host, cmd);
 	if (rtn) {
 		atomic_dec(&cmd->device->iorequest_cnt);
-		trace_scsi_dispatch_cmd_error(cmd, rtn);
 		if (rtn != SCSI_MLQUEUE_DEVICE_BUSY &&
 		    rtn != SCSI_MLQUEUE_TARGET_BUSY)
 			rtn = SCSI_MLQUEUE_HOST_BUSY;
@@ -1747,7 +1743,6 @@ static void scsi_done_internal(struct scsi_cmnd *cmd, bool complete_directly)
 		return;
 	if (unlikely(test_and_set_bit(SCMD_STATE_COMPLETE, &cmd->state)))
 		return;
-	trace_scsi_dispatch_cmd_done(cmd);
 
 	if (complete_directly)
 		blk_mq_complete_request_direct(req, scsi_complete);

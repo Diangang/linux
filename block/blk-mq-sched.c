@@ -8,8 +8,6 @@
 #include <linux/module.h>
 #include <linux/list_sort.h>
 
-#include <trace/events/block.h>
-
 #include "blk.h"
 #include "blk-mq.h"
 #include "blk-mq-debugfs.h"
