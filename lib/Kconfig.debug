@@ -1350,18 +1350,6 @@ config LKDTM
 	Documentation on how to use the module can be found in
 	Documentation/fault-injection/provoke-crashes.rst
 
-config CPUMASK_KUNIT_TEST
-	tristate "KUnit test for cpumask" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable to turn on cpumask tests, running at boot or module load time.
-
-	  For more information on KUnit and unit tests in general, please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
 config TEST_LIST_SORT
 	tristate "Linked list sorting test" if !KUNIT_ALL_TESTS
 	depends on KUNIT
@@ -1422,30 +1410,12 @@ config ASYNC_RAID6_TEST
 
 	  If unsure, say N.
 
-config PRINTF_KUNIT_TEST
-	tristate "KUnit test printf() family of functions at runtime" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable this option to test the printf functions at runtime.
-
-	  If unsure, say N.
-
 config SCANF_KUNIT_TEST
 	tristate "KUnit test scanf() family of functions at runtime" if !KUNIT_ALL_TESTS
 	depends on KUNIT
 	default KUNIT_ALL_TESTS
 	help
 	  Enable this option to test the scanf functions at runtime.
-
-	  If unsure, say N.
-
-config SEQ_BUF_KUNIT_TEST
-	tristate "KUnit test for seq_buf" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This builds unit tests for the seq_buf library.
 
 	  If unsure, say N.
 
@@ -1512,23 +1482,6 @@ config BITOPS_KUNIT
 
 	  Note that this is derived from the original test_bitops module.
 	  For micro-benchmarks and compiler warning checks, enable TEST_BITOPS.
-
-	  If unsure, say N.
-
-config BITFIELD_KUNIT
-	tristate "KUnit test bitfield functions at runtime" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable this option to test the bitfield functions at boot.
-
-	  KUnit tests run during boot and output the results to the debug log
-	  in TAP format (http://testanything.org/). Only useful for kernel devs
-	  running the KUnit test harness, and not intended for inclusion into a
-	  production build.
-
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
 
 	  If unsure, say N.
 
@@ -1731,23 +1684,6 @@ config CMDLINE_KUNIT_TEST
 
 	  If unsure, say N.
 
-config BASE64_KUNIT
-	tristate "KUnit test for base64 decoding and encoding" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the base64 unit tests.
-
-	  The tests cover the encoding and decoding logic of Base64 functions
-	  in the kernel.
-	  In addition to correctness checks, simple performance benchmarks
-	  for both encoding and decoding are also included.
-
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
 config BITS_TEST
 	tristate "KUnit test for bit functions and macros" if !KUNIT_ALL_TESTS
 	depends on KUNIT
@@ -1767,28 +1703,6 @@ config SLUB_KUNIT_TEST
 	help
 	  This builds SLUB allocator unit test.
 	  Tests SLUB cache debugging functionality.
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
-config RATIONAL_KUNIT_TEST
-	tristate "KUnit test for rational.c" if !KUNIT_ALL_TESTS
-	depends on KUNIT && RATIONAL
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the rational math unit test.
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
-config MEMCPY_KUNIT_TEST
-	tristate "Test memcpy(), memmove(), and memset() functions at runtime" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Builds unit tests for memcpy(), memmove(), and memset() functions.
 	  For more information on KUnit and unit tests in general please refer
 	  to the KUnit documentation in Documentation/dev-tools/kunit/.
 
@@ -1995,17 +1909,6 @@ config RATELIMIT_KUNIT_TEST
 
 	  If unsure, say N.
 
-config UUID_KUNIT_TEST
-	tristate "KUnit test for UUID" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This option enables the KUnit test suite for the uuid library,
-	  which provides functions for generating and parsing UUID and GUID.
-	  The test suite checks parsing of UUID and GUID strings.
-
-	  If unsure, say N.
-
 config INT_POW_KUNIT_TEST
 	tristate "Integer exponentiation (int_pow) test" if !KUNIT_ALL_TESTS
 	depends on KUNIT
@@ -2047,19 +1950,6 @@ config INT_LOG_KUNIT_TEST
           base 10, called respectively as intlog2 and intlog10.
 
           If unsure, say N
-
-config GCD_KUNIT_TEST
-	tristate "Greatest common divisor test" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This option enables the KUnit test suite for the gcd() function,
-	  which computes the greatest common divisor of two numbers.
-
-	  This test suite verifies the correctness of gcd() across various
-	  scenarios, including edge cases.
-
-	  If unsure, say N
 
 endif # RUNTIME_TESTING_MENU
 
