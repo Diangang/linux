@@ -195,18 +195,6 @@ config KASAN_VMALLOC
 	  With Hardware Tag-Based KASAN, only non-executable VM_ALLOC mappings
 	  are checked. There is no additional memory usage.
 
-config KASAN_KUNIT_TEST
-	tristate "KUnit-compatible tests of KASAN bug detection capabilities" if !KUNIT_ALL_TESTS
-	depends on KASAN && KUNIT && BROKEN
-	default KUNIT_ALL_TESTS
-	help
-	  A KUnit-based KASAN test suite. Triggers different kinds of
-	  out-of-bounds and use-after-free accesses. Useful for testing whether
-	  KASAN can detect certain bug types.
-
-	  For more information on KUnit and unit tests in general, please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
 config KASAN_EXTRA_INFO
 	bool "Record and report more information"
 	depends on KASAN
