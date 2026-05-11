@@ -103,7 +103,7 @@ vmlinux_link()
 	${ld} ${ldflags} -o ${output}					\
 		${wl}--whole-archive ${objs} ${wl}--no-whole-archive	\
 		${wl}--start-group ${libs} ${wl}--end-group		\
-		${kallsymso} ${btf_vmlinux_bin_o} ${arch_vmlinux_o} ${ldlibs}
+		${kallsymso} ${arch_vmlinux_o} ${ldlibs}
 }
 
 # Create ${2}.o file with all symbols from the ${1} object file
@@ -180,8 +180,6 @@ if is_enabled CONFIG_ARCH_WANTS_PRE_LINK_VMLINUX; then
 	arch_vmlinux_o=arch/${SRCARCH}/tools/vmlinux.arch.o
 fi
 
-btf_vmlinux_bin_o=
-btfids_vmlinux=
 kallsymso=
 strip_debug=
 generate_map=
@@ -191,25 +189,10 @@ if is_enabled CONFIG_KALLSYMS; then
 	kallsyms .tmp_vmlinux0.syms .tmp_vmlinux0.kallsyms
 fi
 
-if is_enabled CONFIG_KALLSYMS || is_enabled CONFIG_DEBUG_INFO_BTF; then
-
-	# The kallsyms linking does not need debug symbols, but the BTF does.
-	if ! is_enabled CONFIG_DEBUG_INFO_BTF; then
-		strip_debug=1
-	fi
-
+if is_enabled CONFIG_KALLSYMS; then
+	# The kallsyms linking does not need debug symbols.
+	strip_debug=1
 	vmlinux_link .tmp_vmlinux1
-fi
-
-if is_enabled CONFIG_DEBUG_INFO_BTF; then
-	info BTF .tmp_vmlinux1
-	if ! ${CONFIG_SHELL} ${srctree}/scripts/gen-btf.sh .tmp_vmlinux1; then
-		echo >&2 "Failed to generate BTF for vmlinux"
-		echo >&2 "Try to disable CONFIG_DEBUG_INFO_BTF"
-		exit 1
-	fi
-	btf_vmlinux_bin_o=.tmp_vmlinux1.btf.o
-	btfids_vmlinux=.tmp_vmlinux1.BTF_ids
 fi
 
 if is_enabled CONFIG_KALLSYMS; then
@@ -261,11 +244,6 @@ if is_enabled CONFIG_VMLINUX_MAP; then
 fi
 
 vmlinux_link "${VMLINUX}"
-
-if is_enabled CONFIG_DEBUG_INFO_BTF; then
-	info BTFIDS ${VMLINUX}
-	${RESOLVE_BTFIDS} --patch_btfids ${btfids_vmlinux} ${VMLINUX}
-fi
 
 mksysmap "${VMLINUX}" System.map
 

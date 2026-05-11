@@ -8,7 +8,6 @@ help:
 	@echo 'Possible targets:'
 	@echo ''
 	@echo '  objtool                - an ELF object analysis tool'
-	@echo '  bpf/resolve_btfids    - BTF ID resolver used by kernel builds'
 	@echo ''
 	@echo 'Cleaning targets:'
 	@echo ''
@@ -16,12 +15,6 @@ help:
 
 objtool: FORCE
 	$(call descend,$@)
-
-bpf/%: FORCE
-	$(call descend,$@)
-
-libbpf_clean:
-	$(call descend,lib/bpf,clean)
 
 libsubcmd_clean:
 	$(call descend,lib/subcmd,clean)
@@ -32,9 +25,6 @@ build_clean:
 objtool_clean:
 	$(call descend,objtool,clean)
 
-resolve_btfids_clean:
-	$(call descend,bpf/resolve_btfids,clean)
-
-clean: objtool_clean resolve_btfids_clean build_clean libbpf_clean libsubcmd_clean
+clean: objtool_clean build_clean libsubcmd_clean
 
 .PHONY: FORCE
