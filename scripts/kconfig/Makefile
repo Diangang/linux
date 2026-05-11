@@ -101,7 +101,7 @@ endif
 %_defconfig: $(obj)/conf
 	$(Q)$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$@ $(Kconfig)
 
-configfiles = $(wildcard $(srctree)/kernel/configs/$(1) $(srctree)/arch/$(SRCARCH)/configs/$(1))
+configfiles = $(wildcard $(srctree)/arch/$(SRCARCH)/configs/$(1))
 all-config-fragments = $(call configfiles,*.config)
 config-fragments = $(call configfiles,$@)
 
@@ -111,11 +111,6 @@ cmd_merge_fragments = $(srctree)/scripts/kconfig/merge_config.sh -m $(KCONFIG_CO
 	$(if $(config-fragments),, $(error $@ fragment does not exists on this architecture))
 	$(call cmd,merge_fragments)
 	$(Q)$(MAKE) -f $(srctree)/Makefile olddefconfig
-
-PHONY += tinyconfig
-tinyconfig:
-	$(Q)KCONFIG_ALLCONFIG=kernel/configs/tiny-base.config $(MAKE) -f $(srctree)/Makefile allnoconfig
-	$(Q)$(MAKE) -f $(srctree)/Makefile tiny.config
 
 # CHECK: -o cache_dir=<path> working?
 PHONY += testconfig
@@ -152,7 +147,6 @@ help:
 	@echo  '  helpnewconfig   - List new options and help text'
 	@echo  '  olddefconfig	  - Same as oldconfig but sets new symbols to their'
 	@echo  '                    default value without prompting'
-	@echo  '  tinyconfig	  - Configure the tiniest possible kernel'
 	@echo  '  testconfig	  - Run Kconfig unit tests (requires python3 and pytest)'
 	@echo  ''
 	@echo  'Configuration topic targets:'
