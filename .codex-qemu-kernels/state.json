@@ -15,13 +15,18 @@
   "run_control": {
     "status": "ready",
     "phase": "ready_to_continue",
-    "active_step": "validated and committed residual zero-dependency SCSI header deletion; continue current-tree module/file proof passes",
+    "active_step": "tools BTF/libbpf residual proof pass complete and committed at 47ae39f6f088; next refresh current whole-file candidates and select one new non-trace module-directory proof target",
     "stop_condition": null,
     "last_error": null,
-    "last_exit": "clean_commit",
+    "last_exit": "clean_review",
     "last_round": 112,
     "last_log": ".codex-qemu-kernels/logs/agent-runs/bugfix-round-20260505-230414-5.log",
-    "heartbeat": "2026-05-07T01:03:23Z",
+    "heartbeat": "2026-05-11T06:59:27Z",
+    "last_live_check": {
+      "time": "2026-05-11T06:59:27Z",
+      "source_tree": "clean excluding .codex-qemu-kernels",
+      "active_supervisor_or_validation": false
+    },
     "budgets": {
       "max_rounds": 0,
       "max_failures": 3,
@@ -73,8 +78,8 @@
       ".codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md",
       ".codex-qemu-kernels/reviews/"
     ],
-    "startup_instruction": "Resume from clean source HEAD 069efd8ed1b6 after validated residual zero-dependency SCSI header deletion. Continue current-tree module/file proof passes; prefer whole directories or tightly-coupled file families before single-file and file-internal trimming. Keep dependency-retained headers such as hidden, compiler-version, highmem-internal, time32, virtio, NFS/netfs, quota, LSM, TTY/console, extcon, nvmem, wwan, and pstore unless a later proof removes their retained users.",
-    "last_updated": "2026-05-07"
+    "startup_instruction": "Resume from clean source HEAD 47ae39f6f088 after validated and review-clean tools BTF/libbpf residual proof pass. Commit 47ae39f6f088 removed tools/bpf/resolve_btfids, tools/lib/bpf, scripts/Makefile.btf, scripts/gen-btf.sh, and stale BTF Makefile/Kconfig/link wiring. Full validation `JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh` passed on 2026-05-11 with QEMU Minix tests for x86_64 and arm64 on /dev/nvme0n1 and /dev/sda. Next default task: refresh current whole-file candidates and select one new non-trace module-directory proof target; do not reopen trace, kernel/configs, or tools BTF/libbpf cleanup without new build/config evidence.",
+    "last_updated": "2026-05-11"
   },
   "boundaries": {
     "roadmap": ".codex-qemu-kernels/Kernel-Minimal-Roadmap.md",
@@ -829,7 +834,7 @@
         "include/",
         "scripts/"
       ],
-      "note": "Root-level Documentation, LICENSES, and README have now been removed. No root-level directory deletion target is currently recorded as ready; continue with remaining coarse subdirectory candidates or whole-file stragglers."
+      "note": "Root-level Documentation, LICENSES, README, and now the deferred tools BTF/libbpf residuals have been removed. Continue with remaining coarse subdirectory candidates or whole-file stragglers."
     },
     {
       "stage": 6,
@@ -1017,14 +1022,23 @@
         "39dd292cb903",
         "22035d8cc825",
         "6c52033fc509",
-    "d4af0e8c77f7",
-    "9de5664f88c0",
-    "08e7dda4eafe",
-    "efe7759cc0f4",
-    "e105d0078882",
-    "069efd8ed1b6"
+        "d4af0e8c77f7",
+        "9de5664f88c0",
+        "08e7dda4eafe",
+        "efe7759cc0f4",
+        "e105d0078882",
+        "069efd8ed1b6",
+        "e7047a6fcad0",
+        "7d26ffefd3f3",
+        "d2efead577d6",
+        "1c077be78fe4",
+        "8322a7a57760",
+        "ea2438b59c29",
+        "7a45416c35af",
+        "35ce50121a22",
+        "47ae39f6f088"
       ],
-  "note": "Whole-file/support-tree trimming is active. Current HEAD 069efd8ed1b6 is validated after deleting residual zero-dependency SCSI headers. Continue whole-directory and file-family proof passes before file-internal trimming.",
+      "note": "Whole-file/support-tree trimming is active. Current HEAD 47ae39f6f088 is validated and review-clean after the tools BTF/libbpf residual proof pass. tools/bpf/resolve_btfids, tools/lib/bpf, scripts/Makefile.btf, scripts/gen-btf.sh, and stale BTF build/config/link wiring are removed. Trace, kernel/configs, and tools BTF/libbpf passes are complete for the current whole-file rule. Next task is a new non-trace module-directory proof target selected after refreshing current candidates.",
       "task_method": "module_directory_proof_pass"
     },
     {
@@ -1034,72 +1048,97 @@
     }
   ],
   "current_patch": {
-    "commit": "069efd8ed1b6",
-    "summary": "refactor(裁剪include): 删除残留无依赖SCSI头文件",
-    "scope": "residual zero-dependency SCSI header deletion",
+    "commit": "47ae39f6f088",
+    "summary": "refactor(裁剪): 删除 BTF 工具链残留",
+    "scope": "tools BTF/libbpf residual proof pass removed tools/bpf/resolve_btfids, tools/lib/bpf, the BTF generation scripts, and stale Makefile/Kconfig/link wiring; fixed configs do not enable DEBUG_INFO_BTF and generated .cmd files have no active tools/lib/bpf dependencies",
     "validation": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh"
   },
   "validation": {
     "status": "passed",
     "command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
     "logs": [
-      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260507-080929-attempt1.log",
-      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260507-080932-attempt1.log"
+      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260511-145704-attempt1.log",
+      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260511-145707-attempt1.log"
     ],
-    "metrics": ".codex-qemu-kernels/metrics/metrics-20260507-080933.txt"
+    "metrics": ".codex-qemu-kernels/metrics/metrics-20260511-145708.txt"
   },
   "review": {
     "status": "clean",
-    "record": ".codex-qemu-kernels/reviews/stage6-scsi-residual-header-deletion-20260507.md"
+    "record": ".codex-qemu-kernels/reviews/tools-btf-libbpf-residual-pass-20260511.md",
+    "reviewed_commit": "47ae39f6f088",
+    "reviewed_at": "2026-05-11T06:59:27Z",
+    "findings": []
   },
   "current_reassessment": {
-    "date": "2026-05-06",
-    "head": "32bbdffde87e",
+    "date": "2026-05-11",
+    "head": "47ae39f6f088",
     "basis": [
-      "find arch block drivers fs init kernel lib mm scripts tools usr -type f",
-      "find .codex-qemu-kernels/build-x86_64 .codex-qemu-kernels/build-arm64 for .o, .ko, and built-in.a",
+      "find arch block drivers fs init kernel lib mm scripts tools usr -type f after d2efead577d6",
+      "find .codex-qemu-kernels/build-x86_64 .codex-qemu-kernels/build-arm64 for .o, .ko, and built-in.a after fixed validation",
       "rg over generated .*.cmd files for host-tool and source dependencies",
       "current fixed x86_64 and arm64 .config files",
-      ".codex-qemu-kernels/metrics/metrics-20260505-190459.txt"
+      ".codex-qemu-kernels/metrics/metrics-20260509-171333.txt",
+      "post-lib deletion validation at d2efead577d6",
+      "post-lib Kconfig/select fallout validation at 1c077be78fe4",
+      ".codex-qemu-kernels/metrics/metrics-20260509-173035.txt",
+      "cascading BROKEN-consumer source cleanup validation at 8322a7a57760",
+      ".codex-qemu-kernels/metrics/metrics-20260509-215459.txt",
+      "trace Kconfig/build fallout cleanup validation at ea2438b59c29",
+      ".codex-qemu-kernels/metrics/metrics-20260509-222105.txt",
+      "post-trace cascading cleanup validation at 7a45416c35af",
+      ".codex-qemu-kernels/metrics/metrics-20260510-173441.txt",
+      "consolidated trace residual proof pass validation at 35ce50121a22",
+      ".codex-qemu-kernels/metrics/metrics-20260511-122044.txt",
+      ".codex-qemu-kernels/reviews/trace-residual-proof-pass-20260511.md",
+      "2026-05-11 git status --porcelain=v1 -uall -- :!/.codex-qemu-kernels returned clean",
+      "2026-05-11 pgrep found no active codex-supervisor, validation, QEMU, or kernel build process",
+      "kernel/configs directory proof pass validation at a4dc450dfc70",
+      ".codex-qemu-kernels/metrics/metrics-20260511-144520.txt",
+      ".codex-qemu-kernels/reviews/kernel-configs-directory-pass-20260511.md",
+      "tools BTF/libbpf residual proof pass validation at 47ae39f6f088",
+      ".codex-qemu-kernels/metrics/metrics-20260511-145708.txt",
+      ".codex-qemu-kernels/reviews/tools-btf-libbpf-residual-pass-20260511.md"
     ],
     "inventory_counts": {
-      "source_files_total": 6514,
-      "built_artifacts_total": 2053,
+      "source_files_total": 5254,
+      "built_artifacts_total": 2758,
       "source_files_by_top": {
-        "arch": 1453,
-        "block": 73,
-        "drivers": 2773,
-        "fs": 157,
-        "init": 16,
-        "kernel": 630,
-        "lib": 706,
-        "mm": 133,
-        "scripts": 212,
-        "tools": 338,
-        "usr": 23
+        "arch": 1337,
+        "block": 68,
+        "drivers": 764,
+        "fs": 150,
+        "include": 1745,
+        "init": 13,
+        "kernel": 380,
+        "lib": 225,
+        "mm": 123,
+        "scripts": 156,
+        "tools": 286,
+        "usr": 7
       },
       "built_artifacts_by_top": {
-        "arch": 515,
-        "block": 48,
-        "drivers": 765,
-        "fs": 124,
-        "init": 9,
-        "kernel": 251,
-        "lib": 178,
-        "mm": 85,
-        "scripts": 37,
+        "arch": 505,
+        "block": 84,
+        "drivers": 991,
+        "fs": 233,
+        "init": 18,
+        "kernel": 371,
+        "lib": 305,
+        "mm": 151,
+        "scripts": 53,
         "tools": 32,
-        "usr": 2
+        "usr": 4
       },
-      "cmd_dependency_files": 3554
+      "cmd_dependency_files": 3068
     },
-    "current_conclusion": "Control records were refreshed after git history advanced beyond the stale e8492b4d13ff firmware checkpoint. Future work must start with a fresh current-tree inventory and then continue module-directory proof passes; do not continue from the old drivers/firmware next_patch assumption.",
+    "current_conclusion": "tools BTF/libbpf residual proof pass is complete at validated and review-clean HEAD 47ae39f6f088. The deferred tools/bpf/resolve_btfids and tools/lib/bpf host-tool chain is removed along with stale BTF build/config/link wiring. Next work should refresh current whole-file candidates and select a new non-trace module-directory target.",
     "explicit_keep": [
       "fs/pstore/ and CONFIG_PSTORE_RAM: kept by user decision for panic log persistence/debuggability; arm64 also keeps REED_SOLOMON because pstore_ram/ramoops selects it.",
       "drivers/of/: keep for arm64 boot/devicetree path unless a focused redesign proves a narrower replacement.",
       "drivers/iommu/: broad deletion deferred because it is built and tied to DMA/IOMMU boot policy.",
       "drivers/pci/, drivers/nvme/, drivers/scsi/, block/, fs/minix/, fs/ramfs/, fs/kernfs/, fs/sysfs/, init/, usr/: required or likely required by the fixed storage validation path.",
-      "scripts/basic, scripts/kconfig, scripts/dtc, scripts/mod, scripts/link-vmlinux.sh, scripts/kallsyms.c, scripts/module-common.c, tools/objtool, tools/build, tools/include, and tools/lib paths observed in .cmd dependencies or required host build flow."
+      "scripts/basic, scripts/kconfig, scripts/dtc, scripts/mod, scripts/link-vmlinux.sh, scripts/kallsyms.c, scripts/module-common.c, tools/objtool, tools/build, tools/include, and tools/lib paths observed in .cmd dependencies or required host build flow.",
+      "tools/objtool, tools/build, tools/include, tools/arch/x86, tools/lib/subcmd, and tools/scripts: kept for fixed x86_64 host-build path; tools/bpf/resolve_btfids and tools/lib/bpf are removed at 47ae39f6f088."
     ],
     "empty_directories_observed": [
       "arch/x86/kernel/cpu/resctrl",
@@ -1108,69 +1147,83 @@
     ],
     "proof_candidates": [
       {
-        "area": "scripts/tools",
+        "area": "post-lib Kconfig/select fallout",
         "examples": [
-          "remaining bash helpers not present in .cmd dependencies",
-          "unused optional Makefile fragments after fixed config review",
-          "tools subtrees outside objtool/build/include/lib if no include/reference edge remains"
+          "lib/Kconfig entries for deleted compression, BCH, textsearch, and helper implementations",
+          "lib/crc/Kconfig entries for deleted CRC variants and external CRC8 select from drivers/pci/controller/dwc/Kconfig",
+          "lib/crypto/Kconfig entries for deleted crypto library implementations and external CRYPTO_LIB_AESGCM select from arch/x86/Kconfig",
+          "lib/math/Kconfig POLYNOMIAL after deleting lib/math/polynomial.c"
         ],
-        "status": "proof_required",
-        "risk": "Host build uses scripts/tools extensively; current scan shows direct dependencies on link-vmlinux.sh, modpost, module-common.c, objtool, and generated syscall/head-object helper flow."
+        "status": "completed",
+        "risk": "Remove or guard stale symbols only after checking fixed configs and all external selects; this should be a config/wiring cleanup pass, not file-internal trimming.",
+        "commit": "1c077be78fe4"
       },
       {
-        "area": "drivers leaf directories",
+        "area": "include cascading headers",
         "examples": [
-          "drivers/clk/x86",
-          "drivers/firmware/efi/stmm",
-          "selected one-ref platform leaf directories under drivers/clk, drivers/firmware, and drivers/dma"
+          "post-commit cascading scan after 7d26ffefd3f3 reported 0 remaining candidates",
+          "include/asm-generic and include/uapi/asm-generic remain excluded because mandatory-y/generic-y generated wrappers require separate proof"
         ],
-        "status": "proof_required",
-        "risk": "Many leaf directories only show built-in.a or Kconfig/Makefile edges, but parent directories are built and arch/platform selects may still keep them reachable."
+        "status": "complete_for_current_rule",
+        "risk": "Do not delete asm-generic or uapi asm-generic from naive scans; they require dedicated Kbuild/generated-wrapper proof."
       },
       {
-        "area": "arch leaves",
+        "area": "drivers remaining module directories",
         "examples": [
-          "arch/arm64/kernel/vdso32",
-          "arch/x86/purgatory",
-          "arch/x86/ras",
-          "arch/x86/entry/vdso/common"
+          "drivers remaining leaf files after prior module passes",
+          "drivers/firmware residual optional leaves only after reassessment",
+          "drivers/clk, drivers/dma, drivers/pci, and drivers/scsi only through focused module proof"
         ],
-        "status": "proof_required",
-        "risk": "arch/arm64 vdso32 has explicit Makefile wiring; x86 purgatory is tied to KEXEC support; x86_64 keeps IA32_EMULATION and KEXEC enabled in current config."
+        "status": "next_proof_required_after_lib_fallout",
+        "risk": "Remaining driver directories contain fixed boot/storage dependencies; keep one directory-scoped proof pass per commit."
       },
       {
-        "area": "kernel optional leaves",
+        "area": "core directories retained until late proof",
         "examples": [
-          "kernel/bpf/preload",
-          "kernel/trace/rv"
+          "block/",
+          "mm/",
+          "kernel/time and kernel/irq",
+          "drivers/pci, drivers/of, drivers/scsi core, drivers/nvme host"
         ],
         "status": "proof_required",
-        "risk": "BPF preload is currently disabled but kernel/bpf/inode.c includes preload headers; runtime verification and build wiring cleanup are required before deletion."
+        "risk": "These are on the fixed NVMe plus SCSI HDD Minix path or shared boot/runtime paths; defer file-internal trimming until no safe directory or whole-file targets remain."
       },
       {
-        "area": "lib optional compression/crypto leaves",
+        "area": "kernel/configs generic config fragments",
         "examples": [
-          "lib/842",
-          "lib/crypto/mpi",
-          "lib/raid6",
-          "lib/zstd/compress",
-          "cross-arch crc/crypto assembly-only leaves"
+          "kernel/configs/*.config fragments",
+          "scripts/kconfig Makefile kernel/configs search path",
+          "tinyconfig target depending on deleted tiny-base/tiny fragments"
         ],
-        "status": "proof_required",
-        "risk": "Some are not fixed-runtime storage features, but compression, firmware loading, decompressor, pstore, or generated-table paths can select shared lib code."
+        "status": "completed",
+        "risk": "Keep arch-local defconfig/config-fragment handling; do not remove kernel/configs.c because it is unrelated IKCONFIG source.",
+        "commit": "a4dc450dfc70"
+      },
+      {
+        "area": "tools BTF/libbpf residuals",
+        "examples": [
+          "tools/bpf/resolve_btfids/",
+          "tools/lib/bpf/",
+          "scripts/Makefile.btf and scripts/gen-btf.sh",
+          "DEBUG_INFO_BTF and related stale Kconfig/build wiring"
+        ],
+        "status": "completed",
+        "risk": "Do not reopen without a new config/build proof that changes the fixed validation contract.",
+        "commit": "47ae39f6f088"
       }
     ],
     "task_model": "module_directory_proof_pass"
   },
   "next_patch": {
-    "status": "reassessment_required",
+    "status": "pending_next_module_directory_reassessment",
     "task_model": "module_directory_proof_pass",
-    "candidate": "next current-tree module directory or header-family proof target",
-    "selection_rule": "Continue from clean HEAD 069efd8ed1b6; reassess remaining current-tree zero-dependency include/header candidates and prefer whole directories or tightly-coupled file families before single-file or file-internal trimming.",
+    "candidate": "refresh current whole-file candidates after completed tools BTF/libbpf residual pass",
+    "selection_rule": "Analyze first from clean source HEAD 47ae39f6f088. Do not reopen trace, kernel/configs, or tools BTF/libbpf cleanup as micro-patches; those passes are complete and review-clean. Select one new non-trace module directory or tightly coupled whole-file group. Prefer whole-directory or whole-file deletion before file-internal trimming, and make one source commit only after the selected module pass is fully analyzed and validated.",
     "required_validation": [
-      "git status --porcelain=v1 -uall -- ':!/.codex-qemu-kernels' before and after source changes",
+      "git status --porcelain=v1 -uall -- :!/.codex-qemu-kernels before and after source changes",
+      "write a module-directory ledger for the selected non-trace target covering fixed configs, Makefile/Kconfig wiring, .cmd dependencies, and keep/delete/defer classification",
+      "rg for references to deleted source files and stale Kconfig/Makefile entries from the selected module pass",
       "git diff --check before commit or git show --check after commit",
-      "find affected module directory -type d -empty -print to confirm no empty source directories remain",
       "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
       "confirm x86_64 and arm64 QEMU Minix tests pass for /dev/nvme0n1 and /dev/sda"
     ]
@@ -1240,9 +1293,9 @@
     {
       "rank": 2,
       "target": "tools/",
-      "status": "done_no_source_patch",
-      "scope": "recursive host-tool directory pass completed with no safe standalone deletion",
-      "reason": "Objtool/build/include/subcmd/x86 host-tool paths are fixed-build dependencies; resolve_btfids/libbpf leftovers require a separate BTF config-and-wiring proof.",
+      "status": "done_current_pass",
+      "scope": "recursive host-tool directory pass plus deferred BTF/libbpf residual proof completed",
+      "reason": "Objtool/build/include/subcmd/x86 host-tool paths remain fixed-build dependencies; deferred tools/bpf/resolve_btfids and tools/lib/bpf BTF/libbpf leftovers are now removed after config, .cmd, Makefile/Kconfig/link proof.",
       "commit_scope": "one tools commit if confirmed unused tool files/directories remain",
       "required_evidence": [
         "objtool .cmd dependencies",
@@ -1250,9 +1303,10 @@
         "resolve_btfids path use",
         "tools/include and tools/lib include edges"
       ],
-      "keep_bias": "Keep objtool, tools/build, tools/include, tools/arch/x86, tools/lib paths, tools/scripts, and tools/bpf/resolve_btfids unless proven unreferenced by fixed builds.",
+      "keep_bias": "Keep objtool, tools/build, tools/include, tools/arch/x86, tools/lib/subcmd, and tools/scripts. tools/bpf/resolve_btfids and tools/lib/bpf residuals are removed.",
       "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
-      "next_action": "No tools source commit from this pass."
+      "next_action": "No immediate further tools cleanup without a new build/config proof; preserve objtool/build/include/subcmd/x86 host-tool path.",
+      "commit": "47ae39f6f088"
     },
     {
       "rank": 3,
@@ -1511,20 +1565,22 @@
       "target": "kernel/",
       "status": "done_current_pass",
       "scope": "per kernel child directory proof pass",
-      "reason": "Core kernel is high risk; optional BPF/trace/power/config/module leaves should be evaluated one child directory at a time.",
+      "reason": "Core kernel is high risk; kernel/trace source and Kconfig fallout cleanup is validated, while other optional BPF/power/config/module leaves should still be evaluated one child directory at a time.",
       "commit_scope": "one kernel child-module commit, e.g. kernel/trace or kernel/bpf, after full child pass",
       "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
-      "commit": "40873a30668f"
+      "commit": "40873a30668f,8322a7a57760,ea2438b59c29,7a45416c35af,35ce50121a22",
+      "next_action": "Tracepoint core, post-trace cascading cleanup, and consolidated trace residual cleanup are complete for the current whole-file rule; do not reopen trace micro-patches without a new broad dependency proof."
     },
     {
       "rank": 24,
       "target": "lib/",
       "status": "done_current_pass",
       "scope": "per lib child directory proof pass",
-      "reason": "Compression/crypto/checksum libraries may be shared by boot, firmware, initramfs, pstore, or decompressor paths; evaluate child directories separately.",
+      "reason": "Current lib pass removed 338 unused files spanning disabled tests/debug helpers, unused crypto and CRC variants, compression-only implementations, and unused helper libraries while preserving fixed validation paths. Follow-up Kconfig/select fallout cleanup is still required.",
       "commit_scope": "one lib child-module commit after full proof; preserve lib/reed_solomon while pstore_ram is kept",
       "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
-      "commit": "0931023c96dd"
+      "commit": "0931023c96dd,d2efead577d6,1c077be78fe4",
+      "next_action": "Post-lib Kconfig/select fallout cleanup completed; next analyze BROKEN-guarded consumers as cascading deletion candidates before deleting."
     },
     {
       "rank": 25,
@@ -1552,17 +1608,34 @@
       "reason": "init and usr/initramfs generation are required by rdinit validation; trim only after exact generated-initramfs dependency proof.",
       "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
       "commit": "f3d8d92acfaf,0e1a4dea5ee9"
+    },
+    {
+      "rank": 28,
+      "target": "kernel/configs/",
+      "status": "done_current_pass",
+      "scope": "recursive generic kernel config-fragment directory pass",
+      "reason": "Deleted generic config fragments and stale scripts/kconfig kernel/configs/tinyconfig wiring; fixed x86_64 and arm64 validation uses arch-local defconfigs and generated .config files, not these generic fragments.",
+      "commit_scope": "one kernel/configs commit for the whole directory and mechanical Kconfig Makefile fallout",
+      "required_evidence": [
+        "source reference scan",
+        "scripts/kconfig Makefile wiring",
+        "fixed x86_64 and arm64 validation",
+        "QEMU Minix storage logs"
+      ],
+      "task_flow": "先完整梳理该目录需要删除的文件/子目录，再统一删除，固定验证通过后一个 commit。",
+      "commit": "a4dc450dfc70",
+      "next_action": "No immediate further kernel/configs cleanup; directory is removed."
     }
   ],
-  "active_step": "validated and committed residual zero-dependency SCSI header deletion; continue current-tree module/file proof passes",
+  "active_step": "tools BTF/libbpf residual proof pass complete and committed at 47ae39f6f088; next refresh current whole-file candidates and select one new non-trace module-directory proof target",
   "last_validation": {
     "status": "passed",
     "command": "JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh",
     "logs": [
-      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260507-090259-attempt1.log",
-      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260507-090302-attempt1.log"
+      ".codex-qemu-kernels/logs/qemu/minix-storage-x86_64-20260511-145704-attempt1.log",
+      ".codex-qemu-kernels/logs/qemu/minix-storage-arm64-20260511-145707-attempt1.log"
     ],
-    "metrics": ".codex-qemu-kernels/metrics/metrics-20260507-090303.txt",
-    "commit": "069efd8ed1b6"
+    "metrics": ".codex-qemu-kernels/metrics/metrics-20260511-145708.txt",
+    "commit": "47ae39f6f088"
   }
 }

@@ -12,6 +12,25 @@ the fixed validation contract, and that x86_64 plus arm64 validation passed.
 
 Only x86_64 and arm64 are required validation targets for this task.
 
+## Multi-agent operating pattern (non-persistent sessions)
+
+Sub-agent IDs (`Hilbert` for validation and `Carver` for modifications) are
+session-local. After a process restart, only Main agent continuity is guaranteed
+through `.codex-qemu-kernels/state.json`; agent IDs may need to be recreated.
+
+Workflow each round:
+
+1. Main agent performs the round analysis and identifies the exact module,
+   directory scope, and file list to touch.
+2. Main agent sends a narrow, explicit modification ticket to the modify-only
+   agent (`Carver` in this session model).
+3. Main agent reviews returned patch scope and only then dispatches the selected
+   validation command to the validation-only agent (`Hilbert` in this session
+   model).
+
+Never let a modify pass start before the round scope is fixed. Never let a test
+pass decide code edits; validation only confirms the already approved round scope.
+
 ## Dry run
 
 From the repository root:
