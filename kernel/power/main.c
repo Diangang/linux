@@ -578,62 +578,6 @@ static const struct attribute_group suspend_attr_group = {
 	.is_visible = suspend_attr_is_visible,
 };
 
-#ifdef CONFIG_DEBUG_FS
-static int suspend_stats_show(struct seq_file *s, void *unused)
-{
-	int i, index, last_dev, last_errno, last_step;
-	enum suspend_stat_step step;
-
-	last_dev = suspend_stats.last_failed_dev + REC_FAILED_NUM - 1;
-	last_dev %= REC_FAILED_NUM;
-	last_errno = suspend_stats.last_failed_errno + REC_FAILED_NUM - 1;
-	last_errno %= REC_FAILED_NUM;
-	last_step = suspend_stats.last_failed_step + REC_FAILED_NUM - 1;
-	last_step %= REC_FAILED_NUM;
-
-	seq_printf(s, "success: %u\nfail: %u\n",
-		   suspend_stats.success, suspend_stats.fail);
-
-	for (step = SUSPEND_FREEZE; step <= SUSPEND_NR_STEPS; step++)
-		seq_printf(s, "failed_%s: %u\n", suspend_step_names[step],
-			   suspend_stats.step_failures[step-1]);
-
-	seq_printf(s,	"failures:\n  last_failed_dev:\t%-s\n",
-		   suspend_stats.failed_devs[last_dev]);
-	for (i = 1; i < REC_FAILED_NUM; i++) {
-		index = last_dev + REC_FAILED_NUM - i;
-		index %= REC_FAILED_NUM;
-		seq_printf(s, "\t\t\t%-s\n", suspend_stats.failed_devs[index]);
-	}
-	seq_printf(s,	"  last_failed_errno:\t%-d\n",
-			suspend_stats.errno[last_errno]);
-	for (i = 1; i < REC_FAILED_NUM; i++) {
-		index = last_errno + REC_FAILED_NUM - i;
-		index %= REC_FAILED_NUM;
-		seq_printf(s, "\t\t\t%-d\n", suspend_stats.errno[index]);
-	}
-	seq_printf(s,	"  last_failed_step:\t%-s\n",
-		   suspend_step_names[suspend_stats.failed_steps[last_step]]);
-	for (i = 1; i < REC_FAILED_NUM; i++) {
-		index = last_step + REC_FAILED_NUM - i;
-		index %= REC_FAILED_NUM;
-		seq_printf(s, "\t\t\t%-s\n",
-			   suspend_step_names[suspend_stats.failed_steps[index]]);
-	}
-
-	return 0;
-}
-DEFINE_SHOW_ATTRIBUTE(suspend_stats);
-
-static int __init pm_debugfs_init(void)
-{
-	debugfs_create_file("suspend_stats", S_IFREG | S_IRUGO,
-			NULL, NULL, &suspend_stats_fops);
-	return 0;
-}
-
-late_initcall(pm_debugfs_init);
-#endif /* CONFIG_DEBUG_FS */
 
 bool pm_sleep_transition_in_progress(void)
 {

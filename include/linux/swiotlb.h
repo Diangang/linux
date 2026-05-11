@@ -106,11 +106,6 @@ struct io_tlb_mem {
 	struct dentry *debugfs;
 	bool force_bounce;
 	bool for_alloc;
-#ifdef CONFIG_DEBUG_FS
-	atomic_long_t total_used;
-	atomic_long_t used_hiwater;
-	atomic_long_t transient_nslabs;
-#endif
 };
 
 struct io_tlb_pool *__swiotlb_find_pool(struct device *dev, phys_addr_t paddr);

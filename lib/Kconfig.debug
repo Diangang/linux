@@ -425,43 +425,6 @@ config MAGIC_SYSRQ_SERIAL_SEQUENCE
 
 	  If unsure, leave an empty string and the option will not be enabled.
 
-config DEBUG_FS
-	bool "Debug Filesystem"
-	help
-	  debugfs is a virtual file system that kernel developers use to put
-	  debugging files into.  Enable this option to be able to read and
-	  write to these files.
-
-	  For detailed documentation on the debugfs API, see
-	  Documentation/filesystems/.
-
-	  If unsure, say N.
-
-choice
-	prompt "Debugfs default access"
-	depends on DEBUG_FS
-	default DEBUG_FS_ALLOW_ALL
-	help
-	  This selects the default access restrictions for debugfs.
-	  It can be overridden with kernel command line option
-	  debugfs=[on,off]. The restrictions apply for API access
-	  and filesystem registration.
-
-config DEBUG_FS_ALLOW_ALL
-	bool "Access normal"
-	help
-	  No restrictions apply. Both API and filesystem registration
-	  is on. This is the normal default operation.
-
-config DEBUG_FS_ALLOW_NONE
-	bool "No access"
-	help
-	  Access is off. Clients get -PERM when trying to create nodes in
-	  debugfs tree and debugfs is not registered as a filesystem.
-	  Client can then back-off or continue without debugfs access.
-
-endchoice
-
 source "lib/Kconfig.ubsan"
 
 endmenu
@@ -1246,14 +1209,12 @@ config FAIL_IO_TIMEOUT
 
 config FAIL_FUTEX
 	bool "Fault-injection capability for futexes"
-	select DEBUG_FS
 	depends on FAULT_INJECTION && FUTEX
 	help
 	  Provide fault-injection capability for futexes.
 
 config FAULT_INJECTION_DEBUG_FS
 	bool "Debugfs entries for fault-injection capabilities"
-	depends on FAULT_INJECTION && SYSFS && DEBUG_FS
 	help
 	  Enable configuration of fault-injection capabilities via debugfs.
 
@@ -1326,7 +1287,6 @@ config KCOV
 	depends on ARCH_HAS_KCOV
 	depends on !ARCH_WANTS_NO_INSTR || HAVE_NOINSTR_HACK || \
 		   GCC_VERSION >= 120000 || CC_IS_CLANG
-	select DEBUG_FS
 	select OBJTOOL if HAVE_NOINSTR_HACK
 	help
 	  KCOV exposes kernel code coverage information in a form suitable
@@ -1380,7 +1340,6 @@ if RUNTIME_TESTING_MENU
 
 config LKDTM
 	tristate "Linux Kernel Dump Test Tool Module"
-	depends on DEBUG_FS
 	help
 	This module enables testing of the different dumping mechanisms by
 	inducing system failures at predefined crash points.
@@ -2126,7 +2085,6 @@ config MEMTEST
 config HYPERV_TESTING
 	bool "Microsoft Hyper-V driver testing"
 	default n
-	depends on HYPERV && DEBUG_FS
 	help
 	  Select this option to enable Hyper-V vmbus testing.
 

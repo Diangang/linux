@@ -128,58 +128,6 @@ static int regcache_rbtree_insert(struct regmap *map, struct rb_root *root,
 	return 1;
 }
 
-#ifdef CONFIG_DEBUG_FS
-static int rbtree_show(struct seq_file *s, void *ignored)
-{
-	struct regmap *map = s->private;
-	struct regcache_rbtree_ctx *rbtree_ctx = map->cache;
-	struct regcache_rbtree_node *n;
-	struct rb_node *node;
-	unsigned int base, top;
-	size_t mem_size;
-	int nodes = 0;
-	int registers = 0;
-	int this_registers, average;
-
-	map->lock(map->lock_arg);
-
-	mem_size = sizeof(*rbtree_ctx);
-
-	for (node = rb_first(&rbtree_ctx->root); node != NULL;
-	     node = rb_next(node)) {
-		n = rb_entry(node, struct regcache_rbtree_node, node);
-		mem_size += sizeof(*n);
-		mem_size += (n->blklen * map->cache_word_size);
-		mem_size += BITS_TO_LONGS(n->blklen) * sizeof(long);
-
-		regcache_rbtree_get_base_top_reg(map, n, &base, &top);
-		this_registers = ((top - base) / map->reg_stride) + 1;
-		seq_printf(s, "%x-%x (%d)\n", base, top, this_registers);
-
-		nodes++;
-		registers += this_registers;
-	}
-
-	if (nodes)
-		average = registers / nodes;
-	else
-		average = 0;
-
-	seq_printf(s, "%d nodes, %d registers, average %d registers, used %zu bytes\n",
-		   nodes, registers, average, mem_size);
-
-	map->unlock(map->lock_arg);
-
-	return 0;
-}
-
-DEFINE_SHOW_ATTRIBUTE(rbtree);
-
-static void rbtree_debugfs_init(struct regmap *map)
-{
-	debugfs_create_file("rbtree", 0400, map->debugfs, map, &rbtree_fops);
-}
-#endif
 
 static int regcache_rbtree_init(struct regmap *map)
 {
@@ -549,9 +497,6 @@ struct regcache_ops regcache_rbtree_ops = {
 	.init = regcache_rbtree_init,
 	.exit = regcache_rbtree_exit,
 	.populate = regcache_rbtree_populate,
-#ifdef CONFIG_DEBUG_FS
-	.debugfs_init = rbtree_debugfs_init,
-#endif
 	.read = regcache_rbtree_read,
 	.write = regcache_rbtree_write,
 	.sync = regcache_rbtree_sync,

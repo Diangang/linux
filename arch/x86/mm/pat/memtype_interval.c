@@ -126,24 +126,3 @@ struct memtype *memtype_lookup(u64 addr)
  * a copy for printout. This allows us to print out the tree
  * via debugfs, without holding the memtype_lock too long:
  */
-#ifdef CONFIG_DEBUG_FS
-int memtype_copy_nth_element(struct memtype *entry_out, loff_t pos)
-{
-	struct memtype *entry_match;
-	int i = 1;
-
-	entry_match = interval_iter_first(&memtype_rbroot, 0, ULONG_MAX);
-
-	while (entry_match && pos != i) {
-		entry_match = interval_iter_next(entry_match, 0, ULONG_MAX);
-		i++;
-	}
-
-	if (entry_match) { /* pos == i */
-		*entry_out = *entry_match;
-		return 0;
-	} else {
-		return 1;
-	}
-}
-#endif

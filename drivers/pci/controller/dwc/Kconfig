@@ -8,7 +8,6 @@ config PCIE_DW
 
 config PCIE_DW_DEBUGFS
 	bool "DesignWare PCIe debugfs entries"
-	depends on DEBUG_FS
 	depends on PCIE_DW_HOST || PCIE_DW_EP
 	help
 	  Say Y here to enable debugfs entries for the PCIe controller. These

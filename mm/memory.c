@@ -5760,42 +5760,6 @@ unlock:
 static unsigned long fault_around_pages __read_mostly =
 	65536 >> PAGE_SHIFT;
 
-#ifdef CONFIG_DEBUG_FS
-static int fault_around_bytes_get(void *data, u64 *val)
-{
-	*val = fault_around_pages << PAGE_SHIFT;
-	return 0;
-}
-
-/*
- * fault_around_bytes must be rounded down to the nearest page order as it's
- * what do_fault_around() expects to see.
- */
-static int fault_around_bytes_set(void *data, u64 val)
-{
-	if (val / PAGE_SIZE > PTRS_PER_PTE)
-		return -EINVAL;
-
-	/*
-	 * The minimum value is 1 page, however this results in no fault-around
-	 * at all. See should_fault_around().
-	 */
-	val = max(val, PAGE_SIZE);
-	fault_around_pages = rounddown_pow_of_two(val) >> PAGE_SHIFT;
-
-	return 0;
-}
-DEFINE_DEBUGFS_ATTRIBUTE(fault_around_bytes_fops,
-		fault_around_bytes_get, fault_around_bytes_set, "%llu\n");
-
-static int __init fault_around_debugfs(void)
-{
-	debugfs_create_file_unsafe("fault_around_bytes", 0644, NULL, NULL,
-				   &fault_around_bytes_fops);
-	return 0;
-}
-late_initcall(fault_around_debugfs);
-#endif
 
 /*
  * do_fault_around() tries to map few pages around the fault address. The hope

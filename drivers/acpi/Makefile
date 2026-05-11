@@ -57,7 +57,6 @@ acpi-y				+= event.o
 acpi-y				+= evged.o
 acpi-y				+= sysfs.o
 acpi-y				+= property.o
-acpi-$(CONFIG_DEBUG_FS)		+= debugfs.o
 acpi-y				+= acpi_lpat.o
 acpi-$(CONFIG_ACPI_LPIT)	+= acpi_lpit.o
 acpi-$(CONFIG_ACPI_GENERIC_GSI) += irq.o

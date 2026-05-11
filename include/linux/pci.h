@@ -1964,17 +1964,11 @@ static inline void pci_disable_ptm(struct pci_dev *dev) { }
 static inline bool pcie_ptm_enabled(struct pci_dev *dev)
 { return false; }
 
-#if IS_ENABLED(CONFIG_DEBUG_FS) && IS_ENABLED(CONFIG_PCIE_PTM)
-struct pci_ptm_debugfs *pcie_ptm_create_debugfs(struct device *dev, void *pdata,
-						const struct pcie_ptm_ops *ops);
-void pcie_ptm_destroy_debugfs(struct pci_ptm_debugfs *ptm_debugfs);
-#else
 static inline struct pci_ptm_debugfs
 *pcie_ptm_create_debugfs(struct device *dev, void *pdata,
 			 const struct pcie_ptm_ops *ops) { return NULL; }
 static inline void
 pcie_ptm_destroy_debugfs(struct pci_ptm_debugfs *ptm_debugfs) { }
-#endif
 
 void pci_cfg_access_lock(struct pci_dev *dev);
 bool pci_cfg_access_trylock(struct pci_dev *dev);

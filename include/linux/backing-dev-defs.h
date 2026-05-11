@@ -203,9 +203,6 @@ struct backing_dev_info {
 	char dev_name[64];
 	struct device *owner;
 
-#ifdef CONFIG_DEBUG_FS
-	struct dentry *debug_dir;
-#endif
 };
 
 struct wb_lock_cookie {

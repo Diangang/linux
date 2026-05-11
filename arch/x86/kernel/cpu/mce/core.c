@@ -2899,53 +2899,7 @@ static int __init mcheck_disable(char *str)
 }
 __setup("nomce", mcheck_disable);
 
-#ifdef CONFIG_DEBUG_FS
-struct dentry *mce_get_debugfs_dir(void)
-{
-	static struct dentry *dmce;
-
-	if (!dmce)
-		dmce = debugfs_create_dir("mce", NULL);
-
-	return dmce;
-}
-
-static void mce_reset(void)
-{
-	atomic_set(&mce_fake_panicked, 0);
-	atomic_set(&mce_executing, 0);
-	atomic_set(&mce_callin, 0);
-	atomic_set(&global_nwo, 0);
-	cpumask_setall(&mce_missing_cpus);
-}
-
-static int fake_panic_get(void *data, u64 *val)
-{
-	*val = fake_panic;
-	return 0;
-}
-
-static int fake_panic_set(void *data, u64 val)
-{
-	mce_reset();
-	fake_panic = val;
-	return 0;
-}
-
-DEFINE_DEBUGFS_ATTRIBUTE(fake_panic_fops, fake_panic_get, fake_panic_set,
-			 "%llu\n");
-
-static void __init mcheck_debugfs_init(void)
-{
-	struct dentry *dmce;
-
-	dmce = mce_get_debugfs_dir();
-	debugfs_create_file_unsafe("fake_panic", 0444, dmce, NULL,
-				   &fake_panic_fops);
-}
-#else
 static void __init mcheck_debugfs_init(void) { }
-#endif
 
 static int __init mcheck_late_init(void)
 {

@@ -345,9 +345,6 @@ struct dma_chan {
 	int chan_id;
 	struct dma_chan_dev *dev;
 	const char *name;
-#ifdef CONFIG_DEBUG_FS
-	char *dbg_client_name;
-#endif
 
 	struct list_head device_node;
 	struct dma_chan_percpu __percpu *local;

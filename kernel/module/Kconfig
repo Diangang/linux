@@ -28,7 +28,6 @@ config MODULE_DEBUGFS
 
 config MODULE_DEBUG
 	bool "Module debugging"
-	depends on DEBUG_FS
 	help
 	  Allows you to enable / disable features which can help you debug
 	  modules. You don't need these options on production systems.
@@ -37,7 +36,6 @@ if MODULE_DEBUG
 
 config MODULE_STATS
 	bool "Module statistics"
-	depends on DEBUG_FS
 	select MODULE_DEBUGFS
 	help
 	  This option allows you to maintain a record of module statistics.

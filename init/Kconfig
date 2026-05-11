@@ -773,7 +773,6 @@ config LOG_CPU_MAX_BUF_SHIFT
 
 config PRINTK_INDEX
 	bool "Printk indexing debugfs interface"
-	depends on PRINTK && DEBUG_FS
 	help
 	  Add support for indexing of all printk formats known at compile time
 	  at <debugfs>/printk/index/<module>.
@@ -1698,7 +1697,6 @@ config RSEQ_SLICE_EXTENSION
 config RSEQ_STATS
 	default n
 	bool "Enable lightweight statistics of restartable sequences" if EXPERT
-	depends on RSEQ && DEBUG_FS
 	help
 	  Enable lightweight counters which expose information about the
 	  frequency of RSEQ operations via debugfs. Mostly interesting for

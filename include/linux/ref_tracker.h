@@ -25,12 +25,6 @@ struct ref_tracker_dir {
 
 #ifdef CONFIG_REF_TRACKER
 
-#ifdef CONFIG_DEBUG_FS
-
-void ref_tracker_dir_debugfs(struct ref_tracker_dir *dir);
-void ref_tracker_dir_symlink(struct ref_tracker_dir *dir, const char *fmt, ...);
-
-#else /* CONFIG_DEBUG_FS */
 
 static inline void ref_tracker_dir_debugfs(struct ref_tracker_dir *dir)
 {
@@ -41,7 +35,6 @@ void ref_tracker_dir_symlink(struct ref_tracker_dir *dir, const char *fmt, ...)
 {
 }
 
-#endif /* CONFIG_DEBUG_FS */
 
 /**
  * ref_tracker_dir_init - initialize a ref_tracker dir

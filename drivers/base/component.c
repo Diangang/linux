@@ -76,59 +76,6 @@ static DEFINE_MUTEX(component_mutex);
 static LIST_HEAD(component_list);
 static LIST_HEAD(aggregate_devices);
 
-#ifdef CONFIG_DEBUG_FS
-
-static struct dentry *component_debugfs_dir;
-
-static int component_devices_show(struct seq_file *s, void *data)
-{
-	struct aggregate_device *m = s->private;
-	struct component_match *match = m->match;
-	size_t i;
-
-	mutex_lock(&component_mutex);
-	seq_printf(s, "%-50s %20s\n", "aggregate_device name", "status");
-	seq_puts(s, "-----------------------------------------------------------------------\n");
-	seq_printf(s, "%-50s %20s\n\n",
-		   dev_name(m->parent), m->bound ? "bound" : "not bound");
-
-	seq_printf(s, "%-50s %20s\n", "device name", "status");
-	seq_puts(s, "-----------------------------------------------------------------------\n");
-	for (i = 0; i < match->num; i++) {
-		struct component *component = match->compare[i].component;
-
-		seq_printf(s, "%-50s %20s\n",
-			   component ? dev_name(component->dev) : "(unknown)",
-			   component ? (component->bound ? "bound" : "not bound") : "not registered");
-	}
-	mutex_unlock(&component_mutex);
-
-	return 0;
-}
-
-DEFINE_SHOW_ATTRIBUTE(component_devices);
-
-static int __init component_debug_init(void)
-{
-	component_debugfs_dir = debugfs_create_dir("device_component", NULL);
-
-	return 0;
-}
-
-core_initcall(component_debug_init);
-
-static void component_debugfs_add(struct aggregate_device *m)
-{
-	debugfs_create_file(dev_name(m->parent), 0444, component_debugfs_dir, m,
-			    &component_devices_fops);
-}
-
-static void component_debugfs_del(struct aggregate_device *m)
-{
-	debugfs_lookup_and_remove(dev_name(m->parent), component_debugfs_dir);
-}
-
-#else
 
 static void component_debugfs_add(struct aggregate_device *m)
 { }
@@ -136,7 +83,6 @@ static void component_debugfs_add(struct aggregate_device *m)
 static void component_debugfs_del(struct aggregate_device *m)
 { }
 
-#endif
 
 static struct aggregate_device *__aggregate_find(struct device *parent,
 	const struct component_master_ops *ops)

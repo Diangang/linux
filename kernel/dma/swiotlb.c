@@ -663,33 +663,12 @@ static unsigned int wrap_area_index(struct io_tlb_pool *mem, unsigned int index)
  * function gives imprecise results because there's no locking across
  * multiple areas.
  */
-#ifdef CONFIG_DEBUG_FS
-static void inc_used_and_hiwater(struct io_tlb_mem *mem, unsigned int nslots)
-{
-	unsigned long old_hiwater, new_used;
-
-	new_used = atomic_long_add_return(nslots, &mem->total_used);
-	old_hiwater = atomic_long_read(&mem->used_hiwater);
-	do {
-		if (new_used <= old_hiwater)
-			break;
-	} while (!atomic_long_try_cmpxchg(&mem->used_hiwater,
-					  &old_hiwater, new_used));
-}
-
-static void dec_used(struct io_tlb_mem *mem, unsigned int nslots)
-{
-	atomic_long_sub(nslots, &mem->total_used);
-}
-
-#else /* !CONFIG_DEBUG_FS */
 static void inc_used_and_hiwater(struct io_tlb_mem *mem, unsigned int nslots)
 {
 }
 static void dec_used(struct io_tlb_mem *mem, unsigned int nslots)
 {
 }
-#endif /* CONFIG_DEBUG_FS */
 
 
 /**
@@ -838,23 +817,6 @@ static int swiotlb_find_slots(struct device *dev, phys_addr_t orig_addr,
 }
 
 
-#ifdef CONFIG_DEBUG_FS
-
-/**
- * mem_used() - get number of used slots in an allocator
- * @mem:	Software IO TLB allocator.
- *
- * The result is accurate in this version of the function, because an atomic
- * counter is available if CONFIG_DEBUG_FS is set.
- *
- * Return: Number of used slots.
- */
-static unsigned long mem_used(struct io_tlb_mem *mem)
-{
-	return atomic_long_read(&mem->total_used);
-}
-
-#else /* !CONFIG_DEBUG_FS */
 
 /**
  * mem_pool_used() - get number of used slots in a memory pool
@@ -888,7 +850,6 @@ static unsigned long mem_used(struct io_tlb_mem *mem)
 	return mem_pool_used(&mem->defpool);
 }
 
-#endif /* CONFIG_DEBUG_FS */
 
 /**
  * swiotlb_tbl_map_single() - bounce buffer map a single contiguous physical area
@@ -1176,70 +1137,12 @@ phys_addr_t default_swiotlb_limit(void)
 	return io_tlb_default_mem.defpool.end - 1;
 }
 
-#ifdef CONFIG_DEBUG_FS
-
-static int io_tlb_used_get(void *data, u64 *val)
-{
-	struct io_tlb_mem *mem = data;
-
-	*val = mem_used(mem);
-	return 0;
-}
-
-static int io_tlb_hiwater_get(void *data, u64 *val)
-{
-	struct io_tlb_mem *mem = data;
-
-	*val = atomic_long_read(&mem->used_hiwater);
-	return 0;
-}
-
-static int io_tlb_hiwater_set(void *data, u64 val)
-{
-	struct io_tlb_mem *mem = data;
-
-	/* Only allow setting to zero */
-	if (val != 0)
-		return -EINVAL;
-
-	atomic_long_set(&mem->used_hiwater, val);
-	return 0;
-}
-
-DEFINE_DEBUGFS_ATTRIBUTE(fops_io_tlb_used, io_tlb_used_get, NULL, "%llu\n");
-DEFINE_DEBUGFS_ATTRIBUTE(fops_io_tlb_hiwater, io_tlb_hiwater_get,
-				io_tlb_hiwater_set, "%llu\n");
-
-static void swiotlb_create_debugfs_files(struct io_tlb_mem *mem,
-					 const char *dirname)
-{
-	mem->debugfs = debugfs_create_dir(dirname, io_tlb_default_mem.debugfs);
-	if (!mem->nslabs)
-		return;
-
-	debugfs_create_ulong("io_tlb_nslabs", 0400, mem->debugfs, &mem->nslabs);
-	debugfs_create_file("io_tlb_used", 0400, mem->debugfs, mem,
-			&fops_io_tlb_used);
-	debugfs_create_file("io_tlb_used_hiwater", 0600, mem->debugfs, mem,
-			&fops_io_tlb_hiwater);
-}
-
-static int __init swiotlb_create_default_debugfs(void)
-{
-	swiotlb_create_debugfs_files(&io_tlb_default_mem, "swiotlb");
-	return 0;
-}
-
-late_initcall(swiotlb_create_default_debugfs);
-
-#else  /* !CONFIG_DEBUG_FS */
 
 static inline void swiotlb_create_debugfs_files(struct io_tlb_mem *mem,
 						const char *dirname)
 {
 }
 
-#endif	/* CONFIG_DEBUG_FS */
 
 #ifdef CONFIG_DMA_RESTRICTED_POOL
 

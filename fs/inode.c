@@ -99,69 +99,9 @@ long get_nr_dirty_inodes(void)
 	return nr_dirty > 0 ? nr_dirty : 0;
 }
 
-#ifdef CONFIG_DEBUG_FS
-static DEFINE_PER_CPU(long, mg_ctime_updates);
-static DEFINE_PER_CPU(long, mg_fine_stamps);
-static DEFINE_PER_CPU(long, mg_ctime_swaps);
-
-static unsigned long get_mg_ctime_updates(void)
-{
-	unsigned long sum = 0;
-	int i;
-
-	for_each_possible_cpu(i)
-		sum += data_race(per_cpu(mg_ctime_updates, i));
-	return sum;
-}
-
-static unsigned long get_mg_fine_stamps(void)
-{
-	unsigned long sum = 0;
-	int i;
-
-	for_each_possible_cpu(i)
-		sum += data_race(per_cpu(mg_fine_stamps, i));
-	return sum;
-}
-
-static unsigned long get_mg_ctime_swaps(void)
-{
-	unsigned long sum = 0;
-	int i;
-
-	for_each_possible_cpu(i)
-		sum += data_race(per_cpu(mg_ctime_swaps, i));
-	return sum;
-}
-
-#define mgtime_counter_inc(__var)	this_cpu_inc(__var)
-
-static int mgts_show(struct seq_file *s, void *p)
-{
-	unsigned long ctime_updates = get_mg_ctime_updates();
-	unsigned long ctime_swaps = get_mg_ctime_swaps();
-	unsigned long fine_stamps = get_mg_fine_stamps();
-	unsigned long floor_swaps = timekeeping_get_mg_floor_swaps();
-
-	seq_printf(s, "%lu %lu %lu %lu\n",
-		   ctime_updates, ctime_swaps, fine_stamps, floor_swaps);
-	return 0;
-}
-
-DEFINE_SHOW_ATTRIBUTE(mgts);
-
-static int __init mg_debugfs_init(void)
-{
-	debugfs_create_file("multigrain_timestamps", S_IFREG | S_IRUGO, NULL, NULL, &mgts_fops);
-	return 0;
-}
-late_initcall(mg_debugfs_init);
-
-#else /* ! CONFIG_DEBUG_FS */
 
 #define mgtime_counter_inc(__var)	do { } while (0)
 
-#endif /* CONFIG_DEBUG_FS */
 
 /*
  * Handle nr_inode sysctl
