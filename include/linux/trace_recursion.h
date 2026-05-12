@@ -91,34 +91,9 @@ static __always_inline int trace_get_context_bit(void)
 	return TRACE_CTX_NORMAL - bit;
 }
 
-#ifdef CONFIG_FTRACE_RECORD_RECURSION
-extern void ftrace_record_recursion(unsigned long ip, unsigned long parent_ip);
-# define do_ftrace_record_recursion(ip, pip)				\
-	do {								\
-		if (!trace_recursion_test(TRACE_RECORD_RECURSION_BIT)) { \
-			trace_recursion_set(TRACE_RECORD_RECURSION_BIT); \
-			ftrace_record_recursion(ip, pip);		\
-			trace_recursion_clear(TRACE_RECORD_RECURSION_BIT); \
-		}							\
-	} while (0)
-#else
 # define do_ftrace_record_recursion(ip, pip)	do { } while (0)
-#endif
 
-#ifdef CONFIG_FTRACE_VALIDATE_RCU_IS_WATCHING
-# define trace_warn_on_no_rcu(ip)					\
-	({								\
-		bool __ret = !rcu_is_watching();			\
-		if (__ret && !trace_recursion_test(TRACE_RECORD_RECURSION_BIT)) { \
-			trace_recursion_set(TRACE_RECORD_RECURSION_BIT); \
-			WARN_ONCE(true, "RCU not on for: %pS\n", (void *)ip); \
-			trace_recursion_clear(TRACE_RECORD_RECURSION_BIT); \
-		}							\
-		__ret;							\
-	})
-#else
 # define trace_warn_on_no_rcu(ip)	false
-#endif
 
 /*
  * Preemption is promised to be disabled when return bit >= 0.

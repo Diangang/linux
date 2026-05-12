@@ -166,17 +166,6 @@ struct rethook_node *rethook_try_get(struct rethook *rh)
 	if (unlikely(!handler))
 		return NULL;
 
-#if defined(CONFIG_FTRACE_VALIDATE_RCU_IS_WATCHING) || defined(CONFIG_KPROBE_EVENTS_ON_NOTRACE)
-	/*
-	 * This expects the caller will set up a rethook on a function entry.
-	 * When the function returns, the rethook will eventually be reclaimed
-	 * or released in the rethook_recycle() with call_rcu().
-	 * This means the caller must be run in the RCU-availabe context.
-	 */
-	if (unlikely(!rcu_is_watching()))
-		return NULL;
-#endif
-
 	return (struct rethook_node *)objpool_pop(&rh->pool);
 }
 NOKPROBE_SYMBOL(rethook_try_get);
