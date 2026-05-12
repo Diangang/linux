@@ -19,8 +19,6 @@ ifdef CONFIG_CC_IS_GCC
 kcsan-cflags += -Wno-tsan
 endif
 
-ifndef CONFIG_KCSAN_WEAK_MEMORY
 kcsan-cflags += $(call cc-option,$(call cc-param,tsan-instrument-func-entry-exit=0))
-endif
 
 export CFLAGS_KCSAN := $(kcsan-cflags)
