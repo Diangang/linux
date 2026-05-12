@@ -238,10 +238,6 @@ static inline void mod_stat_bump_becoming(struct load_info *info, int flags)
 
 #endif /* CONFIG_MODULE_STATS */
 
-#ifdef CONFIG_MODULE_DEBUG_AUTOLOAD_DUPS
-bool kmod_dup_request_exists_wait(char *module_name, bool wait, int *dup_ret);
-void kmod_dup_request_announce(char *module_name, int ret);
-#else
 static inline bool kmod_dup_request_exists_wait(char *module_name, bool wait, int *dup_ret)
 {
 	return false;
@@ -250,7 +246,6 @@ static inline bool kmod_dup_request_exists_wait(char *module_name, bool wait, in
 static inline void kmod_dup_request_announce(char *module_name, int ret)
 {
 }
-#endif
 
 static inline int try_add_tainted_module(struct module *mod)
 {

@@ -13,7 +13,6 @@ obj-y     = fork.o exec_domain.o panic.o \
 	    async.o range.o smpboot.o ucount.o regset.o ksyms_common.o
 
 obj-$(CONFIG_MULTIUSER) += groups.o
-obj-$(CONFIG_VHOST_TASK) += vhost_task.o
 
 # Branch profiling isn't noinstr-safe
 ifdef CONFIG_TRACE_BRANCH_PROFILING
