@@ -503,10 +503,6 @@ struct module {
 	struct jump_entry *jump_entries;
 	unsigned int num_jump_entries;
 #endif
-#ifdef CONFIG_TRACING
-	unsigned int num_trace_bprintk_fmt;
-	const char **trace_bprintk_fmt_start;
-#endif
 #ifdef CONFIG_EVENT_TRACING
 	struct trace_event_call **trace_events;
 	unsigned int num_trace_events;
