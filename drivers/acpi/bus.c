@@ -466,17 +466,8 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 	if (IS_ENABLED(CONFIG_ACPI_PROCESSOR))
 		feature_mask |= OSC_SB_PPC_OST_SUPPORT;
 
-	if (IS_ENABLED(CONFIG_ACPI_THERMAL))
-		feature_mask |= OSC_SB_FAST_THERMAL_SAMPLING_SUPPORT;
-
-	if (IS_ENABLED(CONFIG_ACPI_BATTERY))
-		feature_mask |= OSC_SB_BATTERY_CHARGE_LIMITING_SUPPORT;
-
 	if (IS_ENABLED(CONFIG_ACPI_PRMT))
 		feature_mask |= OSC_SB_PRM_SUPPORT;
-
-	if (IS_ENABLED(CONFIG_ACPI_FFH))
-		feature_mask |= OSC_SB_FFH_OPR_SUPPORT;
 
 	if (IS_ENABLED(CONFIG_USB4))
 		feature_mask |= OSC_SB_NATIVE_USB4_SUPPORT;

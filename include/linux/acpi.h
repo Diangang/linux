@@ -40,15 +40,9 @@ struct irq_domain_ops;
 #include <acpi/acpi_io.h>
 #include <asm/acpi.h>
 
-#ifdef CONFIG_ACPI_TABLE_LIB
-#define EXPORT_SYMBOL_ACPI_LIB(x) EXPORT_SYMBOL_NS_GPL(x, "ACPI")
-#define __init_or_acpilib
-#define __initdata_or_acpilib
-#else
 #define EXPORT_SYMBOL_ACPI_LIB(x)
 #define __init_or_acpilib __init
 #define __initdata_or_acpilib __initdata
-#endif
 
 static inline acpi_handle acpi_device_handle(struct acpi_device *adev)
 {
@@ -440,13 +434,6 @@ extern long acpi_is_video_device(acpi_handle handle);
 
 extern void acpi_osi_setup(char *str);
 extern bool acpi_osi_is_win8(void);
-
-#ifdef CONFIG_ACPI_THERMAL_LIB
-int thermal_acpi_active_trip_temp(struct acpi_device *adev, int id, int *ret_temp);
-int thermal_acpi_passive_trip_temp(struct acpi_device *adev, int *ret_temp);
-int thermal_acpi_hot_trip_temp(struct acpi_device *adev, int *ret_temp);
-int thermal_acpi_critical_trip_temp(struct acpi_device *adev, int *ret_temp);
-#endif
 
 #ifdef CONFIG_ACPI_HMAT
 int acpi_get_genport_coordinates(u32 uid, struct access_coordinate *coord);
