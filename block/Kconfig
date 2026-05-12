@@ -41,9 +41,6 @@ config BLK_RQ_ALLOC_TIME
 config BLK_CGROUP_RWSTAT
 	bool
 
-config BLK_CGROUP_PUNT_BIO
-	bool
-
 config BLK_ICQ
 	bool
 
@@ -85,15 +82,6 @@ config BLK_CGROUP_IOLATENCY
 
 	Note, this is an experimental interface and could be changed someday.
 
-config BLK_CGROUP_FC_APPID
-	bool "Enable support to track FC I/O Traffic across cgroup applications"
-	depends on BLK_CGROUP && NVME_FC
-	help
-	  Enabling this option enables the support to track FC I/O traffic across
-	  cgroup applications. It enables the Fabric and the storage targets to
-	  identify, monitor, and handle FC traffic based on VM tags by inserting
-	  application specific identification into the FC frame.
-
 config BLK_CGROUP_IOCOST
 	bool "Enable support for cost model based cgroup IO controller"
 	depends on BLK_CGROUP
@@ -113,32 +101,12 @@ config BLK_CGROUP_IOPRIO
 	scheduler and block devices process requests. Only some I/O schedulers
 	and some block devices support I/O priorities.
 
-config BLK_SED_OPAL
-	bool "Logic for interfacing with Opal enabled SEDs"
-	depends on KEYS
-	select PSERIES_PLPKS if PPC_PSERIES
-	select PSERIES_PLPKS_SED if PPC_PSERIES
-	help
-	Builds Logic for interfacing with Opal enabled controllers.
-	Enabling this option enables users to setup/unlock/lock
-	Locking ranges for SED devices using the Opal protocol.
-
 config BLK_INLINE_ENCRYPTION
 	bool "Enable inline encryption support in block layer"
 	help
 	  Build the blk-crypto subsystem. Enabling this lets the
 	  block layer handle encryption, so users can take
 	  advantage of inline encryption hardware if present.
-
-config BLK_INLINE_ENCRYPTION_FALLBACK
-	bool "Enable crypto API fallback for blk-crypto"
-	depends on BLK_INLINE_ENCRYPTION
-	select CRYPTO
-	select CRYPTO_SKCIPHER
-	help
-	  Enabling this lets the block layer handle inline encryption
-	  by falling back to the kernel crypto API when inline
-	  encryption hardware is not present.
 
 source "block/partitions/Kconfig"
 
@@ -147,9 +115,6 @@ config BLK_PM
 
 # do not use in new code
 config BLOCK_HOLDER_DEPRECATED
-	bool
-
-config BLK_MQ_STACKING
 	bool
 
 source "block/Kconfig.iosched"

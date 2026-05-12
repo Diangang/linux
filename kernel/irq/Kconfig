@@ -32,10 +32,6 @@ config GENERIC_IRQ_MIGRATION
 	bool
 
 # Alpha specific irq affinity mechanism
-config AUTO_IRQ_AFFINITY
-       bool
-
-# Interrupt injection mechanism
 config GENERIC_IRQ_INJECTION
 	bool
 

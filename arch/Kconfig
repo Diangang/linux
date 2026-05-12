@@ -339,9 +339,6 @@ config ARCH_HAS_DMA_SET_UNCACHED
 # Select if the architectures provides the arch_dma_clear_uncached symbol
 # to undo an in-place page table remap for uncached access.
 #
-config ARCH_HAS_DMA_CLEAR_UNCACHED
-	bool
-
 config ARCH_HAS_CPU_FINALIZE_INIT
 	bool
 
@@ -382,9 +379,6 @@ config ARCH_32BIT_OFF_T
 	  architectures explicitly.
 
 # Selected by 64 bit architectures which have a 32 bit f_tinode in struct ustat
-config ARCH_32BIT_USTAT_F_TINODE
-	bool
-
 config HAVE_ASM_MODVERSIONS
 	bool
 	help
@@ -577,9 +571,6 @@ config HAVE_CMPXCHG_LOCAL
 	bool
 
 config HAVE_CMPXCHG_DOUBLE
-	bool
-
-config ARCH_WEAK_RELEASE_ACQUIRE
 	bool
 
 config ARCH_WANT_IPC_PARSE_VERSION
@@ -846,23 +837,6 @@ endchoice
 config ARCH_SUPPORTS_AUTOFDO_CLANG
 	bool
 
-config AUTOFDO_CLANG
-	bool "Enable Clang's AutoFDO build (EXPERIMENTAL)"
-	depends on ARCH_SUPPORTS_AUTOFDO_CLANG
-	depends on CC_IS_CLANG && CLANG_VERSION >= 170000
-	help
-	  This option enables Clang’s AutoFDO build. When
-	  an AutoFDO profile is specified in variable
-	  CLANG_AUTOFDO_PROFILE during the build process,
-	  Clang uses the profile to optimize the kernel.
-
-	  If no profile is specified, AutoFDO options are
-	  still passed to Clang to facilitate the collection
-	  of perf data for creating an AutoFDO profile in
-	  subsequent builds.
-
-	  If unsure, say N.
-
 config ARCH_SUPPORTS_PROPELLER_CLANG
 	bool
 
@@ -893,13 +867,6 @@ config ARCH_USES_CFI_TRAPS
 	help
 	  An architecture should select this option if it requires the
 	  .kcfi_traps section for KCFI trap handling.
-
-config ARCH_USES_CFI_GENERIC_LLVM_PASS
-	bool
-	help
-	  An architecture should select this option if it uses the generic
-	  KCFIPass in LLVM to expand kCFI bundles instead of architecture-specific
-	  lowering.
 
 config CFI
 	bool "Use Kernel Control Flow Integrity (kCFI)"
@@ -1015,9 +982,6 @@ config HAVE_VIRT_CPU_ACCOUNTING_IDLE
 	  Architecture has its own way to account idle CPU time and therefore
 	  doesn't implement vtime_account_idle().
 
-config ARCH_HAS_SCALED_CPUTIME
-	bool
-
 config HAVE_VIRT_CPU_ACCOUNTING_GEN
 	bool
 	default y if 64BIT
@@ -1101,19 +1065,6 @@ config MODULES_USE_ELF_REL
 	  Modules only use ELF REL relocations.  Modules with ELF RELA
 	  relocations will give an error.
 
-config ARCH_WANTS_MODULES_DATA_IN_VMALLOC
-	bool
-	help
-	  For architectures like powerpc/32 which have constraints on module
-	  allocation and need to allocate module data outside of module area.
-
-config ARCH_WANTS_MODULES_TEXT_SECTIONS
-	bool
-	help
-	  For architectures like 32-bit parisc which require that functions in
-	  modules have to keep code in own text sections (-ffunction-sections)
-	  and to avoid merging all text into one big text section,
-
 config ARCH_WANTS_EXECMEM_LATE
 	bool
 	help
@@ -1148,13 +1099,6 @@ config HAVE_SOFTIRQ_ON_OWN_STACK
 
 config SOFTIRQ_ON_OWN_STACK
 	def_bool HAVE_SOFTIRQ_ON_OWN_STACK && !PREEMPT_RT
-
-config ALTERNATE_USER_ADDRESS_SPACE
-	bool
-	help
-	  Architectures set this when the CPU uses separate address
-	  spaces for kernel and user space pointers. In this case, the
-	  access_ok() check on a __user pointer is skipped.
 
 config PGTABLE_LEVELS
 	int
@@ -1563,9 +1507,6 @@ config STRICT_MODULE_RWX
 	  protection against certain security exploits (e.g. writing to text)
 
 # select if the architecture provides an asm/dma-direct.h header
-config ARCH_HAS_PHYS_TO_DMA
-	bool
-
 config ARCH_HAS_CPU_RESCTRL
 	bool
 	help
@@ -1638,13 +1579,6 @@ config HAVE_SPARSE_SYSCALL_NR
 	  to save space. For example, MIPS architecture has a syscall array with
 	  entries at 4000, 5000 and 6000 locations. This option turns on syscall
 	  related optimizations for a given architecture.
-
-config ARCH_HAS_VDSO_ARCH_DATA
-	depends on HAVE_GENERIC_VDSO
-	bool
-
-config ARCH_HAS_VDSO_TIME_DATA
-	bool
 
 config HAVE_STATIC_CALL
 	bool
@@ -1800,15 +1734,6 @@ config CC_HAS_SANE_FUNCTION_ALIGNMENT
 	# available or extra care is required in the kernel. Clang provides
 	# strict alignment always, even with -falign-functions.
 	def_bool CC_HAS_MIN_FUNCTION_ALIGNMENT || CC_IS_CLANG
-
-config ARCH_NEED_CMPXCHG_1_EMU
-	bool
-
-config ARCH_WANTS_PRE_LINK_VMLINUX
-	bool
-	help
-	  An architecture can select this if it provides arch/<arch>/tools/Makefile
-	  with .arch.vmlinux.o target to be linked into vmlinux.
 
 config ARCH_HAS_CPU_ATTACK_VECTORS
 	bool

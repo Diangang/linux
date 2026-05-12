@@ -527,26 +527,6 @@ config ARM64_ERRATUM_832075
 
 	  If unsure, say Y.
 
-config ARM64_ERRATUM_834220
-	bool "Cortex-A57: 834220: Stage 2 translation fault might be incorrectly reported in presence of a Stage 1 fault (rare)"
-	depends on KVM
-	help
-	  This option adds an alternative code sequence to work around ARM
-	  erratum 834220 on Cortex-A57 parts up to r1p2.
-
-	  Affected Cortex-A57 parts might report a Stage 2 translation
-	  fault as the result of a Stage 1 fault for load crossing a
-	  page boundary when there is a permission or device memory
-	  alignment fault at Stage 1 and a translation fault at Stage 2.
-
-	  The workaround is to verify that the Stage 1 translation
-	  doesn't generate a fault before handling the Stage 2 fault.
-	  Please note that this does not necessarily enable the workaround,
-	  as it depends on the alternative framework, which will only patch
-	  the kernel if an affected CPU is detected.
-
-	  If unsure, say N.
-
 config ARM64_ERRATUM_1742098
 	bool "Cortex-A57/A72: 1742098: ELR recorded incorrectly on interrupt taken between cryptographic instructions in a sequence"
 	depends on COMPAT
@@ -668,39 +648,6 @@ config ARM64_ERRATUM_1530923
 config ARM64_WORKAROUND_REPEAT_TLBI
 	bool
 
-config ARM64_ERRATUM_2441007
-	bool "Cortex-A55: Completion of affected memory accesses might not be guaranteed by completion of a TLBI (rare)"
-	select ARM64_WORKAROUND_REPEAT_TLBI
-	help
-	  This option adds a workaround for ARM Cortex-A55 erratum #2441007.
-
-	  Under very rare circumstances, affected Cortex-A55 CPUs
-	  may not handle a race between a break-before-make sequence on one
-	  CPU, and another CPU accessing the same page. This could allow a
-	  store to a page that has been unmapped.
-
-	  Work around this by adding the affected CPUs to the list that needs
-	  TLB sequences to be done twice.
-
-	  If unsure, say N.
-
-config ARM64_ERRATUM_1286807
-	bool "Cortex-A76: Modification of the translation table for a virtual address might lead to read-after-read ordering violation (rare)"
-	select ARM64_WORKAROUND_REPEAT_TLBI
-	help
-	  This option adds a workaround for ARM Cortex-A76 erratum 1286807.
-
-	  On the affected Cortex-A76 cores (r0p0 to r3p0), if a virtual
-	  address for a cacheable mapping of a location is being
-	  accessed by a core while another core is remapping the virtual
-	  address to a new physical page using the recommended
-	  break-before-make sequence, then under very rare circumstances
-	  TLBI+DSB completes before a read using the translation being
-	  invalidated has been observed by other observers. The
-	  workaround repeats the TLBI+DSB operation.
-
-	  If unsure, say N.
-
 config ARM64_ERRATUM_1463225
 	bool "Cortex-A76: Software Step might prevent interrupt recognition"
 	default y
@@ -718,21 +665,6 @@ config ARM64_ERRATUM_1463225
 	  in a VHE configuration of the kernel.
 
 	  If unsure, say Y.
-
-config ARM64_ERRATUM_1542419
-	bool "Neoverse-N1: workaround mis-ordering of instruction fetches (rare)"
-	help
-	  This option adds a workaround for ARM Neoverse-N1 erratum
-	  1542419.
-
-	  Affected Neoverse-N1 cores could execute a stale instruction when
-	  modified by another CPU. The workaround depends on a firmware
-	  counterpart.
-
-	  Workaround the issue by hiding the DIC feature from EL0. This
-	  forces user-space to perform cache maintenance.
-
-	  If unsure, say N.
 
 config ARM64_ERRATUM_1508412
 	bool "Cortex-A77: 1508412: workaround deadlock on sequence of NC/Device load and store exclusive or PAR read"
@@ -798,42 +730,6 @@ config ARM64_ERRATUM_2658417
 
 	  If unsure, say Y.
 
-config ARM64_ERRATUM_2119858
-	bool "Cortex-A710/X2: 2119858: workaround TRBE overwriting trace data in FILL mode"
-	default y
-	depends on CORESIGHT_TRBE
-	select ARM64_WORKAROUND_TRBE_OVERWRITE_FILL_MODE
-	help
-	  This option adds the workaround for ARM Cortex-A710/X2 erratum 2119858.
-
-	  Affected Cortex-A710/X2 cores could overwrite up to 3 cache lines of trace
-	  data at the base of the buffer (pointed to by TRBASER_EL1) in FILL mode in
-	  the event of a WRAP event.
-
-	  Work around the issue by always making sure we move the TRBPTR_EL1 by
-	  256 bytes before enabling the buffer and filling the first 256 bytes of
-	  the buffer with ETM ignore packets upon disabling.
-
-	  If unsure, say Y.
-
-config ARM64_ERRATUM_2139208
-	bool "Neoverse-N2: 2139208: workaround TRBE overwriting trace data in FILL mode"
-	default y
-	depends on CORESIGHT_TRBE
-	select ARM64_WORKAROUND_TRBE_OVERWRITE_FILL_MODE
-	help
-	  This option adds the workaround for ARM Neoverse-N2 erratum 2139208.
-
-	  Affected Neoverse-N2 cores could overwrite up to 3 cache lines of trace
-	  data at the base of the buffer (pointed to by TRBASER_EL1) in FILL mode in
-	  the event of a WRAP event.
-
-	  Work around the issue by always making sure we move the TRBPTR_EL1 by
-	  256 bytes before enabling the buffer and filling the first 256 bytes of
-	  the buffer with ETM ignore packets upon disabling.
-
-	  If unsure, say Y.
-
 config ARM64_WORKAROUND_TSB_FLUSH_FAILURE
 	bool
 
@@ -869,117 +765,6 @@ config ARM64_ERRATUM_2067961
 
 config ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE
 	bool
-
-config ARM64_ERRATUM_2253138
-	bool "Neoverse-N2: 2253138: workaround TRBE writing to address out-of-range"
-	depends on CORESIGHT_TRBE
-	default y
-	select ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE
-	help
-	  This option adds the workaround for ARM Neoverse-N2 erratum 2253138.
-
-	  Affected Neoverse-N2 cores might write to an out-of-range address, not reserved
-	  for TRBE. Under some conditions, the TRBE might generate a write to the next
-	  virtually addressed page following the last page of the TRBE address space
-	  (i.e., the TRBLIMITR_EL1.LIMIT), instead of wrapping around to the base.
-
-	  Work around this in the driver by always making sure that there is a
-	  page beyond the TRBLIMITR_EL1.LIMIT, within the space allowed for the TRBE.
-
-	  If unsure, say Y.
-
-config ARM64_ERRATUM_2224489
-	bool "Cortex-A710/X2: 2224489: workaround TRBE writing to address out-of-range"
-	depends on CORESIGHT_TRBE
-	default y
-	select ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE
-	help
-	  This option adds the workaround for ARM Cortex-A710/X2 erratum 2224489.
-
-	  Affected Cortex-A710/X2 cores might write to an out-of-range address, not reserved
-	  for TRBE. Under some conditions, the TRBE might generate a write to the next
-	  virtually addressed page following the last page of the TRBE address space
-	  (i.e., the TRBLIMITR_EL1.LIMIT), instead of wrapping around to the base.
-
-	  Work around this in the driver by always making sure that there is a
-	  page beyond the TRBLIMITR_EL1.LIMIT, within the space allowed for the TRBE.
-
-	  If unsure, say Y.
-
-config ARM64_ERRATUM_2441009
-	bool "Cortex-A510: Completion of affected memory accesses might not be guaranteed by completion of a TLBI (rare)"
-	select ARM64_WORKAROUND_REPEAT_TLBI
-	help
-	  This option adds a workaround for ARM Cortex-A510 erratum #2441009.
-
-	  Under very rare circumstances, affected Cortex-A510 CPUs
-	  may not handle a race between a break-before-make sequence on one
-	  CPU, and another CPU accessing the same page. This could allow a
-	  store to a page that has been unmapped.
-
-	  Work around this by adding the affected CPUs to the list that needs
-	  TLB sequences to be done twice.
-
-	  If unsure, say N.
-
-config ARM64_ERRATUM_2064142
-	bool "Cortex-A510: 2064142: workaround TRBE register writes while disabled"
-	depends on CORESIGHT_TRBE
-	default y
-	help
-	  This option adds the workaround for ARM Cortex-A510 erratum 2064142.
-
-	  Affected Cortex-A510 core might fail to write into system registers after the
-	  TRBE has been disabled. Under some conditions after the TRBE has been disabled
-	  writes into TRBE registers TRBLIMITR_EL1, TRBPTR_EL1, TRBBASER_EL1, TRBSR_EL1,
-	  and TRBTRG_EL1 will be ignored and will not be effected.
-
-	  Work around this in the driver by executing TSB CSYNC and DSB after collection
-	  is stopped and before performing a system register write to one of the affected
-	  registers.
-
-	  If unsure, say Y.
-
-config ARM64_ERRATUM_2038923
-	bool "Cortex-A510: 2038923: workaround TRBE corruption with enable"
-	depends on CORESIGHT_TRBE
-	default y
-	help
-	  This option adds the workaround for ARM Cortex-A510 erratum 2038923.
-
-	  Affected Cortex-A510 core might cause an inconsistent view on whether trace is
-	  prohibited within the CPU. As a result, the trace buffer or trace buffer state
-	  might be corrupted. This happens after TRBE buffer has been enabled by setting
-	  TRBLIMITR_EL1.E, followed by just a single context synchronization event before
-	  execution changes from a context, in which trace is prohibited to one where it
-	  isn't, or vice versa. In these mentioned conditions, the view of whether trace
-	  is prohibited is inconsistent between parts of the CPU, and the trace buffer or
-	  the trace buffer state might be corrupted.
-
-	  Work around this in the driver by preventing an inconsistent view of whether the
-	  trace is prohibited or not based on TRBLIMITR_EL1.E by immediately following a
-	  change to TRBLIMITR_EL1.E with at least one ISB instruction before an ERET, or
-	  two ISB instructions if no ERET is to take place.
-
-	  If unsure, say Y.
-
-config ARM64_ERRATUM_1902691
-	bool "Cortex-A510: 1902691: workaround TRBE trace corruption"
-	depends on CORESIGHT_TRBE
-	default y
-	help
-	  This option adds the workaround for ARM Cortex-A510 erratum 1902691.
-
-	  Affected Cortex-A510 core might cause trace data corruption, when being written
-	  into the memory. Effectively TRBE is broken and hence cannot be used to capture
-	  trace data.
-
-	  Work around this problem in the driver by just preventing TRBE initialization on
-	  affected cpus. The firmware must have disabled the access to TRBE for the kernel
-	  on such implementations. This will cover the kernel for any firmware that doesn't
-	  do this already.
-
-	  If unsure, say Y.
 
 config ARM64_ERRATUM_2457168
 	bool "Cortex-A510: 2457168: workaround for AMEVCNTR01 incrementing incorrectly"
@@ -1393,19 +1178,6 @@ config ARM64_VA_BITS_52
 
 endchoice
 
-config ARM64_FORCE_52BIT
-	bool "Force 52-bit virtual addresses for userspace"
-	depends on ARM64_VA_BITS_52 && EXPERT
-	help
-	  For systems with 52-bit userspace VAs enabled, the kernel will attempt
-	  to maintain compatibility with older software by providing 48-bit VAs
-	  unless a hint is supplied to mmap.
-
-	  This configuration option disables the 48-bit compatibility logic, and
-	  forces all userspace addresses to be 52-bit on HW that supports it. One
-	  should only enable this configuration option for stress testing userspace
-	  memory management code. If unsure say N here.
-
 config ARM64_VA_BITS
 	int
 	default 36 if ARM64_VA_BITS_36
@@ -1764,18 +1536,6 @@ endmenu # "ARMv8.1 architectural features"
 
 menu "ARMv8.2 architectural features"
 
-config ARM64_PMEM
-	bool "Enable support for persistent memory"
-	select ARCH_HAS_PMEM_API
-	select ARCH_HAS_UACCESS_FLUSHCACHE
-	help
-	  Say Y to enable support for the persistent memory API based on the
-	  ARMv8.2 DCPoP feature.
-
-	  The feature is detected at runtime, and the kernel will use DC CVAC
-	  operations if DC CVAP is not supported (following the behaviour of
-	  DC CVAP itself if the system does not define a point of persistence).
-
 config ARM64_RAS_EXTN
 	bool "Enable support for RAS CPU Extensions"
 	default y
@@ -1947,22 +1707,6 @@ config ARM64_BTI
 	  BTI, such binaries can still run, but you get no additional
 	  enforcement of branch destinations.
 
-config ARM64_BTI_KERNEL
-	bool "Use Branch Target Identification for kernel"
-	default y
-	depends on ARM64_BTI
-	depends on ARM64_PTR_AUTH_KERNEL
-	depends on CC_HAS_BRANCH_PROT_PAC_RET_BTI
-	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94697
-	depends on !CC_IS_GCC || GCC_VERSION >= 100100
-	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=106671
-	depends on !CC_IS_GCC
-	help
-	  Build the kernel with Branch Target Identification annotations
-	  and enable enforcement of this for kernel code. When this option
-	  is enabled and the system supports BTI all kernel code including
-	  modular code must have BTI enabled.
-
 config CC_HAS_BRANCH_PROT_PAC_RET_BTI
 	# GCC 9 or later, clang 8 or later
 	def_bool $(cc-option,-mbranch-protection=pac-ret+leaf+bti)
@@ -2032,9 +1776,6 @@ config ARM64_EPAN
 	  if the cpu does not implement the feature.
 endmenu # "ARMv8.7 architectural features"
 
-config AS_HAS_MOPS
-	def_bool $(as-instr,.arch_extension mops)
-
 menu "ARMv8.9 architectural features"
 
 config ARM64_POE
@@ -2100,17 +1841,6 @@ config AS_HAS_LSUI
 
 menu "ARMv9.6 architectural features"
 
-config ARM64_LSUI
-	bool "Support Unprivileged Load Store Instructions (LSUI)"
-	default y
-	depends on AS_HAS_LSUI && !CPU_BIG_ENDIAN
-	help
-	  The Unprivileged Load Store Instructions (LSUI) provides
-	  variants load/store instructions that access user-space memory
-	  from the kernel without clearing PSTATE.PAN bit.
-
-	  This feature is supported by LLVM 20+ and binutils 2.45+.
-
 endmenu # "ARMv9.6 architectural feature"
 
 config ARM64_SVE
@@ -2170,14 +1900,6 @@ config ARM64_PSEUDO_NMI
 	  If unsure, say N
 
 if ARM64_PSEUDO_NMI
-config ARM64_DEBUG_PRIORITY_MASKING
-	bool "Debug interrupt priority masking"
-	help
-	  This adds runtime checks to functions enabling/disabling
-	  interrupts when using priority masking. The additional checks verify
-	  the validity of ICC_PMR_EL1 when calling concerned functions.
-
-	  If unsure, say N
 endif # ARM64_PSEUDO_NMI
 
 config RELOCATABLE
@@ -2255,15 +1977,6 @@ config ARM64_CONTPTE
 endmenu # "Kernel Features"
 
 menu "Boot options"
-
-config ARM64_ACPI_PARKING_PROTOCOL
-	bool "Enable support for the ARM64 ACPI parking protocol"
-	depends on ACPI
-	help
-	  Enable support for the ARM64 ACPI parking protocol. If disabled
-	  the kernel will not allow booting through the ARM64 ACPI parking
-	  protocol even if the corresponding data is present in the ACPI
-	  MADT table.
 
 config CMDLINE
 	string "Default kernel command string"

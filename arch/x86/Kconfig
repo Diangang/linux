@@ -702,26 +702,6 @@ config JAILHOUSE_GUEST
 	  cell. You can leave this option disabled if you only want to start
 	  Jailhouse and run Linux afterwards in the root cell.
 
-config ACRN_GUEST
-	bool "ACRN Guest support"
-	depends on X86_64
-	select X86_HV_CALLBACK_VECTOR
-	help
-	  This option allows to run Linux as guest in the ACRN hypervisor. ACRN is
-	  a flexible, lightweight reference open-source hypervisor, built with
-	  real-time and safety-criticality in mind. It is built for embedded
-	  IOT with small footprint and real-time features. More details can be
-	  found in https://projectacrn.org/.
-
-config BHYVE_GUEST
-	bool "Bhyve (BSD Hypervisor) Guest support"
-	depends on X86_64
-	help
-	  This option allows to run Linux to recognise when it is running as a
-	  guest in the Bhyve hypervisor, and to support more than 255 vCPUs when
-	  when doing so. More details about Bhyve can be found at https://bhyve.org
-	  and https://wiki.freebsd.org/bhyve/.
-
 config INTEL_TDX_GUEST
 	bool "Intel TDX (Trust Domain Extensions) - Guest Support"
 	depends on X86_64 && CPU_SUP_INTEL
@@ -1352,14 +1332,6 @@ config ARCH_SPARSEMEM_DEFAULT
 config ARCH_SELECT_MEMORY_MODEL
 	def_bool y
 	depends on ARCH_SPARSEMEM_ENABLE && ARCH_FLATMEM_ENABLE
-
-config ARCH_MEMORY_PROBE
-	bool "Enable sysfs memory/probe interface"
-	depends on MEMORY_HOTPLUG
-	help
-	  This option enables a sysfs memory/probe interface for testing.
-	  See Documentation/admin-guide/mm/memory-hotplug.rst for more information.
-	  If you are unsure how to answer this question, answer N.
 
 config ARCH_PROC_KCORE_TEXT
 	def_bool y
@@ -2521,65 +2493,6 @@ menuconfig APM
 	  module will be called apm.
 
 if APM
-
-config APM_IGNORE_USER_SUSPEND
-	bool "Ignore USER SUSPEND"
-	help
-	  This option will ignore USER SUSPEND requests. On machines with a
-	  compliant APM BIOS, you want to say N. However, on the NEC Versa M
-	  series notebooks, it is necessary to say Y because of a BIOS bug.
-
-config APM_DO_ENABLE
-	bool "Enable PM at boot time"
-	help
-	  Enable APM features at boot time. From page 36 of the APM BIOS
-	  specification: "When disabled, the APM BIOS does not automatically
-	  power manage devices, enter the Standby State, enter the Suspend
-	  State, or take power saving steps in response to CPU Idle calls."
-	  This driver will make CPU Idle calls when Linux is idle (unless this
-	  feature is turned off -- see "Do CPU IDLE calls", below). This
-	  should always save battery power, but more complicated APM features
-	  will be dependent on your BIOS implementation. You may need to turn
-	  this option off if your computer hangs at boot time when using APM
-	  support, or if it beeps continuously instead of suspending. Turn
-	  this off if you have a NEC UltraLite Versa 33/C or a Toshiba
-	  T400CDT. This is off by default since most machines do fine without
-	  this feature.
-
-config APM_CPU_IDLE
-	depends on CPU_IDLE
-	bool "Make CPU Idle calls when idle"
-	help
-	  Enable calls to APM CPU Idle/CPU Busy inside the kernel's idle loop.
-	  On some machines, this can activate improved power savings, such as
-	  a slowed CPU clock rate, when the machine is idle. These idle calls
-	  are made after the idle loop has run for some length of time (e.g.,
-	  333 mS). On some machines, this will cause a hang at boot time or
-	  whenever the CPU becomes idle. (On machines with more than one CPU,
-	  this option does nothing.)
-
-config APM_DISPLAY_BLANK
-	bool "Enable console blanking using APM"
-	help
-	  Enable console blanking using the APM. Some laptops can use this to
-	  turn off the LCD backlight when the screen blanker of the Linux
-	  virtual console blanks the screen. Note that this is only used by
-	  the virtual console screen blanker, and won't turn off the backlight
-	  when using the X Window system. This also doesn't have anything to
-	  do with your VESA-compliant power-saving monitor. Further, this
-	  option doesn't work for all laptops -- it might not turn off your
-	  backlight at all, or it might print a lot of errors to the console,
-	  especially if you are using gpm.
-
-config APM_ALLOW_INTS
-	bool "Allow interrupts during APM BIOS calls"
-	help
-	  Normally we disable external interrupts while we are making calls to
-	  the APM BIOS as a measure to lessen the effects of a badly behaving
-	  BIOS implementation.  The BIOS should reenable interrupts if it
-	  needs to.  Unfortunately, some BIOSes do not -- especially those in
-	  many of the newer IBM Thinkpads.  If you experience hangs when you
-	  suspend, try setting this to Y.  Otherwise, say N.
 
 endif # APM
 

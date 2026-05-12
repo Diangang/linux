@@ -510,10 +510,6 @@ config AUDIT
 config HAVE_ARCH_AUDITSYSCALL
 	bool
 
-config AUDITSYSCALL
-	def_bool n
-	depends on AUDIT && HAVE_ARCH_AUDITSYSCALL
-
 source "kernel/irq/Kconfig"
 source "kernel/time/Kconfig"
 source "kernel/Kconfig.preempt"
@@ -1766,9 +1762,6 @@ config KALLSYMS_ALL
 
 # end of the "standard kernel features (expert users)" menu
 
-config ARCH_HAS_MEMBARRIER_CALLBACKS
-	bool
-
 config ARCH_HAS_MEMBARRIER_SYNC_CORE
 	bool
 
@@ -1881,11 +1874,6 @@ config RUSTC_VERSION_TEXT
 	help
 	  See `CC_VERSION_TEXT`.
 
-config BINDGEN_VERSION_TEXT
-	string
-	depends on RUST
-	default "$(shell,$(BINDGEN) --version 2>/dev/null)"
-
 source "kernel/Kconfig.kexec"
 
 endmenu		# General setup
@@ -1919,9 +1907,6 @@ config PADATA
 source "kernel/Kconfig.locks"
 
 config ARCH_HAS_NON_OVERLAPPING_ADDRESS_SPACE
-	bool
-
-config ARCH_HAS_PREPARE_SYNC_CORE_CMD
 	bool
 
 config ARCH_HAS_SYNC_CORE_BEFORE_USERMODE

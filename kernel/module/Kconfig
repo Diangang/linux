@@ -168,14 +168,6 @@ config GENDWARFKSYMS
 	  If unsure, say N.
 endchoice
 
-config ASM_MODVERSIONS
-	bool
-	default HAVE_ASM_MODVERSIONS
-	help
-	  This enables module versioning for exported symbols also from
-	  assembly. This can be enabled only when the target architecture
-	  supports it.
-
 config EXTENDED_MODVERSIONS
 	bool "Extended Module Versioning Support"
 	help
@@ -184,20 +176,6 @@ config EXTENDED_MODVERSIONS
 
 	  The most likely reason you would enable this is to enable Rust
 	  support. If unsure, say N.
-
-config BASIC_MODVERSIONS
-	bool "Basic Module Versioning Support"
-	default y
-	help
-	  This enables basic MODVERSIONS support, allowing older tools or
-	  kernels to potentially load modules.
-
-	  Disabling this may cause older `modprobe` or `kmod` to be unable
-	  to read MODVERSIONS information from built modules. With this
-	  disabled, older kernels may treat this module as unversioned.
-
-	  This is enabled by default when MODVERSIONS are enabled.
-	  If unsure, say Y.
 
 endif # MODVERSIONS
 

@@ -26,13 +26,6 @@ config ARCH_SUNXI
 	help
 	  This enables support for Allwinner sunxi based SoCs like the A64.
 
-config ARCH_ALPINE
-	bool "Annapurna Labs Alpine platform"
-	select ALPINE_MSI if PCI
-	help
-	  This enables support for the Annapurna Labs Alpine
-	  Soc family.
-
 config ARCH_APPLE
 	bool "Apple Silicon SoC family"
 	select APPLE_AIC
@@ -47,12 +40,6 @@ config ARCH_ARTPEC
 	select ARM_GIC
 	help
 	   This enables support for the ARMv8 based ARTPEC SoC Family.
-
-config ARCH_AXIADO
-	bool "Axiado SoC Family"
-	select GPIOLIB
-	help
-	  This enables support for Axiado SoC family like AX3000
 
 menuconfig ARCH_BCM
 	bool "Broadcom SoC Support"
@@ -101,39 +88,6 @@ config ARCH_BRCMSTB
 
 endif
 
-config ARCH_BERLIN
-	bool "Marvell Berlin SoC Family"
-	select DW_APB_ICTL
-	select DW_APB_TIMER_OF
-	select GPIOLIB
-	select PINCTRL
-	help
-	  This enables support for Marvell Berlin SoC Family
-
-config ARCH_BITMAIN
-	bool "Bitmain SoC Platforms"
-	help
-	  This enables support for the Bitmain SoC Family.
-
-config ARCH_BLAIZE
-	bool "Blaize SoC Platforms"
-	help
-	  This enables support for the Blaize SoC family
-
-config ARCH_BST
-	bool "Black Sesame Technologies SoC Family"
-	help
-	  This enables support for Black Sesame Technologies (BST) SoC family.
-	  BST produces automotive-grade system-on-chips for intelligent driving,
-	  focusing on computer vision and AI capabilities. The BST C1200 family
-	  includes SoCs for ADAS and autonomous driving applications.
-
-config ARCH_CIX
-	bool "Cixtech SoC family"
-	help
-	  This enables support for the Cixtech SoC family,
-	  like P1(sky1).
-
 config ARCH_EXYNOS
 	bool "Samsung Exynos SoC family"
 	select COMMON_CLK_SAMSUNG
@@ -154,11 +108,6 @@ config ARCH_K3
 	help
 	  This enables support for Texas Instruments' K3 multicore SoC
 	  architecture.
-
-config ARCH_LG1K
-	bool "LG Electronics LG1K SoC Family"
-	help
-	  This enables support for LG Electronics LG1K SoC Family
 
 config ARCH_HISI
 	bool "Hisilicon SoC Family"
@@ -192,34 +141,6 @@ menuconfig ARCH_MICROCHIP
 	bool "Microchip SoC support"
 
 if ARCH_MICROCHIP
-
-config ARCH_LAN969X
-	bool "Microchip LAN969X SoC family"
-	select PINCTRL
-	select DW_APB_TIMER_OF
-	help
-	  This enables support for the Microchip LAN969X ARMv8-based
-	  SoC family of TSN-capable gigabit switches.
-
-	  The LAN969X Ethernet switch family provides a rich set of
-	  switching features such as advanced TCAM-based VLAN and QoS
-	  processing enabling delivery of differentiated services, and
-	  security through TCAM-based frame processing using versatile
-	  content aware processor (VCAP).
-
-config ARCH_SPARX5
-	bool "Microchip Sparx5 SoC family"
-	select PINCTRL
-	select DW_APB_TIMER_OF
-	help
-	  This enables support for the Microchip Sparx5 ARMv8-based
-	  SoC family of TSN-capable gigabit switches.
-
-	  The SparX-5 Ethernet switch family provides a rich set of
-	  switching features such as advanced TCAM-based VLAN and QoS
-	  processing enabling delivery of differentiated services, and
-	  security through TCAM-based frame processing using versatile
-	  content aware processor (VCAP).
 
 endif
 
@@ -294,29 +215,6 @@ config ARCH_MA35
 	help
 	  This enables support for the ARMv8 based Nuvoton MA35 series SoCs.
 
-config ARCH_NPCM
-	bool "Nuvoton NPCM Architecture"
-	select PINCTRL
-	select GPIOLIB
-	select NPCM7XX_TIMER
-	select RESET_CONTROLLER
-	select MFD_SYSCON
-	help
-	  General support for NPCM8xx BMC (Arbel).
-	  Nuvoton NPCM8xx BMC based on the Cortex A35.
-
-config ARCH_PENSANDO
-	bool "AMD Pensando Platforms"
-	help
-	  This enables support for the ARMv8 based AMD Pensando SoC
-	  family to include the Elba SoC.
-
-	  AMD Pensando SoCs support a range of Distributed Services
-	  Cards in PCIe format installed into servers.  The Elba
-	  SoC includes 16 Cortex A-72 CPU cores, 144 P4-programmable
-	  cores for a minimal latency/jitter datapath, and network
-	  interfaces up to 200 Gb/s.
-
 config ARCH_QCOM
 	bool "Qualcomm Platforms"
 	select GPIOLIB
@@ -325,13 +223,6 @@ config ARCH_QCOM
 	select HAVE_SHARED_GPIOS
 	help
 	  This enables support for the ARMv8 based Qualcomm chipsets.
-
-config ARCH_REALTEK
-	bool "Realtek Platforms"
-	select RESET_CONTROLLER
-	help
-	  This enables support for the ARMv8 based Realtek chipsets,
-	  like the RTD1295.
 
 config ARCH_RENESAS
 	bool "Renesas SoC Platforms"
@@ -347,18 +238,6 @@ config ARCH_ROCKCHIP
 	help
 	  This enables support for the ARMv8 based Rockchip chipsets,
 	  like the RK3368.
-
-config ARCH_SEATTLE
-	bool "AMD Seattle SoC Family"
-	help
-	  This enables support for AMD Seattle SOC Family
-
-config ARCH_INTEL_SOCFPGA
-	bool "Intel's SoCFPGA ARMv8 Families"
-	help
-	  This enables support for Intel's SoCFPGA ARMv8 families:
-	  Stratix 10 (ex. Altera), Stratix10 Software Virtual Platform,
-	  Agilex and eASIC N5X.
 
 config ARCH_SOPHGO
 	bool "Sophgo SoCs"
@@ -382,10 +261,6 @@ config ARCH_STM32
 		- STM32MP25:
 			- STM32MP251, STM32MP253, STM32MP255 and STM32MP257.
 
-config ARCH_SYNQUACER
-	bool "Socionext SynQuacer SoC Family"
-	select IRQ_FASTEOI_HIERARCHY_HANDLERS
-
 config ARCH_TEGRA
 	bool "NVIDIA Tegra SoC Family"
 	select ARCH_HAS_RESET_CONTROLLER
@@ -400,28 +275,10 @@ config ARCH_TEGRA
 	help
 	  This enables support for the NVIDIA Tegra SoC family.
 
-config ARCH_TESLA_FSD
-	bool "Tesla platform"
-	depends on ARCH_EXYNOS
-	help
-	  Support for ARMv8 based Tesla platforms.
-
 config ARCH_SPRD
 	bool "Spreadtrum SoC platform"
 	help
 	  Support for Spreadtrum ARM based SoCs
-
-config ARCH_THUNDER
-	bool "Cavium Inc. Thunder SoC Family"
-	help
-	  This enables support for Cavium's Thunder Family of SoCs.
-
-config ARCH_THUNDER2
-	bool "Cavium ThunderX2 Server Processors"
-	select GPIOLIB
-	help
-	  This enables support for Cavium's ThunderX2 CN99XX family of
-	  server processors.
 
 config ARCH_UNIPHIER
 	bool "Socionext UniPhier SoC Family"
@@ -431,25 +288,12 @@ config ARCH_UNIPHIER
 	help
 	  This enables support for Socionext UniPhier SoC family.
 
-config ARCH_VEXPRESS
-	bool "ARM Ltd Platforms"
-	select GPIOLIB
-	select PM
-	select PM_GENERIC_DOMAINS
-	help
-	  This enables support for the ARM Ltd Platforms.
-
 config ARCH_VISCONTI
 	bool "Toshiba Visconti SoC Family"
 	select PINCTRL
 	select PINCTRL_VISCONTI
 	help
 	  This enables support for Toshiba Visconti SoCs Family.
-
-config ARCH_XGENE
-	bool "AppliedMicro X-Gene SOC Family"
-	help
-	  This enables support for AppliedMicro X-Gene SOC Family
 
 config ARCH_ZYNQMP
 	bool "Xilinx ZynqMP Family"

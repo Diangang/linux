@@ -59,9 +59,6 @@ config ACPI_SYSTEM_POWER_STATES_SUPPORT
 config ACPI_CCA_REQUIRED
 	bool
 
-config ACPI_TABLE_LIB
-	bool
-
 config ACPI_SPCR_TABLE
 	bool "ACPI Serial Port Console Redirection Support"
 	default y if X86
@@ -161,10 +158,6 @@ config ACPI_CUSTOM_DSDT_FILE
 
 	  If unsure, don't enter a file name.
 
-config ACPI_CUSTOM_DSDT
-	bool
-	default ACPI_CUSTOM_DSDT_FILE != ""
-
 config ARCH_HAS_ACPI_TABLE_UPGRADE
 	def_bool n
 
@@ -176,16 +169,6 @@ config ACPI_TABLE_UPGRADE
 	  This option provides functionality to upgrade arbitrary ACPI tables
 	  via initrd. No functional change if no ACPI tables are passed via
 	  initrd, therefore it's safe to say Y.
-	  See Documentation/admin-guide/acpi/initrd_table_override.rst for details
-
-config ACPI_TABLE_OVERRIDE_VIA_BUILTIN_INITRD
-	bool "Override ACPI tables from built-in initrd"
-	depends on ACPI_TABLE_UPGRADE
-	depends on INITRAMFS_SOURCE!="" && INITRAMFS_COMPRESSION_NONE
-	help
-	  This option provides functionality to override arbitrary ACPI tables
-	  from built-in uncompressed initrd.
-
 	  See Documentation/admin-guide/acpi/initrd_table_override.rst for details
 
 config ACPI_DEBUG
