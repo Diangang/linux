@@ -426,11 +426,7 @@ static inline bool pm_hibernation_mode_is_suspend(void) { return false; }
 
 int arch_resume_nosmt(void);
 
-#ifdef CONFIG_HIBERNATION_SNAPSHOT_DEV
-int is_hibernate_resume_dev(dev_t dev);
-#else
 static inline int is_hibernate_resume_dev(dev_t dev) { return 0; }
-#endif
 
 /* Hibernation and suspend events */
 #define PM_HIBERNATION_PREPARE	0x0001 /* Going to hibernate */

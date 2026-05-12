@@ -24,8 +24,6 @@ $(dst)/%: $(obj)/%
 
 dtbs := $(patsubst $(obj)/%,%,$(call read-file, $(obj)/dtbs-list))
 
-ifdef CONFIG_ARCH_WANT_FLAT_DTB_INSTALL
-
 define gen_install_rules
 $(dst)/%: $(obj)/$(1)%
 	$$(call cmd,dtb_install)
@@ -34,8 +32,6 @@ endef
 $(foreach d, $(sort $(dir $(dtbs))), $(eval $(call gen_install_rules,$(d))))
 
 dtbs := $(notdir $(dtbs))
-
-endif # CONFIG_ARCH_WANT_FLAT_DTB_INSTALL
 
 __dtbs_install: $(addprefix $(dst)/, $(dtbs))
 	@:
