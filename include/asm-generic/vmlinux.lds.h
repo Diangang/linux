@@ -280,12 +280,6 @@
 #define FTRACE_EVENTS()
 #endif
 
-#ifdef CONFIG_TRACING
-#define TRACE_PRINTKS()		BOUNDED_SECTION_BY(__trace_printk_fmt, ___trace_bprintk_fmt)
-#else
-#define TRACE_PRINTKS()
-#endif
-
 #ifdef CONFIG_FTRACE_SYSCALLS
 #define TRACE_SYSCALLS()			\
 	. = ALIGN(8);				\
@@ -386,7 +380,6 @@
 	CODETAG_SECTIONS()						\
 	LIKELY_PROFILE()		       				\
 	BRANCH_PROFILE()						\
-	TRACE_PRINTKS()							\
 	BPF_RAW_TP()							\
 	KUNIT_TABLE()
 
