@@ -77,29 +77,3 @@ config RD_ZSTD
 	help
 	  Support loading of a ZSTD encoded initial ramdisk or cpio buffer.
 	  If unsure, say N.
-
-choice
-	prompt "Built-in initramfs compression mode"
-	depends on INITRAMFS_SOURCE != ""
-	help
-	  This option allows you to decide by which algorithm the builtin
-	  initramfs will be compressed.  Several compression algorithms are
-	  available, which differ in efficiency, compression and
-	  decompression speed.  Compression speed is only relevant
-	  when building a kernel.  Decompression speed is relevant at
-	  each boot. Also the memory usage during decompression may become
-	  relevant on memory constrained systems. This is usually based on the
-	  dictionary size of the algorithm with algorithms like XZ and LZMA
-	  featuring large dictionary sizes.
-
-	  High compression options are mostly useful for users who are
-	  low on RAM, since it reduces the memory consumption during
-	  boot.
-
-	  Keep in mind that your build system needs to provide the appropriate
-	  compression tool to compress the generated initram cpio file for
-	  embedding.
-
-	  If in doubt, select 'None'
-
-endchoice
