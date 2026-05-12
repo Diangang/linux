@@ -323,23 +323,6 @@ static const struct sysrq_key_op sysrq_showstate_blocked_op = {
 	.enable_mask	= SYSRQ_ENABLE_DUMP,
 };
 
-#ifdef CONFIG_TRACING
-#include <linux/ftrace.h>
-
-static void sysrq_ftrace_dump(u8 key)
-{
-	ftrace_dump(DUMP_ALL);
-}
-static const struct sysrq_key_op sysrq_ftrace_dump_op = {
-	.handler	= sysrq_ftrace_dump,
-	.help_msg	= "dump-ftrace-buffer(z)",
-	.action_msg	= "Dump ftrace buffer",
-	.enable_mask	= SYSRQ_ENABLE_DUMP,
-};
-#else
-#define sysrq_ftrace_dump_op (*(const struct sysrq_key_op *)NULL)
-#endif
-
 static void sysrq_handle_showmem(u8 key)
 {
 	show_mem();
@@ -512,7 +495,7 @@ static const struct sysrq_key_op *sysrq_key_table[62] = {
 	NULL,				/* x */
 	/* y: May be registered on sparc64 for global register dump */
 	NULL,				/* y */
-	&sysrq_ftrace_dump_op,		/* z */
+	NULL,				/* z */
 	NULL,				/* A */
 	NULL,				/* B */
 	NULL,				/* C */

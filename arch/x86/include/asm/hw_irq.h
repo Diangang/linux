@@ -117,9 +117,6 @@ extern atomic_t irq_mis_count;
 extern void elcr_set_level_irq(unsigned int irq);
 
 extern char irq_entries_start[];
-#ifdef CONFIG_TRACING
-#define trace_irq_entries_start irq_entries_start
-#endif
 
 extern char spurious_entries_start[];
 
