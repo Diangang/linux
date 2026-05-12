@@ -9,23 +9,6 @@
 #include <linux/smp.h>
 #include <linux/trace_events.h>
 #include <linux/local_lock.h>
-#ifdef CONFIG_TRACING
-void __mmap_lock_do_trace_start_locking(struct mm_struct *mm, bool write)
-{
-}
-EXPORT_SYMBOL(__mmap_lock_do_trace_start_locking);
-
-void __mmap_lock_do_trace_acquire_returned(struct mm_struct *mm, bool write,
-					   bool success)
-{
-}
-EXPORT_SYMBOL(__mmap_lock_do_trace_acquire_returned);
-
-void __mmap_lock_do_trace_released(struct mm_struct *mm, bool write)
-{
-}
-EXPORT_SYMBOL(__mmap_lock_do_trace_released);
-#endif /* CONFIG_TRACING */
 
 #ifdef CONFIG_MMU
 #ifdef CONFIG_PER_VMA_LOCK

@@ -21,50 +21,19 @@ DECLARE_TRACEPOINT(mmap_lock_start_locking);
 DECLARE_TRACEPOINT(mmap_lock_acquire_returned);
 DECLARE_TRACEPOINT(mmap_lock_released);
 
-#ifdef CONFIG_TRACING
-
-void __mmap_lock_do_trace_start_locking(struct mm_struct *mm, bool write);
-void __mmap_lock_do_trace_acquire_returned(struct mm_struct *mm, bool write,
-					   bool success);
-void __mmap_lock_do_trace_released(struct mm_struct *mm, bool write);
-
 static inline void __mmap_lock_trace_start_locking(struct mm_struct *mm,
-						   bool write)
-{
-	if (tracepoint_enabled(mmap_lock_start_locking))
-		__mmap_lock_do_trace_start_locking(mm, write);
-}
-
-static inline void __mmap_lock_trace_acquire_returned(struct mm_struct *mm,
-						      bool write, bool success)
-{
-	if (tracepoint_enabled(mmap_lock_acquire_returned))
-		__mmap_lock_do_trace_acquire_returned(mm, write, success);
-}
-
-static inline void __mmap_lock_trace_released(struct mm_struct *mm, bool write)
-{
-	if (tracepoint_enabled(mmap_lock_released))
-		__mmap_lock_do_trace_released(mm, write);
-}
-
-#else /* !CONFIG_TRACING */
-
-static inline void __mmap_lock_trace_start_locking(struct mm_struct *mm,
-						   bool write)
+					   bool write)
 {
 }
 
 static inline void __mmap_lock_trace_acquire_returned(struct mm_struct *mm,
-						      bool write, bool success)
+					      bool write, bool success)
 {
 }
 
 static inline void __mmap_lock_trace_released(struct mm_struct *mm, bool write)
 {
 }
-
-#endif /* CONFIG_TRACING */
 
 static inline void mmap_assert_locked(const struct mm_struct *mm)
 {
