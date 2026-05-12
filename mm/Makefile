@@ -100,7 +100,6 @@ obj-$(CONFIG_NUMA) += numa.o
 obj-$(CONFIG_NUMA_MEMBLKS) += numa_memblks.o
 obj-$(CONFIG_BALLOON) += balloon.o
 obj-$(CONFIG_SECRETMEM) += secretmem.o
-obj-$(CONFIG_CMA_SYSFS) += cma_sysfs.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
 obj-$(CONFIG_ZONE_DEVICE) += memremap.o
 obj-$(CONFIG_HMM_MIRROR) += hmm.o
