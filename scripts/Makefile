@@ -39,10 +39,6 @@ HOSTCFLAGS_sorttable.o += -I$(srctree)/tools/arch/$(SRCARCH)/include
 HOSTCFLAGS_sorttable.o += -DUNWINDER_ORC_ENABLED
 endif
 
-ifdef CONFIG_BUILDTIME_MCOUNT_SORT
-HOSTCFLAGS_sorttable.o += -DMCOUNT_SORT_ENABLED
-endif
-
 # The following programs are only built on demand
 hostprogs += unifdef gen_packed_field_checks
 
