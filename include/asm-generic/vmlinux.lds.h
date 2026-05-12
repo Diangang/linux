@@ -282,10 +282,8 @@
 
 #ifdef CONFIG_TRACING
 #define TRACE_PRINTKS()		BOUNDED_SECTION_BY(__trace_printk_fmt, ___trace_bprintk_fmt)
-#define TRACEPOINT_STR()	BOUNDED_SECTION_BY(__tracepoint_str, ___tracepoint_str)
 #else
 #define TRACE_PRINTKS()
-#define TRACEPOINT_STR()
 #endif
 
 #ifdef CONFIG_FTRACE_SYSCALLS
@@ -390,7 +388,6 @@
 	BRANCH_PROFILE()						\
 	TRACE_PRINTKS()							\
 	BPF_RAW_TP()							\
-	TRACEPOINT_STR()						\
 	KUNIT_TABLE()
 
 /*
