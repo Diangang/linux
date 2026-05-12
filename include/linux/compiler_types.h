@@ -108,7 +108,7 @@ static inline void __chk_io_ptr(const volatile void __iomem *ptr) { }
  *   https://lore.kernel.org/lkml/Y77%2FqVgvaJidFpYt@FVFF77S0Q05N
  *   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88345#c9
  */
-#if defined(CONFIG_CC_HAS_SANE_FUNCTION_ALIGNMENT) || (CONFIG_FUNCTION_ALIGNMENT == 0)
+#if CONFIG_FUNCTION_ALIGNMENT == 0
 #define __cold				__attribute__((__cold__))
 #else
 #define __cold
@@ -351,11 +351,7 @@ struct ftrace_likely_data {
  * clang: https://clang.llvm.org/docs/AttributeReference.html#id13
  *
  */
-#ifdef CONFIG_CC_HAS_ASSUME
-# define __assume(expr)			__attribute__((__assume__(expr)))
-#else
 # define __assume(expr)
-#endif
 
 /*
  * Optional: only supported since gcc >= 15
@@ -370,11 +366,7 @@ struct ftrace_likely_data {
  * __bdos on clang < 19.1.3 can be off by 4:
  * https://github.com/llvm/llvm-project/pull/112636
  */
-#ifdef CONFIG_CC_HAS_COUNTED_BY
-# define __counted_by(member)		__attribute__((__counted_by__(member)))
-#else
 # define __counted_by(member)
-#endif
 
 /*
  * Runtime track number of objects pointed to by a pointer member for use by
@@ -386,11 +378,7 @@ struct ftrace_likely_data {
  *   gcc: https://gcc.gnu.org/pipermail/gcc-patches/2025-April/681727.html
  * clang: https://clang.llvm.org/docs/AttributeReference.html#counted-by-counted-by-or-null-sized-by-sized-by-or-null
  */
-#ifdef CONFIG_CC_HAS_COUNTED_BY_PTR
-#define __counted_by_ptr(member)	__attribute__((__counted_by__(member)))
-#else
 #define __counted_by_ptr(member)
-#endif
 
 /*
  * Optional: only supported since gcc >= 15
@@ -398,11 +386,7 @@ struct ftrace_likely_data {
  *
  * gcc: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=117178
  */
-#ifdef CONFIG_CC_HAS_MULTIDIMENSIONAL_NONSTRING
-# define __nonstring_array		__attribute__((__nonstring__))
-#else
 # define __nonstring_array
-#endif
 
 /*
  * Apply __counted_by() when the Endianness matches to increase test coverage.
@@ -543,8 +527,7 @@ struct ftrace_likely_data {
  *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html#index-_005f_005fbuiltin_005fcounted_005fby_005fref
  * clang: https://clang.llvm.org/docs/LanguageExtensions.html#builtin-counted-by-ref
  */
-#if __has_builtin(__builtin_counted_by_ref) && \
-    !defined(CONFIG_CC_HAS_BROKEN_COUNTED_BY_REF)
+#if __has_builtin(__builtin_counted_by_ref)
 /**
  * __flex_counter() - Get pointer to counter member for the given
  *                    flexible array, if it was annotated with __counted_by()
