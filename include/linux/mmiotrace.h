@@ -34,24 +34,6 @@ extern void unregister_kmmio_probe(struct kmmio_probe *p);
 extern int kmmio_init(void);
 extern void kmmio_cleanup(void);
 
-#ifdef CONFIG_MMIOTRACE
-/* kmmio is active by some kmmio_probes? */
-static inline int is_kmmio_active(void)
-{
-	return kmmio_count;
-}
-
-/* Called from page fault handler. */
-extern int kmmio_handler(struct pt_regs *regs, unsigned long addr);
-
-/* Called from ioremap.c */
-extern void mmiotrace_ioremap(resource_size_t offset, unsigned long size,
-							void __iomem *addr);
-extern void mmiotrace_iounmap(volatile void __iomem *addr);
-
-/* For anyone to insert markers. Remember trailing newline. */
-extern __printf(1, 2) int mmiotrace_printk(const char *fmt, ...);
-#else /* !CONFIG_MMIOTRACE: */
 static inline int is_kmmio_active(void)
 {
 	return 0;
@@ -75,7 +57,6 @@ static inline __printf(1, 2) int mmiotrace_printk(const char *fmt, ...)
 {
 	return 0;
 }
-#endif /* CONFIG_MMIOTRACE */
 
 enum mm_io_opcode {
 	MMIO_READ	= 0x1,	/* struct mmiotrace_rw */

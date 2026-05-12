@@ -12,10 +12,6 @@
 
 struct thermal_cooling_device;
 
-#ifdef CONFIG_PCIE_THERMAL
-struct thermal_cooling_device *pcie_cooling_device_register(struct pci_dev *port);
-void pcie_cooling_device_unregister(struct thermal_cooling_device *cdev);
-#else
 static inline struct thermal_cooling_device *pcie_cooling_device_register(struct pci_dev *port)
 {
 	return NULL;
@@ -23,6 +19,5 @@ static inline struct thermal_cooling_device *pcie_cooling_device_register(struct
 static inline void pcie_cooling_device_unregister(struct thermal_cooling_device *cdev)
 {
 }
-#endif
 
 #endif
