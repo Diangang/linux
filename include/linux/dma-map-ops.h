@@ -407,13 +407,9 @@ static inline void arch_setup_dma_ops(struct device *dev, bool coherent)
 }
 #endif /* CONFIG_ARCH_HAS_SETUP_DMA_OPS */
 
-#ifdef CONFIG_ARCH_HAS_TEARDOWN_DMA_OPS
-void arch_teardown_dma_ops(struct device *dev);
-#else
 static inline void arch_teardown_dma_ops(struct device *dev)
 {
 }
-#endif /* CONFIG_ARCH_HAS_TEARDOWN_DMA_OPS */
 
 static inline void dma_debug_add_bus(const struct bus_type *bus)
 {

@@ -288,12 +288,6 @@ static inline void pxa_ssp_disable(struct ssp_device *ssp)
 	pxa_ssp_write_reg(ssp, SSCR0, sscr0);
 }
 
-#if IS_ENABLED(CONFIG_PXA_SSP)
-struct ssp_device *pxa_ssp_request(int port, const char *label);
-void pxa_ssp_free(struct ssp_device *);
-struct ssp_device *pxa_ssp_request_of(const struct device_node *of_node,
-				      const char *label);
-#else
 static inline struct ssp_device *pxa_ssp_request(int port, const char *label)
 {
 	return NULL;
@@ -304,6 +298,5 @@ static inline struct ssp_device *pxa_ssp_request_of(const struct device_node *n,
 	return NULL;
 }
 static inline void pxa_ssp_free(struct ssp_device *ssp) {}
-#endif
 
 #endif	/* __LINUX_PXA2XX_SSP_H */

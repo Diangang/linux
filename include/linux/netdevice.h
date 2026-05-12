@@ -5281,13 +5281,9 @@ struct netdev_notifier_bonding_info {
 void netdev_bonding_info_change(struct net_device *dev,
 				struct netdev_bonding_info *bonding_info);
 
-#if IS_ENABLED(CONFIG_ETHTOOL_NETLINK)
-void ethtool_notify(struct net_device *dev, unsigned int cmd);
-#else
 static inline void ethtool_notify(struct net_device *dev, unsigned int cmd)
 {
 }
-#endif
 
 __be16 skb_network_protocol(struct sk_buff *skb, int *depth);
 
