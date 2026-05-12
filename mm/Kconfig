@@ -59,28 +59,6 @@ config SLAB_MERGE_DEFAULT
 
 endmenu # Slab allocator options
 
-config MMAP_ALLOW_UNINITIALIZED
-	bool "Allow mmapped anonymous memory to be uninitialized"
-	depends on EXPERT && !MMU
-	default n
-	help
-	  Normally, and according to the Linux spec, anonymous memory obtained
-	  from mmap() has its contents cleared before it is passed to
-	  userspace.  Enabling this config option allows you to request that
-	  mmap() skip that if it is given an MAP_UNINITIALIZED flag, thus
-	  providing a huge performance boost.  If this option is not enabled,
-	  then the flag will be ignored.
-
-	  This is taken advantage of by uClibc's malloc(), and also by
-	  ELF-FDPIC binfmt's brk and stack allocator.
-
-	  Because of the obvious security issues, this option should only be
-	  enabled on embedded devices where you control what is run in
-	  userspace.  Since that isn't generally a problem on no-MMU systems,
-	  it is normally safe to say Y here.
-
-	  See Documentation/admin-guide/mm/nommu-mmap.rst for more information.
-
 config SELECT_MEMORY_MODEL
 	def_bool y
 	depends on ARCH_SELECT_MEMORY_MODEL
@@ -180,9 +158,6 @@ config ARCH_WANT_OPTIMIZE_HUGETLB_VMEMMAP
 	bool
 
 config ARCH_WANT_HUGETLB_VMEMMAP_PREINIT
-	bool
-
-config HAVE_MEMBLOCK_PHYS_MAP
 	bool
 
 config HAVE_GUP_FAST
@@ -401,9 +376,6 @@ config MIGRATION
 	bool
 	depends on MMU
 
-config DEVICE_MIGRATION
-	def_bool MIGRATION && ZONE_DEVICE
-
 config ARCH_ENABLE_HUGEPAGE_MIGRATION
 	bool
 
@@ -488,34 +460,6 @@ config MEMORY_FAILURE
 	  with MCA recovery. This allows a system to continue running
 	  even when some of its memory has uncorrected errors. This requires
 	  special hardware support and typically ECC memory.
-
-config NOMMU_INITIAL_TRIM_EXCESS
-	int "Turn on mmap() excess space trimming before booting"
-	depends on !MMU
-	default 1
-	help
-	  The NOMMU mmap() frequently needs to allocate large contiguous chunks
-	  of memory on which to store mappings, but it can only ask the system
-	  allocator for chunks in 2^N*PAGE_SIZE amounts - which is frequently
-	  more than it requires.  To deal with this, mmap() is able to trim off
-	  the excess and return it to the allocator.
-
-	  If trimming is enabled, the excess is trimmed off and returned to the
-	  system allocator, which can cause extra fragmentation, particularly
-	  if there are a lot of transient processes.
-
-	  If trimming is disabled, the excess is kept, but not used, which for
-	  long-term mappings means that the space is wasted.
-
-	  Trimming can be dynamically controlled through a sysctl option
-	  (/proc/sys/vm/nr_trim_pages) which specifies the minimum number of
-	  excess pages there must be before trimming should occur, or zero if
-	  no trimming is to occur.
-
-	  This option specifies the initial value of this option.  The default
-	  of 1 says that all excess pages should be trimmed.
-
-	  See Documentation/admin-guide/mm/nommu-mmap.rst for more information.
 
 config ARCH_WANT_GENERAL_HUGETLB
 	bool
@@ -730,10 +674,6 @@ config PGTABLE_HAS_HUGE_LEAVES
 #
 # We can end up creating gigantic folio.
 #
-config HAVE_GIGANTIC_FOLIOS
-	def_bool (HUGETLB_PAGE && ARCH_HAS_GIGANTIC_PAGE) || \
-		 (ZONE_DEVICE && HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-
 config ASYNC_KERNEL_PGTABLE_FREE
 	def_bool n
 
@@ -745,11 +685,6 @@ config ARCH_SUPPORTS_HUGE_PFNMAP
 config ARCH_SUPPORTS_PMD_PFNMAP
 	def_bool y
 	depends on ARCH_SUPPORTS_HUGE_PFNMAP && HAVE_ARCH_TRANSPARENT_HUGEPAGE
-
-config NEED_PER_CPU_KM
-	depends on !SMP || !MMU
-	bool
-	default y
 
 config NEED_PER_CPU_EMBED_FIRST_CHUNK
 	bool
@@ -763,29 +698,6 @@ config USE_PERCPU_NUMA_NODE_ID
 config HAVE_SETUP_PER_CPU_AREA
 	bool
 
-config CMA_SYSFS
-	bool "CMA information through sysfs interface"
-	depends on CMA && SYSFS
-	help
-	  This option exposes some sysfs attributes to get information
-	  from CMA.
-
-config CMA_AREAS
-	int "Maximum count of the CMA areas"
-	depends on CMA
-	default 20 if NUMA
-	default 8
-	help
-	  CMA allows to create CMA areas for particular purpose, mainly,
-	  used as device private area. This parameter sets the maximum
-	  number of CMA area in the system.
-
-	  If unsure, leave the default value "8" in UMA and "20" in NUMA.
-
-#
-# Select this config option from the architecture Kconfig, if available, to set
-# the max page order for physically contiguous allocations.
-#
 config ARCH_FORCE_MAX_ORDER
 	int
 
@@ -816,18 +728,6 @@ config PAGE_BLOCK_MAX_ORDER
 	  option with caution.
 
 	  Don't change if unsure.
-
-config MEM_SOFT_DIRTY
-	bool "Track memory changes"
-	depends on CHECKPOINT_RESTORE && HAVE_ARCH_SOFT_DIRTY && PROC_FS
-	select PROC_PAGE_MONITOR
-	help
-	  This option enables memory changes tracking by introducing a
-	  soft-dirty bit on pte-s. This bit it set when someone writes
-	  into a page just as regular dirty bit, but unlike the latter
-	  it can be cleared by hands.
-
-	  See Documentation/admin-guide/mm/soft-dirty.rst for more details.
 
 config GENERIC_EARLY_IOREMAP
 	bool
@@ -945,17 +845,8 @@ config GUP_GET_PXX_LOW_HIGH
 config ARCH_HAS_PTE_SPECIAL
 	bool
 
-config MAPPING_DIRTY_HELPERS
-        bool
-
 config KMAP_LOCAL
 	bool
-
-config KMAP_LOCAL_NON_LINEAR_PTE_ARRAY
-	bool
-
-config MEMFD_CREATE
-	bool "Enable memfd_create() system call" if EXPERT
 
 config SECRETMEM
 	default y
@@ -989,11 +880,6 @@ config PTE_MARKER_UFFD_WP
 endif # USERFAULTFD
 
 # multi-gen LRU {
-
-config LRU_GEN_WALKS_MMU
-	def_bool y
-	depends on LRU_GEN && ARCH_HAS_HW_PTE_YOUNG
-# }
 
 config ARCH_SUPPORTS_PER_VMA_LOCK
        def_bool n
@@ -1037,9 +923,6 @@ config PT_RECLAIM
 	  and exit_mmap path.
 
 	  Note: now only empty user PTE page table pages will be reclaimed.
-
-config FIND_NORMAL_PAGE
-	def_bool n
 
 config ARCH_HAS_LAZY_MMU_MODE
 	bool

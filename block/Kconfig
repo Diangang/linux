@@ -107,9 +107,6 @@ config BLK_PM
 	def_bool PM
 
 # do not use in new code
-config BLOCK_HOLDER_DEPRECATED
-	bool
-
 source "block/Kconfig.iosched"
 
 endif # BLOCK

@@ -74,9 +74,6 @@ config EFI_CUSTOM_SSDT_OVERLAYS
 	  See Documentation/admin-guide/acpi/ssdt-overlays.rst for more
 	  information.
 
-config EFI_SBAT
-       def_bool y if EFI_SBAT_FILE!=""
-
 config EFI_SBAT_FILE
 	string "Embedded SBAT section file path"
 	depends on EFI_STUB && X86

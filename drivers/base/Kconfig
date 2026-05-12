@@ -106,11 +106,6 @@ config ALLOW_DEV_COREDUMP
 
 	  If unsure, say Y.
 
-config DEV_COREDUMP
-	bool
-	default y if WANT_DEV_COREDUMP
-	depends on ALLOW_DEV_COREDUMP
-
 config DEBUG_DEVRES
 	bool "Managed device resources verbose debug messages"
 	depends on DEBUG_KERNEL
@@ -146,16 +141,6 @@ config GENERIC_CPU_VULNERABILITIES
 	bool
 
 source "drivers/base/regmap/Kconfig"
-
-config DMA_SHARED_BUFFER
-	bool
-	default n
-	select IRQ_WORK
-	help
-	  This option enables the framework for buffer-sharing between
-	  multiple drivers. A buffer is associated with a file using driver
-	  APIs extension; the file's descriptor can then be passed on to other
-	  driver.
 
 config GENERIC_ARCH_TOPOLOGY
 	bool

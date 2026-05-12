@@ -194,16 +194,6 @@ config DEBUG_INFO_COMPRESSED_ZLIB
 	  preferable to setting KDEB_COMPRESS or DPKG_DEB_COMPRESSOR_TYPE to
 	  "none" which would be even larger.
 
-config DEBUG_INFO_COMPRESSED_ZSTD
-	bool "Compress debugging information with zstd"
-	depends on $(cc-option,-gz=zstd)
-	depends on $(ld-option,--compress-debug-sections=zstd)
-	help
-	  Compress the debug information using zstd.  This may provide better
-	  compression than zlib, for about the same time costs, but requires newer
-	  toolchain support.  Requires GCC 13.0+ or Clang 16.0+, binutils 2.40+, and
-	  zstd.
-
 endchoice # "Compressed Debug information"
 
 config DEBUG_INFO_SPLIT
@@ -333,21 +323,6 @@ config VMLINUX_MAP
 	  pieces of code get eliminated with
 	  CONFIG_LD_DEAD_CODE_DATA_ELIMINATION.
 
-config BUILTIN_MODULE_RANGES
-	bool "Generate address range information for builtin modules"
-	depends on !LTO
-	depends on VMLINUX_MAP
-	help
-	 When modules are built into the kernel, there will be no module name
-	 associated with its symbols in /proc/kallsyms.  Tracers may want to
-	 identify symbols by module name and symbol name regardless of whether
-	 the module is configured as loadable or not.
-
-	 This option generates modules.builtin.ranges in the build tree with
-	 offset ranges (per ELF section) for the module(s) they belong to.
-	 It also records an anchor symbol to determine the load address of the
-	 section.
-
 config WARN_CONTEXT_ANALYSIS
 	bool "Compiler context-analysis warnings"
 	depends on CC_IS_CLANG && CLANG_VERSION >= 220100
@@ -437,15 +412,6 @@ menu "Memory Debugging"
 
 source "mm/Kconfig.debug"
 
-config DEBUG_OBJECTS_FREE
-	bool "Debug objects in freed memory"
-	depends on DEBUG_OBJECTS
-	help
-	  This enables checks whether a k/v free operation frees an area
-	  which contains an object which has not been deactivated
-	  properly. This can make kmalloc/kfree-intensive workloads
-	  much slower.
-
 config DEBUG_OBJECTS_TIMERS
 	bool "Debug timer objects"
 	depends on DEBUG_OBJECTS
@@ -461,20 +427,6 @@ config DEBUG_OBJECTS_WORK
 	  If you say Y here, additional code will be inserted into the
 	  work queue routines to track the life time of work objects and
 	  validate the work operations.
-
-config DEBUG_OBJECTS_RCU_HEAD
-	bool "Debug RCU callbacks objects"
-	depends on DEBUG_OBJECTS
-	help
-	  Enable this to turn on debugging of RCU list heads (call_rcu() usage).
-
-config DEBUG_OBJECTS_PERCPU_COUNTER
-	bool "Debug percpu counter objects"
-	depends on DEBUG_OBJECTS
-	help
-	  If you say Y here, additional code will be inserted into the
-	  percpu counter routines to track the life time of percpu counter
-	  objects and validate the percpu counter operations.
 
 config DEBUG_STACK_USAGE
 	bool "Stack utilization instrumentation"
@@ -493,53 +445,8 @@ config ARCH_HAS_DEBUG_VM_PGTABLE
 	  An architecture should select this when it can successfully
 	  build and run DEBUG_VM_PGTABLE.
 
-config DEBUG_VM_IRQSOFF
-	def_bool DEBUG_VM && !PREEMPT_RT
-
-config DEBUG_VM_SHOOT_LAZIES
-	bool "Debug MMU_LAZY_TLB_SHOOTDOWN implementation"
-	depends on DEBUG_VM
-	depends on MMU_LAZY_TLB_SHOOTDOWN
-	help
-	  Enable additional IPIs that ensure lazy tlb mm references are removed
-	  before the mm is freed.
-
-	  If unsure, say N.
-
-config DEBUG_VM_MAPLE_TREE
-	bool "Debug VM maple trees"
-	depends on DEBUG_VM
-	select DEBUG_MAPLE_TREE
-	help
-	  Enable VM maple tree debugging information and extra validations.
-
-	  If unsure, say N.
-
-config DEBUG_VM_RB
-	bool "Debug VM red-black trees"
-	depends on DEBUG_VM
-	help
-	  Enable VM red-black tree debugging information and extra validations.
-
-	  If unsure, say N.
-
-config DEBUG_VM_PGFLAGS
-	bool "Debug page-flags operations"
-	depends on DEBUG_VM
-	help
-	  Enables extra validation on page flags operations.
-
-	  If unsure, say N.
-
 config ARCH_HAS_DEBUG_VIRTUAL
 	bool
-
-config DEBUG_NOMMU_REGIONS
-	bool "Debug the global anon/private NOMMU mapping region tree"
-	depends on DEBUG_KERNEL && !MMU
-	help
-	  This option causes the global tree of anonymous and private mapping
-	  regions to be regularly checked for invalid topology.
 
 config DEBUG_MEMORY_INIT
 	bool "Debug memory initialisation" if EXPERT
@@ -576,41 +483,10 @@ config DEBUG_KMAP_LOCAL_FORCE_MAP
 config HAVE_DEBUG_STACKOVERFLOW
 	bool
 
-config DEBUG_STACKOVERFLOW
-	bool "Check for stack overflows"
-	depends on DEBUG_KERNEL && HAVE_DEBUG_STACKOVERFLOW
-	help
-	  Say Y here if you want to check for overflows of kernel, IRQ
-	  and exception stacks (if your architecture uses them). This
-	  option will show detailed messages if free stack space drops
-	  below a certain limit.
-
-	  These kinds of bugs usually occur when call-chains in the
-	  kernel get too deep, especially when interrupts are
-	  involved.
-
-	  Use this in cases where you see apparently random memory
-	  corruption, especially if it appears in 'struct thread_info'
-
-	  If in doubt, say "N".
-
-config CODE_TAGGING
-	bool
-	select KALLSYMS
-
 config MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT
 	bool "Enable memory allocation profiling by default"
 	default y
 	depends on MEM_ALLOC_PROFILING
-
-config MEM_ALLOC_PROFILING_DEBUG
-	bool "Memory allocation profiler debugging"
-	default n
-	depends on MEM_ALLOC_PROFILING
-	select MEM_ALLOC_PROFILING_ENABLED_BY_DEFAULT
-	help
-	  Adds warnings with helpful error messages for memory allocation
-	  profiling.
 
 endmenu # "Memory Debugging"
 
@@ -626,9 +502,6 @@ config PANIC_TIMEOUT
 	  value n < 0 will reboot immediately. This setting can be overridden
 	  with the kernel command line option panic=, and from userspace via
 	  /proc/sys/kernel/panic.
-
-config LOCKUP_DETECTOR
-	bool
 
 config SOFTLOCKUP_DETECTOR_INTR_STORM
 	bool "Detect Interrupt Storm in Soft Lockups"
@@ -675,33 +548,6 @@ config HARDLOCKUP_DETECTOR_PREFER_BUDDY
 	  an arch-specific hardlockup detector or if resources needed
 	  for the hardlockup detector are better used for other things.
 
-config HARDLOCKUP_DETECTOR_PERF
-	bool
-	depends on HARDLOCKUP_DETECTOR
-	depends on HAVE_HARDLOCKUP_DETECTOR_PERF && !HARDLOCKUP_DETECTOR_PREFER_BUDDY
-	depends on !HAVE_HARDLOCKUP_DETECTOR_ARCH
-	select HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
-
-config HARDLOCKUP_DETECTOR_BUDDY
-	bool
-	depends on HARDLOCKUP_DETECTOR
-	depends on HAVE_HARDLOCKUP_DETECTOR_BUDDY
-	depends on !HAVE_HARDLOCKUP_DETECTOR_PERF || HARDLOCKUP_DETECTOR_PREFER_BUDDY
-	depends on !HAVE_HARDLOCKUP_DETECTOR_ARCH
-	select HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
-
-config HARDLOCKUP_DETECTOR_ARCH
-	bool
-	depends on HARDLOCKUP_DETECTOR
-	depends on HAVE_HARDLOCKUP_DETECTOR_ARCH
-	help
-	  The arch-specific implementation of the hardlockup detector will
-	  be used.
-
-#
-# Both the "perf" and "buddy" hardlockup detectors count hrtimer
-# interrupts. This config enables functions managing this common code.
-#
 config HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
 	bool
 	select SOFTLOCKUP_DETECTOR
@@ -712,17 +558,6 @@ config HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
 #
 config HARDLOCKUP_CHECK_TIMESTAMP
 	bool
-
-config DETECT_HUNG_TASK_BLOCKER
-	bool "Dump Hung Tasks Blocker"
-	depends on DETECT_HUNG_TASK
-	depends on !PREEMPT_RT
-	default y
-	help
-	  Say Y here to show the blocker task's stacktrace who acquires
-	  the mutex lock which "hung tasks" are waiting.
-	  This will add overhead a bit but shows suspicious tasks and
-	  call trace if it comes from waiting a mutex.
 
 endmenu # "Debug lockups and hangs"
 
@@ -746,14 +581,6 @@ config SCHEDSTATS
 	  this adds.
 
 endmenu
-
-config DEBUG_ATOMIC_LARGEST_ALIGN
-	bool "Check alignment only up to __aligned_largest"
-	depends on DEBUG_ATOMIC
-	help
-	  If you say Y here then the check for natural alignment of
-	  atomic accesses will be constrained to the compiler's largest
-	  alignment for scalar types.
 
 menu "Lock Debugging (spinlocks, mutexes, etc...)"
 
@@ -780,55 +607,6 @@ config LOCKDEP
 
 config LOCKDEP_SMALL
 	bool
-
-config LOCKDEP_BITS
-	int "Size for MAX_LOCKDEP_ENTRIES (as Nth power of 2)"
-	depends on LOCKDEP && !LOCKDEP_SMALL
-	range 10 24
-	default 15
-	help
-	  Try increasing this value if you hit "BUG: MAX_LOCKDEP_ENTRIES too low!" message.
-
-config LOCKDEP_CHAINS_BITS
-	int "Size for MAX_LOCKDEP_CHAINS (as Nth power of 2)"
-	depends on LOCKDEP && !LOCKDEP_SMALL
-	range 10 21
-	default 16
-	help
-	  Try increasing this value if you hit "BUG: MAX_LOCKDEP_CHAINS too low!" message.
-
-config LOCKDEP_STACK_TRACE_BITS
-	int "Size for MAX_STACK_TRACE_ENTRIES (as Nth power of 2)"
-	depends on LOCKDEP && !LOCKDEP_SMALL
-	range 10 26
-	default 21 if KASAN
-	default 19
-	help
-	  Try increasing this value if you hit "BUG: MAX_STACK_TRACE_ENTRIES too low!" message.
-
-	  KASAN significantly increases stack trace consumption because its
-	  slab tracking interacts with lockdep's dependency validation under
-	  PREEMPT_FULL, creating a feedback loop.  The higher default when
-	  KASAN is enabled costs ~12MB extra, which is negligible compared to
-	  KASAN's own shadow memory overhead.
-
-config LOCKDEP_STACK_TRACE_HASH_BITS
-	int "Size for STACK_TRACE_HASH_SIZE (as Nth power of 2)"
-	depends on LOCKDEP && !LOCKDEP_SMALL
-	range 10 26
-	default 16 if KASAN
-	default 14
-	help
-	  Try increasing this value if you need large STACK_TRACE_HASH_SIZE.
-
-config DEBUG_LOCKDEP
-	bool "Lock dependency engine debugging"
-	depends on DEBUG_KERNEL && LOCKDEP
-	select DEBUG_IRQFLAGS
-	help
-	  If you say Y here, the lock dependency engine will do
-	  additional runtime checks to debug itself, at the price
-	  of more runtime overhead.
 
 endmenu # lock debugging
 
@@ -863,25 +641,6 @@ config STACKTRACE
 	  every process, showing its current stack trace.
 	  It is also used by various kernel debugging features that require
 	  stack trace generation.
-
-config DEBUG_KOBJECT_RELEASE
-	bool "kobject release debugging"
-	depends on DEBUG_OBJECTS_TIMERS
-	help
-	  kobjects are reference counted objects.  This means that their
-	  last reference count put is not predictable, and the kobject can
-	  live on past the point at which a driver decides to drop its
-	  initial reference to the kobject gained on allocation.  An
-	  example of this would be a struct device which has just been
-	  unregistered.
-
-	  However, some buggy drivers assume that after such an operation,
-	  the memory backing the kobject can be immediately freed.  This
-	  goes completely against the principles of a refcounted object.
-
-	  If you say Y here, the kernel will delay the release of kobjects
-	  on the last reference count to improve the visibility of this
-	  kind of kobject release bug.
 
 config HAVE_DEBUG_BUGVERBOSE
 	bool
@@ -971,30 +730,6 @@ config FUNCTION_ERROR_INJECTION
 
 	  If unsure, say N
 
-config FAULT_INJECTION_USERCOPY
-	bool "Fault injection capability for usercopy functions"
-	depends on FAULT_INJECTION
-	help
-	  Provides fault-injection capability to inject failures
-	  in usercopy functions (copy_from_user(), get_user(), ...).
-
-config FAIL_MAKE_REQUEST
-	bool "Fault-injection capability for disk IO"
-	depends on FAULT_INJECTION && BLOCK
-	help
-	  Provide fault-injection capability for disk IO.
-
-config FAIL_IO_TIMEOUT
-	bool "Fault-injection capability for faking disk interrupts"
-	depends on FAULT_INJECTION && BLOCK
-	help
-	  Provide fault-injection capability on end IO handling. This
-	  will make the block layer "forget" an interrupt as configured,
-	  thus exercising the error handling.
-
-	  Only works with drivers that use the generic timeout handling,
-	  for others it won't do anything.
-
 config FAIL_FUTEX
 	bool "Fault-injection capability for futexes"
 	depends on FAULT_INJECTION && FUTEX
@@ -1005,36 +740,6 @@ config FAULT_INJECTION_DEBUG_FS
 	bool "Debugfs entries for fault-injection capabilities"
 	help
 	  Enable configuration of fault-injection capabilities via debugfs.
-
-config FAIL_FUNCTION
-	bool "Fault-injection capability for functions"
-	depends on FAULT_INJECTION_DEBUG_FS && FUNCTION_ERROR_INJECTION
-	help
-	  Provide function-based fault-injection capability.
-	  This will allow you to override a specific function with a return
-	  with given return value. As a result, function caller will see
-	  an error value and have to handle it. This is useful to test the
-	  error handling in various subsystems.
-
-config FAIL_SKB_REALLOC
-	bool "Fault-injection capability forcing skb to reallocate"
-	depends on FAULT_INJECTION_DEBUG_FS
-	help
-	  Provide fault-injection capability that forces the skb to be
-	  reallocated, catching possible invalid pointers to the skb.
-
-	  For more information, check
-	  Documentation/fault-injection/fault-injection.rst
-
-config FAULT_INJECTION_CONFIGFS
-	bool "Configfs interface for fault-injection capabilities"
-	depends on FAULT_INJECTION
-	depends on CONFIGFS_FS
-	help
-	  This option allows configfs-based drivers to dynamically configure
-	  fault-injection via configfs.  Each parameter for driver-specific
-	  fault-injection can be made visible as a configfs attribute in a
-	  configfs group.
 
 config ARCH_HAS_KCOV
 	bool
@@ -1054,44 +759,6 @@ config KCOV
 	  for coverage-guided fuzzing (randomized testing).
 
 	  For more details, see Documentation/dev-tools/kcov.rst.
-
-config KCOV_ENABLE_COMPARISONS
-	bool "Enable comparison operands collection by KCOV"
-	depends on KCOV
-	depends on $(cc-option,-fsanitize-coverage=trace-cmp)
-	help
-	  KCOV also exposes operands of every comparison in the instrumented
-	  code along with operand sizes and PCs of the comparison instructions.
-	  These operands can be used by fuzzing engines to improve the quality
-	  of fuzzing coverage.
-
-config KCOV_INSTRUMENT_ALL
-	bool "Instrument all code by default"
-	depends on KCOV
-	default y
-	help
-	  If you are doing generic system call fuzzing (like e.g. syzkaller),
-	  then you will want to instrument the whole kernel and you should
-	  say y here. If you are doing more targeted fuzzing (like e.g.
-	  filesystem fuzzing with AFL) then you will want to enable coverage
-	  for more specific subsets of files, and should say n here.
-
-config KCOV_IRQ_AREA_SIZE
-	hex "Size of interrupt coverage collection area in words"
-	depends on KCOV
-	default 0x40000
-	help
-	  KCOV uses preallocated per-cpu areas to collect coverage from
-	  soft interrupts. This specifies the size of those areas in the
-	  number of unsigned long words.
-
-config KCOV_SELFTEST
-	bool "Perform short selftests on boot"
-	depends on KCOV
-	help
-	  Run short KCOV coverage collection selftests on boot.
-	  On test failure, causes the kernel to panic. Recommended to be
-	  enabled, ensuring critical functionality works as intended.
 
 menuconfig RUNTIME_TESTING_MENU
 	bool "Runtime Testing"
@@ -1138,39 +805,6 @@ config SYSCTL_KUNIT_TEST
 	  Tests the API contract and implementation correctness of sysctl.
 	  For more information on KUnit and unit tests in general please refer
 	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
-config LIVEUPDATE_TEST
-	bool "Live Update Kernel Test"
-	default n
-	depends on LIVEUPDATE
-	help
-	  Enable a built-in kernel test module for the Live Update
-	  Orchestrator.
-
-	  This module validates the File-Lifecycle-Bound subsystem by
-	  registering a set of mock FLB objects with any real file handlers
-	  that support live update (such as the memfd handler).
-
-	  When live update operations are performed, this test module will
-	  output messages to the kernel log (dmesg), confirming that its
-	  registration and various callback functions (preserve, retrieve,
-	  finish, etc.) are being invoked correctly.
-
-	  This is a debugging and regression testing tool for developers
-	  working on the Live Update subsystem. It should not be enabled in
-	  production kernels.
-
-	  If unsure, say N
-
-config HW_BREAKPOINT_KUNIT_TEST
-	bool "Test hw_breakpoint constraints accounting" if !KUNIT_ALL_TESTS
-	depends on HAVE_HW_BREAKPOINT
-	depends on KUNIT=y
-	default KUNIT_ALL_TESTS
-	help
-	  Tests for hw_breakpoint constraints accounting.
 
 	  If unsure, say N.
 

@@ -146,18 +146,6 @@ config ACPI_HOTPLUG_CPU
 	depends on ACPI_PROCESSOR && HOTPLUG_CPU
 	select ACPI_CONTAINER
 
-config ACPI_CUSTOM_DSDT_FILE
-	string "Custom DSDT Table file to include"
-	default ""
-	depends on !STANDALONE
-	help
-	  This option supports a custom DSDT by linking it into the kernel.
-
-	  Enter the full path name to the file which includes the AmlCode
-	  or dsdt_aml_code declaration.
-
-	  If unsure, don't enter a file name.
-
 config ARCH_HAS_ACPI_TABLE_UPGRADE
 	def_bool n
 

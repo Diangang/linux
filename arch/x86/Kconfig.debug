@@ -24,20 +24,6 @@ config EARLY_PRINTK
 	  with klogd/syslogd or the X server. You should normally say N here,
 	  unless you want to debug such a crash.
 
-config EARLY_PRINTK_DBGP
-	bool "Early printk via EHCI debug port"
-	depends on EARLY_PRINTK && PCI
-	depends on USB_SUPPORT
-	select EARLY_PRINTK_USB
-	help
-	  Write kernel log output directly into the EHCI debug port.
-
-	  This is useful for kernel debugging when your machine crashes very
-	  early before the console code is initialized. For normal operation
-	  it is not recommended because it looks ugly and doesn't cooperate
-	  with klogd/syslogd or the X server. You should normally say N here,
-	  unless you want to debug such a crash. You need usb debug device.
-
 config EARLY_PRINTK_USB_XDBC
 	bool "Early printk via the xHCI debug port"
 	depends on EARLY_PRINTK && PCI
@@ -127,12 +113,6 @@ config IO_DELAY_NONE
 	  delay for certain operations. Should work on most new machines.
 
 endchoice
-
-config DEBUG_BOOT_PARAMS
-	bool "Debug boot parameters"
-	depends on DEBUG_KERNEL
-	help
-	  This option will cause struct boot_params to be exported via debugfs.
 
 config CPA_DEBUG
 	bool "CPA self-test code"

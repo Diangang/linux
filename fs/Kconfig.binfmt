@@ -89,12 +89,6 @@ config BINFMT_SCRIPT
 config ARCH_HAS_BINFMT_FLAT
 	bool
 
-config BINFMT_FLAT
-	bool "Kernel support for flat binaries"
-	depends on ARCH_HAS_BINFMT_FLAT
-	help
-	  Support uClinux FLAT format binaries.
-
 config BINFMT_MISC
 	tristate "Kernel support for MISC binaries"
 	help

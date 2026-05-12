@@ -16,10 +16,6 @@ config DMA_OPS_HELPERS
 # mapping fast path should select this option and set the dma_ops_bypass
 # flag in struct device where applicable
 #
-config DMA_OPS_BYPASS
-	bool
-
-# Lets platform IOMMU driver choose between bypass and IOMMU
 config NEED_SG_DMA_FLAGS
 	bool
 
@@ -100,12 +96,6 @@ config DMA_COHERENT_POOL
 	select GENERIC_ALLOCATOR
 	bool
 
-config DMA_GLOBAL_POOL
-	select DMA_DECLARE_COHERENT
-	depends on !ARCH_HAS_DMA_SET_UNCACHED
-	depends on !DMA_DIRECT_REMAP
-	bool
-
 config DMA_DIRECT_REMAP
 	bool
 	select DMA_COHERENT_POOL
@@ -130,17 +120,6 @@ config DMA_CMA
 
 if  DMA_CMA
 
-config DMA_NUMA_CMA
-	bool "Enable separate DMA Contiguous Memory Area for NUMA Node"
-	depends on NUMA
-	help
-	  Enable this option to get numa CMA areas so that NUMA devices
-	  can get local memory by DMA coherent APIs.
-
-	  You can set the size of pernuma CMA by specifying "cma_pernuma=size"
-	  or set the node id and its size of CMA by specifying "numa_cma=
-	  <node>:size[,<node>:size]" on the kernel's command line.
-
 comment "Default contiguous memory area size:"
 
 config CMA_SIZE_MBYTES
@@ -154,17 +133,6 @@ config CMA_SIZE_MBYTES
 	  default, but it can be enabled by passing cma=size[MG] to the kernel.
 
 
-config CMA_SIZE_PERCENTAGE
-	int "Percentage of total memory"
-	depends on !CMA_SIZE_SEL_MBYTES
-	default 0 if X86
-	default 10
-	help
-	  Defines the size of the default memory area for Contiguous Memory
-	  Allocator as a percentage of the total memory in the system.
-	  If 0 percent is selected, CMA is disabled by default, but it can be
-	  enabled by passing cma=size[MG] to the kernel.
-
 choice
 	prompt "Selected region size"
 	default CMA_SIZE_SEL_MBYTES
@@ -175,31 +143,7 @@ config CMA_SIZE_SEL_MBYTES
 config CMA_SIZE_SEL_PERCENTAGE
 	bool "Use percentage value only"
 
-config CMA_SIZE_SEL_MIN
-	bool "Use lower value (minimum)"
-
-config CMA_SIZE_SEL_MAX
-	bool "Use higher value (maximum)"
-
 endchoice
-
-config CMA_ALIGNMENT
-	int "Maximum PAGE_SIZE order of alignment for contiguous buffers"
-	range 2 12
-	default 8
-	help
-	  DMA mapping framework by default aligns all buffers to the smallest
-	  PAGE_SIZE order which is greater than or equal to the requested buffer
-	  size. This works well for buffers up to a few hundreds kilobytes, but
-	  for larger buffers it just a memory waste. With this parameter you can
-	  specify the maximum PAGE_SIZE order for contiguous buffers. Larger
-	  buffers will be aligned only to this specified order. The order is
-	  expressed as a power of two multiplied by the PAGE_SIZE.
-
-	  For example, if your system defaults to 4KiB pages, the order value
-	  of 8 means that the buffers will be aligned up to 1MiB only.
-
-	  If unsure, leave the default value "8".
 
 endif
 

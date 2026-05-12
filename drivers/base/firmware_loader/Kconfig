@@ -173,22 +173,6 @@ config FW_LOADER_USER_HELPER_FALLBACK
 	  If you are unsure about this, say N here.
 
 if FW_LOADER_COMPRESS
-config FW_LOADER_COMPRESS_XZ
-	bool "Enable XZ-compressed firmware support"
-	select FW_LOADER_PAGED_BUF
-	select XZ_DEC
-	default y
-	help
-	  This option adds the support for XZ-compressed files.
-	  The files have to be compressed with either none or crc32
-	  integrity check type (pass "-C crc32" option to xz command).
-
-config FW_LOADER_COMPRESS_ZSTD
-	bool "Enable ZSTD-compressed firmware support"
-	select ZSTD_DECOMPRESS
-	help
-	  This option adds the support for ZSTD-compressed files.
-
 endif # FW_LOADER_COMPRESS
 
 config FW_CACHE

@@ -123,55 +123,14 @@ config CC_HAS_ASM_GOTO_OUTPUT
 	# Detect clang (< v17) scoped label issues
 	depends on $(success,echo 'void b(void **);void* c(void);int f(void){{asm goto(""::::l0);return 0;l0:return 1;}void *x __attribute__((cleanup(b)))=c();{asm goto(""::::l1);return 2;l1:return 3;}}' | $(CC) -x c - -c -o /dev/null)
 
-config CC_HAS_ASM_GOTO_TIED_OUTPUT
-	depends on CC_HAS_ASM_GOTO_OUTPUT
-	# Detect buggy gcc and clang, fixed in gcc-11 clang-14.
-	def_bool $(success,echo 'int foo(int *x) { asm goto (".long (%l[bar]) - .": "+m"(*x) ::: bar); return *x; bar: return 0; }' | $CC -x c - -c -o /dev/null)
-
 config TOOLS_SUPPORT_RELR
 	def_bool $(success,env "CC=$(CC)" "LD=$(LD)" "NM=$(NM)" "OBJCOPY=$(OBJCOPY)" $(srctree)/scripts/tools-support-relr.sh)
 
 config CC_HAS_ASM_INLINE
 	def_bool $(success,echo 'void foo(void) { asm inline (""); }' | $(CC) -x c - -c -o /dev/null)
 
-config CC_HAS_ASSUME
-	bool
-	# clang needs to be at least 19.1.0 since the meaning of the assume
-	# attribute changed:
-	# https://github.com/llvm/llvm-project/commit/c44fa3e8a9a44c2e9a575768a3c185354b9f6c17
-	default y if CC_IS_CLANG && CLANG_VERSION >= 190100
-	# supported since gcc 13.1.0
-	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=106654
-	default y if CC_IS_GCC && GCC_VERSION >= 130100
-
 config CC_HAS_NO_PROFILE_FN_ATTR
 	def_bool $(success,echo '__attribute__((no_profile_instrument_function)) int x();' | $(CC) -x c - -c -o /dev/null -Werror)
-
-config CC_HAS_COUNTED_BY
-	bool
-	# clang needs to be at least 20.1.0 to avoid potential crashes
-	# when building structures that contain __counted_by
-	# https://github.com/ClangBuiltLinux/linux/issues/2114
-	# https://github.com/llvm/llvm-project/commit/160fb1121cdf703c3ef5e61fb26c5659eb581489
-	default y if CC_IS_CLANG && CLANG_VERSION >= 200100
-	# supported since gcc 15.1.0
-	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108896
-	default y if CC_IS_GCC && GCC_VERSION >= 150100
-
-config CC_HAS_COUNTED_BY_PTR
-	bool
-	# supported since clang 22
-	default y if CC_IS_CLANG && CLANG_VERSION >= 220100
-	# supported since gcc 16.0.0
-	default y if CC_IS_GCC && GCC_VERSION >= 160000
-
-config CC_HAS_BROKEN_COUNTED_BY_REF
-	bool
-	# https://github.com/llvm/llvm-project/issues/182575
-	default y if CC_IS_CLANG && CLANG_VERSION < 220100
-
-config CC_HAS_MULTIDIMENSIONAL_NONSTRING
-	def_bool $(success,echo 'char tag[][4] __attribute__((__nonstring__)) = { };' | $(CC) $(CLANG_FLAGS) -x c - -c -o /dev/null -Werror)
 
 config LD_CAN_USE_KEEP_IN_OVERLAY
 	# ld.lld prior to 21.0.0 did not support KEEP within an overlay description
@@ -470,15 +429,6 @@ config CROSS_MEMORY_ATTACH
 	  process_vm_writev which allow a process with the correct privileges
 	  to directly read from or write to another process' address space.
 	  See the man page for more details.
-
-config AUDIT
-	bool "Auditing support"
-	depends on NET
-	help
-	  Enable auditing infrastructure that can be used with another
-	  kernel subsystem, such as SELinux (which requires this for
-	  logging of avc messages output).  System call auditing is included
-	  on architectures which support it.
 
 config HAVE_ARCH_AUDITSYSCALL
 	bool
@@ -842,11 +792,6 @@ config CC_MS_EXTENSIONS
 config GCC10_NO_ARRAY_BOUNDS
 	def_bool y
 
-config CC_NO_ARRAY_BOUNDS
-	bool
-	default y if CC_IS_GCC && GCC_VERSION >= 90000 && GCC10_NO_ARRAY_BOUNDS
-
-# Currently, disable -Wstringop-overflow for GCC globally.
 config GCC_NO_STRINGOP_OVERFLOW
 	def_bool y
 
@@ -854,13 +799,6 @@ config CC_NO_STRINGOP_OVERFLOW
 	bool
 	default y if CC_IS_GCC && GCC_NO_STRINGOP_OVERFLOW
 
-config CC_STRINGOP_OVERFLOW
-	bool
-	default y if CC_IS_GCC && !CC_NO_STRINGOP_OVERFLOW
-
-#
-# For architectures that know their GCC __int128 support is sound
-#
 config ARCH_SUPPORTS_INT128
 	bool
 
@@ -920,20 +858,6 @@ config MEMCG
 	select VM_EVENT_COUNTERS
 	help
 	  Provides control over the memory footprint of tasks in a cgroup.
-
-config MEMCG_NMI_UNSAFE
-	bool
-	depends on MEMCG
-	depends on HAVE_NMI
-	depends on !ARCH_HAS_NMI_SAFE_THIS_CPU_OPS && !ARCH_HAVE_NMI_SAFE_CMPXCHG
-	default y
-
-config MEMCG_NMI_SAFETY_REQUIRES_ATOMIC
-	bool
-	depends on MEMCG
-	depends on HAVE_NMI
-	depends on !ARCH_HAS_NMI_SAFE_THIS_CPU_OPS && ARCH_HAVE_NMI_SAFE_CMPXCHG
-	default y
 
 config MEMCG_V1
 	bool "Legacy cgroup v1 memory controller"
@@ -1000,18 +924,7 @@ config FAIR_GROUP_SCHED
 	select GROUP_SCHED_WEIGHT
 	default CGROUP_SCHED
 
-config EXT_GROUP_SCHED
-	bool
-	depends on SCHED_CLASS_EXT && CGROUP_SCHED
-	select GROUP_SCHED_WEIGHT
-	select GROUP_SCHED_BANDWIDTH
-	default y
-
 endif #CGROUP_SCHED
-
-config EXT_SUB_SCHED
-        def_bool y
-        depends on SCHED_CLASS_EXT && CGROUPS
 
 config SCHED_MM_CID
 	def_bool y
@@ -1075,22 +988,6 @@ config CGROUP_FREEZER
 	  controller includes important in-kernel memory consumers per default.
 
 	  If you're using cgroup2, say N.
-
-config CGROUP_HUGETLB
-	bool "HugeTLB controller"
-	depends on HUGETLB_PAGE
-	select PAGE_COUNTER
-	default n
-	help
-	  Provides a cgroup controller for HugeTLB pages.
-	  When you enable this, you can put a per cgroup limit on HugeTLB usage.
-	  The limit is enforced during page fault. Since HugeTLB doesn't
-	  support page reclaim, enforcing the limit at page fault time implies
-	  that, the application will get SIGBUS signal if it tries to access
-	  HugeTLB pages beyond its limit. This requires the application to know
-	  beforehand how much HugeTLB pages it would require for its use. The
-	  control group is tracked in the third page lru pointer. This means
-	  that we cannot use the controller with huge page less than 3 pages.
 
 config CPUSETS
 	bool "Cpuset controller"
@@ -1319,24 +1216,6 @@ config HAVE_LD_DEAD_CODE_DATA_ELIMINATION
 	  output sections. Care must be taken not to pull in unrelated
 	  sections (e.g., '.text.init'). Typically '.' in section names
 	  is used to distinguish them from label names / C identifiers.
-
-config LD_DEAD_CODE_DATA_ELIMINATION
-	bool "Dead code and data elimination (EXPERIMENTAL)"
-	depends on HAVE_LD_DEAD_CODE_DATA_ELIMINATION
-	depends on EXPERT
-	depends on $(cc-option,-ffunction-sections -fdata-sections)
-	depends on $(ld-option,--gc-sections)
-	help
-	  Enable this if you want to do dead code and data elimination with
-	  the linker by compiling with -ffunction-sections -fdata-sections,
-	  and linking with --gc-sections.
-
-	  This can reduce on disk and in-memory size of the kernel
-	  code and static data, particularly for small configs and
-	  on small systems. This has the possibility of introducing
-	  silently broken kernel if the required annotations are not
-	  present. This option is not well tested yet, so use at your
-	  own risk.
 
 config LD_ORPHAN_WARN
 	def_bool y
@@ -1583,16 +1462,6 @@ config MEMBARRIER
 
 	  If unsure, say Y.
 
-config KCMP
-	bool "Enable kcmp() system call" if EXPERT
-	help
-	  Enable the kernel resource comparison system call. It provides
-	  user-space with the ability to compare two processes to see if they
-	  share a common resource, such as a file descriptor or even virtual
-	  memory space.
-
-	  If unsure, say N.
-
 config RSEQ
 	bool "Enable rseq() system call" if EXPERT
 	default y
@@ -1640,16 +1509,6 @@ config RSEQ_DEBUG_DEFAULT_ENABLE
 
 	  This also can be controlled on the kernel command line via the
 	  command line parameter "rseq_debug=0/1" and through debugfs.
-
-	  If unsure, say N.
-
-config DEBUG_RSEQ
-	default n
-	bool "Enable debugging of rseq() system call" if EXPERT
-	depends on RSEQ && DEBUG_KERNEL && !GENERIC_ENTRY
-	select RSEQ_DEBUG_DEFAULT_ENABLE
-	help
-	  Enable extra debugging checks for the rseq system call.
 
 	  If unsure, say N.
 
@@ -1807,15 +1666,6 @@ config RT_MUTEXES
 	default y if PREEMPT_RT
 
 source "kernel/module/Kconfig"
-
-config INIT_ALL_POSSIBLE
-	bool
-	help
-	  Back when each arch used to define their own cpu_online_mask and
-	  cpu_possible_mask, some of them chose to initialize cpu_possible_mask
-	  with all 1s, and others with all 0s.  When they were centralised,
-	  it was better to provide this option than to break all the archs
-	  and have several arch maintainers pursuing me down dark alleys.
 
 source "block/Kconfig"
 

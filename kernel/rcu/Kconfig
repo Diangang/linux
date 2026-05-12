@@ -50,9 +50,6 @@ config TREE_SRCU
 	help
 	  This option selects the full-fledged version of SRCU.
 
-config NEED_SRCU_NMI_SAFE
-	def_bool HAVE_NMI && !ARCH_HAS_NMI_SAFE_THIS_CPU_OPS && !TINY_SRCU
-
 config TASKS_RCU_GENERIC
 	def_bool TASKS_RCU || TASKS_RUDE_RCU
 	help
@@ -67,18 +64,6 @@ config TASKS_RCU
 	bool
 	default NEED_TASKS_RCU && PREEMPTION
 	select IRQ_WORK
-
-config FORCE_TASKS_RUDE_RCU
-	bool "Force selection of Tasks Rude RCU"
-	depends on RCU_EXPERT
-	select TASKS_RUDE_RCU
-	default n
-	help
-	  This option force-enables a task-based RCU implementation
-	  that uses only context switch (including preemption) and
-	  user-mode execution as quiescent states.  It forces IPIs and
-	  context switches on all online CPUs, including idle ones,
-	  so use with caution.	Not for manual selection in most cases.
 
 config TASKS_RUDE_RCU
 	bool

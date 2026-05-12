@@ -25,39 +25,4 @@ menuconfig KFENCE
 
 if KFENCE
 
-config KFENCE_SAMPLE_INTERVAL
-	int "Default sample interval in milliseconds"
-	default 100
-	help
-	  The KFENCE sample interval determines the frequency with which heap
-	  allocations will be guarded by KFENCE. May be overridden via boot
-	  parameter "kfence.sample_interval".
-
-	  Set this to 0 to disable KFENCE by default, in which case only
-	  setting "kfence.sample_interval" to a non-zero value enables KFENCE.
-
-config KFENCE_NUM_OBJECTS
-	int "Number of guarded objects available"
-	range 1 65535
-	default 255
-	help
-	  The number of guarded objects available. For each KFENCE object, 2
-	  pages are required; with one containing the object and two adjacent
-	  ones used as guard pages.
-
-config KFENCE_STATIC_KEYS
-	bool "Use static keys to set up allocations" if EXPERT
-	depends on JUMP_LABEL
-	help
-	  Use static keys (static branches) to set up KFENCE allocations. This
-	  option is only recommended when using very large sample intervals, or
-	  performance has carefully been evaluated with this option.
-
-	  Using static keys comes with trade-offs that need to be carefully
-	  evaluated given target workloads and system architectures. Notably,
-	  enabling and disabling static keys invoke IPI broadcasts, the latency
-	  and impact of which is much harder to predict than a dynamic branch.
-
-	  Say N if you are unsure.
-
 endif # KFENCE

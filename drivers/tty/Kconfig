@@ -40,14 +40,6 @@ config VT
 	  If unsure, say Y, or else you won't be able to do much with your new
 	  shiny Linux system :-)
 
-config CONSOLE_TRANSLATIONS
-	depends on VT
-	default y
-	bool "Enable character translations in console" if EXPERT
-	help
-	  This enables support for font mapping and Unicode translation
-	  on virtual consoles.
-
 config VT_CONSOLE
 	bool "Support for console on virtual terminal" if EXPERT
 	depends on VT
@@ -267,14 +259,6 @@ config PPC_EARLY_DEBUG_EHV_BC
 	  via an ePAPR byte channel.  You also need to choose the byte channel
 	  handle below.
 
-config GOLDFISH_TTY
-	tristate "Goldfish TTY Driver"
-	depends on GOLDFISH
-	select SERIAL_CORE
-	select SERIAL_CORE_CONSOLE
-	help
-	  Console and system TTY driver for the Goldfish virtual platform.
-
 config MIPS_EJTAG_FDC_TTY
 	bool "MIPS EJTAG Fast Debug Channel TTY"
 	depends on MIPS_CDMM
@@ -292,14 +276,6 @@ config MIPS_EJTAG_FDC_TTY
 	  to drain the FDC TX FIFO.
 
 	  If unsure, say N.
-
-config MIPS_EJTAG_FDC_KGDB
-	bool "Use KGDB over an FDC channel"
-	depends on MIPS_EJTAG_FDC_TTY && KGDB
-	default y
-	help
-	  This enables the use of KGDB over an FDC channel, allowing KGDB to be
-	  used remotely or when a serial port isn't available.
 
 config NULL_TTY_DEFAULT_CONSOLE
 	bool "Support for console on ttynull"

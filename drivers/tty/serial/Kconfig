@@ -413,9 +413,6 @@ config SERIAL_CORE
 config SERIAL_CORE_CONSOLE
 	bool
 
-config CONSOLE_POLL
-	bool
-
 config SERIAL_MCF
 	bool "Coldfire serial support"
 	depends on COLDFIRE

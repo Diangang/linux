@@ -61,15 +61,6 @@ menuconfig KASAN
 
 if KASAN
 
-config CC_HAS_KASAN_MEMINTRINSIC_PREFIX
-	def_bool (CC_IS_CLANG && $(cc-option,-fsanitize=kernel-address -mllvm -asan-kernel-mem-intrinsic-prefix=1)) || \
-		 (CC_IS_GCC && $(cc-option,-fsanitize=kernel-address --param asan-kernel-mem-intrinsic-prefix=1))
-	# Don't define it if we don't need it: compilation of the test uses
-	# this variable to decide how the compiler should treat builtins.
-	depends on !KASAN_HW_TAGS
-	help
-	  The compiler is able to prefix memintrinsics with __asan or __hwasan.
-
 choice
 	prompt "KASAN mode"
 	default KASAN_GENERIC
@@ -159,29 +150,6 @@ config KASAN_INLINE
 	  some workloads), but makes the kernel's .text size much bigger.
 
 endchoice
-
-config KASAN_STACK
-	bool "Stack instrumentation (unsafe)" if CC_IS_CLANG && !COMPILE_TEST
-	depends on KASAN_GENERIC || KASAN_SW_TAGS
-	depends on !ARCH_DISABLE_KASAN_INLINE
-	default y if CC_IS_GCC
-	help
-	  Disables stack instrumentation and thus KASAN's ability to detect
-	  out-of-bounds bugs in stack variables.
-
-	  With Clang, stack instrumentation has a problem that causes excessive
-	  stack usage, see https://llvm.org/pr38809. Thus,
-	  with Clang, this option is deemed unsafe.
-
-	  This option is always disabled when compile-testing with Clang to
-	  avoid cluttering the log with stack overflow warnings.
-
-	  With GCC, enabling stack instrumentation is assumed to be safe.
-
-	  If the architecture disables inline instrumentation via
-	  ARCH_DISABLE_KASAN_INLINE, stack instrumentation gets disabled
-	  as well, as it adds inline-style instrumentation that is run
-	  unconditionally.
 
 config KASAN_VMALLOC
 	bool "Check accesses to vmalloc allocations"

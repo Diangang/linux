@@ -739,12 +739,6 @@ config HPET_TIMER
 
 	  Choose N to continue using the legacy 8254 timer.
 
-config HPET_EMULATE_RTC
-	def_bool y
-	depends on HPET_TIMER && (RTC_DRV_CMOS=m || RTC_DRV_CMOS=y)
-
-# Mark as expert because too many people got it wrong.
-# The code disables itself when not needed.
 config DMI
 	default y
 	select DMI_SCAN_MACHINE_NON_EFI_FALLBACK
@@ -754,12 +748,6 @@ config DMI
 	  here unless you have verified that your setup is not
 	  affected by entries in the DMI blacklist. Required by PNP
 	  BIOS code.
-
-config BOOT_VESA_SUPPORT
-	bool
-	help
-	  If true, at least one selected framebuffer driver can take advantage
-	  of VESA video modes set at an early boot stage via the vga= parameter.
 
 config MAXSMP
 	bool "Enable Maximum number of SMP Processors and NUMA Nodes"
@@ -1111,24 +1099,6 @@ config MICROCODE_LATE_LOADING
 	  minimal revision check. This minimal revision check can be enforced on
 	  the kernel command line with "microcode=force_minrev".
 
-config MICROCODE_LATE_FORCE_MINREV
-	bool "Enforce late microcode loading minimal revision check"
-	default n
-	depends on MICROCODE_LATE_LOADING
-	help
-	  To prevent that users load microcode late which modifies already
-	  in use features, newer microcode patches have a minimum revision field
-	  in the microcode header, which tells the kernel which minimum
-	  revision must be active in the CPU to safely load that new microcode
-	  late into the running system. If disabled the check will not
-	  be enforced but the kernel will be tainted when the minimal
-	  revision check fails.
-
-	  This minimal revision check can also be controlled via the
-	  "microcode=force_minrev" parameter on the kernel command line.
-
-	  If unsure say Y.
-
 config MICROCODE_DBG
 	bool "Enable microcode loader debugging"
 	default n
@@ -1432,23 +1402,6 @@ config MTRR_SANITIZER
 
 	  If unsure, say Y.
 
-config MTRR_SANITIZER_ENABLE_DEFAULT
-	int "MTRR cleanup enable value (0-1)"
-	range 0 1
-	default "0"
-	depends on MTRR_SANITIZER
-	help
-	  Enable mtrr cleanup default value
-
-config MTRR_SANITIZER_SPARE_REG_NR_DEFAULT
-	int "MTRR cleanup spare reg num (0-7)"
-	range 0 7
-	default "1"
-	depends on MTRR_SANITIZER
-	help
-	  mtrr cleanup spare entries default, it can be changed via
-	  mtrr_spare_reg_nr=N on the kernel command line.
-
 config X86_PAT
 	def_bool y
 	prompt "x86 PAT support" if EXPERT
@@ -1610,22 +1563,6 @@ config X86_USER_SHADOW_STACK
 	  CPUs supporting shadow stacks were first released in 2020.
 
 	  See Documentation/arch/x86/shstk.rst for more information.
-
-	  If unsure, say N.
-
-config INTEL_TDX_HOST
-	bool "Intel Trust Domain Extensions (TDX) host support"
-	depends on CPU_SUP_INTEL
-	depends on X86_64
-	depends on KVM_INTEL
-	depends on X86_X2APIC
-	select ARCH_KEEP_MEMBLOCK
-	depends on CONTIG_ALLOC
-	depends on X86_MCE
-	help
-	  Intel Trust Domain Extensions (TDX) protects guest VMs from malicious
-	  host and certain physical attacks.  This option enables necessary TDX
-	  support in the host kernel to run confidential VMs.
 
 	  If unsure, say N.
 
@@ -1996,16 +1933,6 @@ config CMDLINE
 	  by the boot loader) should specify the device for the root
 	  file system.
 
-config CMDLINE_OVERRIDE
-	bool "Built-in command line overrides boot loader arguments"
-	depends on CMDLINE_BOOL && CMDLINE != ""
-	help
-	  Set this option to 'Y' to have the kernel ignore the boot loader
-	  command line, and use ONLY the built-in command line.
-
-	  This is used to work around broken boot loaders.  This should
-	  be set to 'N' under normal conditions.
-
 config MODIFY_LDT_SYSCALL
 	bool "Enable the LDT (local descriptor table)" if EXPERT
 	default y
@@ -2037,16 +1964,6 @@ config STRICT_SIGALTSTACK_SIZE
 	  never get a signal delivered.
 
 	  Say 'N' unless you want to really enforce this check.
-
-config CFI_AUTO_DEFAULT
-	bool "Attempt to use FineIBT by default at boot time"
-	depends on FINEIBT
-	depends on !RUST || RUSTC_VERSION >= 108800
-	default y
-	help
-	  Attempt to use FineIBT by default at boot time. If enabled,
-	  this is the same as booting with "cfi=auto". If disabled,
-	  this is the same as booting with "cfi=kcfi".
 
 config X86_BUS_LOCK_DETECT
 	bool "Split Lock Detect and Bus Lock Detect support"
@@ -2403,14 +2320,6 @@ config MITIGATION_TSA
 	  invalid info to subsequent instructions and thus can affect their
 	  timing and thereby cause a leakage.
 
-config MITIGATION_VMSCAPE
-	bool "Mitigate VMSCAPE"
-	depends on KVM
-	default y
-	help
-	  Enable mitigation for VMSCAPE attacks. VMSCAPE is a hardware security
-	  vulnerability on Intel and AMD CPUs that may allow a guest to do
-	  Spectre v2 style attacks on userspace hypervisor.
 endif
 
 config ARCH_HAS_ADD_PAGES

@@ -9,21 +9,10 @@ menu "File systems"
 config DCACHE_WORD_ACCESS
        bool
 
-config FS_STACK
-	bool
-
 config BUFFER_HEAD
 	bool
 
 # old blockdev_direct_IO implementation.  Use iomap for new code instead
-config LEGACY_DIRECT_IO
-	depends on BUFFER_HEAD
-	bool
-
-config FS_MBCACHE
-	# Meta block cache for extended attributes
-	tristate
-
 config FS_DAX
 	bool "File system based Direct Access (DAX) support"
 	depends on MMU

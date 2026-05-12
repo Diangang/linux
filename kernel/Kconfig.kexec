@@ -11,12 +11,6 @@ config VMCORE_INFO
 config KEXEC_CORE
 	bool
 
-config KEXEC_ELF
-	bool
-
-config HAVE_IMA_KEXEC
-	bool
-
 config KEXEC
 	bool "Enable kexec system call"
 	depends on ARCH_SUPPORTS_KEXEC
@@ -68,14 +62,6 @@ config KEXEC_SIG_FORCE
 	  This option makes kernel signature verification mandatory for
 	  the kexec_file_load() syscall.
 
-config KEXEC_JUMP
-	bool "kexec jump"
-	depends on ARCH_SUPPORTS_KEXEC_JUMP
-	depends on KEXEC && HIBERNATION
-	help
-	  Jump between original kernel and kexeced kernel and invoke
-	  code in physical address mode via KEXEC
-
 config CRASH_DUMP
 	bool "kernel crash dumps"
 	default ARCH_DEFAULT_CRASH_DUMP
@@ -96,29 +82,6 @@ config CRASH_DUMP
 
 	  For s390, this option also enables zfcpdump.
 	  See also <file:Documentation/arch/s390/zfcpdump.rst>
-
-config CRASH_DM_CRYPT
-	bool "Support saving crash dump to dm-crypt encrypted volume"
-	depends on KEXEC_FILE
-	depends on CRASH_DUMP
-	depends on DM_CRYPT
-	depends on KEYS
-	depends on CONFIGFS_FS
-	help
-	  With this option enabled, user space can intereact with
-	  /sys/kernel/config/crash_dm_crypt_keys to make the dm crypt keys
-	  persistent for the dump-capture kernel.
-
-config CRASH_DUMP_KUNIT_TEST
-	tristate "Unit Tests for kernel crash dumps" if !KUNIT_ALL_TESTS
-	depends on CRASH_DUMP && KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This option builds KUnit unit tests for kernel crash dumps. The unit
-	  tests will be used to verify the correctness of covered functions and
-	  also prevent any regression.
-
-	  If unsure, say N.
 
 config CRASH_HOTPLUG
 	bool "Update the crash elfcorehdr on system configuration changes"

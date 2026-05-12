@@ -51,10 +51,6 @@ config GENERIC_CLOCKEVENTS_COUPLED_INLINE
 	bool
 
 # Generic update of CMOS clock
-config GENERIC_CMOS_UPDATE
-	bool
-
-# Deferred rearming of the hrtimer interrupt
 config HRTIMER_REARM_DEFERRED
        def_bool y
        depends on GENERIC_ENTRY && HAVE_GENERIC_TIF_BITS
@@ -131,32 +127,6 @@ config CONTEXT_TRACKING_USER
 	  Track transitions between kernel and user on behalf of RCU and
 	  tickless cputime accounting. The former case relies on context
 	  tracking to enter/exit RCU extended quiescent states.
-
-config CONTEXT_TRACKING_USER_FORCE
-	bool "Force user context tracking"
-	depends on CONTEXT_TRACKING_USER
-	default y if !NO_HZ_FULL
-	help
-	  The major pre-requirement for full dynticks to work is to
-	  support the user context tracking subsystem. But there are also
-	  other dependencies to provide in order to make the full
-	  dynticks working.
-
-	  This option stands for testing when an arch implements the
-	  user context tracking backend but doesn't yet fulfill all the
-	  requirements to make the full dynticks feature working.
-	  Without the full dynticks, there is no way to test the support
-	  for user context tracking and the subsystems that rely on it: RCU
-	  userspace extended quiescent state and tickless cputime
-	  accounting. This option copes with the absence of the full
-	  dynticks subsystem by forcing the user context tracking on all
-	  CPUs in the system.
-
-	  Say Y only if you're working on the development of an
-	  architecture backend for the user context tracking.
-
-	  Say N otherwise, this option brings an overhead that you
-	  don't want in production.
 
 config NO_HZ
 	bool "Old Idle dynticks config"
