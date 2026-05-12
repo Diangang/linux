@@ -118,18 +118,3 @@ int msr_clear_bit(u32 msr, u8 bit)
 	return __flip_bit(msr, bit, false);
 }
 EXPORT_SYMBOL_FOR_KVM(msr_clear_bit);
-
-#ifdef CONFIG_TRACEPOINTS
-void do_trace_write_msr(u32 msr, u64 val, int failed)
-{
-}
-EXPORT_SYMBOL(do_trace_write_msr);
-void do_trace_read_msr(u32 msr, u64 val, int failed)
-{
-}
-EXPORT_SYMBOL(do_trace_read_msr);
-void do_trace_rdpmc(u32 msr, u64 val, int failed)
-{
-}
-EXPORT_SYMBOL(do_trace_rdpmc);
-#endif

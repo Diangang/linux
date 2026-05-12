@@ -17,7 +17,7 @@ struct mod_arch_specific {
 	struct mod_plt_sec	core;
 	struct mod_plt_sec	init;
 
-	/* for CONFIG_DYNAMIC_FTRACE */
+	/* For dynamic ftrace trampolines. */
 	struct plt_entry	*ftrace_trampolines;
 	struct plt_entry	*init_ftrace_trampolines;
 };

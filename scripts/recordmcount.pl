@@ -359,7 +359,7 @@ if ($arch eq "x86_64") {
     $mcount_regex = "^\\s*([0-9a-fA-F]+):\\s*R_CKCORE_PCREL_JSR_IMM26BY2\\s+_mcount\$";
     $alignment = 2;
 } else {
-    die "Arch $arch is not supported with CONFIG_DYNAMIC_FTRACE";
+    die "Arch $arch is not supported with dynamic ftrace";
 }
 
 my $text_found = 0;
@@ -468,7 +468,7 @@ while (<IN>) {
 	print STDERR "ERROR: $mcount_section already in $inputfile\n" .
 	    "\tThis may be an indication that your build is corrupted.\n" .
 	    "\tDelete $inputfile and try again. If the same object file\n" .
-	    "\tstill causes an issue, then disable CONFIG_DYNAMIC_FTRACE.\n";
+	    "\tstill causes an issue, then disable dynamic ftrace.\n";
 	exit(-1);
     }
 

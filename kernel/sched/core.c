@@ -5211,8 +5211,7 @@ void sched_tick(void)
 static inline void sched_tick_start(int cpu) { }
 static inline void sched_tick_stop(int cpu) { }
 
-#if defined(CONFIG_PREEMPTION) && (defined(CONFIG_DEBUG_PREEMPT) || \
-				defined(CONFIG_TRACE_PREEMPT_TOGGLE))
+#if defined(CONFIG_PREEMPTION) && defined(CONFIG_DEBUG_PREEMPT)
 /*
  * If the value passed in is equal to the current preempt count
  * then we just disabled preemption. Start timing the latency.

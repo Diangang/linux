@@ -103,21 +103,6 @@ static int __init rseq_setup_debug(char *str)
 }
 __setup("rseq_debug=", rseq_setup_debug);
 
-#ifdef CONFIG_TRACEPOINTS
-/*
- * Out of line, so the actual update functions can be in a header to be
- * inlined into the exit to user code.
- */
-void __rseq_trace_update(struct task_struct *t)
-{
-}
-
-void __rseq_trace_ip_fixup(unsigned long ip, unsigned long start_ip,
-			   unsigned long offset, unsigned long abort_ip)
-{
-}
-#endif /* CONFIG_TRACEPOINTS */
-
 #ifdef CONFIG_RSEQ_STATS
 DEFINE_PER_CPU(struct rseq_stats, rseq_stats);
 

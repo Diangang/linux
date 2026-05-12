@@ -130,9 +130,4 @@ enum system_states {
 };
 extern enum system_states system_state;
 
-/* Rebuild everything on CONFIG_DYNAMIC_FTRACE */
-#ifdef CONFIG_DYNAMIC_FTRACE
-# define REBUILD_DUE_TO_DYNAMIC_FTRACE
-#endif
-
 #endif
