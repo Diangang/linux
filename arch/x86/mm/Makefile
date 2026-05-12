@@ -31,7 +31,6 @@ obj-$(CONFIG_KASAN)		+= kasan_init_$(BITS).o
 KMSAN_SANITIZE_kmsan_shadow.o	:= n
 
 
-obj-$(CONFIG_MMIOTRACE)		+= mmiotrace.o
 mmiotrace-y			:= kmmio.o pf_in.o mmio-mod.o
 
 

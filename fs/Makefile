@@ -45,4 +45,3 @@ obj-$(CONFIG_SYSFS)		+= sysfs/
 obj-y				+= ramfs/
 obj-$(CONFIG_MINIX_FS)		+= minix/
 obj-$(CONFIG_PSTORE)		+= pstore/
-obj-$(CONFIG_BPF_LSM)		+= bpf_fs_kfuncs.o
