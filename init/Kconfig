@@ -178,18 +178,6 @@ config LD_CAN_USE_KEEP_IN_OVERLAY
 	# https://github.com/llvm/llvm-project/pull/130661
 	def_bool LD_IS_BFD || LLD_VERSION >= 210000
 
-config RUSTC_HAS_SPAN_FILE
-	def_bool RUSTC_VERSION >= 108800
-
-config RUSTC_HAS_UNNECESSARY_TRANSMUTES
-	def_bool RUSTC_VERSION >= 108800
-
-config RUSTC_HAS_FILE_WITH_NUL
-	def_bool RUSTC_VERSION >= 108900
-
-config RUSTC_HAS_FILE_AS_C_STR
-	def_bool RUSTC_VERSION >= 109100
-
 config PAHOLE_VERSION
 	int
 	default "$(PAHOLE_VERSION)"
@@ -221,11 +209,6 @@ config BROKEN
 	  This option allows you to choose whether you want to try to
 	  compile (and fix) old drivers that haven't been updated to
 	  new infrastructure.
-
-config BROKEN_ON_SMP
-	bool
-	depends on BROKEN || !SMP
-	default y
 
 config INIT_ENV_ARG_LIMIT
 	int
@@ -408,16 +391,6 @@ config KERNEL_ZSTD
 	  decompress around the same speed as LZO, but slower than LZ4. You
 	  will need at least 192 KB RAM or more for booting. The zstd command
 	  line tool is required for compression.
-
-config KERNEL_UNCOMPRESSED
-	bool "None"
-	depends on HAVE_KERNEL_UNCOMPRESSED
-	help
-	  Produce uncompressed kernel image. This option is usually not what
-	  you want. It is useful for debugging the kernel in slow simulation
-	  environments, where decompressing and moving the kernel is awfully
-	  slow. This option allows early boot code to skip the decompressor
-	  and jump right at uncompressed kernel image.
 
 endchoice
 
@@ -654,26 +627,6 @@ config TASK_IO_ACCOUNTING
 	help
 	  Collect information on the number of bytes of storage I/O which this
 	  task has caused.
-
-	  Say N if unsure.
-
-config PSI_DEFAULT_DISABLED
-	bool "Require boot parameter to enable pressure stall information tracking"
-	default n
-	depends on PSI
-	help
-	  If set, pressure stall information tracking will be disabled
-	  per default but can be enabled through passing psi=1 on the
-	  kernel commandline during boot.
-
-	  This feature adds some code to the task wakeup and sleep
-	  paths of the scheduler. The overhead is too low to affect
-	  common scheduling-intense workloads in practice (such as
-	  webservers, memcache), but it does show up in artificial
-	  scheduler stress tests, such as hackbench.
-
-	  If you are paranoid and not sure what the kernel will be
-	  used for, say Y.
 
 	  Say N if unsure.
 
@@ -1046,17 +999,6 @@ config FAIR_GROUP_SCHED
 	depends on CGROUP_SCHED
 	select GROUP_SCHED_WEIGHT
 	default CGROUP_SCHED
-
-config RT_GROUP_SCHED_DEFAULT_DISABLED
-	bool "Require boot parameter to enable group scheduling for SCHED_RR/FIFO"
-	depends on RT_GROUP_SCHED
-	default n
-	help
-	  When set, the RT group scheduling is disabled by default. The option
-	  is in inverted form so that mere RT_GROUP_SCHED enables the group
-	  scheduling.
-
-	  Say N if unsure.
 
 config EXT_GROUP_SCHED
 	bool
@@ -1468,18 +1410,6 @@ config SGETMASK_SYSCALL
 
 	  If unsure, leave the default option here.
 
-config FHANDLE
-	bool "open by fhandle syscalls" if EXPERT
-	default n
-	help
-	  If you say Y here, a user level program will be able to map
-	  file names to handle and then later use the handle for
-	  different file system operations. This is useful in implementing
-	  userspace file servers, which now track files using handles instead
-	  of names. The handle would remain the same even if file names
-	  get renamed. Enables open_by_handle_at(2) and name_to_handle_at(2)
-	  syscalls.
-
 config POSIX_TIMERS
 	bool "Posix Clocks & timers" if EXPERT
 	default y
@@ -1536,7 +1466,6 @@ config ELF_CORE
 	bool "Enable ELF core dumps" if EXPERT
 	help
 	  Enable support for generating core dumps. Disabling saves about 4k.
-
 
 config PCSPKR_PLATFORM
 	bool "Enable PC-Speaker support" if EXPERT
@@ -1866,13 +1795,6 @@ config RUST
 	  See Documentation/rust/ for more information.
 
 	  If unsure, say N.
-
-config RUSTC_VERSION_TEXT
-	string
-	depends on RUST
-	default "$(RUSTC_VERSION_TEXT)"
-	help
-	  See `CC_VERSION_TEXT`.
 
 source "kernel/Kconfig.kexec"
 

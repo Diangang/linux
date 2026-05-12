@@ -15,16 +15,6 @@ config REGMAP
 
 	  If unsure, say N.
 
-config REGMAP_BUILD
-	bool "Enable regmap build"
-	depends on KUNIT
-	select REGMAP
-	help
-	  This option exists purely to allow the regmap KUnit tests to
-	  be enabled without having to enable some driver that uses
-	  regmap due to unfortunate issues with how KUnit tests are
-	  normally enabled.
-
 config REGMAP_AC97
 	tristate
 

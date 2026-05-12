@@ -179,22 +179,6 @@ config UPROBES
 	    managed by the kernel and kept transparent to the probed
 	    application. )
 
-config HAVE_64BIT_ALIGNED_ACCESS
-	def_bool 64BIT && !HAVE_EFFICIENT_UNALIGNED_ACCESS
-	help
-	  Some architectures require 64 bit accesses to be 64 bit
-	  aligned, which also requires structs containing 64 bit values
-	  to be 64 bit aligned too. This includes some 32 bit
-	  architectures which can do 64 bit accesses, as well as 64 bit
-	  architectures without unaligned access.
-
-	  This symbol should be selected by an architecture if 64 bit
-	  accesses are required to be 64 bit aligned in this way even
-	  though it is not a 64 bit architecture.
-
-	  See Documentation/core-api/unaligned-memory-access.rst for
-	  more information on the topic of unaligned memory accesses.
-
 config HAVE_EFFICIENT_UNALIGNED_ACCESS
 	bool
 	help
@@ -800,25 +784,6 @@ config LTO_NONE
 	help
 	  Build the kernel normally, without Link Time Optimization (LTO).
 
-config LTO_CLANG_FULL
-	bool "Clang Full LTO (EXPERIMENTAL)"
-	depends on HAS_LTO_CLANG
-	depends on !COMPILE_TEST
-	select LTO_CLANG
-	help
-	  This option enables Clang's full Link Time Optimization (LTO), which
-	  allows the compiler to optimize the kernel globally. If you enable
-	  this option, the compiler generates LLVM bitcode instead of ELF
-	  object files, and the actual compilation from bitcode happens at
-	  the LTO link step, which may take several minutes depending on the
-	  kernel configuration. More information can be found from LLVM's
-	  documentation:
-
-	    https://llvm.org/docs/LinkTimeOptimization.html
-
-	  During link time, this option can use a large amount of RAM, and
-	  may take much longer than the ThinLTO option.
-
 config LTO_CLANG_THIN
 	bool "Clang ThinLTO (EXPERIMENTAL)"
 	depends on HAS_LTO_CLANG && ARCH_SUPPORTS_LTO_CLANG_THIN
@@ -1341,9 +1306,6 @@ config HAVE_ARCH_HASH
 	  file which provides platform-specific implementations of some
 	  functions in <linux/hash.h> or fs/namei.c.
 
-config HAVE_ARCH_NVRAM_OPS
-	bool
-
 config ISA_BUS_API
 	def_bool ISA
 
@@ -1522,14 +1484,6 @@ config HAVE_ARCH_COMPILER_H
 	  asm/compiler.h header that should be included after
 	  linux/compiler-*.h in order to override macro definitions that those
 	  headers generally provide.
-
-config HAVE_ARCH_LIBGCC_H
-	bool
-	help
-	  An architecture can select this if it provides an
-	  asm/libgcc.h header that should be included after
-	  linux/libgcc.h in order to override macro definitions that
-	  header generally provides.
 
 config HAVE_ARCH_PREL32_RELOCATIONS
 	bool

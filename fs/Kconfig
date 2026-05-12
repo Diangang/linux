@@ -54,18 +54,6 @@ config FS_DAX
 	  If you do not have a block device that is capable of using this,
 	  or if unsure, say N.  Saying Y will increase the size of the kernel
 	  by about 5kB.
-
-config FS_DAX_PMD
-	bool
-	default FS_DAX
-	depends on FS_DAX
-	depends on ZONE_DEVICE
-	depends on TRANSPARENT_HUGEPAGE
-
-# Posix ACL utility routines
-#
-# Note: Posix ACLs can be implemented without these helpers.  Never use
-# this symbol for ifdefs in core code.
 #
 config FS_POSIX_ACL
 	def_bool n

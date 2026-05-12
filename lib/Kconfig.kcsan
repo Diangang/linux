@@ -30,70 +30,6 @@ menuconfig KCSAN
 
 if KCSAN
 
-config CC_HAS_TSAN_COMPOUND_READ_BEFORE_WRITE
-	def_bool (CC_IS_CLANG && $(cc-option,-fsanitize=thread -mllvm -tsan-compound-read-before-write=1)) || \
-		 (CC_IS_GCC && $(cc-option,-fsanitize=thread --param tsan-compound-read-before-write=1))
-	help
-	  The compiler instruments plain compound read-write operations
-	  differently (++, --, +=, -=, |=, &=, etc.), which allows KCSAN to
-	  distinguish them from other plain accesses. This is currently
-	  supported by Clang 12 or later.
-
-config KCSAN_VERBOSE
-	bool "Show verbose reports with more information about system state"
-	depends on PROVE_LOCKING
-	help
-	  If enabled, reports show more information about the system state that
-	  may help better analyze and debug races. This includes held locks and
-	  IRQ trace events.
-
-	  While this option should generally be benign, we call into more
-	  external functions on report generation; if a race report is
-	  generated from any one of them, system stability may suffer due to
-	  deadlocks or recursion.  If in doubt, say N.
-
-
-config KCSAN_EARLY_ENABLE
-	bool "Early enable during boot"
-	default y
-	help
-	  If KCSAN should be enabled globally as soon as possible. KCSAN can
-	  later be enabled/disabled via debugfs.
-
-config KCSAN_NUM_WATCHPOINTS
-	int "Number of available watchpoints"
-	default 64
-	help
-	  Total number of available watchpoints. An address range maps into a
-	  specific watchpoint slot as specified in kernel/kcsan/encoding.h.
-	  Although larger number of watchpoints may not be usable due to
-	  limited number of CPUs, a larger value helps to improve performance
-	  due to reducing cache-line contention. The chosen default is a
-	  conservative value; we should almost never observe "no_capacity"
-	  events (see /sys/kernel/debug/kcsan).
-
-config KCSAN_UDELAY_TASK
-	int "Delay in microseconds (for tasks)"
-	default 80
-	help
-	  For tasks, the microsecond delay after setting up a watchpoint.
-
-config KCSAN_UDELAY_INTERRUPT
-	int "Delay in microseconds (for interrupts)"
-	default 20
-	help
-	  For interrupts, the microsecond delay after setting up a watchpoint.
-	  Interrupts have tighter latency requirements, and their delay should
-	  be lower than for tasks.
-
-config KCSAN_DELAY_RANDOMIZE
-	bool "Randomize above delays"
-	default y
-	help
-	  If delays should be randomized, where the maximum is KCSAN_UDELAY_*.
-	  If false, the chosen delays are always the KCSAN_UDELAY_* values
-	  as defined above.
-
 config KCSAN_SKIP_WATCH
 	int "Skip instructions before setting up watchpoint"
 	default 4000
@@ -103,49 +39,6 @@ config KCSAN_SKIP_WATCH
 	  memory operations are used to set up a watchpoint. A smaller value
 	  results in more aggressive race detection, whereas a larger value
 	  improves system performance at the cost of missing some races.
-
-config KCSAN_SKIP_WATCH_RANDOMIZE
-	bool "Randomize watchpoint instruction skip count"
-	default y
-	help
-	  If instruction skip count should be randomized, where the maximum is
-	  KCSAN_SKIP_WATCH. If false, the chosen value is always
-	  KCSAN_SKIP_WATCH.
-
-config KCSAN_INTERRUPT_WATCHER
-	bool "Interruptible watchers" if !KCSAN_STRICT
-	default KCSAN_STRICT
-	help
-	  If enabled, a task that set up a watchpoint may be interrupted while
-	  delayed. This option will allow KCSAN to detect races between
-	  interrupted tasks and other threads of execution on the same CPU.
-
-	  Currently disabled by default, because not all safe per-CPU access
-	  primitives and patterns may be accounted for, and therefore could
-	  result in false positives.
-
-config KCSAN_REPORT_ONCE_IN_MS
-	int "Duration in milliseconds, in which any given race is only reported once"
-	default 3000
-	help
-	  Any given race is only reported once in the defined time window.
-	  Different races may still generate reports within a duration that is
-	  smaller than the duration defined here. This allows rate limiting
-	  reporting to avoid flooding the console with reports.  Setting this
-	  to 0 disables rate limiting.
-
-# The main purpose of the below options is to control reported data races, and
-# are not expected to be switched frequently by non-testers or at runtime.
-# The defaults are chosen to be conservative, and can miss certain bugs.
-
-config KCSAN_REPORT_RACE_UNKNOWN_ORIGIN
-	bool "Report races of unknown origin"
-	default y
-	help
-	  If KCSAN should report races where only one access is known, and the
-	  conflicting access is of unknown origin. This type of race is
-	  reported if it was only possible to infer a race due to a data value
-	  change while an access is being delayed on a watchpoint.
 
 config KCSAN_STRICT
 	bool "Strict data-race checking"
@@ -210,15 +103,5 @@ config KCSAN_IGNORE_ATOMICS
 	  be reported as data races; however, unlike that option, data races
 	  due to two conflicting plain writes will be reported (aligned and
 	  unaligned, if CONFIG_KCSAN_ASSUME_PLAIN_WRITES_ATOMIC=n).
-
-config KCSAN_PERMISSIVE
-	bool "Enable all additional permissive rules"
-	depends on KCSAN_REPORT_VALUE_CHANGE_ONLY
-	help
-	  Enable additional permissive rules to ignore certain classes of data
-	  races (also see kernel/kcsan/permissive.h). None of the permissive
-	  rules imply that such data races are generally safe, but can be used
-	  to further reduce reported data races due to data-racy patterns
-	  common across the kernel.
 
 endif # KCSAN

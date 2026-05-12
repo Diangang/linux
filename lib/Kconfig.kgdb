@@ -5,8 +5,6 @@ config HAVE_ARCH_KGDB
 
 # set if architecture has the its kgdb_arch_handle_qxfer_pkt
 # function to enable gdb stub to address XML packet sent from GDB.
-config HAVE_ARCH_KGDB_QXFER_PKT
-	bool
 
 menuconfig KGDB
 	bool "KGDB: kernel debugger"
@@ -39,16 +37,6 @@ config KGDB_HONOUR_BLOCKLIST
 
 	  If unsure, say Y.
 
-config KGDB_SERIAL_CONSOLE
-	tristate "KGDB: use kgdb over the serial console"
-	select CONSOLE_POLL
-	select MAGIC_SYSRQ
-	depends on TTY && VT
-	default y
-	help
-	  Share a serial console with kgdb. Sysrq-g must be used
-	  to break in initially.
-
 config KGDB_TESTS
 	bool "KGDB: internal test suite"
 	default n
@@ -60,14 +48,6 @@ config KGDB_TESTS
 	  See the drivers/misc/kgdbts.c for the details about
 	  the tests.  The most basic of this I/O module is to boot
 	  a kernel boot arguments "kgdbwait kgdbts=V1F100"
-
-config KGDB_TESTS_ON_BOOT
-	bool "KGDB: Run tests on boot"
-	depends on KGDB_TESTS
-	default n
-	help
-	  Run the kgdb tests on boot up automatically without the need
-	  to pass in a kernel parameter
 
 config KGDB_LOW_LEVEL_TRAP
        bool "KGDB: Allow debugging with traps in notifiers"
@@ -83,57 +63,6 @@ config KGDB_KDB
 	default n
 	help
 	  KDB frontend for kernel
-
-config KDB_DEFAULT_ENABLE
-	hex "KDB: Select kdb command functions to be enabled by default"
-	depends on KGDB_KDB
-	default 0x1
-	help
-	  Specifiers which kdb commands are enabled by default. This may
-	  be set to 1 or 0 to enable all commands or disable almost all
-	  commands.
-
-	  Alternatively the following bitmask applies:
-
-	    0x0002 - allow arbitrary reads from memory and symbol lookup
-	    0x0004 - allow arbitrary writes to memory
-	    0x0008 - allow current register state to be inspected
-	    0x0010 - allow current register state to be modified
-	    0x0020 - allow passive inspection (backtrace, process list, lsmod)
-	    0x0040 - allow flow control management (breakpoint, single step)
-	    0x0080 - enable signalling of processes
-	    0x0100 - allow machine to be rebooted
-
-	  The config option merely sets the default at boot time. Both
-	  issuing 'echo X > /sys/module/kdb/parameters/cmd_enable' or
-	  setting with kdb.cmd_enable=X kernel command line option will
-	  override the default settings.
-
-config KDB_KEYBOARD
-	bool "KGDB_KDB: keyboard as input device"
-	depends on VT && KGDB_KDB && !PARISC
-	depends on HAS_IOPORT
-	default n
-	help
-	  KDB can use a PS/2 type keyboard for an input device
-
-config KDB_CONTINUE_CATASTROPHIC
-	int "KDB: continue after catastrophic errors"
-	depends on KGDB_KDB
-	default "0"
-	help
-	  This integer controls the behaviour of kdb when the kernel gets a
-	  catastrophic error, i.e. for a panic or oops.
-	  When KDB is active and a catastrophic error occurs, nothing extra
-	  will happen until you type 'go'.
-	  CONFIG_KDB_CONTINUE_CATASTROPHIC == 0 (default). The first time
-	  you type 'go', you will be warned by kdb. The secend time you type
-	  'go', KDB tries to continue. No guarantees that the
-	  kernel is still usable in this situation.
-	  CONFIG_KDB_CONTINUE_CATASTROPHIC == 1. KDB tries to continue.
-	  No guarantees that the kernel is still usable in this situation.
-	  CONFIG_KDB_CONTINUE_CATASTROPHIC == 2. KDB forces a reboot.
-	  If you are not sure, say 0.
 
 config ARCH_HAS_EARLY_DEBUG
 	bool

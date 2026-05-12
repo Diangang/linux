@@ -156,17 +156,6 @@ config PM_SLEEP_SMP_NONZERO_CPU
 	non-zero numbered CPU, it may define ARCH_SUSPEND_NONZERO_CPU. This
 	will allow nohz_full mask to include CPU0.
 
-config PM_WAKELOCKS_LIMIT
-	int "Maximum number of user space wakeup sources (0 = no limit)"
-	range 0 100000
-	default 100
-	depends on PM_WAKELOCKS
-
-config PM_WAKELOCKS_GC
-	bool "Garbage collector for user space wakeup sources"
-	depends on PM_WAKELOCKS
-	default y
-
 config PM_QOS_CPU_SYSTEM_WAKEUP
 	bool "User space interface for CPU system wakeup QoS"
 	depends on CPU_IDLE
@@ -271,25 +260,6 @@ config PM_TRACE
 	  The way the information is presented is architecture-
 	  dependent, x86 will print the information during a
 	  late_initcall.
-
-config PM_TRACE_RTC
-	bool "Suspend/resume event tracing"
-	depends on PM_SLEEP_DEBUG
-	depends on X86
-	depends on RTC_MC146818_LIB
-	select PM_TRACE
-	help
-	This enables some cheesy code to save the last PM event point in the
-	RTC across reboots, so that you can debug a machine that just hangs
-	during suspend (or more commonly, during resume).
-
-	To use this debugging feature you should attempt to suspend the
-	machine, reboot it and then run
-
-		dmesg -s 1000000 | grep 'hash matches'
-
-	CAUTION: this option will cause your machine's real-time clock to be
-	set to an invalid time after a resume.
 
 config PM_CLK
 	def_bool y

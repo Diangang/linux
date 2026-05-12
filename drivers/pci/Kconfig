@@ -8,12 +8,6 @@ config HAVE_PCI
 	bool
 
 # select this to unconditionally force on PCI support
-config FORCE_PCI
-	bool
-	select HAVE_PCI
-	select PCI
-
-# select this to provide a generic PCI iomap,
 # without PCI itself having to be defined
 config GENERIC_PCI_IOMAP
 	bool

@@ -17,15 +17,6 @@ config ARM_SDE_INTERFACE
 config DMI_SCAN_MACHINE_NON_EFI_FALLBACK
 	bool
 
-config FW_CFG_SYSFS_CMDLINE
-	bool "QEMU fw_cfg device parameter parsing"
-	depends on FW_CFG_SYSFS
-	help
-	  Allow the qemu_fw_cfg device to be initialized via the kernel
-	  command line or using a module parameter.
-	  WARNING: Using incorrect parameters (base address in particular)
-	  may crash your system.
-
 source "drivers/firmware/efi/Kconfig"
 source "drivers/firmware/psci/Kconfig"
 source "drivers/firmware/smccc/Kconfig"

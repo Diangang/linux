@@ -64,13 +64,6 @@ config BLK_DEV_WRITE_MOUNTED
 	storage stack. If in doubt, say Y. The configuration can be overridden
 	with the bdev_allow_write_mounted boot option.
 
-config BLK_WBT_MQ
-	bool "Enable writeback throttling by default"
-	default y
-	depends on BLK_WBT
-	help
-	Enable writeback throttling by default for request-based block devices.
-
 config BLK_CGROUP_IOLATENCY
 	bool "Enable support for latency based cgroup IO protection"
 	depends on BLK_CGROUP

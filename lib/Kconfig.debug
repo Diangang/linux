@@ -476,14 +476,6 @@ config DEBUG_OBJECTS_PERCPU_COUNTER
 	  percpu counter routines to track the life time of percpu counter
 	  objects and validate the percpu counter operations.
 
-config DEBUG_OBJECTS_ENABLE_DEFAULT
-	int "debug_objects bootup default value (0-1)"
-	range 0 1
-	default "1"
-	depends on DEBUG_OBJECTS
-	help
-	  Debug objects boot parameter default value
-
 config DEBUG_STACK_USAGE
 	bool "Stack utilization instrumentation"
 	depends on DEBUG_KERNEL
@@ -561,29 +553,6 @@ config DEBUG_MEMORY_INIT
 
 	  If unsure, say Y
 
-config MEMORY_NOTIFIER_ERROR_INJECT
-	tristate "Memory hotplug notifier error injection module"
-	depends on MEMORY_HOTPLUG && NOTIFIER_ERROR_INJECTION
-	help
-	  This option provides the ability to inject artificial errors to
-	  memory hotplug notifier chain callbacks.  It is controlled through
-	  debugfs interface under /sys/kernel/debug/notifier-error-inject/memory
-
-	  If the notifier call chain should be failed with some events
-	  notified, write the error code to "actions/<notifier event>/error".
-
-	  Example: Inject memory hotplug offline error (-12 == -ENOMEM)
-
-	  # cd /sys/kernel/debug/notifier-error-inject/memory
-	  # echo -12 > actions/MEM_GOING_OFFLINE/error
-	  # echo offline > /sys/devices/system/memory/memoryXXX/state
-	  bash: echo: write error: Cannot allocate memory
-
-	  To compile this code as a module, choose M here: the module will
-	  be called memory-notifier-error-inject.
-
-	  If unsure, say N.
-
 config DEBUG_KMAP_LOCAL
 	bool "Debug kmap_local temporary mappings"
 	depends on DEBUG_KERNEL && KMAP_LOCAL
@@ -603,15 +572,6 @@ config DEBUG_KMAP_LOCAL_FORCE_MAP
 	  This option enforces temporary mappings through the kmap_local
 	  mechanism for non-highmem pages and on non-highmem systems.
 	  Disable this for production systems!
-
-config DEBUG_HIGHMEM
-	bool "Highmem debugging"
-	depends on DEBUG_KERNEL && HIGHMEM
-	select DEBUG_KMAP_LOCAL_FORCE_MAP if ARCH_SUPPORTS_KMAP_LOCAL_FORCE_MAP
-	select DEBUG_KMAP_LOCAL
-	help
-	  This option enables additional error checking for high memory
-	  systems.  Disable for production systems.
 
 config HAVE_DEBUG_STACKOVERFLOW
 	bool
@@ -684,24 +644,6 @@ config SOFTLOCKUP_DETECTOR_INTR_STORM
 	  be on the callstack. To detect this case, it is necessary to report
 	  the CPU stats and the interrupt counts during the "soft lockups".
 
-config BOOTPARAM_SOFTLOCKUP_PANIC
-	int "Panic (Reboot) On Soft Lockups"
-	depends on SOFTLOCKUP_DETECTOR
-	default 0
-	help
-	  Set to a non-zero value N to enable the kernel to panic on "soft
-	  lockups", which are bugs that cause the kernel to loop in kernel
-	  mode for more than (N * 20 seconds) (configurable using the
-	  watchdog_thresh sysctl), without giving other tasks a chance to run.
-
-	  The panic can be used in combination with panic_timeout,
-	  to cause the system to reboot automatically after a
-	  lockup has been detected. This feature is useful for
-	  high-availability systems that have uptime guarantees and
-	  where a lockup must be resolved ASAP.
-
-	  Say 0 if unsure.
-
 config HAVE_HARDLOCKUP_DETECTOR_BUDDY
 	bool
 	depends on SMP
@@ -771,50 +713,6 @@ config HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
 config HARDLOCKUP_CHECK_TIMESTAMP
 	bool
 
-config BOOTPARAM_HARDLOCKUP_PANIC
-	bool "Panic (Reboot) On Hard Lockups"
-	depends on HARDLOCKUP_DETECTOR
-	help
-	  Say Y here to enable the kernel to panic on "hard lockups",
-	  which are bugs that cause the kernel to loop in kernel
-	  mode with interrupts disabled for more than 10 seconds (configurable
-	  using the watchdog_thresh sysctl).
-
-	  Say N if unsure.
-
-config DEFAULT_HUNG_TASK_TIMEOUT
-	int "Default timeout for hung task detection (in seconds)"
-	depends on DETECT_HUNG_TASK
-	default 120
-	help
-	  This option controls the default timeout (in seconds) used
-	  to determine when a task has become non-responsive and should
-	  be considered hung.
-
-	  It can be adjusted at runtime via the kernel.hung_task_timeout_secs
-	  sysctl or by writing a value to
-	  /proc/sys/kernel/hung_task_timeout_secs.
-
-	  A timeout of 0 disables the check.  The default is two minutes.
-	  Keeping the default should be fine in most cases.
-
-config BOOTPARAM_HUNG_TASK_PANIC
-	int "Number of hung tasks to trigger kernel panic"
-	depends on DETECT_HUNG_TASK
-	default 0
-	help
-	  When set to a non-zero value, a kernel panic will be triggered
-	  if the number of hung tasks found during a single scan reaches
-	  this value.
-
-	  The panic can be used in combination with panic_timeout,
-	  to cause the system to reboot automatically after a
-	  hung task has been detected. This feature is useful for
-	  high-availability systems that have uptime guarantees and
-	  where a hung tasks must be resolved ASAP.
-
-	  Say 0 if unsure.
-
 config DETECT_HUNG_TASK_BLOCKER
 	bool "Dump Hung Tasks Blocker"
 	depends on DETECT_HUNG_TASK
@@ -825,29 +723,6 @@ config DETECT_HUNG_TASK_BLOCKER
 	  the mutex lock which "hung tasks" are waiting.
 	  This will add overhead a bit but shows suspicious tasks and
 	  call trace if it comes from waiting a mutex.
-
-config BOOTPARAM_WQ_STALL_PANIC
-	int "Panic on Nth workqueue stall"
-	default 0
-	range 0 100
-	depends on WQ_WATCHDOG
-	help
-	  Set the number of workqueue stalls to trigger a kernel panic.
-	  A workqueue stall occurs when a worker pool doesn't make forward
-	  progress on a pending work item for over 30 seconds (configurable
-	  using the workqueue.watchdog_thresh parameter).
-
-	  If n = 0, the kernel will not panic on stall. If n > 0, the kernel
-	  will panic after n stall warnings.
-
-	  The panic can be used in combination with panic_timeout,
-	  to cause the system to reboot automatically after a
-	  stall has been detected. This feature is useful for
-	  high-availability systems that have uptime guarantees and
-	  where a stall must be resolved ASAP.
-
-	  This setting can be overridden at runtime via the
-	  workqueue.panic_on_stall kernel parameter.
 
 endmenu # "Debug lockups and hangs"
 
@@ -946,14 +821,6 @@ config LOCKDEP_STACK_TRACE_HASH_BITS
 	help
 	  Try increasing this value if you need large STACK_TRACE_HASH_SIZE.
 
-config LOCKDEP_CIRCULAR_QUEUE_BITS
-	int "Size for elements in circular_queue struct (as Nth power of 2)"
-	depends on LOCKDEP
-	range 10 26
-	default 12
-	help
-	  Try increasing this value if you hit "lockdep bfs error:-1" warning due to __cq_enqueue() failure.
-
 config DEBUG_LOCKDEP
 	bool "Lock dependency engine debugging"
 	depends on DEBUG_KERNEL && LOCKDEP
@@ -962,15 +829,6 @@ config DEBUG_LOCKDEP
 	  If you say Y here, the lock dependency engine will do
 	  additional runtime checks to debug itself, at the price
 	  of more runtime overhead.
-
-config CSD_LOCK_WAIT_DEBUG_DEFAULT
-	bool "Default csd_lock_wait() debugging on at boot time"
-	depends on CSD_LOCK_WAIT_DEBUG
-	depends on 64BIT
-	default n
-	help
-	  This option causes the csdlock_debug= kernel boot parameter to
-	  default to 1 (basic debugging) instead of 0 (no debugging).
 
 endmenu # lock debugging
 
@@ -1103,70 +961,6 @@ endmenu
 
 menu "Kernel Testing and Coverage"
 
-config PM_NOTIFIER_ERROR_INJECT
-	tristate "PM notifier error injection module"
-	depends on PM && NOTIFIER_ERROR_INJECTION
-	default m if PM_DEBUG
-	help
-	  This option provides the ability to inject artificial errors to
-	  PM notifier chain callbacks.  It is controlled through debugfs
-	  interface /sys/kernel/debug/notifier-error-inject/pm
-
-	  If the notifier call chain should be failed with some events
-	  notified, write the error code to "actions/<notifier event>/error".
-
-	  Example: Inject PM suspend error (-12 = -ENOMEM)
-
-	  # cd /sys/kernel/debug/notifier-error-inject/pm/
-	  # echo -12 > actions/PM_SUSPEND_PREPARE/error
-	  # echo mem > /sys/power/state
-	  bash: echo: write error: Cannot allocate memory
-
-	  To compile this code as a module, choose M here: the module will
-	  be called pm-notifier-error-inject.
-
-	  If unsure, say N.
-
-config OF_RECONFIG_NOTIFIER_ERROR_INJECT
-	tristate "OF reconfig notifier error injection module"
-	depends on OF_DYNAMIC && NOTIFIER_ERROR_INJECTION
-	help
-	  This option provides the ability to inject artificial errors to
-	  OF reconfig notifier chain callbacks.  It is controlled
-	  through debugfs interface under
-	  /sys/kernel/debug/notifier-error-inject/OF-reconfig/
-
-	  If the notifier call chain should be failed with some events
-	  notified, write the error code to "actions/<notifier event>/error".
-
-	  To compile this code as a module, choose M here: the module will
-	  be called of-reconfig-notifier-error-inject.
-
-	  If unsure, say N.
-
-config NETDEV_NOTIFIER_ERROR_INJECT
-	tristate "Netdev notifier error injection module"
-	depends on NET && NOTIFIER_ERROR_INJECTION
-	help
-	  This option provides the ability to inject artificial errors to
-	  netdevice notifier chain callbacks.  It is controlled through debugfs
-	  interface /sys/kernel/debug/notifier-error-inject/netdev
-
-	  If the notifier call chain should be failed with some events
-	  notified, write the error code to "actions/<notifier event>/error".
-
-	  Example: Inject netdevice mtu change error (-22 = -EINVAL)
-
-	  # cd /sys/kernel/debug/notifier-error-inject/netdev
-	  # echo -22 > actions/NETDEV_CHANGEMTU/error
-	  # ip link set eth0 mtu 1024
-	  RTNETLINK answers: Invalid argument
-
-	  To compile this code as a module, choose M here: the module will
-	  be called netdev-notifier-error-inject.
-
-	  If unsure, say N.
-
 config FUNCTION_ERROR_INJECTION
 	bool "Fault-injections of functions"
 	depends on HAVE_FUNCTION_ERROR_INJECTION && KPROBES
@@ -1222,23 +1016,6 @@ config FAIL_FUNCTION
 	  an error value and have to handle it. This is useful to test the
 	  error handling in various subsystems.
 
-config FAIL_MMC_REQUEST
-	bool "Fault-injection capability for MMC IO"
-	depends on FAULT_INJECTION_DEBUG_FS && MMC
-	help
-	  Provide fault-injection capability for MMC IO.
-	  This will make the mmc core return data errors. This is
-	  useful to test the error handling in the mmc block device
-	  and to test how the mmc host driver handles retries from
-	  the block device.
-
-config FAIL_SUNRPC
-	bool "Fault-injection capability for SunRPC"
-	depends on FAULT_INJECTION_DEBUG_FS && SUNRPC_DEBUG
-	help
-	  Provide fault-injection capability for SunRPC and
-	  its consumers.
-
 config FAIL_SKB_REALLOC
 	bool "Fault-injection capability forcing skb to reallocate"
 	depends on FAULT_INJECTION_DEBUG_FS
@@ -1258,16 +1035,6 @@ config FAULT_INJECTION_CONFIGFS
 	  fault-injection via configfs.  Each parameter for driver-specific
 	  fault-injection can be made visible as a configfs attribute in a
 	  configfs group.
-
-
-config FAULT_INJECTION_STACKTRACE_FILTER
-	bool "stacktrace filter for fault-injection capabilities"
-	depends on FAULT_INJECTION
-	depends on (FAULT_INJECTION_DEBUG_FS || FAULT_INJECTION_CONFIGFS) && STACKTRACE_SUPPORT
-	select STACKTRACE
-	depends on FRAME_POINTER || MIPS || PPC || S390 || MICROBLAZE || ARM || ARC || X86
-	help
-	  Provide stacktrace filter for fault-injection capabilities
 
 config ARCH_HAS_KCOV
 	bool
@@ -1348,25 +1115,6 @@ config STRING_KUNIT_TEST
 	tristate "KUnit test string functions at runtime" if !KUNIT_ALL_TESTS
 	depends on KUNIT
 	default KUNIT_ALL_TESTS
-
-config HASH_KUNIT_TEST
-	tristate "KUnit Test for integer hash functions" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable this option to test the kernel's string (<linux/stringhash.h>), and
-	  integer (<linux/hash.h>) hash functions on boot.
-
-	  KUnit tests run during boot and output the results to the debug log
-	  in TAP format (https://testanything.org/). Only useful for kernel devs
-	  running the KUnit test harness, and not intended for inclusion into a
-	  production build.
-
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  This is intended to help people writing architecture-specific
-	  optimized versions. If unsure, say N.
 
 config RESOURCE_KUNIT_TEST
 	tristate "KUnit test for resource API" if !KUNIT_ALL_TESTS
@@ -1517,7 +1265,6 @@ config MEMTEST
 	        memtest=17, mean do 17 test patterns.
 	  If you are unsure how to answer this question, answer N.
 
-
 endmenu # "Kernel Testing and Coverage"
 
 menu "Rust hacking"
@@ -1551,22 +1298,6 @@ config RUST_OVERFLOW_CHECKS
 	  Note that this will apply to all Rust code, including `core`.
 
 	  If unsure, say Y.
-
-config RUST_BUILD_ASSERT_ALLOW
-	bool "Allow unoptimized build-time assertions"
-	depends on RUST
-	help
-	  Controls how `build_error!` and `build_assert!` are handled during the build.
-
-	  If calls to them exist in the binary, it may indicate a violated invariant
-	  or that the optimizer failed to verify the invariant during compilation.
-
-	  This should not happen, thus by default the build is aborted. However,
-	  as an escape hatch, you can choose Y here to ignore them during build
-	  and let the check be carried at runtime (with `panic!` being called if
-	  the check fails).
-
-	  If unsure, say N.
 
 config RUST_KERNEL_DOCTESTS
 	bool "Doctests for the `kernel` crate" if !KUNIT_ALL_TESTS

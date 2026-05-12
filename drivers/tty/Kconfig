@@ -267,24 +267,6 @@ config PPC_EARLY_DEBUG_EHV_BC
 	  via an ePAPR byte channel.  You also need to choose the byte channel
 	  handle below.
 
-config PPC_EARLY_DEBUG_EHV_BC_HANDLE
-	int "Byte channel handle for early console (udbg)"
-	depends on PPC_EARLY_DEBUG_EHV_BC
-	default 0
-	help
-	  If you want early console (udbg) output through a byte channel,
-	  specify the handle of the byte channel to use.
-
-	  For this to work, the byte channel driver must be compiled
-	  in-kernel, not as a module.
-
-	  Note that only one early console driver can be enabled, so don't
-	  enable any others if you enable this one.
-
-	  If the number you specify is not a valid byte channel handle, then
-	  there simply will be no early console output.  This is true also
-	  if you don't boot under a hypervisor at all.
-
 config GOLDFISH_TTY
 	tristate "Goldfish TTY Driver"
 	depends on GOLDFISH
@@ -292,27 +274,6 @@ config GOLDFISH_TTY
 	select SERIAL_CORE_CONSOLE
 	help
 	  Console and system TTY driver for the Goldfish virtual platform.
-
-config GOLDFISH_TTY_EARLY_CONSOLE
-	bool
-	default y if GOLDFISH_TTY=y
-	select SERIAL_EARLYCON
-
-config IPWIRELESS
-	tristate "IPWireless 3G UMTS PCMCIA card support"
-	depends on PCMCIA && NETDEVICES && HAS_IOPORT
-	select PPP
-	help
-	  This is a driver for 3G UMTS PCMCIA card from IPWireless company. In
-	  some countries (for example Czech Republic, T-Mobile ISP) this card
-	  is shipped for service called UMTS 4G.
-
-config N_GSM
-	tristate "GSM MUX line discipline support (EXPERIMENTAL)"
-	depends on NET
-	help
-	  This line discipline provides support for the GSM MUX protocol and
-	  presents the mux as a set of 61 individual tty devices.
 
 config MIPS_EJTAG_FDC_TTY
 	bool "MIPS EJTAG Fast Debug Channel TTY"
@@ -332,19 +293,6 @@ config MIPS_EJTAG_FDC_TTY
 
 	  If unsure, say N.
 
-config MIPS_EJTAG_FDC_EARLYCON
-	bool "Early FDC console"
-	depends on MIPS_EJTAG_FDC_TTY
-	help
-	  This registers a console on FDC channel 1 very early during boot (from
-	  MIPS arch code). This is useful for bring-up and debugging early boot
-	  issues.
-
-	  Do not enable unless there is a debug probe attached to drain the FDC
-	  TX FIFO.
-
-	  If unsure, say N.
-
 config MIPS_EJTAG_FDC_KGDB
 	bool "Use KGDB over an FDC channel"
 	depends on MIPS_EJTAG_FDC_TTY && KGDB
@@ -352,14 +300,6 @@ config MIPS_EJTAG_FDC_KGDB
 	help
 	  This enables the use of KGDB over an FDC channel, allowing KGDB to be
 	  used remotely or when a serial port isn't available.
-
-config MIPS_EJTAG_FDC_KGDB_CHAN
-	int "KGDB FDC channel"
-	depends on MIPS_EJTAG_FDC_KGDB
-	range 2 15
-	default 3
-	help
-	  FDC channel number to use for KGDB.
 
 config NULL_TTY_DEFAULT_CONSOLE
 	bool "Support for console on ttynull"
@@ -382,18 +322,6 @@ config VCC
 	depends on SUN_LDOMS
 	help
 	  Support for Sun logical domain consoles.
-
-config RPMSG_TTY
-	tristate "RPMSG tty driver"
-	depends on RPMSG
-	help
-	  Say y here to export rpmsg endpoints as tty devices, usually found
-	  in /dev/ttyRPMSGx.
-	  This makes it possible for user-space programs to send and receive
-	  rpmsg messages as a standard tty protocol.
-
-	  To compile this driver as a module, choose M here: the module will be
-	  called rpmsg_tty.
 
 endif # TTY
 

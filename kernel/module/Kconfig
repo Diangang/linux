@@ -107,16 +107,6 @@ config MODULE_DEBUG_AUTOLOAD_DUPS
 	  Only enable this for debugging system functionality, never have it
 	  enabled on real systems.
 
-config MODULE_DEBUG_AUTOLOAD_DUPS_TRACE
-	bool "Force full stack trace when duplicates are found"
-	depends on MODULE_DEBUG_AUTOLOAD_DUPS
-	help
-	  Enabling this will force a full stack trace for duplicate module
-	  auto-loading requests using WARN_ON() instead of pr_warn(). You
-	  should keep this disabled at all times unless you are a developer
-	  and are doing a manual inspection and want to debug exactly why
-	  these duplicates occur.
-
 endif # MODULE_DEBUG
 
 config MODULE_UNLOAD

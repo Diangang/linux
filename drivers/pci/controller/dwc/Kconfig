@@ -63,26 +63,6 @@ config PCIE_ANDES_QILAI
 config PCIE_ARTPEC6
 	bool
 
-config PCIE_ARTPEC6_HOST
-	bool "Axis ARTPEC-6 PCIe controller (host mode)"
-	depends on MACH_ARTPEC6 || COMPILE_TEST
-	depends on PCI_MSI
-	select PCIE_DW_HOST
-	select PCIE_ARTPEC6
-	help
-	  Enables support for the PCIe controller in the ARTPEC-6 SoC to work in
-	  host mode. This uses the DesignWare core.
-
-config PCIE_ARTPEC6_EP
-	bool "Axis ARTPEC-6 PCIe controller (endpoint mode)"
-	depends on MACH_ARTPEC6 || COMPILE_TEST
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCIE_ARTPEC6
-	help
-	  Enables support for the PCIe controller in the ARTPEC-6 SoC to work in
-	  endpoint mode. This uses the DesignWare core.
-
 config PCIE_ESWIN
 	tristate "ESWIN PCIe controller"
 	depends on ARCH_ESWIN || COMPILE_TEST
@@ -95,30 +75,6 @@ config PCIE_ESWIN
 
 config PCI_IMX6
 	bool
-
-config PCI_IMX6_HOST
-	bool "Freescale i.MX6/7/8 PCIe controller (host mode)"
-	depends on ARCH_MXC || COMPILE_TEST
-	depends on PCI_MSI
-	select PCIE_DW_HOST
-	select PCI_IMX6
-	help
-	  Enables support for the PCIe controller in the i.MX SoCs to
-	  work in Root Complex mode. The PCI controller on i.MX is based
-	  on DesignWare hardware and therefore the driver re-uses the
-	  DesignWare core functions to implement the driver.
-
-config PCI_IMX6_EP
-	bool "Freescale i.MX6/7/8 PCIe controller (endpoint mode)"
-	depends on ARCH_MXC || COMPILE_TEST
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCI_IMX6
-	help
-	  Enables support for the PCIe controller in the i.MX SoCs to
-	  work in endpoint mode. The PCI controller on i.MX is based
-	  on DesignWare hardware and therefore the driver re-uses the
-	  DesignWare core functions to implement the driver.
 
 config PCI_LAYERSCAPE
 	tristate "Freescale Layerscape PCIe controller (host mode)"
@@ -186,31 +142,6 @@ config PCIE_INTEL_GW
 
 config PCIE_KEEMBAY
 	bool
-
-config PCIE_KEEMBAY_HOST
-	bool "Intel Keem Bay PCIe controller (host mode)"
-	depends on ARCH_KEEMBAY || COMPILE_TEST
-	depends on PCI_MSI
-	select PCIE_DW_HOST
-	select PCIE_KEEMBAY
-	help
-	  Say 'Y' here to enable support for the PCIe controller in Keem Bay
-	  to work in host mode.
-	  The PCIe controller is based on DesignWare Hardware and uses
-	  DesignWare core functions.
-
-config PCIE_KEEMBAY_EP
-	bool "Intel Keem Bay PCIe controller (endpoint mode)"
-	depends on ARCH_KEEMBAY || COMPILE_TEST
-	depends on PCI_MSI
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCIE_KEEMBAY
-	help
-	  Say 'Y' here to enable support for the PCIe controller in Keem Bay
-	  to work in endpoint mode.
-	  The PCIe controller is based on DesignWare Hardware and uses
-	  DesignWare core functions.
 
 config PCIE_ARMADA_8K
 	bool "Marvell Armada-8K PCIe controller"
@@ -287,52 +218,8 @@ config PCIE_DW_PLAT_EP
 config PCIE_RCAR_GEN4
 	tristate
 
-config PCIE_RCAR_GEN4_HOST
-	tristate "Renesas R-Car Gen4 PCIe controller (host mode)"
-	depends on ARCH_RENESAS || COMPILE_TEST
-	depends on PCI_MSI
-	select PCIE_DW_HOST
-	select PCIE_RCAR_GEN4
-	help
-	  Say Y here if you want PCIe controller (host mode) on R-Car Gen4 SoCs.
-	  To compile this driver as a module, choose M here: the module will be
-	  called pcie-rcar-gen4.ko. This uses the DesignWare core.
-
-config PCIE_RCAR_GEN4_EP
-	tristate "Renesas R-Car Gen4 PCIe controller (endpoint mode)"
-	depends on ARCH_RENESAS || COMPILE_TEST
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCIE_RCAR_GEN4
-	help
-	  Say Y here if you want PCIe controller (endpoint mode) on R-Car Gen4
-	  SoCs. To compile this driver as a module, choose M here: the module
-	  will be called pcie-rcar-gen4.ko. This uses the DesignWare core.
-
 config PCIE_ROCKCHIP_DW
 	bool
-
-config PCIE_ROCKCHIP_DW_HOST
-	bool "Rockchip DesignWare PCIe controller (host mode)"
-	depends on PCI_MSI
-	depends on ARCH_ROCKCHIP || COMPILE_TEST
-	depends on OF
-	select PCIE_DW_HOST
-	select PCIE_ROCKCHIP_DW
-	help
-	  Enables support for the DesignWare PCIe controller in the
-	  Rockchip SoC (except RK3399) to work in host mode.
-
-config PCIE_ROCKCHIP_DW_EP
-	bool "Rockchip DesignWare PCIe controller (endpoint mode)"
-	depends on ARCH_ROCKCHIP || COMPILE_TEST
-	depends on OF
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCIE_ROCKCHIP_DW
-	help
-	  Enables support for the DesignWare PCIe controller in the
-	  Rockchip SoC (except RK3399) to work in endpoint mode.
 
 config PCI_EXYNOS
 	tristate "Samsung Exynos PCIe controller"
@@ -469,32 +356,6 @@ config PCI_KEYSTONE
 # On non-ARM32 platforms, loadable module can be supported.
 config PCI_KEYSTONE_TRISTATE
 	tristate
-
-config PCI_KEYSTONE_HOST
-	tristate "TI Keystone PCIe controller (host mode)"
-	depends on ARCH_KEYSTONE || ARCH_K3 || COMPILE_TEST
-	depends on PCI_MSI
-	select PCIE_DW_HOST
-	select PCI_KEYSTONE if ARM
-	select PCI_KEYSTONE_TRISTATE if !ARM
-	help
-	  Enables support for the PCIe controller in the Keystone SoC to
-	  work in host mode. The PCI controller on Keystone is based on
-	  DesignWare hardware and therefore the driver re-uses the
-	  DesignWare core functions to implement the driver.
-
-config PCI_KEYSTONE_EP
-	tristate "TI Keystone PCIe controller (endpoint mode)"
-	depends on ARCH_KEYSTONE || ARCH_K3 || COMPILE_TEST
-	depends on PCI_ENDPOINT
-	select PCIE_DW_EP
-	select PCI_KEYSTONE if ARM
-	select PCI_KEYSTONE_TRISTATE if !ARM
-	help
-	  Enables support for the PCIe controller in the Keystone SoC to
-	  work in endpoint mode. The PCI controller on Keystone is based
-	  on DesignWare hardware and therefore the driver re-uses the
-	  DesignWare core functions to implement the driver.
 
 config PCIE_VISCONTI_HOST
 	bool "Toshiba Visconti PCIe controller"

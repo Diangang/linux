@@ -1477,22 +1477,6 @@ config SWP_EMULATION
 
 	  If unsure, say Y
 
-config CP15_BARRIER_EMULATION
-	bool "Emulate CP15 Barrier instructions"
-	help
-	  The CP15 barrier instructions - CP15ISB, CP15DSB, and
-	  CP15DMB - are deprecated in ARMv8 (and ARMv7). It is
-	  strongly recommended to use the ISB, DSB, and DMB
-	  instructions instead.
-
-	  Say Y here to enable software emulation of these
-	  instructions for AArch32 userspace code. When this option is
-	  enabled, CP15 barrier usage is traced which can help
-	  identify software that needs updating. This feature can be
-	  controlled at runtime with the abi.cp15_barrier sysctl.
-
-	  If unsure, say Y
-
 config SETEND_EMULATION
 	bool "Emulate SETEND instruction"
 	help
@@ -1707,10 +1691,6 @@ config ARM64_BTI
 	  BTI, such binaries can still run, but you get no additional
 	  enforcement of branch destinations.
 
-config CC_HAS_BRANCH_PROT_PAC_RET_BTI
-	# GCC 9 or later, clang 8 or later
-	def_bool $(cc-option,-mbranch-protection=pac-ret+leaf+bti)
-
 config ARM64_E0PD
 	bool "Enable support for E0PD"
 	default y
@@ -1833,11 +1813,6 @@ config ARM64_GCS
 	  if the system does not implement the feature.
 
 endmenu # "ARMv9.4 architectural features"
-
-config AS_HAS_LSUI
-	def_bool $(as-instr,.arch_extension lsui)
-	help
-	  Supported by LLVM 20+ and binutils 2.45+.
 
 menu "ARMv9.6 architectural features"
 
