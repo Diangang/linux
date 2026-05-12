@@ -1394,11 +1394,6 @@ struct task_struct {
 	atomic_t			tracing_graph_pause;
 #endif
 
-#ifdef CONFIG_TRACING
-	/* Bitmask and counter of trace recursion: */
-	unsigned long			trace_recursion;
-#endif /* CONFIG_TRACING */
-
 #ifdef CONFIG_KCOV
 	/* See kernel/kcov.c for more details. */
 
