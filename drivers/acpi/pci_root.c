@@ -447,7 +447,7 @@ static u32 calculate_support(void)
 
 /*
  * Background on hotplug support, and making it depend on only
- * CONFIG_HOTPLUG_PCI_PCIE vs. also considering CONFIG_MEMORY_HOTPLUG:
+ * PCIe hotplug vs. also considering CONFIG_MEMORY_HOTPLUG:
  *
  * CONFIG_ACPI_HOTPLUG_MEMORY does depend on CONFIG_MEMORY_HOTPLUG, but
  * there is no existing _OSC for memory hotplug support. The reason is that
@@ -461,8 +461,7 @@ static u32 calculate_support(void)
  * The concern is that if Linux says no to supporting CXL hotplug then
  * the BIOS may say no to giving the OS hotplug control of any other PCIe
  * device. So the question here is not whether hotplug is enabled, it's
- * whether it is handled natively by the at all OS, and if
- * CONFIG_HOTPLUG_PCI_PCIE is enabled then the answer is "yes".
+ * whether it is handled natively by the OS at all.
  *
  * Otherwise, the plan for CXL coordinated remove, since the kernel does
  * not support blocking hotplug, is to require the memory device to be
@@ -487,9 +486,6 @@ static u32 calculate_cxl_support(void)
 	support |= OSC_CXL_1_1_PORT_REG_ACCESS_SUPPORT;
 	if (pci_aer_available())
 		support |= OSC_CXL_PROTOCOL_ERR_REPORTING_SUPPORT;
-	if (IS_ENABLED(CONFIG_HOTPLUG_PCI_PCIE))
-		support |= OSC_CXL_NATIVE_HP_SUPPORT;
-
 	return support;
 }
 
@@ -502,12 +498,6 @@ static u32 calculate_control(void)
 
 	if (IS_ENABLED(CONFIG_PCIEASPM))
 		control |= OSC_PCI_EXPRESS_LTR_CONTROL;
-
-	if (IS_ENABLED(CONFIG_HOTPLUG_PCI_PCIE))
-		control |= OSC_PCI_EXPRESS_NATIVE_HP_CONTROL;
-
-	if (IS_ENABLED(CONFIG_HOTPLUG_PCI_SHPC))
-		control |= OSC_PCI_SHPC_NATIVE_HP_CONTROL;
 
 	if (pci_aer_available())
 		control |= OSC_PCI_EXPRESS_AER_CONTROL;

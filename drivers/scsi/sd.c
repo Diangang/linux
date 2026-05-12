@@ -24,7 +24,7 @@
  *	   <willy@debian.org>, Kurt Garloff <garloff@suse.de>: 
  *	   Support 32k/1M disks.
  *
- *	Logging policy (needs CONFIG_SCSI_LOGGING defined):
+ *	Logging policy (with SCSI logging enabled):
  *	 - setting up transfer: SCSI_LOG_HLQUEUE levels 1 and 2
  *	 - end of transfer (bh + scsi_lib): SCSI_LOG_HLCOMPLETE level 1
  *	 - entering sd_ioctl: SCSI_LOG_IOCTL level 1

@@ -807,16 +807,7 @@ int pci_acpi_program_hp_params(struct pci_dev *dev)
  */
 bool pciehp_is_native(struct pci_dev *bridge)
 {
-	const struct pci_host_bridge *host;
-
-	if (!IS_ENABLED(CONFIG_HOTPLUG_PCI_PCIE))
-		return false;
-
-	if (pcie_ports_native)
-		return true;
-
-	host = pci_find_host_bridge(bridge->bus);
-	return host->native_pcie_hotplug;
+	return false;
 }
 
 /**

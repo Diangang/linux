@@ -98,7 +98,7 @@ void numa_clear_node(int cpu)
  * Requires node_possible_map to be valid.
  *
  * Note: cpumask_of_node() is not valid until after this is done.
- * (Use CONFIG_DEBUG_PER_CPU_MAPS to check this.)
+ * (Use debug per-CPU map checks to verify this.)
  */
 void __init setup_node_to_cpumask_map(void)
 {
@@ -325,5 +325,4 @@ void numa_remove_cpu(unsigned int cpu)
 {
 	cpumask_clear_cpu(cpu, node_to_cpumask_map[early_cpu_to_node(cpu)]);
 }
-
 

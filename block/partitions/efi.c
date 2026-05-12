@@ -42,7 +42,7 @@
  * - Changed gpt structure names and members to be simpler and more Linux-like.
  * 
  * Wed Oct 17 2001 Matt Domsch <Matt_Domsch@dell.com>
- * - Removed CONFIG_DEVFS_VOLUMES_UUID code entirely per Martin Wilck
+ * - Removed device volume UUID code entirely per Martin Wilck
  *
  * Wed Oct 10 2001 Matt Domsch <Matt_Domsch@dell.com>
  * - Changed function comments to DocBook style per Andreas Dilger suggestion.

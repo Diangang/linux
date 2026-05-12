@@ -231,9 +231,8 @@ static int get_port_device_capability(struct pci_dev *dev)
 		 * by the BIOS and the hot-plug service driver won't be loaded
 		 * to handle them.
 		 */
-		if (!IS_ENABLED(CONFIG_HOTPLUG_PCI_PCIE))
-			pcie_capability_clear_word(dev, PCI_EXP_SLTCTL,
-				PCI_EXP_SLTCTL_CCIE | PCI_EXP_SLTCTL_HPIE);
+		pcie_capability_clear_word(dev, PCI_EXP_SLTCTL,
+			PCI_EXP_SLTCTL_CCIE | PCI_EXP_SLTCTL_HPIE);
 	}
 
 #ifdef CONFIG_PCIEAER

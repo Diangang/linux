@@ -1021,7 +1021,7 @@ static inline blk_status_t nvme_setup_rw(struct nvme_ns *ns,
 	if (ns->head->ms) {
 		/*
 		 * If formatted with metadata, the block layer always provides a
-		 * metadata buffer if CONFIG_BLK_DEV_INTEGRITY is enabled.  Else
+		 * metadata buffer when integrity support is enabled. Else
 		 * we enable the PRACT bit for protection information or set the
 		 * namespace capacity to zero to prevent any I/O.
 		 */
