@@ -7,8 +7,6 @@ ifdef CONFIG_DEBUG_INFO_SPLIT
 DEBUG_CFLAGS	+= -gsplit-dwarf
 endif
 
-debug-flags-$(CONFIG_DEBUG_INFO_DWARF4)	+= -gdwarf-4
-debug-flags-$(CONFIG_DEBUG_INFO_DWARF5)	+= -gdwarf-5
 ifeq ($(CONFIG_CC_IS_CLANG)$(CONFIG_AS_IS_GNU),yy)
 # Clang does not pass -g or -gdwarf-* option down to GAS.
 # Add -Wa, prefix to explicitly specify the flags.
@@ -16,12 +14,6 @@ KBUILD_AFLAGS	+= $(addprefix -Wa$(comma), $(debug-flags-y))
 endif
 DEBUG_CFLAGS	+= $(debug-flags-y)
 KBUILD_AFLAGS	+= $(debug-flags-y)
-
-ifdef CONFIG_DEBUG_INFO_DWARF4
-DEBUG_RUSTFLAGS	+= -Zdwarf-version=4
-else ifdef CONFIG_DEBUG_INFO_DWARF5
-DEBUG_RUSTFLAGS	+= -Zdwarf-version=5
-endif
 
 ifdef CONFIG_DEBUG_INFO_REDUCED
 DEBUG_CFLAGS	+= -fno-var-tracking
