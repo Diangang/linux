@@ -31,11 +31,7 @@
 #define ARCH_SUPPORTS_FTRACE_OPS 0
 #endif
 
-#ifdef CONFIG_TRACER_SNAPSHOT
-extern void ftrace_boot_snapshot(void);
-#else
 static inline void ftrace_boot_snapshot(void) { }
-#endif
 
 struct ftrace_ops;
 struct ftrace_regs;
@@ -566,22 +562,6 @@ static inline void arch_ftrace_set_direct_caller(struct ftrace_regs *fregs,
 						 unsigned long addr) { }
 #endif /* CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS */
 
-#ifdef CONFIG_DYNAMIC_FTRACE_WITH_JMP
-static inline bool ftrace_is_jmp(unsigned long addr)
-{
-	return addr & 1;
-}
-
-static inline unsigned long ftrace_jmp_set(unsigned long addr)
-{
-	return addr | 1UL;
-}
-
-static inline unsigned long ftrace_jmp_get(unsigned long addr)
-{
-	return addr & ~1UL;
-}
-#else
 static inline bool ftrace_is_jmp(unsigned long addr)
 {
 	return false;
@@ -596,51 +576,11 @@ static inline unsigned long ftrace_jmp_get(unsigned long addr)
 {
 	return addr;
 }
-#endif /* CONFIG_DYNAMIC_FTRACE_WITH_JMP */
 
-#ifdef CONFIG_STACK_TRACER
-
-int stack_trace_sysctl(const struct ctl_table *table, int write, void *buffer,
-		       size_t *lenp, loff_t *ppos);
-
-/* DO NOT MODIFY THIS VARIABLE DIRECTLY! */
-DECLARE_PER_CPU(int, disable_stack_tracer);
-
-/**
- * stack_tracer_disable - temporarily disable the stack tracer
- *
- * There's a few locations (namely in RCU) where stack tracing
- * cannot be executed. This function is used to disable stack
- * tracing during those critical sections.
- *
- * This function must be called with preemption or interrupts
- * disabled and stack_tracer_enable() must be called shortly after
- * while preemption or interrupts are still disabled.
- */
-static inline void stack_tracer_disable(void)
-{
-	/* Preemption or interrupts must be disabled */
-	if (IS_ENABLED(CONFIG_DEBUG_PREEMPT))
-		WARN_ON_ONCE(!preempt_count() || !irqs_disabled());
-	this_cpu_inc(disable_stack_tracer);
-}
-
-/**
- * stack_tracer_enable - re-enable the stack tracer
- *
- * After stack_tracer_disable() is called, stack_tracer_enable()
- * must be called shortly afterward.
- */
 static inline void stack_tracer_enable(void)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_PREEMPT))
-		WARN_ON_ONCE(!preempt_count() || !irqs_disabled());
-	this_cpu_dec(disable_stack_tracer);
 }
-#else
 static inline void stack_tracer_disable(void) { }
-static inline void stack_tracer_enable(void) { }
-#endif
 
 enum {
 	FTRACE_UPDATE_CALLS		= (1 << 0),
@@ -1120,17 +1060,12 @@ static __always_inline unsigned long get_lock_parent_ip(void)
 	return CALLER_ADDR2;
 }
 
-#ifdef CONFIG_TRACE_PREEMPT_TOGGLE
-  extern void trace_preempt_on(unsigned long a0, unsigned long a1);
-  extern void trace_preempt_off(unsigned long a0, unsigned long a1);
-#else
 /*
  * Use defines instead of static inlines because some arches will make code out
  * of the CALLER_ADDR, when we really want these to be a real nop.
  */
 # define trace_preempt_on(a0, a1) do { } while (0)
 # define trace_preempt_off(a0, a1) do { } while (0)
-#endif
 
 #ifdef CONFIG_DYNAMIC_FTRACE
 extern void ftrace_init(void);

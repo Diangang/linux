@@ -1,13 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0
 
-ifdef CONFIG_CC_HAS_KASAN_MEMINTRINSIC_PREFIX
-# Safe for compiler to generate meminstrinsic calls in uninstrumented files.
-CFLAGS_KASAN_NOSANITIZE :=
-else
 # Don't let compiler generate memintrinsic calls in uninstrumented files
 # because they are instrumented.
 CFLAGS_KASAN_NOSANITIZE := -fno-builtin
-endif
 
 KASAN_SHADOW_OFFSET ?= $(CONFIG_KASAN_SHADOW_OFFSET)
 
@@ -87,13 +82,11 @@ kasan_params += hwasan-instrument-stack=$(stack_enable) \
 		hwasan-inline-all-checks=0
 
 # Instrument memcpy/memset/memmove calls by using instrumented __(hw)asan_mem*().
-ifdef CONFIG_CC_HAS_KASAN_MEMINTRINSIC_PREFIX
-	ifdef CONFIG_CC_IS_GCC
+ifdef CONFIG_CC_IS_GCC
 		kasan_params += asan-kernel-mem-intrinsic-prefix=1
-	else
+else
 		kasan_params += hwasan-kernel-mem-intrinsic-prefix=1
-	endif
-endif # CONFIG_CC_HAS_KASAN_MEMINTRINSIC_PREFIX
+endif
 
 endif # CONFIG_KASAN_SW_TAGS
 

@@ -157,9 +157,7 @@ static inline void __chk_io_ptr(const volatile void __iomem *ptr) { }
  *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-retain-function-attribute
  * clang: https://clang.llvm.org/docs/AttributeReference.html#retain
  */
-#if __has_attribute(__retain__) && \
-	(defined(CONFIG_LD_DEAD_CODE_DATA_ELIMINATION) || \
-	 defined(CONFIG_LTO_CLANG))
+#if __has_attribute(__retain__) && defined(CONFIG_LTO_CLANG)
 # define __retain			__attribute__((__retain__))
 #else
 # define __retain
