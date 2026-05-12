@@ -15,8 +15,6 @@ DECLARE_TRACEPOINT(page_ref_mod_unless);
 DECLARE_TRACEPOINT(page_ref_freeze);
 DECLARE_TRACEPOINT(page_ref_unfreeze);
 
-#ifdef CONFIG_DEBUG_PAGE_REF
-
 /*
  * Ideally we would want to use the trace_<tracepoint>_enabled() helper
  * functions. But due to include header file issues, that is not
@@ -24,18 +22,6 @@ DECLARE_TRACEPOINT(page_ref_unfreeze);
  *
  * See trace_##name##_enabled(void) in include/linux/tracepoint.h
  */
-#define page_ref_tracepoint_active(t) tracepoint_enabled(t)
-
-extern void __page_ref_set(struct page *page, int v);
-extern void __page_ref_mod(struct page *page, int v);
-extern void __page_ref_mod_and_test(struct page *page, int v, int ret);
-extern void __page_ref_mod_and_return(struct page *page, int v, int ret);
-extern void __page_ref_mod_unless(struct page *page, int v, int u);
-extern void __page_ref_freeze(struct page *page, int v, int ret);
-extern void __page_ref_unfreeze(struct page *page, int v);
-
-#else
-
 #define page_ref_tracepoint_active(t) false
 
 static inline void __page_ref_set(struct page *page, int v)
@@ -59,8 +45,6 @@ static inline void __page_ref_freeze(struct page *page, int v, int ret)
 static inline void __page_ref_unfreeze(struct page *page, int v)
 {
 }
-
-#endif
 
 static inline int page_ref_count(const struct page *page)
 {

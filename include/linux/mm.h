@@ -4987,18 +4987,6 @@ static inline int pages_identical(struct page *page1, struct page *page2)
 	return !memcmp_pages(page1, page2);
 }
 
-#ifdef CONFIG_MAPPING_DIRTY_HELPERS
-unsigned long clean_record_shared_mapping_range(struct address_space *mapping,
-						pgoff_t first_index, pgoff_t nr,
-						pgoff_t bitmap_pgoff,
-						unsigned long *bitmap,
-						pgoff_t *start,
-						pgoff_t *end);
-
-unsigned long wp_shared_mapping_range(struct address_space *mapping,
-				      pgoff_t first_index, pgoff_t nr);
-#endif
-
 static inline
 int set_anon_vma_name(unsigned long addr, unsigned long size,
 		      const char __user *uname)
