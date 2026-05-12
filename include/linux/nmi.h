@@ -13,58 +13,14 @@
 #include <asm/nmi.h>
 #endif
 
-#ifdef CONFIG_LOCKUP_DETECTOR
-void lockup_detector_init(void);
-void lockup_detector_retry_init(void);
-void lockup_detector_soft_poweroff(void);
-
-extern int watchdog_user_enabled;
-extern int watchdog_thresh;
-extern unsigned long watchdog_enabled;
-extern int watchdog_hardlockup_miss_thresh;
-
-extern struct cpumask watchdog_cpumask;
-extern unsigned long *watchdog_cpumask_bits;
-#ifdef CONFIG_SMP
-extern int sysctl_softlockup_all_cpu_backtrace;
-extern int sysctl_hardlockup_all_cpu_backtrace;
-#else
-#define sysctl_softlockup_all_cpu_backtrace 0
-#define sysctl_hardlockup_all_cpu_backtrace 0
-#endif /* !CONFIG_SMP */
-
-#else /* CONFIG_LOCKUP_DETECTOR */
 static inline void lockup_detector_init(void) { }
-static inline void lockup_detector_retry_init(void) { }
-static inline void lockup_detector_soft_poweroff(void) { }
-#endif /* !CONFIG_LOCKUP_DETECTOR */
 
 static inline void touch_softlockup_watchdog_sched(void) { }
 static inline void touch_softlockup_watchdog(void) { }
 static inline void touch_softlockup_watchdog_sync(void) { }
 static inline void touch_all_softlockup_watchdogs(void) { }
 
-#define lockup_detector_online_cpu	NULL
-#define lockup_detector_offline_cpu	NULL
-
 static inline void reset_hung_task_detector(void) { }
-
-/*
- * The run state of the lockup detectors is controlled by the content of the
- * 'watchdog_enabled' variable. Each lockup detector has its dedicated bit -
- * bit 0 for the hard lockup detector and bit 1 for the soft lockup detector.
- *
- * 'watchdog_user_enabled', 'watchdog_hardlockup_user_enabled' and
- * 'watchdog_softlockup_user_enabled' are variables that are only used as an
- * 'interface' between the parameters in /proc/sys/kernel and the internal
- * state bits in 'watchdog_enabled'. The 'watchdog_thresh' variable is
- * handled differently because its value is not boolean, and the lockup
- * detectors are 'suspended' while 'watchdog_thresh' is equal zero.
- */
-#define WATCHDOG_HARDLOCKUP_ENABLED_BIT  0
-#define WATCHDOG_SOFTOCKUP_ENABLED_BIT   1
-#define WATCHDOG_HARDLOCKUP_ENABLED     (1 << WATCHDOG_HARDLOCKUP_ENABLED_BIT)
-#define WATCHDOG_SOFTOCKUP_ENABLED      (1 << WATCHDOG_SOFTOCKUP_ENABLED_BIT)
 
 static inline void hardlockup_detector_disable(void) {}
 
@@ -80,25 +36,8 @@ void watchdog_hardlockup_touch_cpu(unsigned int cpu);
 void watchdog_hardlockup_check(unsigned int cpu, struct pt_regs *regs);
 #endif
 
-#if defined(CONFIG_HARDLOCKUP_DETECTOR_PERF)
-extern void hardlockup_detector_perf_stop(void);
-extern void hardlockup_detector_perf_restart(void);
-extern void hardlockup_config_perf_event(const char *str);
-extern void hardlockup_detector_perf_adjust_period(u64 period);
-#else
 static inline void hardlockup_detector_perf_stop(void) { }
 static inline void hardlockup_detector_perf_restart(void) { }
-static inline void hardlockup_config_perf_event(const char *str) { }
-static inline void hardlockup_detector_perf_adjust_period(u64 period) { }
-#endif
-
-void watchdog_hardlockup_stop(void);
-void watchdog_hardlockup_start(void);
-int watchdog_hardlockup_probe(void);
-void watchdog_hardlockup_enable(unsigned int cpu);
-void watchdog_hardlockup_disable(unsigned int cpu);
-
-void lockup_detector_reconfigure(void);
 
 static inline void watchdog_buddy_check_hardlockup(int hrtimer_interrupts) {}
 
@@ -179,18 +118,6 @@ static inline bool trigger_single_cpu_backtrace(int cpu)
 {
 	return false;
 }
-#endif
-
-#ifdef CONFIG_HARDLOCKUP_DETECTOR_PERF
-u64 hw_nmi_get_sample_period(int watchdog_thresh);
-bool arch_perf_nmi_is_available(void);
-#endif
-
-#if defined(CONFIG_HARDLOCKUP_CHECK_TIMESTAMP) && \
-    defined(CONFIG_HARDLOCKUP_DETECTOR_PERF)
-void watchdog_update_hrtimer_threshold(u64 period);
-#else
-static inline void watchdog_update_hrtimer_threshold(u64 period) { }
 #endif
 
 #ifdef CONFIG_HAVE_ACPI_APEI_NMI

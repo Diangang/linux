@@ -532,9 +532,4 @@ PROVIDE(__ref_stack_chk_guard = __stack_chk_guard);
 xen_elfnote_entry_value =
 	ABSOLUTE(xen_elfnote_entry) + ABSOLUTE(startup_xen);
 #endif
-#ifdef CONFIG_PVH
-xen_elfnote_phys32_entry_value =
-	ABSOLUTE(xen_elfnote_phys32_entry) + ABSOLUTE(pvh_start_xen - LOAD_OFFSET);
-#endif
-
 #include "../boot/startup/exports.h"
