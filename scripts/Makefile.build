@@ -413,14 +413,10 @@ cmd_cpp_s_S       = $(CPP) $(a_flags) -o $@ $<
 $(obj)/%.s: $(obj)/%.S FORCE
 	$(call if_changed_dep,cpp_s_S)
 
-ifdef CONFIG_ASM_MODVERSIONS
-
 # versioning matches the C process described above, with difference that
 # we parse asm-prototypes.h C header to get function definitions.
 
 cmd_gen_symversions_S = $(call gen_symversions,S)
-
-endif
 
 $(obj)/%.o: $(obj)/%.S FORCE
 	$(call if_changed_rule,as_o_S)

@@ -7,22 +7,14 @@
 #ifndef _ACPI_RIMT_H
 #define _ACPI_RIMT_H
 
-#ifdef CONFIG_ACPI_RIMT
-int rimt_iommu_register(struct device *dev);
-#else
 static inline int rimt_iommu_register(struct device *dev)
 {
 	return -ENODEV;
 }
-#endif
 
-#if defined(CONFIG_IOMMU_API) && defined(CONFIG_ACPI_RIMT)
-int rimt_iommu_configure_id(struct device *dev, const u32 *id_in);
-#else
 static inline int rimt_iommu_configure_id(struct device *dev, const u32 *id_in)
 {
 	return -ENODEV;
 }
-#endif
 
 #endif /* _ACPI_RIMT_H */
