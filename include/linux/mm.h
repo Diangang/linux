@@ -3422,7 +3422,6 @@ static inline pmd_t pmd_mkspecial(pmd_t pmd)
 }
 #endif	/* CONFIG_ARCH_SUPPORTS_PMD_PFNMAP */
 
-#ifndef CONFIG_ARCH_SUPPORTS_PUD_PFNMAP
 static inline bool pud_special(pud_t pud)
 {
 	return false;
@@ -3432,7 +3431,6 @@ static inline pud_t pud_mkspecial(pud_t pud)
 {
 	return pud;
 }
-#endif	/* CONFIG_ARCH_SUPPORTS_PUD_PFNMAP */
 
 extern pte_t *get_locked_pte(struct mm_struct *mm, unsigned long addr,
 			     spinlock_t **ptl);

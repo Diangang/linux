@@ -16,8 +16,6 @@
 #include <asm/x86_init.h>
 
 #include <xen/xen.h>
-#include <xen/swiotlb-xen.h>
-
 static bool disable_dac_quirk __read_mostly;
 
 const struct dma_map_ops *dma_ops;
@@ -71,28 +69,9 @@ static inline void __init pci_swiotlb_detect(void)
 #define x86_swiotlb_flags 0
 #endif /* CONFIG_SWIOTLB */
 
-#ifdef CONFIG_SWIOTLB_XEN
-static bool xen_swiotlb_enabled(void)
-{
-	return xen_initial_domain() || x86_swiotlb_enable;
-}
-
-static void __init pci_xen_swiotlb_init(void)
-{
-	if (!xen_swiotlb_enabled())
-		return;
-	x86_swiotlb_enable = true;
-	x86_swiotlb_flags |= SWIOTLB_ANY;
-	swiotlb_init_remap(true, x86_swiotlb_flags, xen_swiotlb_fixup);
-	dma_ops = &xen_swiotlb_dma_ops;
-	if (IS_ENABLED(CONFIG_PCI))
-		pci_request_acs();
-}
-#else
 static inline void __init pci_xen_swiotlb_init(void)
 {
 }
-#endif /* CONFIG_SWIOTLB_XEN */
 
 void __init pci_iommu_alloc(void)
 {

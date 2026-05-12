@@ -20,20 +20,6 @@
 SYM_FUNC_START(__arch_clear_user)
 	add	x2, x0, x1
 
-#ifdef CONFIG_AS_HAS_MOPS
-	.arch_extension mops
-alternative_if_not ARM64_HAS_MOPS
-	b	.Lno_mops
-alternative_else_nop_endif
-
-USER(9f, setpt	[x0]!, x1!, xzr)
-USER(6f, setmt	[x0]!, x1!, xzr)
-USER(6f, setet	[x0]!, x1!, xzr)
-	mov	x0, #0
-	ret
-.Lno_mops:
-#endif
-
 	subs	x1, x1, #8
 	b.mi	2f
 

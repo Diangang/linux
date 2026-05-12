@@ -183,9 +183,6 @@ struct gendisk {
 	struct backing_dev_info	*bdi;
 	struct kobject queue_kobj;	/* the queue/ directory */
 	struct kobject *slave_dir;
-#ifdef CONFIG_BLOCK_HOLDER_DEPRECATED
-	struct list_head slave_bdevs;
-#endif
 	struct timer_rand_state *random;
 	struct disk_events *ev;
 
@@ -895,10 +892,6 @@ void unregister_blkdev(unsigned int major, const char *name);
 bool disk_check_media_change(struct gendisk *disk);
 void set_capacity(struct gendisk *disk, sector_t size);
 
-#ifdef CONFIG_BLOCK_HOLDER_DEPRECATED
-int bd_link_disk_holder(struct block_device *bdev, struct gendisk *disk);
-void bd_unlink_disk_holder(struct block_device *bdev, struct gendisk *disk);
-#else
 static inline int bd_link_disk_holder(struct block_device *bdev,
 				      struct gendisk *disk)
 {
@@ -908,7 +901,6 @@ static inline void bd_unlink_disk_holder(struct block_device *bdev,
 					 struct gendisk *disk)
 {
 }
-#endif /* CONFIG_BLOCK_HOLDER_DEPRECATED */
 
 dev_t part_devt(struct gendisk *disk, u8 partno);
 void inc_diskseq(struct gendisk *disk);

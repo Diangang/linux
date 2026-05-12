@@ -369,46 +369,6 @@ do {									\
 
 #endif // CONFIG_CC_HAS_ASM_GOTO_OUTPUT
 
-#ifdef CONFIG_CC_HAS_ASM_GOTO_TIED_OUTPUT
-#define __try_cmpxchg_user_asm(itype, ltype, _ptr, _pold, _new, label)	({ \
-	bool success;							\
-	__typeof__(_ptr) _old = (__typeof__(_ptr))(_pold);		\
-	__typeof__(*(_ptr)) __old = *_old;				\
-	__typeof__(*(_ptr)) __new = (_new);				\
-	asm_goto_output("\n"						\
-		     "1: " LOCK_PREFIX "cmpxchg"itype" %[new], %[ptr]\n"\
-		     _ASM_EXTABLE_UA(1b, %l[label])			\
-		     : "=@ccz" (success),				\
-		       [ptr] "+m" (*_ptr),				\
-		       [old] "+a" (__old)				\
-		     : [new] ltype (__new)				\
-		     : "memory"						\
-		     : label);						\
-	if (unlikely(!success))						\
-		*_old = __old;						\
-	likely(success);					})
-
-#ifdef CONFIG_X86_32
-#define __try_cmpxchg64_user_asm(_ptr, _pold, _new, label)	({	\
-	bool success;							\
-	__typeof__(_ptr) _old = (__typeof__(_ptr))(_pold);		\
-	__typeof__(*(_ptr)) __old = *_old;				\
-	__typeof__(*(_ptr)) __new = (_new);				\
-	asm_goto_output("\n"						\
-		     "1: " LOCK_PREFIX "cmpxchg8b %[ptr]\n"		\
-		     _ASM_EXTABLE_UA(1b, %l[label])			\
-		     : "=@ccz" (success),				\
-		       "+A" (__old),					\
-		       [ptr] "+m" (*_ptr)				\
-		     : "b" ((u32)__new),				\
-		       "c" ((u32)((u64)__new >> 32))			\
-		     : "memory"						\
-		     : label);						\
-	if (unlikely(!success))						\
-		*_old = __old;						\
-	likely(success);					})
-#endif // CONFIG_X86_32
-#else  // !CONFIG_CC_HAS_ASM_GOTO_TIED_OUTPUT
 #define __try_cmpxchg_user_asm(itype, ltype, _ptr, _pold, _new, label)	({ \
 	int __err = 0;							\
 	bool success;							\
@@ -464,7 +424,6 @@ do {									\
 		*_old = __old;						\
 	likely(__result);					})
 #endif // CONFIG_X86_32
-#endif // CONFIG_CC_HAS_ASM_GOTO_TIED_OUTPUT
 
 /* FIXME: this hack is definitely wrong -AK */
 struct __large_struct { unsigned long buf[100]; };
@@ -638,4 +597,3 @@ do {									\
 			sizeof(type), err_label)
 
 #endif /* _ASM_X86_UACCESS_H */
-

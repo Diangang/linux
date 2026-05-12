@@ -376,8 +376,8 @@ static inline void msi_free_msi_descs(struct device *dev)
  * as weak symbols so that they /can/ be overriden by architecture specific
  * code if needed. These hooks can only be enabled by the architecture.
  *
- * If CONFIG_PCI_MSI_ARCH_FALLBACKS is not selected they are replaced by
- * stubs with warnings.
+ * If the architecture does not provide fallback implementations then they are
+ * replaced by stubs with warnings.
  */
 
 /*

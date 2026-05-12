@@ -111,34 +111,6 @@ void for_each_tracepoint_in_module(struct module *mod,
  * - tracepoint_is_faultable() == false: call_srcu()
  * - tracepoint_is_faultable() == true:  call_rcu_tasks_trace()
  */
-#ifdef CONFIG_TRACEPOINTS
-extern struct srcu_struct tracepoint_srcu;
-static inline void tracepoint_synchronize_unregister(void)
-{
-	synchronize_rcu_tasks_trace();
-	synchronize_srcu(&tracepoint_srcu);
-}
-static inline bool tracepoint_is_faultable(struct tracepoint *tp)
-{
-	return tp->ext && tp->ext->faultable;
-}
-/*
- * Run RCU callback with the appropriate grace period wait for non-faultable
- * tracepoints, e.g., those used in atomic context.
- */
-static inline void call_tracepoint_unregister_atomic(struct rcu_head *rcu, rcu_callback_t func)
-{
-	call_srcu(&tracepoint_srcu, rcu, func);
-}
-/*
- * Run RCU callback with the appropriate grace period wait for faultable
- * tracepoints, e.g., those used in syscall context.
- */
-static inline void call_tracepoint_unregister_syscall(struct rcu_head *rcu, rcu_callback_t func)
-{
-	call_rcu_tasks_trace(rcu, func);
-}
-#else
 static inline void tracepoint_synchronize_unregister(void)
 { }
 static inline bool tracepoint_is_faultable(struct tracepoint *tp)
@@ -149,7 +121,6 @@ static inline void call_tracepoint_unregister_atomic(struct rcu_head *rcu, rcu_c
 {  }
 static inline void call_tracepoint_unregister_syscall(struct rcu_head *rcu, rcu_callback_t func)
 {  }
-#endif
 
 #ifndef PARAMS
 #define PARAMS(args...) args
@@ -197,15 +168,10 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
 #define TP_CONDITION(args...)	args
 
 /*
- * Individual subsystem may have a separate configuration to
- * enable their tracepoints. By default, this file will create
- * the tracepoints if CONFIG_TRACEPOINTS is defined. If a subsystem
- * wants to be able to disable its tracepoints from being created
- * it can define NOTRACE before including the tracepoint headers.
+ * Individual subsystems may define TRACEPOINTS_ENABLED before including
+ * tracepoint headers. Subsystems that want to suppress tracepoint creation
+ * can still define NOTRACE.
  */
-#if defined(CONFIG_TRACEPOINTS) && !defined(NOTRACE)
-#define TRACEPOINTS_ENABLED
-#endif
 
 #ifdef TRACEPOINTS_ENABLED
 
@@ -459,7 +425,6 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
 
 #endif /* TRACEPOINTS_ENABLED */
 
-#ifdef CONFIG_TRACING
 /**
  * tracepoint_string - register constant persistent string to trace system
  * @str - a constant persistent string that will be referenced in tracepoints
@@ -487,21 +452,8 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
  * does not change during the life of the module, it is fine to use
  * tracepoint_string() within a module.
  */
-#define tracepoint_string(str)						\
-	({								\
-		static const char *___tp_str __tracepoint_string = str; \
-		___tp_str;						\
-	})
-#define __tracepoint_string	__used __section("__tracepoint_str")
-#else
-/*
- * tracepoint_string() is used to save the string address for userspace
- * tracing tools. When tracing isn't configured, there's no need to save
- * anything.
- */
 # define tracepoint_string(str) str
 # define __tracepoint_string
-#endif
 
 #define DECLARE_TRACE(name, proto, args)				\
 	__DECLARE_TRACE(name##_tp, PARAMS(proto), PARAMS(args),		\

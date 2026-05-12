@@ -1132,14 +1132,6 @@ struct task_struct {
 	unsigned int			sas_ss_flags;
 
 	struct callback_head		*task_works;
-
-#ifdef CONFIG_AUDIT
-#ifdef CONFIG_AUDITSYSCALL
-	struct audit_context		*audit_context;
-#endif
-	kuid_t				loginuid;
-	unsigned int			sessionid;
-#endif
 	struct seccomp			seccomp;
 	struct syscall_user_dispatch	syscall_dispatch;
 

@@ -136,24 +136,6 @@ targets += modules.builtin
 modules.builtin: modules.builtin.modinfo FORCE
 	$(call if_changed,modules_builtin)
 
-# modules.builtin.ranges
-# ---------------------------------------------------------------------------
-ifdef CONFIG_BUILTIN_MODULE_RANGES
-__default: modules.builtin.ranges
-
-quiet_cmd_modules_builtin_ranges = GEN     $@
-      cmd_modules_builtin_ranges = gawk -f $(real-prereqs) > $@
-
-targets += modules.builtin.ranges
-modules.builtin.ranges: $(srctree)/scripts/generate_builtin_ranges.awk \
-			modules.builtin vmlinux.map vmlinux.o.map FORCE
-	$(call if_changed,modules_builtin_ranges)
-
-vmlinux.map: vmlinux.unstripped
-	@:
-
-endif
-
 # Add FORCE to the prerequisites of a target to force it to be always rebuilt.
 # ---------------------------------------------------------------------------
 

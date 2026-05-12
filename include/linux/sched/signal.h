@@ -219,10 +219,6 @@ struct signal_struct {
 #ifdef CONFIG_TASKSTATS
 	struct taskstats *stats;
 #endif
-#ifdef CONFIG_AUDIT
-	unsigned audit_tty;
-	struct tty_audit_buf *tty_audit_buf;
-#endif
 
 #ifdef CONFIG_CGROUPS
 	struct rw_semaphore cgroup_threadgroup_rwsem;

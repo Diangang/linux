@@ -204,22 +204,7 @@ SYM_FUNC_START_LOCAL(__pi_memset_generic)
 	ret
 SYM_FUNC_END(__pi_memset_generic)
 
-#ifdef CONFIG_AS_HAS_MOPS
-	.arch_extension mops
-SYM_FUNC_START(__pi_memset)
-alternative_if_not ARM64_HAS_MOPS
-	b	__pi_memset_generic
-alternative_else_nop_endif
-
-	mov	dst, dstin
-	setp	[dst]!, count!, val_x
-	setm	[dst]!, count!, val_x
-	sete	[dst]!, count!, val_x
-	ret
-SYM_FUNC_END(__pi_memset)
-#else
 SYM_FUNC_ALIAS(__pi_memset, __pi_memset_generic)
-#endif
 
 SYM_FUNC_ALIAS(__memset, __pi_memset)
 EXPORT_SYMBOL(__memset)

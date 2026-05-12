@@ -694,7 +694,7 @@ static void __init do_populate_rootfs(void *unused, async_cookie_t cookie)
 	if (err)
 		panic_show_mem("%s", err); /* Failed to decompress INTERNAL initramfs */
 
-	if (!initrd_start || IS_ENABLED(CONFIG_INITRAMFS_FORCE))
+	if (!initrd_start)
 		goto done;
 
 	if (IS_ENABLED(CONFIG_BLK_DEV_RAM))

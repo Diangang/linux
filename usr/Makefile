@@ -4,12 +4,6 @@
 #
 
 compress-y					:= copy
-compress-$(CONFIG_INITRAMFS_COMPRESSION_GZIP)	:= gzip
-compress-$(CONFIG_INITRAMFS_COMPRESSION_BZIP2)	:= bzip2
-compress-$(CONFIG_INITRAMFS_COMPRESSION_LZMA)	:= lzma
-compress-$(CONFIG_INITRAMFS_COMPRESSION_XZ)	:= xzmisc
-compress-$(CONFIG_INITRAMFS_COMPRESSION_LZO)	:= lzo
-compress-$(CONFIG_INITRAMFS_COMPRESSION_LZ4)	:= lz4
 
 obj-$(CONFIG_BLK_DEV_INITRD) := initramfs_data.o
 
@@ -61,8 +55,6 @@ $(deps_initramfs): ;
 quiet_cmd_initfs = GEN     $@
       cmd_initfs = \
 	$(CONFIG_SHELL) $< -o $@ -l $(obj)/.initramfs_data.cpio.d \
-	$(addprefix -u , $(CONFIG_INITRAMFS_ROOT_UID)) \
-	$(addprefix -g , $(CONFIG_INITRAMFS_ROOT_GID)) \
 	$(if $(KBUILD_BUILD_TIMESTAMP), -d "$(KBUILD_BUILD_TIMESTAMP)") \
 	$(ramfs-input)
 

@@ -49,48 +49,14 @@ unsigned long ftrace_return_to_handler(struct ftrace_regs *fregs);
 unsigned long ftrace_return_to_handler(unsigned long frame_pointer);
 #endif
 
-#ifdef CONFIG_FUNCTION_TRACER
-/*
- * If the arch's mcount caller does not support all of ftrace's
- * features, then it must call an indirect function that
- * does. Or at least does enough to prevent any unwelcome side effects.
- *
- * Also define the function prototype that these architectures use
- * to call the ftrace_ops_list_func().
- */
-#if !ARCH_SUPPORTS_FTRACE_OPS
-# define FTRACE_FORCE_LIST_FUNC 1
-void arch_ftrace_ops_list_func(unsigned long ip, unsigned long parent_ip);
-#else
-# define FTRACE_FORCE_LIST_FUNC 0
-void arch_ftrace_ops_list_func(unsigned long ip, unsigned long parent_ip,
-			       struct ftrace_ops *op, struct ftrace_regs *fregs);
-#endif
-extern const struct ftrace_ops ftrace_nop_ops;
-extern const struct ftrace_ops ftrace_list_ops;
-struct ftrace_ops *ftrace_find_unique_ops(struct dyn_ftrace *rec);
-#endif /* CONFIG_FUNCTION_TRACER */
-
 /* Main tracing buffer and events set up */
-#ifdef CONFIG_TRACING
-void trace_init(void);
-void early_trace_init(void);
-#else
 static inline void trace_init(void) { }
 static inline void early_trace_init(void) { }
-#endif
 
 struct module;
 struct ftrace_hash;
 struct ftrace_func_entry;
 
-#if defined(CONFIG_FUNCTION_TRACER) && defined(CONFIG_MODULES) && \
-	defined(CONFIG_DYNAMIC_FTRACE)
-int
-ftrace_mod_address_lookup(unsigned long addr, unsigned long *size,
-			  unsigned long *off, char **modname,
-			  const unsigned char **modbuildid, char *sym);
-#else
 static inline int
 ftrace_mod_address_lookup(unsigned long addr, unsigned long *size,
 			  unsigned long *off, char **modname,
@@ -98,20 +64,13 @@ ftrace_mod_address_lookup(unsigned long addr, unsigned long *size,
 {
 	return 0;
 }
-#endif
 
-#if defined(CONFIG_FUNCTION_TRACER) && defined(CONFIG_DYNAMIC_FTRACE)
-int ftrace_mod_get_kallsym(unsigned int symnum, unsigned long *value,
-			   char *type, char *name,
-			   char *module_name, int *exported);
-#else
 static inline int ftrace_mod_get_kallsym(unsigned int symnum, unsigned long *value,
 					 char *type, char *name,
 					 char *module_name, int *exported)
 {
 	return -1;
 }
-#endif
 
 #ifdef CONFIG_FUNCTION_TRACER
 
@@ -1111,9 +1070,6 @@ void ftrace_kill(void);
 
 static inline void tracer_disable(void)
 {
-#ifdef CONFIG_FUNCTION_TRACER
-	ftrace_enabled = 0;
-#endif
 }
 
 /*
@@ -1123,20 +1079,11 @@ static inline void tracer_disable(void)
  */
 static inline int __ftrace_enabled_save(void)
 {
-#ifdef CONFIG_FUNCTION_TRACER
-	int saved_ftrace_enabled = ftrace_enabled;
-	ftrace_enabled = 0;
-	return saved_ftrace_enabled;
-#else
 	return 0;
-#endif
 }
 
 static inline void __ftrace_enabled_restore(int enabled)
 {
-#ifdef CONFIG_FUNCTION_TRACER
-	ftrace_enabled = enabled;
-#endif
 }
 
 /* All archs should have this, but we define it for consistency */
@@ -1371,16 +1318,7 @@ static inline void pause_graph_tracing(void) { }
 static inline void unpause_graph_tracing(void) { }
 #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
 
-#ifdef CONFIG_TRACING
-enum ftrace_dump_mode;
-
-extern int ftrace_dump_on_oops_enabled(void);
-
-extern void disable_trace_on_warning(void);
-
-#else /* CONFIG_TRACING */
 static inline void  disable_trace_on_warning(void) { }
-#endif /* CONFIG_TRACING */
 
 #ifdef CONFIG_FTRACE_SYSCALLS
 

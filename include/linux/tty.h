@@ -471,11 +471,6 @@ static inline void n_tty_init(void) { }
 #endif
 
 /* tty_audit.c */
-#ifdef CONFIG_AUDIT
-void tty_audit_exit(void);
-void tty_audit_fork(struct signal_struct *sig);
-int tty_audit_push(void);
-#else
 static inline void tty_audit_exit(void)
 {
 }
@@ -486,7 +481,6 @@ static inline int tty_audit_push(void)
 {
 	return 0;
 }
-#endif
 
 /* tty_ioctl.c */
 int n_tty_ioctl_helper(struct tty_struct *tty, unsigned int cmd,

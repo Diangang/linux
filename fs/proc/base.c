@@ -1248,98 +1248,6 @@ static const struct file_operations proc_oom_score_adj_operations = {
 	.llseek		= default_llseek,
 };
 
-#ifdef CONFIG_AUDIT
-#define TMPBUFLEN 11
-static ssize_t proc_loginuid_read(struct file * file, char __user * buf,
-				  size_t count, loff_t *ppos)
-{
-	struct inode * inode = file_inode(file);
-	struct task_struct *task = get_proc_task(inode);
-	ssize_t length;
-	char tmpbuf[TMPBUFLEN];
-
-	if (!task)
-		return -ESRCH;
-	length = scnprintf(tmpbuf, TMPBUFLEN, "%u",
-			   from_kuid(file->f_cred->user_ns,
-				     audit_get_loginuid(task)));
-	put_task_struct(task);
-	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
-}
-
-static ssize_t proc_loginuid_write(struct file * file, const char __user * buf,
-				   size_t count, loff_t *ppos)
-{
-	struct inode * inode = file_inode(file);
-	uid_t loginuid;
-	kuid_t kloginuid;
-	int rv;
-
-	/* Don't let kthreads write their own loginuid */
-	if (current->flags & PF_KTHREAD)
-		return -EPERM;
-
-	rcu_read_lock();
-	if (current != pid_task(proc_pid(inode), PIDTYPE_PID)) {
-		rcu_read_unlock();
-		return -EPERM;
-	}
-	rcu_read_unlock();
-
-	if (*ppos != 0) {
-		/* No partial writes. */
-		return -EINVAL;
-	}
-
-	rv = kstrtou32_from_user(buf, count, 10, &loginuid);
-	if (rv < 0)
-		return rv;
-
-	/* is userspace tring to explicitly UNSET the loginuid? */
-	if (loginuid == AUDIT_UID_UNSET) {
-		kloginuid = INVALID_UID;
-	} else {
-		kloginuid = make_kuid(file->f_cred->user_ns, loginuid);
-		if (!uid_valid(kloginuid))
-			return -EINVAL;
-	}
-
-	rv = audit_set_loginuid(kloginuid);
-	if (rv < 0)
-		return rv;
-	return count;
-}
-
-static const struct file_operations proc_loginuid_operations = {
-	.read		= proc_loginuid_read,
-	.write		= proc_loginuid_write,
-	.llseek		= generic_file_llseek,
-};
-
-static ssize_t proc_sessionid_read(struct file * file, char __user * buf,
-				  size_t count, loff_t *ppos)
-{
-	struct inode * inode = file_inode(file);
-	struct task_struct *task = get_proc_task(inode);
-	ssize_t length;
-	char tmpbuf[TMPBUFLEN];
-
-	if (!task)
-		return -ESRCH;
-	length = scnprintf(tmpbuf, TMPBUFLEN, "%u",
-				audit_get_sessionid(task));
-	put_task_struct(task);
-	return simple_read_from_buffer(buf, count, ppos, tmpbuf, length);
-}
-
-static const struct file_operations proc_sessionid_operations = {
-	.read		= proc_sessionid_read,
-	.llseek		= generic_file_llseek,
-};
-#endif
-
-
-
 /*
  * Print out various scheduling related per-task fields:
  */
@@ -3223,10 +3131,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 	ONE("oom_score",  S_IRUGO, proc_oom_score),
 	REG("oom_adj",    S_IRUGO|S_IWUSR, proc_oom_adj_operations),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
-#ifdef CONFIG_AUDIT
-	REG("loginuid",   S_IWUSR|S_IRUGO, proc_loginuid_operations),
-	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
-#endif
 #ifdef CONFIG_ELF_CORE
 	REG("coredump_filter", S_IRUGO|S_IWUSR, proc_coredump_filter_operations),
 #endif
@@ -3557,10 +3461,6 @@ static const struct pid_entry tid_base_stuff[] = {
 	ONE("oom_score", S_IRUGO, proc_oom_score),
 	REG("oom_adj",   S_IRUGO|S_IWUSR, proc_oom_adj_operations),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
-#ifdef CONFIG_AUDIT
-	REG("loginuid",  S_IWUSR|S_IRUGO, proc_loginuid_operations),
-	REG("sessionid",  S_IRUGO, proc_sessionid_operations),
-#endif
 #ifdef CONFIG_TASK_IO_ACCOUNTING
 	ONE("io",	S_IRUSR, proc_tid_io_accounting),
 #endif

@@ -2653,11 +2653,6 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 	mod->noinstr_text_start = section_objs(info, ".noinstr.text", 1,
 						&mod->noinstr_text_size);
 
-#ifdef CONFIG_TRACEPOINTS
-	mod->tracepoints_ptrs = section_objs(info, "__tracepoints_ptrs",
-					     sizeof(*mod->tracepoints_ptrs),
-					     &mod->num_tracepoints);
-#endif
 #ifdef CONFIG_TREE_SRCU
 	mod->srcu_struct_ptrs = section_objs(info, "___srcu_struct_ptrs",
 					     sizeof(*mod->srcu_struct_ptrs),
@@ -2677,25 +2672,6 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 	mod->jump_entries = section_objs(info, "__jump_table",
 					sizeof(*mod->jump_entries),
 					&mod->num_jump_entries);
-#endif
-#ifdef CONFIG_EVENT_TRACING
-	mod->trace_events = section_objs(info, "_ftrace_events",
-					 sizeof(*mod->trace_events),
-					 &mod->num_trace_events);
-	mod->trace_evals = section_objs(info, "_ftrace_eval_map",
-					sizeof(*mod->trace_evals),
-					&mod->num_trace_evals);
-#endif
-#ifdef CONFIG_TRACING
-	mod->trace_bprintk_fmt_start = section_objs(info, "__trace_printk_fmt",
-					 sizeof(*mod->trace_bprintk_fmt_start),
-					 &mod->num_trace_bprintk_fmt);
-#endif
-#ifdef CONFIG_DYNAMIC_FTRACE
-	/* sechdrs[0].sh_size is always zero */
-	mod->ftrace_callsites = section_objs(info, FTRACE_CALLSITE_SECTION,
-					     sizeof(*mod->ftrace_callsites),
-					     &mod->num_ftrace_callsites);
 #endif
 #ifdef CONFIG_FUNCTION_ERROR_INJECTION
 	mod->ei_funcs = section_objs(info, "_error_injection_whitelist",

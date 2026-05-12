@@ -338,84 +338,19 @@ struct bsd_disklabel {
 	} d_partitions[BSD_MAXPARTITIONS];	/* actually may be more */
 };
 
-#if defined(CONFIG_BSD_DISKLABEL)
-/*
- * Create devices for BSD partitions listed in a disklabel, under a
- * dos-like partition. See parse_extended() for more information.
- */
-static void parse_bsd(struct parsed_partitions *state,
-		      sector_t offset, sector_t size, int origin, char *flavour,
-		      int max_partitions)
-{
-	Sector sect;
-	struct bsd_disklabel *l;
-	struct bsd_partition *p;
-
-	l = read_part_sector(state, offset + 1, &sect);
-	if (!l)
-		return;
-	if (le32_to_cpu(l->d_magic) != BSD_DISKMAGIC) {
-		put_dev_sector(sect);
-		return;
-	}
-
-	seq_buf_printf(&state->pp_buf, " %s%d: <%s:", state->name, origin, flavour);
-
-	if (le16_to_cpu(l->d_npartitions) < max_partitions)
-		max_partitions = le16_to_cpu(l->d_npartitions);
-	for (p = l->d_partitions; p - l->d_partitions < max_partitions; p++) {
-		sector_t bsd_start, bsd_size;
-
-		if (state->next == state->limit)
-			break;
-		if (p->p_fstype == BSD_FS_UNUSED)
-			continue;
-		bsd_start = le32_to_cpu(p->p_offset);
-		bsd_size = le32_to_cpu(p->p_size);
-		/* FreeBSD has relative offset if C partition offset is zero */
-		if (memcmp(flavour, "bsd\0", 4) == 0 &&
-		    le32_to_cpu(l->d_partitions[2].p_offset) == 0)
-			bsd_start += offset;
-		if (offset == bsd_start && size == bsd_size)
-			/* full parent partition, we have it already */
-			continue;
-		if (offset > bsd_start || offset+size < bsd_start+bsd_size) {
-			seq_buf_puts(&state->pp_buf, "bad subpartition - ignored\n");
-			continue;
-		}
-		put_partition(state, state->next++, bsd_start, bsd_size);
-	}
-	put_dev_sector(sect);
-	if (le16_to_cpu(l->d_npartitions) > max_partitions)
-		seq_buf_printf(&state->pp_buf, " (ignored %d more)",
-			       le16_to_cpu(l->d_npartitions) - max_partitions);
-	seq_buf_puts(&state->pp_buf, " >\n");
-}
-#endif
-
 static void parse_freebsd(struct parsed_partitions *state,
 			  sector_t offset, sector_t size, int origin)
 {
-#ifdef CONFIG_BSD_DISKLABEL
-	parse_bsd(state, offset, size, origin, "bsd", BSD_MAXPARTITIONS);
-#endif
 }
 
 static void parse_netbsd(struct parsed_partitions *state,
 			 sector_t offset, sector_t size, int origin)
 {
-#ifdef CONFIG_BSD_DISKLABEL
-	parse_bsd(state, offset, size, origin, "netbsd", BSD_MAXPARTITIONS);
-#endif
 }
 
 static void parse_openbsd(struct parsed_partitions *state,
 			  sector_t offset, sector_t size, int origin)
 {
-#ifdef CONFIG_BSD_DISKLABEL
-	parse_bsd(state, offset, size, origin, "openbsd",
-		  OPENBSD_MAXPARTITIONS);
-#endif
 }
 
 #define UNIXWARE_DISKMAGIC     (0xCA5E600DUL)	/* The disk magic number */
@@ -511,36 +446,6 @@ static void parse_unixware(struct parsed_partitions *state,
 static void parse_minix(struct parsed_partitions *state,
 			sector_t offset, sector_t size, int origin)
 {
-#ifdef CONFIG_MINIX_SUBPARTITION
-	Sector sect;
-	unsigned char *data;
-	struct msdos_partition *p;
-	int i;
-
-	data = read_part_sector(state, offset, &sect);
-	if (!data)
-		return;
-
-	p = (struct msdos_partition *)(data + 0x1be);
-
-	/* The first sector of a Minix partition can have either
-	 * a secondary MBR describing its subpartitions, or
-	 * the normal boot sector. */
-	if (msdos_magic_present(data + 510) &&
-	    p->sys_ind == MINIX_PARTITION) { /* subpartition table present */
-		seq_buf_printf(&state->pp_buf, " %s%d: <minix:", state->name, origin);
-		for (i = 0; i < MINIX_NR_SUBPARTITIONS; i++, p++) {
-			if (state->next == state->limit)
-				break;
-			/* add each partition in use */
-			if (p->sys_ind == MINIX_PARTITION)
-				put_partition(state, state->next++,
-					      start_sect(p), nr_sects(p));
-		}
-		seq_buf_puts(&state->pp_buf, " >\n");
-	}
-	put_dev_sector(sect);
-#endif /* CONFIG_MINIX_SUBPARTITION */
 }
 
 static struct {
@@ -578,12 +483,8 @@ int msdos_partition(struct parsed_partitions *state)
 	 */
 	if (aix_magic_present(state, data)) {
 		put_dev_sector(sect);
-#ifdef CONFIG_AIX_PARTITION
-		return aix_partition(state);
-#else
 		seq_buf_puts(&state->pp_buf, " [AIX]");
 		return 0;
-#endif
 	}
 
 	if (!msdos_magic_present(data + 510)) {

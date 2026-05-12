@@ -79,22 +79,6 @@ static int vesa_probe(void)
 			mi->x     = vminfo.h_res;
 			mi->y     = vminfo.v_res;
 			nmodes++;
-		} else if ((vminfo.mode_attr & 0x99) == 0x99 &&
-			   (vminfo.memory_layout == 4 ||
-			    vminfo.memory_layout == 6) &&
-			   vminfo.memory_planes == 1) {
-#ifdef CONFIG_BOOT_VESA_SUPPORT
-			/* Graphics mode, color, linear frame buffer
-			   supported.  Only register the mode if
-			   if framebuffer is configured, however,
-			   otherwise the user will be left without a screen. */
-			mi = GET_HEAP(struct mode_info, 1);
-			mi->mode = mode + VIDEO_FIRST_VESA;
-			mi->depth = vminfo.bpp;
-			mi->x = vminfo.h_res;
-			mi->y = vminfo.v_res;
-			nmodes++;
-#endif
 		}
 	}
 
@@ -121,12 +105,6 @@ static int vesa_set_mode(struct mode_info *mode)
 	if ((vminfo.mode_attr & 0x15) == 0x05) {
 		/* It's a supported text mode */
 		is_graphic = 0;
-#ifdef CONFIG_BOOT_VESA_SUPPORT
-	} else if ((vminfo.mode_attr & 0x99) == 0x99) {
-		/* It's a graphics mode with linear frame buffer */
-		is_graphic = 1;
-		vesa_mode |= 0x4000; /* Request linear frame buffer */
-#endif
 	} else {
 		return -1;	/* Invalid mode */
 	}

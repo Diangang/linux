@@ -43,44 +43,8 @@ void __lockfunc
 _raw_spin_unlock_irqrestore(raw_spinlock_t *lock, unsigned long flags)
 								__releases(lock);
 
-#ifdef CONFIG_INLINE_SPIN_LOCK
-#define _raw_spin_lock(lock) __raw_spin_lock(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_LOCK_BH
-#define _raw_spin_lock_bh(lock) __raw_spin_lock_bh(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_LOCK_IRQ
-#define _raw_spin_lock_irq(lock) __raw_spin_lock_irq(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_LOCK_IRQSAVE
-#define _raw_spin_lock_irqsave(lock) __raw_spin_lock_irqsave(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_TRYLOCK
-#define _raw_spin_trylock(lock) __raw_spin_trylock(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_TRYLOCK_BH
-#define _raw_spin_trylock_bh(lock) __raw_spin_trylock_bh(lock)
-#endif
-
 #ifndef CONFIG_UNINLINE_SPIN_UNLOCK
 #define _raw_spin_unlock(lock) __raw_spin_unlock(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_UNLOCK_BH
-#define _raw_spin_unlock_bh(lock) __raw_spin_unlock_bh(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_UNLOCK_IRQ
-#define _raw_spin_unlock_irq(lock) __raw_spin_unlock_irq(lock)
-#endif
-
-#ifdef CONFIG_INLINE_SPIN_UNLOCK_IRQRESTORE
-#define _raw_spin_unlock_irqrestore(lock, flags) __raw_spin_unlock_irqrestore(lock, flags)
 #endif
 
 static inline int __raw_spin_trylock(raw_spinlock_t *lock)
