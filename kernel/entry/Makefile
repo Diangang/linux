@@ -14,4 +14,3 @@ CFLAGS_common.o		+= -fno-stack-protector
 
 obj-$(CONFIG_GENERIC_IRQ_ENTRY) 	+= common.o
 obj-$(CONFIG_GENERIC_SYSCALL) 		+= syscall_user_dispatch.o
-obj-$(CONFIG_VIRT_XFER_TO_GUEST_WORK)	+= virt.o

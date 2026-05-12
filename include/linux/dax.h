@@ -311,13 +311,9 @@ static inline int dax_mem2blk_err(int err)
 	return (err == -EHWPOISON) ? -EIO : err;
 }
 
-#ifdef CONFIG_DEV_DAX_HMEM_DEVICES
-void hmem_register_resource(int target_nid, struct resource *r);
-#else
 static inline void hmem_register_resource(int target_nid, struct resource *r)
 {
 }
-#endif
 
 typedef int (*walk_hmem_fn)(struct device *dev, int target_nid,
 			    const struct resource *res);
