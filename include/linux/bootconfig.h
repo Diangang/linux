@@ -296,13 +296,9 @@ static __always_inline void xbc_exit(void)
 }
 
 /* XBC embedded bootconfig data in kernel */
-#ifdef CONFIG_BOOT_CONFIG_EMBED
-const char * __init xbc_get_embedded_bootconfig(size_t *size);
-#else
 static inline const char *xbc_get_embedded_bootconfig(size_t *size)
 {
 	return NULL;
 }
-#endif
 
 #endif
