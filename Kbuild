@@ -104,4 +104,3 @@ obj-$(CONFIG_BLOCK)	+= block/
 obj-y			+= $(ARCH_LIB)
 obj-y			+= drivers/
 obj-y			+= $(ARCH_DRIVERS)
-obj-$(CONFIG_DRM_HEADER_TEST)	+= include/

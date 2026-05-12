@@ -60,18 +60,13 @@ vmlinux_link()
 	# skip output file argument
 	shift
 
-	if is_enabled CONFIG_LTO_CLANG || is_enabled CONFIG_X86_KERNEL_IBT ||
-	   is_enabled CONFIG_KLP_BUILD; then
+	if is_enabled CONFIG_LTO_CLANG || is_enabled CONFIG_X86_KERNEL_IBT; then
 		# Use vmlinux.o instead of performing the slow LTO link again.
 		objs=vmlinux.o
 		libs=
 	else
 		objs=vmlinux.a
 		libs="${KBUILD_VMLINUX_LIBS}"
-	fi
-
-	if is_enabled CONFIG_GENERIC_BUILTIN_DTB; then
-		objs="${objs} .builtin-dtbs.o"
 	fi
 
 	objs="${objs} .vmlinux.export.o"
@@ -176,9 +171,6 @@ fi
 ${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init init/version-timestamp.o
 
 arch_vmlinux_o=
-if is_enabled CONFIG_ARCH_WANTS_PRE_LINK_VMLINUX; then
-	arch_vmlinux_o=arch/${SRCARCH}/tools/vmlinux.arch.o
-fi
 
 kallsymso=
 strip_debug=

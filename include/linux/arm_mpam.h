@@ -23,17 +23,12 @@ enum mpam_class_types {
 
 #define MPAM_CLASS_ID_DEFAULT	255
 
-#ifdef CONFIG_ARM64_MPAM_DRIVER
-int mpam_ris_create(struct mpam_msc *msc, u8 ris_idx,
-		    enum mpam_class_types type, u8 class_id, int component_id);
-#else
 static inline int mpam_ris_create(struct mpam_msc *msc, u8 ris_idx,
 				  enum mpam_class_types type, u8 class_id,
 				  int component_id)
 {
 	return -EINVAL;
 }
-#endif
 
 bool resctrl_arch_alloc_capable(void);
 bool resctrl_arch_mon_capable(void);

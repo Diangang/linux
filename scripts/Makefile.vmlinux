@@ -33,32 +33,8 @@ quiet_cmd_wrap_dtbs = WRAP    $@
 	done < $<;							\
 	} > $@
 
-.builtin-dtbs.S: .builtin-dtbs-list FORCE
-	$(call if_changed,wrap_dtbs)
-
-quiet_cmd_gen_dtbs_list = GEN     $@
-      cmd_gen_dtbs_list = \
-	$(if $(CONFIG_BUILTIN_DTB_NAME), echo "arch/$(SRCARCH)/boot/dts/$(CONFIG_BUILTIN_DTB_NAME).dtb",:) > $@
-
-.builtin-dtbs-list: arch/$(SRCARCH)/boot/dts/dtbs-list FORCE
-	$(call if_changed,$(if $(CONFIG_BUILTIN_DTB_ALL),copy,gen_dtbs_list))
-
-targets += .builtin-dtbs-list
-
-ifdef CONFIG_GENERIC_BUILTIN_DTB
-targets += .builtin-dtbs.S .builtin-dtbs.o
-vmlinux.unstripped: .builtin-dtbs.o
-endif
-
 # vmlinux.unstripped
 # ---------------------------------------------------------------------------
-
-ifdef CONFIG_ARCH_WANTS_PRE_LINK_VMLINUX
-vmlinux.unstripped: arch/$(SRCARCH)/tools/vmlinux.arch.o
-
-arch/$(SRCARCH)/tools/vmlinux.arch.o: vmlinux.o FORCE
-	$(Q)$(MAKE) $(build)=arch/$(SRCARCH)/tools $@
-endif
 
 ARCH_POSTLINK := $(wildcard $(srctree)/arch/$(SRCARCH)/Makefile.postlink)
 
