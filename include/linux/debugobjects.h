@@ -85,11 +85,7 @@ debug_object_assert_init(void *addr, const struct debug_obj_descr *descr) { }
 static inline void debug_objects_early_init(void) { }
 static inline void debug_objects_mem_init(void) { }
 
-#ifdef CONFIG_DEBUG_OBJECTS_FREE
-extern void debug_check_no_obj_freed(const void *address, unsigned long size);
-#else
 static inline void
 debug_check_no_obj_freed(const void *address, unsigned long size) { }
-#endif
 
 #endif

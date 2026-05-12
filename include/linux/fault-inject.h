@@ -68,14 +68,10 @@ static inline void fault_config_init(struct fault_config *config,
 
 #endif /* CONFIG_FAULT_INJECTION_CONFIGFS */
 
-#ifdef CONFIG_FAIL_PAGE_ALLOC
-bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order);
-#else
 static inline bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
 {
 	return false;
 }
-#endif /* CONFIG_FAIL_PAGE_ALLOC */
 
 #ifdef CONFIG_FAILSLAB
 int should_failslab(struct kmem_cache *s, gfp_t gfpflags);

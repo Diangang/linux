@@ -619,17 +619,9 @@ enum led_trigger_netdev_modes {
 };
 
 /* Trigger specific functions */
-#ifdef CONFIG_LEDS_TRIGGER_DISK
-void ledtrig_disk_activity(bool write);
-#else
 static inline void ledtrig_disk_activity(bool write) {}
-#endif
 
-#ifdef CONFIG_LEDS_TRIGGER_MTD
-void ledtrig_mtd_activity(void);
-#else
 static inline void ledtrig_mtd_activity(void) {}
-#endif
 
 #if defined(CONFIG_LEDS_TRIGGER_CAMERA) || defined(CONFIG_LEDS_TRIGGER_CAMERA_MODULE)
 void ledtrig_flash_ctrl(bool on);
