@@ -644,9 +644,6 @@ static void pci_release_host_bridge_dev(struct device *dev)
 }
 
 static const struct attribute_group *pci_host_bridge_groups[] = {
-#ifdef CONFIG_PCI_IDE
-	&pci_ide_attr_group,
-#endif
 	NULL
 };
 

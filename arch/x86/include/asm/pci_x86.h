@@ -138,11 +138,8 @@ static inline int pci_direct_probe(void) { return -1; }
 static inline  void pci_direct_init(int type) { }
 #endif
 
-#ifdef CONFIG_PCI_BIOS
-extern void pci_pcbios_init(void);
-#else
 static inline void pci_pcbios_init(void) { }
-#endif
+
 
 extern void __init dmi_check_pciprobe(void);
 extern void __init dmi_check_skip_isa_align(void);

@@ -112,10 +112,6 @@ bool pci_setup_msix_device_domain(struct pci_dev *pdev, unsigned int hwsize);
 
 /* Legacy (!IRQDOMAIN) fallbacks */
 
-#ifdef CONFIG_PCI_MSI_ARCH_FALLBACKS
-int pci_msi_legacy_setup_msi_irqs(struct pci_dev *dev, int nvec, int type);
-void pci_msi_legacy_teardown_msi_irqs(struct pci_dev *dev);
-#else
 static inline int pci_msi_legacy_setup_msi_irqs(struct pci_dev *dev, int nvec, int type)
 {
 	WARN_ON_ONCE(1);
@@ -126,4 +122,3 @@ static inline void pci_msi_legacy_teardown_msi_irqs(struct pci_dev *dev)
 {
 	WARN_ON_ONCE(1);
 }
-#endif

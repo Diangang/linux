@@ -117,13 +117,8 @@ extern const guid_t pci_acpi_dsm_guid;
 #define DSM_PCI_POWER_ON_RESET_DELAY		0x08
 #define DSM_PCI_DEVICE_READINESS_DURATIONS	0x09
 
-#ifdef CONFIG_PCIE_EDR
-void pci_acpi_add_edr_notifier(struct pci_dev *pdev);
-void pci_acpi_remove_edr_notifier(struct pci_dev *pdev);
-#else
 static inline void pci_acpi_add_edr_notifier(struct pci_dev *pdev) { }
 static inline void pci_acpi_remove_edr_notifier(struct pci_dev *pdev) { }
-#endif /* CONFIG_PCIE_EDR */
 
 int pci_acpi_set_companion_lookup_hook(struct acpi_device *(*func)(struct pci_dev *));
 void pci_acpi_clear_companion_lookup_hook(void);

@@ -198,50 +198,6 @@ config SERIAL_NONSTANDARD
 
 	  Most people can say N here.
 
-config MOXA_INTELLIO
-	tristate "Moxa Intellio support"
-	depends on SERIAL_NONSTANDARD && PCI
-	select FW_LOADER
-	help
-	  Say Y here if you have a Moxa Intellio multiport serial card.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called moxa.
-
-config MOXA_SMARTIO
-	tristate "Moxa SmartIO support v. 2.0"
-	depends on SERIAL_NONSTANDARD && PCI && HAS_IOPORT
-	help
-	  Say Y here if you have a Moxa SmartIO multiport serial card and/or
-	  want to help develop a new version of this driver.
-
-	  This is upgraded (1.9.1) driver from original Moxa drivers with
-	  changes finally resulting in PCI probing.
-
-	  This driver can also be built as a module. The module will be called
-	  mxser. If you want to do that, say M here.
-
-config SYNCLINK_GT
-	tristate "SyncLink GT/AC support"
-	depends on SERIAL_NONSTANDARD && PCI
-	depends on BROKEN
-	help
-	  Support for SyncLink GT and SyncLink AC families of
-	  synchronous and asynchronous serial adapters
-	  manufactured by Microgate Systems, Ltd. (www.microgate.com)
-
-config N_HDLC
-	tristate "HDLC line discipline support"
-	depends on SERIAL_NONSTANDARD
-	help
-	  Allows synchronous HDLC communications with tty device drivers that
-	  support synchronous HDLC such as the Microgate SyncLink adapter.
-
-	  This driver can be built as a module ( = code which can be
-	  inserted in and removed from the running kernel whenever you want).
-	  The module will be called n_hdlc. If you want to do that, say M
-	  here.
-
 config PPC_EPAPR_HV_BYTECHAN
 	bool "ePAPR hypervisor byte channel driver"
 	depends on PPC
@@ -259,11 +215,6 @@ config PPC_EARLY_DEBUG_EHV_BC
 	  via an ePAPR byte channel.  You also need to choose the byte channel
 	  handle below.
 
-config MIPS_EJTAG_FDC_TTY
-	bool "MIPS EJTAG Fast Debug Channel TTY"
-	depends on MIPS_CDMM
-	help
-	  This enables a TTY and console on the MIPS EJTAG Fast Debug Channels,
 	  if they are present. This can be useful when working with an EJTAG
 	  probe which supports it, to get console output and a login prompt via
 	  EJTAG without needing to connect a serial cable.
@@ -292,12 +243,6 @@ config NULL_TTY_DEFAULT_CONSOLE
 	  line, SPCR, or the device tree.
 
 	  If unsure, say N.
-
-config VCC
-	tristate "Sun Virtual Console Concentrator"
-	depends on SUN_LDOMS
-	help
-	  Support for Sun logical domain consoles.
 
 endif # TTY
 

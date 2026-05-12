@@ -300,8 +300,6 @@ bool pci_msi_domain_supports(struct pci_dev *pdev, unsigned int feature_mask,
 	domain = dev_get_msi_domain(&pdev->dev);
 
 	if (!domain || !irq_domain_is_hierarchy(domain)) {
-		if (IS_ENABLED(CONFIG_PCI_MSI_ARCH_FALLBACKS))
-			return mode == ALLOW_LEGACY;
 		return false;
 	}
 

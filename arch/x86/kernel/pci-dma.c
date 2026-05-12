@@ -74,8 +74,7 @@ static inline void __init pci_swiotlb_detect(void)
 #ifdef CONFIG_SWIOTLB_XEN
 static bool xen_swiotlb_enabled(void)
 {
-	return xen_initial_domain() || x86_swiotlb_enable ||
-		(IS_ENABLED(CONFIG_XEN_PCIDEV_FRONTEND) && xen_pv_pci_possible);
+	return xen_initial_domain() || x86_swiotlb_enable;
 }
 
 static void __init pci_xen_swiotlb_init(void)

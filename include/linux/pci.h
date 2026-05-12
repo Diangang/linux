@@ -523,11 +523,6 @@ struct pci_dev {
 	raw_spinlock_t	msi_lock;
 #endif
 	struct pci_vpd	vpd;
-#ifdef CONFIG_PCIE_DPC
-	u16		dpc_cap;
-	unsigned int	dpc_rp_extensions:1;
-	u8		dpc_rp_log_size;
-#endif
 	struct pcie_bwctrl_data		*link_bwctrl;
 #ifdef CONFIG_PCI_ATS
 	union {
@@ -545,21 +540,6 @@ struct pci_dev {
 #ifdef CONFIG_PCI_PASID
 	u16		pasid_cap;	/* PASID Capability offset */
 	u16		pasid_features;
-#endif
-#ifdef CONFIG_PCI_P2PDMA
-	struct pci_p2pdma __rcu *p2pdma;
-#endif
-#ifdef CONFIG_PCI_NPEM
-	struct npem	*npem;		/* Native PCIe Enclosure Management */
-#endif
-#ifdef CONFIG_PCI_IDE
-	u16		ide_cap;	/* Link Integrity & Data Encryption */
-	u8		nr_ide_mem;	/* Address association resources for streams */
-	u8		nr_link_ide;	/* Link Stream count (Selective Stream offset) */
-	u16		nr_sel_ide;	/* Selective Stream count (register block allocator) */
-	struct ida	ide_stream_ida;
-	unsigned int	ide_cfg:1;	/* Config cycles over IDE */
-	unsigned int	ide_tee_limit:1; /* Disallow T=0 traffic over IDE */
 #endif
 	u16		acs_cap;	/* ACS Capability offset */
 	u16		acs_capabilities; /* ACS Capabilities */
@@ -614,11 +594,6 @@ struct pci_host_bridge {
 	int		domain_nr;
 	struct list_head windows;	/* resource_entry */
 	struct list_head dma_ranges;	/* dma ranges resource list */
-#ifdef CONFIG_PCI_IDE
-	u16 nr_ide_streams; /* Max streams possibly active in @ide_stream_ida */
-	struct ida ide_stream_ida;
-	struct ida ide_stream_ids_ida; /* track unique ids per domain */
-#endif
 	u8 (*swizzle_irq)(struct pci_dev *, u8 *); /* Platform IRQ swizzler */
 	int (*map_irq)(const struct pci_dev *, u8, u8);
 	void (*release_fn)(struct pci_host_bridge *);

@@ -525,21 +525,6 @@ char *__init pcibios_setup(char *str)
 		pci_bf_sort = pci_force_nobf;
 		return NULL;
 	}
-#ifdef CONFIG_PCI_BIOS
-	else if (!strcmp(str, "bios")) {
-		pci_probe = PCI_PROBE_BIOS;
-		return NULL;
-	} else if (!strcmp(str, "nobios")) {
-		pci_probe &= ~PCI_PROBE_BIOS;
-		return NULL;
-	} else if (!strcmp(str, "biosirq")) {
-		pci_probe |= PCI_BIOS_IRQ_SCAN;
-		return NULL;
-	} else if (!strncmp(str, "pirqaddr=", 9)) {
-		pirq_table_addr = simple_strtoul(str+9, NULL, 0);
-		return NULL;
-	}
-#endif
 #ifdef CONFIG_PCI_DIRECT
 	else if (!strcmp(str, "conf1")) {
 		pci_probe = PCI_PROBE_CONF1 | PCI_NO_CHECKS;

@@ -950,16 +950,6 @@ static int pirq_pico_set(struct pci_dev *router, struct pci_dev *dev, int pirq,
 	return 1;
 }
 
-#ifdef CONFIG_PCI_BIOS
-
-static int pirq_bios_set(struct pci_dev *router, struct pci_dev *dev, int pirq, int irq)
-{
-	struct pci_dev *bridge;
-	int pin = pci_get_interrupt_pin(dev, &bridge);
-	return pcibios_set_irq_routing(bridge, pin - 1, irq);
-}
-
-#endif
 
 static __init int intel_router_probe(struct irq_router *r, struct pci_dev *router, u16 device)
 {
@@ -1291,14 +1281,6 @@ static void __init pirq_find_router(struct irq_router *r)
 	struct irq_routing_table *rt = pirq_table;
 	struct pci_dev *dev;
 
-#ifdef CONFIG_PCI_BIOS
-	if (!rt->signature) {
-		printk(KERN_INFO "PCI: Using BIOS for IRQ routing\n");
-		r->set = pirq_bios_set;
-		r->name = "BIOS";
-		return;
-	}
-#endif
 
 	/* Default unless a driver reloads it */
 	r->name = "default";
@@ -1652,12 +1634,6 @@ void __init pcibios_irq_init(void)
 
 	pirq_table = pirq_find_routing_table();
 
-#ifdef CONFIG_PCI_BIOS
-	if (!pirq_table && (pci_probe & PCI_BIOS_IRQ_SCAN)) {
-		pirq_table = pcibios_get_irq_routing_table();
-		rtable = pirq_table;
-	}
-#endif
 	if (pirq_table) {
 		pirq_peer_trick();
 		pirq_find_router(&pirq_router);

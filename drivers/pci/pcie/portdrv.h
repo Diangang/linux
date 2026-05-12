@@ -41,11 +41,8 @@ int pcie_pme_init(void);
 static inline int pcie_pme_init(void) { return 0; }
 #endif
 
-#ifdef CONFIG_PCIE_DPC
-int pcie_dpc_init(void);
-#else
 static inline int pcie_dpc_init(void) { return 0; }
-#endif
+
 
 int pcie_bwctrl_init(void);
 

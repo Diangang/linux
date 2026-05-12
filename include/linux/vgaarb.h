@@ -25,16 +25,6 @@ struct pci_dev;
 #define VGA_RSRC_NORMAL_IO     0x04
 #define VGA_RSRC_NORMAL_MEM    0x08
 
-#ifdef CONFIG_VGA_ARB
-void vga_set_legacy_decoding(struct pci_dev *pdev, unsigned int decodes);
-int vga_get(struct pci_dev *pdev, unsigned int rsrc, int interruptible);
-void vga_put(struct pci_dev *pdev, unsigned int rsrc);
-struct pci_dev *vga_default_device(void);
-void vga_set_default_device(struct pci_dev *pdev);
-int vga_remove_vgacon(struct pci_dev *pdev);
-int vga_client_register(struct pci_dev *pdev,
-		unsigned int (*set_decode)(struct pci_dev *pdev, bool state));
-#else /* CONFIG_VGA_ARB */
 static inline void vga_set_legacy_decoding(struct pci_dev *pdev,
 		unsigned int decodes)
 {
@@ -63,7 +53,6 @@ static inline int vga_client_register(struct pci_dev *pdev,
 {
 	return 0;
 }
-#endif /* CONFIG_VGA_ARB */
 
 /**
  * vga_get_interruptible

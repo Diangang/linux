@@ -30,22 +30,6 @@ unsigned int aer_tlp_log_len(struct pci_dev *dev, u32 aercc)
 		dev->eetlp_prefix_max : 0);
 }
 
-#ifdef CONFIG_PCIE_DPC
-/**
- * dpc_tlp_log_len - Calculate DPC RP PIO TLP Header/Prefix Log length
- * @dev: PCIe device
- *
- * Return: TLP Header/Prefix Log length
- */
-unsigned int dpc_tlp_log_len(struct pci_dev *dev)
-{
-	/* Remove ImpSpec Log register from the count */
-	if (dev->dpc_rp_log_size >= PCIE_STD_NUM_TLP_HEADERLOG + 1)
-		return dev->dpc_rp_log_size - 1;
-
-	return dev->dpc_rp_log_size;
-}
-#endif
 
 /**
  * pcie_read_tlp_log - read TLP Header Log

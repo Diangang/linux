@@ -66,29 +66,6 @@ enum pci_p2pdma_map_type {
 	 */
 	PCI_P2PDMA_MAP_THRU_HOST_BRIDGE,
 };
-
-#ifdef CONFIG_PCI_P2PDMA
-int pcim_p2pdma_init(struct pci_dev *pdev);
-struct p2pdma_provider *pcim_p2pdma_provider(struct pci_dev *pdev, int bar);
-int pci_p2pdma_add_resource(struct pci_dev *pdev, int bar, size_t size,
-		u64 offset);
-int pci_p2pdma_distance_many(struct pci_dev *provider, struct device **clients,
-			     int num_clients, bool verbose);
-struct pci_dev *pci_p2pmem_find_many(struct device **clients, int num_clients);
-void *pci_alloc_p2pmem(struct pci_dev *pdev, size_t size);
-void pci_free_p2pmem(struct pci_dev *pdev, void *addr, size_t size);
-pci_bus_addr_t pci_p2pmem_virt_to_bus(struct pci_dev *pdev, void *addr);
-struct scatterlist *pci_p2pmem_alloc_sgl(struct pci_dev *pdev,
-					 unsigned int *nents, u32 length);
-void pci_p2pmem_free_sgl(struct pci_dev *pdev, struct scatterlist *sgl);
-void pci_p2pmem_publish(struct pci_dev *pdev, bool publish);
-int pci_p2pdma_enable_store(const char *page, struct pci_dev **p2p_dev,
-			    bool *use_p2pdma);
-ssize_t pci_p2pdma_enable_show(char *page, struct pci_dev *p2p_dev,
-			       bool use_p2pdma);
-enum pci_p2pdma_map_type pci_p2pdma_map_type(struct p2pdma_provider *provider,
-					     struct device *dev);
-#else /* CONFIG_PCI_P2PDMA */
 static inline int pcim_p2pdma_init(struct pci_dev *pdev)
 {
 	return -EOPNOTSUPP;
@@ -154,7 +131,6 @@ pci_p2pdma_map_type(struct p2pdma_provider *provider, struct device *dev)
 {
 	return PCI_P2PDMA_MAP_NOT_SUPPORTED;
 }
-#endif /* CONFIG_PCI_P2PDMA */
 
 
 static inline int pci_p2pdma_distance(struct pci_dev *provider,
@@ -173,11 +149,6 @@ struct pci_p2pdma_map_state {
 	enum pci_p2pdma_map_type map;
 };
 
-
-/* helper for pci_p2pdma_state(), do not use directly */
-void __pci_p2pdma_update_state(struct pci_p2pdma_map_state *state,
-		struct device *dev, struct page *page);
-
 /**
  * pci_p2pdma_state - check the P2P transfer state of a page
  * @state:	P2P state structure
@@ -191,10 +162,6 @@ static inline enum pci_p2pdma_map_type
 pci_p2pdma_state(struct pci_p2pdma_map_state *state, struct device *dev,
 		struct page *page)
 {
-	if (IS_ENABLED(CONFIG_PCI_P2PDMA) && is_pci_p2pdma_page(page)) {
-		__pci_p2pdma_update_state(state, dev, page);
-		return state->map;
-	}
 	return PCI_P2PDMA_MAP_NONE;
 }
 

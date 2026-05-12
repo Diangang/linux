@@ -85,11 +85,7 @@ extern unsigned long pci_mem_start;
 
 #define PCIBIOS_MIN_CARDBUS_IO	0x4000
 
-extern int pcibios_enabled;
 void pcibios_scan_root(int bus);
-
-struct irq_routing_table *pcibios_get_irq_routing_table(void);
-int pcibios_set_irq_routing(struct pci_dev *dev, int pin, int irq);
 
 bool pci_dev_has_default_msi_parent_domain(struct pci_dev *dev);
 

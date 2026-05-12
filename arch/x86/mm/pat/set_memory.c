@@ -488,26 +488,11 @@ static bool overlaps(unsigned long r1_start, unsigned long r1_end,
 		(r2_start <= r1_end && r2_end >= r1_start);
 }
 
-#ifdef CONFIG_PCI_BIOS
-/*
- * The BIOS area between 640k and 1Mb needs to be executable for PCI BIOS
- * based config access (CONFIG_PCI_GOBIOS) support.
- */
-#define BIOS_PFN	PFN_DOWN(BIOS_BEGIN)
-#define BIOS_PFN_END	PFN_DOWN(BIOS_END - 1)
+static pgprotval_t protect_pci_bios(unsigned long spfn, unsigned long epfn)
+{
+	return 0;
+}
 
-static pgprotval_t protect_pci_bios(unsigned long spfn, unsigned long epfn)
-{
-	if (pcibios_enabled && overlaps(spfn, epfn, BIOS_PFN, BIOS_PFN_END))
-		return _PAGE_NX;
-	return 0;
-}
-#else
-static pgprotval_t protect_pci_bios(unsigned long spfn, unsigned long epfn)
-{
-	return 0;
-}
-#endif
 
 /*
  * The .rodata section needs to be read-only. Using the pfn catches all

@@ -559,39 +559,6 @@ fail:
 	return ret;
 }
 
-#if defined(CONFIG_PCI_MSI_ARCH_FALLBACKS) || defined(CONFIG_PCI_XEN)
-/**
- * msi_device_populate_sysfs - Populate msi_irqs sysfs entries for a device
- * @dev:	The device (PCI, platform etc) which will get sysfs entries
- */
-int msi_device_populate_sysfs(struct device *dev)
-{
-	struct msi_desc *desc;
-	int ret;
-
-	msi_for_each_desc(desc, dev, MSI_DESC_ASSOCIATED) {
-		if (desc->sysfs_attrs)
-			continue;
-		ret = msi_sysfs_populate_desc(dev, desc);
-		if (ret)
-			return ret;
-	}
-	return 0;
-}
-
-/**
- * msi_device_destroy_sysfs - Destroy msi_irqs sysfs entries for a device
- * @dev:		The device (PCI, platform etc) for which to remove
- *			sysfs entries
- */
-void msi_device_destroy_sysfs(struct device *dev)
-{
-	struct msi_desc *desc;
-
-	msi_for_each_desc(desc, dev, MSI_DESC_ALL)
-		msi_sysfs_remove_desc(dev, desc);
-}
-#endif /* CONFIG_PCI_MSI_ARCH_FALLBACK || CONFIG_PCI_XEN */
 #else /* CONFIG_SYSFS */
 static inline int msi_sysfs_create_group(struct device *dev) { return 0; }
 static inline int msi_sysfs_populate_desc(struct device *dev, struct msi_desc *desc) { return 0; }

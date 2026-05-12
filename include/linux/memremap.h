@@ -178,8 +178,7 @@ static inline bool is_device_private_page(const struct page *page)
 
 static inline bool folio_is_pci_p2pdma(const struct folio *folio)
 {
-	return IS_ENABLED(CONFIG_PCI_P2PDMA) &&
-		folio_is_zone_device(folio) &&
+	return folio_is_zone_device(folio) &&
 		folio->pgmap->type == MEMORY_DEVICE_PCI_P2PDMA;
 }
 
@@ -197,8 +196,7 @@ static inline void folio_set_zone_device_data(struct folio *folio, void *data)
 
 static inline bool is_pci_p2pdma_page(const struct page *page)
 {
-	return IS_ENABLED(CONFIG_PCI_P2PDMA) &&
-		folio_is_pci_p2pdma(page_folio(page));
+	return folio_is_pci_p2pdma(page_folio(page));
 }
 
 static inline bool folio_is_device_coherent(const struct folio *folio)

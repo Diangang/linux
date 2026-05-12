@@ -682,13 +682,9 @@ static inline void pci_doe_init(struct pci_dev *pdev) { }
 static inline void pci_doe_destroy(struct pci_dev *pdev) { }
 static inline void pci_doe_disconnected(struct pci_dev *pdev) { }
 
-#ifdef CONFIG_PCI_NPEM
-void pci_npem_create(struct pci_dev *dev);
-void pci_npem_remove(struct pci_dev *dev);
-#else
 static inline void pci_npem_create(struct pci_dev *dev) { }
 static inline void pci_npem_remove(struct pci_dev *dev) { }
-#endif
+
 
 #if defined(CONFIG_PCI_DOE) && defined(CONFIG_SYSFS)
 void pci_doe_sysfs_init(struct pci_dev *pci_dev);
@@ -698,16 +694,10 @@ static inline void pci_doe_sysfs_init(struct pci_dev *pdev) { }
 static inline void pci_doe_sysfs_teardown(struct pci_dev *pdev) { }
 #endif
 
-#ifdef CONFIG_PCI_IDE
-void pci_ide_init(struct pci_dev *dev);
-void pci_ide_init_host_bridge(struct pci_host_bridge *hb);
-void pci_ide_destroy(struct pci_dev *dev);
-extern const struct attribute_group pci_ide_attr_group;
-#else
 static inline void pci_ide_init(struct pci_dev *dev) { }
 static inline void pci_ide_init_host_bridge(struct pci_host_bridge *hb) { }
 static inline void pci_ide_destroy(struct pci_dev *dev) { }
-#endif
+
 
 static inline void pci_tsm_init(struct pci_dev *pdev) { }
 static inline void pci_tsm_destroy(struct pci_dev *pdev) { }
@@ -868,20 +858,11 @@ struct rcec_ea {
 };
 #endif
 
-#ifdef CONFIG_PCIE_DPC
-void pci_save_dpc_state(struct pci_dev *dev);
-void pci_restore_dpc_state(struct pci_dev *dev);
-void pci_dpc_init(struct pci_dev *pdev);
-void dpc_process_error(struct pci_dev *pdev);
-pci_ers_result_t dpc_reset_link(struct pci_dev *pdev);
-bool pci_dpc_recovered(struct pci_dev *pdev);
-unsigned int dpc_tlp_log_len(struct pci_dev *dev);
-#else
 static inline void pci_save_dpc_state(struct pci_dev *dev) { }
 static inline void pci_restore_dpc_state(struct pci_dev *dev) { }
 static inline void pci_dpc_init(struct pci_dev *pdev) { }
 static inline bool pci_dpc_recovered(struct pci_dev *pdev) { return false; }
-#endif
+
 
 #ifdef CONFIG_PCIEPORTBUS
 void pci_rcec_init(struct pci_dev *dev);
@@ -1087,13 +1068,9 @@ static inline void pci_configure_ltr(struct pci_dev *pdev) { }
 static inline void pci_bridge_reconfigure_ltr(struct pci_dev *pdev) { }
 #endif
 
-#ifdef CONFIG_PCIE_ECRC
-void pcie_set_ecrc_checking(struct pci_dev *dev);
-void pcie_ecrc_get_policy(char *str);
-#else
 static inline void pcie_set_ecrc_checking(struct pci_dev *dev) { }
 static inline void pcie_ecrc_get_policy(char *str) { }
-#endif
+
 
 #ifdef CONFIG_PCIEPORTBUS
 void pcie_reset_lbms(struct pci_dev *port);
@@ -1231,22 +1208,11 @@ static inline int of_pci_get_equalization_presets(struct device *dev,
 
 struct of_changeset;
 
-#ifdef CONFIG_PCI_DYNAMIC_OF_NODES
-void of_pci_make_dev_node(struct pci_dev *pdev);
-void of_pci_remove_node(struct pci_dev *pdev);
-int of_pci_add_properties(struct pci_dev *pdev, struct of_changeset *ocs,
-			  struct device_node *np);
-void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge);
-void of_pci_remove_host_bridge_node(struct pci_host_bridge *bridge);
-int of_pci_add_host_bridge_properties(struct pci_host_bridge *bridge,
-				      struct of_changeset *ocs,
-				      struct device_node *np);
-#else
 static inline void of_pci_make_dev_node(struct pci_dev *pdev) { }
 static inline void of_pci_remove_node(struct pci_dev *pdev) { }
 static inline void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge) { }
 static inline void of_pci_remove_host_bridge_node(struct pci_host_bridge *bridge) { }
-#endif
+
 
 #ifdef CONFIG_PCIEAER
 void pci_no_aer(void);

@@ -17,4 +17,3 @@ obj-$(CONFIG_SERIAL_FSL_LPUART)		+= fsl_lpuart.o
 obj-$(CONFIG_SERIAL_XILINX_PS_UART)	+= xilinx_uartps.o
 
 # GPIOLIB helpers for modem control lines
-obj-$(CONFIG_SERIAL_MCTRL_GPIO)	+= serial_mctrl_gpio.o

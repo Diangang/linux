@@ -1893,11 +1893,7 @@ static int kt_serial_setup(struct serial_private *priv,
 
 static int pci_eg20t_init(struct pci_dev *dev)
 {
-#if defined(CONFIG_SERIAL_PCH_UART) || defined(CONFIG_SERIAL_PCH_UART_MODULE)
-	return -ENODEV;
-#else
 	return 0;
-#endif
 }
 
 static int

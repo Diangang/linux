@@ -896,24 +896,6 @@ static inline void __iomem *dw_pcie_own_conf_map_bus(struct pci_bus *bus,
 }
 #endif
 
-#ifdef CONFIG_PCIE_DW_EP
-void dw_pcie_ep_linkup(struct dw_pcie_ep *ep);
-void dw_pcie_ep_linkdown(struct dw_pcie_ep *ep);
-int dw_pcie_ep_init(struct dw_pcie_ep *ep);
-int dw_pcie_ep_init_registers(struct dw_pcie_ep *ep);
-void dw_pcie_ep_deinit(struct dw_pcie_ep *ep);
-void dw_pcie_ep_cleanup(struct dw_pcie_ep *ep);
-int dw_pcie_ep_raise_intx_irq(struct dw_pcie_ep *ep, u8 func_no);
-int dw_pcie_ep_raise_msi_irq(struct dw_pcie_ep *ep, u8 func_no,
-			     u8 interrupt_num);
-int dw_pcie_ep_raise_msix_irq(struct dw_pcie_ep *ep, u8 func_no,
-			     u16 interrupt_num);
-int dw_pcie_ep_raise_msix_irq_doorbell(struct dw_pcie_ep *ep, u8 func_no,
-				       u16 interrupt_num);
-void dw_pcie_ep_reset_bar(struct dw_pcie *pci, enum pci_barno bar);
-struct dw_pcie_ep_func *
-dw_pcie_ep_get_func_from_ep(struct dw_pcie_ep *ep, u8 func_no);
-#else
 static inline void dw_pcie_ep_linkup(struct dw_pcie_ep *ep)
 {
 }
@@ -973,12 +955,7 @@ dw_pcie_ep_get_func_from_ep(struct dw_pcie_ep *ep, u8 func_no)
 {
 	return NULL;
 }
-#endif
 
-#ifdef CONFIG_PCIE_DW_DEBUGFS
-void dwc_pcie_debugfs_init(struct dw_pcie *pci, enum dw_pcie_device_mode mode);
-void dwc_pcie_debugfs_deinit(struct dw_pcie *pci);
-#else
 static inline void dwc_pcie_debugfs_init(struct dw_pcie *pci,
 					 enum dw_pcie_device_mode mode)
 {
@@ -986,6 +963,5 @@ static inline void dwc_pcie_debugfs_init(struct dw_pcie *pci,
 static inline void dwc_pcie_debugfs_deinit(struct dw_pcie *pci)
 {
 }
-#endif
 
 #endif /* _PCIE_DESIGNWARE_H */

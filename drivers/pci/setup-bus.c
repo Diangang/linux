@@ -1787,57 +1787,12 @@ static bool pci_realloc_enabled(enum enable_type enable)
 	return enable >= user_enabled;
 }
 
-#if defined(CONFIG_PCI_IOV) && defined(CONFIG_PCI_REALLOC_ENABLE_AUTO)
-static int iov_resources_unassigned(struct pci_dev *dev, void *data)
-{
-	int i;
-	bool *unassigned = data;
-
-	for (i = 0; i < PCI_SRIOV_NUM_BARS; i++) {
-		int idx = pci_resource_num_from_vf_bar(i);
-		struct resource *r = &dev->resource[idx];
-		struct pci_bus_region region;
-
-		/* Not assigned or rejected by kernel? */
-		if (!r->flags)
-			continue;
-
-		pcibios_resource_to_bus(dev->bus, &region, r);
-		if (!region.start) {
-			*unassigned = true;
-			return 1; /* Return early from pci_walk_bus() */
-		}
-	}
-
-	return 0;
-}
-
-static enum enable_type pci_realloc_detect(struct pci_bus *bus,
-					   enum enable_type enable_local)
-{
-	bool unassigned = false;
-	struct pci_host_bridge *host;
-
-	if (enable_local != undefined)
-		return enable_local;
-
-	host = pci_find_host_bridge(bus);
-	if (host->preserve_config)
-		return auto_disabled;
-
-	pci_walk_bus(bus, iov_resources_unassigned, &unassigned);
-	if (unassigned)
-		return auto_enabled;
-
-	return enable_local;
-}
-#else
 static enum enable_type pci_realloc_detect(struct pci_bus *bus,
 					   enum enable_type enable_local)
 {
 	return enable_local;
 }
-#endif
+
 
 static void adjust_bridge_window(struct pci_dev *bridge, struct resource *res,
 				 struct list_head *add_list,

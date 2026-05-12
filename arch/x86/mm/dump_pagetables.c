@@ -230,17 +230,6 @@ static void note_wx(struct pg_state *st, unsigned long addr)
 
 	npages = (addr - st->start_address) / PAGE_SIZE;
 
-#ifdef CONFIG_PCI_BIOS
-	/*
-	 * If PCI BIOS is enabled, the PCI BIOS area is forced to WX.
-	 * Inform about it, but avoid the warning.
-	 */
-	if (pcibios_enabled && st->start_address >= PAGE_OFFSET + BIOS_BEGIN &&
-	    addr <= PAGE_OFFSET + BIOS_END) {
-		pr_warn_once("x86/mm: PCI BIOS W+X mapping %lu pages\n", npages);
-		return;
-	}
-#endif
 	/* Account the WX pages */
 	st->wx_pages += npages;
 	WARN_ONCE(__supported_pte_mask & _PAGE_NX,
