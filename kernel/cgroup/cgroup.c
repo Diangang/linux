@@ -216,7 +216,7 @@ static u32 have_exit_callback __read_mostly;
 static u32 have_release_callback __read_mostly;
 static u32 have_canfork_callback __read_mostly;
 
-static bool have_favordynmods __ro_after_init = IS_ENABLED(CONFIG_CGROUP_FAVOR_DYNMODS);
+static bool have_favordynmods __ro_after_init;
 
 /*
  * Write protected by cgroup_mutex and write-lock of cgroup_threadgroup_rwsem,

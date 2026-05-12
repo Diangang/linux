@@ -45,7 +45,7 @@
 static struct microcode_ops *microcode_ops;
 static bool dis_ucode_ldr;
 
-bool force_minrev = IS_ENABLED(CONFIG_MICROCODE_LATE_FORCE_MINREV);
+bool force_minrev;
 
 /*
  * Those below should be behind CONFIG_MICROCODE_DBG ifdeffery but in

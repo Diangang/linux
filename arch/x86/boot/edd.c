@@ -121,11 +121,7 @@ void query_edd(void)
 {
 	char eddarg[8];
 	int do_mbr = 1;
-#ifdef CONFIG_EDD_OFF
-	int do_edd = 0;
-#else
 	int do_edd = 1;
-#endif
 	int be_quiet;
 	int devno;
 	struct edd_info ei, *edp;
