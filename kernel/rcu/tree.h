@@ -468,13 +468,7 @@ struct rcu_state {
 #define RCU_ABBR 's'
 #define RCU_NAME_RAW "rcu_sched"
 #endif /* #else #ifdef CONFIG_PREEMPT_RCU */
-#ifndef CONFIG_TRACING
 #define RCU_NAME RCU_NAME_RAW
-#else /* #ifdef CONFIG_TRACING */
-static char rcu_name[] = RCU_NAME_RAW;
-static const char *tp_rcu_varname __used __tracepoint_string = rcu_name;
-#define RCU_NAME rcu_name
-#endif /* #else #ifdef CONFIG_TRACING */
 
 /* Forward declarations for tree_plugin.h */
 static void rcu_bootup_announce(void);
