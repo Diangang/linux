@@ -91,7 +91,3 @@
 #ifdef CONFIG_CPU_ISOLATION
 # include "isolation.c"
 #endif
-
-#ifdef CONFIG_SCHED_AUTOGROUP
-# include "autogroup.c"
-#endif

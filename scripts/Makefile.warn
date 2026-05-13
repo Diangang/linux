@@ -164,9 +164,9 @@ KBUILD_CFLAGS += -Wno-unused-parameter
 endif
 
 #
-# W=e and CONFIG_WERROR - error out on warnings
+# W=e - error out on warnings
 #
-ifneq ($(findstring e, $(KBUILD_EXTRA_WARN))$(CONFIG_WERROR),)
+ifneq ($(findstring e, $(KBUILD_EXTRA_WARN)),)
 
 KBUILD_CPPFLAGS		+= -Werror
 KBUILD_AFLAGS		+= -Wa,--fatal-warnings

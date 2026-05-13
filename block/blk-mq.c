@@ -963,12 +963,8 @@ bool blk_update_request(struct request *req, blk_status_t error,
 	    error == BLK_STS_OK)
 		blk_integrity_complete(req, nr_bytes);
 
-	/*
-	 * Upper layers may call blk_crypto_evict_key() anytime after the last
-	 * bio_endio().  Therefore, the keyslot must be released before that.
-	 */
-	if (blk_crypto_rq_has_keyslot(req) && nr_bytes >= blk_rq_bytes(req))
-		__blk_crypto_rq_put_keyslot(req);
+	if (nr_bytes >= blk_rq_bytes(req))
+		blk_crypto_rq_put_keyslot(req);
 
 	if (unlikely(error && !blk_rq_is_passthrough(req) && !quiet) &&
 	    !test_bit(GD_DEAD, &req->q->disk->state)) {

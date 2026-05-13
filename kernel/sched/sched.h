@@ -471,10 +471,6 @@ struct task_group {
 	struct list_head	siblings;
 	struct list_head	children;
 
-#ifdef CONFIG_SCHED_AUTOGROUP
-	struct autogroup	*autogroup;
-#endif
-
 	struct cfs_bandwidth	cfs_bandwidth;
 
 
@@ -1081,11 +1077,6 @@ struct rq {
 
 #ifdef CONFIG_HOTPLUG_CPU
 	struct rcuwait		hotplug_wait;
-#endif
-
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-	u64			prev_irq_time;
-	u64			psi_irq_time;
 #endif
 #ifdef CONFIG_PARAVIRT
 	u64			prev_steal_time;
@@ -2925,50 +2916,12 @@ static inline void sched_core_account_forceidle(struct rq *rq) { }
 
 static inline void sched_core_tick(struct rq *rq) { }
 
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-
-struct irqtime {
-	u64			total;
-	u64			tick_delta;
-	u64			irq_start_time;
-	struct u64_stats_sync	sync;
-};
-
-DECLARE_PER_CPU(struct irqtime, cpu_irqtime);
-DECLARE_STATIC_KEY_FALSE(sched_clock_irqtime);
-
-static inline int irqtime_enabled(void)
-{
-	return static_branch_likely(&sched_clock_irqtime);
-}
-
-/*
- * Returns the irqtime minus the softirq time computed by ksoftirqd.
- * Otherwise ksoftirqd's sum_exec_runtime is subtracted its own runtime
- * and never move forward.
- */
-static inline u64 irq_time_read(int cpu)
-{
-	struct irqtime *irqtime = &per_cpu(cpu_irqtime, cpu);
-	unsigned int seq;
-	u64 total;
-
-	do {
-		seq = __u64_stats_fetch_begin(&irqtime->sync);
-		total = irqtime->total;
-	} while (__u64_stats_fetch_retry(&irqtime->sync, seq));
-
-	return total;
-}
-
-#else /* !CONFIG_IRQ_TIME_ACCOUNTING: */
 
 static inline int irqtime_enabled(void)
 {
 	return 0;
 }
 
-#endif /* !CONFIG_IRQ_TIME_ACCOUNTING */
 
 #ifdef CONFIG_CPU_FREQ
 

@@ -264,7 +264,6 @@ void pci_refresh_power_state(struct pci_dev *dev);
 int pci_power_up(struct pci_dev *dev);
 void pci_disable_enabled_device(struct pci_dev *dev);
 int pci_finish_runtime_suspend(struct pci_dev *dev);
-void pcie_clear_device_status(struct pci_dev *dev);
 void pcie_clear_root_pme_status(struct pci_dev *dev);
 bool pci_check_pme_status(struct pci_dev *dev);
 void pci_pme_wakeup_bus(struct pci_bus *bus);
@@ -785,70 +784,6 @@ static inline bool pci_dev_binding_disallowed(struct pci_dev *dev)
 	return !test_bit(PCI_DEV_ALLOW_BINDING, &dev->priv_flags);
 }
 
-#ifdef CONFIG_PCIEAER
-#include <linux/aer.h>
-
-#define AER_MAX_MULTI_ERR_DEVICES	5	/* Not likely to have more */
-
-/**
- * struct aer_err_info - AER Error Information
- * @dev: Devices reporting error
- * @ratelimit_print: Flag to log or not log the devices' error. 0=NotLog/1=Log
- * @__pad1: Padding for alignment
- * @error_dev_num: Number of devices reporting an error
- * @level: printk level to use in logging
- * @id: Value from register PCI_ERR_ROOT_ERR_SRC
- * @severity: AER severity, 0-UNCOR Non-fatal, 1-UNCOR fatal, 2-COR
- * @root_ratelimit_print: Flag to log or not log the root's error. 0=NotLog/1=Log
- * @multi_error_valid: If multiple errors are reported
- * @first_error: First reported error
- * @__pad2: Padding for alignment
- * @is_cxl: Bus type error: 0-PCI Bus error, 1-CXL Bus error
- * @tlp_header_valid: Indicates if TLP field contains error information
- * @status: COR/UNCOR error status
- * @mask: COR/UNCOR mask
- * @tlp: Transaction packet information
- */
-struct aer_err_info {
-	struct pci_dev *dev[AER_MAX_MULTI_ERR_DEVICES];
-	int ratelimit_print[AER_MAX_MULTI_ERR_DEVICES];
-	int error_dev_num;
-	const char *level;
-
-	unsigned int id:16;
-
-	unsigned int severity:2;
-	unsigned int root_ratelimit_print:1;
-	unsigned int __pad1:4;
-	unsigned int multi_error_valid:1;
-
-	unsigned int first_error:5;
-	unsigned int __pad2:1;
-	unsigned int is_cxl:1;
-	unsigned int tlp_header_valid:1;
-
-	unsigned int status;
-	unsigned int mask;
-	struct pcie_tlp_log tlp;
-};
-
-int aer_get_device_error_info(struct aer_err_info *info, int i);
-void aer_print_error(struct aer_err_info *info, int i);
-
-static inline const char *aer_err_bus(struct aer_err_info *info)
-{
-	return info->is_cxl ? "CXL" : "PCIe";
-}
-
-int pcie_read_tlp_log(struct pci_dev *dev, int where, int where2,
-		      unsigned int tlp_len, bool flit,
-		      struct pcie_tlp_log *log);
-unsigned int aer_tlp_log_len(struct pci_dev *dev, u32 aercc);
-void pcie_print_tlp_log(const struct pci_dev *dev,
-			const struct pcie_tlp_log *log, const char *level,
-			const char *pfx);
-#endif	/* CONFIG_PCIEAER */
-
 #ifdef CONFIG_PCIEPORTBUS
 /* Cached RCEC Endpoint Association */
 struct rcec_ea {
@@ -889,13 +824,8 @@ static inline void pci_ats_init(struct pci_dev *d) { }
 static inline void pci_restore_ats_state(struct pci_dev *dev) { }
 #endif /* CONFIG_PCI_ATS */
 
-#ifdef CONFIG_PCI_PRI
-void pci_pri_init(struct pci_dev *dev);
-void pci_restore_pri_state(struct pci_dev *pdev);
-#else
 static inline void pci_pri_init(struct pci_dev *dev) { }
 static inline void pci_restore_pri_state(struct pci_dev *pdev) { }
-#endif
 
 #ifdef CONFIG_PCI_PASID
 void pci_pasid_init(struct pci_dev *dev);
@@ -905,38 +835,6 @@ static inline void pci_pasid_init(struct pci_dev *dev) { }
 static inline void pci_restore_pasid_state(struct pci_dev *pdev) { }
 #endif
 
-#ifdef CONFIG_PCI_IOV
-int pci_iov_init(struct pci_dev *dev);
-void pci_iov_release(struct pci_dev *dev);
-void pci_iov_remove(struct pci_dev *dev);
-void pci_iov_update_resource(struct pci_dev *dev, int resno);
-resource_size_t pci_sriov_resource_alignment(struct pci_dev *dev, int resno);
-void pci_restore_iov_state(struct pci_dev *dev);
-int pci_iov_bus_range(struct pci_bus *bus);
-void pci_iov_resource_set_size(struct pci_dev *dev, int resno, int size);
-bool pci_iov_is_memory_decoding_enabled(struct pci_dev *dev);
-static inline u16 pci_iov_vf_rebar_cap(struct pci_dev *dev)
-{
-	if (!dev->is_physfn)
-		return 0;
-
-	return dev->sriov->vf_rebar_cap;
-}
-static inline bool pci_resource_is_iov(int resno)
-{
-	return resno >= PCI_IOV_RESOURCES && resno <= PCI_IOV_RESOURCE_END;
-}
-static inline int pci_resource_num_from_vf_bar(int resno)
-{
-	return resno + PCI_IOV_RESOURCES;
-}
-static inline int pci_resource_num_to_vf_bar(int resno)
-{
-	return resno - PCI_IOV_RESOURCES;
-}
-extern const struct attribute_group sriov_pf_dev_attr_group;
-extern const struct attribute_group sriov_vf_dev_attr_group;
-#else
 static inline int pci_iov_init(struct pci_dev *dev)
 {
 	return -ENODEV;
@@ -978,7 +876,6 @@ static inline int pci_resource_num_to_vf_bar(int resno)
 	WARN_ON_ONCE(1);
 	return -ENODEV;
 }
-#endif /* CONFIG_PCI_IOV */
 
 static inline void pci_restore_tph_state(struct pci_dev *dev) { }
 static inline void pci_save_tph_state(struct pci_dev *dev) { }
@@ -1214,18 +1111,6 @@ static inline void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge) 
 static inline void of_pci_remove_host_bridge_node(struct pci_host_bridge *bridge) { }
 
 
-#ifdef CONFIG_PCIEAER
-void pci_no_aer(void);
-void pci_aer_init(struct pci_dev *dev);
-void pci_aer_exit(struct pci_dev *dev);
-extern const struct attribute_group aer_stats_attr_group;
-extern const struct attribute_group aer_attr_group;
-void pci_aer_clear_fatal_status(struct pci_dev *dev);
-int pci_aer_clear_status(struct pci_dev *dev);
-int pci_aer_raw_clear_status(struct pci_dev *dev);
-void pci_save_aer_state(struct pci_dev *dev);
-void pci_restore_aer_state(struct pci_dev *dev);
-#else
 static inline void pci_no_aer(void) { }
 static inline void pci_aer_init(struct pci_dev *d) { }
 static inline void pci_aer_exit(struct pci_dev *d) { }
@@ -1234,7 +1119,6 @@ static inline int pci_aer_clear_status(struct pci_dev *dev) { return -EINVAL; }
 static inline int pci_aer_raw_clear_status(struct pci_dev *dev) { return -EINVAL; }
 static inline void pci_save_aer_state(struct pci_dev *dev) { }
 static inline void pci_restore_aer_state(struct pci_dev *dev) { }
-#endif
 
 #ifdef CONFIG_ACPI
 bool pci_acpi_preserve_config(struct pci_host_bridge *bridge);

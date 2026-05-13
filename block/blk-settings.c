@@ -553,14 +553,6 @@ int queue_limits_commit_update(struct request_queue *q,
 	if (error)
 		goto out_unlock;
 
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-	if (q->crypto_profile && lim->integrity.tag_size) {
-		pr_warn("blk-integrity: Integrity and hardware inline encryption are not supported together.\n");
-		error = -EINVAL;
-		goto out_unlock;
-	}
-#endif
-
 	q->limits = *lim;
 	if (q->disk)
 		blk_apply_bdi_limits(q->disk->bdi, lim);

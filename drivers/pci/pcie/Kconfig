@@ -13,15 +13,6 @@ config PCIEPORTBUS
 #
 # Include service Kconfig here
 #
-config PCIEAER
-	bool "PCI Express Advanced Error Reporting support"
-	depends on PCIEPORTBUS
-	select RAS
-	help
-	  This enables PCI Express Root Port Advanced Error Reporting
-	  (AER) driver support. Error reporting messages sent to Root
-	  Port will be handled by PCI Express AER driver.
-
 config PCIEASPM
 	bool "PCI Express ASPM control" if EXPERT
 	default y

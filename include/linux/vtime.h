@@ -88,11 +88,7 @@ static __always_inline void vtime_account_guest_exit(void)
 #endif
 
 
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-extern void irqtime_account_irq(struct task_struct *tsk, unsigned int offset);
-#else
 static inline void irqtime_account_irq(struct task_struct *tsk, unsigned int offset) { }
-#endif
 
 static inline void account_softirq_enter(struct task_struct *tsk)
 {

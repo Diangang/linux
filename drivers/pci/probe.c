@@ -1850,21 +1850,6 @@ int pci_cfg_space_size(struct pci_dev *dev)
 	u32 status;
 	u16 class;
 
-#ifdef CONFIG_PCI_IOV
-	/*
-	 * Per the SR-IOV specification (rev 1.1, sec 3.5), VFs are required to
-	 * implement a PCIe capability and therefore must implement extended
-	 * config space.  We can skip the NO_EXTCFG test below and the
-	 * reachability/aliasing test in pci_cfg_space_size_ext() by virtue of
-	 * the fact that the SR-IOV capability on the PF resides in extended
-	 * config space and must be accessible and non-aliased to have enabled
-	 * support for this VF.  This is a micro performance optimization for
-	 * systems supporting many VFs.
-	 */
-	if (dev->is_virtfn)
-		return PCI_CFG_SPACE_EXP_SIZE;
-#endif
-
 	if (dev->bus->bus_flags & PCI_BUS_FLAGS_NO_EXTCFG)
 		return PCI_CFG_SPACE_SIZE;
 
@@ -1890,23 +1875,12 @@ static u32 pci_class(struct pci_dev *dev)
 {
 	u32 class;
 
-#ifdef CONFIG_PCI_IOV
-	if (dev->is_virtfn)
-		return dev->physfn->sriov->class;
-#endif
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &class);
 	return class;
 }
 
 static void pci_subsystem_ids(struct pci_dev *dev, u16 *vendor, u16 *device)
 {
-#ifdef CONFIG_PCI_IOV
-	if (dev->is_virtfn) {
-		*vendor = dev->physfn->sriov->subsystem_vendor;
-		*device = dev->physfn->sriov->subsystem_device;
-		return;
-	}
-#endif
 	pci_read_config_word(dev, PCI_SUBSYSTEM_VENDOR_ID, vendor);
 	pci_read_config_word(dev, PCI_SUBSYSTEM_ID, device);
 }
@@ -1915,10 +1889,6 @@ static u8 pci_hdr_type(struct pci_dev *dev)
 {
 	u8 hdr_type;
 
-#ifdef CONFIG_PCI_IOV
-	if (dev->is_virtfn)
-		return dev->physfn->sriov->hdr_type;
-#endif
 	pci_read_config_byte(dev, PCI_HEADER_TYPE, &hdr_type);
 	return hdr_type;
 }

@@ -26,16 +26,8 @@ static inline int pci_ats_page_aligned(struct pci_dev *dev)
 { return 0; }
 #endif /* CONFIG_PCI_ATS */
 
-#ifdef CONFIG_PCI_PRI
-int pci_enable_pri(struct pci_dev *pdev, u32 reqs);
-void pci_disable_pri(struct pci_dev *pdev);
-int pci_reset_pri(struct pci_dev *pdev);
-int pci_prg_resp_pasid_required(struct pci_dev *pdev);
-bool pci_pri_supported(struct pci_dev *pdev);
-#else
 static inline bool pci_pri_supported(struct pci_dev *pdev)
 { return false; }
-#endif /* CONFIG_PCI_PRI */
 
 #ifdef CONFIG_PCI_PASID
 int pci_enable_pasid(struct pci_dev *pdev, int features);

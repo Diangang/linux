@@ -74,20 +74,6 @@ static int pcie_message_numbers(struct pci_dev *dev, int mask,
 		nvec = *pme + 1;
 	}
 
-#ifdef CONFIG_PCIEAER
-	if (mask & PCIE_PORT_SERVICE_AER) {
-		u32 reg32;
-
-		pos = dev->aer_cap;
-		if (pos) {
-			pci_read_config_dword(dev, pos + PCI_ERR_ROOT_STATUS,
-					      &reg32);
-			*aer = FIELD_GET(PCI_ERR_ROOT_AER_IRQ, reg32);
-			nvec = max(nvec, *aer + 1);
-		}
-	}
-#endif
-
 	if (mask & PCIE_PORT_SERVICE_DPC) {
 		pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_DPC);
 		if (pos) {
@@ -234,14 +220,6 @@ static int get_port_device_capability(struct pci_dev *dev)
 		pcie_capability_clear_word(dev, PCI_EXP_SLTCTL,
 			PCI_EXP_SLTCTL_CCIE | PCI_EXP_SLTCTL_HPIE);
 	}
-
-#ifdef CONFIG_PCIEAER
-	if ((pci_pcie_type(dev) == PCI_EXP_TYPE_ROOT_PORT ||
-             pci_pcie_type(dev) == PCI_EXP_TYPE_RC_EC) &&
-	    dev->aer_cap && pci_aer_available() &&
-	    (pcie_ports_native || host->native_aer))
-		services |= PCIE_PORT_SERVICE_AER;
-#endif
 
 	/* Root Ports and Root Complex Event Collectors may generate PMEs */
 	if ((pci_pcie_type(dev) == PCI_EXP_TYPE_ROOT_PORT ||

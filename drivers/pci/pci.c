@@ -792,14 +792,6 @@ const char *pci_resource_name(struct pci_dev *dev, unsigned int i)
 		"BAR 4",
 		"BAR 5",
 		"ROM",
-#ifdef CONFIG_PCI_IOV
-		"VF BAR 0",
-		"VF BAR 1",
-		"VF BAR 2",
-		"VF BAR 3",
-		"VF BAR 4",
-		"VF BAR 5",
-#endif
 		"bridge window",	/* "io" included in %pR */
 		"bridge window",	/* "mem" included in %pR */
 		"bridge window",	/* "mem pref" included in %pR */
@@ -811,14 +803,6 @@ const char *pci_resource_name(struct pci_dev *dev, unsigned int i)
 		"unknown",
 		"unknown",
 		"unknown",
-#ifdef CONFIG_PCI_IOV
-		"unknown",
-		"unknown",
-		"unknown",
-		"unknown",
-		"unknown",
-		"unknown",
-#endif
 		"CardBus bridge window 0",	/* I/O */
 		"CardBus bridge window 1",	/* I/O */
 		"CardBus bridge window 0",	/* mem */
@@ -2224,15 +2208,6 @@ int pci_set_pcie_reset_state(struct pci_dev *dev, enum pcie_reset_state state)
 }
 EXPORT_SYMBOL_GPL(pci_set_pcie_reset_state);
 
-#ifdef CONFIG_PCIEAER
-void pcie_clear_device_status(struct pci_dev *dev)
-{
-	pcie_capability_write_word(dev, PCI_EXP_DEVSTA,
-				   PCI_EXP_DEVSTA_CED | PCI_EXP_DEVSTA_NFED |
-				   PCI_EXP_DEVSTA_FED | PCI_EXP_DEVSTA_URD);
-}
-#endif
-
 /**
  * pcie_clear_root_pme_status - Clear root port PME interrupt status.
  * @dev: PCIe root port or event collector.
@@ -3216,12 +3191,6 @@ static struct resource *pci_ea_get_resource(struct pci_dev *dev, u8 bei,
 {
 	if (bei <= PCI_EA_BEI_BAR5 && prop <= PCI_EA_P_IO)
 		return &dev->resource[bei];
-#ifdef CONFIG_PCI_IOV
-	else if (bei >= PCI_EA_BEI_VF_BAR0 && bei <= PCI_EA_BEI_VF_BAR5 &&
-		 (prop == PCI_EA_P_VF_MEM || prop == PCI_EA_P_VF_MEM_PREFETCH))
-		return &dev->resource[PCI_IOV_RESOURCES +
-				      bei - PCI_EA_BEI_VF_BAR0];
-#endif
 	else if (bei == PCI_EA_BEI_ROM)
 		return &dev->resource[PCI_ROM_RESOURCE];
 	else

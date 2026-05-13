@@ -356,11 +356,7 @@ static void local_pci_probe_callback(struct work_struct *work)
 
 static bool pci_physfn_is_probed(struct pci_dev *dev)
 {
-#ifdef CONFIG_PCI_IOV
-	return dev->is_virtfn && dev->physfn->is_probed;
-#else
 	return false;
-#endif
 }
 
 static int pci_call_probe(struct pci_driver *drv, struct pci_dev *dev,
@@ -450,18 +446,10 @@ static int __pci_device_probe(struct pci_driver *drv, struct pci_dev *pci_dev)
 	return error;
 }
 
-#ifdef CONFIG_PCI_IOV
-static inline bool pci_device_can_probe(struct pci_dev *pdev)
-{
-	return (!pdev->is_virtfn || pdev->physfn->sriov->drivers_autoprobe ||
-		device_has_driver_override(&pdev->dev));
-}
-#else
 static inline bool pci_device_can_probe(struct pci_dev *pdev)
 {
 	return true;
 }
-#endif
 
 static int pci_device_probe(struct device *dev)
 {
@@ -1615,7 +1603,7 @@ static int pci_uevent(const struct device *dev, struct kobj_uevent_env *env)
 	return 0;
 }
 
-#if defined(CONFIG_PCIEAER) || defined(CONFIG_EEH) || defined(CONFIG_S390)
+#if defined(CONFIG_EEH) || defined(CONFIG_S390)
 /**
  * pci_uevent_ers - emit a uevent during recovery path of PCI device
  * @pdev: PCI device undergoing error recovery

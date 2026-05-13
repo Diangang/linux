@@ -534,11 +534,6 @@ struct request_queue {
 	unsigned int		nr_requests;	/* Max # of requests */
 	unsigned int		async_depth;	/* Max # of async requests */
 
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-	struct blk_crypto_profile *crypto_profile;
-	struct kobject *crypto_kobject;
-#endif
-
 	struct timer_list	timeout;
 	struct work_struct	timeout_work;
 
@@ -1514,20 +1509,11 @@ int kblockd_mod_delayed_work_on(int cpu, struct delayed_work *dwork, unsigned lo
 #define MODULE_ALIAS_BLOCKDEV_MAJOR(major) \
 	MODULE_ALIAS("block-major-" __stringify(major) "-*")
 
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-
-bool blk_crypto_register(struct blk_crypto_profile *profile,
-			 struct request_queue *q);
-
-#else /* CONFIG_BLK_INLINE_ENCRYPTION */
-
 static inline bool blk_crypto_register(struct blk_crypto_profile *profile,
 				       struct request_queue *q)
 {
 	return true;
 }
-
-#endif /* CONFIG_BLK_INLINE_ENCRYPTION */
 
 enum blk_unique_id {
 	/* these match the Designator Types specified in SPC */

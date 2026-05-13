@@ -254,15 +254,7 @@ struct bio {
 	struct blkcg_gq		*bi_blkg;
 	/* Time that this bio was issued. */
 	u64			issue_time_ns;
-#ifdef CONFIG_BLK_CGROUP_IOCOST
-	u64			bi_iocost_cost;
 #endif
-#endif
-
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-	struct bio_crypt_ctx	*bi_crypt_context;
-#endif
-
 
 	unsigned short		bi_vcnt;	/* how many bio_vec's */
 

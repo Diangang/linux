@@ -236,12 +236,6 @@ void bio_init(struct bio *bio, struct block_device *bdev, struct bio_vec *table,
 	bio->issue_time_ns = 0;
 	if (bdev)
 		bio_associate_blkg(bio);
-#ifdef CONFIG_BLK_CGROUP_IOCOST
-	bio->bi_iocost_cost = 0;
-#endif
-#endif
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-	bio->bi_crypt_context = NULL;
 #endif
 	bio->bi_vcnt = 0;
 

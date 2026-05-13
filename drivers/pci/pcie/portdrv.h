@@ -27,11 +27,7 @@
 
 extern bool pcie_ports_dpc_native;
 
-#ifdef CONFIG_PCIEAER
-int pcie_aer_init(void);
-#else
 static inline int pcie_aer_init(void) { return 0; }
-#endif
 
 static inline int pcie_hp_init(void) { return 0; }
 

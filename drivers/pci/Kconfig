@@ -67,25 +67,6 @@ config PCI_ECAM
 config PCI_LOCKLESS_CONFIG
 	bool
 
-config PCI_IOV
-	bool "PCI IOV support"
-	select PCI_ATS
-	help
-	  I/O Virtualization is a PCI feature supported by some devices
-	  which allows them to create virtual devices which share their
-	  physical resources.
-
-	  If unsure, say N.
-
-config PCI_PRI
-	bool "PCI PRI support"
-	select PCI_ATS
-	help
-	  PRI is the PCI Page Request Interface. It allows PCI devices that are
-	  behind an IOMMU to recover from page faults.
-
-	  If unsure, say N.
-
 config PCI_PASID
 	bool "PCI PASID support"
 	select PCI_ATS

@@ -108,66 +108,8 @@ struct blk_crypto_key {
 #define BLK_CRYPTO_MAX_IV_SIZE		32
 #define BLK_CRYPTO_DUN_ARRAY_SIZE	(BLK_CRYPTO_MAX_IV_SIZE / sizeof(u64))
 
-/**
- * struct bio_crypt_ctx - an inline encryption context
- * @bc_key: the key, algorithm, and data unit size to use
- * @bc_dun: the data unit number (starting IV) to use
- *
- * A bio_crypt_ctx specifies that the contents of the bio will be encrypted (for
- * write requests) or decrypted (for read requests) inline by the storage device
- * or controller, or by the crypto API fallback.
- */
-struct bio_crypt_ctx {
-	const struct blk_crypto_key	*bc_key;
-	u64				bc_dun[BLK_CRYPTO_DUN_ARRAY_SIZE];
-};
-
 #include <linux/blk_types.h>
 #include <linux/blkdev.h>
-
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-
-static inline bool bio_has_crypt_ctx(struct bio *bio)
-{
-	return bio->bi_crypt_context;
-}
-
-static inline struct bio_crypt_ctx *bio_crypt_ctx(struct bio *bio)
-{
-	return bio->bi_crypt_context;
-}
-
-void bio_crypt_set_ctx(struct bio *bio, const struct blk_crypto_key *key,
-		       const u64 dun[BLK_CRYPTO_DUN_ARRAY_SIZE],
-		       gfp_t gfp_mask);
-
-bool bio_crypt_dun_is_contiguous(const struct bio_crypt_ctx *bc,
-				 unsigned int bytes,
-				 const u64 next_dun[BLK_CRYPTO_DUN_ARRAY_SIZE]);
-
-int blk_crypto_init_key(struct blk_crypto_key *blk_key,
-			const u8 *key_bytes, size_t key_size,
-			enum blk_crypto_key_type key_type,
-			enum blk_crypto_mode_num crypto_mode,
-			unsigned int dun_bytes,
-			unsigned int data_unit_size);
-
-int blk_crypto_start_using_key(struct block_device *bdev,
-			       const struct blk_crypto_key *key);
-
-void blk_crypto_evict_key(struct block_device *bdev,
-			  const struct blk_crypto_key *key);
-
-bool blk_crypto_config_supported_natively(struct block_device *bdev,
-					  const struct blk_crypto_config *cfg);
-bool blk_crypto_config_supported(struct block_device *bdev,
-				 const struct blk_crypto_config *cfg);
-
-int blk_crypto_derive_sw_secret(struct block_device *bdev,
-				const u8 *eph_key, size_t eph_key_size,
-				u8 sw_secret[BLK_CRYPTO_SW_SECRET_SIZE]);
-
-#else /* CONFIG_BLK_INLINE_ENCRYPTION */
 
 static inline bool bio_has_crypt_ctx(struct bio *bio)
 {
@@ -178,10 +120,6 @@ static inline struct bio_crypt_ctx *bio_crypt_ctx(struct bio *bio)
 {
 	return NULL;
 }
-
-#endif /* CONFIG_BLK_INLINE_ENCRYPTION */
-
-bool __blk_crypto_submit_bio(struct bio *bio);
 
 /**
  * blk_crypto_submit_bio - Submit a bio that may have a crypto context
@@ -199,11 +137,9 @@ bool __blk_crypto_submit_bio(struct bio *bio);
  */
 static inline void blk_crypto_submit_bio(struct bio *bio)
 {
-	if (!bio_has_crypt_ctx(bio) || __blk_crypto_submit_bio(bio))
-		submit_bio(bio);
+	submit_bio(bio);
 }
 
-int __bio_crypt_clone(struct bio *dst, struct bio *src, gfp_t gfp_mask);
 /**
  * bio_crypt_clone - clone bio encryption context
  * @dst: destination bio
@@ -218,8 +154,6 @@ int __bio_crypt_clone(struct bio *dst, struct bio *src, gfp_t gfp_mask);
 static inline int bio_crypt_clone(struct bio *dst, struct bio *src,
 				  gfp_t gfp_mask)
 {
-	if (bio_has_crypt_ctx(src))
-		return __bio_crypt_clone(dst, src, gfp_mask);
 	return 0;
 }
 

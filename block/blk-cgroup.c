@@ -32,7 +32,6 @@
 #include <linux/part_stat.h>
 #include "blk.h"
 #include "blk-cgroup.h"
-#include "blk-ioprio.h"
 #include "blk-throttle.h"
 
 static void __blkcg_rstat_flush(struct blkcg *blkcg, int cpu);

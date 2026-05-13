@@ -109,12 +109,6 @@ enum {
 	/* #6: expansion ROM resource */
 	PCI_ROM_RESOURCE,
 
-	/* Device-specific resources */
-#ifdef CONFIG_PCI_IOV
-	PCI_IOV_RESOURCES,
-	PCI_IOV_RESOURCE_END = PCI_IOV_RESOURCES + PCI_SRIOV_NUM_BARS - 1,
-#endif
-
 /* PCI-to-PCI (P2P) bridge windows */
 #define PCI_BRIDGE_IO_WINDOW		(PCI_BRIDGE_RESOURCES + 0)
 #define PCI_BRIDGE_MEM_WINDOW		(PCI_BRIDGE_RESOURCES + 1)
@@ -365,10 +359,6 @@ struct pci_dev {
 	unsigned int	class;		/* 3 bytes: (base,sub,prog-if) */
 	u8		revision;	/* PCI revision, low byte of class word */
 	u8		hdr_type;	/* PCI header type (`multi' flag masked out) */
-#ifdef CONFIG_PCIEAER
-	u16		aer_cap;	/* AER capability offset */
-	struct aer_info	*aer_info;	/* AER info for this device */
-#endif
 #ifdef CONFIG_PCIEPORTBUS
 	struct rcec_ea	*rcec_ea;	/* RCEC cached endpoint association */
 	struct pci_dev  *rcec;          /* Associated RCEC device */
@@ -532,11 +522,6 @@ struct pci_dev {
 	u16		ats_cap;	/* ATS Capability offset */
 	u8		ats_stu;	/* ATS Smallest Translation Unit */
 #endif
-#ifdef CONFIG_PCI_PRI
-	u16		pri_cap;	/* PRI Capability offset */
-	u32		pri_reqs_alloc; /* Number of PRI requests allocated */
-	unsigned int	pasid_required:1; /* PRG Response PASID Required */
-#endif
 #ifdef CONFIG_PCI_PASID
 	u16		pasid_cap;	/* PASID Capability offset */
 	u16		pasid_features;
@@ -555,10 +540,6 @@ struct pci_dev {
 
 static inline struct pci_dev *pci_physfn(struct pci_dev *dev)
 {
-#ifdef CONFIG_PCI_IOV
-	if (dev->is_virtfn)
-		dev = dev->physfn;
-#endif
 	return dev;
 }
 
@@ -1892,11 +1873,7 @@ static inline void pci_hp_ignore_link_change(struct pci_dev *pdev) { }
 static inline void pci_hp_unignore_link_change(struct pci_dev *pdev) { }
 #endif
 
-#ifdef CONFIG_PCIEAER
-bool pci_aer_available(void);
-#else
 static inline bool pci_aer_available(void) { return false; }
-#endif
 
 bool pci_ats_disabled(void);
 
@@ -2465,32 +2442,6 @@ int pci_ext_cfg_avail(void);
 void __iomem *pci_ioremap_bar(struct pci_dev *pdev, int bar);
 void __iomem *pci_ioremap_wc_bar(struct pci_dev *pdev, int bar);
 
-#ifdef CONFIG_PCI_IOV
-int pci_iov_virtfn_bus(struct pci_dev *dev, int id);
-int pci_iov_virtfn_devfn(struct pci_dev *dev, int id);
-int pci_iov_vf_id(struct pci_dev *dev);
-void *pci_iov_get_pf_drvdata(struct pci_dev *dev, struct pci_driver *pf_driver);
-int pci_enable_sriov(struct pci_dev *dev, int nr_virtfn);
-void pci_disable_sriov(struct pci_dev *dev);
-
-int pci_iov_sysfs_link(struct pci_dev *dev, struct pci_dev *virtfn, int id);
-int pci_iov_add_virtfn(struct pci_dev *dev, int id);
-void pci_iov_remove_virtfn(struct pci_dev *dev, int id);
-int pci_num_vf(struct pci_dev *dev);
-int pci_vfs_assigned(struct pci_dev *dev);
-int pci_sriov_set_totalvfs(struct pci_dev *dev, u16 numvfs);
-int pci_sriov_get_totalvfs(struct pci_dev *dev);
-int pci_sriov_configure_simple(struct pci_dev *dev, int nr_virtfn);
-resource_size_t pci_iov_resource_size(struct pci_dev *dev, int resno);
-int pci_iov_vf_bar_set_size(struct pci_dev *dev, int resno, int size);
-u32 pci_iov_vf_bar_get_sizes(struct pci_dev *dev, int resno, int num_vfs);
-void pci_vf_drivers_autoprobe(struct pci_dev *dev, bool probe);
-
-/* Arch may override these (weak) */
-int pcibios_sriov_enable(struct pci_dev *pdev, u16 num_vfs);
-int pcibios_sriov_disable(struct pci_dev *pdev);
-resource_size_t pcibios_iov_resource_alignment(struct pci_dev *dev, int resno);
-#else
 static inline int pci_iov_virtfn_bus(struct pci_dev *dev, int id)
 {
 	return -ENOSYS;
@@ -2541,7 +2492,6 @@ static inline int pci_iov_vf_bar_set_size(struct pci_dev *dev, int resno, int si
 static inline u32 pci_iov_vf_bar_get_sizes(struct pci_dev *dev, int resno, int num_vfs)
 { return 0; }
 static inline void pci_vf_drivers_autoprobe(struct pci_dev *dev, bool probe) { }
-#endif
 
 /**
  * pci_pcie_cap - get the saved PCIe capability offset

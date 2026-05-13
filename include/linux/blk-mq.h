@@ -159,11 +159,6 @@ struct request {
 	 */
 	unsigned char phys_gap_bit;
 
-#ifdef CONFIG_BLK_INLINE_ENCRYPTION
-	struct bio_crypt_ctx *crypt_ctx;
-	struct blk_crypto_keyslot *crypt_keyslot;
-#endif
-
 	enum mq_rq_state state;
 	atomic_t ref;
 

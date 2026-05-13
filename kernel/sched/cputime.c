@@ -7,96 +7,12 @@
 #include "sched.h"
 
 
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-
-DEFINE_STATIC_KEY_FALSE(sched_clock_irqtime);
-
-/*
- * There are no locks covering percpu hardirq/softirq time.
- * They are only modified in vtime_account, on corresponding CPU
- * with interrupts disabled. So, writes are safe.
- * They are read and saved off onto struct rq in update_rq_clock().
- * This may result in other CPU reading this CPU's IRQ time and can
- * race with irq/vtime_account on this CPU. We would either get old
- * or new value with a side effect of accounting a slice of IRQ time to wrong
- * task when IRQ is in progress while we read rq->clock. That is a worthy
- * compromise in place of having locks on each IRQ in account_system_time.
- */
-DEFINE_PER_CPU(struct irqtime, cpu_irqtime);
-
-void enable_sched_clock_irqtime(void)
-{
-	static_branch_enable(&sched_clock_irqtime);
-}
-
-void disable_sched_clock_irqtime(void)
-{
-	if (irqtime_enabled())
-		static_branch_disable(&sched_clock_irqtime);
-}
-
-static void irqtime_account_delta(struct irqtime *irqtime, u64 delta,
-				  enum cpu_usage_stat idx)
-{
-	u64 *cpustat = kcpustat_this_cpu->cpustat;
-
-	u64_stats_update_begin(&irqtime->sync);
-	cpustat[idx] += delta;
-	irqtime->total += delta;
-	irqtime->tick_delta += delta;
-	u64_stats_update_end(&irqtime->sync);
-}
-
-/*
- * Called after incrementing preempt_count on {soft,}irq_enter
- * and before decrementing preempt_count on {soft,}irq_exit.
- */
-void irqtime_account_irq(struct task_struct *curr, unsigned int offset)
-{
-	struct irqtime *irqtime = this_cpu_ptr(&cpu_irqtime);
-	unsigned int pc;
-	s64 delta;
-	int cpu;
-
-	if (!irqtime_enabled())
-		return;
-
-	cpu = smp_processor_id();
-	delta = sched_clock_cpu(cpu) - irqtime->irq_start_time;
-	irqtime->irq_start_time += delta;
-	pc = irq_count() - offset;
-
-	/*
-	 * We do not account for softirq time from ksoftirqd here.
-	 * We want to continue accounting softirq time to ksoftirqd thread
-	 * in that case, so as not to confuse scheduler with a special task
-	 * that do not consume any time, but still wants to run.
-	 */
-	if (pc & HARDIRQ_MASK)
-		irqtime_account_delta(irqtime, delta, CPUTIME_IRQ);
-	else if ((pc & SOFTIRQ_OFFSET) && curr != this_cpu_ksoftirqd())
-		irqtime_account_delta(irqtime, delta, CPUTIME_SOFTIRQ);
-}
-
-static u64 irqtime_tick_accounted(u64 maxtime)
-{
-	struct irqtime *irqtime = this_cpu_ptr(&cpu_irqtime);
-	u64 delta;
-
-	delta = min(irqtime->tick_delta, maxtime);
-	irqtime->tick_delta -= delta;
-
-	return delta;
-}
-
-#else /* !CONFIG_IRQ_TIME_ACCOUNTING: */
 
 static u64 irqtime_tick_accounted(u64 dummy)
 {
 	return 0;
 }
 
-#endif /* !CONFIG_IRQ_TIME_ACCOUNTING */
 
 static inline void task_group_account_field(struct task_struct *p, int index,
 					    u64 tmp)
@@ -340,73 +256,9 @@ void thread_group_cputime(struct task_struct *tsk, struct task_cputime *times)
 	}
 }
 
-#ifdef CONFIG_IRQ_TIME_ACCOUNTING
-/*
- * Account a tick to a process and cpustat
- * @p: the process that the CPU time gets accounted to
- * @user_tick: is the tick from userspace
- * @rq: the pointer to rq
- *
- * Tick demultiplexing follows the order
- * - pending hardirq update
- * - pending softirq update
- * - user_time
- * - idle_time
- * - system time
- *   - check for guest_time
- *   - else account as system_time
- *
- * Check for hardirq is done both for system and user time as there is
- * no timer going off while we are on hardirq and hence we may never get an
- * opportunity to update it solely in system time.
- * p->stime and friends are only updated on system time and not on IRQ
- * softirq as those do not count in task exec_runtime any more.
- */
-static void irqtime_account_process_tick(struct task_struct *p, int user_tick,
-					 int ticks)
-{
-	u64 other, cputime = TICK_NSEC * ticks;
-
-	/*
-	 * When returning from idle, many ticks can get accounted at
-	 * once, including some ticks of steal, IRQ, and softirq time.
-	 * Subtract those ticks from the amount of time accounted to
-	 * idle, or potentially user or system time. Due to rounding,
-	 * other time can exceed ticks occasionally.
-	 */
-	other = account_other_time(ULONG_MAX);
-	if (other >= cputime)
-		return;
-
-	cputime -= other;
-
-	if (this_cpu_ksoftirqd() == p) {
-		/*
-		 * ksoftirqd time do not get accounted in cpu_softirq_time.
-		 * So, we have to handle it separately here.
-		 * Also, p->stime needs to be updated for ksoftirqd.
-		 */
-		account_system_index_time(p, cputime, CPUTIME_SOFTIRQ);
-	} else if (user_tick) {
-		account_user_time(p, cputime);
-	} else if (p == this_rq()->idle) {
-		account_idle_time(cputime);
-	} else if (p->flags & PF_VCPU) { /* System time or guest time */
-		account_guest_time(p, cputime);
-	} else {
-		account_system_index_time(p, cputime, CPUTIME_SYSTEM);
-	}
-}
-
-static void irqtime_account_idle_ticks(int ticks)
-{
-	irqtime_account_process_tick(current, 0, ticks);
-}
-#else /* !CONFIG_IRQ_TIME_ACCOUNTING: */
 static inline void irqtime_account_idle_ticks(int ticks) { }
 static inline void irqtime_account_process_tick(struct task_struct *p, int user_tick,
 						int nr_ticks) { }
-#endif /* !CONFIG_IRQ_TIME_ACCOUNTING */
 
 /*
  * Use precise platform statistics if available:
@@ -423,12 +275,6 @@ void account_process_tick(struct task_struct *p, int user_tick)
 
 	if (vtime_accounting_enabled_this_cpu())
 		return;
-
-	if (irqtime_enabled()) {
-		irqtime_account_process_tick(p, user_tick, 1);
-		return;
-	}
-
 	cputime = TICK_NSEC;
 	steal = steal_account_process_time(ULONG_MAX);
 
@@ -452,12 +298,6 @@ void account_process_tick(struct task_struct *p, int user_tick)
 void account_idle_ticks(unsigned long ticks)
 {
 	u64 cputime, steal;
-
-	if (irqtime_enabled()) {
-		irqtime_account_idle_ticks(ticks);
-		return;
-	}
-
 	cputime = ticks * TICK_NSEC;
 	steal = steal_account_process_time(ULONG_MAX);
 

@@ -34,7 +34,7 @@ ccflags-y := -fno-common -fno-builtin -fno-stack-protector -ffixed-x18
 ccflags-y += -DDISABLE_BRANCH_PROFILING -DBUILD_VDSO
 
 # -Wmissing-prototypes and -Wmissing-declarations are removed from
-# the CFLAGS to make possible to build the kernel with CONFIG_WERROR enabled.
+# the CFLAGS to make possible to build the kernel with -Werror enabled.
 CC_FLAGS_REMOVE_VDSO := -Os $(CC_FLAGS_SCS) \
 			$(RANDSTRUCT_CFLAGS) $(KSTACK_ERASE_CFLAGS) \
 			$(GCC_PLUGINS_CFLAGS) \

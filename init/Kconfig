@@ -118,21 +118,6 @@ config INIT_ENV_ARG_LIMIT
 	  Maximum of each of the number of arguments and environment
 	  variables passed to init from the kernel command line.
 
-config WERROR
-	bool "Compile the kernel with warnings as errors"
-	default COMPILE_TEST
-	help
-	  A kernel build should not cause any compiler warnings, and this
-	  enables the '-Werror' (for C) and '-Dwarnings' (for Rust) flags
-	  to enforce that rule by default. Certain warnings from other tools
-	  such as the linker may be upgraded to errors with this option as
-	  well.
-
-	  However, if you have a new (or very old) compiler or linker with odd
-	  and unusual warnings, or you have some architecture with problems,
-	  you may need to disable this config option in order to
-	  successfully build the kernel.
-
 	  If in doubt, say Y.
 
 config LOCALVERSION
@@ -282,20 +267,9 @@ config TICK_CPU_ACCOUNTING
 
 endchoice
 
-config IRQ_TIME_ACCOUNTING
-	bool "Fine granularity task level IRQ time accounting"
-	depends on HAVE_IRQ_TIME_ACCOUNTING
-	help
-	  Select this option to enable fine granularity task irq time
-	  accounting. This is done by reading a timestamp on each
-	  transitions between softirq and hardirq state, so there can be a
-	  small performance impact.
-
-	  If in doubt, say N here.
-
 config HAVE_SCHED_AVG_IRQ
 	def_bool y
-	depends on IRQ_TIME_ACCOUNTING || PARAVIRT_TIME_ACCOUNTING
+	depends on PARAVIRT_TIME_ACCOUNTING
 	depends on SMP
 
 config BSD_PROCESS_ACCT
@@ -653,18 +627,6 @@ config PID_NS
 
 endif # NAMESPACES
 
-config SCHED_AUTOGROUP
-	bool "Automatic process group scheduling"
-	select CGROUPS
-	select CGROUP_SCHED
-	select FAIR_GROUP_SCHED
-	help
-	  This option optimizes the scheduler for common desktop workloads by
-	  automatically creating and populating task groups.  This separation
-	  of workloads isolates aggressive CPU burners (like build jobs) from
-	  desktop applications.  Task group autogeneration is currently based
-	  upon task session.
-
 config BLK_DEV_INITRD
 	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
 	help
@@ -737,7 +699,6 @@ config LD_ORPHAN_WARN
 config LD_ORPHAN_WARN_LEVEL
         string
         depends on LD_ORPHAN_WARN
-        default "error" if WERROR
         default "warn"
 
 config SYSCTL
