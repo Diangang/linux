@@ -4445,9 +4445,6 @@ DEFINE_SCHED_CLASS(ext) = {
 
 	.update_curr		= update_curr_scx,
 
-#ifdef CONFIG_UCLAMP_TASK
-	.uclamp_enabled		= 1,
-#endif
 };
 
 static s32 init_dsq(struct scx_dispatch_q *dsq, u64 dsq_id,

@@ -4,13 +4,9 @@
 
 #include <linux/linkage.h>
 
-#ifdef CONFIG_X86_32
-extern void doublefault_init_cpu_tss(void);
-#else
 static inline void doublefault_init_cpu_tss(void)
 {
 }
-#endif
 
 asmlinkage void __noreturn doublefault_shim(void);
 

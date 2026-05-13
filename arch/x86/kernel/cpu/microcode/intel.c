@@ -720,7 +720,7 @@ static __init bool load_builtin_intel_microcode(struct cpio_data *cp)
 	struct firmware fw;
 	char name[30];
 
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return false;
 
 	native_cpuid(&eax, &ebx, &ecx, &edx);

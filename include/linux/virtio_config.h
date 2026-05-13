@@ -347,15 +347,6 @@ void virtio_device_ready(struct virtio_device *dev)
 
 	WARN_ON(status & VIRTIO_CONFIG_S_DRIVER_OK);
 
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	/*
-	 * The virtio_synchronize_cbs() makes sure vring_interrupt()
-	 * will see the driver specific setup if it sees vq->broken
-	 * as false (even if the notifications come before DRIVER_OK).
-	 */
-	virtio_synchronize_cbs(dev);
-	__virtio_unbreak_device(dev);
-#endif
 	/*
 	 * The transport should ensure the visibility of vq->broken
 	 * before setting DRIVER_OK. See the comments for the transport

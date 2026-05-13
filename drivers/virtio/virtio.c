@@ -252,16 +252,6 @@ static int virtio_features_ok(struct virtio_device *dev)
  * */
 void virtio_reset_device(struct virtio_device *dev)
 {
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	/*
-	 * The below virtio_synchronize_cbs() guarantees that any
-	 * interrupt for this line arriving after
-	 * virtio_synchronize_vqs() has completed is guaranteed to see
-	 * vq->broken as true.
-	 */
-	virtio_break_device(dev);
-	virtio_synchronize_cbs(dev);
-#endif
 
 	dev->config->reset(dev);
 }

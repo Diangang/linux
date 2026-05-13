@@ -12,15 +12,6 @@
 #include <asm/time.h>
 #include <asm/setup.h>
 
-#ifdef CONFIG_X86_32
-/*
- * This is a special lock that is owned by the CPU and holds the index
- * register we are working with.  It is required for NMI access to the
- * CMOS/RTC registers.  See arch/x86/include/asm/mc146818rtc.h for details.
- */
-volatile unsigned long cmos_lock;
-EXPORT_SYMBOL(cmos_lock);
-#endif /* CONFIG_X86_32 */
 
 DEFINE_SPINLOCK(rtc_lock);
 EXPORT_SYMBOL(rtc_lock);

@@ -113,9 +113,6 @@ SYM_FUNC_START(__put_user_8)
 	check_range size=8
 	ASM_STAC
 7:	mov %_ASM_AX,(%_ASM_CX)
-#ifdef CONFIG_X86_32
-8:	movl %edx,4(%_ASM_CX)
-#endif
 	xor %ecx,%ecx
 	ASM_CLAC
 	RET
@@ -126,9 +123,6 @@ SYM_FUNC_START(__put_user_nocheck_8)
 	ANNOTATE_NOENDBR
 	ASM_STAC
 9:	mov %_ASM_AX,(%_ASM_CX)
-#ifdef CONFIG_X86_32
-10:	movl %edx,4(%_ASM_CX)
-#endif
 	xor %ecx,%ecx
 	ASM_CLAC
 	RET
@@ -150,7 +144,3 @@ SYM_CODE_END(__put_user_handle_exception)
 	_ASM_EXTABLE_UA(6b, __put_user_handle_exception)
 	_ASM_EXTABLE_UA(7b, __put_user_handle_exception)
 	_ASM_EXTABLE_UA(9b, __put_user_handle_exception)
-#ifdef CONFIG_X86_32
-	_ASM_EXTABLE_UA(8b, __put_user_handle_exception)
-	_ASM_EXTABLE_UA(10b, __put_user_handle_exception)
-#endif

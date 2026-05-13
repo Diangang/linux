@@ -28,32 +28,6 @@ static int has_fpu(void)
 	return fsw == 0 && (fcw & 0x103f) == 0x003f;
 }
 
-#ifdef CONFIG_X86_32
-/*
- * For building the 16-bit code we want to explicitly specify 32-bit
- * push/pop operations, rather than just saying 'pushf' or 'popf' and
- * letting the compiler choose.
- */
-bool has_eflag(unsigned long mask)
-{
-	unsigned long f0, f1;
-
-	asm volatile("pushfl	\n\t"
-		     "pushfl	\n\t"
-		     "pop %0	\n\t"
-		     "mov %0,%1	\n\t"
-		     "xor %2,%1	\n\t"
-		     "push %1	\n\t"
-		     "popfl	\n\t"
-		     "pushfl	\n\t"
-		     "pop %1	\n\t"
-		     "popfl"
-		     : "=&r" (f0), "=&r" (f1)
-		     : "ri" (mask));
-
-	return !!((f0^f1) & mask);
-}
-#endif
 
 void cpuid_count(u32 id, u32 count, u32 *a, u32 *b, u32 *c, u32 *d)
 {

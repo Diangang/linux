@@ -197,13 +197,6 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 			   irq_stats(j)->perf_guest_mediated_pmis);
 	seq_puts(p, " Perf Guest Mediated PMI\n");
 #endif
-#ifdef CONFIG_X86_POSTED_MSI
-	seq_printf(p, "%*s: ", prec, "PMN");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ",
-			   irq_stats(j)->posted_msi_notification_count);
-	seq_puts(p, "  Posted MSI notification event\n");
-#endif
 	return 0;
 }
 
@@ -408,108 +401,6 @@ DEFINE_IDTENTRY_SYSVEC_SIMPLE(sysvec_kvm_posted_intr_nested_ipi)
 }
 #endif
 
-#ifdef CONFIG_X86_POSTED_MSI
-
-/* Posted Interrupt Descriptors for coalesced MSIs to be posted */
-DEFINE_PER_CPU_ALIGNED(struct pi_desc, posted_msi_pi_desc);
-static DEFINE_PER_CPU_CACHE_HOT(bool, posted_msi_handler_active);
-
-void intel_posted_msi_init(void)
-{
-	u32 destination, apic_id;
-
-	this_cpu_write(posted_msi_pi_desc.nv, POSTED_MSI_NOTIFICATION_VECTOR);
-	/*
-	 * APIC destination ID is stored in bit 8:15 while in XAPIC mode.
-	 * VT-d spec. CH 9.11
-	 */
-	apic_id = this_cpu_read(x86_cpu_to_apicid);
-	destination = x2apic_enabled() ? apic_id : apic_id << 8;
-	this_cpu_write(posted_msi_pi_desc.ndst, destination);
-}
-
-void intel_ack_posted_msi_irq(struct irq_data *irqd)
-{
-	irq_move_irq(irqd);
-
-	/*
-	 * Handle the rare case that irq_retrigger() raised the actual
-	 * assigned vector on the target CPU, which means that it was not
-	 * invoked via the posted MSI handler below. In that case APIC EOI
-	 * is required as otherwise the ISR entry becomes stale and lower
-	 * priority interrupts are never going to be delivered after that.
-	 *
-	 * If the posted handler invoked the device interrupt handler then
-	 * the EOI would be premature because it would acknowledge the
-	 * posted vector.
-	 */
-	if (unlikely(!__this_cpu_read(posted_msi_handler_active)))
-		apic_eoi();
-}
-
-static __always_inline bool handle_pending_pir(unsigned long *pir, struct pt_regs *regs)
-{
-	unsigned long pir_copy[NR_PIR_WORDS];
-	int vec = FIRST_EXTERNAL_VECTOR;
-
-	if (!pi_harvest_pir(pir, pir_copy))
-		return false;
-
-	for_each_set_bit_from(vec, pir_copy, FIRST_SYSTEM_VECTOR)
-		call_irq_handler(vec, regs);
-
-	return true;
-}
-
-/*
- * Performance data shows that 3 is good enough to harvest 90+% of the
- * benefit on high interrupt rate workloads.
- */
-#define MAX_POSTED_MSI_COALESCING_LOOP 3
-
-/*
- * For MSIs that are delivered as posted interrupts, the CPU notifications
- * can be coalesced if the MSIs arrive in high frequency bursts.
- */
-DEFINE_IDTENTRY_SYSVEC(sysvec_posted_msi_notification)
-{
-	struct pi_desc *pid = this_cpu_ptr(&posted_msi_pi_desc);
-	struct pt_regs *old_regs = set_irq_regs(regs);
-
-	/* Mark the handler active for intel_ack_posted_msi_irq() */
-	__this_cpu_write(posted_msi_handler_active, true);
-	inc_irq_stat(posted_msi_notification_count);
-	irq_enter();
-
-	/*
-	 * Loop only MAX_POSTED_MSI_COALESCING_LOOP - 1 times here to take
-	 * the final handle_pending_pir() invocation after clearing the
-	 * outstanding notification bit into account.
-	 */
-	for (int i = 1; i < MAX_POSTED_MSI_COALESCING_LOOP; i++) {
-		if (!handle_pending_pir(pid->pir, regs))
-			break;
-	}
-
-	/*
-	 * Clear the outstanding notification bit to rearm the notification
-	 * mechanism.
-	 */
-	pi_clear_on(pid);
-
-	/*
-	 * Clearing the ON bit can race with a notification. Process the
-	 * PIR bits one last time so that handling the new interrupts is
-	 * not delayed until the next notification happens.
-	 */
-	handle_pending_pir(pid->pir, regs);
-
-	apic_eoi();
-	irq_exit();
-	__this_cpu_write(posted_msi_handler_active, false);
-	set_irq_regs(old_regs);
-}
-#endif /* X86_POSTED_MSI */
 
 #ifdef CONFIG_HOTPLUG_CPU
 /* A cpu has been removed from cpu_online_mask.  Reset irq affinities. */

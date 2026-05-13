@@ -616,7 +616,7 @@ int __init efi_config_parse_tables(const efi_config_table_t *config_tables,
 			guid = &tbl64[i].guid;
 			table = tbl64[i].table;
 
-			if (IS_ENABLED(CONFIG_X86_32) &&
+			if (0 &&
 			    tbl64[i].table > U32_MAX) {
 				pr_cont("\n");
 				pr_err("Table located above 4GB, disabling EFI.\n");
@@ -657,7 +657,7 @@ int __init efi_config_parse_tables(const efi_config_table_t *config_tables,
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_X86_32) && efi_enabled(EFI_MEMMAP))
+	if (!0 && efi_enabled(EFI_MEMMAP))
 		efi_memattr_init();
 
 	if (mem_reserve != EFI_INVALID_TABLE_ADDR) {

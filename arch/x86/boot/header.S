@@ -54,15 +54,9 @@ pe_header:
 	.long	IMAGE_NT_SIGNATURE
 
 coff_header:
-#ifdef CONFIG_X86_32
-	.set	image_file_add_flags, IMAGE_FILE_32BIT_MACHINE
-	.set	pe_opt_magic, IMAGE_NT_OPTIONAL_HDR32_MAGIC
-	.word	IMAGE_FILE_MACHINE_I386
-#else
 	.set	image_file_add_flags, 0
 	.set	pe_opt_magic, IMAGE_NT_OPTIONAL_HDR64_MAGIC
 	.word	IMAGE_FILE_MACHINE_AMD64
-#endif
 	.word	section_count			# nr_sections
 	.long	0 				# TimeDateStamp
 	.long	0				# PointerToSymbolTable
@@ -86,16 +80,9 @@ optional_header:
 	.long	setup_size + ZO_efi_pe_entry	# AddressOfEntryPoint
 
 	.long	setup_size			# BaseOfCode
-#ifdef CONFIG_X86_32
-	.long	0				# data
-#endif
 
 extra_header_fields:
-#ifdef CONFIG_X86_32
-	.long	0				# ImageBase
-#else
 	.quad	0				# ImageBase
-#endif
 	.long	salign				# SectionAlignment
 	.long	falign				# FileAlignment
 	.word	0				# MajorOperatingSystemVersion
@@ -112,17 +99,10 @@ extra_header_fields:
 	.long	0				# CheckSum
 	.word	IMAGE_SUBSYSTEM_EFI_APPLICATION	# Subsystem (EFI application)
 	.word	IMAGE_DLLCHARACTERISTICS_NX_COMPAT	# DllCharacteristics
-#ifdef CONFIG_X86_32
-	.long	0				# SizeOfStackReserve
-	.long	0				# SizeOfStackCommit
-	.long	0				# SizeOfHeapReserve
-	.long	0				# SizeOfHeapCommit
-#else
 	.quad	0				# SizeOfStackReserve
 	.quad	0				# SizeOfStackCommit
 	.quad	0				# SizeOfHeapReserve
 	.quad	0				# SizeOfHeapCommit
-#endif
 	.long	0				# LoaderFlags
 	.long	(section_table - .) / 8		# NumberOfRvaAndSizes
 

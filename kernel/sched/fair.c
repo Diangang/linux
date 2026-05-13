@@ -12719,9 +12719,6 @@ DEFINE_SCHED_CLASS(fair) = {
 #endif
 
 
-#ifdef CONFIG_UCLAMP_TASK
-	.uclamp_enabled		= 1,
-#endif
 };
 
 void print_cfs_stats(struct seq_file *m, int cpu)

@@ -113,32 +113,12 @@ static struct resource bss_resource = {
 };
 
 
-#ifdef CONFIG_X86_32
-/* CPU data as detected by the assembly code in head_32.S */
-struct cpuinfo_x86 new_cpu_data;
-
-struct apm_info apm_info;
-EXPORT_SYMBOL(apm_info);
-
-#if defined(CONFIG_X86_SPEEDSTEP_SMI) || \
-	defined(CONFIG_X86_SPEEDSTEP_SMI_MODULE)
-struct ist_info ist_info;
-EXPORT_SYMBOL(ist_info);
-#else
-struct ist_info ist_info;
-#endif
-
-#endif
 
 struct cpuinfo_x86 boot_cpu_data __read_mostly;
 EXPORT_SYMBOL(boot_cpu_data);
 SYM_PIC_ALIAS(boot_cpu_data);
 
-#if !defined(CONFIG_X86_PAE) || defined(CONFIG_X86_64)
 __visible unsigned long mmu_cr4_features __ro_after_init;
-#else
-__visible unsigned long mmu_cr4_features __ro_after_init = X86_CR4_PAE;
-#endif
 
 #ifdef CONFIG_IMA
 static phys_addr_t ima_kexec_buffer_phys;
@@ -273,11 +253,6 @@ void * __init extend_brk(size_t size, size_t align)
 	return ret;
 }
 
-#ifdef CONFIG_X86_32
-static void __init cleanup_highmap(void)
-{
-}
-#endif
 
 static void __init reserve_brk(void)
 {
@@ -533,10 +508,6 @@ static void __init parse_boot_params(void)
 	sysfb_primary_display.screen = boot_params.screen_info;
 #if defined(CONFIG_FIRMWARE_EDID)
 	sysfb_primary_display.edid = boot_params.edid_info;
-#endif
-#ifdef CONFIG_X86_32
-	apm_info.bios = boot_params.apm_bios_info;
-	ist_info = boot_params.ist_info;
 #endif
 	saved_video_mode = boot_params.hdr.vid_mode;
 	bootloader_type = boot_params.hdr.type_of_loader;
@@ -855,7 +826,7 @@ static void __init x86_report_nx(void)
 		printk(KERN_NOTICE "Notice: NX (Execute Disable) protection "
 		       "missing in CPU!\n");
 	} else {
-#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+#if defined(CONFIG_X86_64) || 0
 		printk(KERN_INFO "NX (Execute Disable) protection: active\n");
 #else
 		/* 32bit non-PAE kernel, NX cannot be used */
@@ -880,32 +851,8 @@ static void __init x86_report_nx(void)
 
 void __init setup_arch(char **cmdline_p)
 {
-#ifdef CONFIG_X86_32
-	memcpy(&boot_cpu_data, &new_cpu_data, sizeof(new_cpu_data));
-
-	/*
-	 * copy kernel address range established so far and switch
-	 * to the proper swapper page table
-	 */
-	clone_pgd_range(swapper_pg_dir     + KERNEL_PGD_BOUNDARY,
-			initial_page_table + KERNEL_PGD_BOUNDARY,
-			KERNEL_PGD_PTRS);
-
-	load_cr3(swapper_pg_dir);
-	/*
-	 * Note: Quark X1000 CPUs advertise PGE incorrectly and require
-	 * a cr3 based tlb flush, so the following __flush_tlb_all()
-	 * will not flush anything because the CPU quirk which clears
-	 * X86_FEATURE_PGE has not been invoked yet. Though due to the
-	 * load_cr3() above the TLB has been flushed already. The
-	 * quirk is invoked before subsequent calls to __flush_tlb_all()
-	 * so proper operation is guaranteed.
-	 */
-	__flush_tlb_all();
-#else
 	printk(KERN_INFO "Command line: %s\n", boot_command_line);
 	boot_cpu_data.x86_phys_bits = MAX_PHYSMEM_BITS;
-#endif
 
 #if 0
 #ifdef CONFIG_CMDLINE_OVERRIDE
@@ -1014,15 +961,7 @@ void __init setup_arch(char **cmdline_p)
 
 	e820_add_kernel_range();
 	trim_bios_range();
-#ifdef CONFIG_X86_32
-	if (ppro_with_ram_bug()) {
-		pr_info("Applying PPro RAM bug workaround: punching 256 kB hole at 1.75 GB physical.\n");
-		e820__range_update(0x70000000ULL, SZ_256K, E820_TYPE_RAM, E820_TYPE_RESERVED);
-		e820__update_table(e820_table);
-	}
-#else
 	early_gart_iommu_check();
-#endif
 
 	/*
 	 * partially used pages are not usable - thus
@@ -1043,10 +982,6 @@ void __init setup_arch(char **cmdline_p)
 	 */
 	kernel_randomize_memory();
 
-#ifdef CONFIG_X86_32
-	/* max_low_pfn get updated here */
-	find_low_pfn_range();
-#else
 	check_x2apic();
 
 	/* How many end-of-memory variables you have, grandma! */
@@ -1055,7 +990,6 @@ void __init setup_arch(char **cmdline_p)
 		max_low_pfn = e820__end_of_low_ram_pfn();
 	else
 		max_low_pfn = max_pfn;
-#endif
 
 	/* Find and reserve MPTABLE area */
 	x86_init.mpparse.find_mptable();
@@ -1096,10 +1030,6 @@ void __init setup_arch(char **cmdline_p)
 	setup_bios_corruption_check();
 #endif
 
-#ifdef CONFIG_X86_32
-	printk(KERN_DEBUG "initial memory mapped: [mem 0x00000000-%#010lx]\n",
-			(max_pfn_mapped<<PAGE_SHIFT) - 1);
-#endif
 
 	/*
 	 * Find free memory for the real mode trampoline and place it there. If
@@ -1240,12 +1170,6 @@ void __init setup_arch(char **cmdline_p)
 
 	e820__setup_pci_gap();
 
-#ifdef CONFIG_VT
-#if defined(CONFIG_VGA_CONSOLE)
-	if (!efi_enabled(EFI_BOOT) || (efi_mem_type(0xa0000) != EFI_CONVENTIONAL_MEMORY))
-		vgacon_register_screen(&sysfb_primary_display.screen);
-#endif
-#endif
 	x86_init.oem.banner();
 
 	x86_init.timers.wallclock_init();
@@ -1270,22 +1194,6 @@ void __init setup_arch(char **cmdline_p)
 	unwind_init();
 }
 
-#ifdef CONFIG_X86_32
-
-static struct resource video_ram_resource = {
-	.name	= "Video RAM area",
-	.start	= 0xa0000,
-	.end	= 0xbffff,
-	.flags	= IORESOURCE_BUSY | IORESOURCE_MEM
-};
-
-void __init i386_reserve_resources(void)
-{
-	request_resource(&iomem_resource, &video_ram_resource);
-	reserve_standard_io_resources();
-}
-
-#endif /* CONFIG_X86_32 */
 
 static struct notifier_block kernel_offset_notifier = {
 	.notifier_call = dump_kernel_offset

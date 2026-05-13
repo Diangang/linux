@@ -10,21 +10,6 @@
 
 #include "../string.c"
 
-#ifdef CONFIG_X86_32
-static void *____memcpy(void *dest, const void *src, size_t n)
-{
-	int d0, d1, d2;
-	asm volatile(
-		"rep movsl\n\t"
-		"movl %4,%%ecx\n\t"
-		"rep movsb"
-		: "=&c" (d0), "=&D" (d1), "=&S" (d2)
-		: "0" (n >> 2), "g" (n & 3), "1" (dest), "2" (src)
-		: "memory");
-
-	return dest;
-}
-#else
 static void *____memcpy(void *dest, const void *src, size_t n)
 {
 	long d0, d1, d2;
@@ -38,7 +23,6 @@ static void *____memcpy(void *dest, const void *src, size_t n)
 
 	return dest;
 }
-#endif
 
 void *memset(void *s, int c, size_t n)
 {

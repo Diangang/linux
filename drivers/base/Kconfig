@@ -4,16 +4,6 @@ menu "Generic Driver Options"
 config AUXILIARY_BUS
 	bool
 
-config UEVENT_HELPER_PATH
-	string "path to uevent helper"
-	depends on UEVENT_HELPER
-	default ""
-	help
-	  To disable user space helper program execution at by default
-	  specify an empty string here. This setting can still be altered
-	  via /proc/sys/kernel/hotplug or via /sys/kernel/uevent_helper
-	  later at runtime.
-
 config DEVTMPFS
 	bool "Maintain a devtmpfs filesystem to mount at /dev"
 	help
@@ -86,12 +76,6 @@ config PREVENT_FIRMWARE_BUILD
 	    o CONFIG_SCSI_AIC79XX through CONFIG_AIC79XX_BUILD_FIRMWARE
 
 source "drivers/base/firmware_loader/Kconfig"
-
-config WANT_DEV_COREDUMP
-	bool
-	help
-	  Drivers should "select" this option if they desire to use the
-	  device coredump mechanism.
 
 config ALLOW_DEV_COREDUMP
 	bool "Allow device coredump" if EXPERT

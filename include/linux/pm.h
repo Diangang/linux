@@ -24,10 +24,6 @@
 extern void (*pm_power_off)(void);
 
 struct device; /* we have a circular dep with device.h */
-#ifdef CONFIG_VT_CONSOLE_SLEEP
-extern int pm_vt_switch_required(struct device *dev, bool required);
-extern void pm_vt_switch_unregister(struct device *dev);
-#else
 static inline int pm_vt_switch_required(struct device *dev, bool required)
 {
 	return 0;
@@ -35,7 +31,6 @@ static inline int pm_vt_switch_required(struct device *dev, bool required)
 static inline void pm_vt_switch_unregister(struct device *dev)
 {
 }
-#endif /* CONFIG_VT_CONSOLE_SLEEP */
 
 static inline bool cxl_mem_active(void)
 {

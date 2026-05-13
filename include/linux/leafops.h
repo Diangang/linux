@@ -567,33 +567,12 @@ static inline bool pte_is_uffd_marker(pte_t pte)
 	return false;
 }
 
-#if defined(CONFIG_ZONE_DEVICE) && defined(CONFIG_ARCH_ENABLE_THP_MIGRATION)
-
-/**
- * pmd_is_device_private_entry() - Check if PMD contains a device private swap
- * entry.
- * @pmd: The PMD to check.
- *
- * Returns true if the PMD contains a swap entry that represents a device private
- * page mapping. This is used for zone device private pages that have been
- * swapped out but still need special handling during various memory management
- * operations.
- *
- * Return: true if PMD contains device private entry, false otherwise
- */
-static inline bool pmd_is_device_private_entry(pmd_t pmd)
-{
-	return softleaf_is_device_private(softleaf_from_pmd(pmd));
-}
-
-#else  /* CONFIG_ZONE_DEVICE && CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
 static inline bool pmd_is_device_private_entry(pmd_t pmd)
 {
 	return false;
 }
 
-#endif /* CONFIG_ZONE_DEVICE && CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
 /**
  * pmd_is_migration_entry() - Does this PMD entry encode a migration entry?

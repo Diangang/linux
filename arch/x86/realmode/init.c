@@ -20,9 +20,6 @@ pgd_t trampoline_pgd_entry;
 
 void load_trampoline_pgtable(void)
 {
-#ifdef CONFIG_X86_32
-	load_cr3(initial_page_table);
-#else
 	/*
 	 * This function is called before exiting to real-mode and that will
 	 * fail with CR4.PCIDE still set.
@@ -31,7 +28,6 @@ void load_trampoline_pgtable(void)
 		cr4_clear_bits(X86_CR4_PCIDE);
 
 	write_cr3(real_mode_header->trampoline_pgd);
-#endif
 
 	/*
 	 * The CR3 write above will not flush global TLB entries.
@@ -139,11 +135,6 @@ static void __init setup_real_mode(void)
 	trampoline_header = (struct trampoline_header *)
 		__va(real_mode_header->trampoline_header);
 
-#ifdef CONFIG_X86_32
-	trampoline_header->start = __pa_symbol(startup_32_smp);
-	trampoline_header->gdt_limit = __BOOT_DS + 7;
-	trampoline_header->gdt_base = __pa_symbol(boot_gdt);
-#else
 	/*
 	 * Some AMD processors will #GP(0) if EFER.LMA is set in WRMSR
 	 * so we need to mask it out.
@@ -172,7 +163,6 @@ static void __init setup_real_mode(void)
 	 */
 	for (i = pgd_index(__PAGE_OFFSET); i < PTRS_PER_PGD; i++)
 		trampoline_pgd[i] = init_top_pgt[i].pgd;
-#endif
 
 	sme_sev_setup_real_mode(trampoline_header);
 }

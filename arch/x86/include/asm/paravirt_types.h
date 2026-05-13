@@ -129,24 +129,6 @@ extern struct paravirt_patch_template pv_ops;
  * means that all uses must be wrapped in inline functions.  This also
  * makes sure the incoming and outgoing types are always correct.
  */
-#ifdef CONFIG_X86_32
-#define PVOP_CALL_ARGS							\
-	unsigned long __eax = __eax, __edx = __edx, __ecx = __ecx;
-
-#define PVOP_CALL_ARG1(x)		"a" ((unsigned long)(x))
-#define PVOP_CALL_ARG2(x)		"d" ((unsigned long)(x))
-#define PVOP_CALL_ARG3(x)		"c" ((unsigned long)(x))
-
-#define PVOP_VCALL_CLOBBERS		"=a" (__eax), "=d" (__edx),	\
-					"=c" (__ecx)
-#define PVOP_CALL_CLOBBERS		PVOP_VCALL_CLOBBERS
-
-#define PVOP_VCALLEE_CLOBBERS		"=a" (__eax), "=d" (__edx)
-#define PVOP_CALLEE_CLOBBERS		PVOP_VCALLEE_CLOBBERS
-
-#define EXTRA_CLOBBERS
-#define VEXTRA_CLOBBERS
-#else  /* CONFIG_X86_64 */
 /* [re]ax isn't an arg, but the return val */
 #define PVOP_CALL_ARGS						\
 	unsigned long __edi = __edi, __esi = __esi,		\
@@ -177,7 +159,6 @@ extern struct paravirt_patch_template pv_ops;
 
 #define EXTRA_CLOBBERS	 , "r8", "r9", "r10", "r11"
 #define VEXTRA_CLOBBERS	 , "rax", "r8", "r9", "r10", "r11"
-#endif	/* CONFIG_X86_32 */
 
 #define PVOP_RETVAL(rettype)						\
 	({	unsigned long __mask = ~0UL;				\
@@ -326,11 +307,6 @@ extern struct paravirt_patch_template pv_ops;
 
 #define ALT_NOT_XEN	ALT_NOT(X86_FEATURE_XENPV)
 
-#ifdef CONFIG_X86_32
-/* save and restore all caller-save registers, except return value */
-#define PV_SAVE_ALL_CALLER_REGS		"pushl %ecx;"
-#define PV_RESTORE_ALL_CALLER_REGS	"popl  %ecx;"
-#else
 /* save and restore all caller-save registers, except return value */
 #define PV_SAVE_ALL_CALLER_REGS						\
 	"push %rcx;"							\
@@ -350,7 +326,6 @@ extern struct paravirt_patch_template pv_ops;
 	"pop %rsi;"							\
 	"pop %rdx;"							\
 	"pop %rcx;"
-#endif
 
 /*
  * Generate a thunk around a function which saves all caller-save

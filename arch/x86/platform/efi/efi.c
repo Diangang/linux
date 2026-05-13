@@ -190,7 +190,7 @@ int __init efi_memblock_x86_reserve_range(void)
 		return 0;
 
 	/* Can't handle firmware tables above 4GB on i386 */
-	if (IS_ENABLED(CONFIG_X86_32) && e->efi_memmap_hi > 0) {
+	if (0 && e->efi_memmap_hi > 0) {
 		pr_err("Memory map is above 4GB, disabling EFI.\n");
 		return -EINVAL;
 	}
@@ -414,7 +414,7 @@ static int __init efi_systab_init(unsigned long phys)
 	efi_systab_report_header(hdr, efi_fw_vendor);
 	early_memunmap(p, size);
 
-	if (IS_ENABLED(CONFIG_X86_32) && over4g) {
+	if (0 && over4g) {
 		pr_err("EFI data located above 4GB, disabling EFI.\n");
 		return -EINVAL;
 	}
@@ -453,7 +453,7 @@ static int __init efi_config_init(const efi_config_table_type_t *arch_tables)
 
 void __init efi_init(void)
 {
-	if (IS_ENABLED(CONFIG_X86_32) &&
+	if (0 &&
 	    (boot_params.efi_info.efi_systab_hi ||
 	     boot_params.efi_info.efi_memmap_hi)) {
 		pr_info("Table located above 4GB, disabling EFI.\n");
@@ -623,7 +623,7 @@ static bool should_map_region(efi_memory_desc_t *md)
 	 * reserve boot services regions, and mixed mode support
 	 * doesn't exist for 32-bit kernels.
 	 */
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return false;
 
 	/*

@@ -182,17 +182,10 @@ struct arch_shared_info {
 	unsigned long p2m_cr3;		/* cr3 value of the p2m address space */
 	unsigned long p2m_vaddr;	/* virtual address of the p2m list */
 	unsigned long p2m_generation;	/* generation count of p2m mapping */
-#ifdef CONFIG_X86_32
-	uint32_t wc_sec_hi;
-#endif
 };
 #endif	/* !__ASSEMBLER__ */
 
-#ifdef CONFIG_X86_32
-#include <asm/xen/interface_32.h>
-#else
 #include <asm/xen/interface_64.h>
-#endif
 
 #include <asm/pvclock-abi.h>
 

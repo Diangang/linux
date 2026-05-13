@@ -24,7 +24,7 @@ struct unwind_state {
 	bool signal, full_regs;
 	unsigned long sp, bp, ip;
 	struct pt_regs *regs, *prev_regs;
-#elif defined(CONFIG_UNWINDER_FRAME_POINTER)
+#elif 0
 	bool got_irq;
 	unsigned long *bp, *orig_sp, ip;
 	/*
@@ -64,7 +64,7 @@ void unwind_start(struct unwind_state *state, struct task_struct *task,
 	__unwind_start(state, task, regs, first_frame);
 }
 
-#if defined(CONFIG_UNWINDER_ORC) || defined(CONFIG_UNWINDER_FRAME_POINTER)
+#if defined(CONFIG_UNWINDER_ORC) || 0
 /*
  * If 'partial' returns true, only the iret frame registers are valid.
  */

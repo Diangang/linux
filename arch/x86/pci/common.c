@@ -708,7 +708,7 @@ int pci_ext_cfg_avail(void)
 		return 0;
 }
 
-#if IS_ENABLED(CONFIG_VMD)
+#if 0
 struct pci_dev *pci_real_dma_dev(struct pci_dev *dev)
 {
 	if (is_vmd(dev->bus))

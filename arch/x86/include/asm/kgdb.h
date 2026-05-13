@@ -23,29 +23,6 @@
  *  Linux's register image is defined by struct pt_regs in ptrace.h.
  *  Just why GDB uses a different order is a historical mystery.
  */
-#ifdef CONFIG_X86_32
-enum regnames {
-	GDB_AX,			/* 0 */
-	GDB_CX,			/* 1 */
-	GDB_DX,			/* 2 */
-	GDB_BX,			/* 3 */
-	GDB_SP,			/* 4 */
-	GDB_BP,			/* 5 */
-	GDB_SI,			/* 6 */
-	GDB_DI,			/* 7 */
-	GDB_PC,			/* 8 also known as eip */
-	GDB_PS,			/* 9 also known as eflags */
-	GDB_CS,			/* 10 */
-	GDB_SS,			/* 11 */
-	GDB_DS,			/* 12 */
-	GDB_ES,			/* 13 */
-	GDB_FS,			/* 14 */
-	GDB_GS,			/* 15 */
-};
-#define GDB_ORIG_AX		41
-#define DBG_MAX_REG_NUM		16
-#define NUMREGBYTES		((GDB_GS+1)*4)
-#else /* ! CONFIG_X86_32 */
 enum regnames {
 	GDB_AX,			/* 0 */
 	GDB_BX,			/* 1 */
@@ -76,7 +53,6 @@ enum regnames {
 #define DBG_MAX_REG_NUM		24
 /* 17 64 bit regs and 5 32 bit regs */
 #define NUMREGBYTES		((17 * 8) + (5 * 4))
-#endif /* ! CONFIG_X86_32 */
 
 static inline void arch_kgdb_breakpoint(void)
 {

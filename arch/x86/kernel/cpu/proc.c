@@ -30,25 +30,6 @@ static void show_cpuinfo_core(struct seq_file *m, struct cpuinfo_x86 *c,
 #endif
 }
 
-#ifdef CONFIG_X86_32
-static void show_cpuinfo_misc(struct seq_file *m, struct cpuinfo_x86 *c)
-{
-	seq_printf(m,
-		   "fdiv_bug\t: %s\n"
-		   "f00f_bug\t: %s\n"
-		   "coma_bug\t: %s\n"
-		   "fpu\t\t: %s\n"
-		   "fpu_exception\t: %s\n"
-		   "cpuid level\t: %d\n"
-		   "wp\t\t: yes\n",
-		   str_yes_no(boot_cpu_has_bug(X86_BUG_FDIV)),
-		   str_yes_no(boot_cpu_has_bug(X86_BUG_F00F)),
-		   str_yes_no(boot_cpu_has_bug(X86_BUG_COMA)),
-		   str_yes_no(boot_cpu_has(X86_FEATURE_FPU)),
-		   str_yes_no(boot_cpu_has(X86_FEATURE_FPU)),
-		   c->cpuid_level);
-}
-#else
 static void show_cpuinfo_misc(struct seq_file *m, struct cpuinfo_x86 *c)
 {
 	seq_printf(m,
@@ -58,7 +39,6 @@ static void show_cpuinfo_misc(struct seq_file *m, struct cpuinfo_x86 *c)
 		   "wp\t\t: yes\n",
 		   c->cpuid_level);
 }
-#endif
 
 static int show_cpuinfo(struct seq_file *m, void *v)
 {
@@ -180,24 +160,3 @@ const struct seq_operations cpuinfo_op = {
 	.stop	= c_stop,
 	.show	= show_cpuinfo,
 };
-
-#ifdef CONFIG_X86_USER_SHADOW_STACK
-static void dump_x86_features(struct seq_file *m, unsigned long features)
-{
-	if (features & ARCH_SHSTK_SHSTK)
-		seq_puts(m, "shstk ");
-	if (features & ARCH_SHSTK_WRSS)
-		seq_puts(m, "wrss ");
-}
-
-void arch_proc_pid_thread_features(struct seq_file *m, struct task_struct *task)
-{
-	seq_puts(m, "x86_Thread_features:\t");
-	dump_x86_features(m, task->thread.features);
-	seq_putc(m, '\n');
-
-	seq_puts(m, "x86_Thread_features_locked:\t");
-	dump_x86_features(m, task->thread.features_locked);
-	seq_putc(m, '\n');
-}
-#endif /* CONFIG_X86_USER_SHADOW_STACK */

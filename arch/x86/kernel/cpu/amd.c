@@ -81,200 +81,17 @@ static inline int wrmsrq_amd_safe(unsigned msr, u64 val)
  *	performance at the same time..
  */
 
-#ifdef CONFIG_X86_32
-extern __visible void vide(void);
-__asm__(".text\n"
-	".globl vide\n"
-	".type vide, @function\n"
-	".align 4\n"
-	"vide: ret\n");
-#endif
 
 static void init_amd_k5(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-/*
- * General Systems BIOSen alias the cpu frequency registers
- * of the Elan at 0x000df000. Unfortunately, one of the Linux
- * drivers subsequently pokes it, and changes the CPU speed.
- * Workaround : Remove the unneeded alias.
- */
-#define CBAR		(0xfffc) /* Configuration Base Address  (32-bit) */
-#define CBAR_ENB	(0x80000000)
-#define CBAR_KEY	(0X000000CB)
-	if (c->x86_model == 9 || c->x86_model == 10) {
-		if (inl(CBAR) & CBAR_ENB)
-			outl(0 | CBAR_KEY, CBAR);
-	}
-#endif
 }
 
 static void init_amd_k6(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-	u32 l, h;
-	int mbytes = get_num_physpages() >> (20-PAGE_SHIFT);
-
-	if (c->x86_model < 6) {
-		/* Based on AMD doc 20734R - June 2000 */
-		if (c->x86_model == 0) {
-			clear_cpu_cap(c, X86_FEATURE_APIC);
-			set_cpu_cap(c, X86_FEATURE_PGE);
-		}
-		return;
-	}
-
-	if (c->x86_model == 6 && c->x86_stepping == 1) {
-		const int K6_BUG_LOOP = 1000000;
-		int n;
-		void (*f_vide)(void);
-		u64 d, d2;
-
-		pr_info("AMD K6 stepping B detected - ");
-
-		/*
-		 * It looks like AMD fixed the 2.6.2 bug and improved indirect
-		 * calls at the same time.
-		 */
-
-		n = K6_BUG_LOOP;
-		f_vide = vide;
-		OPTIMIZER_HIDE_VAR(f_vide);
-		d = rdtsc();
-		while (n--)
-			f_vide();
-		d2 = rdtsc();
-		d = d2-d;
-
-		if (d > 20*K6_BUG_LOOP)
-			pr_cont("system stability may be impaired when more than 32 MB are used.\n");
-		else
-			pr_cont("probably OK (after B9730xxxx).\n");
-	}
-
-	/* K6 with old style WHCR */
-	if (c->x86_model < 8 ||
-	   (c->x86_model == 8 && c->x86_stepping < 8)) {
-		/* We can only write allocate on the low 508Mb */
-		if (mbytes > 508)
-			mbytes = 508;
-
-		rdmsr(MSR_K6_WHCR, l, h);
-		if ((l&0x0000FFFF) == 0) {
-			unsigned long flags;
-			l = (1<<0)|((mbytes/4)<<1);
-			local_irq_save(flags);
-			wbinvd();
-			wrmsr(MSR_K6_WHCR, l, h);
-			local_irq_restore(flags);
-			pr_info("Enabling old style K6 write allocation for %d Mb\n",
-				mbytes);
-		}
-		return;
-	}
-
-	if ((c->x86_model == 8 && c->x86_stepping > 7) ||
-	     c->x86_model == 9 || c->x86_model == 13) {
-		/* The more serious chips .. */
-
-		if (mbytes > 4092)
-			mbytes = 4092;
-
-		rdmsr(MSR_K6_WHCR, l, h);
-		if ((l&0xFFFF0000) == 0) {
-			unsigned long flags;
-			l = ((mbytes>>2)<<22)|(1<<16);
-			local_irq_save(flags);
-			wbinvd();
-			wrmsr(MSR_K6_WHCR, l, h);
-			local_irq_restore(flags);
-			pr_info("Enabling new style K6 write allocation for %d Mb\n",
-				mbytes);
-		}
-
-		return;
-	}
-
-	if (c->x86_model == 10) {
-		/* AMD Geode LX is model 10 */
-		/* placeholder for any needed mods */
-		return;
-	}
-#endif
 }
 
 static void init_amd_k7(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-	u32 l, h;
-
-	/*
-	 * Bit 15 of Athlon specific MSR 15, needs to be 0
-	 * to enable SSE on Palomino/Morgan/Barton CPU's.
-	 * If the BIOS didn't enable it already, enable it here.
-	 */
-	if (c->x86_model >= 6 && c->x86_model <= 10) {
-		if (!cpu_has(c, X86_FEATURE_XMM)) {
-			pr_info("Enabling disabled K7/SSE Support.\n");
-			msr_clear_bit(MSR_K7_HWCR, 15);
-			set_cpu_cap(c, X86_FEATURE_XMM);
-		}
-	}
-
-	/*
-	 * It's been determined by AMD that Athlons since model 8 stepping 1
-	 * are more robust with CLK_CTL set to 200xxxxx instead of 600xxxxx
-	 * As per AMD technical note 27212 0.2
-	 */
-	if ((c->x86_model == 8 && c->x86_stepping >= 1) || (c->x86_model > 8)) {
-		rdmsr(MSR_K7_CLK_CTL, l, h);
-		if ((l & 0xfff00000) != 0x20000000) {
-			pr_info("CPU: CLK_CTL MSR was %x. Reprogramming to %x\n",
-				l, ((l & 0x000fffff)|0x20000000));
-			wrmsr(MSR_K7_CLK_CTL, (l & 0x000fffff)|0x20000000, h);
-		}
-	}
-
-	/* calling is from identify_secondary_cpu() ? */
-	if (!c->cpu_index)
-		return;
-
-	/*
-	 * Certain Athlons might work (for various values of 'work') in SMP
-	 * but they are not certified as MP capable.
-	 */
-	/* Athlon 660/661 is valid. */
-	if ((c->x86_model == 6) && ((c->x86_stepping == 0) ||
-	    (c->x86_stepping == 1)))
-		return;
-
-	/* Duron 670 is valid */
-	if ((c->x86_model == 7) && (c->x86_stepping == 0))
-		return;
-
-	/*
-	 * Athlon 662, Duron 671, and Athlon >model 7 have capability
-	 * bit. It's worth noting that the A5 stepping (662) of some
-	 * Athlon XP's have the MP bit set.
-	 * See http://www.heise.de/newsticker/data/jow-18.10.01-000 for
-	 * more.
-	 */
-	if (((c->x86_model == 6) && (c->x86_stepping >= 2)) ||
-	    ((c->x86_model == 7) && (c->x86_stepping >= 1)) ||
-	     (c->x86_model > 7))
-		if (cpu_has(c, X86_FEATURE_MP))
-			return;
-
-	/* If we get here, not a certified SMP capable AMD system. */
-
-	/*
-	 * Don't taint if we are running SMP kernel on a single non-MP
-	 * approved Athlon
-	 */
-	WARN_ONCE(1, "WARNING: This combination of AMD"
-		" processors is not suitable for SMP.\n");
-	add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_NOW_UNRELIABLE);
-#endif
 }
 
 #ifdef CONFIG_NUMA
@@ -590,7 +407,7 @@ static void early_detect_mem_encrypt(struct cpuinfo_x86 *c)
 		 */
 		c->x86_phys_bits -= (cpuid_ebx(0x8000001f) >> 6) & 0x3f;
 
-		if (IS_ENABLED(CONFIG_X86_32))
+		if (0)
 			goto clear_all;
 
 		if (!sme_me_mask)
@@ -1165,22 +982,6 @@ static void init_amd(struct cpuinfo_x86 *c)
 		msr_set_bit(MSR_EFER, _EFER_TCE);
 }
 
-#ifdef CONFIG_X86_32
-static unsigned int amd_size_cache(struct cpuinfo_x86 *c, unsigned int size)
-{
-	/* AMD errata T13 (order #21922) */
-	if (c->x86 == 6) {
-		/* Duron Rev A0 */
-		if (c->x86_model == 3 && c->x86_stepping == 0)
-			size = 64;
-		/* Tbird rev A1/A2 */
-		if (c->x86_model == 4 &&
-			(c->x86_stepping == 0 || c->x86_stepping == 1))
-			size = 256;
-	}
-	return size;
-}
-#endif
 
 static void cpu_detect_tlb_amd(struct cpuinfo_x86 *c)
 {
@@ -1238,21 +1039,6 @@ static void cpu_detect_tlb_amd(struct cpuinfo_x86 *c)
 static const struct cpu_dev amd_cpu_dev = {
 	.c_vendor	= "AMD",
 	.c_ident	= { "AuthenticAMD" },
-#ifdef CONFIG_X86_32
-	.legacy_models = {
-		{ .family = 4, .model_names =
-		  {
-			  [3] = "486 DX/2",
-			  [7] = "486 DX/2-WB",
-			  [8] = "486 DX/4",
-			  [9] = "486 DX/4-WB",
-			  [14] = "Am5x86-WT",
-			  [15] = "Am5x86-WB"
-		  }
-		},
-	},
-	.legacy_cache_size = amd_size_cache,
-#endif
 	.c_early_init   = early_init_amd,
 	.c_detect_tlb	= cpu_detect_tlb_amd,
 	.c_bsp_init	= bsp_init_amd,

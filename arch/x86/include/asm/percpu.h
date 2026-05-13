@@ -321,68 +321,6 @@ do {									\
 	likely(success);						\
 })
 
-#if defined(CONFIG_X86_32) && !defined(CONFIG_UML)
-
-#define percpu_cmpxchg64_op(size, qual, _var, _oval, _nval)		\
-({									\
-	union {								\
-		u64 var;						\
-		struct {						\
-			u32 low, high;					\
-		};							\
-	} old__, new__;							\
-									\
-	old__.var = _oval;						\
-	new__.var = _nval;						\
-									\
-	asm_inline qual (						\
-		ALTERNATIVE("call this_cpu_cmpxchg8b_emu",		\
-			    "cmpxchg8b " __percpu_arg([var]), X86_FEATURE_CX8) \
-		: ALT_OUTPUT_SP([var] "+m" (__my_cpu_var(_var)),	\
-				"+a" (old__.low), "+d" (old__.high))	\
-		: "b" (new__.low), "c" (new__.high),			\
-		  "S" (&(_var))						\
-		: "memory");						\
-									\
-	old__.var;							\
-})
-
-#define raw_cpu_cmpxchg64(pcp, oval, nval)		percpu_cmpxchg64_op(8,         , pcp, oval, nval)
-#define this_cpu_cmpxchg64(pcp, oval, nval)		percpu_cmpxchg64_op(8, volatile, pcp, oval, nval)
-
-#define percpu_try_cmpxchg64_op(size, qual, _var, _ovalp, _nval)	\
-({									\
-	bool success;							\
-	u64 *_oval = (u64 *)(_ovalp);					\
-	union {								\
-		u64 var;						\
-		struct {						\
-			u32 low, high;					\
-		};							\
-	} old__, new__;							\
-									\
-	old__.var = *_oval;						\
-	new__.var = _nval;						\
-									\
-	asm_inline qual (						\
-		ALTERNATIVE("call this_cpu_cmpxchg8b_emu",		\
-			    "cmpxchg8b " __percpu_arg([var]), X86_FEATURE_CX8) \
-		: ALT_OUTPUT_SP("=@ccz" (success),			\
-				[var] "+m" (__my_cpu_var(_var)),	\
-				"+a" (old__.low), "+d" (old__.high))	\
-		: "b" (new__.low), "c" (new__.high),			\
-		  "S" (&(_var))						\
-		: "memory");						\
-	if (unlikely(!success))						\
-		*_oval = old__.var;					\
-									\
-	likely(success);						\
-})
-
-#define raw_cpu_try_cmpxchg64(pcp, ovalp, nval)		percpu_try_cmpxchg64_op(8,         , pcp, ovalp, nval)
-#define this_cpu_try_cmpxchg64(pcp, ovalp, nval)	percpu_try_cmpxchg64_op(8, volatile, pcp, ovalp, nval)
-
-#endif /* defined(CONFIG_X86_32) && !defined(CONFIG_UML) */
 
 #ifdef CONFIG_X86_64
 #define raw_cpu_cmpxchg64(pcp, oval, nval)		percpu_cmpxchg_op(8,         , pcp, oval, nval);

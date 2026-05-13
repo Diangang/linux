@@ -38,7 +38,7 @@ static void __init unmap_segment(pgd_t *pg_dir, u64 va_offset, void *start,
 
 static void __init map_kernel(u64 kaslr_offset, u64 va_offset, int root_level)
 {
-	bool enable_scs = IS_ENABLED(CONFIG_UNWIND_PATCH_PAC_INTO_SCS);
+	bool enable_scs = 0;
 	bool twopass = IS_ENABLED(CONFIG_RELOCATABLE);
 	phys_addr_t pgdp = (phys_addr_t)init_pg_dir + PAGE_SIZE;
 	pgprot_t text_prot = PAGE_KERNEL_ROX;

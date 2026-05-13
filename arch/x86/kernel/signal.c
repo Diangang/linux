@@ -51,12 +51,12 @@ static inline int is_ia32_compat_frame(struct ksignal *ksig)
 
 static inline int is_ia32_frame(struct ksignal *ksig)
 {
-	return IS_ENABLED(CONFIG_X86_32) || is_ia32_compat_frame(ksig);
+	return 0 || is_ia32_compat_frame(ksig);
 }
 
 static inline int is_x32_frame(struct ksignal *ksig)
 {
-	return IS_ENABLED(CONFIG_X86_X32_ABI) &&
+	return 0 &&
 		ksig->ka.sa.sa_flags & SA_X32_ABI;
 }
 
@@ -178,7 +178,7 @@ get_sigframe(struct ksignal *ksig, struct pt_regs *regs, size_t frame_size,
  * -- the largest size. It means the size for 64-bit apps is a bit more
  * than needed, but this keeps the code simple.
  */
-#if defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION)
+#if 0 || defined(CONFIG_IA32_EMULATION)
 # define MAX_FRAME_SIGINFO_UCTXT_SIZE	sizeof(struct sigframe_ia32)
 #else
 # define MAX_FRAME_SIGINFO_UCTXT_SIZE	sizeof(struct rt_sigframe)
@@ -318,11 +318,7 @@ static inline unsigned long get_nr_restart_syscall(const struct pt_regs *regs)
 	if (current->restart_block.arch_data & TS_COMPAT)
 		return __NR_ia32_restart_syscall;
 #endif
-#ifdef CONFIG_X86_X32_ABI
-	return __NR_restart_syscall | (regs->orig_ax & __X32_SYSCALL_BIT);
-#else
 	return __NR_restart_syscall;
-#endif
 }
 
 /*

@@ -7,19 +7,13 @@
 #include <asm/ucontext.h>
 #include <linux/compat.h>
 
-#ifdef CONFIG_X86_32
-#define sigframe_ia32		sigframe
-#define rt_sigframe_ia32	rt_sigframe
-#define ucontext_ia32		ucontext
-#else /* !CONFIG_X86_32 */
 
 #ifdef CONFIG_IA32_EMULATION
 #include <asm/ia32.h>
 #endif /* CONFIG_IA32_EMULATION */
 
-#endif /* CONFIG_X86_32 */
 
-#if defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION)
+#if 0 || defined(CONFIG_IA32_EMULATION)
 struct sigframe_ia32 {
 	u32 pretcode;
 	int sig;
@@ -52,7 +46,7 @@ struct rt_sigframe_ia32 {
 	char retcode[8];
 	/* fp state follows here */
 };
-#endif /* defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION) */
+#endif /* 0 || defined(CONFIG_IA32_EMULATION) */
 
 #ifdef CONFIG_X86_64
 
@@ -63,25 +57,6 @@ struct rt_sigframe {
 	/* fp state follows here */
 };
 
-#ifdef CONFIG_X86_X32_ABI
-
-struct ucontext_x32 {
-	unsigned int	  uc_flags;
-	unsigned int 	  uc_link;
-	compat_stack_t	  uc_stack;
-	unsigned int	  uc__pad0;     /* needed for alignment */
-	struct sigcontext uc_mcontext;  /* the 64-bit sigcontext type */
-	compat_sigset_t	  uc_sigmask;	/* mask last for extensibility */
-};
-
-struct rt_sigframe_x32 {
-	u64 pretcode;
-	struct ucontext_x32 uc;
-	compat_siginfo_t info;
-	/* fp state follows here */
-};
-
-#endif /* CONFIG_X86_X32_ABI */
 
 #endif /* CONFIG_X86_64 */
 

@@ -1991,13 +1991,6 @@ static __init int amd_ibs_init(void)
 
 	perf_ibs_pm_init();
 
-#ifdef CONFIG_X86_32
-	/*
-	 * IBS_CAPS_BIT63_FILTER is used for exclude_kernel/user filtering,
-	 * which obviously won't work for 32 bit kernel.
-	 */
-	caps &= ~IBS_CAPS_BIT63_FILTER;
-#endif
 
 	ibs_caps = caps;
 	/* make ibs_caps visible to other cpus: */

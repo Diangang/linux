@@ -40,10 +40,6 @@ static __always_inline void prevent_single_step_upon_eretu(struct pt_regs *regs)
 	 * is being single-stepped, do not clear the software event flag in the
 	 * augmented SS, thus a debugger won't skip over the following instruction.
 	 */
-#ifdef CONFIG_X86_FRED
-	if (!(regs->flags & X86_EFLAGS_TF))
-		regs->fred_ss.swevent = 0;
-#endif
 }
 
 #endif /* _ASM_X86_SIGHANDLING_H */

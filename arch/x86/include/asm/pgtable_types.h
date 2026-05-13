@@ -82,7 +82,7 @@
 			 _PAGE_PKEY_BIT2 | \
 			 _PAGE_PKEY_BIT3)
 
-#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+#if defined(CONFIG_X86_64) || 0
 #define _PAGE_KNL_ERRATUM_MASK (_PAGE_DIRTY | _PAGE_ACCESSED)
 #else
 #define _PAGE_KNL_ERRATUM_MASK 0
@@ -118,7 +118,7 @@
 #define _PAGE_SWP_UFFD_WP	(_AT(pteval_t, 0))
 #endif
 
-#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+#if defined(CONFIG_X86_64) || 0
 #define _PAGE_NX	(_AT(pteval_t, 1) << _PAGE_BIT_NX)
 #define _PAGE_SOFTW4	(_AT(pteval_t, 1) << _PAGE_BIT_SOFTW4)
 #else
@@ -300,28 +300,8 @@ static inline pgprot_t pgprot_nx(pgprot_t prot)
 }
 #define pgprot_nx pgprot_nx
 
-#ifdef CONFIG_X86_PAE
-
-/*
- * PHYSICAL_PAGE_MASK might be non-constant when SME is compiled in, so we can't
- * use it here.
- */
-
-#define PGD_PAE_PAGE_MASK	((signed long)PAGE_MASK)
-#define PGD_PAE_PHYS_MASK	(((1ULL << __PHYSICAL_MASK_SHIFT)-1) & PGD_PAE_PAGE_MASK)
-
-/*
- * PAE allows Base Address, P, PWT, PCD and AVL bits to be set in PGD entries.
- * All other bits are Reserved MBZ
- */
-#define PGD_ALLOWED_BITS	(PGD_PAE_PHYS_MASK | _PAGE_PRESENT | \
-				 _PAGE_PWT | _PAGE_PCD | \
-				 _PAGE_SOFTW1 | _PAGE_SOFTW2 | _PAGE_SOFTW3)
-
-#else
 /* No need to mask any bits for !PAE */
 #define PGD_ALLOWED_BITS	(~0ULL)
-#endif
 
 static inline pgd_t native_make_pgd(pgdval_t val)
 {
@@ -535,11 +515,7 @@ pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
 /* Install a pte for a particular vaddr in kernel space. */
 void set_pte_vaddr(unsigned long vaddr, pte_t pte);
 
-#ifdef CONFIG_X86_32
-extern void native_pagetable_init(void);
-#else
 #define native_pagetable_init        paging_init
-#endif
 
 enum pg_level {
 	PG_LEVEL_NONE,

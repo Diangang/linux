@@ -100,12 +100,6 @@ static const struct pt_regs_offset regoffset_table[] = {
 	REG_OFFSET_NAME(di),
 	REG_OFFSET_NAME(bp),
 	REG_OFFSET_NAME(ax),
-#ifdef CONFIG_X86_32
-	REG_OFFSET_NAME(ds),
-	REG_OFFSET_NAME(es),
-	REG_OFFSET_NAME(fs),
-	REG_OFFSET_NAME(gs),
-#endif
 	REG_OFFSET_NAME(orig_ax),
 	REG_OFFSET_NAME(ip),
 	REG_OFFSET_NAME(cs),
@@ -170,73 +164,6 @@ static inline bool invalid_selector(u16 value)
 	return unlikely(value != 0 && (value & SEGMENT_RPL_MASK) != USER_RPL);
 }
 
-#ifdef CONFIG_X86_32
-
-#define FLAG_MASK		FLAG_MASK_32
-
-static unsigned long *pt_regs_access(struct pt_regs *regs, unsigned long regno)
-{
-	BUILD_BUG_ON(offsetof(struct pt_regs, bx) != 0);
-	return &regs->bx + (regno >> 2);
-}
-
-static u16 get_segment_reg(struct task_struct *task, unsigned long offset)
-{
-	/*
-	 * Returning the value truncates it to 16 bits.
-	 */
-	unsigned int retval;
-	if (offset != offsetof(struct user_regs_struct, gs))
-		retval = *pt_regs_access(task_pt_regs(task), offset);
-	else {
-		if (task == current)
-			savesegment(gs, retval);
-		else
-			retval = task->thread.gs;
-	}
-	return retval;
-}
-
-static int set_segment_reg(struct task_struct *task,
-			   unsigned long offset, u16 value)
-{
-	if (WARN_ON_ONCE(task == current))
-		return -EIO;
-
-	/*
-	 * The value argument was already truncated to 16 bits.
-	 */
-	if (invalid_selector(value))
-		return -EIO;
-
-	/*
-	 * For %cs and %ss we cannot permit a null selector.
-	 * We can permit a bogus selector as long as it has USER_RPL.
-	 * Null selectors are fine for other segment registers, but
-	 * we will never get back to user mode with invalid %cs or %ss
-	 * and will take the trap in iret instead.  Much code relies
-	 * on user_mode() to distinguish a user trap frame (which can
-	 * safely use invalid selectors) from a kernel trap frame.
-	 */
-	switch (offset) {
-	case offsetof(struct user_regs_struct, cs):
-	case offsetof(struct user_regs_struct, ss):
-		if (unlikely(value == 0))
-			return -EIO;
-		fallthrough;
-
-	default:
-		*pt_regs_access(task_pt_regs(task), offset) = value;
-		break;
-
-	case offsetof(struct user_regs_struct, gs):
-		task->thread.gs = value;
-	}
-
-	return 0;
-}
-
-#else  /* CONFIG_X86_64 */
 
 #define FLAG_MASK		(FLAG_MASK_32 | X86_EFLAGS_NT)
 
@@ -337,7 +264,6 @@ static int set_segment_reg(struct task_struct *task,
 	return 0;
 }
 
-#endif	/* CONFIG_X86_32 */
 
 static unsigned long get_flags(struct task_struct *task)
 {
@@ -720,7 +646,7 @@ void ptrace_disable(struct task_struct *child)
 	user_disable_single_step(child);
 }
 
-#if defined CONFIG_X86_32 || defined CONFIG_IA32_EMULATION
+#if 0 || defined CONFIG_IA32_EMULATION
 static const struct user_regset_view user_x86_32_view; /* Initialized below. */
 #endif
 #ifdef CONFIG_X86_64
@@ -805,21 +731,8 @@ long arch_ptrace(struct task_struct *child, long request,
 					     0, sizeof(struct user_i387_struct),
 					     datap);
 
-#ifdef CONFIG_X86_32
-	case PTRACE_GETFPXREGS:	/* Get the child extended FPU state. */
-		return copy_regset_to_user(child, &user_x86_32_view,
-					   REGSET32_XFP,
-					   0, sizeof(struct user_fxsr_struct),
-					   datap) ? -EIO : 0;
 
-	case PTRACE_SETFPXREGS:	/* Set the child extended FPU state. */
-		return copy_regset_from_user(child, &user_x86_32_view,
-					     REGSET32_XFP,
-					     0, sizeof(struct user_fxsr_struct),
-					     datap) ? -EIO : 0;
-#endif
-
-#if defined CONFIG_X86_32 || defined CONFIG_IA32_EMULATION
+#if 0 || defined CONFIG_IA32_EMULATION
 	case PTRACE_GET_THREAD_AREA:
 		if ((int) addr < 0)
 			return -EIO;
@@ -1128,102 +1041,11 @@ static long ia32_arch_ptrace(struct task_struct *child, compat_long_t request,
 }
 #endif /* CONFIG_IA32_EMULATION */
 
-#ifdef CONFIG_X86_X32_ABI
-static long x32_arch_ptrace(struct task_struct *child,
-			    compat_long_t request, compat_ulong_t caddr,
-			    compat_ulong_t cdata)
-{
-	unsigned long addr = caddr;
-	unsigned long data = cdata;
-	void __user *datap = compat_ptr(data);
-	int ret;
-
-	switch (request) {
-	/* Read 32bits at location addr in the USER area.  Only allow
-	   to return the lower 32bits of segment and debug registers.  */
-	case PTRACE_PEEKUSR: {
-		u32 tmp;
-
-		ret = -EIO;
-		if ((addr & (sizeof(data) - 1)) || addr >= sizeof(struct user) ||
-		    addr < offsetof(struct user_regs_struct, cs))
-			break;
-
-		tmp = 0;  /* Default return condition */
-		if (addr < sizeof(struct user_regs_struct))
-			tmp = getreg(child, addr);
-		else if (addr >= offsetof(struct user, u_debugreg[0]) &&
-			 addr <= offsetof(struct user, u_debugreg[7])) {
-			addr -= offsetof(struct user, u_debugreg[0]);
-			tmp = ptrace_get_debugreg(child, addr / sizeof(data));
-		}
-		ret = put_user(tmp, (__u32 __user *)datap);
-		break;
-	}
-
-	/* Write the word at location addr in the USER area.  Only allow
-	   to update segment and debug registers with the upper 32bits
-	   zero-extended. */
-	case PTRACE_POKEUSR:
-		ret = -EIO;
-		if ((addr & (sizeof(data) - 1)) || addr >= sizeof(struct user) ||
-		    addr < offsetof(struct user_regs_struct, cs))
-			break;
-
-		if (addr < sizeof(struct user_regs_struct))
-			ret = putreg(child, addr, data);
-		else if (addr >= offsetof(struct user, u_debugreg[0]) &&
-			 addr <= offsetof(struct user, u_debugreg[7])) {
-			addr -= offsetof(struct user, u_debugreg[0]);
-			ret = ptrace_set_debugreg(child,
-						  addr / sizeof(data), data);
-		}
-		break;
-
-	case PTRACE_GETREGS:	/* Get all gp regs from the child. */
-		return copy_regset_to_user(child,
-					   &user_x86_64_view,
-					   REGSET_GENERAL,
-					   0, sizeof(struct user_regs_struct),
-					   datap);
-
-	case PTRACE_SETREGS:	/* Set all gp regs in the child. */
-		return copy_regset_from_user(child,
-					     &user_x86_64_view,
-					     REGSET_GENERAL,
-					     0, sizeof(struct user_regs_struct),
-					     datap);
-
-	case PTRACE_GETFPREGS:	/* Get the child FPU state. */
-		return copy_regset_to_user(child,
-					   &user_x86_64_view,
-					   REGSET_FP,
-					   0, sizeof(struct user_i387_struct),
-					   datap);
-
-	case PTRACE_SETFPREGS:	/* Set the child FPU state. */
-		return copy_regset_from_user(child,
-					     &user_x86_64_view,
-					     REGSET_FP,
-					     0, sizeof(struct user_i387_struct),
-					     datap);
-
-	default:
-		return compat_ptrace_request(child, request, addr, data);
-	}
-
-	return ret;
-}
-#endif
 
 #ifdef CONFIG_COMPAT
 long compat_arch_ptrace(struct task_struct *child, compat_long_t request,
 			compat_ulong_t caddr, compat_ulong_t cdata)
 {
-#ifdef CONFIG_X86_X32_ABI
-	if (!in_ia32_syscall())
-		return x32_arch_ptrace(child, request, caddr, cdata);
-#endif
 #ifdef CONFIG_IA32_EMULATION
 	return ia32_arch_ptrace(child, request, caddr, cdata);
 #else
@@ -1268,17 +1090,6 @@ static struct user_regset x86_64_regsets[] __ro_after_init = {
 		.active		= ioperm_active,
 		.regset_get	= ioperm_get
 	},
-#ifdef CONFIG_X86_USER_SHADOW_STACK
-	[REGSET64_SSP] = {
-		USER_REGSET_NOTE_TYPE(X86_SHSTK),
-		.n		= 1,
-		.size		= sizeof(u64),
-		.align		= sizeof(u64),
-		.active		= ssp_active,
-		.regset_get	= ssp_get,
-		.set		= ssp_set
-	},
-#endif
 };
 
 static const struct user_regset_view user_x86_64_view = {
@@ -1294,7 +1105,7 @@ static const struct user_regset_view user_x86_64_view = {
 
 #endif	/* CONFIG_X86_64 */
 
-#if defined CONFIG_X86_32 || defined CONFIG_IA32_EMULATION
+#if 0 || defined CONFIG_IA32_EMULATION
 static struct user_regset x86_32_regsets[] __ro_after_init = {
 	[REGSET32_GENERAL] = {
 		USER_REGSET_NOTE_TYPE(PRSTATUS),
@@ -1367,7 +1178,7 @@ void __init update_regset_xstate_info(unsigned int size, u64 xstate_mask)
 #ifdef CONFIG_X86_64
 	x86_64_regsets[REGSET64_XSTATE].n = size / sizeof(u64);
 #endif
-#if defined CONFIG_X86_32 || defined CONFIG_IA32_EMULATION
+#if 0 || defined CONFIG_IA32_EMULATION
 	x86_32_regsets[REGSET32_XSTATE].n = size / sizeof(u64);
 #endif
 	xstate_fx_sw_bytes[USER_XSTATE_XCR0_WORD] = xstate_mask;
@@ -1397,7 +1208,7 @@ const struct user_regset_view *task_user_regset_view(struct task_struct *task)
 #ifdef CONFIG_IA32_EMULATION
 	if (!user_64bit_mode(task_pt_regs(task)))
 #endif
-#if defined CONFIG_X86_32 || defined CONFIG_IA32_EMULATION
+#if 0 || defined CONFIG_IA32_EMULATION
 		return &user_x86_32_view;
 #endif
 #ifdef CONFIG_X86_64

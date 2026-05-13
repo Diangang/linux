@@ -1037,10 +1037,6 @@ static void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 
 static void mm_init_uprobes_state(struct mm_struct *mm)
 {
-#ifdef CONFIG_UPROBES
-	mm->uprobes_state.xol_area = NULL;
-	arch_uprobe_init_state(mm);
-#endif
 }
 
 static void mmap_init_lock(struct mm_struct *mm)

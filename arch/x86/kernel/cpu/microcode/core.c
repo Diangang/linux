@@ -240,13 +240,6 @@ struct cpio_data __init find_microcode_in_initrd(const char *path)
 	unsigned long start = 0;
 	size_t size;
 
-#ifdef CONFIG_X86_32
-	size = boot_params.hdr.ramdisk_size;
-	/* Early load on BSP has a temporary mapping. */
-	if (size)
-		start = initrd_start_early;
-
-#else /* CONFIG_X86_64 */
 	size  = (unsigned long)boot_params.ext_ramdisk_size << 32;
 	size |= boot_params.hdr.ramdisk_size;
 
@@ -255,7 +248,6 @@ struct cpio_data __init find_microcode_in_initrd(const char *path)
 		start |= boot_params.hdr.ramdisk_image;
 		start += PAGE_OFFSET;
 	}
-#endif
 
 	/*
 	 * Fixup the start address: after reserve_initrd() runs, initrd_start

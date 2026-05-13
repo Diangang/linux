@@ -26,7 +26,7 @@ enum {
 	NPAGES			= 100,
 #ifdef CONFIG_X86_64
 	LPS			= (1 << PMD_SHIFT),
-#elif defined(CONFIG_X86_PAE)
+#elif 0
 	LPS			= (1 << PMD_SHIFT),
 #else
 	LPS			= (1 << 22),

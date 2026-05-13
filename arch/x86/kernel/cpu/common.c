@@ -293,7 +293,7 @@ static inline bool flag_is_changeable_p(unsigned long flag)
 {
 	unsigned long f1, f2;
 
-	if (!IS_ENABLED(CONFIG_X86_32))
+	if (!0)
 		return true;
 
 	/*
@@ -320,54 +320,9 @@ static inline bool flag_is_changeable_p(unsigned long flag)
 	return (f1 ^ f2) & flag;
 }
 
-#ifdef CONFIG_X86_32
-static int cachesize_override = -1;
-static int disable_x86_serial_nr = 1;
-
-static int __init cachesize_setup(char *str)
-{
-	get_option(&str, &cachesize_override);
-	return 1;
-}
-__setup("cachesize=", cachesize_setup);
-
-/* Probe for the CPUID instruction */
-bool cpuid_feature(void)
-{
-	return flag_is_changeable_p(X86_EFLAGS_ID);
-}
-
-static void squash_the_stupid_serial_number(struct cpuinfo_x86 *c)
-{
-	unsigned long lo, hi;
-
-	if (!cpu_has(c, X86_FEATURE_PN) || !disable_x86_serial_nr)
-		return;
-
-	/* Disable processor serial number: */
-
-	rdmsr(MSR_IA32_BBL_CR_CTL, lo, hi);
-	lo |= 0x200000;
-	wrmsr(MSR_IA32_BBL_CR_CTL, lo, hi);
-
-	pr_notice("CPU serial number disabled.\n");
-	clear_cpu_cap(c, X86_FEATURE_PN);
-
-	/* Disabling the serial number may affect the cpuid level */
-	c->cpuid_level = cpuid_eax(0);
-}
-
-static int __init x86_serial_nr_setup(char *s)
-{
-	disable_x86_serial_nr = 0;
-	return 1;
-}
-__setup("serialnumber", x86_serial_nr_setup);
-#else
 static inline void squash_the_stupid_serial_number(struct cpuinfo_x86 *c)
 {
 }
-#endif
 
 static __always_inline void setup_smep(struct cpuinfo_x86 *c)
 {
@@ -641,7 +596,7 @@ static __always_inline void setup_cet(struct cpuinfo_x86 *c)
 
 	kernel_ibt = HAS_KERNEL_IBT && cpu_feature_enabled(X86_FEATURE_IBT);
 	user_shstk = cpu_feature_enabled(X86_FEATURE_SHSTK) &&
-		     IS_ENABLED(CONFIG_X86_USER_SHADOW_STACK);
+		     0;
 
 	if (!kernel_ibt && !user_shstk)
 		return;
@@ -730,23 +685,6 @@ static void filter_cpuid_features(struct cpuinfo_x86 *c, bool warn)
 /* Look up CPU names by table lookup. */
 static const char *table_lookup_model(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-	const struct legacy_cpu_model_info *info;
-
-	if (c->x86_model >= 16)
-		return NULL;	/* Range check */
-
-	if (!this_cpu)
-		return NULL;
-
-	info = this_cpu->legacy_models;
-
-	while (info->family) {
-		if (info->family == c->x86)
-			return info->model_names[c->x86_model];
-		info++;
-	}
-#endif
 	return NULL;		/* Not found */
 }
 
@@ -754,10 +692,6 @@ static const char *table_lookup_model(struct cpuinfo_x86 *c)
 __u32 cpu_caps_cleared[NCAPINTS + NBUGINTS] __aligned(sizeof(unsigned long));
 __u32 cpu_caps_set[NCAPINTS + NBUGINTS] __aligned(sizeof(unsigned long));
 
-#ifdef CONFIG_X86_32
-/* The 32-bit entry code needs to find cpu_entry_area. */
-DEFINE_PER_CPU(struct cpu_entry_area *, cpu_entry_area);
-#endif
 
 /* Load the original GDT from the per-cpu structure */
 void load_direct_gdt(int cpu)
@@ -1638,11 +1572,7 @@ static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
  */
 static void detect_nopl(void)
 {
-#ifdef CONFIG_X86_32
-	setup_clear_cpu_cap(X86_FEATURE_NOPL);
-#else
 	setup_force_cpu_cap(X86_FEATURE_NOPL);
-#endif
 }
 
 static inline bool parse_set_clear_cpuid(char *arg, bool set)
@@ -1736,17 +1666,6 @@ static void __init cpu_parse_early_param(void)
 	char arg[128];
 	int arglen;
 
-#ifdef CONFIG_X86_32
-	if (cmdline_find_option_bool(boot_command_line, "no387"))
-#ifdef CONFIG_MATH_EMULATION
-		setup_clear_cpu_cap(X86_FEATURE_FPU);
-#else
-		pr_err("Option 'no387' required CONFIG_MATH_EMULATION enabled.\n");
-#endif
-
-	if (cmdline_find_option_bool(boot_command_line, "nofxsr"))
-		setup_clear_cpu_cap(X86_FEATURE_FXSR);
-#endif
 
 	if (cmdline_find_option_bool(boot_command_line, "noxsave"))
 		setup_clear_cpu_cap(X86_FEATURE_XSAVE);
@@ -1829,18 +1748,6 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 
 	sld_setup(c);
 
-#ifdef CONFIG_X86_32
-	/*
-	 * Regardless of whether PCID is enumerated, the SDM says
-	 * that it can't be enabled in 32-bit mode.
-	 */
-	setup_clear_cpu_cap(X86_FEATURE_PCID);
-
-	/*
-	 * Never use SYSCALL on a 32-bit kernel
-	 */
-	setup_clear_cpu_cap(X86_FEATURE_SYSCALL32);
-#endif
 
 	/*
 	 * Later in the boot process pgtable_l5_enabled() relies on
@@ -1993,9 +1900,6 @@ static void generic_identify(struct cpuinfo_x86 *c)
 	 * non-paravirt system ever shows up that does *not* have the
 	 * ESPFIX issue, we can change this.
 	 */
-#ifdef CONFIG_X86_32
-	set_cpu_bug(c, X86_BUG_ESPFIX);
-#endif
 }
 
 /*
@@ -2126,40 +2030,12 @@ static void identify_cpu(struct cpuinfo_x86 *c)
  * Set up the CPU state needed to execute SYSENTER/SYSEXIT instructions
  * on 32-bit kernels:
  */
-#ifdef CONFIG_X86_32
-void enable_sep_cpu(void)
-{
-	struct tss_struct *tss;
-	int cpu;
-
-	if (!boot_cpu_has(X86_FEATURE_SEP))
-		return;
-
-	cpu = get_cpu();
-	tss = &per_cpu(cpu_tss_rw, cpu);
-
-	/*
-	 * We cache MSR_IA32_SYSENTER_CS's value in the TSS's ss1 field --
-	 * see the big comment in struct x86_hw_tss's definition.
-	 */
-
-	tss->x86_tss.ss1 = __KERNEL_CS;
-	wrmsrq(MSR_IA32_SYSENTER_CS, tss->x86_tss.ss1);
-	wrmsrq(MSR_IA32_SYSENTER_ESP, (unsigned long)(cpu_entry_stack(cpu) + 1));
-	wrmsrq(MSR_IA32_SYSENTER_EIP, (unsigned long)entry_SYSENTER_32);
-
-	put_cpu();
-}
-#endif
 
 static __init void identify_boot_cpu(void)
 {
 	identify_cpu(&boot_cpu_data);
 	if (HAS_KERNEL_IBT && cpu_feature_enabled(X86_FEATURE_IBT))
 		pr_info("CET detected: Indirect Branch Tracking enabled\n");
-#ifdef CONFIG_X86_32
-	enable_sep_cpu();
-#endif
 	cpu_detect_tlb(&boot_cpu_data);
 	setup_cr_pinning();
 
@@ -2179,9 +2055,6 @@ void identify_secondary_cpu(unsigned int cpu)
 	c->cpu_index = cpu;
 
 	identify_cpu(c);
-#ifdef CONFIG_X86_32
-	enable_sep_cpu();
-#endif
 	x86_spec_ctrl_setup_ap();
 	update_srbds_msr();
 	if (boot_cpu_has_bug(X86_BUG_GDS))
@@ -2553,7 +2426,7 @@ void __init arch_cpu_finalize_init(void)
 
 	arch_smt_update();
 
-	if (IS_ENABLED(CONFIG_X86_32)) {
+	if (0) {
 		/*
 		 * Check whether this is a real i386 which is not longer
 		 * supported and fixup the utsname.

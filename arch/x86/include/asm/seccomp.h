@@ -4,9 +4,6 @@
 
 #include <asm/unistd.h>
 
-#ifdef CONFIG_X86_32
-#define __NR_seccomp_sigreturn		__NR_sigreturn
-#endif
 
 #ifdef CONFIG_COMPAT
 #include <asm/unistd_32_ia32.h>

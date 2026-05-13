@@ -367,35 +367,6 @@ struct unixware_disklabel {
 static void parse_unixware(struct parsed_partitions *state,
 			   sector_t offset, sector_t size, int origin)
 {
-#ifdef CONFIG_UNIXWARE_DISKLABEL
-	Sector sect;
-	struct unixware_disklabel *l;
-	struct unixware_slice *p;
-
-	l = read_part_sector(state, offset + 29, &sect);
-	if (!l)
-		return;
-	if (le32_to_cpu(l->d_magic) != UNIXWARE_DISKMAGIC ||
-	    le32_to_cpu(l->vtoc.v_magic) != UNIXWARE_DISKMAGIC2) {
-		put_dev_sector(sect);
-		return;
-	}
-	seq_buf_printf(&state->pp_buf, " %s%d: <unixware:", state->name, origin);
-	p = &l->vtoc.v_slice[1];
-	/* I omit the 0th slice as it is the same as whole disk. */
-	while (p - &l->vtoc.v_slice[0] < UNIXWARE_NUMSLICE) {
-		if (state->next == state->limit)
-			break;
-
-		if (p->s_label != UNIXWARE_FS_UNUSED)
-			put_partition(state, state->next++,
-				      le32_to_cpu(p->start_sect),
-				      le32_to_cpu(p->nr_sects));
-		p++;
-	}
-	put_dev_sector(sect);
-	seq_buf_puts(&state->pp_buf, " >\n");
-#endif
 }
 
 #define MINIX_NR_SUBPARTITIONS  4

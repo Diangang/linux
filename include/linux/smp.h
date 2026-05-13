@@ -224,12 +224,7 @@ static inline bool cpus_peek_for_pending_ipi(const struct cpumask *mask)
 
 #define setup_max_cpus 0
 
-#ifdef CONFIG_UP_LATE_INIT
-extern void __init up_late_init(void);
-static __always_inline void smp_init(void) { up_late_init(); }
-#else
 static inline void smp_init(void) { }
-#endif
 
 static inline int get_boot_cpu_id(void)
 {

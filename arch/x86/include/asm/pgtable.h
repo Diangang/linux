@@ -902,11 +902,7 @@ static inline pgd_t pti_set_user_pgtbl(pgd_t *pgdp, pgd_t pgd)
 #endif	/* __ASSEMBLER__ */
 
 
-#ifdef CONFIG_X86_32
-# include <asm/pgtable_32.h>
-#else
 # include <asm/pgtable_64.h>
-#endif
 
 #ifndef __ASSEMBLER__
 #include <linux/mm_types.h>
@@ -1649,13 +1645,6 @@ static inline bool arch_has_hw_nonleaf_pmd_young(void)
 #endif
 
 
-#ifdef CONFIG_X86_SGX
-int arch_memory_failure(unsigned long pfn, int flags);
-#define arch_memory_failure arch_memory_failure
-
-bool arch_is_platform_page(u64 paddr);
-#define arch_is_platform_page arch_is_platform_page
-#endif
 
 /*
  * Use set_p*_safe(), and elide TLB flushing, when confident that *no*

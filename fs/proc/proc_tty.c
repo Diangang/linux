@@ -78,16 +78,6 @@ static int show_tty_driver(struct seq_file *m, void *v)
 		seq_printf(m, "%-20s /dev/%-8s ", "/dev/console", "console");
 		seq_printf(m, "%3d %7d ", TTYAUX_MAJOR, 1);
 		seq_puts(m, "system:console\n");
-#ifdef CONFIG_UNIX98_PTYS
-		seq_printf(m, "%-20s /dev/%-8s ", "/dev/ptmx", "ptmx");
-		seq_printf(m, "%3d %7d ", TTYAUX_MAJOR, 2);
-		seq_puts(m, "system\n");
-#endif
-#ifdef CONFIG_VT
-		seq_printf(m, "%-20s /dev/%-8s ", "/dev/vc/0", "vc/0");
-		seq_printf(m, "%3d %7d ", TTY_MAJOR, 0);
-		seq_puts(m, "system:vtmaster\n");
-#endif
 	}
 
 	while (MAJOR(from) < MAJOR(to)) {

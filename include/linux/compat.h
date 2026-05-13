@@ -194,16 +194,6 @@ typedef struct compat_siginfo {
 			compat_clock_t _stime;
 		} _sigchld;
 
-#ifdef CONFIG_X86_X32_ABI
-		/* SIGCHLD (x32 version) */
-		struct {
-			compat_pid_t _pid;	/* which child */
-			__compat_uid32_t _uid;	/* sender's uid */
-			int _status;		/* exit code */
-			compat_s64 _utime;
-			compat_s64 _stime;
-		} _sigchld_x32;
-#endif
 
 		/* SIGILL, SIGFPE, SIGSEGV, SIGBUS, SIGTRAP, SIGEMT */
 		struct {

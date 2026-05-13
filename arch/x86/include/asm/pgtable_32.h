@@ -31,11 +31,7 @@ extern pmd_t initial_pg_pmd[];
 void paging_init(void);
 void sync_initial_page_table(void);
 
-#ifdef CONFIG_X86_PAE
-# include <asm/pgtable-3level.h>
-#else
 # include <asm/pgtable-2level.h>
-#endif
 
 /* Clear a kernel PTE and flush it from the TLB */
 #define kpte_clear_flush(ptep, vaddr)		\

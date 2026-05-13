@@ -231,10 +231,6 @@ fi
 
 strip_debug=
 
-if is_enabled CONFIG_VMLINUX_MAP; then
-	generate_map=1
-fi
-
 vmlinux_link "${VMLINUX}"
 
 mksysmap "${VMLINUX}" System.map

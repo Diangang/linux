@@ -2176,30 +2176,6 @@ DEFINE_IDTENTRY_MCE_USER(exc_machine_check)
 	local_db_restore(dr7);
 }
 
-#ifdef CONFIG_X86_FRED
-/*
- * When occurred on different ring level, i.e., from user or kernel
- * context, #MCE needs to be handled on different stack: User #MCE
- * on current task stack, while kernel #MCE on a dedicated stack.
- *
- * This is exactly how FRED event delivery invokes an exception
- * handler: ring 3 event on level 0 stack, i.e., current task stack;
- * ring 0 event on the #MCE dedicated stack specified in the
- * IA32_FRED_STKLVLS MSR. So unlike IDT, the FRED machine check entry
- * stub doesn't do stack switch.
- */
-DEFINE_FREDENTRY_MCE(exc_machine_check)
-{
-	unsigned long dr7;
-
-	dr7 = local_db_save();
-	if (user_mode(regs))
-		exc_machine_check_user(regs);
-	else
-		exc_machine_check_kernel(regs);
-	local_db_restore(dr7);
-}
-#endif
 #else
 /* 32bit unified entry point */
 DEFINE_IDTENTRY_RAW(exc_machine_check)
@@ -2658,9 +2634,6 @@ static struct dev_ext_attribute dev_attr_cmci_disabled = {
 
 static struct device_attribute *mce_device_attrs[] = {
 	&dev_attr_check_interval.attr,
-#ifdef CONFIG_X86_MCELOG_LEGACY
-	&dev_attr_trigger,
-#endif
 	&dev_attr_monarch_timeout.attr,
 	&dev_attr_dont_log_ce.attr,
 	&dev_attr_print_all.attr,

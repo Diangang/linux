@@ -89,9 +89,6 @@ static inline void efi_fpu_end(void)
 	kernel_fpu_end();
 }
 
-#ifdef CONFIG_X86_32
-#define EFI_X86_KERNEL_ALLOC_LIMIT		(SZ_512M - 1)
-#else /* !CONFIG_X86_32 */
 #define EFI_X86_KERNEL_ALLOC_LIMIT		EFI_ALLOC_LIMIT
 
 extern asmlinkage u64 __efi_call(void *fp, ...);
@@ -123,7 +120,6 @@ extern bool efi_disable_ibt_for_runtime;
 #undef memmove
 #endif
 
-#endif /* CONFIG_X86_32 */
 
 extern int __init efi_memblock_x86_reserve_range(void);
 extern void __init efi_print_memmap(void);

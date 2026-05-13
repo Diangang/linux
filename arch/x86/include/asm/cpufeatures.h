@@ -531,13 +531,6 @@
 #define X86_BUG_FXSAVE_LEAK		X86_BUG(6) /* "fxsave_leak" FXSAVE leaks FOP/FIP/FOP */
 #define X86_BUG_CLFLUSH_MONITOR		X86_BUG(7) /* "clflush_monitor" AAI65, CLFLUSH required before MONITOR */
 #define X86_BUG_SYSRET_SS_ATTRS		X86_BUG(8) /* "sysret_ss_attrs" SYSRET doesn't fix up SS attrs */
-#ifdef CONFIG_X86_32
-/*
- * 64-bit kernels don't use X86_BUG_ESPFIX.  Make the define conditional
- * to avoid confusion.
- */
-#define X86_BUG_ESPFIX			X86_BUG(9) /* IRET to 16-bit SS corrupts ESP/RSP high bits */
-#endif
 #define X86_BUG_NULL_SEG		X86_BUG(10) /* "null_seg" Nulling a selector preserves the base */
 #define X86_BUG_SWAPGS_FENCE		X86_BUG(11) /* "swapgs_fence" SWAPGS without input dep on GS */
 #define X86_BUG_MONITOR			X86_BUG(12) /* "monitor" IPI required to wake up remote CPU */

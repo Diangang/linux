@@ -25,11 +25,7 @@
 #include <xen/interface/xen.h>
 #endif
 
-#ifdef CONFIG_X86_32
-# include "asm-offsets_32.c"
-#else
 # include "asm-offsets_64.c"
-#endif
 
 static void __used common(void)
 {
@@ -52,7 +48,7 @@ static void __used common(void)
 	OFFSET(pbe_orig_address, pbe, orig_address);
 	OFFSET(pbe_next, pbe, next);
 
-#if defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION)
+#if 0 || defined(CONFIG_IA32_EMULATION)
 	BLANK();
 	OFFSET(IA32_SIGCONTEXT_ax, sigcontext_32, ax);
 	OFFSET(IA32_SIGCONTEXT_bx, sigcontext_32, bx);

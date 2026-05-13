@@ -9,12 +9,10 @@ hostprogs-always-$(CONFIG_BUILDTIME_TABLE_SORT)		+= sorttable
 
 sorttable-objs := sorttable.o elf-parse.o
 
-ifneq ($(or $(CONFIG_X86_64),$(CONFIG_X86_32)),)
 filechk_rust_target = $< < include/config/auto.conf
 
 $(obj)/target.json: scripts/generate_rust_target include/config/auto.conf FORCE
 	$(call filechk,rust_target)
-endif
 
 hostprogs += generate_rust_target
 generate_rust_target-rust := y

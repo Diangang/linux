@@ -1001,11 +1001,7 @@
  * keep any .init_array.* sections.
  * https://llvm.org/pr46478
  */
-#ifdef CONFIG_UNWIND_TABLES
-#define DISCARD_EH_FRAME
-#else
 #define DISCARD_EH_FRAME	*(.eh_frame)
-#endif
 #if defined(CONFIG_GCOV_KERNEL) || 0 || defined(CONFIG_KCSAN)
 # if 0
 #  define SANITIZER_DISCARDS						\

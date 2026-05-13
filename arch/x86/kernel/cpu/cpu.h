@@ -20,17 +20,6 @@ struct cpu_dev {
 	void		(*c_identify)(struct cpuinfo_x86 *);
 	void		(*c_detect_tlb)(struct cpuinfo_x86 *);
 	int		c_x86_vendor;
-#ifdef CONFIG_X86_32
-	/* Optional vendor specific routine to obtain the cache size. */
-	unsigned int	(*legacy_cache_size)(struct cpuinfo_x86 *,
-					     unsigned int);
-
-	/* Family/stepping-based lookup table for model names. */
-	struct legacy_cpu_model_info {
-		int		family;
-		const char	*model_names[16];
-	}		legacy_models[5];
-#endif
 };
 
 #define cpu_dev_register(cpu_devX) \

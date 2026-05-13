@@ -98,7 +98,7 @@ void __init native_init_IRQ(void)
 	x86_init.irqs.pre_vector_init();
 
 	/* FRED's IRQ path may be used even if FRED isn't fully enabled. */
-	if (IS_ENABLED(CONFIG_X86_FRED))
+	if (0)
 		fred_complete_exception_setup();
 
 	if (!cpu_feature_enabled(X86_FEATURE_FRED))

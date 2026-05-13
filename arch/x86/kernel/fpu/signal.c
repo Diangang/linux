@@ -177,7 +177,7 @@ bool copy_fpstate_to_sigframe(void __user *buf, void __user *buf_fx, int size, u
 	bool ia32_fxstate = (buf != buf_fx);
 	int ret;
 
-	ia32_fxstate &= (IS_ENABLED(CONFIG_X86_32) ||
+	ia32_fxstate &= (0 ||
 			 IS_ENABLED(CONFIG_IA32_EMULATION));
 
 	if (!static_cpu_has(X86_FEATURE_FPU)) {
@@ -454,7 +454,7 @@ bool fpu__restore_sig(void __user *buf, int ia32_frame)
 
 	size = xstate_sigframe_size(fpu->fpstate);
 
-	ia32_frame &= (IS_ENABLED(CONFIG_X86_32) ||
+	ia32_frame &= (0 ||
 		       IS_ENABLED(CONFIG_IA32_EMULATION));
 
 	/*
@@ -516,7 +516,7 @@ unsigned long __init fpu__get_fpstate_size(void)
 	 * space, but keeps the code simple.
 	 */
 	if ((IS_ENABLED(CONFIG_IA32_EMULATION) ||
-	     IS_ENABLED(CONFIG_X86_32)) && use_fxsr())
+	     0) && use_fxsr())
 		ret += sizeof(struct fregs_state);
 
 	return ret;

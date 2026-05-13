@@ -60,11 +60,7 @@ static inline bool on_stack(struct stack_info *info, void *addr, size_t len)
 		addr + len > begin && addr + len <= end);
 }
 
-#ifdef CONFIG_X86_32
-#define STACKSLOTS_PER_LINE 8
-#else
 #define STACKSLOTS_PER_LINE 4
-#endif
 
 #ifdef CONFIG_FRAME_POINTER
 static inline unsigned long *

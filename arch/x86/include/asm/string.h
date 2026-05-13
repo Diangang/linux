@@ -2,11 +2,7 @@
 #ifndef _ASM_X86_STRING_H
 #define _ASM_X86_STRING_H
 
-#ifdef CONFIG_X86_32
-# include <asm/string_32.h>
-#else
 # include <asm/string_64.h>
-#endif
 
 static __always_inline void *__inline_memcpy(void *to, const void *from, size_t len)
 {

@@ -42,37 +42,6 @@ struct vm86 {
 	struct vm86plus_info_struct vm86plus;
 };
 
-#ifdef CONFIG_VM86
-
-void handle_vm86_fault(struct kernel_vm86_regs *, long);
-int handle_vm86_trap(struct kernel_vm86_regs *, long, int);
-void save_v86_state(struct kernel_vm86_regs *, int);
-
-struct task_struct;
-
-#define free_vm86(t) do {				\
-	struct thread_struct *__t = (t);		\
-	if (__t->vm86 != NULL) {			\
-		kfree(__t->vm86);			\
-		__t->vm86 = NULL;			\
-	}						\
-} while (0)
-
-/*
- * Support for VM86 programs to request interrupts for
- * real mode hardware drivers:
- */
-#define FIRST_VM86_IRQ		 3
-#define LAST_VM86_IRQ		15
-
-static inline int invalid_vm86_irq(int irq)
-{
-	return irq < FIRST_VM86_IRQ || irq > LAST_VM86_IRQ;
-}
-
-void release_vm86_irqs(struct task_struct *);
-
-#else
 
 #define handle_vm86_fault(a, b)
 #define release_vm86_irqs(a)
@@ -86,6 +55,5 @@ static inline void save_v86_state(struct kernel_vm86_regs *a, int b) { }
 
 #define free_vm86(task) do { (void)(task); } while(0)
 
-#endif /* CONFIG_VM86 */
 
 #endif /* _ASM_X86_VM86_H */

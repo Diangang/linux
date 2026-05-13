@@ -734,22 +734,6 @@ void set_personality_64bit(void)
 
 static void __set_personality_x32(void)
 {
-#ifdef CONFIG_X86_X32_ABI
-	if (current->mm)
-		current->mm->context.flags = 0;
-
-	current->personality &= ~READ_IMPLIES_EXEC;
-	/*
-	 * in_32bit_syscall() uses the presence of the x32 syscall bit
-	 * flag to determine compat status.  The x86 mmap() code relies on
-	 * the syscall bitness so set x32 syscall bit right here to make
-	 * in_32bit_syscall() work during exec().
-	 *
-	 * Pretend to come from a x32 execve.
-	 */
-	task_pt_regs(current)->orig_ax = __NR_x32_execve | __X32_SYSCALL_BIT;
-	current_thread_info()->status &= ~TS_COMPAT;
-#endif
 }
 
 static void __set_personality_ia32(void)

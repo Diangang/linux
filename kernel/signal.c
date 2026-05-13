@@ -3669,12 +3669,6 @@ static int post_copy_siginfo_from_user32(kernel_siginfo_t *to,
 		to->si_pid    = from->si_pid;
 		to->si_uid    = from->si_uid;
 		to->si_status = from->si_status;
-#ifdef CONFIG_X86_X32_ABI
-		if (in_x32_syscall()) {
-			to->si_utime = from->_sifields._sigchld_x32._utime;
-			to->si_stime = from->_sifields._sigchld_x32._stime;
-		} else
-#endif
 		{
 			to->si_utime = from->si_utime;
 			to->si_stime = from->si_stime;

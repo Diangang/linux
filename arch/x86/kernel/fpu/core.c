@@ -627,27 +627,6 @@ static inline void fpu_inherit_perms(struct fpu *dst_fpu)
 /* A passed ssp of zero will not cause any update */
 static int update_fpu_shstk(struct task_struct *dst, unsigned long ssp)
 {
-#ifdef CONFIG_X86_USER_SHADOW_STACK
-	struct cet_user_state *xstate;
-
-	/* If ssp update is not needed. */
-	if (!ssp)
-		return 0;
-
-	xstate = get_xsave_addr(&x86_task_fpu(dst)->fpstate->regs.xsave,
-				XFEATURE_CET_USER);
-
-	/*
-	 * If there is a non-zero ssp, then 'dst' must be configured with a shadow
-	 * stack and the fpu state should be up to date since it was just copied
-	 * from the parent in fpu_clone(). So there must be a valid non-init CET
-	 * state location in the buffer.
-	 */
-	if (WARN_ON_ONCE(!xstate))
-		return 1;
-
-	xstate->user_ssp = (u64)ssp;
-#endif
 	return 0;
 }
 

@@ -10,26 +10,6 @@ config MSDOS_PARTITION
 	help
 	  Say Y here.
 
-config UNIXWARE_DISKLABEL
-	bool "Unixware slices support"
-	depends on PARTITION_ADVANCED && MSDOS_PARTITION
-	help
-	  Like some systems, UnixWare uses its own slice table inside a
-	  partition (VTOC - Virtual Table of Contents). Its format is
-	  incompatible with all other OSes. Saying Y here allows you to read
-	  VTOC and further mount UnixWare partitions read-only from within
-	  Linux if you have also said Y to "UFS file system support" or
-	  "System V and Coherent file system support", above.
-
-	  This is mainly used to carry data from a UnixWare box to your
-	  Linux box via a removable medium like magneto-optical, ZIP or
-	  removable IDE drives. Note, however, that a good portable way to
-	  transport files and directories between unixes (and even other
-	  operating systems) is given by the tar program ("man tar" or
-	  preferably "info tar").
-
-	  If you don't know what all this is about, say N.
-
 config EFI_PARTITION
 	bool "EFI GUID Partition support" if PARTITION_ADVANCED
 	default y

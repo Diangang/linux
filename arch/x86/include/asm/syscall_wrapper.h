@@ -120,7 +120,7 @@ extern long __ia32_sys_ni_syscall(const struct pt_regs *regs);
 #define __X64_COND_SYSCALL(name)
 #endif /* CONFIG_X86_64 */
 
-#if defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION)
+#if 0 || defined(CONFIG_IA32_EMULATION)
 #define __IA32_SYS_STUB0(name)						\
 	__SYS_STUB0(ia32, sys_##name)
 
@@ -162,27 +162,9 @@ extern long __ia32_sys_ni_syscall(const struct pt_regs *regs);
 #endif /* CONFIG_IA32_EMULATION */
 
 
-#ifdef CONFIG_X86_X32_ABI
-/*
- * For the x32 ABI, we need to create a stub for compat_sys_*() which is aware
- * of the x86-64-style parameter ordering of x32 syscalls. The syscalls common
- * with x86_64 obviously do not need such care.
- */
-#define __X32_COMPAT_SYS_STUB0(name)					\
-	__SYS_STUB0(x64, compat_sys_##name)
-
-#define __X32_COMPAT_SYS_STUBx(x, name, ...)				\
-	__SYS_STUBx(x64, compat_sys##name,				\
-		    SC_X86_64_REGS_TO_ARGS(x, __VA_ARGS__))
-
-#define __X32_COMPAT_COND_SYSCALL(name)					\
-	__COND_SYSCALL(x64, compat_sys_##name)
-
-#else /* CONFIG_X86_X32_ABI */
 #define __X32_COMPAT_SYS_STUB0(name)
 #define __X32_COMPAT_SYS_STUBx(x, name, ...)
 #define __X32_COMPAT_COND_SYSCALL(name)
-#endif /* CONFIG_X86_X32_ABI */
 
 
 #ifdef CONFIG_COMPAT

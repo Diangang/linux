@@ -72,12 +72,6 @@ enum exception_stack_ordering {
 
 #endif
 
-#ifdef CONFIG_X86_32
-struct doublefault_stack {
-	unsigned long stack[(PAGE_SIZE - sizeof(struct x86_hw_tss)) / sizeof(unsigned long)];
-	struct x86_hw_tss tss;
-} __aligned(PAGE_SIZE);
-#endif
 
 /*
  * cpu_entry_area is a percpu region that contains things needed by the CPU
@@ -95,15 +89,8 @@ struct cpu_entry_area {
 	 * a read-only guard page. On 32-bit the GDT must be writeable, so
 	 * it needs an extra guard page.
 	 */
-#ifdef CONFIG_X86_32
-	char guard_entry_stack[PAGE_SIZE];
-#endif
 	struct entry_stack_page entry_stack_page;
 
-#ifdef CONFIG_X86_32
-	char guard_doublefault_stack[PAGE_SIZE];
-	struct doublefault_stack doublefault_stack;
-#endif
 
 	/*
 	 * On x86_64, the TSS is mapped RO.  On x86_32, it's mapped RW because

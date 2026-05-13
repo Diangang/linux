@@ -87,9 +87,6 @@ static inline void __pmd_free_tlb(struct mmu_gather *tlb, pmd_t *pmd,
 	___pmd_free_tlb(tlb, pmd);
 }
 
-#ifdef CONFIG_X86_PAE
-extern void pud_populate(struct mm_struct *mm, pud_t *pudp, pmd_t *pmd);
-#else	/* !CONFIG_X86_PAE */
 static inline void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
 {
 	paravirt_alloc_pmd(mm, __pa(pmd) >> PAGE_SHIFT);
@@ -101,7 +98,6 @@ static inline void pud_populate_safe(struct mm_struct *mm, pud_t *pud, pmd_t *pm
 	paravirt_alloc_pmd(mm, __pa(pmd) >> PAGE_SHIFT);
 	set_pud_safe(pud, __pud(_PAGE_TABLE | __pa(pmd)));
 }
-#endif	/* CONFIG_X86_PAE */
 
 #if CONFIG_PGTABLE_LEVELS > 3
 static inline void p4d_populate(struct mm_struct *mm, p4d_t *p4d, pud_t *pud)

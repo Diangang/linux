@@ -54,7 +54,7 @@ static inline int fnsave_to_user_sigframe(struct fregs_state __user *fx)
 
 static inline int fxsave_to_user_sigframe(struct fxregs_state __user *fx)
 {
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return user_insn(fxsave %[fx], [fx] "=m" (*fx), "m" (*fx));
 	else
 		return user_insn(fxsaveq %[fx], [fx] "=m" (*fx), "m" (*fx));
@@ -63,7 +63,7 @@ static inline int fxsave_to_user_sigframe(struct fxregs_state __user *fx)
 
 static inline void fxrstor(struct fxregs_state *fx)
 {
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		kernel_insn(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
 	else
 		kernel_insn(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
@@ -71,7 +71,7 @@ static inline void fxrstor(struct fxregs_state *fx)
 
 static inline int fxrstor_safe(struct fxregs_state *fx)
 {
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return kernel_insn_err(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
 	else
 		return kernel_insn_err(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
@@ -79,7 +79,7 @@ static inline int fxrstor_safe(struct fxregs_state *fx)
 
 static inline int fxrstor_from_user_sigframe(struct fxregs_state __user *fx)
 {
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return user_insn(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
 	else
 		return user_insn(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
@@ -102,7 +102,7 @@ static inline int frstor_from_user_sigframe(struct fregs_state __user *fx)
 
 static inline void fxsave(struct fxregs_state *fx)
 {
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		asm volatile( "fxsave %[fx]" : [fx] "=m" (*fx));
 	else
 		asm volatile("fxsaveq %[fx]" : [fx] "=m" (*fx));

@@ -502,15 +502,6 @@ static __init void mpparse_get_smp_config(unsigned int early)
 
 	pr_info("Intel MultiProcessor Specification v1.%d\n",
 		mpf->specification);
-#if defined(CONFIG_X86_LOCAL_APIC) && defined(CONFIG_X86_32)
-	if (mpf->feature2 & (1 << 7)) {
-		pr_info("    IMCR and PIC compatibility mode.\n");
-		pic_mode = 1;
-	} else {
-		pr_info("    Virtual Wire compatibility mode.\n");
-		pic_mode = 0;
-	}
-#endif
 	/*
 	 * Now see if we need to read further.
 	 */

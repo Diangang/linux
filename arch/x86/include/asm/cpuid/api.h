@@ -13,14 +13,10 @@
  * Raw CPUID accessors:
  */
 
-#ifdef CONFIG_X86_32
-bool cpuid_feature(void);
-#else
 static inline bool cpuid_feature(void)
 {
 	return true;
 }
-#endif
 
 static inline void native_cpuid(u32 *eax, u32 *ebx,
 				u32 *ecx, u32 *edx)

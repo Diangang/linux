@@ -148,19 +148,12 @@ do {						\
 	switch_mm_irqs_off((prev), (next), NULL);	\
 } while (0);
 
-#ifdef CONFIG_X86_32
-#define deactivate_mm(tsk, mm)			\
-do {						\
-	loadsegment(gs, 0);			\
-} while (0)
-#else
 #define deactivate_mm(tsk, mm)			\
 do {						\
 	shstk_free(tsk);			\
 	load_gs_index(0);			\
 	loadsegment(fs, 0);			\
 } while (0)
-#endif
 
 static inline void arch_dup_pkeys(struct mm_struct *oldmm,
 				  struct mm_struct *mm)

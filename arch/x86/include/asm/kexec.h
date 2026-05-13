@@ -2,16 +2,8 @@
 #ifndef _ASM_X86_KEXEC_H
 #define _ASM_X86_KEXEC_H
 
-#ifdef CONFIG_X86_32
-# define PA_CONTROL_PAGE	0
-# define VA_CONTROL_PAGE	1
-# define PA_PGD			2
-# define PA_SWAP_PAGE		3
-# define PAGES_NR		4
-#else
 /* Size of each exception handler referenced by the IDT */
 # define KEXEC_DEBUG_EXC_HANDLER_SIZE	6 /* PUSHI, PUSHI, 2-byte JMP */
-#endif
 
 #ifdef CONFIG_X86_64
 
@@ -43,21 +35,6 @@ struct kimage;
  *
  * So far x86_64 is limited to 40 physical address bits.
  */
-#ifdef CONFIG_X86_32
-/* Maximum physical address we can use pages from */
-# define KEXEC_SOURCE_MEMORY_LIMIT (-1UL)
-/* Maximum address we can reach in physical address mode */
-# define KEXEC_DESTINATION_MEMORY_LIMIT (-1UL)
-/* Maximum address we can use for the control code buffer */
-# define KEXEC_CONTROL_MEMORY_LIMIT TASK_SIZE
-
-
-/* The native architecture */
-# define KEXEC_ARCH KEXEC_ARCH_386
-
-/* We can also handle crash dumps from 64 bit kernel. */
-# define vmcore_elf_check_arch_cross(x) ((x)->e_machine == EM_X86_64)
-#else
 /* Maximum physical address we can use pages from */
 # define KEXEC_SOURCE_MEMORY_LIMIT      (MAXMEM-1)
 /* Maximum address we can reach in physical address mode */
@@ -75,7 +52,6 @@ extern gate_desc kexec_debug_idt[];
 extern unsigned char kexec_debug_exc_vectors[];
 extern uint16_t kexec_debug_8250_port;
 extern unsigned long kexec_debug_8250_mmio32;
-#endif
 
 /*
  * This function is responsible for capturing register states if coming
@@ -108,44 +84,20 @@ static inline void crash_setup_regs(struct pt_regs *newregs,
 #endif
 		asm volatile("mov %%ss,%k0" : "=a"(newregs->ss));
 		asm volatile("mov %%cs,%k0" : "=a"(newregs->cs));
-#ifdef CONFIG_X86_32
-		asm volatile("mov %%ds,%k0" : "=a"(newregs->ds));
-		asm volatile("mov %%es,%k0" : "=a"(newregs->es));
-#endif
 		asm volatile("pushf\n\t"
 			     "pop %0" : "=m"(newregs->flags));
 		newregs->ip = _THIS_IP_;
 	}
 }
 
-#ifdef CONFIG_X86_32
-typedef asmlinkage unsigned long
-relocate_kernel_fn(unsigned long indirection_page,
-		   unsigned long control_page,
-		   unsigned long start_address,
-		   unsigned int has_pae,
-		   unsigned int preserve_context);
-#else
 typedef unsigned long
 relocate_kernel_fn(unsigned long indirection_page,
 		   unsigned long pa_control_page,
 		   unsigned long start_address,
 		   unsigned int flags);
-#endif
 extern relocate_kernel_fn relocate_kernel;
 #define ARCH_HAS_KIMAGE_ARCH
 
-#ifdef CONFIG_X86_32
-struct kimage_arch {
-	pgd_t *pgd;
-#ifdef CONFIG_X86_PAE
-	pmd_t *pmd0;
-	pmd_t *pmd1;
-#endif
-	pte_t *pte0;
-	pte_t *pte1;
-};
-#else
 struct kimage_arch {
 	/*
 	 * This is a kimage control page, as it must not overlap with either
@@ -165,7 +117,6 @@ struct kimage_arch {
 	pmd_t *pmd;
 	pte_t *pte;
 };
-#endif /* CONFIG_X86_32 */
 
 #ifdef CONFIG_X86_64
 /*

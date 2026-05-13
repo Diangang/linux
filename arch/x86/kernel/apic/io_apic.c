@@ -517,38 +517,6 @@ void clear_IO_APIC (void)
 		clear_IO_APIC_pin(apic, pin);
 }
 
-#ifdef CONFIG_X86_32
-/*
- * support for broken MP BIOSs, enables hand-redirection of PIRQ0-7 to
- * specific CPU-side IRQs.
- */
-
-#define MAX_PIRQS 8
-static int pirq_entries[MAX_PIRQS] = {
-	[0 ... MAX_PIRQS - 1] = -1
-};
-
-static int __init ioapic_pirq_setup(char *str)
-{
-	int i, max, ints[MAX_PIRQS+1];
-
-	get_options(str, ARRAY_SIZE(ints), ints);
-
-	apic_pr_verbose("PIRQ redirection, working around broken MP-BIOS.\n");
-
-	max = MAX_PIRQS;
-	if (ints[0] < MAX_PIRQS)
-		max = ints[0];
-
-	for (i = 0; i < max; i++) {
-		apic_pr_verbose("... PIRQ%d -> IRQ %d\n", i, ints[i + 1]);
-		/* PIRQs are mapped upside down, usually */
-		pirq_entries[MAX_PIRQS-i-1] = ints[i+1];
-	}
-	return 1;
-}
-__setup("pirq=", ioapic_pirq_setup);
-#endif /* CONFIG_X86_32 */
 
 /*
  * Saves all the IO-APIC RTE's
@@ -1009,21 +977,6 @@ static int pin_2_irq(int idx, int ioapic, int pin, unsigned int flags)
 	if (mp_irqs[idx].dstirq != pin)
 		pr_err("broken BIOS or MPTABLE parser, ayiee!!\n");
 
-#ifdef CONFIG_X86_32
-	/* PCI IRQ command line redirection. Yes, limits are hardcoded. */
-	if ((pin >= 16) && (pin <= 23)) {
-		if (pirq_entries[pin - 16] != -1) {
-			if (!pirq_entries[pin - 16]) {
-				apic_pr_verbose("Disabling PIRQ%d\n", pin - 16);
-			} else {
-				int irq = pirq_entries[pin-16];
-
-				apic_pr_verbose("Using PIRQ%d -> IRQ %d\n", pin - 16, irq);
-				return irq;
-			}
-		}
-	}
-#endif
 
 	return  mp_map_pin_to_irq(gsi, idx, ioapic, pin, flags, NULL);
 }
@@ -1353,115 +1306,6 @@ void restore_boot_irq_mode(void)
 	x86_apic_ops.restore();
 }
 
-#ifdef CONFIG_X86_32
-/*
- * function to set the IO-APIC physical IDs based on the
- * values stored in the MPC table.
- *
- * by Matt Domsch <Matt_Domsch@dell.com>  Tue Dec 21 12:25:05 CST 1999
- */
-static void __init setup_ioapic_ids_from_mpc_nocheck(void)
-{
-	DECLARE_BITMAP(phys_id_present_map, MAX_LOCAL_APIC);
-	const u32 broadcast_id = 0xF;
-	union IO_APIC_reg_00 reg_00;
-	unsigned char old_id;
-	int ioapic_idx, i;
-
-	/*
-	 * This is broken; anything with a real cpu count has to
-	 * circumvent this idiocy regardless.
-	 */
-	copy_phys_cpu_present_map(phys_id_present_map);
-
-	/*
-	 * Set the IOAPIC ID to the value stored in the MPC table.
-	 */
-	for_each_ioapic(ioapic_idx) {
-		/* Read the register 0 value */
-		scoped_guard (raw_spinlock_irqsave, &ioapic_lock)
-			reg_00.raw = io_apic_read(ioapic_idx, 0);
-
-		old_id = mpc_ioapic_id(ioapic_idx);
-
-		if (mpc_ioapic_id(ioapic_idx) >= broadcast_id) {
-			pr_err(FW_BUG "IO-APIC#%d ID is %d in the MPC table!...\n",
-			       ioapic_idx, mpc_ioapic_id(ioapic_idx));
-			pr_err("... fixing up to %d. (tell your hw vendor)\n", reg_00.bits.ID);
-			ioapics[ioapic_idx].mp_config.apicid = reg_00.bits.ID;
-		}
-
-		/*
-		 * Sanity check, is the ID really free? Every APIC in a
-		 * system must have a unique ID or we get lots of nice
-		 * 'stuck on smp_invalidate_needed IPI wait' messages.
-		 */
-		if (test_bit(mpc_ioapic_id(ioapic_idx), phys_id_present_map)) {
-			pr_err(FW_BUG "IO-APIC#%d ID %d is already used!...\n",
-			       ioapic_idx, mpc_ioapic_id(ioapic_idx));
-			for (i = 0; i < broadcast_id; i++)
-				if (!test_bit(i, phys_id_present_map))
-					break;
-			if (i >= broadcast_id)
-				panic("Max APIC ID exceeded!\n");
-			pr_err("... fixing up to %d. (tell your hw vendor)\n", i);
-			set_bit(i, phys_id_present_map);
-			ioapics[ioapic_idx].mp_config.apicid = i;
-		} else {
-			apic_pr_verbose("Setting %d in the phys_id_present_map\n",
-					mpc_ioapic_id(ioapic_idx));
-			set_bit(mpc_ioapic_id(ioapic_idx), phys_id_present_map);
-		}
-
-		/*
-		 * We need to adjust the IRQ routing table if the ID
-		 * changed.
-		 */
-		if (old_id != mpc_ioapic_id(ioapic_idx)) {
-			for (i = 0; i < mp_irq_entries; i++) {
-				if (mp_irqs[i].dstapic == old_id)
-					mp_irqs[i].dstapic = mpc_ioapic_id(ioapic_idx);
-			}
-		}
-
-		/*
-		 * Update the ID register according to the right value from
-		 * the MPC table if they are different.
-		 */
-		if (mpc_ioapic_id(ioapic_idx) == reg_00.bits.ID)
-			continue;
-
-		apic_pr_verbose("...changing IO-APIC physical APIC ID to %d ...",
-				mpc_ioapic_id(ioapic_idx));
-
-		reg_00.bits.ID = mpc_ioapic_id(ioapic_idx);
-		scoped_guard (raw_spinlock_irqsave, &ioapic_lock) {
-			io_apic_write(ioapic_idx, 0, reg_00.raw);
-			reg_00.raw = io_apic_read(ioapic_idx, 0);
-		}
-		/* Sanity check */
-		if (reg_00.bits.ID != mpc_ioapic_id(ioapic_idx))
-			pr_cont("could not set ID!\n");
-		else
-			apic_pr_verbose(" ok.\n");
-	}
-}
-
-void __init setup_ioapic_ids_from_mpc(void)
-{
-
-	if (acpi_ioapic)
-		return;
-	/*
-	 * Don't check I/O APIC IDs for xAPIC systems.  They have
-	 * no meaning without the serial APIC bus.
-	 */
-	if (!(boot_cpu_data.x86_vendor == X86_VENDOR_INTEL)
-		|| APIC_XAPIC(boot_cpu_apic_version))
-		return;
-	setup_ioapic_ids_from_mpc_nocheck();
-}
-#endif
 
 int no_timer_check __initdata;
 
@@ -2374,70 +2218,6 @@ unsigned int arch_dynirq_lower_bound(unsigned int from)
 	return ret ? : from;
 }
 
-#ifdef CONFIG_X86_32
-static int io_apic_get_unique_id(int ioapic, int apic_id)
-{
-	static DECLARE_BITMAP(apic_id_map, MAX_LOCAL_APIC);
-	const u32 broadcast_id = 0xF;
-	union IO_APIC_reg_00 reg_00;
-	int i = 0;
-
-	/* Initialize the ID map */
-	if (bitmap_empty(apic_id_map, MAX_LOCAL_APIC))
-		copy_phys_cpu_present_map(apic_id_map);
-
-	scoped_guard (raw_spinlock_irqsave, &ioapic_lock)
-		reg_00.raw = io_apic_read(ioapic, 0);
-
-	if (apic_id >= broadcast_id) {
-		pr_warn("IOAPIC[%d]: Invalid apic_id %d, trying %d\n",
-			ioapic, apic_id, reg_00.bits.ID);
-		apic_id = reg_00.bits.ID;
-	}
-
-	/* Every APIC in a system must have a unique ID */
-	if (test_bit(apic_id, apic_id_map)) {
-		for (i = 0; i < broadcast_id; i++) {
-			if (!test_bit(i, apic_id_map))
-				break;
-		}
-
-		if (i == broadcast_id)
-			panic("Max apic_id exceeded!\n");
-
-		pr_warn("IOAPIC[%d]: apic_id %d already used, trying %d\n", ioapic, apic_id, i);
-		apic_id = i;
-	}
-
-	set_bit(apic_id, apic_id_map);
-
-	if (reg_00.bits.ID != apic_id) {
-		reg_00.bits.ID = apic_id;
-
-		scoped_guard (raw_spinlock_irqsave, &ioapic_lock) {
-			io_apic_write(ioapic, 0, reg_00.raw);
-			reg_00.raw = io_apic_read(ioapic, 0);
-		}
-
-		/* Sanity check */
-		if (reg_00.bits.ID != apic_id) {
-			pr_err("IOAPIC[%d]: Unable to change apic_id!\n", ioapic);
-			return -1;
-		}
-	}
-
-	apic_pr_verbose("IOAPIC[%d]: Assigned apic_id %d\n", ioapic, apic_id);
-
-	return apic_id;
-}
-
-static u8 io_apic_unique_id(int idx, u8 id)
-{
-	if ((boot_cpu_data.x86_vendor == X86_VENDOR_INTEL) && !APIC_XAPIC(boot_cpu_apic_version))
-		return io_apic_get_unique_id(idx, id);
-	return id;
-}
-#else
 static u8 io_apic_unique_id(int idx, u8 id)
 {
 	union IO_APIC_reg_00 reg_00;
@@ -2479,7 +2259,6 @@ static u8 io_apic_unique_id(int idx, u8 id)
 
 	return new_id;
 }
-#endif
 
 static int io_apic_get_version(int ioapic)
 {
@@ -2558,19 +2337,7 @@ void __init io_apic_init_mappings(void)
 	for_each_ioapic(i) {
 		if (smp_found_config) {
 			ioapic_phys = mpc_ioapic_addr(i);
-#ifdef CONFIG_X86_32
-			if (!ioapic_phys) {
-				pr_err("WARNING: bogus zero IO-APIC address found in MPTABLE, "
-				       "disabling IO/APIC support!\n");
-				smp_found_config = 0;
-				ioapic_is_disabled = true;
-				goto fake_ioapic_page;
-			}
-#endif
 		} else {
-#ifdef CONFIG_X86_32
-fake_ioapic_page:
-#endif
 			ioapic_phys = (unsigned long)memblock_alloc_or_panic(PAGE_SIZE,
 								    PAGE_SIZE);
 			ioapic_phys = __pa(ioapic_phys);

@@ -740,9 +740,6 @@ enum zone_type {
 	 * there can be false negatives).
 	 */
 	ZONE_MOVABLE,
-#ifdef CONFIG_ZONE_DEVICE
-	ZONE_DEVICE,
-#endif
 	__MAX_NR_ZONES
 
 };
@@ -1067,39 +1064,6 @@ static inline enum zone_type folio_zonenum(const struct folio *folio)
 	return memdesc_zonenum(folio->flags);
 }
 
-#ifdef CONFIG_ZONE_DEVICE
-static inline bool memdesc_is_zone_device(memdesc_flags_t mdf)
-{
-	return memdesc_zonenum(mdf) == ZONE_DEVICE;
-}
-
-static inline struct dev_pagemap *page_pgmap(const struct page *page)
-{
-	VM_WARN_ON_ONCE_PAGE(!memdesc_is_zone_device(page->flags), page);
-	return page_folio(page)->pgmap;
-}
-
-/*
- * Consecutive zone device pages should not be merged into the same sgl
- * or bvec segment with other types of pages or if they belong to different
- * pgmaps. Otherwise getting the pgmap of a given segment is not possible
- * without scanning the entire segment. This helper returns true either if
- * both pages are not zone device pages or both pages are zone device pages
- * with the same pgmap.
- */
-static inline bool zone_device_pages_have_same_pgmap(const struct page *a,
-						     const struct page *b)
-{
-	if (memdesc_is_zone_device(a->flags) != memdesc_is_zone_device(b->flags))
-		return false;
-	if (!memdesc_is_zone_device(a->flags))
-		return true;
-	return page_pgmap(a) == page_pgmap(b);
-}
-
-extern void memmap_init_zone_device(struct zone *, unsigned long,
-				    unsigned long, struct dev_pagemap *);
-#else
 static inline bool memdesc_is_zone_device(memdesc_flags_t mdf)
 {
 	return false;
@@ -1113,7 +1077,6 @@ static inline struct dev_pagemap *page_pgmap(const struct page *page)
 {
 	return NULL;
 }
-#endif
 
 static inline bool is_zone_device_page(const struct page *page)
 {
@@ -1444,17 +1407,10 @@ static inline int local_memory_node(int node_id) { return node_id; };
  */
 #define zone_idx(zone)		((zone) - (zone)->zone_pgdat->node_zones)
 
-#ifdef CONFIG_ZONE_DEVICE
-static inline bool zone_is_zone_device(const struct zone *zone)
-{
-	return zone_idx(zone) == ZONE_DEVICE;
-}
-#else
 static inline bool zone_is_zone_device(const struct zone *zone)
 {
 	return false;
 }
-#endif
 
 /*
  * Returns true if a zone has pages managed by the buddy allocator.
@@ -1842,9 +1798,6 @@ enum {
 	SECTION_HAS_MEM_MAP_BIT,
 	SECTION_IS_ONLINE_BIT,
 	SECTION_IS_EARLY_BIT,
-#ifdef CONFIG_ZONE_DEVICE
-	SECTION_TAINT_ZONE_DEVICE_BIT,
-#endif
 	SECTION_MAP_LAST_BIT,
 };
 
@@ -1852,9 +1805,6 @@ enum {
 #define SECTION_HAS_MEM_MAP		BIT(SECTION_HAS_MEM_MAP_BIT)
 #define SECTION_IS_ONLINE		BIT(SECTION_IS_ONLINE_BIT)
 #define SECTION_IS_EARLY		BIT(SECTION_IS_EARLY_BIT)
-#ifdef CONFIG_ZONE_DEVICE
-#define SECTION_TAINT_ZONE_DEVICE	BIT(SECTION_TAINT_ZONE_DEVICE_BIT)
-#endif
 #define SECTION_MAP_MASK		(~(BIT(SECTION_MAP_LAST_BIT) - 1))
 #define SECTION_NID_SHIFT		SECTION_MAP_LAST_BIT
 
@@ -1895,19 +1845,10 @@ static inline int online_section(const struct mem_section *section)
 	return (section && (section->section_mem_map & SECTION_IS_ONLINE));
 }
 
-#ifdef CONFIG_ZONE_DEVICE
-static inline int online_device_section(const struct mem_section *section)
-{
-	unsigned long flags = SECTION_IS_ONLINE | SECTION_TAINT_ZONE_DEVICE;
-
-	return section && ((section->section_mem_map & flags) == flags);
-}
-#else
 static inline int online_device_section(const struct mem_section *section)
 {
 	return 0;
 }
-#endif
 
 static inline int preinited_vmemmap_section(const struct mem_section *section)
 {

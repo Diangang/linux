@@ -22,19 +22,7 @@
 #include <linux/scs.h>
 #include <asm/cpufeature.h>
 
-#ifdef CONFIG_UNWIND_PATCH_PAC_INTO_SCS
-static inline void dynamic_scs_init(void)
-{
-	extern bool __pi_dynamic_scs_is_enabled;
-
-	if (__pi_dynamic_scs_is_enabled) {
-		pr_info("Enabling dynamic shadow call stack\n");
-		static_branch_enable(&dynamic_scs_enabled);
-	}
-}
-#else
 static inline void dynamic_scs_init(void) {}
-#endif
 
 enum {
 	EDYNSCS_INVALID_CIE_HEADER		= 1,

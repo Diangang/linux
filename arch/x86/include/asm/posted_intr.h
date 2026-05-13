@@ -161,27 +161,8 @@ static inline void __pi_clear_sn(struct pi_desc *pi_desc)
 	pi_desc->notifications &= ~BIT(POSTED_INTR_SN);
 }
 
-#ifdef CONFIG_X86_POSTED_MSI
-/*
- * Not all external vectors are subject to interrupt remapping, e.g. IOMMU's
- * own interrupts. Here we do not distinguish them since those vector bits in
- * PIR will always be zero.
- */
-static inline bool pi_pending_this_cpu(unsigned int vector)
-{
-	struct pi_desc *pid = this_cpu_ptr(&posted_msi_pi_desc);
-
-	if (WARN_ON_ONCE(vector > NR_VECTORS || vector < FIRST_EXTERNAL_VECTOR))
-		return false;
-
-	return test_bit(vector, pid->pir);
-}
-
-extern void intel_posted_msi_init(void);
-#else
 static inline bool pi_pending_this_cpu(unsigned int vector) { return false; }
 
 static inline void intel_posted_msi_init(void) {};
-#endif /* X86_POSTED_MSI */
 
 #endif /* _X86_POSTED_INTR_H */

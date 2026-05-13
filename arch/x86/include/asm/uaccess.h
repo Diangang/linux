@@ -16,11 +16,7 @@
 #include <asm/extable.h>
 #include <asm/tlbflush.h>
 
-#ifdef CONFIG_X86_32
-# include <asm/uaccess_32.h>
-#else
 # include <asm/uaccess_64.h>
-#endif
 
 #include <asm-generic/access_ok.h>
 
@@ -131,20 +127,8 @@ extern int __get_user_bad(void);
 #define __get_user(x,ptr) do_get_user_call(get_user_nocheck,x,ptr)
 
 
-#ifdef CONFIG_X86_32
-#define __put_user_goto_u64(x, addr, label)			\
-	asm goto("\n"					\
-		     "1:	movl %%eax,0(%1)\n"		\
-		     "2:	movl %%edx,4(%1)\n"		\
-		     _ASM_EXTABLE_UA(1b, %l2)			\
-		     _ASM_EXTABLE_UA(2b, %l2)			\
-		     : : "A" (x), "r" (addr)			\
-		     : : label)
-
-#else
 #define __put_user_goto_u64(x, ptr, label) \
 	__put_user_goto(x, ptr, "q", "er", label)
-#endif
 
 extern void __put_user_bad(void);
 
@@ -255,19 +239,8 @@ do {									\
 
 #if 0
 
-#ifdef CONFIG_X86_32
-#define __get_user_asm_u64(x, ptr, label) do {				\
-	unsigned int __gu_low, __gu_high;				\
-	const unsigned int __user *__gu_ptr;				\
-	__gu_ptr = (const void __user *)(ptr);				\
-	__get_user_asm(__gu_low, __gu_ptr, "l", "=r", label);		\
-	__get_user_asm(__gu_high, __gu_ptr+1, "l", "=r", label);	\
-	(x) = ((unsigned long long)__gu_high << 32) | __gu_low;		\
-} while (0)
-#else
 #define __get_user_asm_u64(x, ptr, label)				\
 	__get_user_asm(x, ptr, "q", "=r", label)
-#endif
 
 #define __get_user_size(x, ptr, size, label)				\
 do {									\
@@ -304,31 +277,8 @@ do {									\
 
 #else // !CONFIG_CC_HAS_ASM_GOTO_OUTPUT
 
-#ifdef CONFIG_X86_32
-#define __get_user_asm_u64(x, ptr, retval)				\
-({									\
-	__typeof__(ptr) __ptr = (ptr);					\
-	asm volatile("\n"						\
-		     "1:	movl %[lowbits],%%eax\n"		\
-		     "2:	movl %[highbits],%%edx\n"		\
-		     "3:\n"						\
-		     _ASM_EXTABLE_TYPE_REG(1b, 3b, EX_TYPE_EFAULT_REG |	\
-					   EX_FLAG_CLEAR_AX_DX,		\
-					   %[errout])			\
-		     _ASM_EXTABLE_TYPE_REG(2b, 3b, EX_TYPE_EFAULT_REG |	\
-					   EX_FLAG_CLEAR_AX_DX,		\
-					   %[errout])			\
-		     : [errout] "=r" (retval),				\
-		       [output] "=&A"(x)				\
-		     : [lowbits] "m" (__m(__ptr)),			\
-		       [highbits] "m" __m(((u32 __user *)(__ptr)) + 1),	\
-		       "0" (retval));					\
-})
-
-#else
 #define __get_user_asm_u64(x, ptr, retval) \
 	 __get_user_asm(x, ptr, retval, "q")
-#endif
 
 #define __get_user_size(x, ptr, size, retval)				\
 do {									\
@@ -392,38 +342,6 @@ do {									\
 		*_old = __old;						\
 	likely(success);					})
 
-#ifdef CONFIG_X86_32
-/*
- * Unlike the normal CMPXCHG, use output GPR for both success/fail and error.
- * There are only six GPRs available and four (EAX, EBX, ECX, and EDX) are
- * hardcoded by CMPXCHG8B, leaving only ESI and EDI.  If the compiler uses
- * both ESI and EDI for the memory operand, compilation will fail if the error
- * is an input+output as there will be no register available for input.
- */
-#define __try_cmpxchg64_user_asm(_ptr, _pold, _new, label)	({	\
-	int __result;							\
-	__typeof__(_ptr) _old = (__typeof__(_ptr))(_pold);		\
-	__typeof__(*(_ptr)) __old = *_old;				\
-	__typeof__(*(_ptr)) __new = (_new);				\
-	asm volatile("\n"						\
-		     "1: " LOCK_PREFIX "cmpxchg8b %[ptr]\n"		\
-		     "mov $0, %[result]\n\t"				\
-		     "setz %b[result]\n"				\
-		     "2:\n"						\
-		     _ASM_EXTABLE_TYPE_REG(1b, 2b, EX_TYPE_EFAULT_REG,	\
-					   %[result])			\
-		     : [result] "=q" (__result),			\
-		       "+A" (__old),					\
-		       [ptr] "+m" (*_ptr)				\
-		     : "b" ((u32)__new),				\
-		       "c" ((u32)((u64)__new >> 32))			\
-		     : "memory", "cc");					\
-	if (unlikely(__result < 0))					\
-		goto label;						\
-	if (unlikely(!__result))					\
-		*_old = __old;						\
-	likely(__result);					})
-#endif // CONFIG_X86_32
 
 /* FIXME: this hack is definitely wrong -AK */
 struct __large_struct { unsigned long buf[100]; };
@@ -460,11 +378,6 @@ copy_mc_to_user(void __user *to, const void *from, unsigned len);
 /*
  * movsl can be slow when source and dest are not both 8-byte aligned
  */
-#ifdef CONFIG_X86_INTEL_USERCOPY
-extern struct movsl_mask {
-	int mask;
-} ____cacheline_aligned_in_smp movsl_mask;
-#endif
 
 #define ARCH_HAS_NONTEMPORAL_UACCESS 1
 
@@ -510,10 +423,8 @@ do {										\
 
 extern void __try_cmpxchg_user_wrong_size(void);
 
-#ifndef CONFIG_X86_32
 #define __try_cmpxchg64_user_asm(_ptr, _oldp, _nval, _label)		\
 	__try_cmpxchg_user_asm("q", "r", (_ptr), (_oldp), (_nval), _label)
-#endif
 
 /*
  * Force the pointer to u<size> to match the size expected by the asm helper.

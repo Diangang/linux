@@ -18,13 +18,8 @@
 #include <asm/asm.h>
 struct boot_params;
 
-#ifdef CONFIG_X86_MEM_ENCRYPT
-void __init mem_encrypt_init(void);
-void __init mem_encrypt_setup_arch(void);
-#else
 static inline void mem_encrypt_init(void) { }
 static inline void __init mem_encrypt_setup_arch(void) { }
-#endif
 
 #ifdef CONFIG_AMD_MEM_ENCRYPT
 

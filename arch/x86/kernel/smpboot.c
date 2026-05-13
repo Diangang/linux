@@ -239,7 +239,7 @@ static void notrace __noendbr start_secondary(void *unused)
 	 * 32-bit specific. 64-bit reaches this code with the correct page
 	 * table established. Yet another historical divergence.
 	 */
-	if (IS_ENABLED(CONFIG_X86_32)) {
+	if (0) {
 		/* switch away from the initial page table */
 		load_cr3(swapper_pg_dir);
 		__flush_tlb_all();
@@ -982,10 +982,6 @@ int common_cpu_up(unsigned int cpu, struct task_struct *idle)
 	if (ret)
 		return ret;
 
-#ifdef CONFIG_X86_32
-	/* Stack for startup_32 can be just as for start_secondary onwards */
-	per_cpu(cpu_current_top_of_stack, cpu) = task_top_of_stack(idle);
-#endif
 	return 0;
 }
 
@@ -1008,7 +1004,7 @@ static int do_boot_cpu(u32 apicid, unsigned int cpu, struct task_struct *idle)
 	idle->thread.sp = (unsigned long)task_pt_regs(idle);
 	initial_code = (unsigned long)start_secondary;
 
-	if (IS_ENABLED(CONFIG_X86_32)) {
+	if (0) {
 		early_gdt_descr.address = (unsigned long)get_cpu_gdt_rw(cpu);
 		initial_stack  = idle->thread.sp;
 	} else if (!(smpboot_control & STARTUP_PARALLEL_MASK)) {

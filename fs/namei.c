@@ -3609,32 +3609,6 @@ struct dentry *start_removing_dentry(struct dentry *parent,
 }
 EXPORT_SYMBOL(start_removing_dentry);
 
-#ifdef CONFIG_UNIX98_PTYS
-int path_pts(struct path *path)
-{
-	/* Find something mounted on "pts" in the same directory as
-	 * the input path.
-	 */
-	struct dentry *parent = dget_parent(path->dentry);
-	struct dentry *child;
-	struct qstr this = QSTR_INIT("pts", 3);
-
-	if (unlikely(!path_connected(path->mnt, parent))) {
-		dput(parent);
-		return -ENOENT;
-	}
-	dput(path->dentry);
-	path->dentry = parent;
-	child = d_hash_and_lookup(parent, &this);
-	if (IS_ERR_OR_NULL(child))
-		return -ENOENT;
-
-	path->dentry = child;
-	dput(parent);
-	follow_down(path, 0);
-	return 0;
-}
-#endif
 
 int user_path_at(int dfd, const char __user *name, unsigned flags,
 		 struct path *path)

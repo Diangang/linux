@@ -53,7 +53,7 @@ typedef void *efi_handle_t;
 
 #if defined(CONFIG_X86_64)
 #define __efiapi __attribute__((ms_abi))
-#elif defined(CONFIG_X86_32)
+#elif 0
 #define __efiapi __attribute__((regparm(0)))
 #else
 #define __efiapi

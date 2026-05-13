@@ -99,7 +99,6 @@ obj-$(CONFIG_NUMA_MEMBLKS) += numa_memblks.o
 obj-$(CONFIG_BALLOON) += balloon.o
 obj-$(CONFIG_SECRETMEM) += secretmem.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
-obj-$(CONFIG_ZONE_DEVICE) += memremap.o
 obj-$(CONFIG_MEMFD_CREATE) += memfd.o
 obj-$(CONFIG_PTDUMP) += ptdump.o
 obj-$(CONFIG_PAGE_REPORTING) += page_reporting.o

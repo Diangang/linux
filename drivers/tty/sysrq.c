@@ -113,38 +113,9 @@ static const struct sysrq_key_op sysrq_loglevel_op = {
 	.enable_mask	= SYSRQ_ENABLE_LOG,
 };
 
-#ifdef CONFIG_VT
-static void sysrq_handle_SAK(u8 key)
-{
-	struct work_struct *SAK_work = &vc_cons[fg_console].SAK_work;
-
-	schedule_work(SAK_work);
-}
-static const struct sysrq_key_op sysrq_SAK_op = {
-	.handler	= sysrq_handle_SAK,
-	.help_msg	= "sak(k)",
-	.action_msg	= "SAK",
-	.enable_mask	= SYSRQ_ENABLE_KEYBOARD,
-};
-#else
 #define sysrq_SAK_op (*(const struct sysrq_key_op *)NULL)
-#endif
 
-#ifdef CONFIG_VT
-static void sysrq_handle_unraw(u8 key)
-{
-	vt_reset_unicode(fg_console);
-}
-
-static const struct sysrq_key_op sysrq_unraw_op = {
-	.handler	= sysrq_handle_unraw,
-	.help_msg	= "unraw(r)",
-	.action_msg	= "Keyboard mode set to system default",
-	.enable_mask	= SYSRQ_ENABLE_KEYBOARD,
-};
-#else
 #define sysrq_unraw_op (*(const struct sysrq_key_op *)NULL)
-#endif /* CONFIG_VT */
 
 static void sysrq_handle_crash(u8 key)
 {

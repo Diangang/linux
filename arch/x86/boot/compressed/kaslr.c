@@ -691,16 +691,7 @@ process_efi_entries(unsigned long minimum, unsigned long image_size)
 	    strncmp(signature, EFI64_LOADER_SIGNATURE, 4))
 		return false;
 
-#ifdef CONFIG_X86_32
-	/* Can't handle data above 4GB at this time */
-	if (e->efi_memmap_hi) {
-		warn("EFI memmap is above 4GB, can't be handled now on x86_32. EFI should be disabled.\n");
-		return false;
-	}
-	pmap =  e->efi_memmap;
-#else
 	pmap = (e->efi_memmap | ((__u64)e->efi_memmap_hi << 32));
-#endif
 
 	nr_desc = e->efi_memmap_size / e->efi_memdesc_size;
 	for (i = 0; i < nr_desc; i++) {
@@ -873,7 +864,7 @@ void choose_random_location(unsigned long input,
 
 	boot_params_ptr->hdr.loadflags |= KASLR_FLAG;
 
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		mem_limit = KERNEL_IMAGE_SIZE;
 	else
 		mem_limit = MAXMEM;

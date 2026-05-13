@@ -220,45 +220,6 @@ static inline bool is_fsdax_page(const struct page *page)
 	return folio_is_fsdax(page_folio(page));
 }
 
-#ifdef CONFIG_ZONE_DEVICE
-void zone_device_page_init(struct page *page, struct dev_pagemap *pgmap,
-			   unsigned int order);
-void *memremap_pages(struct dev_pagemap *pgmap, int nid);
-void memunmap_pages(struct dev_pagemap *pgmap);
-void *devm_memremap_pages(struct device *dev, struct dev_pagemap *pgmap);
-void devm_memunmap_pages(struct device *dev, struct dev_pagemap *pgmap);
-struct dev_pagemap *get_dev_pagemap(unsigned long pfn);
-bool pgmap_pfn_valid(struct dev_pagemap *pgmap, unsigned long pfn);
-
-unsigned long memremap_compat_align(void);
-
-static inline void zone_device_folio_init(struct folio *folio,
-					  struct dev_pagemap *pgmap,
-					  unsigned int order)
-{
-	zone_device_page_init(&folio->page, pgmap, order);
-	if (order)
-		folio_set_large_rmappable(folio);
-}
-
-static inline void zone_device_private_split_cb(struct folio *original_folio,
-						struct folio *new_folio)
-{
-	if (folio_is_device_private(original_folio)) {
-		if (!original_folio->pgmap->ops->folio_split) {
-			if (new_folio) {
-				new_folio->pgmap = original_folio->pgmap;
-				new_folio->page.mapping =
-					original_folio->page.mapping;
-			}
-		} else {
-			original_folio->pgmap->ops->folio_split(original_folio,
-								 new_folio);
-		}
-	}
-}
-
-#else
 static inline void *devm_memremap_pages(struct device *dev,
 		struct dev_pagemap *pgmap)
 {
@@ -296,7 +257,6 @@ static inline void zone_device_private_split_cb(struct folio *original_folio,
 						struct folio *new_folio)
 {
 }
-#endif /* CONFIG_ZONE_DEVICE */
 
 static inline void put_dev_pagemap(struct dev_pagemap *pgmap)
 {

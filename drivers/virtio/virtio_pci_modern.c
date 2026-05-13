@@ -608,9 +608,6 @@ static int vp_modern_disable_vq_and_reset(struct virtqueue *vq)
 
 	INIT_LIST_HEAD(&info->node);
 
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	__virtqueue_break(vq);
-#endif
 
 	/* For the case where vq has an exclusive irq, call synchronize_irq() to
 	 * wait for completion.
@@ -658,9 +655,6 @@ static int vp_modern_enable_vq_after_reset(struct virtqueue *vq)
 		INIT_LIST_HEAD(&info->node);
 	}
 
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	__virtqueue_unbreak(vq);
-#endif
 
 	vp_modern_set_queue_enable(&vp_dev->mdev, index, true);
 	vq->reset = false;

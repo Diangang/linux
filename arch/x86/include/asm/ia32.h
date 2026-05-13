@@ -72,7 +72,7 @@ static inline void ia32_disable(void)
 
 static __always_inline bool ia32_enabled(void)
 {
-	return IS_ENABLED(CONFIG_X86_32);
+	return 0;
 }
 
 static inline void ia32_disable(void) {}

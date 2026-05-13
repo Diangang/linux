@@ -117,14 +117,7 @@ extern void account_steal_time(u64);
 extern void account_idle_time(u64);
 extern u64 get_idle_time(struct kernel_cpustat *kcs, int cpu);
 
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
-static inline void account_process_tick(struct task_struct *tsk, int user)
-{
-	vtime_flush(tsk);
-}
-#else
 extern void account_process_tick(struct task_struct *, int user);
-#endif
 
 extern void account_idle_ticks(unsigned long ticks);
 

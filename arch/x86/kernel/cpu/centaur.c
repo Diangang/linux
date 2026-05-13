@@ -48,19 +48,6 @@ static void init_c3(struct cpuinfo_x86 *c)
 		 */
 		c->x86_capability[CPUID_C000_0001_EDX] = cpuid_edx(0xC0000001);
 	}
-#ifdef CONFIG_X86_32
-	/* Cyrix III family needs CX8 & PGE explicitly enabled. */
-	if (c->x86_model >= 6 && c->x86_model <= 13) {
-		rdmsr(MSR_VIA_FCR, lo, hi);
-		lo |= (1<<1 | 1<<7);
-		wrmsr(MSR_VIA_FCR, lo, hi);
-		set_cpu_cap(c, X86_FEATURE_CX8);
-	}
-
-	/* Before Nehemiah, the C3's had 3dNOW! */
-	if (c->x86_model >= 6 && c->x86_model < 9)
-		set_cpu_cap(c, X86_FEATURE_3DNOW);
-#endif
 	if (c->x86 == 0x6 && c->x86_model >= 0xf) {
 		c->x86_cache_alignment = c->x86_clflush_size * 2;
 		set_cpu_cap(c, X86_FEATURE_REP_GOOD);
@@ -93,11 +80,6 @@ enum {
 
 static void early_init_centaur(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-	/* Emulate MTRRs using Centaur's MCR. */
-	if (c->x86 == 5)
-		set_cpu_cap(c, X86_FEATURE_CENTAUR_MCR);
-#endif
 	if ((c->x86 == 6 && c->x86_model >= 0xf) ||
 	    (c->x86 >= 7))
 		set_cpu_cap(c, X86_FEATURE_CONSTANT_TSC);
@@ -110,13 +92,6 @@ static void early_init_centaur(struct cpuinfo_x86 *c)
 
 static void init_centaur(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
-	char *name;
-	u32  fcr_set = 0;
-	u32  fcr_clr = 0;
-	u32  lo, hi, newlo;
-	u32  aa, bb, cc, dd;
-#endif
 	early_init_centaur(c);
 	init_intel_cacheinfo(c);
 
@@ -132,69 +107,6 @@ static void init_centaur(struct cpuinfo_x86 *c)
 			set_cpu_cap(c, X86_FEATURE_ARCH_PERFMON);
 	}
 
-#ifdef CONFIG_X86_32
-	if (c->x86 == 5) {
-		switch (c->x86_model) {
-		case 4:
-			name = "C6";
-			fcr_set = ECX8|DSMC|EDCTLB|EMMX|ERETSTK;
-			fcr_clr = DPDC;
-			pr_notice("Disabling bugged TSC.\n");
-			clear_cpu_cap(c, X86_FEATURE_TSC);
-			break;
-		case 8:
-			switch (c->x86_stepping) {
-			default:
-			name = "2";
-				break;
-			case 7 ... 9:
-				name = "2A";
-				break;
-			case 10 ... 15:
-				name = "2B";
-				break;
-			}
-			fcr_set = ECX8|DSMC|DTLOCK|EMMX|EBRPRED|ERETSTK|
-				  E2MMX|EAMD3D;
-			fcr_clr = DPDC;
-			break;
-		case 9:
-			name = "3";
-			fcr_set = ECX8|DSMC|DTLOCK|EMMX|EBRPRED|ERETSTK|
-				  E2MMX|EAMD3D;
-			fcr_clr = DPDC;
-			break;
-		default:
-			name = "??";
-		}
-
-		rdmsr(MSR_IDT_FCR1, lo, hi);
-		newlo = (lo|fcr_set) & (~fcr_clr);
-
-		if (newlo != lo) {
-			pr_info("Centaur FCR was 0x%X now 0x%X\n",
-				lo, newlo);
-			wrmsr(MSR_IDT_FCR1, newlo, hi);
-		} else {
-			pr_info("Centaur FCR is 0x%X\n", lo);
-		}
-		/* Emulate MTRRs using Centaur's MCR. */
-		set_cpu_cap(c, X86_FEATURE_CENTAUR_MCR);
-		/* Report CX8 */
-		set_cpu_cap(c, X86_FEATURE_CX8);
-		/* Set 3DNow! on Winchip 2 and above. */
-		if (c->x86_model >= 8)
-			set_cpu_cap(c, X86_FEATURE_3DNOW);
-		/* See if we can find out some more. */
-		if (cpuid_eax(0x80000000) >= 0x80000005) {
-			/* Yes, we can. */
-			cpuid(0x80000005, &aa, &bb, &cc, &dd);
-			/* Add L1 data and code cache sizes. */
-			c->x86_cache_size = (cc>>24)+(dd>>24);
-		}
-		sprintf(c->x86_model_id, "WinChip %s", name);
-	}
-#endif
 	if (c->x86 == 6 || c->x86 >= 7)
 		init_c3(c);
 #ifdef CONFIG_X86_64
@@ -204,34 +116,12 @@ static void init_centaur(struct cpuinfo_x86 *c)
 	init_ia32_feat_ctl(c);
 }
 
-#ifdef CONFIG_X86_32
-static unsigned int
-centaur_size_cache(struct cpuinfo_x86 *c, unsigned int size)
-{
-	/* VIA C3 CPUs (670-68F) need further shifting. */
-	if ((c->x86 == 6) && ((c->x86_model == 7) || (c->x86_model == 8)))
-		size >>= 8;
-
-	/*
-	 * There's also an erratum in Nehemiah stepping 1, which
-	 * returns '65KB' instead of '64KB'
-	 *  - Note, it seems this may only be in engineering samples.
-	 */
-	if ((c->x86 == 6) && (c->x86_model == 9) &&
-				(c->x86_stepping == 1) && (size == 65))
-		size -= 1;
-	return size;
-}
-#endif
 
 static const struct cpu_dev centaur_cpu_dev = {
 	.c_vendor	= "Centaur",
 	.c_ident	= { "CentaurHauls" },
 	.c_early_init	= early_init_centaur,
 	.c_init		= init_centaur,
-#ifdef CONFIG_X86_32
-	.legacy_cache_size = centaur_size_cache,
-#endif
 	.c_x86_vendor	= X86_VENDOR_CENTAUR,
 };
 

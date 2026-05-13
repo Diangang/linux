@@ -185,9 +185,6 @@ optimized_callback(struct optimized_kprobe *op, struct pt_regs *regs)
 		regs->sp += sizeof(long);
 		/* Save skipped registers */
 		regs->cs = __KERNEL_CS;
-#ifdef CONFIG_X86_32
-		regs->gs = 0;
-#endif
 		regs->ip = (unsigned long)op->kp.addr + INT3_INSN_SIZE;
 		regs->orig_ax = ~0UL;
 

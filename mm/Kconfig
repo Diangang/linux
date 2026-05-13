@@ -499,35 +499,8 @@ config ZONE_DMA
 
 config ZONE_DMA32
 	bool "Support DMA32 zone"
-	depends on !X86_32
+	depends on y
 	default y if ARM64
-
-config ZONE_DEVICE
-	bool "Device memory (pmem, HMM, etc...) hotplug support"
-	depends on MEMORY_HOTPLUG
-	depends on MEMORY_HOTREMOVE
-	depends on SPARSEMEM_VMEMMAP
-	select XARRAY_MULTI
-
-	help
-	  Device memory hotplug support allows for establishing pmem,
-	  or other device driver discovered memory regions, in the
-	  memmap. This allows pfn_to_page() lookups of otherwise
-	  "device-physical" addresses which is needed for DAX, PCI_P2PDMA, and
-	  DEVICE_PRIVATE features among others.
-
-	  Enabling this option will reduce the entropy of x86 KASLR memory
-	  regions. For example - on a 46 bit system, the entropy goes down
-	  from 16 bits to 15 bits. The actual reduction in entropy depends
-	  on the physical address bits, on processor features, kernel config
-	  (5 level page table) and physical memory present on the system.
-
-#
-# Helpers to mirror range of the CPU page tables of a process into device page
-# tables.
-#
-config VMAP_PFN
-	bool
 
 config ARCH_USES_HIGH_VMA_FLAGS
 	bool

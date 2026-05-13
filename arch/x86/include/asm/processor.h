@@ -52,13 +52,8 @@ struct vm86;
  * but in the task_struct case we must also meet hardware imposed
  * alignment requirements of the FPU state:
  */
-#ifdef CONFIG_X86_VSMP
-# define ARCH_MIN_TASKALIGN		(1 << INTERNODE_CACHE_SHIFT)
-# define ARCH_MIN_MMSTRUCT_ALIGN	(1 << INTERNODE_CACHE_SHIFT)
-#else
 # define ARCH_MIN_TASKALIGN		__alignof__(union fpregs_state)
 # define ARCH_MIN_MMSTRUCT_ALIGN	0
-#endif
 
 extern u16 __read_mostly tlb_lli_4k;
 extern u16 __read_mostly tlb_lli_2m;
@@ -261,55 +256,6 @@ static inline void load_cr3(pgd_t *pgdir)
  * on modern x86 CPUs the TSS also holds information important to 64-bit mode,
  * unrelated to the task-switch mechanism:
  */
-#ifdef CONFIG_X86_32
-/* This is the TSS defined by the hardware. */
-struct x86_hw_tss {
-	unsigned short		back_link, __blh;
-	unsigned long		sp0;
-	unsigned short		ss0, __ss0h;
-	unsigned long		sp1;
-
-	/*
-	 * We don't use ring 1, so ss1 is a convenient scratch space in
-	 * the same cacheline as sp0.  We use ss1 to cache the value in
-	 * MSR_IA32_SYSENTER_CS.  When we context switch
-	 * MSR_IA32_SYSENTER_CS, we first check if the new value being
-	 * written matches ss1, and, if it's not, then we wrmsr the new
-	 * value and update ss1.
-	 *
-	 * The only reason we context switch MSR_IA32_SYSENTER_CS is
-	 * that we set it to zero in vm86 tasks to avoid corrupting the
-	 * stack if we were to go through the sysenter path from vm86
-	 * mode.
-	 */
-	unsigned short		ss1;	/* MSR_IA32_SYSENTER_CS */
-
-	unsigned short		__ss1h;
-	unsigned long		sp2;
-	unsigned short		ss2, __ss2h;
-	unsigned long		__cr3;
-	unsigned long		ip;
-	unsigned long		flags;
-	unsigned long		ax;
-	unsigned long		cx;
-	unsigned long		dx;
-	unsigned long		bx;
-	unsigned long		sp;
-	unsigned long		bp;
-	unsigned long		si;
-	unsigned long		di;
-	unsigned short		es, __esh;
-	unsigned short		cs, __csh;
-	unsigned short		ss, __ssh;
-	unsigned short		ds, __dsh;
-	unsigned short		fs, __fsh;
-	unsigned short		gs, __gsh;
-	unsigned short		ldt, __ldth;
-	unsigned short		trace;
-	unsigned short		io_bitmap_base;
-
-} __attribute__((packed));
-#else
 struct x86_hw_tss {
 	u32			reserved1;
 	u64			sp0;
@@ -330,7 +276,6 @@ struct x86_hw_tss {
 	u16			io_bitmap_base;
 
 } __attribute__((packed));
-#endif
 
 /*
  * IO-bitmap sizes:
@@ -453,18 +398,11 @@ struct perf_event;
 struct thread_struct {
 	/* Cached TLS descriptors: */
 	struct desc_struct	tls_array[GDT_ENTRY_TLS_ENTRIES];
-#ifdef CONFIG_X86_32
-	unsigned long		sp0;
-#endif
 	unsigned long		sp;
-#ifdef CONFIG_X86_32
-	unsigned long		sysenter_cs;
-#else
 	unsigned short		es;
 	unsigned short		ds;
 	unsigned short		fsindex;
 	unsigned short		gsindex;
-#endif
 
 #ifdef CONFIG_X86_64
 	unsigned long		fsbase;
@@ -488,10 +426,6 @@ struct thread_struct {
 	unsigned long		cr2;
 	unsigned long		trap_nr;
 	unsigned long		error_code;
-#ifdef CONFIG_VM86
-	/* Virtual 86 mode info */
-	struct vm86		*vm86;
-#endif
 	/* IO permissions: */
 	struct io_bitmap	*io_bitmap;
 
@@ -513,12 +447,6 @@ struct thread_struct {
 	 */
 	u32			pkru;
 
-#ifdef CONFIG_X86_USER_SHADOW_STACK
-	unsigned long		features;
-	unsigned long		features_locked;
-
-	struct thread_shstk	shstk;
-#endif
 };
 
 #ifdef CONFIG_X86_DEBUG_FPU
@@ -609,12 +537,7 @@ extern char			ignore_fpu_irq;
 #define HAVE_ARCH_PICK_MMAP_LAYOUT 1
 #define ARCH_HAS_PREFETCHW
 
-#ifdef CONFIG_X86_32
-# define BASE_PREFETCH		""
-# define ARCH_HAS_PREFETCH
-#else
 # define BASE_PREFETCH		"prefetcht0 %1"
-#endif
 
 /*
  * Prefetch instructions for Pentium III (+) and AMD Athlon (+)
@@ -653,20 +576,12 @@ static __always_inline void prefetchw(const void *x)
 	((struct pt_regs *)__ptr) - 1;					\
 })
 
-#ifdef CONFIG_X86_32
-#define INIT_THREAD  {							  \
-	.sp0			= TOP_OF_INIT_STACK,			  \
-	.sysenter_cs		= __KERNEL_CS,				  \
-}
-
-#else
 extern unsigned long __top_init_kernel_stack[];
 
 #define INIT_THREAD {							\
 	.sp	= (unsigned long)&__top_init_kernel_stack,		\
 }
 
-#endif /* CONFIG_X86_64 */
 
 extern void start_thread(struct pt_regs *regs, unsigned long new_ip,
 					       unsigned long new_sp);

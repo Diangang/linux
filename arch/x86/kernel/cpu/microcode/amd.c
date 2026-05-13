@@ -734,7 +734,7 @@ static bool get_builtin_microcode(struct cpio_data *cp)
 	u8 family = x86_family(bsp_cpuid_1_eax);
 	struct firmware fw;
 
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return false;
 
 	if (family >= 0x15)

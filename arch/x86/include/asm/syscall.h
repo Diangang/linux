@@ -83,38 +83,6 @@ static inline void syscall_set_return_value(struct task_struct *task,
 	regs->ax = (long) error ?: val;
 }
 
-#ifdef CONFIG_X86_32
-
-static inline void syscall_get_arguments(struct task_struct *task,
-					 struct pt_regs *regs,
-					 unsigned long *args)
-{
-	args[0] = regs->bx;
-	args[1] = regs->cx;
-	args[2] = regs->dx;
-	args[3] = regs->si;
-	args[4] = regs->di;
-	args[5] = regs->bp;
-}
-
-static inline void syscall_set_arguments(struct task_struct *task,
-					 struct pt_regs *regs,
-					 const unsigned long *args)
-{
-	regs->bx = args[0];
-	regs->cx = args[1];
-	regs->dx = args[2];
-	regs->si = args[3];
-	regs->di = args[4];
-	regs->bp = args[5];
-}
-
-static inline int syscall_get_arch(struct task_struct *task)
-{
-	return AUDIT_ARCH_I386;
-}
-
-#else	 /* CONFIG_X86_64 */
 
 static inline void syscall_get_arguments(struct task_struct *task,
 					 struct pt_regs *regs,
@@ -175,7 +143,6 @@ static inline int syscall_get_arch(struct task_struct *task)
 bool do_syscall_64(struct pt_regs *regs, int nr);
 void do_int80_emulation(struct pt_regs *regs);
 
-#endif	/* CONFIG_X86_32 */
 
 void do_int80_syscall_32(struct pt_regs *regs);
 bool do_fast_syscall_32(struct pt_regs *regs);

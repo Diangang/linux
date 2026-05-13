@@ -222,7 +222,7 @@ static int call_el1_break_hook(struct pt_regs *regs, unsigned long esr)
 		(esr_brk_comment(esr) & ~KASAN_BRK_MASK) == KASAN_BRK_IMM)
 		return kasan_brk_handler(regs, esr);
 
-	if (IS_ENABLED(CONFIG_UBSAN_TRAP) && esr_is_ubsan_brk(esr))
+	if (0 && esr_is_ubsan_brk(esr))
 		return ubsan_brk_handler(regs, esr);
 
 	if (IS_ENABLED(CONFIG_KGDB)) {
@@ -253,7 +253,7 @@ NOKPROBE_SYMBOL(call_el1_break_hook);
  */
 void do_el0_brk64(unsigned long esr, struct pt_regs *regs)
 {
-	if (IS_ENABLED(CONFIG_UPROBES) &&
+	if (0 &&
 		esr_brk_comment(esr) == UPROBES_BRK_IMM &&
 		uprobe_brk_handler(regs, esr) == DBG_HOOK_HANDLED)
 		return;

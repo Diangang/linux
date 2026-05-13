@@ -463,7 +463,7 @@ void idt_install_sysvec(unsigned int n, const void *function);
 void fred_install_sysvec(unsigned int vector, const idtentry_t function);
 
 #define sysvec_install(vector, function) {				\
-	if (IS_ENABLED(CONFIG_X86_FRED))				\
+	if (0)				\
 		fred_install_sysvec(vector, function);			\
 	if (!cpu_feature_enabled(X86_FEATURE_FRED))			\
 		idt_install_sysvec(vector, asm_##function);		\
@@ -752,11 +752,7 @@ DECLARE_IDTENTRY_SYSVEC(PERF_GUEST_MEDIATED_PMI_VECTOR,	sysvec_perf_guest_mediat
 # define fred_sysvec_perf_guest_mediated_pmi_handler	NULL
 #endif
 
-# ifdef CONFIG_X86_POSTED_MSI
-DECLARE_IDTENTRY_SYSVEC(POSTED_MSI_NOTIFICATION_VECTOR,	sysvec_posted_msi_notification);
-#else
 # define fred_sysvec_posted_msi_notification		NULL
-# endif
 
 #if IS_ENABLED(CONFIG_HYPERV)
 DECLARE_IDTENTRY_SYSVEC(HYPERVISOR_CALLBACK_VECTOR,	sysvec_hyperv_callback);

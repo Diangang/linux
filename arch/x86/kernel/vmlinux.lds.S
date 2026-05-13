@@ -34,13 +34,8 @@
 
 OUTPUT_FORMAT(CONFIG_OUTPUT_FORMAT)
 
-#ifdef CONFIG_X86_32
-OUTPUT_ARCH(i386)
-ENTRY(phys_startup_32)
-#else
 OUTPUT_ARCH(i386:x86-64)
 ENTRY(phys_startup_64)
-#endif
 
 jiffies = jiffies_64;
 const_current_task = current_task;
@@ -124,11 +119,7 @@ PHDRS {
 SECTIONS
 {
 	. = __START_KERNEL;
-#ifdef CONFIG_X86_32
-	phys_startup_32 = ABSOLUTE(startup_32 - LOAD_OFFSET);
-#else
 	phys_startup_64 = ABSOLUTE(startup_64 - LOAD_OFFSET);
-#endif
 
 	/* Text and read-only data */
 	.text :  AT(ADDR(.text) - LOAD_OFFSET) {
@@ -182,10 +173,6 @@ SECTIONS
 		/* equivalent to task_pt_regs(&init_task) */
 		__top_init_kernel_stack = __end_init_stack - TOP_OF_KERNEL_STACK_PADDING - PTREGS_SIZE;
 
-#ifdef CONFIG_X86_32
-		/* 32 bit has nosave before _edata */
-		NOSAVE_DATA
-#endif
 
 		PAGE_ALIGNED_DATA(PAGE_SIZE)
 

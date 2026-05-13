@@ -1170,11 +1170,7 @@ int fragmentation_index(struct zone *zone, unsigned int order)
 #define TEXT_FOR_HIGHMEM(xx, yy)
 #endif
 
-#ifdef CONFIG_ZONE_DEVICE
-#define TEXT_FOR_DEVICE(xx, yy) [xx##_DEVICE] = yy "_device",
-#else
 #define TEXT_FOR_DEVICE(xx, yy)
-#endif
 
 #define TEXTS_FOR_ZONES(xx, yy)			\
 	TEXT_FOR_DMA(xx, yy)			\

@@ -70,9 +70,6 @@ __used __visible void arch_rethook_trampoline_callback(struct pt_regs *regs)
 
 	/* fixup registers */
 	regs->cs = __KERNEL_CS;
-#ifdef CONFIG_X86_32
-	regs->gs = 0;
-#endif
 	regs->ip = (unsigned long)&arch_rethook_trampoline;
 	regs->orig_ax = ~0UL;
 	regs->sp += 2*sizeof(long);

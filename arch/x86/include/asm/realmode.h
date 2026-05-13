@@ -42,18 +42,11 @@ struct real_mode_header {
 
 /* This must match data at realmode/rm/trampoline_{32,64}.S */
 struct trampoline_header {
-#ifdef CONFIG_X86_32
-	u32 start;
-	u16 gdt_pad;
-	u16 gdt_limit;
-	u32 gdt_base;
-#else
 	u64 start;
 	u64 efer;
 	u32 cr4;
 	u32 flags;
 	u32 lock;
-#endif
 };
 
 extern struct real_mode_header *real_mode_header;
@@ -70,13 +63,8 @@ extern u32 *trampoline_lock;
 extern unsigned char real_mode_blob[];
 extern unsigned char real_mode_relocs[];
 
-#ifdef CONFIG_X86_32
-extern unsigned char startup_32_smp[];
-extern unsigned char boot_gdt[];
-#else
 extern unsigned char secondary_startup_64[];
 extern unsigned char secondary_startup_64_no_verify[];
-#endif
 
 static __always_inline size_t real_mode_size_needed(void)
 {

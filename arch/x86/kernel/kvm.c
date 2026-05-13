@@ -793,7 +793,7 @@ static void kvm_crash_shutdown(struct pt_regs *regs)
 }
 #endif
 
-#if defined(CONFIG_X86_32) || !defined(CONFIG_SMP)
+#if 0 || !defined(CONFIG_SMP)
 bool __kvm_vcpu_is_preempted(long cpu);
 
 __visible bool __kvm_vcpu_is_preempted(long cpu)

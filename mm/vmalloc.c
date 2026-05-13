@@ -3554,60 +3554,6 @@ void *vmap(struct page **pages, unsigned int count,
 }
 EXPORT_SYMBOL(vmap);
 
-#ifdef CONFIG_VMAP_PFN
-struct vmap_pfn_data {
-	unsigned long	*pfns;
-	pgprot_t	prot;
-	unsigned int	idx;
-};
-
-static int vmap_pfn_apply(pte_t *pte, unsigned long addr, void *private)
-{
-	struct vmap_pfn_data *data = private;
-	unsigned long pfn = data->pfns[data->idx];
-	pte_t ptent;
-
-	if (WARN_ON_ONCE(pfn_valid(pfn)))
-		return -EINVAL;
-
-	ptent = pte_mkspecial(pfn_pte(pfn, data->prot));
-	set_pte_at(&init_mm, addr, pte, ptent);
-
-	data->idx++;
-	return 0;
-}
-
-/**
- * vmap_pfn - map an array of PFNs into virtually contiguous space
- * @pfns: array of PFNs
- * @count: number of pages to map
- * @prot: page protection for the mapping
- *
- * Maps @count PFNs from @pfns into contiguous kernel virtual space and returns
- * the start address of the mapping.
- */
-void *vmap_pfn(unsigned long *pfns, unsigned int count, pgprot_t prot)
-{
-	struct vmap_pfn_data data = { .pfns = pfns, .prot = pgprot_nx(prot) };
-	struct vm_struct *area;
-
-	area = get_vm_area_caller(count * PAGE_SIZE, VM_IOREMAP,
-			__builtin_return_address(0));
-	if (!area)
-		return NULL;
-	if (apply_to_page_range(&init_mm, (unsigned long)area->addr,
-			count * PAGE_SIZE, vmap_pfn_apply, &data)) {
-		free_vm_area(area);
-		return NULL;
-	}
-
-	flush_cache_vmap((unsigned long)area->addr,
-			 (unsigned long)area->addr + count * PAGE_SIZE);
-
-	return area->addr;
-}
-EXPORT_SYMBOL_GPL(vmap_pfn);
-#endif /* CONFIG_VMAP_PFN */
 
 /*
  * Helper for vmalloc to adjust the gfp flags for certain allocations.

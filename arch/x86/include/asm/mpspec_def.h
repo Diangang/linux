@@ -14,9 +14,6 @@
 
 #define SMP_MAGIC_IDENT	(('_'<<24) | ('P'<<16) | ('M'<<8) | '_')
 
-#ifdef CONFIG_X86_32
-# define MAX_MPC_ENTRY 1024
-#endif
 
 /* Intel MP Floating Pointer Structure */
 struct mpf_intel {

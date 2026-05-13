@@ -18,11 +18,7 @@ extern bool __vmalloc_start_set; /* set once high_memory is set */
 #endif
 
 #define VMALLOC_START	((unsigned long)high_memory + VMALLOC_OFFSET)
-#ifdef CONFIG_X86_PAE
-#define LAST_PKMAP 512
-#else
 #define LAST_PKMAP 1024
-#endif
 
 #define CPU_ENTRY_AREA_PAGES		(NR_CPUS * DIV_ROUND_UP(sizeof(struct cpu_entry_area), PAGE_SIZE))
 

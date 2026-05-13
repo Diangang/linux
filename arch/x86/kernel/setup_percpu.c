@@ -45,36 +45,6 @@ EXPORT_SYMBOL(__per_cpu_offset);
 #define PERCPU_FIRST_CHUNK_RESERVE	0
 #endif
 
-#ifdef CONFIG_X86_32
-/**
- * pcpu_need_numa - determine percpu allocation needs to consider NUMA
- *
- * If NUMA is not configured or there is only one NUMA node available,
- * there is no reason to consider NUMA.  This function determines
- * whether percpu allocation should consider NUMA or not.
- *
- * RETURNS:
- * true if NUMA should be considered; otherwise, false.
- */
-static bool __init pcpu_need_numa(void)
-{
-#ifdef CONFIG_NUMA
-	pg_data_t *last = NULL;
-	unsigned int cpu;
-
-	for_each_possible_cpu(cpu) {
-		int node = early_cpu_to_node(cpu);
-
-		if (node_online(node) && NODE_DATA(node) &&
-		    last && last != NODE_DATA(node))
-			return true;
-
-		last = NODE_DATA(node);
-	}
-#endif
-	return false;
-}
-#endif
 
 static int __init pcpu_cpu_distance(unsigned int from, unsigned int to)
 {
@@ -100,12 +70,6 @@ void __init pcpu_populate_pte(unsigned long addr)
 
 static inline void setup_percpu_segment(int cpu)
 {
-#ifdef CONFIG_X86_32
-	struct desc_struct d = GDT_ENTRY_INIT(DESC_DATA32,
-					      per_cpu_offset(cpu), 0xFFFFF);
-
-	write_gdt_entry(get_cpu_gdt_rw(cpu), GDT_ENTRY_PERCPU, &d, DESCTYPE_S);
-#endif
 }
 
 void __init setup_per_cpu_areas(void)
@@ -123,10 +87,6 @@ void __init setup_per_cpu_areas(void)
 	 * sparse unit mapping and vmalloc area isn't spacious enough
 	 * on 32bit.  Use page in that case.
 	 */
-#ifdef CONFIG_X86_32
-	if (pcpu_chosen_fc == PCPU_FC_AUTO && pcpu_need_numa())
-		pcpu_chosen_fc = PCPU_FC_PAGE;
-#endif
 	rc = -EINVAL;
 	if (pcpu_chosen_fc != PCPU_FC_PAGE) {
 		const size_t dyn_size = PERCPU_MODULE_RESERVE +

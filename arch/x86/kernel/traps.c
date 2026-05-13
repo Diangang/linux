@@ -388,11 +388,7 @@ DEFINE_IDTENTRY(exc_overflow)
 	do_error_trap(regs, 0, "overflow", X86_TRAP_OF, SIGSEGV, 0, NULL);
 }
 
-#ifdef CONFIG_X86_F00F_BUG
-void handle_invalid_op(struct pt_regs *regs)
-#else
 static inline void handle_invalid_op(struct pt_regs *regs)
-#endif
 {
 	do_error_trap(regs, 0, "invalid opcode", X86_TRAP_UD, SIGILL,
 		      ILL_ILLOPN, error_get_trap_addr(regs));
@@ -448,7 +444,7 @@ noinstr bool handle_bug(struct pt_regs *regs)
 		break;
 
 	case BUG_UD1_UBSAN:
-		if (IS_ENABLED(CONFIG_UBSAN_TRAP)) {
+		if (0) {
 			pr_crit("%s at %pS\n",
 				report_ubsan_failure(ud_imm),
 				(void *)regs->ip);
@@ -1089,11 +1085,7 @@ static bool is_sysenter_singlestep(struct pt_regs *regs)
 	 * which instructions will be hit because BTF could plausibly
 	 * be set.)
 	 */
-#ifdef CONFIG_X86_32
-	return (regs->ip - (unsigned long)__begin_SYSENTER_singlestep_region) <
-		(unsigned long)__end_SYSENTER_singlestep_region -
-		(unsigned long)__begin_SYSENTER_singlestep_region;
-#elif defined(CONFIG_IA32_EMULATION)
+#if   defined(CONFIG_IA32_EMULATION)
 	return (regs->ip - (unsigned long)entry_SYSENTER_compat) <
 		(unsigned long)__end_entry_SYSENTER_compat -
 		(unsigned long)entry_SYSENTER_compat;
@@ -1336,32 +1328,6 @@ DEFINE_IDTENTRY_DEBUG_USER(exc_debug)
 	exc_debug_user(regs, debug_read_reset_dr6());
 }
 
-#ifdef CONFIG_X86_FRED
-/*
- * When occurred on different ring level, i.e., from user or kernel
- * context, #DB needs to be handled on different stack: User #DB on
- * current task stack, while kernel #DB on a dedicated stack.
- *
- * This is exactly how FRED event delivery invokes an exception
- * handler: ring 3 event on level 0 stack, i.e., current task stack;
- * ring 0 event on the #DB dedicated stack specified in the
- * IA32_FRED_STKLVLS MSR. So unlike IDT, the FRED debug exception
- * entry stub doesn't do stack switch.
- */
-DEFINE_FREDENTRY_DEBUG(exc_debug)
-{
-	/*
-	 * FRED #DB stores DR6 on the stack in the format which
-	 * debug_read_reset_dr6() returns for the IDT entry points.
-	 */
-	unsigned long dr6 = fred_event_data(regs);
-
-	if (user_mode(regs))
-		exc_debug_user(regs, dr6);
-	else
-		exc_debug_kernel(regs, dr6);
-}
-#endif /* CONFIG_X86_FRED */
 
 #else
 /* 32 bit does not have separate entry points. */
@@ -1434,7 +1400,7 @@ DEFINE_IDTENTRY(exc_coprocessor_error)
 
 DEFINE_IDTENTRY(exc_simd_coprocessor_error)
 {
-	if (IS_ENABLED(CONFIG_X86_INVD_BUG)) {
+	if (0) {
 		/* AMD 486 bug: INVD in CPL 0 raises #XF instead of #GP */
 		if (!static_cpu_has(X86_FEATURE_XMM)) {
 			__exc_general_protection(regs, 0);
@@ -1625,18 +1591,6 @@ DEFINE_IDTENTRY(exc_virtualization_exception)
 
 #endif
 
-#ifdef CONFIG_X86_32
-DEFINE_IDTENTRY_SW(iret_error)
-{
-	local_irq_enable();
-	if (notify_die(DIE_TRAP, "iret exception", regs, 0,
-			X86_TRAP_IRET, SIGILL) != NOTIFY_STOP) {
-		do_trap(X86_TRAP_IRET, SIGILL, "iret exception", regs, 0,
-			ILL_BADSTK, (void __user *)NULL);
-	}
-	local_irq_disable();
-}
-#endif
 
 void __init trap_init(void)
 {

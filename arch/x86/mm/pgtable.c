@@ -32,9 +32,6 @@ void ___pmd_free_tlb(struct mmu_gather *tlb, pmd_t *pmd)
 	 * NOTE! For PAE, any changes to the top page-directory-pointer-table
 	 * entries need a full cr3 reload to flush.
 	 */
-#ifdef CONFIG_X86_PAE
-	tlb->need_flush_all = 1;
-#endif
 	tlb_remove_ptdesc(tlb, virt_to_ptdesc(pmd));
 }
 
@@ -82,7 +79,7 @@ struct mm_struct *pgd_page_get_mm(struct page *page)
 static void pgd_ctor(struct mm_struct *mm, pgd_t *pgd)
 {
 	/* PAE preallocates all its PMDs.  No cloning needed. */
-	if (!IS_ENABLED(CONFIG_X86_PAE))
+	if (!0)
 		clone_pgd_range(pgd + KERNEL_PGD_BOUNDARY,
 				swapper_pg_dir + KERNEL_PGD_BOUNDARY,
 				KERNEL_PGD_PTRS);
@@ -110,53 +107,11 @@ static void pgd_dtor(pgd_t *pgd)
  * -- nyc
  */
 
-#ifdef CONFIG_X86_PAE
-/*
- * In PAE mode, we need to do a cr3 reload (=tlb flush) when
- * updating the top-level pagetable entries to guarantee the
- * processor notices the update.  Since this is expensive, and
- * all 4 top-level entries are used almost immediately in a
- * new process's life, we just pre-populate them here.
- */
-#define PREALLOCATED_PMDS	PTRS_PER_PGD
-
-/*
- * "USER_PMDS" are the PMDs for the user copy of the page tables when
- * PTI is enabled. They do not exist when PTI is disabled.  Note that
- * this is distinct from the user _portion_ of the kernel page tables
- * which always exists.
- *
- * We allocate separate PMDs for the kernel part of the user page-table
- * when PTI is enabled. We need them to map the per-process LDT into the
- * user-space page-table.
- */
-#define PREALLOCATED_USER_PMDS	 (boot_cpu_has(X86_FEATURE_PTI) ? \
-					KERNEL_PGD_PTRS : 0)
-#define MAX_PREALLOCATED_USER_PMDS KERNEL_PGD_PTRS
-
-void pud_populate(struct mm_struct *mm, pud_t *pudp, pmd_t *pmd)
-{
-	paravirt_alloc_pmd(mm, __pa(pmd) >> PAGE_SHIFT);
-
-	/* Note: almost everything apart from _PAGE_PRESENT is
-	   reserved at the pmd (PDPT) level. */
-	set_pud(pudp, __pud(__pa(pmd) | _PAGE_PRESENT));
-
-	/*
-	 * According to Intel App note "TLBs, Paging-Structure Caches,
-	 * and Their Invalidation", April 2007, document 317080-001,
-	 * section 8.1: in PAE mode we explicitly have to flush the
-	 * TLB via cr3 if the top-level pgd is changed...
-	 */
-	flush_tlb_mm(mm);
-}
-#else  /* !CONFIG_X86_PAE */
 
 /* No need to prepopulate any pagetable entries in non-PAE modes. */
 #define PREALLOCATED_PMDS	0
 #define PREALLOCATED_USER_PMDS	 0
 #define MAX_PREALLOCATED_USER_PMDS 0
-#endif	/* CONFIG_X86_PAE */
 
 static void free_pmds(struct mm_struct *mm, pmd_t *pmds[], int count)
 {
@@ -551,12 +506,6 @@ pud_t pudp_invalidate(struct vm_area_struct *vma, unsigned long address,
  */
 void __init reserve_top_address(unsigned long reserve)
 {
-#ifdef CONFIG_X86_32
-	BUG_ON(fixmaps_set > 0);
-	__FIXADDR_TOP = round_down(-reserve, 1 << PMD_SHIFT) - PAGE_SIZE;
-	printk(KERN_INFO "Reserving virtual address space above 0x%08lx (rounded to 0x%08lx)\n",
-	       -reserve, __FIXADDR_TOP + PAGE_SIZE);
-#endif
 }
 
 int fixmaps_set;

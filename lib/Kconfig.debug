@@ -215,46 +215,6 @@ config NOINSTR_VALIDATION
 	select OBJTOOL
 	default y
 
-config VMLINUX_MAP
-	bool "Generate vmlinux.map file when linking"
-	depends on EXPERT
-	help
-	  Selecting this option will pass "-Map=vmlinux.map" to ld
-	  when linking vmlinux. That file can be useful for verifying
-	  and debugging magic section games, and for seeing which
-	  pieces of code get eliminated with
-	  CONFIG_LD_DEAD_CODE_DATA_ELIMINATION.
-
-config WARN_CONTEXT_ANALYSIS
-	bool "Compiler context-analysis warnings"
-	depends on n
-	# Branch profiling re-defines "if", which messes with the compiler's
-	# ability to analyze __cond_acquires(..), resulting in false positives.
-	depends on !TRACE_BRANCH_PROFILING
-	default y
-	help
-	  Context Analysis is a language extension, which enables statically
-	  checking that required contexts are active (or inactive) by acquiring
-	  and releasing user-definable "context locks".
-
-	  Clang's name of the feature is "Thread Safety Analysis". Requires
-	  Clang 22.1.0 or later.
-
-	  Produces warnings by default. Select CONFIG_WERROR if you wish to
-	  turn these warnings into errors.
-
-	  For more details, see Documentation/dev-tools/context-analysis.rst.
-
-config WARN_CONTEXT_ANALYSIS_ALL
-	bool "Enable context analysis for all source files"
-	depends on WARN_CONTEXT_ANALYSIS
-	depends on EXPERT && !COMPILE_TEST
-	help
-	  Enable tree-wide context analysis. This is likely to produce a
-	  large number of false positives - enable at your own risk.
-
-	  If unsure, say N.
-
 endmenu # "Compiler options"
 
 menu "Generic Kernel Debugging Instruments"

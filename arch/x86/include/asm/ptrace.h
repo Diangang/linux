@@ -208,20 +208,12 @@ static __always_inline void regs_set_return_value(struct pt_regs *regs, unsigned
  */
 static __always_inline int user_mode(struct pt_regs *regs)
 {
-#ifdef CONFIG_X86_32
-	return ((regs->cs & SEGMENT_RPL_MASK) | (regs->flags & X86_VM_MASK)) >= USER_RPL;
-#else
 	return !!(regs->cs & 3);
-#endif
 }
 
 static __always_inline int v8086_mode(struct pt_regs *regs)
 {
-#ifdef CONFIG_X86_32
-	return (regs->flags & X86_VM_MASK);
-#else
 	return 0;	/* No V86 mode support in long mode */
-#endif
 }
 
 static inline bool user_64bit_mode(struct pt_regs *regs)
@@ -328,18 +320,6 @@ static inline unsigned long regs_get_register(struct pt_regs *regs,
 {
 	if (unlikely(offset > MAX_REG_OFFSET))
 		return 0;
-#ifdef CONFIG_X86_32
-	/* The selector fields are 16-bit. */
-	if (offset == offsetof(struct pt_regs, cs) ||
-	    offset == offsetof(struct pt_regs, ss) ||
-	    offset == offsetof(struct pt_regs, ds) ||
-	    offset == offsetof(struct pt_regs, es) ||
-	    offset == offsetof(struct pt_regs, fs) ||
-	    offset == offsetof(struct pt_regs, gs)) {
-		return *(u16 *)((unsigned long)regs + offset);
-
-	}
-#endif
 	return *(unsigned long *)((unsigned long)regs + offset);
 }
 

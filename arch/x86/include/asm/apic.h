@@ -47,11 +47,7 @@ do {						\
 /* Unconditional debug prints for code which is guarded by apic_verbosity already */
 #define apic_dbg(s, a...)		printk(KERN_DEBUG s, ##a)
 
-#if defined(CONFIG_X86_LOCAL_APIC) && defined(CONFIG_X86_32)
-extern void x86_32_probe_apic(void);
-#else
 static inline void x86_32_probe_apic(void) { }
-#endif
 
 extern u32 cpuid_to_apicid[];
 

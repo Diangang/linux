@@ -1320,11 +1320,7 @@ static struct virtqueue *__vring_new_virtqueue_split(unsigned int index,
 	vq->we_own_ring = false;
 	vq->notify = notify;
 	vq->weak_barriers = weak_barriers;
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	vq->broken = true;
-#else
 	vq->broken = false;
-#endif
 	vq->map = map;
 	vq->use_map_api = vring_use_map_api(vdev);
 
@@ -2540,11 +2536,7 @@ static struct virtqueue *__vring_new_virtqueue_packed(unsigned int index,
 	vq->we_own_ring = false;
 	vq->notify = notify;
 	vq->weak_barriers = weak_barriers;
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-	vq->broken = true;
-#else
 	vq->broken = false;
-#endif
 	vq->map = map;
 	vq->use_map_api = vring_use_map_api(vdev);
 
@@ -3236,13 +3228,7 @@ irqreturn_t vring_interrupt(int irq, void *_vq)
 	}
 
 	if (unlikely(vq->broken)) {
-#ifdef CONFIG_VIRTIO_HARDEN_NOTIFICATION
-		dev_warn_once(&vq->vq.vdev->dev,
-			      "virtio vring IRQ raised before DRIVER_OK");
-		return IRQ_NONE;
-#else
 		return IRQ_HANDLED;
-#endif
 	}
 
 	/* Just a hint for performance: so it's ok that this can be racy! */

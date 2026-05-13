@@ -20,10 +20,6 @@ asmlinkage __visible noinstr struct pt_regs *vc_switch_off_ist(struct pt_regs *e
 extern int ibt_selftest(void);
 extern int ibt_selftest_noendbr(void);
 
-#ifdef CONFIG_X86_F00F_BUG
-/* For handling the FOOF bug */
-void handle_invalid_op(struct pt_regs *regs);
-#endif
 
 noinstr bool handle_bug(struct pt_regs *regs);
 

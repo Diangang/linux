@@ -240,9 +240,6 @@ char * const zone_names[MAX_NR_ZONES] = {
 	 "HighMem",
 #endif
 	 "Movable",
-#ifdef CONFIG_ZONE_DEVICE
-	 "Device",
-#endif
 };
 
 const char * const migratetype_names[MIGRATE_TYPES] = {

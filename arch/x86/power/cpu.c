@@ -30,12 +30,6 @@
 #include <asm/msr.h>
 #include <asm/fred.h>
 
-#ifdef CONFIG_X86_32
-__visible unsigned long saved_context_ebx;
-__visible unsigned long saved_context_esp, saved_context_ebp;
-__visible unsigned long saved_context_esi, saved_context_edi;
-__visible unsigned long saved_context_eflags;
-#endif
 struct saved_context saved_context;
 
 static void msr_save_context(struct saved_context *ctxt)
@@ -80,9 +74,6 @@ static void msr_restore_context(struct saved_context *ctxt)
  */
 static void __save_processor_state(struct saved_context *ctxt)
 {
-#ifdef CONFIG_X86_32
-	mtrr_save_fixed_ranges(NULL);
-#endif
 	kernel_fpu_begin();
 
 	/*
@@ -137,9 +128,6 @@ void save_processor_state(void)
 	__save_processor_state(&saved_context);
 	x86_platform.save_sched_clock_state();
 }
-#ifdef CONFIG_X86_32
-EXPORT_SYMBOL(save_processor_state);
-#endif
 
 static void do_fpu_end(void)
 {
@@ -204,14 +192,9 @@ static void notrace __restore_processor_state(struct saved_context *ctxt)
 	 * control registers
 	 */
 	/* cr4 was introduced in the Pentium CPU */
-#ifdef CONFIG_X86_32
-	if (ctxt->cr4)
-		__write_cr4(ctxt->cr4);
-#else
 /* CONFIG X86_64 */
 	wrmsrq(MSR_EFER, ctxt->efer);
 	__write_cr4(ctxt->cr4);
-#endif
 	write_cr3(ctxt->cr3);
 	write_cr2(ctxt->cr2);
 	write_cr0(ctxt->cr0);
@@ -298,48 +281,7 @@ void notrace restore_processor_state(void)
 {
 	__restore_processor_state(&saved_context);
 }
-#ifdef CONFIG_X86_32
-EXPORT_SYMBOL(restore_processor_state);
-#endif
 
-#if 0 && defined(CONFIG_HOTPLUG_CPU)
-static void __noreturn resume_play_dead(void)
-{
-	play_dead_common();
-	tboot_shutdown(TB_SHUTDOWN_WFS);
-	hlt_play_dead();
-}
-
-int hibernate_resume_nonboot_cpu_disable(void)
-{
-	void (*play_dead)(void) = smp_ops.play_dead;
-	int ret;
-
-	/*
-	 * Ensure that MONITOR/MWAIT will not be used in the "play dead" loop
-	 * during hibernate image restoration, because it is likely that the
-	 * monitored address will be actually written to at that time and then
-	 * the "dead" CPU will attempt to execute instructions again, but the
-	 * address in its instruction pointer may not be possible to resolve
-	 * any more at that point (the page tables used by it previously may
-	 * have been overwritten by hibernate image data).
-	 *
-	 * First, make sure that we wake up all the potentially disabled SMT
-	 * threads which have been initially brought up and then put into
-	 * mwait/cpuidle sleep.
-	 * Those will be put to proper (not interfering with hibernation
-	 * resume) sleep afterwards, and the resumed kernel will decide itself
-	 * what to do with them.
-	 */
-	ret = cpuhp_smt_enable();
-	if (ret)
-		return ret;
-	smp_ops.play_dead = resume_play_dead;
-	ret = freeze_secondary_cpus(0);
-	smp_ops.play_dead = play_dead;
-	return ret;
-}
-#endif
 
 /*
  * When bsp_check() is called in hibernate and suspend, cpu hotplug

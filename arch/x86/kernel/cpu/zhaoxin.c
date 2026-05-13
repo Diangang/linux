@@ -92,22 +92,12 @@ static void init_zhaoxin(struct cpuinfo_x86 *c)
 	init_ia32_feat_ctl(c);
 }
 
-#ifdef CONFIG_X86_32
-static unsigned int
-zhaoxin_size_cache(struct cpuinfo_x86 *c, unsigned int size)
-{
-	return size;
-}
-#endif
 
 static const struct cpu_dev zhaoxin_cpu_dev = {
 	.c_vendor	= "zhaoxin",
 	.c_ident	= { "  Shanghai  " },
 	.c_early_init	= early_init_zhaoxin,
 	.c_init		= init_zhaoxin,
-#ifdef CONFIG_X86_32
-	.legacy_cache_size = zhaoxin_size_cache,
-#endif
 	.c_x86_vendor	= X86_VENDOR_ZHAOXIN,
 };
 

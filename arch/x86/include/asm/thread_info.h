@@ -35,19 +35,7 @@
  * or not FRED is enabled. Future versions of FRED might make this
  * dynamic, but for now it is always 2 words longer.
  */
-#ifdef CONFIG_X86_32
-# ifdef CONFIG_VM86
-#  define TOP_OF_KERNEL_STACK_PADDING 16
-# else
-#  define TOP_OF_KERNEL_STACK_PADDING 8
-# endif
-#else /* x86-64 */
-# ifdef CONFIG_X86_FRED
-#  define TOP_OF_KERNEL_STACK_PADDING (2 * 8)
-# else
 #  define TOP_OF_KERNEL_STACK_PADDING 0
-# endif
-#endif
 
 /*
  * low level task data that entry.S needs immediate access to
@@ -217,12 +205,8 @@ static inline int arch_within_stack_frames(const void * const stack,
 
 #endif
 
-#ifdef CONFIG_X86_32
-#define in_ia32_syscall() true
-#else
 #define in_ia32_syscall() (IS_ENABLED(CONFIG_IA32_EMULATION) && \
 			   current_thread_info()->status & TS_COMPAT)
-#endif
 
 extern void arch_setup_new_exec(void);
 #define arch_setup_new_exec arch_setup_new_exec

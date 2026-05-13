@@ -37,7 +37,6 @@ unsigned int csum_partial(const unsigned char * buff, int len, unsigned int sum)
 		
 .text
 		
-#ifndef CONFIG_X86_USE_PPRO_CHECKSUM
 
 	  /*		
 	   * Experiments with Ethernet and SLIP connections show that buff
@@ -130,125 +129,6 @@ SYM_FUNC_START(csum_partial)
 	RET
 SYM_FUNC_END(csum_partial)
 
-#else
-
-/* Version for PentiumII/PPro */
-
-SYM_FUNC_START(csum_partial)
-	pushl %esi
-	pushl %ebx
-	movl 20(%esp),%eax	# Function arg: unsigned int sum
-	movl 16(%esp),%ecx	# Function arg: int len
-	movl 12(%esp),%esi	# Function arg:	const unsigned char *buf
-
-	testl $3, %esi         
-	jnz 25f                 
-10:
-	movl %ecx, %edx
-	movl %ecx, %ebx
-	andl $0x7c, %ebx
-	shrl $7, %ecx
-	addl %ebx,%esi
-	shrl $2, %ebx  
-	negl %ebx
-	lea 45f(%ebx,%ebx,2), %ebx
-	testl %esi, %esi
-	JMP_NOSPEC ebx
-
-	# Handle 2-byte-aligned regions
-20:	addw (%esi), %ax
-	lea 2(%esi), %esi
-	adcl $0, %eax
-	jmp 10b
-25:
-	testl $1, %esi         
-	jz 30f                 
-	# buf is odd
-	dec %ecx
-	jl 90f
-	movzbl (%esi), %ebx
-	addl %ebx, %eax
-	adcl $0, %eax
-	roll $8, %eax
-	inc %esi
-	testl $2, %esi
-	jz 10b
-
-30:	subl $2, %ecx          
-	ja 20b                 
-	je 32f
-	addl $2, %ecx
-	jz 80f
-	movzbl (%esi),%ebx	# csumming 1 byte, 2-aligned
-	addl %ebx, %eax
-	adcl $0, %eax
-	jmp 80f
-32:
-	addw (%esi), %ax	# csumming 2 bytes, 2-aligned
-	adcl $0, %eax
-	jmp 80f
-
-40: 
-	addl -128(%esi), %eax
-	adcl -124(%esi), %eax
-	adcl -120(%esi), %eax
-	adcl -116(%esi), %eax   
-	adcl -112(%esi), %eax   
-	adcl -108(%esi), %eax
-	adcl -104(%esi), %eax
-	adcl -100(%esi), %eax
-	adcl -96(%esi), %eax
-	adcl -92(%esi), %eax
-	adcl -88(%esi), %eax
-	adcl -84(%esi), %eax
-	adcl -80(%esi), %eax
-	adcl -76(%esi), %eax
-	adcl -72(%esi), %eax
-	adcl -68(%esi), %eax
-	adcl -64(%esi), %eax     
-	adcl -60(%esi), %eax     
-	adcl -56(%esi), %eax     
-	adcl -52(%esi), %eax   
-	adcl -48(%esi), %eax   
-	adcl -44(%esi), %eax
-	adcl -40(%esi), %eax
-	adcl -36(%esi), %eax
-	adcl -32(%esi), %eax
-	adcl -28(%esi), %eax
-	adcl -24(%esi), %eax
-	adcl -20(%esi), %eax
-	adcl -16(%esi), %eax
-	adcl -12(%esi), %eax
-	adcl -8(%esi), %eax
-	adcl -4(%esi), %eax
-45:
-	lea 128(%esi), %esi
-	adcl $0, %eax
-	dec %ecx
-	jge 40b
-	movl %edx, %ecx
-50:	andl $3, %ecx
-	jz 80f
-
-	# Handle the last 1-3 bytes without jumping
-	notl %ecx		# 1->2, 2->1, 3->0, higher bits are masked
-	movl $0xffffff,%ebx	# by the shll and shrl instructions
-	shll $3,%ecx
-	shrl %cl,%ebx
-	andl -128(%esi),%ebx	# esi is 4-aligned so should be ok
-	addl %ebx,%eax
-	adcl $0,%eax
-80: 
-	testb $1, 12(%esp)
-	jz 90f
-	roll $8, %eax
-90: 
-	popl %ebx
-	popl %esi
-	RET
-SYM_FUNC_END(csum_partial)
-				
-#endif
 EXPORT_SYMBOL(csum_partial)
 
 /*
@@ -264,7 +144,6 @@ unsigned int csum_partial_copy_generic (const char *src, char *dst,
 	9999: y;						\
 	_ASM_EXTABLE_TYPE(9999b, 7f, EX_TYPE_UACCESS | EX_FLAG_CLEAR_AX)
 
-#ifndef CONFIG_X86_USE_PPRO_CHECKSUM
 
 #define ARGBASE 16		
 #define FP		12
@@ -365,80 +244,4 @@ EXC(	movb %cl, (%edi)	)
 	RET
 SYM_FUNC_END(csum_partial_copy_generic)
 
-#else
-
-/* Version for PentiumII/PPro */
-
-#define ROUND1(x) \
-	EXC(movl x(%esi), %ebx	)	;	\
-	addl %ebx, %eax			;	\
-	EXC(movl %ebx, x(%edi)	)	;
-
-#define ROUND(x) \
-	EXC(movl x(%esi), %ebx	)	;	\
-	adcl %ebx, %eax			;	\
-	EXC(movl %ebx, x(%edi)	)	;
-
-#define ARGBASE 12
-		
-SYM_FUNC_START(csum_partial_copy_generic)
-	pushl %ebx
-	pushl %edi
-	pushl %esi
-	movl ARGBASE+4(%esp),%esi	#src
-	movl ARGBASE+8(%esp),%edi	#dst	
-	movl ARGBASE+12(%esp),%ecx	#len
-	movl $-1, %eax			#sum
-#	movl %ecx, %edx  
-	movl %ecx, %ebx  
-	movl %esi, %edx
-	shrl $6, %ecx     
-	andl $0x3c, %ebx  
-	negl %ebx
-	subl %ebx, %esi  
-	subl %ebx, %edi  
-	lea  -1(%esi),%edx
-	andl $-32,%edx
-	lea 3f(%ebx,%ebx), %ebx
-	testl %esi, %esi 
-	JMP_NOSPEC ebx
-1:	addl $64,%esi
-	addl $64,%edi 
-	EXC(movb -32(%edx),%bl)	; EXC(movb (%edx),%bl)
-	ROUND1(-64) ROUND(-60) ROUND(-56) ROUND(-52)	
-	ROUND (-48) ROUND(-44) ROUND(-40) ROUND(-36)	
-	ROUND (-32) ROUND(-28) ROUND(-24) ROUND(-20)	
-	ROUND (-16) ROUND(-12) ROUND(-8)  ROUND(-4)	
-3:	adcl $0,%eax
-	addl $64, %edx
-	dec %ecx
-	jge 1b
-4:	movl ARGBASE+12(%esp),%edx	#len
-	andl $3, %edx
-	jz 7f
-	cmpl $2, %edx
-	jb 5f
-EXC(	movw (%esi), %dx         )
-	leal 2(%esi), %esi
-EXC(	movw %dx, (%edi)         )
-	leal 2(%edi), %edi
-	je 6f
-	shll $16,%edx
-5:
-EXC(	movb (%esi), %dl         )
-EXC(	movb %dl, (%edi)         )
-6:	addl %edx, %eax
-	adcl $0, %eax
-7:
-
-	popl %esi
-	popl %edi
-	popl %ebx
-	RET
-SYM_FUNC_END(csum_partial_copy_generic)
-				
-#undef ROUND
-#undef ROUND1		
-		
-#endif
 EXPORT_SYMBOL(csum_partial_copy_generic)

@@ -12,9 +12,6 @@
 #define __SYSCALL(nr, sym) extern long __x64_##sym(const struct pt_regs *);
 #define __SYSCALL_NORETURN(nr, sym) extern long __noreturn __x64_##sym(const struct pt_regs *);
 #include <asm/syscalls_64.h>
-#ifdef CONFIG_X86_X32_ABI
-#include <asm/syscalls_x32.h>
-#endif
 #undef  __SYSCALL
 
 #undef  __SYSCALL_NORETURN
@@ -40,15 +37,6 @@ long x64_sys_call(const struct pt_regs *regs, unsigned int nr)
 	}
 }
 
-#ifdef CONFIG_X86_X32_ABI
-long x32_sys_call(const struct pt_regs *regs, unsigned int nr)
-{
-	switch (nr) {
-	#include <asm/syscalls_x32.h>
-	default: return __x64_sys_ni_syscall(regs);
-	}
-}
-#endif
 
 static __always_inline bool do_syscall_x64(struct pt_regs *regs, int nr)
 {
@@ -75,7 +63,7 @@ static __always_inline bool do_syscall_x32(struct pt_regs *regs, int nr)
 	 */
 	unsigned int xnr = nr - __X32_SYSCALL_BIT;
 
-	if (IS_ENABLED(CONFIG_X86_X32_ABI) && likely(xnr < X32_NR_syscalls)) {
+	if (0 && likely(xnr < X32_NR_syscalls)) {
 		xnr = array_index_nospec(xnr, X32_NR_syscalls);
 		regs->ax = x32_sys_call(regs, xnr);
 		return true;

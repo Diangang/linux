@@ -47,9 +47,6 @@ static int __init vdso32_setup(char *s)
  */
 __setup("vdso32=", vdso32_setup);
 
-#ifdef CONFIG_X86_32
-__setup_param("vdso=", vdso_setup, vdso32_setup, 0);
-#endif
 
 
 #ifdef CONFIG_SYSCTL

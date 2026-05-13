@@ -215,7 +215,7 @@ int check_knl_erratum(void)
 	 * bits.  But, we do not have enough space in our 32-bit
 	 * PTEs.  So, refuse to run on 32-bit non-PAE kernels.
 	 */
-	if (IS_ENABLED(CONFIG_X86_64) || IS_ENABLED(CONFIG_X86_PAE))
+	if (IS_ENABLED(CONFIG_X86_64) || 0)
 		return 0;
 
 	puts("This 32-bit kernel can not run on this Xeon Phi x200\n"

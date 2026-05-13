@@ -102,21 +102,12 @@ DECLARE_STATIC_CALL(xen_hypercall, xen_hypercall_func);
 
 #define __HYPERCALL_ENTRY(x)	"a" (x)
 
-#ifdef CONFIG_X86_32
-#define __HYPERCALL_RETREG	"eax"
-#define __HYPERCALL_ARG1REG	"ebx"
-#define __HYPERCALL_ARG2REG	"ecx"
-#define __HYPERCALL_ARG3REG	"edx"
-#define __HYPERCALL_ARG4REG	"esi"
-#define __HYPERCALL_ARG5REG	"edi"
-#else
 #define __HYPERCALL_RETREG	"rax"
 #define __HYPERCALL_ARG1REG	"rdi"
 #define __HYPERCALL_ARG2REG	"rsi"
 #define __HYPERCALL_ARG3REG	"rdx"
 #define __HYPERCALL_ARG4REG	"r10"
 #define __HYPERCALL_ARG5REG	"r8"
-#endif
 
 #define __HYPERCALL_DECLS						\
 	register unsigned long __res  asm(__HYPERCALL_RETREG);		\

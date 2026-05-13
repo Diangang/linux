@@ -341,132 +341,9 @@ static void bsp_init_intel(struct cpuinfo_x86 *c)
 	resctrl_cpu_detect(c);
 }
 
-#ifdef CONFIG_X86_32
-/*
- *	Early probe support logic for ppro memory erratum #50
- *
- *	This is called before we do cpu ident work
- */
-
-int ppro_with_ram_bug(void)
-{
-	/* Uses data from early_cpu_detect now */
-	if (boot_cpu_data.x86_vfm == INTEL_PENTIUM_PRO &&
-	    boot_cpu_data.x86_stepping < 8) {
-		pr_info("Pentium Pro with Errata#50 detected. Taking evasive action.\n");
-		return 1;
-	}
-	return 0;
-}
-
-static void intel_smp_check(struct cpuinfo_x86 *c)
-{
-	/* calling is from identify_secondary_cpu() ? */
-	if (!c->cpu_index)
-		return;
-
-	/*
-	 * Mask B, Pentium, but not Pentium MMX
-	 */
-	if (c->x86_vfm >= INTEL_FAM5_START && c->x86_vfm < INTEL_PENTIUM_MMX &&
-	    c->x86_stepping >= 1 && c->x86_stepping <= 4) {
-		/*
-		 * Remember we have B step Pentia with bugs
-		 */
-		WARN_ONCE(1, "WARNING: SMP operation may be unreliable"
-				    "with B stepping processors.\n");
-	}
-}
-
-static int forcepae;
-static int __init forcepae_setup(char *__unused)
-{
-	forcepae = 1;
-	return 1;
-}
-__setup("forcepae", forcepae_setup);
-
-static void intel_workarounds(struct cpuinfo_x86 *c)
-{
-#ifdef CONFIG_X86_F00F_BUG
-	/*
-	 * All models of Pentium and Pentium with MMX technology CPUs
-	 * have the F0 0F bug, which lets nonprivileged users lock up the
-	 * system. Announce that the fault handler will be checking for it.
-	 * The Quark is also family 5, but does not have the same bug.
-	 */
-	clear_cpu_bug(c, X86_BUG_F00F);
-	if (c->x86_vfm >= INTEL_FAM5_START && c->x86_vfm < INTEL_QUARK_X1000) {
-		static int f00f_workaround_enabled;
-
-		set_cpu_bug(c, X86_BUG_F00F);
-		if (!f00f_workaround_enabled) {
-			pr_notice("Intel Pentium with F0 0F bug - workaround enabled.\n");
-			f00f_workaround_enabled = 1;
-		}
-	}
-#endif
-
-	/*
-	 * SEP CPUID bug: Pentium Pro reports SEP but doesn't have it until
-	 * model 3 mask 3
-	 */
-	if ((c->x86_vfm == INTEL_PENTIUM_II_KLAMATH && c->x86_stepping < 3) ||
-	    c->x86_vfm < INTEL_PENTIUM_II_KLAMATH)
-		clear_cpu_cap(c, X86_FEATURE_SEP);
-
-	/*
-	 * PAE CPUID issue: many Pentium M report no PAE but may have a
-	 * functionally usable PAE implementation.
-	 * Forcefully enable PAE if kernel parameter "forcepae" is present.
-	 */
-	if (forcepae) {
-		pr_warn("PAE forced!\n");
-		set_cpu_cap(c, X86_FEATURE_PAE);
-		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_NOW_UNRELIABLE);
-	}
-
-	/*
-	 * P4 Xeon erratum 037 workaround.
-	 * Hardware prefetcher may cause stale data to be loaded into the cache.
-	 */
-	if (c->x86_vfm == INTEL_P4_WILLAMETTE && c->x86_stepping == 1) {
-		if (msr_set_bit(MSR_IA32_MISC_ENABLE,
-				MSR_IA32_MISC_ENABLE_PREFETCH_DISABLE_BIT) > 0) {
-			pr_info("CPU: C0 stepping P4 Xeon detected.\n");
-			pr_info("CPU: Disabling hardware prefetching (Erratum 037)\n");
-		}
-	}
-
-	/*
-	 * See if we have a good local APIC by checking for buggy Pentia,
-	 * i.e. all B steppings and the C2 stepping of P54C when using their
-	 * integrated APIC (see 11AP erratum in "Pentium Processor
-	 * Specification Update").
-	 */
-	if (boot_cpu_has(X86_FEATURE_APIC) && c->x86_vfm == INTEL_PENTIUM_75 &&
-	    (c->x86_stepping < 0x6 || c->x86_stepping == 0xb))
-		set_cpu_bug(c, X86_BUG_11AP);
-
-#ifdef CONFIG_X86_INTEL_USERCOPY
-	/*
-	 * MOVSL bulk memory moves can be slow when source and dest are not
-	 * both 8-byte aligned. PII/PIII only like MOVSL with 8-byte alignment.
-	 *
-	 * Set the preferred alignment for Pentium Pro and newer processors, as
-	 * it has only been tested on these.
-	 */
-	if (c->x86_vfm >= INTEL_PENTIUM_PRO)
-		movsl_mask.mask = 7;
-#endif
-
-	intel_smp_check(c);
-}
-#else
 static void intel_workarounds(struct cpuinfo_x86 *c)
 {
 }
-#endif
 
 static void srat_detect_node(struct cpuinfo_x86 *c)
 {
@@ -625,27 +502,6 @@ static void init_intel(struct cpuinfo_x86 *c)
 	intel_init_thermal(c);
 }
 
-#ifdef CONFIG_X86_32
-static unsigned int intel_size_cache(struct cpuinfo_x86 *c, unsigned int size)
-{
-	/*
-	 * Intel PIII Tualatin. This comes in two flavours.
-	 * One has 256kb of cache, the other 512. We have no way
-	 * to determine which, so we use a boottime override
-	 * for the 512kb model, and assume 256 otherwise.
-	 */
-	if (c->x86_vfm == INTEL_PENTIUM_III_TUALATIN && size == 0)
-		size = 256;
-
-	/*
-	 * Intel Quark SoC X1000 contains a 4-way set associative
-	 * 16K cache with a 16 byte cache line and 256 lines per tag
-	 */
-	if (c->x86_vfm == INTEL_QUARK_X1000)
-		size = 16;
-	return size;
-}
-#endif
 
 static void intel_tlb_lookup(const struct leaf_0x2_table *desc)
 {
@@ -723,59 +579,6 @@ static void intel_detect_tlb(struct cpuinfo_x86 *c)
 static const struct cpu_dev intel_cpu_dev = {
 	.c_vendor	= "Intel",
 	.c_ident	= { "GenuineIntel" },
-#ifdef CONFIG_X86_32
-	.legacy_models = {
-		{ .family = 4, .model_names =
-		  {
-			  [0] = "486 DX-25/33",
-			  [1] = "486 DX-50",
-			  [2] = "486 SX",
-			  [3] = "486 DX/2",
-			  [4] = "486 SL",
-			  [5] = "486 SX/2",
-			  [7] = "486 DX/2-WB",
-			  [8] = "486 DX/4",
-			  [9] = "486 DX/4-WB"
-		  }
-		},
-		{ .family = 5, .model_names =
-		  {
-			  [0] = "Pentium 60/66 A-step",
-			  [1] = "Pentium 60/66",
-			  [2] = "Pentium 75 - 200",
-			  [3] = "OverDrive PODP5V83",
-			  [4] = "Pentium MMX",
-			  [7] = "Mobile Pentium 75 - 200",
-			  [8] = "Mobile Pentium MMX",
-			  [9] = "Quark SoC X1000",
-		  }
-		},
-		{ .family = 6, .model_names =
-		  {
-			  [0] = "Pentium Pro A-step",
-			  [1] = "Pentium Pro",
-			  [3] = "Pentium II (Klamath)",
-			  [4] = "Pentium II (Deschutes)",
-			  [5] = "Pentium II (Deschutes)",
-			  [6] = "Mobile Pentium II",
-			  [7] = "Pentium III (Katmai)",
-			  [8] = "Pentium III (Coppermine)",
-			  [10] = "Pentium III (Cascades)",
-			  [11] = "Pentium III (Tualatin)",
-		  }
-		},
-		{ .family = 15, .model_names =
-		  {
-			  [0] = "Pentium 4 (Unknown)",
-			  [1] = "Pentium 4 (Willamette)",
-			  [2] = "Pentium 4 (Northwood)",
-			  [4] = "Pentium 4 (Foster)",
-			  [5] = "Pentium 4 (Foster)",
-		  }
-		},
-	},
-	.legacy_cache_size = intel_size_cache,
-#endif
 	.c_detect_tlb	= intel_detect_tlb,
 	.c_early_init   = early_init_intel,
 	.c_bsp_init	= bsp_init_intel,

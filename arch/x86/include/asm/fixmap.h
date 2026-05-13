@@ -36,28 +36,15 @@
 #include <asm/apicdef.h>
 #include <asm/page.h>
 #include <asm/pgtable_types.h>
-#ifdef CONFIG_X86_32
-#include <linux/threads.h>
-#else
 #include <uapi/asm/vsyscall.h>
-#endif
 
 /*
  * We can't declare FIXADDR_TOP as variable for x86_64 because vsyscall
  * uses fixmaps that relies on FIXADDR_TOP for proper address calculation.
  * Because of this, FIXADDR_TOP x86 integration was left as later work.
  */
-#ifdef CONFIG_X86_32
-/*
- * Leave one empty page between vmalloc'ed areas and
- * the start of the fixmap.
- */
-extern unsigned long __FIXADDR_TOP;
-#define FIXADDR_TOP	((unsigned long)__FIXADDR_TOP)
-#else
 #define FIXADDR_TOP	(round_up(VSYSCALL_ADDR + PAGE_SIZE, 1<<PMD_SHIFT) - \
 			 PAGE_SIZE)
-#endif
 
 /*
  * Here we define all the compile-time 'special' virtual
@@ -79,12 +66,8 @@ extern unsigned long __FIXADDR_TOP;
  * task switches.
  */
 enum fixed_addresses {
-#ifdef CONFIG_X86_32
-	FIX_HOLE,
-#else
 #ifdef CONFIG_X86_VSYSCALL_EMULATION
 	VSYSCALL_PAGE = (FIXADDR_TOP - VSYSCALL_ADDR) >> PAGE_SHIFT,
-#endif
 #endif
 	FIX_DBGP_BASE,
 	FIX_EARLYCON_MEM_BASE,
@@ -129,9 +112,6 @@ enum fixed_addresses {
 	   (__end_of_permanent_fixed_addresses & (TOTAL_FIX_BTMAPS - 1))
 	 : __end_of_permanent_fixed_addresses,
 	FIX_BTMAP_BEGIN = FIX_BTMAP_END + TOTAL_FIX_BTMAPS - 1,
-#ifdef CONFIG_X86_32
-	FIX_WP_TEST,
-#endif
 #ifdef CONFIG_INTEL_TXT
 	FIX_TBOOT_BASE,
 #endif

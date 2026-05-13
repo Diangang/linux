@@ -136,13 +136,8 @@ int con_is_bound(const struct consw *csw);
 int do_unregister_con_driver(const struct consw *csw);
 int do_take_over_console(const struct consw *sw, int first, int last, int deflt);
 void give_up_console(const struct consw *sw);
-#ifdef CONFIG_VT
-void con_debug_enter(struct vc_data *vc);
-void con_debug_leave(void);
-#else
 static inline void con_debug_enter(struct vc_data *vc) { }
 static inline void con_debug_leave(void) { }
-#endif
 
 /*
  * The interface for a console, or any other device that wants to capture

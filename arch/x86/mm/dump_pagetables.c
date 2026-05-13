@@ -517,18 +517,6 @@ static int __init pt_dump_init(void)
 	address_markers[KASAN_SHADOW_END_NR].start_address = KASAN_SHADOW_END;
 #endif
 #endif
-#ifdef CONFIG_X86_32
-	address_markers[VMALLOC_START_NR].start_address = VMALLOC_START;
-	address_markers[VMALLOC_END_NR].start_address = VMALLOC_END;
-# if 0
-	address_markers[PKMAP_BASE_NR].start_address = PKMAP_BASE;
-# endif
-	address_markers[FIXADDR_START_NR].start_address = FIXADDR_START;
-	address_markers[CPU_ENTRY_AREA_NR].start_address = CPU_ENTRY_AREA_BASE;
-# ifdef CONFIG_MODIFY_LDT_SYSCALL
-	address_markers[LDT_NR].start_address = LDT_BASE_ADDR;
-# endif
-#endif
 	return 0;
 }
 __initcall(pt_dump_init);

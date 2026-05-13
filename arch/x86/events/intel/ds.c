@@ -2238,7 +2238,6 @@ static void setup_pebs_fixed_sample_data(struct perf_event *event,
 		regs->bp = pebs->bp;
 		regs->sp = pebs->sp;
 
-#ifndef CONFIG_X86_32
 		regs->r8 = pebs->r8;
 		regs->r9 = pebs->r9;
 		regs->r10 = pebs->r10;
@@ -2247,7 +2246,6 @@ static void setup_pebs_fixed_sample_data(struct perf_event *event,
 		regs->r13 = pebs->r13;
 		regs->r14 = pebs->r14;
 		regs->r15 = pebs->r15;
-#endif
 	}
 
 	if (event->attr.precise_ip > 1) {
@@ -2322,7 +2320,6 @@ static void adaptive_pebs_save_regs(struct pt_regs *regs,
 	regs->di = gprs->di;
 	regs->bp = gprs->bp;
 	regs->sp = gprs->sp;
-#ifndef CONFIG_X86_32
 	regs->r8 = gprs->r8;
 	regs->r9 = gprs->r9;
 	regs->r10 = gprs->r10;
@@ -2331,7 +2328,6 @@ static void adaptive_pebs_save_regs(struct pt_regs *regs,
 	regs->r13 = gprs->r13;
 	regs->r14 = gprs->r14;
 	regs->r15 = gprs->r15;
-#endif
 }
 
 static void intel_perf_event_update_pmc(struct perf_event *event, u64 pmc)

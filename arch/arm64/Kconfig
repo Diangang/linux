@@ -306,9 +306,6 @@ config ARCH_SUPPORTS_UPROBES
 config ARCH_PROC_KCORE_TEXT
 	def_bool y
 
-config UNWIND_TABLES
-	bool
-
 source "arch/arm64/Kconfig.platforms"
 
 menu "Kernel Features"
@@ -1645,12 +1642,6 @@ config RANDOMIZE_MODULE_REGION_FULL
 	  core kernel, so branch relocations are almost always in range unless
 	  the region is exhausted. In this particular case of region
 	  exhaustion, modules might be able to fall back to a larger 2GB area.
-
-config UNWIND_PATCH_PAC_INTO_SCS
-	bool "Enable shadow call stack dynamically using code patching"
-	depends on n
-	depends on n
-	select UNWIND_TABLES
 
 config ARM64_CONTPTE
 	bool "Contiguous PTE mappings for user memory" if EXPERT

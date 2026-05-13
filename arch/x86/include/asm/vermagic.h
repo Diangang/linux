@@ -25,10 +25,6 @@
 #error unknown processor family
 #endif
 
-#ifdef CONFIG_X86_32
-# define MODULE_ARCH_VERMAGIC MODULE_PROC_FAMILY
-#else
 # define MODULE_ARCH_VERMAGIC ""
-#endif
 
 #endif /* _ASM_VERMAGIC_H */

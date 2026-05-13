@@ -349,34 +349,6 @@ static void quirk_passive_release(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,	PCI_DEVICE_ID_INTEL_82441,	quirk_passive_release);
 DECLARE_PCI_FIXUP_RESUME(PCI_VENDOR_ID_INTEL,	PCI_DEVICE_ID_INTEL_82441,	quirk_passive_release);
 
-#ifdef CONFIG_X86_32
-/*
- * The VIA VP2/VP3/MVP3 seem to have some 'features'. There may be a
- * workaround but VIA don't answer queries. If you happen to have good
- * contacts at VIA ask them for me please -- Alan
- *
- * This appears to be BIOS not version dependent. So presumably there is a
- * chipset level fix.
- */
-static void quirk_isa_dma_hangs(struct pci_dev *dev)
-{
-	if (!isa_dma_bridge_buggy) {
-		isa_dma_bridge_buggy = 1;
-		pci_info(dev, "Activating ISA DMA hang workarounds\n");
-	}
-}
-/*
- * It's not totally clear which chipsets are the problematic ones.  We know
- * 82C586 and 82C596 variants are affected.
- */
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA,	PCI_DEVICE_ID_VIA_82C586_0,	quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_VIA,	PCI_DEVICE_ID_VIA_82C596,	quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL,    PCI_DEVICE_ID_INTEL_82371SB_0,  quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AL,	PCI_DEVICE_ID_AL_M1533,		quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_NEC,	PCI_DEVICE_ID_NEC_CBUS_1,	quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_NEC,	PCI_DEVICE_ID_NEC_CBUS_2,	quirk_isa_dma_hangs);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_NEC,	PCI_DEVICE_ID_NEC_CBUS_3,	quirk_isa_dma_hangs);
-#endif
 
 #ifdef CONFIG_HAS_IOPORT
 /*

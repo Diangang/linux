@@ -10,18 +10,10 @@
 #include <linux/freezer.h>
 #include <asm/errno.h>
 
-#ifdef CONFIG_VT
-extern void pm_set_vt_switch(int);
-#else
 static inline void pm_set_vt_switch(int do_switch)
 {
 }
-#endif
 
-#ifdef CONFIG_VT_CONSOLE_SLEEP
-extern void pm_prepare_console(void);
-extern void pm_restore_console(void);
-#else
 static inline void pm_prepare_console(void)
 {
 }
@@ -29,7 +21,6 @@ static inline void pm_prepare_console(void)
 static inline void pm_restore_console(void)
 {
 }
-#endif
 
 typedef int __bitwise suspend_state_t;
 
@@ -418,11 +409,7 @@ static inline int hibernate_quiet_exec(int (*func)(void *data), void *data) {
 }
 #endif /* CONFIG_HIBERNATION */
 
-#if 0 && defined(CONFIG_SUSPEND)
-bool pm_hibernation_mode_is_suspend(void);
-#else
 static inline bool pm_hibernation_mode_is_suspend(void) { return false; }
-#endif
 
 int arch_resume_nosmt(void);
 

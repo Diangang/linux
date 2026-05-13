@@ -158,15 +158,9 @@ static inline bool mce_cmp(struct mce *m1, struct mce *m2)
 
 extern struct device_attribute dev_attr_trigger;
 
-#ifdef CONFIG_X86_MCELOG_LEGACY
-void mce_work_trigger(void);
-void mce_register_injector_chain(struct notifier_block *nb);
-void mce_unregister_injector_chain(struct notifier_block *nb);
-#else
 static inline void mce_work_trigger(void)	{ }
 static inline void mce_register_injector_chain(struct notifier_block *nb)	{ }
 static inline void mce_unregister_injector_chain(struct notifier_block *nb)	{ }
-#endif
 
 struct mca_config {
 	__u64 lmce_disabled		: 1,
@@ -310,19 +304,11 @@ static inline void smca_extract_err_addr(struct mce *m) { }
 static inline void smca_bsp_init(void) { }
 #endif
 
-#ifdef CONFIG_X86_ANCIENT_MCE
-void intel_p5_mcheck_init(struct cpuinfo_x86 *c);
-void winchip_mcheck_init(struct cpuinfo_x86 *c);
-noinstr void pentium_machine_check(struct pt_regs *regs);
-noinstr void winchip_machine_check(struct pt_regs *regs);
-static inline void enable_p5_mce(void) { mce_p5_enabled = 1; }
-#else
 static __always_inline void intel_p5_mcheck_init(struct cpuinfo_x86 *c) {}
 static __always_inline void winchip_mcheck_init(struct cpuinfo_x86 *c) {}
 static __always_inline void enable_p5_mce(void) {}
 static __always_inline void pentium_machine_check(struct pt_regs *regs) {}
 static __always_inline void winchip_machine_check(struct pt_regs *regs) {}
-#endif
 
 noinstr u64 mce_rdmsrq(u32 msr);
 noinstr void mce_wrmsrq(u32 msr, u64 v);

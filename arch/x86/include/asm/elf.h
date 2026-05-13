@@ -87,58 +87,6 @@ extern unsigned int vdso32_enabled;
 
 #include <asm/processor.h>
 
-#ifdef CONFIG_X86_32
-#include <asm/desc.h>
-
-#define elf_check_arch(x)	elf_check_arch_ia32(x)
-
-/* SVR4/i386 ABI (pages 3-31, 3-32) says that when the program starts %edx
-   contains a pointer to a function which might be registered using `atexit'.
-   This provides a mean for the dynamic linker to call DT_FINI functions for
-   shared libraries that have been loaded before the code runs.
-
-   A value of 0 tells we have no such handler.
-
-   We might as well make sure everything else is cleared too (except for %esp),
-   just to make things more deterministic.
- */
-#define ELF_PLAT_INIT(_r, load_addr)		\
-	do {					\
-	_r->bx = 0; _r->cx = 0; _r->dx = 0;	\
-	_r->si = 0; _r->di = 0; _r->bp = 0;	\
-	_r->ax = 0;				\
-} while (0)
-
-/*
- * regs is struct pt_regs, pr_reg is elf_gregset_t (which is
- * now struct_user_regs, they are different)
- */
-
-#define ELF_CORE_COPY_REGS(pr_reg, regs)	\
-do {						\
-	pr_reg[0] = regs->bx;			\
-	pr_reg[1] = regs->cx;			\
-	pr_reg[2] = regs->dx;			\
-	pr_reg[3] = regs->si;			\
-	pr_reg[4] = regs->di;			\
-	pr_reg[5] = regs->bp;			\
-	pr_reg[6] = regs->ax;			\
-	pr_reg[7] = regs->ds;			\
-	pr_reg[8] = regs->es;			\
-	pr_reg[9] = regs->fs;			\
-	savesegment(gs, pr_reg[10]);		\
-	pr_reg[11] = regs->orig_ax;		\
-	pr_reg[12] = regs->ip;			\
-	pr_reg[13] = regs->cs;			\
-	pr_reg[14] = regs->flags;		\
-	pr_reg[15] = regs->sp;			\
-	pr_reg[16] = regs->ss;			\
-} while (0);
-
-#define ELF_PLATFORM	(utsname()->machine)
-#define set_personality_64bit()	do { } while (0)
-
-#else /* CONFIG_X86_32 */
 
 /*
  * This is used to ensure we don't load something for the wrong architecture.
@@ -148,7 +96,7 @@ do {						\
 
 #define compat_elf_check_arch(x)					\
 	((elf_check_arch_ia32(x) && ia32_enabled_verbose()) ||		\
-	 (IS_ENABLED(CONFIG_X86_X32_ABI) && (x)->e_machine == EM_X86_64))
+	 (0 && (x)->e_machine == EM_X86_64))
 
 static inline void elf_common_init(struct thread_struct *t,
 				   struct pt_regs *regs, const u16 ds)
@@ -221,7 +169,6 @@ do {								\
 extern void set_personality_64bit(void);
 extern int force_personality32;
 
-#endif /* !CONFIG_X86_32 */
 
 #define CORE_DUMP_USE_REGSET
 #define ELF_EXEC_PAGESIZE	4096
@@ -301,7 +248,7 @@ do {									\
  */
 static inline int mmap_is_ia32(void)
 {
-	return IS_ENABLED(CONFIG_X86_32) ||
+	return 0 ||
 	       (IS_ENABLED(CONFIG_COMPAT) &&
 		test_thread_flag(TIF_ADDR32));
 }
@@ -312,16 +259,6 @@ extern unsigned long get_mmap_base(int is_legacy);
 extern bool mmap_address_hint_valid(unsigned long addr, unsigned long len);
 extern unsigned long get_sigframe_size(void);
 
-#ifdef CONFIG_X86_32
-
-#define __STACK_RND_MASK(is32bit) (0x7ff)
-#define STACK_RND_MASK (0x7ff)
-
-#define ARCH_DLINFO		ARCH_DLINFO_IA32
-
-/* update AT_VECTOR_SIZE_ARCH if the number of NEW_AUX_ENT entries changes */
-
-#else /* CONFIG_X86_32 */
 
 /* 1GB for 64bit, 8MB for 32bit */
 #define __STACK_RND_MASK(is32bit) ((is32bit) ? 0x7ff : 0x3fffff)
@@ -354,7 +291,6 @@ else if (IS_ENABLED(CONFIG_IA32_EMULATION))				\
 
 #define COMPAT_ELF_ET_DYN_BASE	(TASK_UNMAPPED_BASE + 0x1000000)
 
-#endif /* !CONFIG_X86_32 */
 
 #define VDSO_CURRENT_BASE	((unsigned long)current->mm->context.vdso)
 

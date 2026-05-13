@@ -14,7 +14,6 @@
 # AWK script as the following example:
 #
 #                          +----------------------+
-#                          |    X86_FRED = y ?    |
 #                          +----------------------+
 #                              /             \
 #                           Y /               \ N
@@ -52,28 +51,20 @@ config X86_REQUIRED_FEATURE_CMOV
 
 # this should be set for all -march= options where the compiler
 # generates movbe.
-config X86_REQUIRED_FEATURE_MOVBE
-	def_bool y
-	depends on n
-
 config X86_REQUIRED_FEATURE_SYSFAST32
 	def_bool y
-	depends on X86_64 && !X86_FRED
+	depends on X86_64
 
 config X86_REQUIRED_FEATURE_CPUID
 	def_bool y
 	depends on X86_64
-
-config X86_REQUIRED_FEATURE_UP
-	def_bool y
-	depends on !SMP
 
 config X86_REQUIRED_FEATURE_FPU
 	def_bool y
 
 config X86_REQUIRED_FEATURE_PAE
 	def_bool y
-	depends on X86_64 || X86_PAE
+	depends on X86_64
 
 config X86_REQUIRED_FEATURE_PSE
 	def_bool y
@@ -103,10 +94,6 @@ config X86_REQUIRED_FEATURE_LM
 	def_bool y
 	depends on X86_64
 
-config X86_DISABLED_FEATURE_UMIP
-	def_bool y
-	depends on !X86_UMIP
-
 config X86_DISABLED_FEATURE_VME
 	def_bool y
 	depends on X86_64
@@ -123,50 +110,6 @@ config X86_DISABLED_FEATURE_CENTAUR_MCR
 	def_bool y
 	depends on X86_64
 
-config X86_DISABLED_FEATURE_SYSCALL32
-	def_bool y
-	depends on !X86_64
-
-config X86_DISABLED_FEATURE_PCID
-	def_bool y
-	depends on !X86_64
-
-config X86_DISABLED_FEATURE_LASS
-	def_bool y
-	depends on X86_32
-
-config X86_DISABLED_FEATURE_PKU
-	def_bool y
-	depends on !X86_INTEL_MEMORY_PROTECTION_KEYS
-
-config X86_DISABLED_FEATURE_OSPKE
-	def_bool y
-	depends on !X86_INTEL_MEMORY_PROTECTION_KEYS
-
-config X86_DISABLED_FEATURE_PTI
-	def_bool y
-	depends on !MITIGATION_PAGE_TABLE_ISOLATION
-
-config X86_DISABLED_FEATURE_RETPOLINE
-	def_bool y
-	depends on !MITIGATION_RETPOLINE
-
-config X86_DISABLED_FEATURE_RETPOLINE_LFENCE
-	def_bool y
-	depends on !MITIGATION_RETPOLINE
-
-config X86_DISABLED_FEATURE_RETHUNK
-	def_bool y
-	depends on !MITIGATION_RETHUNK
-
-config X86_DISABLED_FEATURE_UNRET
-	def_bool y
-	depends on !MITIGATION_UNRET_ENTRY
-
-config X86_DISABLED_FEATURE_CALL_DEPTH
-	def_bool y
-	depends on !MITIGATION_CALL_DEPTH_TRACKING
-
 config X86_DISABLED_FEATURE_LAM
 	def_bool y
 
@@ -176,7 +119,7 @@ config X86_DISABLED_FEATURE_ENQCMD
 
 config X86_DISABLED_FEATURE_SGX
 	def_bool y
-	depends on !X86_SGX
+	depends on y
 
 config X86_DISABLED_FEATURE_XENPV
 	def_bool y
@@ -188,20 +131,12 @@ config X86_DISABLED_FEATURE_TDX_GUEST
 
 config X86_DISABLED_FEATURE_USER_SHSTK
 	def_bool y
-	depends on !X86_USER_SHADOW_STACK
-
-config X86_DISABLED_FEATURE_IBT
-	def_bool y
-	depends on !X86_KERNEL_IBT
+	depends on y
 
 config X86_DISABLED_FEATURE_FRED
 	def_bool y
-	depends on !X86_FRED
+	depends on y
 
 config X86_DISABLED_FEATURE_SEV_SNP
 	def_bool y
 	depends on !KVM_AMD_SEV
-
-config X86_DISABLED_FEATURE_INVLPGB
-	def_bool y
-	depends on !BROADCAST_TLB_FLUSH

@@ -6,9 +6,6 @@
 #include <linux/tsacct_kern.h>
 #include "sched.h"
 
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
- #include <asm/cputime.h>
-#endif
 
 #ifdef CONFIG_IRQ_TIME_ACCOUNTING
 
@@ -414,49 +411,6 @@ static inline void irqtime_account_process_tick(struct task_struct *p, int user_
 /*
  * Use precise platform statistics if available:
  */
-#ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
-
-void vtime_account_irq(struct task_struct *tsk, unsigned int offset)
-{
-	unsigned int pc = irq_count() - offset;
-
-	if (pc & HARDIRQ_OFFSET) {
-		vtime_account_hardirq(tsk);
-	} else if (pc & SOFTIRQ_OFFSET) {
-		vtime_account_softirq(tsk);
-	} else if (!IS_ENABLED(CONFIG_HAVE_VIRT_CPU_ACCOUNTING_IDLE) &&
-		   is_idle_task(tsk)) {
-		vtime_account_idle(tsk);
-	} else {
-		vtime_account_kernel(tsk);
-	}
-}
-
-void cputime_adjust(struct task_cputime *curr, struct prev_cputime *prev,
-		    u64 *ut, u64 *st)
-{
-	*ut = curr->utime;
-	*st = curr->stime;
-}
-
-void task_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st)
-{
-	*ut = p->utime;
-	*st = p->stime;
-}
-EXPORT_SYMBOL_GPL(task_cputime_adjusted);
-
-void thread_group_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st)
-{
-	struct task_cputime cputime;
-
-	thread_group_cputime(p, &cputime);
-
-	*ut = cputime.utime;
-	*st = cputime.stime;
-}
-
-#else /* !CONFIG_VIRT_CPU_ACCOUNTING_NATIVE: */
 
 /*
  * Account a single tick of CPU time.
@@ -631,5 +585,4 @@ void thread_group_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st)
 	thread_group_cputime(p, &cputime);
 	cputime_adjust(&cputime, &p->signal->prev_cputime, ut, st);
 }
-#endif /* !CONFIG_VIRT_CPU_ACCOUNTING_NATIVE */
 

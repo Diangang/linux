@@ -233,9 +233,6 @@ static void __init setup_cpu_entry_area(unsigned int cpu)
 	cea_map_percpu_pages(&cea->tss, &per_cpu(cpu_tss_rw, cpu),
 			     sizeof(struct tss_struct) / PAGE_SIZE, tss_prot);
 
-#ifdef CONFIG_X86_32
-	per_cpu(cpu_entry_area, cpu) = cea;
-#endif
 
 	percpu_setup_exception_stacks(cpu);
 
@@ -244,20 +241,6 @@ static void __init setup_cpu_entry_area(unsigned int cpu)
 
 static __init void setup_cpu_entry_area_ptes(void)
 {
-#ifdef CONFIG_X86_32
-	unsigned long start, end;
-
-	/* The +1 is for the readonly IDT: */
-	BUILD_BUG_ON((CPU_ENTRY_AREA_PAGES+1)*PAGE_SIZE != CPU_ENTRY_AREA_MAP_SIZE);
-	BUG_ON(CPU_ENTRY_AREA_BASE & ~PMD_MASK);
-
-	start = CPU_ENTRY_AREA_BASE;
-	end = start + CPU_ENTRY_AREA_MAP_SIZE;
-
-	/* Careful here: start + PMD_SIZE might wrap around */
-	for (; start < end && start >= CPU_ENTRY_AREA_BASE; start += PMD_SIZE)
-		populate_extra_pte(start);
-#endif
 }
 
 void __init setup_cpu_entry_areas(void)

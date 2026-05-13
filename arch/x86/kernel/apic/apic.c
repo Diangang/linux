@@ -93,30 +93,6 @@ static inline bool apic_accessible(void)
 	return x2apic_mode || apic_mmio_base;
 }
 
-#ifdef CONFIG_X86_32
-/* Local APIC was disabled by the BIOS and enabled by the kernel */
-static int enabled_via_apicbase __ro_after_init;
-
-/*
- * Handle interrupt mode configuration register (IMCR).
- * This register controls whether the interrupt signals
- * that reach the BSP come from the master PIC or from the
- * local APIC. Before entering Symmetric I/O Mode, either
- * the BIOS or the operating system must switch out of
- * PIC Mode by changing the IMCR.
- */
-static inline void imcr_pic_to_apic(void)
-{
-	/* NMI and 8259 INTR go through APIC */
-	pc_conf_set(PC_CONF_MPS_IMCR, 0x01);
-}
-
-static inline void imcr_apic_to_pic(void)
-{
-	/* NMI and 8259 INTR go directly to BSP */
-	pc_conf_set(PC_CONF_MPS_IMCR, 0x00);
-}
-#endif
 
 /*
  * Knob to control our willingness to enable the local APIC.
@@ -130,7 +106,7 @@ static int force_enable_local_apic __initdata;
  */
 static int __init parse_lapic(char *arg)
 {
-	if (IS_ENABLED(CONFIG_X86_32) && !arg)
+	if (0 && !arg)
 		force_enable_local_apic = 1;
 	else if (arg && !strncmp(arg, "notscdeadline", 13))
 		setup_clear_cpu_cap(X86_FEATURE_TSC_DEADLINE_TIMER);
@@ -1180,19 +1156,6 @@ void disable_local_APIC(void)
 
 	apic_soft_disable();
 
-#ifdef CONFIG_X86_32
-	/*
-	 * When LAPIC was disabled by the BIOS and enabled by the kernel,
-	 * restore the disabled state.
-	 */
-	if (enabled_via_apicbase) {
-		unsigned int l, h;
-
-		rdmsr(MSR_IA32_APICBASE, l, h);
-		l &= ~MSR_IA32_APICBASE_ENABLE;
-		wrmsr(MSR_IA32_APICBASE, l, h);
-	}
-#endif
 }
 
 /*
@@ -1210,11 +1173,6 @@ void lapic_shutdown(void)
 
 	local_irq_save(flags);
 
-#ifdef CONFIG_X86_32
-	if (!enabled_via_apicbase)
-		clear_local_APIC();
-	else
-#endif
 		disable_local_APIC();
 
 
@@ -1331,13 +1289,6 @@ void __init init_bsp_APIC(void)
 	value &= ~APIC_VECTOR_MASK;
 	value |= APIC_SPIV_APIC_ENABLED;
 
-#ifdef CONFIG_X86_32
-	/* This bit is reserved on P4/Xeon and should be cleared */
-	if ((boot_cpu_data.x86_vendor == X86_VENDOR_INTEL) &&
-	    (boot_cpu_data.x86 == 15))
-		value &= ~APIC_SPIV_FOCUS_DISABLED;
-	else
-#endif
 		value |= APIC_SPIV_FOCUS_DISABLED;
 	value |= SPURIOUS_APIC_VECTOR;
 	apic_write(APIC_SPIV, value);
@@ -1359,7 +1310,7 @@ static void __init apic_bsp_setup(bool upmode);
 /* Init the interrupt delivery mode for the BSP */
 void __init apic_intr_mode_init(void)
 {
-	bool upmode = IS_ENABLED(CONFIG_UP_LATE_INIT);
+	bool upmode = 0;
 
 	switch (apic_intr_mode) {
 	case APIC_PIC:
@@ -1522,15 +1473,6 @@ static void setup_local_APIC(void)
 	value &= ~APIC_SPIV_APIC_ENABLED;
 	apic_write(APIC_SPIV, value);
 
-#ifdef CONFIG_X86_32
-	/* Pound the ESR really hard over the head with a big hammer - mbligh */
-	if (lapic_is_integrated() && apic->disable_esr) {
-		apic_write(APIC_ESR, 0);
-		apic_write(APIC_ESR, 0);
-		apic_write(APIC_ESR, 0);
-		apic_write(APIC_ESR, 0);
-	}
-#endif
 	/*
 	 * Intel recommends to set DFR, LDR and TPR before enabling
 	 * an APIC.  See e.g. "AP-388 82489DX User's Manual" (Intel
@@ -1564,33 +1506,6 @@ static void setup_local_APIC(void)
 	 */
 	value |= APIC_SPIV_APIC_ENABLED;
 
-#ifdef CONFIG_X86_32
-	/*
-	 * Some unknown Intel IO/APIC (or APIC) errata is biting us with
-	 * certain networking cards. If high frequency interrupts are
-	 * happening on a particular IOAPIC pin, plus the IOAPIC routing
-	 * entry is masked/unmasked at a high rate as well then sooner or
-	 * later IOAPIC line gets 'stuck', no more interrupts are received
-	 * from the device. If focus CPU is disabled then the hang goes
-	 * away, oh well :-(
-	 *
-	 * [ This bug can be reproduced easily with a level-triggered
-	 *   PCI Ne2000 networking cards and PII/PIII processors, dual
-	 *   BX chipset. ]
-	 */
-	/*
-	 * Actually disabling the focus CPU check just makes the hang less
-	 * frequent as it makes the interrupt distribution model be more
-	 * like LRU than MRU (the short-term load is more even across CPUs).
-	 */
-
-	/*
-	 * - enable focus processor (bit==0)
-	 * - 64bit mode always use processor focus
-	 *   so no need to set it
-	 */
-	value &= ~APIC_SPIV_FOCUS_DISABLED;
-#endif
 
 	/*
 	 * Set spurious IRQ vector
@@ -1646,15 +1561,6 @@ static void end_local_APIC_setup(void)
 {
 	lapic_setup_esr();
 
-#ifdef CONFIG_X86_32
-	{
-		unsigned int value;
-		/* Disable the local apic timer */
-		value = apic_read(APIC_LVTT);
-		value |= (APIC_LVT_MASKED | LOCAL_TIMER_VECTOR);
-		apic_write(APIC_LVTT, value);
-	}
-#endif
 
 	apic_pm_activate();
 }
@@ -2201,20 +2107,6 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_error_interrupt)
  */
 static void __init connect_bsp_APIC(void)
 {
-#ifdef CONFIG_X86_32
-	if (pic_mode) {
-		/*
-		 * Do not trust the local APIC being empty at bootup.
-		 */
-		clear_local_APIC();
-		/*
-		 * PIC mode, enable APIC mode in the IMCR, i.e.  connect BSP's
-		 * local APIC to INT and NMI lines.
-		 */
-		apic_pr_verbose("Leaving PIC mode, enabling APIC mode.\n");
-		imcr_pic_to_apic();
-	}
-#endif
 }
 
 /**
@@ -2228,19 +2120,6 @@ void disconnect_bsp_APIC(int virt_wire_setup)
 {
 	unsigned int value;
 
-#ifdef CONFIG_X86_32
-	if (pic_mode) {
-		/*
-		 * Put the board back into PIC mode (has an effect only on
-		 * certain older boards).  Note that APIC interrupts, including
-		 * IPIs, won't work beyond this point!  The only exception are
-		 * INIT IPIs.
-		 */
-		apic_pr_verbose("Disabling APIC mode, entering PIC mode.\n");
-		imcr_apic_to_pic();
-		return;
-	}
-#endif
 
 	/* Go back to Virtual Wire compatibility mode */
 
@@ -2344,16 +2223,6 @@ static void __init apic_bsp_setup(bool upmode)
 	lapic_update_legacy_vectors();
 }
 
-#ifdef CONFIG_UP_LATE_INIT
-void __init up_late_init(void)
-{
-	if (apic_intr_mode == APIC_PIC)
-		return;
-
-	/* Setup local timer */
-	x86_init.timers.setup_percpu_clockev();
-}
-#endif
 
 /*
  * Power management
@@ -2629,7 +2498,7 @@ early_param("nolapic_timer", parse_nolapic_timer);
 static int __init apic_set_verbosity(char *arg)
 {
 	if (!arg)  {
-		if (IS_ENABLED(CONFIG_X86_32))
+		if (0)
 			return -EINVAL;
 
 		ioapic_is_disabled = false;

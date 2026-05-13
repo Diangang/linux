@@ -93,36 +93,6 @@ else
 KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
 endif
 
-ifeq ($(CONFIG_X86_32),y)
-        BITS := 32
-        UTS_MACHINE := i386
-        CHECKFLAGS += -D__i386__
-
-        KBUILD_AFLAGS += -m32
-        KBUILD_CFLAGS += -m32
-
-        KBUILD_CFLAGS += -msoft-float -mregparm=3 -freg-struct-return
-
-        # Never want PIC in a 32-bit kernel, prevent breakage with GCC built
-        # with nonstandard options
-        KBUILD_CFLAGS += -fno-pic
-
-        # Align the stack to the register width instead of using the default
-        # alignment of 16 bytes. This reduces stack usage and the number of
-        # alignment instructions.
-        KBUILD_CFLAGS += $(cc_stack_align4)
-
-        # CPU-specific tuning. Anything which can be shared with UML should go here.
-        include $(srctree)/arch/x86/Makefile_32.cpu
-        KBUILD_CFLAGS += $(cflags-y)
-
-    ifneq ($(call clang-min-version, 160000),y)
-        # https://github.com/llvm/llvm-project/issues/53645
-        KBUILD_CFLAGS += -ffreestanding
-    endif
-
-        percpu_seg := fs
-else
         BITS := 64
         UTS_MACHINE := x86_64
         CHECKFLAGS += -D__x86_64__
@@ -161,7 +131,6 @@ else
         KBUILD_RUSTFLAGS += -Ccode-model=kernel
 
         percpu_seg := gs
-endif
 
 ifeq ($(CONFIG_STACKPROTECTOR),y)
 	ifeq ($(CONFIG_SMP),y)
@@ -273,9 +242,6 @@ all: bzImage
 KBUILD_IMAGE := $(boot)/bzImage
 
 bzImage: vmlinux
-ifeq ($(CONFIG_X86_DECODER_SELFTEST),y)
-	$(Q)$(MAKE) $(build)=arch/x86/tools posttest
-endif
 	$(Q)$(MAKE) $(build)=$(boot) $(KBUILD_IMAGE)
 	$(Q)mkdir -p $(objtree)/arch/$(UTS_MACHINE)/boot
 	$(Q)ln -fsn ../../x86/boot/bzImage $(objtree)/arch/$(UTS_MACHINE)/boot/$@
@@ -284,7 +250,6 @@ $(BOOT_TARGETS): vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $@
 
 vdso-install-$(CONFIG_X86_64)	   += arch/x86/entry/vdso/vdso64/vdso64.so.dbg
-vdso-install-$(CONFIG_X86_X32_ABI) += arch/x86/entry/vdso/vdso64/vdsox32.so.dbg
 vdso-install-$(CONFIG_COMPAT_32)   += arch/x86/entry/vdso/vdso32/vdso32.so.dbg
 
 archprepare: checkbin

@@ -122,7 +122,7 @@ void arch_report_meminfo(struct seq_file *m)
 {
 	seq_printf(m, "DirectMap4k:    %8lu kB\n",
 			direct_pages_count[PG_LEVEL_4K] << 2);
-#if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
+#if defined(CONFIG_X86_64) || 0
 	seq_printf(m, "DirectMap2M:    %8lu kB\n",
 			direct_pages_count[PG_LEVEL_2M] << 11);
 #else
@@ -138,85 +138,11 @@ static inline void split_page_count(int level) { }
 static inline void collapse_page_count(int level) { }
 #endif
 
-#ifdef CONFIG_X86_CPA_STATISTICS
-
-static unsigned long cpa_1g_checked;
-static unsigned long cpa_1g_sameprot;
-static unsigned long cpa_1g_preserved;
-static unsigned long cpa_2m_checked;
-static unsigned long cpa_2m_sameprot;
-static unsigned long cpa_2m_preserved;
-static unsigned long cpa_4k_install;
-
-static inline void cpa_inc_1g_checked(void)
-{
-	cpa_1g_checked++;
-}
-
-static inline void cpa_inc_2m_checked(void)
-{
-	cpa_2m_checked++;
-}
-
-static inline void cpa_inc_4k_install(void)
-{
-	data_race(cpa_4k_install++);
-}
-
-static inline void cpa_inc_lp_sameprot(int level)
-{
-	if (level == PG_LEVEL_1G)
-		cpa_1g_sameprot++;
-	else
-		cpa_2m_sameprot++;
-}
-
-static inline void cpa_inc_lp_preserved(int level)
-{
-	if (level == PG_LEVEL_1G)
-		cpa_1g_preserved++;
-	else
-		cpa_2m_preserved++;
-}
-
-static int cpastats_show(struct seq_file *m, void *p)
-{
-	seq_printf(m, "1G pages checked:     %16lu\n", cpa_1g_checked);
-	seq_printf(m, "1G pages sameprot:    %16lu\n", cpa_1g_sameprot);
-	seq_printf(m, "1G pages preserved:   %16lu\n", cpa_1g_preserved);
-	seq_printf(m, "2M pages checked:     %16lu\n", cpa_2m_checked);
-	seq_printf(m, "2M pages sameprot:    %16lu\n", cpa_2m_sameprot);
-	seq_printf(m, "2M pages preserved:   %16lu\n", cpa_2m_preserved);
-	seq_printf(m, "4K pages set-checked: %16lu\n", cpa_4k_install);
-	return 0;
-}
-
-static int cpastats_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, cpastats_show, NULL);
-}
-
-static const struct file_operations cpastats_fops = {
-	.open		= cpastats_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
-
-static int __init cpa_stats_init(void)
-{
-	debugfs_create_file("cpa_stats", S_IRUSR, arch_debugfs_dir, NULL,
-			    &cpastats_fops);
-	return 0;
-}
-late_initcall(cpa_stats_init);
-#else
 static inline void cpa_inc_1g_checked(void) { }
 static inline void cpa_inc_2m_checked(void) { }
 static inline void cpa_inc_4k_install(void) { }
 static inline void cpa_inc_lp_sameprot(int level) { }
 static inline void cpa_inc_lp_preserved(int level) { }
-#endif
 
 
 static inline int
@@ -663,7 +589,7 @@ static inline pgprot_t verify_rwx(pgprot_t old, pgprot_t new, unsigned long star
 	 * and writeable data being in the same page.  Disable
 	 * detection and enforcement there.
 	 */
-	if (IS_ENABLED(CONFIG_X86_32))
+	if (0)
 		return new;
 
 	/* Only verify when NX is supported: */
@@ -873,24 +799,6 @@ static void __set_pmd_pte(pte_t *kpte, unsigned long address, pte_t pte)
 {
 	/* change init_mm */
 	set_pte_atomic(kpte, pte);
-#ifdef CONFIG_X86_32
-	{
-		struct page *page;
-
-		list_for_each_entry(page, &pgd_list, lru) {
-			pgd_t *pgd;
-			p4d_t *p4d;
-			pud_t *pud;
-			pmd_t *pmd;
-
-			pgd = (pgd_t *)page_address(page) + pgd_index(address);
-			p4d = p4d_offset(pgd, address);
-			pud = pud_offset(p4d, address);
-			pmd = pmd_offset(pud, address);
-			set_pte_atomic((pte_t *)pmd, pte);
-		}
-	}
-#endif
 }
 
 static pgprot_t pgprot_clear_protnone_bits(pgprot_t prot)
@@ -1282,7 +1190,7 @@ static int collapse_pmd_page(pmd_t *pmd, unsigned long addr,
 	/* Queue the page table to be freed after TLB flush */
 	list_add(&page_ptdesc(pmd_page(old_pmd))->pt_list, pgtables);
 
-	if (IS_ENABLED(CONFIG_X86_32)) {
+	if (0) {
 		struct page *page;
 
 		/* Update all PGD tables to use the same large page */

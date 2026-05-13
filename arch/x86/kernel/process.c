@@ -73,12 +73,6 @@ __visible DEFINE_PER_CPU_PAGE_ALIGNED(struct tss_struct, cpu_tss_rw) = {
 		 */
 		.sp0 = (1UL << (BITS_PER_LONG-1)) + 1,
 
-#ifdef CONFIG_X86_32
-		.sp1 = TOP_OF_INIT_STACK,
-
-		.ss0 = __KERNEL_DS,
-		.ss1 = __KERNEL_CS,
-#endif
 		.io_bitmap_base	= IO_BITMAP_OFFSET_INVALID,
 	 },
 };
@@ -106,9 +100,6 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 	/* fpu_clone() will initialize the "dst_fpu" memory */
 	memcpy_and_pad(dst, arch_task_struct_size, src, sizeof(*dst), 0);
 
-#ifdef CONFIG_VM86
-	dst->thread.vm86 = NULL;
-#endif
 
 	return 0;
 }

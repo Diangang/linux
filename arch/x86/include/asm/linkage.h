@@ -16,9 +16,6 @@
 #define _THIS_IP_ ({ unsigned long __here; asm ("lea 0(%%rip), %0" : "=r" (__here)); __here; })
 #endif
 
-#ifdef CONFIG_X86_32
-#define asmlinkage CPP_ASMLINKAGE __attribute__((regparm(0)))
-#endif /* CONFIG_X86_32 */
 
 #define __ALIGN		.balign CONFIG_FUNCTION_ALIGNMENT, 0x90;
 #define __ALIGN_STR	__stringify(__ALIGN)

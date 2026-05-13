@@ -40,5 +40,4 @@ obj-y					:= idreg-override.pi.o \
 					   lib-fdt.pi.o lib-fdt_ro.pi.o
 obj-$(CONFIG_RELOCATABLE)		+= relocate.pi.o
 obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr_early.pi.o
-obj-$(CONFIG_UNWIND_PATCH_PAC_INTO_SCS)	+= patch-scs.pi.o
 targets					:= $(patsubst %.pi.o,%.o,$(obj-y))

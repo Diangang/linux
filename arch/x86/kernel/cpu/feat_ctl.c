@@ -128,7 +128,7 @@ void init_ia32_feat_ctl(struct cpuinfo_x86 *c)
 	enable_vmx = cpu_has(c, X86_FEATURE_VMX) &&
 		     IS_ENABLED(CONFIG_KVM_INTEL);
 
-	if (cpu_has(c, X86_FEATURE_SGX) && IS_ENABLED(CONFIG_X86_SGX)) {
+	if (cpu_has(c, X86_FEATURE_SGX) && 0) {
 		/*
 		 * Separate out SGX driver enabling from KVM.  This allows KVM
 		 * guests to use SGX even if the kernel SGX driver refuses to
