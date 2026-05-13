@@ -5,6 +5,12 @@
 /initramfs-*.cpio
 /rootfs-*/
 
+# Generated analysis/progress evidence. Keep the compact current state in
+# CURRENT_PROJECT_STATE.md and state.json instead of versioning every run.
+/metrics/
+/reviews/
+/tmp/
+
 # Logs are generated evidence. They can be large and contain raw console output
 # with whitespace that should not be rewritten for source-control checks.
 /logs/

@@ -1,8 +1,8 @@
 # Deploying the QEMU kernel control workspace
 
 This directory contains the recoverable task state, prompts, scripts, fixed
-validation configs, reviews, metrics, and QEMU validation logs needed to resume
-the trimming workflow on another machine.
+validation configs, and compact current project notes needed to resume the
+trimming workflow on another machine.
 
 Generated artifacts are intentionally not committed:
 
@@ -12,6 +12,8 @@ Generated artifacts are intentionally not committed:
 - `.codex-qemu-kernels/initramfs-*.cpio`
 - `.codex-qemu-kernels/rootfs-*`
 - `.codex-qemu-kernels/logs`
+- `.codex-qemu-kernels/metrics`
+- `.codex-qemu-kernels/reviews`
 
 After cloning, regenerate validation artifacts from the repository root:
 
@@ -22,4 +24,6 @@ After cloning, regenerate validation artifacts from the repository root:
 JOBS=32 .codex-qemu-kernels/scripts/validate-fixed-storage-contract.sh
 ```
 
-Resume instructions live in `.codex-qemu-kernels/state.json`.
+Resume instructions live in `.codex-qemu-kernels/state.json`. The compact
+analysis/progress/plan document is
+`.codex-qemu-kernels/CURRENT_PROJECT_STATE.md`.

@@ -1,7 +1,0 @@
-date_utc=2026-05-01T11:11:13Z
-image_size_bytes .codex-qemu-kernels/build-x86_64/arch/x86/boot/bzImage 14701568
-image_size_bytes .codex-qemu-kernels/build-arm64/arch/arm64/boot/Image 52484608
-enabled_config_count .codex-qemu-kernels/build-x86_64/.config 1608
-module_config_count .codex-qemu-kernels/build-x86_64/.config 12
-enabled_config_count .codex-qemu-kernels/build-arm64/.config 3312
-module_config_count .codex-qemu-kernels/build-arm64/.config 1423

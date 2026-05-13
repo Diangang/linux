@@ -1,8 +1,0 @@
-scripts/check-sysctl-docs
-scripts/check_extable.sh
-scripts/depmod.sh
-scripts/headers_install.sh
-scripts/mkuboot.sh
-scripts/nsdeps
-scripts/objdiff
-scripts/xen-hypercalls.sh

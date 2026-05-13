@@ -66,11 +66,10 @@ QEMU_TIMEOUT=45
 QEMU_ATTEMPTS=2
 ```
 
-## Expected first real work
+## Current resume point
 
-Stage 1 should automate the fixed validation described in
-`.codex-qemu-kernels/QEMU_KERNEL_MINIX_TEST.md` before kernel source trimming
-starts.
+Current source HEAD is `9423d475c3c4`. The compact current analysis, progress,
+and next plan live in `.codex-qemu-kernels/CURRENT_PROJECT_STATE.md`.
 
 The automated validation boots with a generated initramfs, not a Debian qcow2
 root filesystem. Do not make `VIRTIO_BLK` part of the validation contract.
