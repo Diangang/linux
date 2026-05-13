@@ -448,18 +448,8 @@
 	__end_ro_after_init = .;
 #endif
 
-/*
- * .kcfi_traps contains a list KCFI trap locations.
- */
 #ifndef KCFI_TRAPS
-#ifdef CONFIG_ARCH_USES_CFI_TRAPS
-#define KCFI_TRAPS							\
-	__kcfi_traps : AT(ADDR(__kcfi_traps) - LOAD_OFFSET) {		\
-		BOUNDED_SECTION_BY(.kcfi_traps, ___kcfi_traps)		\
-	}
-#else
 #define KCFI_TRAPS
-#endif
 #endif
 
 /*

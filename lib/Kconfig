@@ -15,17 +15,11 @@ config HAVE_ARCH_BITREVERSE
 	  This option enables the use of hardware bit-reversal instructions on
 	  architectures which support such operations.
 
-config ARCH_HAS_STRNCPY_FROM_USER
-	bool
-
-config ARCH_HAS_STRNLEN_USER
-	bool
-
 config GENERIC_STRNCPY_FROM_USER
-	def_bool !ARCH_HAS_STRNCPY_FROM_USER
+	def_bool y
 
 config GENERIC_STRNLEN_USER
-	def_bool !ARCH_HAS_STRNLEN_USER
+	def_bool y
 
 source "lib/math/Kconfig"
 

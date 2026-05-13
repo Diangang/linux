@@ -14,21 +14,10 @@
 #include <asm/mte.h>
 #include <asm/page.h>
 
-#ifdef CONFIG_ARCH_ENABLE_HUGEPAGE_MIGRATION
-#define arch_hugetlb_migration_supported arch_hugetlb_migration_supported
-extern bool arch_hugetlb_migration_supported(struct hstate *h);
-#endif
-
 static inline void arch_clear_hugetlb_flags(struct folio *folio)
 {
 	clear_bit(PG_dcache_clean, &folio->flags.f);
 
-#ifdef CONFIG_ARM64_MTE
-	if (system_supports_mte()) {
-		clear_bit(PG_mte_tagged, &folio->flags.f);
-		clear_bit(PG_mte_lock, &folio->flags.f);
-	}
-#endif
 }
 #define arch_clear_hugetlb_flags arch_clear_hugetlb_flags
 

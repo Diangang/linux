@@ -79,12 +79,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 
 	if (CONFIG_PGTABLE_LEVELS > 3 && !p4d_none(p4d) &&
 	    p4d_page_paddr(p4d) != __pa_symbol(bm_pud)) {
-		/*
-		 * We only end up here if the kernel mapping and the fixmap
-		 * share the top level pgd entry, which should only happen on
-		 * 16k/4 levels configurations.
-		 */
-		BUG_ON(!IS_ENABLED(CONFIG_ARM64_16K_PAGES));
+		BUG();
 	}
 
 	if (p4d_none(p4d))

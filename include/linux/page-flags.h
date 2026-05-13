@@ -124,9 +124,6 @@ enum pageflags {
 #ifdef CONFIG_ARCH_USES_PG_ARCH_2
 	PG_arch_2,
 #endif
-#ifdef CONFIG_ARCH_USES_PG_ARCH_3
-	PG_arch_3,
-#endif
 	__NR_PAGEFLAGS,
 
 	PG_readahead = PG_reclaim,

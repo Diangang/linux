@@ -129,46 +129,13 @@ alternative_cb_end
 
 	/* Check for MTE asynchronous tag check faults */
 	.macro check_mte_async_tcf, tmp, ti_flags, thread_sctlr
-#ifdef CONFIG_ARM64_MTE
-	.arch_extension lse
-alternative_if_not ARM64_MTE
-	b	1f
-alternative_else_nop_endif
-	/*
-	 * Asynchronous tag check faults are only possible in ASYNC (2) or
-	 * ASYM (3) modes. In each of these modes bit 1 of SCTLR_EL1.TCF0 is
-	 * set, so skip the check if it is unset.
-	 */
-	tbz	\thread_sctlr, #(SCTLR_EL1_TCF0_SHIFT + 1), 1f
-	mrs_s	\tmp, SYS_TFSRE0_EL1
-	tbz	\tmp, #SYS_TFSR_EL1_TF0_SHIFT, 1f
-	/* Asynchronous TCF occurred for TTBR0 access, set the TI flag */
-	mov	\tmp, #_TIF_MTE_ASYNC_FAULT
-	add	\ti_flags, tsk, #TSK_TI_FLAGS
-	stset	\tmp, [\ti_flags]
-1:
-#endif
 	.endm
 
 	/* Clear the MTE asynchronous tag check faults */
 	.macro clear_mte_async_tcf thread_sctlr
-#ifdef CONFIG_ARM64_MTE
-alternative_if ARM64_MTE
-	/* See comment in check_mte_async_tcf above. */
-	tbz	\thread_sctlr, #(SCTLR_EL1_TCF0_SHIFT + 1), 1f
-	dsb	ish
-	msr_s	SYS_TFSRE0_EL1, xzr
-1:
-alternative_else_nop_endif
-#endif
 	.endm
 
 	.macro mte_set_gcr, mte_ctrl, tmp
-#ifdef CONFIG_ARM64_MTE
-	ubfx	\tmp, \mte_ctrl, #MTE_CTRL_GCR_USER_EXCL_SHIFT, #16
-	orr	\tmp, \tmp, #SYS_GCR_EL1_RRND
-	msr_s	SYS_GCR_EL1, \tmp
-#endif
 	.endm
 
 	.macro mte_set_kernel_gcr, tmp, tmp2

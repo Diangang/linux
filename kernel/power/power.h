@@ -28,22 +28,6 @@ extern bool filesystem_freeze_enabled;
 extern void __init hibernate_reserved_size_init(void);
 extern void __init hibernate_image_size_init(void);
 
-#ifdef CONFIG_ARCH_HIBERNATION_HEADER
-/* Maximum size of architecture specific data in a hibernation header */
-#define MAX_ARCH_HEADER_SIZE	(sizeof(struct new_utsname) + 4)
-
-static inline int init_header_complete(struct swsusp_info *info)
-{
-	return arch_hibernation_header_save(info, MAX_ARCH_HEADER_SIZE);
-}
-
-static inline const char *check_image_kernel(struct swsusp_info *info)
-{
-	return arch_hibernation_header_restore(info) ?
-			"architecture specific data" : NULL;
-}
-#endif /* CONFIG_ARCH_HIBERNATION_HEADER */
-
 /*
  * Keep some memory free so that I/O operations can succeed without paging
  * [Might this be more than 4 MB?]

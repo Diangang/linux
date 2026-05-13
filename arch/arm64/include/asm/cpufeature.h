@@ -811,7 +811,7 @@ static __always_inline bool system_uses_irq_prio_masking(void)
 
 static inline bool system_supports_mte(void)
 {
-	return alternative_has_cap_unlikely(ARM64_MTE);
+	return false;
 }
 
 static inline bool system_has_prio_mask_debugging(void)

@@ -57,8 +57,6 @@ static bool system_needs_vamap(void)
 
 efi_status_t check_platform_features(void)
 {
-	u64 tg;
-
 	/*
 	 * If we have 48 bits of VA space for TTBR0 mappings, we can map the
 	 * UEFI runtime regions 1:1 and so calling SetVirtualAddressMap() is
@@ -68,17 +66,6 @@ efi_status_t check_platform_features(void)
 		efi_novamap = true;
 
 	/* UEFI mandates support for 4 KB granularity, no need to check */
-	if (IS_ENABLED(CONFIG_ARM64_4K_PAGES))
-		return EFI_SUCCESS;
-
-	tg = (read_cpuid(ID_AA64MMFR0_EL1) >> ID_AA64MMFR0_EL1_TGRAN_SHIFT) & 0xf;
-	if (tg < ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MIN || tg > ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MAX) {
-		if (IS_ENABLED(CONFIG_ARM64_64K_PAGES))
-			efi_err("This 64 KB granular kernel is not supported by your CPU\n");
-		else
-			efi_err("This 16 KB granular kernel is not supported by your CPU\n");
-		return EFI_UNSUPPORTED;
-	}
 	return EFI_SUCCESS;
 }
 

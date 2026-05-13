@@ -318,8 +318,8 @@ static const struct arm64_ftr_bits ftr_id_aa64pfr1[] = {
 		       FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_SME_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_MPAM_frac_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_RAS_frac_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_MTE),
-		       FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_MTE_SHIFT, 4, ID_AA64PFR1_EL1_MTE_NI),
+	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE,
+		       ID_AA64PFR1_EL1_MTE_SHIFT, 4, ID_AA64PFR1_EL1_MTE_NI),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_SSBS_SHIFT, 4, ID_AA64PFR1_EL1_SSBS_NI),
 	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_BTI),
 				    FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR1_EL1_BT_SHIFT, 4, 0),
@@ -1478,12 +1478,6 @@ void update_cpu_features(int cpu,
 	 * they read/write depends on the GMID_EL1.BS field. Check that the
 	 * value is the same on all CPUs.
 	 */
-	if (IS_ENABLED(CONFIG_ARM64_MTE) &&
-	    id_aa64pfr1_mte(info->reg_id_aa64pfr1)) {
-		taint |= check_update_ftr_reg(SYS_GMID_EL1, cpu,
-					      info->reg_gmid, boot->reg_gmid);
-	}
-
 	/*
 	 * If we don't have AArch32 at all then skip the checks entirely
 	 * as the register values may be UNKNOWN and we're not going to be
@@ -2375,30 +2369,6 @@ static void bti_enable(const struct arm64_cpu_capabilities *__unused)
 }
 #endif /* CONFIG_ARM64_BTI */
 
-#ifdef CONFIG_ARM64_MTE
-static void cpu_enable_mte(struct arm64_cpu_capabilities const *cap)
-{
-	static bool cleared_zero_page = false;
-
-	sysreg_clear_set(sctlr_el1, 0, SCTLR_ELx_ATA | SCTLR_EL1_ATA0);
-
-	mte_cpu_setup();
-
-	/*
-	 * Clear the tags in the zero page. This needs to be done via the
-	 * linear map which has the Tagged attribute. Since this page is
-	 * always mapped as pte_special(), set_pte_at() will not attempt to
-	 * clear the tags or set PG_mte_tagged.
-	 */
-	if (!cleared_zero_page) {
-		cleared_zero_page = true;
-		mte_clear_page_tags(lm_alias(empty_zero_page));
-	}
-
-	kasan_init_hw_tags_cpu();
-}
-#endif /* CONFIG_ARM64_MTE */
-
 static void user_feature_fixup(void)
 {
 	if (cpus_have_cap(ARM64_WORKAROUND_2658417)) {
@@ -2498,9 +2468,6 @@ cpu_enable_mpam(const struct arm64_cpu_capabilities *entry)
 {
 	int cpu = smp_processor_id();
 	u64 regval = 0;
-
-	if (IS_ENABLED(CONFIG_ARM64_MPAM) && static_branch_likely(&mpam_enabled))
-		regval = READ_ONCE(per_cpu(arm64_mpam_current, cpu));
 
 	write_sysreg_s(regval | MPAM1_EL1_MPAMEN, SYS_MPAM1_EL1);
 	if (cpus_have_cap(ARM64_SME))
@@ -2913,37 +2880,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, BT, IMP)
 	},
 #endif
-#ifdef CONFIG_ARM64_MTE
-	{
-		.desc = "Memory Tagging Extension",
-		.capability = ARM64_MTE,
-		.type = ARM64_CPUCAP_STRICT_BOOT_CPU_FEATURE,
-		.matches = has_cpuid_feature,
-		.cpu_enable = cpu_enable_mte,
-		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, MTE, MTE2)
-	},
-	{
-		.desc = "Asymmetric MTE Tag Check Fault",
-		.capability = ARM64_MTE_ASYMM,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, MTE, MTE3)
-	},
-	{
-		.desc = "FAR on MTE Tag Check Fault",
-		.capability = ARM64_MTE_FAR,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64PFR2_EL1, MTEFAR, IMP)
-	},
-	{
-		.desc = "Store Only MTE Tag Check",
-		.capability = ARM64_MTE_STORE_ONLY,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64PFR2_EL1, MTESTOREONLY, IMP)
-	},
-#endif /* CONFIG_ARM64_MTE */
 	{
 		.desc = "RCpc load-acquire (LDAPR)",
 		.capability = ARM64_HAS_LDAPR,
@@ -3074,18 +3010,13 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.capability = ARM64_HAS_VA52,
 		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
 		.matches = has_cpuid_feature,
-#ifdef CONFIG_ARM64_64K_PAGES
-		.desc = "52-bit Virtual Addressing (LVA)",
-		ARM64_CPUID_FIELDS(ID_AA64MMFR2_EL1, VARange, 52)
-#else
 		.desc = "52-bit Virtual Addressing (LPA2)",
 #ifdef CONFIG_ARM64_4K_PAGES
 		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, TGRAN4, 52_BIT)
 #else
-		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, TGRAN16, 52_BIT)
+			ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, TGRAN16, 52_BIT)
 #endif
-#endif
-	},
+		},
 #endif
 	{
 		.desc = "Memory Partitioning And Monitoring",
@@ -3344,12 +3275,6 @@ static const struct arm64_cpu_capabilities arm64_elf_hwcaps[] = {
 	HWCAP_MULTI_CAP(ptr_auth_hwcap_addr_matches, CAP_HWCAP, KERNEL_HWCAP_PACA),
 	HWCAP_MULTI_CAP(ptr_auth_hwcap_gen_matches, CAP_HWCAP, KERNEL_HWCAP_PACG),
 #endif
-#ifdef CONFIG_ARM64_MTE
-	HWCAP_CAP(ID_AA64PFR1_EL1, MTE, MTE2, CAP_HWCAP, KERNEL_HWCAP_MTE),
-	HWCAP_CAP(ID_AA64PFR1_EL1, MTE, MTE3, CAP_HWCAP, KERNEL_HWCAP_MTE3),
-	HWCAP_CAP(ID_AA64PFR2_EL1, MTEFAR, IMP, CAP_HWCAP, KERNEL_HWCAP_MTE_FAR),
-	HWCAP_CAP(ID_AA64PFR2_EL1, MTESTOREONLY, IMP, CAP_HWCAP , KERNEL_HWCAP_MTE_STORE_ONLY),
-#endif /* CONFIG_ARM64_MTE */
 	HWCAP_CAP(ID_AA64MMFR0_EL1, ECV, IMP, CAP_HWCAP, KERNEL_HWCAP_ECV),
 	HWCAP_CAP(ID_AA64MMFR1_EL1, AFP, IMP, CAP_HWCAP, KERNEL_HWCAP_AFP),
 	HWCAP_CAP(ID_AA64ISAR2_EL1, CSSC, IMP, CAP_HWCAP, KERNEL_HWCAP_CSSC),

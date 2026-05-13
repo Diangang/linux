@@ -106,16 +106,6 @@ struct tlb_state {
 	 */
 	bool invalidate_other;
 
-#ifdef CONFIG_ADDRESS_MASKING
-	/*
-	 * Active LAM mode.
-	 *
-	 * X86_CR3_LAM_U57/U48 shifted right by X86_CR3_LAM_U57_BIT or 0 if LAM
-	 * disabled.
-	 */
-	u8 lam;
-#endif
-
 	/*
 	 * Mask that contains TLB_NR_DYN_ASIDS+1 bits to indicate
 	 * the corresponding user PCID needs a flush next time we
@@ -477,22 +467,6 @@ static inline bool huge_pmd_needs_flush(pmd_t oldpmd, pmd_t newpmd)
 }
 #define huge_pmd_needs_flush huge_pmd_needs_flush
 
-#ifdef CONFIG_ADDRESS_MASKING
-static inline  u64 tlbstate_lam_cr3_mask(void)
-{
-	u64 lam = this_cpu_read(cpu_tlbstate.lam);
-
-	return lam << X86_CR3_LAM_U57_BIT;
-}
-
-static inline void cpu_tlbstate_update_lam(unsigned long lam, u64 untag_mask)
-{
-	this_cpu_write(cpu_tlbstate.lam, lam >> X86_CR3_LAM_U57_BIT);
-	this_cpu_write(tlbstate_untag_mask, untag_mask);
-}
-
-#else
-
 static inline u64 tlbstate_lam_cr3_mask(void)
 {
 	return 0;
@@ -501,7 +475,6 @@ static inline u64 tlbstate_lam_cr3_mask(void)
 static inline void cpu_tlbstate_update_lam(unsigned long lam, u64 untag_mask)
 {
 }
-#endif
 #else /* !MODULE */
 #define enter_lazy_tlb enter_lazy_tlb
 extern void enter_lazy_tlb(struct mm_struct *mm, struct task_struct *tsk)

@@ -36,10 +36,6 @@ SECTIONS {
 	.init.klp_funcs		0 : ALIGN(8) { KEEP(*(.init.klp_funcs)) }
 	.init.klp_objects	0 : ALIGN(8) { KEEP(*(.init.klp_objects)) }
 
-#ifdef CONFIG_ARCH_USES_CFI_TRAPS
-	__kcfi_traps		0 : { KEEP(*(.kcfi_traps)) }
-#endif
-
 	.text			0 : {
 		*(.text .text.[0-9a-zA-Z_]*)
 	}

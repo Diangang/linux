@@ -975,9 +975,6 @@ struct task_struct {
 	/* Recursion prevention for eventfd_signal() */
 	unsigned			in_eventfd:1;
 #endif
-#ifdef CONFIG_ARCH_HAS_CPU_PASID
-	unsigned			pasid_activated:1;
-#endif
 #ifdef CONFIG_X86_BUS_LOCK_DETECT
 	unsigned			reported_split_lock:1;
 #endif

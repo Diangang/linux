@@ -661,9 +661,6 @@ struct device {
 	struct dev_pin_info	*pins;
 #endif
 	struct dev_msi_info	msi;
-#ifdef CONFIG_ARCH_HAS_DMA_OPS
-	const struct dma_map_ops *dma_ops;
-#endif
 	u64		*dma_mask;	/* dma mask (if dma'able device) */
 	u64		coherent_dma_mask;/* Like dma_mask, but for
 					     alloc_coherent mappings as
@@ -720,8 +717,7 @@ struct device {
 	bool			state_synced:1;
 	bool			can_match:1;
 #if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL)
+    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
 	bool			dma_coherent:1;
 #endif
 #ifdef CONFIG_DMA_OPS_BYPASS

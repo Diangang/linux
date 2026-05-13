@@ -9,7 +9,7 @@ config PREEMPT_VOLUNTARY_BUILD
 config PREEMPT_BUILD
 	bool
 	select PREEMPTION
-	select UNINLINE_SPIN_UNLOCK if !ARCH_INLINE_SPIN_UNLOCK
+	select UNINLINE_SPIN_UNLOCK
 
 config ARCH_HAS_PREEMPT_LAZY
 	bool
@@ -17,28 +17,10 @@ config ARCH_HAS_PREEMPT_LAZY
 choice
 	prompt "Preemption Model"
 	default PREEMPT_LAZY if ARCH_HAS_PREEMPT_LAZY
-	default PREEMPT_NONE
-
-config PREEMPT_NONE
-	bool "No Forced Preemption (Server)"
-	depends on !PREEMPT_RT
-	depends on ARCH_NO_PREEMPT
-	select PREEMPT_NONE_BUILD if !PREEMPT_DYNAMIC
-	help
-	  This is the traditional Linux preemption model, geared towards
-	  throughput. It will still provide good latencies most of the
-	  time, but there are no guarantees and occasional longer delays
-	  are possible.
-
-	  Select this option if you are building a kernel for a server or
-	  scientific/computation system, or if you want to maximize the
-	  raw processing power of the kernel, irrespective of scheduling
-	  latencies.
 
 config PREEMPT_VOLUNTARY
 	bool "Voluntary Kernel Preemption (Desktop)"
 	depends on !ARCH_HAS_PREEMPT_LAZY
-	depends on !ARCH_NO_PREEMPT
 	depends on !PREEMPT_RT
 	select PREEMPT_VOLUNTARY_BUILD if !PREEMPT_DYNAMIC
 	help
@@ -58,7 +40,6 @@ config PREEMPT_VOLUNTARY
 
 config PREEMPT
 	bool "Preemptible Kernel (Low-Latency Desktop)"
-	depends on !ARCH_NO_PREEMPT
 	select PREEMPT_BUILD if !PREEMPT_DYNAMIC
 	help
 	  This option reduces the latency of the kernel by making
@@ -77,7 +58,6 @@ config PREEMPT
 
 config PREEMPT_LAZY
 	bool "Scheduler controlled preemption model"
-	depends on !ARCH_NO_PREEMPT
 	depends on ARCH_HAS_PREEMPT_LAZY
 	select PREEMPT_BUILD if !PREEMPT_DYNAMIC
 	help

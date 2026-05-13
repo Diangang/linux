@@ -169,7 +169,6 @@ config X86_DISABLED_FEATURE_CALL_DEPTH
 
 config X86_DISABLED_FEATURE_LAM
 	def_bool y
-	depends on !ADDRESS_MASKING
 
 config X86_DISABLED_FEATURE_ENQCMD
 	def_bool y

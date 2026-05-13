@@ -801,7 +801,7 @@ static inline int pmd_trans_huge(pmd_t pmd)
 }
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
-#if defined(CONFIG_ARM64_64K_PAGES) || CONFIG_PGTABLE_LEVELS < 3
+#if CONFIG_PGTABLE_LEVELS < 3
 static inline bool pud_table(pud_t pud) { return true; }
 #else
 #define pud_table(pud)		((pud_val(pud) & PUD_TYPE_MASK) == \
@@ -1528,29 +1528,6 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
  * PTEs.
  */
 #define MAX_SWAPFILES_CHECK() BUILD_BUG_ON(MAX_SWAPFILES_SHIFT > __SWP_TYPE_BITS)
-
-#ifdef CONFIG_ARM64_MTE
-
-#define __HAVE_ARCH_PREPARE_TO_SWAP
-extern int arch_prepare_to_swap(struct folio *folio);
-
-#define __HAVE_ARCH_SWAP_INVALIDATE
-static inline void arch_swap_invalidate_page(int type, pgoff_t offset)
-{
-	if (system_supports_mte())
-		mte_invalidate_tags(type, offset);
-}
-
-static inline void arch_swap_invalidate_area(int type)
-{
-	if (system_supports_mte())
-		mte_invalidate_tags_area(type);
-}
-
-#define __HAVE_ARCH_SWAP_RESTORE
-extern void arch_swap_restore(swp_entry_t entry, struct folio *folio);
-
-#endif /* CONFIG_ARM64_MTE */
 
 /*
  * On AArch64, the cache coherency is handled via the __set_ptes() function.

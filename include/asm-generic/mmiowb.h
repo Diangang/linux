@@ -13,9 +13,8 @@
  * 	1. Implement mmiowb() (and arch_mmiowb_state() if you're fancy)
  *	   in asm/mmiowb.h, then #include this file
  *	2. Ensure your I/O write accessors call mmiowb_set_pending()
- *	3. Select ARCH_HAS_MMIOWB
- *	4. Untangle the resulting mess of header files
- *	5. Complain to your architects
+ *	3. Untangle the resulting mess of header files
+ *	4. Complain to your architects
  */
 #ifdef CONFIG_MMIOWB
 

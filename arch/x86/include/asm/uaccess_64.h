@@ -20,39 +20,6 @@
 #endif
 extern unsigned long USER_PTR_MAX;
 
-#ifdef CONFIG_ADDRESS_MASKING
-/*
- * Mask out tag bits from the address.
- */
-static inline unsigned long __untagged_addr(unsigned long addr)
-{
-	asm_inline (ALTERNATIVE("", "and " __percpu_arg([mask]) ", %[addr]",
-				X86_FEATURE_LAM)
-	     : [addr] "+r" (addr)
-	     : [mask] "m" (__my_cpu_var(tlbstate_untag_mask)));
-
-	return addr;
-}
-
-#define untagged_addr(addr)	({					\
-	unsigned long __addr = (__force unsigned long)(addr);		\
-	(__force __typeof__(addr))__untagged_addr(__addr);		\
-})
-
-static inline unsigned long __untagged_addr_remote(struct mm_struct *mm,
-						   unsigned long addr)
-{
-	mmap_assert_locked(mm);
-	return addr & (mm)->context.untag_mask;
-}
-
-#define untagged_addr_remote(mm, addr)	({				\
-	unsigned long __addr = (__force unsigned long)(addr);		\
-	(__force __typeof__(addr))__untagged_addr_remote(mm, __addr);	\
-})
-
-#endif
-
 #define valid_user_address(x) \
 	likely((__force unsigned long)(x) <= runtime_const_ptr(USER_PTR_MAX))
 

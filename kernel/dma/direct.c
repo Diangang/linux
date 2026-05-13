@@ -234,7 +234,7 @@ void *dma_direct_alloc(struct device *dev, size_t size,
 		 * mark arbitrary parts of the kernel direct mapping uncached,
 		 * or remapped it uncached.
 		 */
-		set_uncached = IS_ENABLED(CONFIG_ARCH_HAS_DMA_SET_UNCACHED);
+		set_uncached = false;
 		remap = IS_ENABLED(CONFIG_DMA_DIRECT_REMAP);
 		if (!set_uncached && !remap) {
 			pr_warn_once("coherent DMA allocations not supported on this platform.\n");
@@ -411,9 +411,7 @@ void dma_direct_sync_sg_for_device(struct device *dev,
 }
 #endif
 
-#if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) || \
-    defined(CONFIG_SWIOTLB)
+#if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || defined(CONFIG_SWIOTLB)
 void dma_direct_sync_sg_for_cpu(struct device *dev,
 		struct scatterlist *sgl, int nents, enum dma_data_direction dir)
 {

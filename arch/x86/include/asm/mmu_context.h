@@ -83,43 +83,6 @@ static inline void switch_ldt(struct mm_struct *prev, struct mm_struct *next)
 }
 #endif
 
-#ifdef CONFIG_ADDRESS_MASKING
-static inline unsigned long mm_lam_cr3_mask(struct mm_struct *mm)
-{
-	/*
-	 * When switch_mm_irqs_off() is called for a kthread, it may race with
-	 * LAM enablement. switch_mm_irqs_off() uses the LAM mask to do two
-	 * things: populate CR3 and populate 'cpu_tlbstate.lam'. Make sure it
-	 * reads a single value for both.
-	 */
-	return READ_ONCE(mm->context.lam_cr3_mask);
-}
-
-static inline void dup_lam(struct mm_struct *oldmm, struct mm_struct *mm)
-{
-	mm->context.lam_cr3_mask = oldmm->context.lam_cr3_mask;
-	mm->context.untag_mask = oldmm->context.untag_mask;
-}
-
-#define mm_untag_mask mm_untag_mask
-static inline unsigned long mm_untag_mask(struct mm_struct *mm)
-{
-	return mm->context.untag_mask;
-}
-
-static inline void mm_reset_untag_mask(struct mm_struct *mm)
-{
-	mm->context.untag_mask = -1UL;
-}
-
-#define arch_pgtable_dma_compat arch_pgtable_dma_compat
-static inline bool arch_pgtable_dma_compat(struct mm_struct *mm)
-{
-	return !mm_lam_cr3_mask(mm) ||
-		test_bit(MM_CONTEXT_FORCE_TAGGED_SVA, &mm->context.flags);
-}
-#else
-
 static inline unsigned long mm_lam_cr3_mask(struct mm_struct *mm)
 {
 	return 0;
@@ -132,7 +95,6 @@ static inline void dup_lam(struct mm_struct *oldmm, struct mm_struct *mm)
 static inline void mm_reset_untag_mask(struct mm_struct *mm)
 {
 }
-#endif
 
 extern void mm_init_global_asid(struct mm_struct *mm);
 extern void mm_free_global_asid(struct mm_struct *mm);

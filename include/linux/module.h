@@ -418,11 +418,6 @@ struct module {
 	const u8 *flagstab;
 	unsigned int num_syms;
 
-#ifdef CONFIG_ARCH_USES_CFI_TRAPS
-	s32 *kcfi_traps;
-	s32 *kcfi_traps_end;
-#endif
-
 	/* Kernel parameters. */
 #ifdef CONFIG_SYSFS
 	struct mutex param_lock;

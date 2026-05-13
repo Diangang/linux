@@ -86,9 +86,6 @@ config BINFMT_SCRIPT
 
 	  Most systems will not boot if you say M or N here.  If unsure, say Y.
 
-config ARCH_HAS_BINFMT_FLAT
-	bool
-
 config BINFMT_MISC
 	tristate "Kernel support for MISC binaries"
 	help

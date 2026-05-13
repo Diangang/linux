@@ -35,7 +35,7 @@ cpucap_is_possible(const unsigned int cap)
 	case ARM64_HAS_GIC_PRIO_MASKING:
 		return IS_ENABLED(CONFIG_ARM64_PSEUDO_NMI);
 	case ARM64_MTE:
-		return IS_ENABLED(CONFIG_ARM64_MTE);
+		return false;
 	case ARM64_BTI:
 		return IS_ENABLED(CONFIG_ARM64_BTI);
 	case ARM64_HAS_TLB_RANGE:

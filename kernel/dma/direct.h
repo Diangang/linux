@@ -34,9 +34,7 @@ static inline void dma_direct_sync_sg_for_device(struct device *dev,
 }
 #endif
 
-#if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) || \
-    defined(CONFIG_SWIOTLB)
+#if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || defined(CONFIG_SWIOTLB)
 void dma_direct_unmap_sg(struct device *dev, struct scatterlist *sgl,
 		int nents, enum dma_data_direction dir, unsigned long attrs);
 void dma_direct_sync_sg_for_cpu(struct device *dev,

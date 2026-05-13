@@ -97,12 +97,8 @@ config RUSTC_CLANG_LLVM_COMPATIBLE
 	  LTO) require the same LLVM major version to work properly. For best
 	  compatibility it is recommended that the exact same LLVM is used.
 
-config ARCH_HAS_CC_CAN_LINK
-	bool
-
 config CC_CAN_LINK
 	bool
-	default ARCH_CC_CAN_LINK if ARCH_HAS_CC_CAN_LINK
 	default $(cc_can_link_user,$(m64-flag)) if 64BIT
 	default $(cc_can_link_user,$(m32-flag))
 
@@ -805,13 +801,9 @@ config ARCH_SUPPORTS_INT128
 # For architectures that (ab)use NUMA to represent different memory regions
 # all cpu-local but of different latencies, such as SuperH.
 #
-config ARCH_WANT_NUMA_VARIABLE_LOCALITY
-	bool
-
 config NUMA_BALANCING
 	bool "Memory placement aware NUMA scheduler"
 	depends on ARCH_SUPPORTS_NUMA_BALANCING
-	depends on !ARCH_WANT_NUMA_VARIABLE_LOCALITY
 	depends on SMP && NUMA_MIGRATION && !PREEMPT_RT
 	help
 	  This option adds support for automatic NUMA aware memory/task placement.

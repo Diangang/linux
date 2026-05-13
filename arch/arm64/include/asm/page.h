@@ -46,12 +46,7 @@ int pfn_is_map_memory(unsigned long pfn);
 
 #endif /* !__ASSEMBLER__ */
 
-#ifdef CONFIG_ARM64_MTE
-#define VMA_DATA_DEFAULT_FLAGS	append_vma_flags(VMA_DATA_FLAGS_TSK_EXEC, \
-						 VMA_MTE_ALLOWED_BIT)
-#else
 #define VMA_DATA_DEFAULT_FLAGS	VMA_DATA_FLAGS_TSK_EXEC
-#endif
 
 #include <asm-generic/getorder.h>
 

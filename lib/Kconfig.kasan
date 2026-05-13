@@ -13,24 +13,6 @@ config HAVE_ARCH_KASAN_HW_TAGS
 config HAVE_ARCH_KASAN_VMALLOC
 	bool
 
-config ARCH_DISABLE_KASAN_INLINE
-	bool
-	help
-	  Disables both inline and stack instrumentation. Selected by
-	  architectures that do not support these instrumentation types.
-
-config ARCH_NEEDS_DEFER_KASAN
-	bool
-
-config ARCH_DEFER_KASAN
-	def_bool y
-	depends on KASAN && ARCH_NEEDS_DEFER_KASAN
-	help
-	  Architectures should select this if they need to defer KASAN
-	  initialization until shadow memory is properly set up. This
-	  enables runtime control via static keys. Otherwise, KASAN uses
-	  compile-time constants for better performance.
-
 config CC_HAS_KASAN_GENERIC
 	def_bool $(cc-option, -fsanitize=kernel-address)
 
@@ -132,7 +114,7 @@ endchoice
 choice
 	prompt "Instrumentation type"
 	depends on KASAN_GENERIC || KASAN_SW_TAGS
-	default KASAN_INLINE if !ARCH_DISABLE_KASAN_INLINE
+	default KASAN_INLINE
 
 config KASAN_OUTLINE
 	bool "Outline instrumentation"
@@ -143,7 +125,6 @@ config KASAN_OUTLINE
 
 config KASAN_INLINE
 	bool "Inline instrumentation"
-	depends on !ARCH_DISABLE_KASAN_INLINE
 	help
 	  Makes the compiler directly insert memory accessibility checks before
 	  each memory access. Faster than KASAN_OUTLINE (gives ~x2 boost for

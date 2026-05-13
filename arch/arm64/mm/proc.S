@@ -22,16 +22,8 @@
 #include <asm/smp.h>
 #include <asm/sysreg.h>
 
-#ifdef CONFIG_ARM64_64K_PAGES
-#define TCR_TG_FLAGS	((TCR_EL1_TG0_64K << TCR_EL1_TG0_SHIFT) |\
-			 (TCR_EL1_TG1_64K << TCR_EL1_TG1_SHIFT))
-#elif defined(CONFIG_ARM64_16K_PAGES)
-#define TCR_TG_FLAGS	((TCR_EL1_TG0_16K << TCR_EL1_TG0_SHIFT) |\
-			 (TCR_EL1_TG1_16K << TCR_EL1_TG1_SHIFT))
-#else /* CONFIG_ARM64_4K_PAGES */
 #define TCR_TG_FLAGS	((TCR_EL1_TG0_4K << TCR_EL1_TG0_SHIFT) |\
 			 (TCR_EL1_TG1_4K << TCR_EL1_TG1_SHIFT))
-#endif
 
 #ifdef CONFIG_RANDOMIZE_BASE
 #define TCR_KASLR_FLAGS	TCR_EL1_NFD1
@@ -48,17 +40,7 @@
 #define TCR_KASAN_SW_FLAGS 0
 #endif
 
-#ifdef CONFIG_ARM64_MTE
-/*
- * The mte_zero_clear_page_tags() implementation uses DC GZVA, which relies on
- * TBI being enabled at EL1.  TCMA1 is needed to treat accesses with the
- * match-all tag (0xF) as Tag Unchecked, irrespective of the SCTLR_EL1.TCF
- * setting.
- */
-#define TCR_MTE_FLAGS TCR_EL1_TCMA1 | TCR_EL1_TBI1 | TCR_EL1_TBID1
-#else
 #define TCR_MTE_FLAGS 0
-#endif
 
 #define TCR_IRGN_WBWA	((TCR_EL1_IRGN0_WBWA << TCR_EL1_IRGN0_SHIFT) |\
 			 (TCR_EL1_IRGN1_WBWA << TCR_EL1_IRGN1_SHIFT))

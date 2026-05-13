@@ -18,8 +18,7 @@
 #include "debug.h"
 #include "direct.h"
 #if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \
-	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL)
+	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
 bool dma_default_coherent = IS_ENABLED(CONFIG_ARCH_DMA_DEFAULT_COHERENT);
 #endif
 

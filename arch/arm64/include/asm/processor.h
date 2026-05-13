@@ -57,15 +57,7 @@
 #define TASK_SIZE_MAX		(UL(1) << VA_BITS)
 
 #ifdef CONFIG_COMPAT
-#if defined(CONFIG_ARM64_64K_PAGES) && defined(CONFIG_KUSER_HELPERS)
-/*
- * With CONFIG_ARM64_64K_PAGES enabled, the last page is occupied
- * by the compat vectors page.
- */
-#define TASK_SIZE_32		UL(0x100000000)
-#else
 #define TASK_SIZE_32		(UL(0x100000000) - PAGE_SIZE)
-#endif /* CONFIG_ARM64_64K_PAGES */
 #define TASK_SIZE		(test_thread_flag(TIF_32BIT) ? \
 				TASK_SIZE_32 : TASK_SIZE_64)
 #define TASK_SIZE_OF(tsk)	(test_tsk_thread_flag(tsk, TIF_32BIT) ? \
@@ -184,9 +176,6 @@ struct thread_struct {
 #ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
 	struct ptrauth_keys_kernel	keys_kernel;
 #endif
-#endif
-#ifdef CONFIG_ARM64_MTE
-	u64			mte_ctrl;
 #endif
 	u64			sctlr_user;
 	u64			svcr;

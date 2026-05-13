@@ -783,74 +783,6 @@ void set_personality_ia32(bool x32)
 EXPORT_SYMBOL_GPL(set_personality_ia32);
 
 
-#ifdef CONFIG_ADDRESS_MASKING
-
-#define LAM_U57_BITS 6
-
-static void enable_lam_func(void *__mm)
-{
-	struct mm_struct *mm = __mm;
-	unsigned long lam;
-
-	if (this_cpu_read(cpu_tlbstate.loaded_mm) == mm) {
-		lam = mm_lam_cr3_mask(mm);
-		write_cr3(__read_cr3() | lam);
-		cpu_tlbstate_update_lam(lam, mm_untag_mask(mm));
-	}
-}
-
-static void mm_enable_lam(struct mm_struct *mm)
-{
-	mm->context.lam_cr3_mask = X86_CR3_LAM_U57;
-	mm->context.untag_mask =  ~GENMASK(62, 57);
-
-	/*
-	 * Even though the process must still be single-threaded at this
-	 * point, kernel threads may be using the mm.  IPI those kernel
-	 * threads if they exist.
-	 */
-	on_each_cpu_mask(mm_cpumask(mm), enable_lam_func, mm, true);
-	set_bit(MM_CONTEXT_LOCK_LAM, &mm->context.flags);
-}
-
-static int prctl_enable_tagged_addr(struct mm_struct *mm, unsigned long nr_bits)
-{
-	if (!cpu_feature_enabled(X86_FEATURE_LAM))
-		return -ENODEV;
-
-	/* PTRACE_ARCH_PRCTL */
-	if (current->mm != mm)
-		return -EINVAL;
-
-	if (mm_valid_pasid(mm) &&
-	    !test_bit(MM_CONTEXT_FORCE_TAGGED_SVA, &mm->context.flags))
-		return -EINVAL;
-
-	if (mmap_write_lock_killable(mm))
-		return -EINTR;
-
-	/*
-	 * MM_CONTEXT_LOCK_LAM is set on clone.  Prevent LAM from
-	 * being enabled unless the process is single threaded:
-	 */
-	if (test_bit(MM_CONTEXT_LOCK_LAM, &mm->context.flags)) {
-		mmap_write_unlock(mm);
-		return -EBUSY;
-	}
-
-	if (!nr_bits || nr_bits > LAM_U57_BITS) {
-		mmap_write_unlock(mm);
-		return -EINVAL;
-	}
-
-	mm_enable_lam(mm);
-
-	mmap_write_unlock(mm);
-
-	return 0;
-}
-#endif
-
 long do_arch_prctl_64(struct task_struct *task, int option, unsigned long arg2)
 {
 	int ret = 0;
@@ -926,23 +858,6 @@ long do_arch_prctl_64(struct task_struct *task, int option, unsigned long arg2)
 		break;
 	}
 
-#ifdef CONFIG_ADDRESS_MASKING
-	case ARCH_GET_UNTAG_MASK:
-		return put_user(task->mm->context.untag_mask,
-				(unsigned long __user *)arg2);
-	case ARCH_ENABLE_TAGGED_ADDR:
-		return prctl_enable_tagged_addr(task->mm, arg2);
-	case ARCH_FORCE_TAGGED_SVA:
-		if (current != task)
-			return -EINVAL;
-		set_bit(MM_CONTEXT_FORCE_TAGGED_SVA, &task->mm->context.flags);
-		return 0;
-	case ARCH_GET_MAX_TAG_BITS:
-		if (!cpu_feature_enabled(X86_FEATURE_LAM))
-			return put_user(0, (unsigned long __user *)arg2);
-		else
-			return put_user(LAM_U57_BITS, (unsigned long __user *)arg2);
-#endif
 	case ARCH_SHSTK_ENABLE:
 	case ARCH_SHSTK_DISABLE:
 	case ARCH_SHSTK_LOCK:

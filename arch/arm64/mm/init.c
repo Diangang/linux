@@ -74,13 +74,7 @@ phys_addr_t __ro_after_init arm64_dma_phys_limit;
  * (64k granule), or a multiple that can be mapped using contiguous bits
  * in the page tables: 32 * PMD_SIZE (16k granule)
  */
-#if defined(CONFIG_ARM64_4K_PAGES)
 #define ARM64_MEMSTART_SHIFT		PUD_SHIFT
-#elif defined(CONFIG_ARM64_16K_PAGES)
-#define ARM64_MEMSTART_SHIFT		CONT_PMD_SHIFT
-#else
-#define ARM64_MEMSTART_SHIFT		PMD_SHIFT
-#endif
 
 /*
  * sparsemem vmemmap imposes an additional requirement on the alignment of

@@ -62,21 +62,12 @@ static inline u32 cfi_get_func_hash(void *func) { return 0; }
 
 #endif /* CONFIG_CFI */
 
-#ifdef CONFIG_ARCH_USES_CFI_TRAPS
-bool is_cfi_trap(unsigned long addr);
-#else
 static inline bool is_cfi_trap(unsigned long addr) { return false; }
-#endif
 
 #ifdef CONFIG_MODULES
-#ifdef CONFIG_ARCH_USES_CFI_TRAPS
-void module_cfi_finalize(const Elf_Ehdr *hdr, const Elf_Shdr *sechdrs,
-			 struct module *mod);
-#else
 static inline void module_cfi_finalize(const Elf_Ehdr *hdr,
 				       const Elf_Shdr *sechdrs,
 				       struct module *mod) {}
-#endif /* CONFIG_ARCH_USES_CFI_TRAPS */
 #endif /* CONFIG_MODULES */
 
 #ifndef CFI_NOSEAL

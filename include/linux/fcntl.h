@@ -22,7 +22,7 @@
 #define OPEN_HOW_SIZE_LATEST	OPEN_HOW_SIZE_VER0
 
 #ifndef force_o_largefile
-#define force_o_largefile() (!IS_ENABLED(CONFIG_ARCH_32BIT_OFF_T))
+#define force_o_largefile() true
 #endif
 
 #if BITS_PER_LONG == 32

@@ -134,11 +134,7 @@ TRACE_DEFINE_ENUM(___GFP_LAST_BIT);
 #define IF_HAVE_PG_ARCH_2(_name)
 #endif
 
-#ifdef CONFIG_ARCH_USES_PG_ARCH_3
-#define IF_HAVE_PG_ARCH_3(_name) ,{1UL << PG_##_name, __stringify(_name)}
-#else
 #define IF_HAVE_PG_ARCH_3(_name)
-#endif
 
 #define DEF_PAGEFLAG_NAME(_name) { 1UL <<  PG_##_name, __stringify(_name) }
 

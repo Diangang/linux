@@ -54,11 +54,7 @@
 #define FIXADDR_TOP		(-UL(SZ_8M))
 
 #if VA_BITS > 48
-#ifdef CONFIG_ARM64_16K_PAGES
-#define VA_BITS_MIN		(47)
-#else
 #define VA_BITS_MIN		(48)
-#endif
 #else
 #define VA_BITS_MIN		(VA_BITS)
 #endif

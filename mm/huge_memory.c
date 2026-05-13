@@ -3514,9 +3514,6 @@ static void __split_folio_to_order(struct folio *folio, int old_order,
 #ifdef CONFIG_ARCH_USES_PG_ARCH_2
 				 (1L << PG_arch_2) |
 #endif
-#ifdef CONFIG_ARCH_USES_PG_ARCH_3
-				 (1L << PG_arch_3) |
-#endif
 				 (1L << PG_dirty) |
 				 LRU_GEN_MASK | LRU_REFS_MASK));
 

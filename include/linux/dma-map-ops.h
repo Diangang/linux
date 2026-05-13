@@ -64,22 +64,6 @@ struct dma_map_ops {
 	unsigned long (*get_merge_boundary)(struct device *dev);
 };
 
-#ifdef CONFIG_ARCH_HAS_DMA_OPS
-#include <asm/dma-mapping.h>
-
-static inline const struct dma_map_ops *get_dma_ops(struct device *dev)
-{
-	if (dev->dma_ops)
-		return dev->dma_ops;
-	return get_arch_dma_ops();
-}
-
-static inline void set_dma_ops(struct device *dev,
-			       const struct dma_map_ops *dma_ops)
-{
-	dev->dma_ops = dma_ops;
-}
-#else /* CONFIG_ARCH_HAS_DMA_OPS */
 static inline const struct dma_map_ops *get_dma_ops(struct device *dev)
 {
 	return NULL;
@@ -88,7 +72,6 @@ static inline void set_dma_ops(struct device *dev,
 			       const struct dma_map_ops *dma_ops)
 {
 }
-#endif /* CONFIG_ARCH_HAS_DMA_OPS */
 
 #ifdef CONFIG_DMA_CMA
 struct cma *dev_get_cma_area(struct device *dev);
@@ -220,8 +203,7 @@ int dma_direct_set_offset(struct device *dev, phys_addr_t cpu_start,
 		dma_addr_t dma_start, u64 size);
 
 #if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \
-	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL)
+	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
 extern bool dma_default_coherent;
 static inline bool dev_is_dma_coherent(struct device *dev)
 {
@@ -362,13 +344,9 @@ static inline void arch_sync_dma_flush(void)
 }
 #endif
 
-#ifdef CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL
-void arch_sync_dma_for_cpu_all(void);
-#else
 static inline void arch_sync_dma_for_cpu_all(void)
 {
 }
-#endif /* CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL */
 
 #ifdef CONFIG_ARCH_HAS_DMA_PREP_COHERENT
 void arch_dma_prep_coherent(struct page *page, size_t size);

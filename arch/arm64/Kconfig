@@ -14,7 +14,6 @@ config ARM64
 	select ARCH_HAS_DEBUG_WX
 	select ARCH_BINFMT_ELF_EXTRA_PHDRS
 	select ARCH_BINFMT_ELF_STATE
-	select ARCH_ENABLE_HUGEPAGE_MIGRATION if HUGETLB_PAGE && MIGRATION
 	select ARCH_ENABLE_MEMORY_HOTPLUG
 	select ARCH_ENABLE_SPLIT_PMD_PTLOCK if PGTABLE_LEVELS > 2
 	select ARCH_ENABLE_THP_MIGRATION if TRANSPARENT_HUGEPAGE
@@ -24,7 +23,6 @@ config ARM64
 	select ARCH_HAS_CURRENT_STACK_POINTER
 	select ARCH_HAS_DEBUG_VIRTUAL
 	select ARCH_HAS_DEBUG_VM_PGTABLE
-	select ARCH_HAS_DMA_OPS if XEN
 	select ARCH_HAS_DMA_PREP_COHERENT
 	select ARCH_HAS_ACPI_TABLE_UPGRADE if ACPI
 	select ARCH_HAS_FAST_MULTIPLIER
@@ -57,7 +55,6 @@ config ARM64
 	select ARCH_HAS_BATCHED_DMA_SYNC
 	select ARCH_HAS_SYSCALL_WRAPPER
 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-	select ARCH_HAS_ZONE_DMA_SET if EXPERT
 	select ARCH_HAVE_ELF_PROT
 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
 	select ARCH_HAVE_TRACE_MMIO_ACCESS
@@ -72,7 +69,6 @@ config ARM64
 	select ARCH_SUPPORTS_DEBUG_PAGEALLOC
 	select ARCH_SUPPORTS_HUGETLBFS
 	select ARCH_SUPPORTS_MEMORY_FAILURE
-	select ARCH_SUPPORTS_SHADOW_CALL_STACK if CC_HAVE_SHADOW_CALL_STACK
 	select ARCH_SUPPORTS_LTO_CLANG if CPU_LITTLE_ENDIAN
 	select ARCH_SUPPORTS_LTO_CLANG_THIN
 	select ARCH_SUPPORTS_CFI
@@ -90,7 +86,7 @@ config ARM64
 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION if COMPAT
 	select ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT
 	select ARCH_WANT_FRAME_POINTERS
-	select ARCH_WANT_HUGE_PMD_SHARE if ARM64_4K_PAGES || (ARM64_16K_PAGES && !ARM64_VA_BITS_36)
+	select ARCH_WANT_HUGE_PMD_SHARE if ARM64_4K_PAGES
 	select ARCH_WANT_LD_ORPHAN_WARN
 	select ARCH_WANTS_EXECMEM_LATE
 	select ARCH_WANTS_NO_INSTR
@@ -154,7 +150,6 @@ config ARM64
 	select HAVE_ARCH_KASAN
 	select HAVE_ARCH_KASAN_VMALLOC
 	select HAVE_ARCH_KASAN_SW_TAGS
-	select HAVE_ARCH_KASAN_HW_TAGS if ARM64_MTE
 	# Some instrumentation may be unsound, hence EXPERT
 	select HAVE_ARCH_KCSAN if EXPERT
 	select HAVE_ARCH_KFENCE
@@ -269,16 +264,10 @@ config ARCH_MMAP_RND_BITS_MAX
 	default 24 if ARM64_VA_BITS=39
 	default 27 if ARM64_VA_BITS=42
 	default 30 if ARM64_VA_BITS=47
-	default 29 if (ARM64_VA_BITS=48 || ARM64_VA_BITS=52) && ARM64_64K_PAGES
-	default 31 if (ARM64_VA_BITS=48 || ARM64_VA_BITS=52) && ARM64_16K_PAGES
 	default 33 if (ARM64_VA_BITS=48 || ARM64_VA_BITS=52)
-	default 14 if ARM64_64K_PAGES
-	default 16 if ARM64_16K_PAGES
 	default 18
 
 config ARCH_MMAP_RND_COMPAT_BITS_MIN
-	default 7 if ARM64_64K_PAGES
-	default 9 if ARM64_16K_PAGES
 	default 11
 
 config ARCH_MMAP_RND_COMPAT_BITS_MAX
@@ -325,13 +314,8 @@ config FIX_EARLYCON_MEM
 
 config PGTABLE_LEVELS
 	int
-	default 2 if ARM64_16K_PAGES && ARM64_VA_BITS_36
-	default 2 if ARM64_64K_PAGES && ARM64_VA_BITS_42
-	default 3 if ARM64_64K_PAGES && (ARM64_VA_BITS_48 || ARM64_VA_BITS_52)
 	default 3 if ARM64_4K_PAGES && ARM64_VA_BITS_39
-	default 3 if ARM64_16K_PAGES && ARM64_VA_BITS_47
-	default 4 if ARM64_16K_PAGES && (ARM64_VA_BITS_48 || ARM64_VA_BITS_52)
-	default 4 if !ARM64_64K_PAGES && ARM64_VA_BITS_48
+	default 4 if ARM64_VA_BITS_48
 	default 5 if ARM64_4K_PAGES && ARM64_VA_BITS_52
 
 config ARCH_SUPPORTS_UPROBES
@@ -343,13 +327,11 @@ config ARCH_PROC_KCORE_TEXT
 config KASAN_SHADOW_OFFSET
 	hex
 	depends on KASAN_GENERIC || KASAN_SW_TAGS
-	default 0xdfff800000000000 if (ARM64_VA_BITS_48 || (ARM64_VA_BITS_52 && !ARM64_16K_PAGES)) && !KASAN_SW_TAGS
-	default 0xdfffc00000000000 if (ARM64_VA_BITS_47 || ARM64_VA_BITS_52) && ARM64_16K_PAGES && !KASAN_SW_TAGS
+	default 0xdfff800000000000 if (ARM64_VA_BITS_48 || ARM64_VA_BITS_52) && !KASAN_SW_TAGS
 	default 0xdffffe0000000000 if ARM64_VA_BITS_42 && !KASAN_SW_TAGS
 	default 0xdfffffc000000000 if ARM64_VA_BITS_39 && !KASAN_SW_TAGS
 	default 0xdffffff800000000 if ARM64_VA_BITS_36 && !KASAN_SW_TAGS
-	default 0xefff800000000000 if (ARM64_VA_BITS_48 || (ARM64_VA_BITS_52 && !ARM64_16K_PAGES)) && KASAN_SW_TAGS
-	default 0xefffc00000000000 if (ARM64_VA_BITS_47 || ARM64_VA_BITS_52) && ARM64_16K_PAGES && KASAN_SW_TAGS
+	default 0xefff800000000000 if (ARM64_VA_BITS_48 || ARM64_VA_BITS_52) && KASAN_SW_TAGS
 	default 0xeffffe0000000000 if ARM64_VA_BITS_42 && KASAN_SW_TAGS
 	default 0xefffffc000000000 if ARM64_VA_BITS_39 && KASAN_SW_TAGS
 	default 0xeffffff800000000 if ARM64_VA_BITS_36 && KASAN_SW_TAGS
@@ -1098,23 +1080,6 @@ config ARM64_4K_PAGES
 	help
 	  This feature enables 4KB pages support.
 
-config ARM64_16K_PAGES
-	bool "16KB"
-	select HAVE_PAGE_SIZE_16KB
-	help
-	  The system will use 16KB pages support. AArch32 emulation
-	  requires applications compiled with 16K (or a multiple of 16K)
-	  aligned segments.
-
-config ARM64_64K_PAGES
-	bool "64KB"
-	select HAVE_PAGE_SIZE_64KB
-	help
-	  This feature enables 64KB pages support (4KB by default)
-	  allowing only two levels of page tables and faster TLB
-	  look-up. AArch32 emulation requires applications compiled
-	  with 64K aligned segments.
-
 endchoice
 
 choice
@@ -1172,18 +1137,14 @@ config ARM64_VA_BITS
 
 choice
 	prompt "Physical address space size"
-	default ARM64_PA_BITS_48
+	default ARM64_PA_BITS_52
 	help
 	  Choose the maximum physical address range that the kernel will
 	  support.
 
-config ARM64_PA_BITS_48
-	bool "48-bit"
-	depends on ARM64_64K_PAGES || !ARM64_VA_BITS_52
-
 config ARM64_PA_BITS_52
 	bool "52-bit"
-	depends on ARM64_64K_PAGES || ARM64_VA_BITS_52
+	depends on ARM64_VA_BITS_52
 	help
 	  Enable support for a 52-bit physical address space, introduced as
 	  part of the ARMv8.2-LPA extension.
@@ -1196,12 +1157,11 @@ endchoice
 
 config ARM64_PA_BITS
 	int
-	default 48 if ARM64_PA_BITS_48
 	default 52 if ARM64_PA_BITS_52
 
 config ARM64_LPA2
 	def_bool y
-	depends on ARM64_PA_BITS_52 && !ARM64_64K_PAGES
+	depends on ARM64_PA_BITS_52
 
 choice
 	prompt "Endianness"
@@ -1316,8 +1276,6 @@ config TRANS_TABLE
 # 64K |       29          |      16      |       13             |         13              |
 config ARCH_FORCE_MAX_ORDER
 	int
-	default "13" if ARM64_64K_PAGES
-	default "11" if ARM64_16K_PAGES
 	default "10"
 	help
 	  The kernel page allocator limits the size of maximal physically
@@ -1618,32 +1576,6 @@ config ARM64_TLB_RANGE
 	  ARMv8.4-TLBI provides TLBI invalidation instruction that apply to a
 	  range of input addresses.
 
-config ARM64_MPAM
-	bool "Enable support for MPAM"
-	select ARCH_HAS_CPU_RESCTRL
-	help
-	  Memory System Resource Partitioning and Monitoring (MPAM) is an
-	  optional extension to the Arm architecture that allows each
-	  transaction issued to the memory system to be labelled with a
-	  Partition identifier (PARTID) and Performance Monitoring Group
-	  identifier (PMG).
-
-	  Memory system components, such as the caches, can be configured with
-	  policies to control how much of various physical resources (such as
-	  memory bandwidth or cache memory) the transactions labelled with each
-	  PARTID can consume.  Depending on the capabilities of the hardware,
-	  the PARTID and PMG can also be used as filtering criteria to measure
-	  the memory system resource consumption of different parts of a
-	  workload.
-
-	  Use of this extension requires CPU support, support in the
-	  Memory System Components (MSC), and a description from firmware
-	  of where the MSCs are in the address space.
-
-	  MPAM is exposed to user-space via the resctrl pseudo filesystem.
-
-	  This option enables the extra context switch code.
-
 endmenu # "ARMv8.4 architectural features"
 
 menu "ARMv8.5 architectural features"
@@ -1684,44 +1616,6 @@ config ARM64_E0PD
 	  kernel memory such as SPE.
 
 	  This option enables E0PD for TTBR1 where available.
-
-config ARM64_AS_HAS_MTE
-	# Initial support for MTE went in binutils 2.32.0, checked with
-	# ".arch armv8.5-a+memtag" below. However, this was incomplete
-	# as a late addition to the final architecture spec (LDGM/STGM)
-	# is only supported in the newer 2.32.x and 2.33 binutils
-	# versions, hence the extra "stgm" instruction check below.
-	def_bool $(as-instr,.arch armv8.5-a+memtag\nstgm xzr$(comma)[x0])
-
-config ARM64_MTE
-	bool "Memory Tagging Extension support"
-	default y
-	depends on ARM64_AS_HAS_MTE && ARM64_TAGGED_ADDR_ABI
-	depends on AS_HAS_ARMV8_5
-	# Required for tag checking in the uaccess routines
-	select ARCH_HAS_SUBPAGE_FAULTS
-	select ARCH_USES_HIGH_VMA_FLAGS
-	select ARCH_USES_PG_ARCH_2
-	select ARCH_USES_PG_ARCH_3
-	help
-	  Memory Tagging (part of the ARMv8.5 Extensions) provides
-	  architectural support for run-time, always-on detection of
-	  various classes of memory error to aid with software debugging
-	  to eliminate vulnerabilities arising from memory-unsafe
-	  languages.
-
-	  This option enables the support for the Memory Tagging
-	  Extension at EL0 (i.e. for userspace).
-
-	  Selecting this option allows the feature to be detected at
-	  runtime. Any secondary CPU not implementing this feature will
-	  not be allowed a late bring-up.
-
-	  Userspace binaries that want to use this feature must
-	  explicitly opt in. The mechanism for the userspace is
-	  described in:
-
-	  Documentation/arch/arm64/memory-tagging-extension.rst.
 
 endmenu # "ARMv8.5 architectural features"
 
@@ -2022,10 +1916,6 @@ source "kernel/power/Kconfig"
 config ARCH_HIBERNATION_POSSIBLE
 	def_bool y
 	depends on CPU_PM
-
-config ARCH_HIBERNATION_HEADER
-	def_bool y
-	depends on HIBERNATION
 
 config ARCH_SUSPEND_POSSIBLE
 	def_bool y

@@ -2406,21 +2406,7 @@ static int its_setup_baser(struct its_node *its, struct its_baser *baser,
 	base = (void *)page_address(page);
 	baser_phys = virt_to_phys(base);
 
-	/* Check if the physical address of the memory is above 48bits */
-	if (IS_ENABLED(CONFIG_ARM64_64K_PAGES) && (baser_phys >> 48)) {
-
-		/* 52bit PA is supported only when PageSize=64K */
-		if (psz != SZ_64K) {
-			pr_err("ITS: no 52bit PA support when psz=%d\n", psz);
-			its_free_pages(base, order);
-			return -ENXIO;
-		}
-
-		/* Convert 52bit PA to 48bit field */
-		baser_phys = GITS_BASER_PHYS_52_to_48(baser_phys);
-	}
-
-retry_baser:
+	retry_baser:
 	val = (baser_phys					 |
 		(type << GITS_BASER_TYPE_SHIFT)			 |
 		((esz - 1) << GITS_BASER_ENTRY_SIZE_SHIFT)	 |

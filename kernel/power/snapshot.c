@@ -2148,7 +2148,6 @@ asmlinkage __visible int swsusp_save(void)
 	return 0;
 }
 
-#ifndef CONFIG_ARCH_HIBERNATION_HEADER
 static int init_header_complete(struct swsusp_info *info)
 {
 	memcpy(&info->uts, init_utsname(), sizeof(struct new_utsname));
@@ -2170,7 +2169,6 @@ static const char *check_image_kernel(struct swsusp_info *info)
 		return "machine";
 	return NULL;
 }
-#endif /* CONFIG_ARCH_HIBERNATION_HEADER */
 
 unsigned long snapshot_get_image_size(void)
 {

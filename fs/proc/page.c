@@ -249,10 +249,6 @@ u64 stable_page_flags(const struct page *page)
 #ifdef CONFIG_ARCH_USES_PG_ARCH_2
 	u |= kpf_copy_bit(k, KPF_ARCH_2,	PG_arch_2);
 #endif
-#ifdef CONFIG_ARCH_USES_PG_ARCH_3
-	u |= kpf_copy_bit(k, KPF_ARCH_3,	PG_arch_3);
-#endif
-
 	return u;
 }
 EXPORT_SYMBOL_GPL(stable_page_flags);

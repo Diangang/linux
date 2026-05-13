@@ -3167,8 +3167,7 @@ void device_initialize(struct device *dev)
 	INIT_LIST_HEAD(&dev->links.defer_sync);
 	dev->links.status = DL_DEV_NO_DRIVER;
 #if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU) || \
-    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU_ALL)
+    defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
 	dev->dma_coherent = dma_default_coherent;
 #endif
 	swiotlb_dev_init(dev);

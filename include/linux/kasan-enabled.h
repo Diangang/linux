@@ -4,16 +4,15 @@
 
 #include <linux/static_key.h>
 
-#if defined(CONFIG_ARCH_DEFER_KASAN) || defined(CONFIG_KASAN_HW_TAGS)
+#ifdef CONFIG_KASAN_HW_TAGS
 /*
  * Global runtime flag for KASAN modes that need runtime control.
- * Used by ARCH_DEFER_KASAN architectures and HW_TAGS mode.
+ * Used by HW_TAGS mode.
  */
 DECLARE_STATIC_KEY_FALSE(kasan_flag_enabled);
 
 /*
- * Runtime control for shadow memory initialization or HW_TAGS mode.
- * Uses static key for architectures that need deferred KASAN or HW_TAGS.
+ * Runtime control for HW_TAGS mode.
  */
 static __always_inline bool kasan_enabled(void)
 {
@@ -32,7 +31,7 @@ static __always_inline bool kasan_enabled(void)
 }
 
 static inline void kasan_enable(void) {}
-#endif /* CONFIG_ARCH_DEFER_KASAN || CONFIG_KASAN_HW_TAGS */
+#endif /* CONFIG_KASAN_HW_TAGS */
 
 #ifdef CONFIG_KASAN_HW_TAGS
 static inline bool kasan_hw_tags_enabled(void)

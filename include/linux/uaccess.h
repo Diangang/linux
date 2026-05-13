@@ -309,8 +309,6 @@ static inline bool pagefault_disabled(void)
 
 DEFINE_LOCK_GUARD_0(pagefault, pagefault_disable(), pagefault_enable())
 
-#ifndef CONFIG_ARCH_HAS_SUBPAGE_FAULTS
-
 /**
  * probe_subpage_writeable: probe the user range for write faults at sub-page
  *			    granularity (e.g. arm64 MTE)
@@ -328,8 +326,6 @@ static inline size_t probe_subpage_writeable(char __user *uaddr, size_t size)
 {
 	return 0;
 }
-
-#endif /* CONFIG_ARCH_HAS_SUBPAGE_FAULTS */
 
 #ifndef ARCH_HAS_NONTEMPORAL_UACCESS
 

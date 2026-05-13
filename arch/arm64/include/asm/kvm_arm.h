@@ -161,22 +161,8 @@
  * Entry_Level = 4 - Number_of_levels.
  *
  */
-#ifdef CONFIG_ARM64_64K_PAGES
-
-#define VTCR_EL2_TGRAN			64K
-#define VTCR_EL2_TGRAN_SL0_BASE		3UL
-
-#elif defined(CONFIG_ARM64_16K_PAGES)
-
-#define VTCR_EL2_TGRAN			16K
-#define VTCR_EL2_TGRAN_SL0_BASE		3UL
-
-#else	/* 4K */
-
 #define VTCR_EL2_TGRAN			4K
 #define VTCR_EL2_TGRAN_SL0_BASE		2UL
-
-#endif
 
 #define VTCR_EL2_LVLS_TO_SL0(levels)	\
 	FIELD_PREP(VTCR_EL2_SL0, (VTCR_EL2_TGRAN_SL0_BASE - (4 - (levels))))

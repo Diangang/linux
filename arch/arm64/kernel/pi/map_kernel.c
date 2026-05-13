@@ -255,9 +255,7 @@ asmlinkage void __init early_map_kernel(u64 boot_status, phys_addr_t fdt)
 	chosen = fdt_path_offset(fdt_mapped, chosen_str);
 	init_feature_override(boot_status, fdt_mapped, chosen);
 
-	if (IS_ENABLED(CONFIG_ARM64_64K_PAGES) && !cpu_has_lva()) {
-		va_bits = VA_BITS_MIN;
-	} else if (IS_ENABLED(CONFIG_ARM64_LPA2) && !cpu_has_lpa2()) {
+	if (IS_ENABLED(CONFIG_ARM64_LPA2) && !cpu_has_lpa2()) {
 		va_bits = VA_BITS_MIN;
 		root_level++;
 	}

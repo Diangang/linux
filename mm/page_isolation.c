@@ -37,26 +37,14 @@ bool page_is_unmovable(struct zone *zone, struct page *page,
 	 * We need not scan over tail pages because we don't
 	 * handle each tail page individually in migration.
 	 */
-	if (PageHuge(page) || PageCompound(page)) {
-		struct folio *folio = page_folio(page);
+		if (PageHuge(page) || PageCompound(page)) {
+			struct folio *folio = page_folio(page);
 
-		if (folio_test_hugetlb(folio)) {
-			struct hstate *h;
-
-			if (!IS_ENABLED(CONFIG_ARCH_ENABLE_HUGEPAGE_MIGRATION))
+			if (folio_test_hugetlb(folio)) {
 				return true;
-
-			/*
-			 * The huge page may be freed so can not
-			 * use folio_hstate() directly.
-			 */
-			h = size_to_hstate(folio_size(folio));
-			if (h && !hugepage_migration_supported(h))
+			} else if (!folio_test_lru(folio)) {
 				return true;
-
-		} else if (!folio_test_lru(folio)) {
-			return true;
-		}
+			}
 
 		*step = folio_nr_pages(folio) - folio_page_idx(folio, page);
 		return false;

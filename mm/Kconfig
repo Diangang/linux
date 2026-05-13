@@ -2,16 +2,9 @@
 
 menu "Memory Management options"
 
-#
-# For some reason microblaze and nios2 hard code SWAP=n.  Hopefully we can
-# add proper SWAP support to them, in which case this can be remove.
-#
-config ARCH_NO_SWAP
-	bool
-
 menuconfig SWAP
 	bool "Support for paging of anonymous memory (swap)"
-	depends on MMU && BLOCK && !ARCH_NO_SWAP
+	depends on MMU && BLOCK
 	default y
 	help
 	  This option allows you to choose whether you want to have support
@@ -59,58 +52,13 @@ config SLAB_MERGE_DEFAULT
 
 endmenu # Slab allocator options
 
-config SELECT_MEMORY_MODEL
-	def_bool y
-	depends on ARCH_SELECT_MEMORY_MODEL
-
-choice
-	prompt "Memory model"
-	depends on SELECT_MEMORY_MODEL
-	default SPARSEMEM_MANUAL if ARCH_SPARSEMEM_DEFAULT
-	default FLATMEM_MANUAL
-	help
-	  This option allows you to change some of the ways that
-	  Linux manages its memory internally. Most users will
-	  only have one option here selected by the architecture
-	  configuration. This is normal.
-
-config FLATMEM_MANUAL
-	bool "Flat Memory"
-	depends on !ARCH_SPARSEMEM_ENABLE || ARCH_FLATMEM_ENABLE
-	help
-	  This option is best suited for non-NUMA systems with
-	  flat address space. The FLATMEM is the most efficient
-	  system in terms of performance and resource consumption
-	  and it is the best option for smaller systems.
-
-	  For systems that have holes in their physical address
-	  spaces and for features like NUMA and memory hotplug,
-	  choose "Sparse Memory".
-
-	  If unsure, choose this option (Flat Memory) over any other.
-
-config SPARSEMEM_MANUAL
-	bool "Sparse Memory"
-	depends on ARCH_SPARSEMEM_ENABLE
-	help
-	  This will be the only option for some systems, including
-	  memory hot-plug systems.  This is normal.
-
-	  This option provides efficient support for systems with
-	  holes is their physical address space and allows memory
-	  hot-plug and hot-remove.
-
-	  If unsure, choose "Flat Memory" over this option.
-
-endchoice
-
 config SPARSEMEM
 	def_bool y
-	depends on (!SELECT_MEMORY_MODEL && ARCH_SPARSEMEM_ENABLE) || SPARSEMEM_MANUAL
+	depends on ARCH_SPARSEMEM_ENABLE
 
 config FLATMEM
 	def_bool y
-	depends on !SPARSEMEM || FLATMEM_MANUAL
+	depends on !SPARSEMEM
 
 #
 # SPARSEMEM_EXTREME (which is the default) does some bootmem
@@ -375,9 +323,6 @@ config NUMA_MIGRATION
 config MIGRATION
 	bool
 	depends on MMU
-
-config ARCH_ENABLE_HUGEPAGE_MIGRATION
-	bool
 
 config ARCH_ENABLE_THP_MIGRATION
 	bool
@@ -764,15 +709,12 @@ config ARCH_HAS_CURRENT_STACK_POINTER
 	  register alias named "current_stack_pointer", this config can be
 	  selected.
 
-config ARCH_HAS_ZONE_DMA_SET
-	bool
-
 config ZONE_DMA
-	bool "Support DMA zone" if ARCH_HAS_ZONE_DMA_SET
+	bool "Support DMA zone"
 	default y if ARM64 || X86
 
 config ZONE_DMA32
-	bool "Support DMA32 zone" if ARCH_HAS_ZONE_DMA_SET
+	bool "Support DMA32 zone"
 	depends on !X86_32
 	default y if ARM64
 
@@ -826,8 +768,6 @@ config ARCH_HAS_PKEYS
 	bool
 
 config ARCH_USES_PG_ARCH_2
-	bool
-config ARCH_USES_PG_ARCH_3
 	bool
 
 config VM_EVENT_COUNTERS
