@@ -4733,17 +4733,6 @@ static int its_force_quiescent(void __iomem *base)
 	}
 }
 
-static bool __maybe_unused its_enable_quirk_qdf2400_e0065(void *data)
-{
-	struct its_node *its = data;
-
-	/* On QDF2400, the size of the ITE is 16Bytes */
-	its->typer &= ~GITS_TYPER_ITT_ENTRY_SIZE;
-	its->typer |= FIELD_PREP(GITS_TYPER_ITT_ENTRY_SIZE, 16 - 1);
-
-	return true;
-}
-
 static u64 its_irq_get_msi_base_pre_its(struct its_device *its_dev)
 {
 	struct its_node *its = its_dev->its;
@@ -4785,20 +4774,6 @@ static bool __maybe_unused its_enable_quirk_socionext_synquacer(void *data)
 	return false;
 }
 
-static bool __maybe_unused its_enable_rk3588001(void *data)
-{
-	struct its_node *its = data;
-
-	if (!of_machine_is_compatible("rockchip,rk3588") &&
-	    !of_machine_is_compatible("rockchip,rk3588s"))
-		return false;
-
-	its->flags |= ITS_FLAGS_FORCE_NON_SHAREABLE;
-	gic_rdists->flags |= RDIST_FLAGS_FORCE_NON_SHAREABLE;
-
-	return true;
-}
-
 static bool its_set_non_coherent(void *data)
 {
 	struct its_node *its = data;
@@ -4807,26 +4782,7 @@ static bool its_set_non_coherent(void *data)
 	return true;
 }
 
-static bool __maybe_unused its_enable_rk3568002(void *data)
-{
-	if (!of_machine_is_compatible("rockchip,rk3566") &&
-	    !of_machine_is_compatible("rockchip,rk3568"))
-		return false;
-
-	gfp_flags_quirk |= GFP_DMA32;
-
-	return true;
-}
-
 static const struct gic_quirk its_quirks[] = {
-#ifdef CONFIG_QCOM_QDF2400_ERRATUM_0065
-	{
-		.desc	= "ITS: QDF2400 erratum 0065",
-		.iidr	= 0x00001070, /* QDF2400 ITS rev 1.x */
-		.mask	= 0xffffffff,
-		.init	= its_enable_quirk_qdf2400_e0065,
-	},
-#endif
 #ifdef CONFIG_SOCIONEXT_SYNQUACER_PREITS
 	{
 		/*
@@ -4840,27 +4796,11 @@ static const struct gic_quirk its_quirks[] = {
 		.init	= its_enable_quirk_socionext_synquacer,
 	},
 #endif
-#ifdef CONFIG_ROCKCHIP_ERRATUM_3588001
-	{
-		.desc   = "ITS: Rockchip erratum RK3588001",
-		.iidr   = 0x0201743b,
-		.mask   = 0xffffffff,
-		.init   = its_enable_rk3588001,
-	},
-#endif
 	{
 		.desc   = "ITS: non-coherent attribute",
 		.property = "dma-noncoherent",
 		.init   = its_set_non_coherent,
 	},
-#ifdef CONFIG_ROCKCHIP_ERRATUM_3568002
-	{
-		.desc   = "ITS: Rockchip erratum RK3568002",
-		.iidr   = 0x0201743b,
-		.mask   = 0xffffffff,
-		.init   = its_enable_rk3568002,
-	},
-#endif
 	{
 	}
 };

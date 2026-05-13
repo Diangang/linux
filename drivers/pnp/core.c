@@ -216,9 +216,3 @@ static int __init pnp_init(void)
 }
 
 subsys_initcall(pnp_init);
-
-int pnp_debug;
-
-#if defined(CONFIG_PNP_DEBUG_MESSAGES)
-module_param_named(debug, pnp_debug, int, 0644);
-#endif

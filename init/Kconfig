@@ -707,9 +707,6 @@ config SYSCTL_EXCEPTION_TRACE
 	help
 	  Enable support for /proc/sys/debug/exception-trace.
 
-config HAVE_PCSPKR_PLATFORM
-	bool
-
 config UID16
 	bool "Enable 16-bit UID system calls" if EXPERT
 	depends on HAVE_UID16 && MULTIUSER
@@ -785,15 +782,6 @@ config ELF_CORE
 	bool "Enable ELF core dumps" if EXPERT
 	help
 	  Enable support for generating core dumps. Disabling saves about 4k.
-
-config PCSPKR_PLATFORM
-	bool "Enable PC-Speaker support" if EXPERT
-	depends on HAVE_PCSPKR_PLATFORM
-	select I8253_LOCK
-	default y
-	help
-	  This option allows to disable the internal PC-Speaker
-	  support, saving some memory.
 
 config FUTEX
 	bool "Enable futex support" if EXPERT

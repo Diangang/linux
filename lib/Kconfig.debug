@@ -301,14 +301,6 @@ config ARCH_HAS_KCOV
 	  build and run with CONFIG_KCOV. This typically requires
 	  disabling instrumentation for some early boot code.
 
-menuconfig RUNTIME_TESTING_MENU
-	bool "Runtime Testing"
-	default y
-
-if RUNTIME_TESTING_MENU
-
-endif # RUNTIME_TESTING_MENU
-
 config ARCH_USE_MEMTEST
 	bool
 	help

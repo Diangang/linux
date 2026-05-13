@@ -48,8 +48,6 @@ cpucap_is_possible(const unsigned int cap)
 		return IS_ENABLED(CONFIG_ARM64_HAFT);
 	case ARM64_UNMAP_KERNEL_AT_EL0:
 		return IS_ENABLED(CONFIG_UNMAP_KERNEL_AT_EL0);
-	case ARM64_WORKAROUND_NVIDIA_CARMEL_CNP:
-		return IS_ENABLED(CONFIG_NVIDIA_CARMEL_CNP_ERRATUM);
 	case ARM64_MPAM:
 		/*
 		 * KVM MPAM support doesn't rely on the host kernel supporting MPAM.

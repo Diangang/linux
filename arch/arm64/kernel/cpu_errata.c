@@ -282,25 +282,6 @@ static void cpu_enable_impdef_pmuv3_traps(const struct arm64_cpu_capabilities *_
 
 
 
-#ifdef CONFIG_QCOM_FALKOR_ERRATUM_1003
-static const struct arm64_cpu_capabilities qcom_erratum_1003_list[] = {
-	{
-		ERRATA_MIDR_REV(MIDR_QCOM_FALKOR_V1, 0, 0),
-	},
-	{
-		.midr_range.model = MIDR_QCOM_KRYO,
-		.matches = is_kryo_midr,
-	},
-	{},
-};
-#endif
-
-
-
-
-
-
-
 #if 0
 static const struct midr_range trbe_overwrite_fill_mode_cpus[] = {
 #ifdef CONFIG_ARM64_ERRATUM_2139208
@@ -352,15 +333,6 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
 		.cpu_enable = cpu_enable_trap_ctr_access,
 	},
-#ifdef CONFIG_QCOM_FALKOR_ERRATUM_1003
-	{
-		.desc = "Qualcomm Technologies Falkor/Kryo erratum 1003",
-		.capability = ARM64_WORKAROUND_QCOM_FALKOR_E1003,
-		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
-		.matches = cpucap_multi_entry_cap_matches,
-		.match_list = qcom_erratum_1003_list,
-	},
-#endif
 	{
 		.desc = "Spectre-v2",
 		.capability = ARM64_SPECTRE_V2,
@@ -400,14 +372,6 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
 		.matches = has_neoverse_n1_erratum_1542419,
 		.cpu_enable = cpu_enable_trap_ctr_access,
-	},
-#endif
-#ifdef CONFIG_NVIDIA_CARMEL_CNP_ERRATUM
-	{
-		/* NVIDIA Carmel */
-		.desc = "NVIDIA Carmel CNP erratum",
-		.capability = ARM64_WORKAROUND_NVIDIA_CARMEL_CNP,
-		ERRATA_MIDR_ALL_VERSIONS(MIDR_NVIDIA_CARMEL),
 	},
 #endif
 #if 0

@@ -572,18 +572,6 @@ SYM_CODE_END(ret_to_user)
 	add	\tmp, \tmp, #TRAMP_SWAPPER_OFFSET
 	bic	\tmp, \tmp, #USER_ASID_FLAG
 	msr	ttbr1_el1, \tmp
-#ifdef CONFIG_QCOM_FALKOR_ERRATUM_1003
-alternative_if ARM64_WORKAROUND_QCOM_FALKOR_E1003
-	/* ASID already in \tmp[63:48] */
-	movk	\tmp, #:abs_g2_nc:(TRAMP_VALIAS >> 12)
-	movk	\tmp, #:abs_g1_nc:(TRAMP_VALIAS >> 12)
-	/* 2MB boundary containing the vectors, so we nobble the walk cache */
-	movk	\tmp, #:abs_g0_nc:((TRAMP_VALIAS & ~(SZ_2M - 1)) >> 12)
-	isb
-	tlbi	vae1, \tmp
-	dsb	nsh
-alternative_else_nop_endif
-#endif /* CONFIG_QCOM_FALKOR_ERRATUM_1003 */
 	.endm
 
 	// Move from swapper_pg_dir to tramp_pg_dir
@@ -659,7 +647,6 @@ alternative_else_nop_endif
 	b	.
 2:
 	tramp_map_kernel	x30
-alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
 	tramp_data_read_var	x30, vectors
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
 
