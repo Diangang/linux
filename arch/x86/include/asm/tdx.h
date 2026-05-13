@@ -84,17 +84,12 @@ static inline bool tdx_early_handle_ve(struct pt_regs *regs) { return false; }
 
 #endif /* CONFIG_INTEL_TDX_GUEST */
 
-#if defined(CONFIG_KVM_GUEST) && 0
-long tdx_kvm_hypercall(unsigned int nr, unsigned long p1, unsigned long p2,
-		       unsigned long p3, unsigned long p4);
-#else
 static inline long tdx_kvm_hypercall(unsigned int nr, unsigned long p1,
 				     unsigned long p2, unsigned long p3,
 				     unsigned long p4)
 {
 	return -ENODEV;
 }
-#endif /* CONFIG_INTEL_TDX_GUEST && CONFIG_KVM_GUEST */
 
 #ifdef CONFIG_INTEL_TDX_HOST
 u64 __seamcall(u64 fn, struct tdx_module_args *args);

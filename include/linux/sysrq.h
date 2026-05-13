@@ -36,23 +36,6 @@ struct sysrq_key_op {
 	const int enable_mask;
 };
 
-#ifdef CONFIG_MAGIC_SYSRQ
-
-/* Generic SysRq interface -- you may call it from any device driver, supplying
- * ASCII code of the key, pointer to registers and kbd/tty structs (if they
- * are available -- else NULL's).
- */
-
-void handle_sysrq(u8 key);
-void __handle_sysrq(u8 key, bool check_mask);
-int register_sysrq_key(u8 key, const struct sysrq_key_op *op);
-int unregister_sysrq_key(u8 key, const struct sysrq_key_op *op);
-extern const struct sysrq_key_op *__sysrq_reboot_op;
-
-int sysrq_toggle_support(int enable_mask);
-int sysrq_mask(void);
-
-#else
 
 static inline void handle_sysrq(u8 key)
 {
@@ -78,6 +61,5 @@ static inline int sysrq_mask(void)
 	return 0;
 }
 
-#endif
 
 #endif /* _LINUX_SYSRQ_H */

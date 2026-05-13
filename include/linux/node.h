@@ -81,13 +81,6 @@ struct node_cache_attrs {
 	u16 address_mode;
 };
 
-#ifdef CONFIG_HMEM_REPORTING
-void node_add_cache(unsigned int nid, struct node_cache_attrs *cache_attrs);
-void node_set_perf_attrs(unsigned int nid, struct access_coordinate *coord,
-			 enum access_coordinate_class access);
-void node_update_perf_attrs(unsigned int nid, struct access_coordinate *coord,
-			    enum access_coordinate_class access);
-#else
 static inline void node_add_cache(unsigned int nid,
 				  struct node_cache_attrs *cache_attrs)
 {
@@ -104,15 +97,10 @@ static inline void node_update_perf_attrs(unsigned int nid,
 					  enum access_coordinate_class access)
 {
 }
-#endif
 
 struct node {
 	struct device	dev;
 	struct list_head access_list;
-#ifdef CONFIG_HMEM_REPORTING
-	struct list_head cache_attrs;
-	struct device *cache_dev;
-#endif
 };
 
 struct memory_block;

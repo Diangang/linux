@@ -29,6 +29,31 @@
 #include "cpu.h"
 
 /*
+ * Use CPUID to generate a "vfm" value before cpuinfo_x86 structures are
+ * populated.
+ */
+static u32 intel_cpuid_vfm(void)
+{
+	u32 eax   = cpuid_eax(1);
+	u32 fam   = x86_family(eax);
+	u32 model = x86_model(eax);
+
+	return IFM(fam, model);
+}
+
+static u32 intel_get_platform_id(void)
+{
+	unsigned int val[2];
+
+	if (intel_cpuid_vfm() <= INTEL_PENTIUM_II_KLAMATH)
+		return 0;
+
+	native_rdmsr(MSR_IA32_PLATFORM_ID, val[0], val[1]);
+
+	return (val[1] >> 18) & 7;
+}
+
+/*
  * Processors which have self-snooping capability can handle conflicting
  * memory type across CPUs by snooping its own cache. However, there exists
  * CPU models in which having conflicting memory types still leads to

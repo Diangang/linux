@@ -39,7 +39,6 @@ endif
 
 obj-$(CONFIG_X86_MCE)			+= mce/
 obj-$(CONFIG_MTRR)			+= mtrr/
-obj-$(CONFIG_MICROCODE)			+= microcode/
 
 
 obj-$(CONFIG_X86_LOCAL_APIC)		+= perfctr-watchdog.o

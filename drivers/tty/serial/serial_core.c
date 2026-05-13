@@ -3441,55 +3441,6 @@ void uart_insert_char(struct uart_port *port, unsigned int status,
 }
 EXPORT_SYMBOL_GPL(uart_insert_char);
 
-#ifdef CONFIG_MAGIC_SYSRQ_SERIAL
-static const u8 sysrq_toggle_seq[] = CONFIG_MAGIC_SYSRQ_SERIAL_SEQUENCE;
-
-static void uart_sysrq_on(struct work_struct *w)
-{
-	int sysrq_toggle_seq_len = strlen(sysrq_toggle_seq);
-
-	sysrq_toggle_support(1);
-	pr_info("SysRq is enabled by magic sequence '%*pE' on serial\n",
-		sysrq_toggle_seq_len, sysrq_toggle_seq);
-}
-static DECLARE_WORK(sysrq_enable_work, uart_sysrq_on);
-
-/**
- * uart_try_toggle_sysrq - Enables SysRq from serial line
- * @port: uart_port structure where char(s) after BREAK met
- * @ch: new character in the sequence after received BREAK
- *
- * Enables magic SysRq when the required sequence is met on port
- * (see CONFIG_MAGIC_SYSRQ_SERIAL_SEQUENCE).
- *
- * Returns: %false if @ch is out of enabling sequence and should be
- * handled some other way, %true if @ch was consumed.
- */
-bool uart_try_toggle_sysrq(struct uart_port *port, u8 ch)
-{
-	int sysrq_toggle_seq_len = strlen(sysrq_toggle_seq);
-
-	if (!sysrq_toggle_seq_len)
-		return false;
-
-	BUILD_BUG_ON(ARRAY_SIZE(sysrq_toggle_seq) >= U8_MAX);
-	if (sysrq_toggle_seq[port->sysrq_seq] != ch) {
-		port->sysrq_seq = 0;
-		return false;
-	}
-
-	if (++port->sysrq_seq < sysrq_toggle_seq_len) {
-		port->sysrq = jiffies + SYSRQ_TIMEOUT;
-		return true;
-	}
-
-	schedule_work(&sysrq_enable_work);
-
-	port->sysrq = 0;
-	return true;
-}
-EXPORT_SYMBOL_GPL(uart_try_toggle_sysrq);
-#endif
 
 /**
  * uart_get_rs485_mode() - retrieve rs485 properties for given uart

@@ -582,7 +582,6 @@ struct uart_port {
 	unsigned long		sysrq;			/* sysrq timeout */
 	u8			sysrq_ch;		/* char for sysrq */
 	unsigned char		has_sysrq;
-	unsigned char		sysrq_seq;		/* index in sysrq_toggle_seq */
 
 	unsigned char		hub6;			/* this should be in the 8250 driver */
 	unsigned char		suspended;
@@ -1175,86 +1174,6 @@ void uart_insert_char(struct uart_port *port, unsigned int status,
 
 void uart_xchar_out(struct uart_port *uport, int offset);
 
-#ifdef CONFIG_MAGIC_SYSRQ_SERIAL
-#define SYSRQ_TIMEOUT	(HZ * 5)
-
-bool uart_try_toggle_sysrq(struct uart_port *port, u8 ch);
-
-static inline int uart_handle_sysrq_char(struct uart_port *port, u8 ch)
-{
-	if (!port->sysrq)
-		return 0;
-
-	if (ch && time_before(jiffies, port->sysrq)) {
-		if (sysrq_mask()) {
-			handle_sysrq(ch);
-			port->sysrq = 0;
-			return 1;
-		}
-		if (uart_try_toggle_sysrq(port, ch))
-			return 1;
-	}
-	port->sysrq = 0;
-
-	return 0;
-}
-
-static inline int uart_prepare_sysrq_char(struct uart_port *port, u8 ch)
-{
-	if (!port->sysrq)
-		return 0;
-
-	if (ch && time_before(jiffies, port->sysrq)) {
-		if (sysrq_mask()) {
-			port->sysrq_ch = ch;
-			port->sysrq = 0;
-			return 1;
-		}
-		if (uart_try_toggle_sysrq(port, ch))
-			return 1;
-	}
-	port->sysrq = 0;
-
-	return 0;
-}
-
-static inline void uart_unlock_and_check_sysrq(struct uart_port *port)
-{
-	u8 sysrq_ch;
-
-	if (!port->has_sysrq) {
-		uart_port_unlock(port);
-		return;
-	}
-
-	sysrq_ch = port->sysrq_ch;
-	port->sysrq_ch = 0;
-
-	uart_port_unlock(port);
-
-	if (sysrq_ch)
-		handle_sysrq(sysrq_ch);
-}
-
-static inline void uart_unlock_and_check_sysrq_irqrestore(struct uart_port *port,
-		unsigned long flags)
-{
-	u8 sysrq_ch;
-
-	if (!port->has_sysrq) {
-		uart_port_unlock_irqrestore(port, flags);
-		return;
-	}
-
-	sysrq_ch = port->sysrq_ch;
-	port->sysrq_ch = 0;
-
-	uart_port_unlock_irqrestore(port, flags);
-
-	if (sysrq_ch)
-		handle_sysrq(sysrq_ch);
-}
-#else	/* CONFIG_MAGIC_SYSRQ_SERIAL */
 static inline int uart_handle_sysrq_char(struct uart_port *port, u8 ch)
 {
 	return 0;
@@ -1272,7 +1191,6 @@ static inline void uart_unlock_and_check_sysrq_irqrestore(struct uart_port *port
 {
 	uart_port_unlock_irqrestore(port, flags);
 }
-#endif	/* CONFIG_MAGIC_SYSRQ_SERIAL */
 
 /*
  * We do the SysRQ and SAK checking like this...
@@ -1284,15 +1202,6 @@ static inline int uart_handle_break(struct uart_port *port)
 	if (port->handle_break)
 		port->handle_break(port);
 
-#ifdef CONFIG_MAGIC_SYSRQ_SERIAL
-	if (port->has_sysrq && uart_console(port)) {
-		if (!port->sysrq) {
-			port->sysrq = jiffies + SYSRQ_TIMEOUT;
-			return 1;
-		}
-		port->sysrq = 0;
-	}
-#endif
 	if (port->flags & UPF_SAK)
 		do_SAK(state->port.tty);
 	return 0;

@@ -2246,7 +2246,7 @@ static int tty_fasync(int fd, struct file *filp, int on)
 	return retval;
 }
 
-static bool tty_legacy_tiocsti __read_mostly = IS_ENABLED(CONFIG_LEGACY_TIOCSTI);
+static bool tty_legacy_tiocsti __read_mostly;
 /**
  * tiocsti - fake input character
  * @tty: tty to fake input into

@@ -9,14 +9,10 @@
 
 #include <asm/tdx.h>
 
-#ifdef CONFIG_KVM_GUEST
-bool kvm_check_and_clear_guest_paused(void);
-#else
 static inline bool kvm_check_and_clear_guest_paused(void)
 {
 	return false;
 }
-#endif /* CONFIG_KVM_GUEST */
 
 #define KVM_HYPERCALL \
         ALTERNATIVE("vmcall", "vmmcall", X86_FEATURE_VMMCALL)
@@ -117,31 +113,6 @@ static inline long kvm_sev_hypercall3(unsigned int nr, unsigned long p1,
 	return ret;
 }
 
-#ifdef CONFIG_KVM_GUEST
-void kvmclock_init(void);
-void kvmclock_disable(void);
-bool kvm_para_available(void);
-unsigned int kvm_arch_para_features(void);
-unsigned int kvm_arch_para_hints(void);
-void kvm_async_pf_task_wait_schedule(u32 token);
-u32 kvm_read_and_reset_apf_flags(void);
-bool __kvm_handle_async_pf(struct pt_regs *regs, u32 token);
-
-DECLARE_STATIC_KEY_FALSE(kvm_async_pf_enabled);
-
-static __always_inline bool kvm_handle_async_pf(struct pt_regs *regs, u32 token)
-{
-	if (static_branch_unlikely(&kvm_async_pf_enabled))
-		return __kvm_handle_async_pf(regs, token);
-	else
-		return false;
-}
-
-static inline void kvm_spinlock_init(void)
-{
-}
-
-#else /* CONFIG_KVM_GUEST */
 #define kvm_async_pf_task_wait_schedule(T) do {} while(0)
 
 static inline bool kvm_para_available(void)
@@ -168,6 +139,5 @@ static __always_inline bool kvm_handle_async_pf(struct pt_regs *regs, u32 token)
 {
 	return false;
 }
-#endif
 
 #endif /* _ASM_X86_KVM_PARA_H */

@@ -166,64 +166,6 @@ struct ate_acpi_oem_info {
 };
 
 
-#ifdef CONFIG_HISILICON_ERRATUM_161010101
-/*
- * Verify whether the value of the second read is larger than the first by
- * less than 32 is the only way to confirm the value is correct, so clear the
- * lower 5 bits to check whether the difference is greater than 32 or not.
- * Theoretically the erratum should not occur more than twice in succession
- * when reading the system counter, but it is possible that some interrupts
- * may lead to more than twice read errors, triggering the warning, so setting
- * the number of retries far beyond the number of iterations the loop has been
- * observed to take.
- */
-#define __hisi_161010101_read_reg(reg) ({				\
-	u64 _old, _new;						\
-	int _retries = 50;					\
-								\
-	do {							\
-		_old = read_sysreg(reg);			\
-		_new = read_sysreg(reg);			\
-		_retries--;					\
-	} while (unlikely((_new - _old) >> 5) && _retries);	\
-								\
-	WARN_ON_ONCE(!_retries);				\
-	_new;							\
-})
-
-static u64 notrace hisi_161010101_read_cntpct_el0(void)
-{
-	return __hisi_161010101_read_reg(cntpct_el0);
-}
-
-static u64 notrace hisi_161010101_read_cntvct_el0(void)
-{
-	return __hisi_161010101_read_reg(cntvct_el0);
-}
-
-static const struct ate_acpi_oem_info hisi_161010101_oem_info[] = {
-	/*
-	 * Note that trailing spaces are required to properly match
-	 * the OEM table information.
-	 */
-	{
-		.oem_id		= "HISI  ",
-		.oem_table_id	= "HIP05   ",
-		.oem_revision	= 0,
-	},
-	{
-		.oem_id		= "HISI  ",
-		.oem_table_id	= "HIP06   ",
-		.oem_revision	= 0,
-	},
-	{
-		.oem_id		= "HISI  ",
-		.oem_table_id	= "HIP07   ",
-		.oem_revision	= 0,
-	},
-	{ /* Sentinel indicating the end of the OEM array */ },
-};
-#endif
 
 
 
@@ -274,26 +216,6 @@ static __maybe_unused int erratum_set_next_event_phys(unsigned long evt,
 }
 
 static const struct arch_timer_erratum_workaround ool_workarounds[] = {
-#ifdef CONFIG_HISILICON_ERRATUM_161010101
-	{
-		.match_type = ate_match_dt,
-		.id = "hisilicon,erratum-161010101",
-		.desc = "HiSilicon erratum 161010101",
-		.read_cntpct_el0 = hisi_161010101_read_cntpct_el0,
-		.read_cntvct_el0 = hisi_161010101_read_cntvct_el0,
-		.set_next_event_phys = erratum_set_next_event_phys,
-		.set_next_event_virt = erratum_set_next_event_virt,
-	},
-	{
-		.match_type = ate_match_acpi_oem_info,
-		.id = hisi_161010101_oem_info,
-		.desc = "HiSilicon erratum 161010101",
-		.read_cntpct_el0 = hisi_161010101_read_cntpct_el0,
-		.read_cntvct_el0 = hisi_161010101_read_cntvct_el0,
-		.set_next_event_phys = erratum_set_next_event_phys,
-		.set_next_event_virt = erratum_set_next_event_virt,
-	},
-#endif
 };
 
 typedef bool (*ate_match_fn_t)(const struct arch_timer_erratum_workaround *,

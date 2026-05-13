@@ -46,7 +46,6 @@
 
 #define ITS_FLAGS_CMDQ_NEEDS_FLUSHING		(1ULL << 0)
 #define ITS_FLAGS_FORCE_NON_SHAREABLE		(1ULL << 3)
-#define ITS_FLAGS_WORKAROUND_HISILICON_162100801	(1ULL << 4)
 
 #define RD_LOCAL_LPI_ENABLED                    BIT(0)
 #define RD_LOCAL_PENDTABLE_PREALLOCATED         BIT(1)
@@ -121,7 +120,6 @@ struct its_node {
 	int			numa_node;
 	unsigned int		msi_domain_flags;
 	u32			pre_its_base; /* for Socionext Synquacer */
-	int			vlpi_redist_offset;
 };
 
 static DEFINE_PER_CPU(struct its_node *, local_4_1_its);
@@ -900,7 +898,7 @@ static struct its_vpe *its_build_vmapp_cmd(struct its_node *its,
 	}
 
 	vpt_addr = virt_to_phys(page_address(desc->its_vmapp_cmd.vpe->vpt_page));
-	target = desc->its_vmapp_cmd.col->target_address + its->vlpi_redist_offset;
+	target = desc->its_vmapp_cmd.col->target_address;
 
 	its_encode_target(cmd, target);
 	its_encode_vpt_addr(cmd, vpt_addr);
@@ -983,7 +981,7 @@ static struct its_vpe *its_build_vmovp_cmd(struct its_node *its,
 {
 	u64 target;
 
-	target = desc->its_vmovp_cmd.col->target_address + its->vlpi_redist_offset;
+	target = desc->its_vmovp_cmd.col->target_address;
 	its_encode_cmd(cmd, GITS_CMD_VMOVP);
 	its_encode_seq_num(cmd, desc->its_vmovp_cmd.seq_num);
 	its_encode_its_list(cmd, desc->its_vmovp_cmd.its_list);
@@ -3874,7 +3872,6 @@ static int its_vpe_set_affinity(struct irq_data *d,
 	struct its_vpe *vpe = irq_data_get_irq_chip_data(d);
 	unsigned int from, cpu = nr_cpu_ids;
 	struct cpumask *table_mask;
-	struct its_node *its;
 	unsigned long flags;
 
 	/*
@@ -3937,10 +3934,6 @@ static int its_vpe_set_affinity(struct irq_data *d,
 	vpe->col_idx = cpu;
 
 	its_send_vmovp(vpe);
-
-	its = find_4_1_its();
-	if (its && its->flags & ITS_FLAGS_WORKAROUND_HISILICON_162100801)
-		its_vpe_4_1_invall_locked(cpu, vpe);
 
 	its_vpe_db_proxy_move(vpe, from, cpu);
 
@@ -4792,18 +4785,6 @@ static bool __maybe_unused its_enable_quirk_socionext_synquacer(void *data)
 	return false;
 }
 
-static bool __maybe_unused its_enable_quirk_hip07_161600802(void *data)
-{
-	struct its_node *its = data;
-
-	/*
-	 * Hip07 insists on using the wrong address for the VLPI
-	 * page. Trick it into doing the right thing...
-	 */
-	its->vlpi_redist_offset = SZ_128K;
-	return true;
-}
-
 static bool __maybe_unused its_enable_rk3588001(void *data)
 {
 	struct its_node *its = data;
@@ -4823,14 +4804,6 @@ static bool its_set_non_coherent(void *data)
 	struct its_node *its = data;
 
 	its->flags |= ITS_FLAGS_FORCE_NON_SHAREABLE;
-	return true;
-}
-
-static bool __maybe_unused its_enable_quirk_hip09_162100801(void *data)
-{
-	struct its_node *its = data;
-
-	its->flags |= ITS_FLAGS_WORKAROUND_HISILICON_162100801;
 	return true;
 }
 
@@ -4865,22 +4838,6 @@ static const struct gic_quirk its_quirks[] = {
 		.iidr	= 0x0001143b,
 		.mask	= 0xffffffff,
 		.init	= its_enable_quirk_socionext_synquacer,
-	},
-#endif
-#ifdef CONFIG_HISILICON_ERRATUM_161600802
-	{
-		.desc	= "ITS: Hip07 erratum 161600802",
-		.iidr	= 0x00000004,
-		.mask	= 0xffffffff,
-		.init	= its_enable_quirk_hip07_161600802,
-	},
-#endif
-#ifdef CONFIG_HISILICON_ERRATUM_162100801
-	{
-		.desc	= "ITS: Hip09 erratum 162100801",
-		.iidr	= 0x00051736,
-		.mask	= 0xffffffff,
-		.init	= its_enable_quirk_hip09_162100801,
 	},
 #endif
 #ifdef CONFIG_ROCKCHIP_ERRATUM_3588001

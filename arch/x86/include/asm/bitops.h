@@ -163,9 +163,6 @@ arch_test_and_clear_bit(long nr, volatile unsigned long *addr)
  * Note: the operation is performed atomically with respect to
  * the local CPU, but not other CPUs. Portable code should not
  * rely on this behaviour.
- * KVM relies on this behaviour on x86 for modifying memory that is also
- * accessed from a hypervisor on the same CPU if running in a VM: don't change
- * this without also updating arch/x86/kernel/kvm.c
  */
 static __always_inline bool
 arch___test_and_clear_bit(unsigned long nr, volatile unsigned long *addr)

@@ -77,14 +77,6 @@ config PREVENT_FIRMWARE_BUILD
 
 source "drivers/base/firmware_loader/Kconfig"
 
-config HMEM_REPORTING
-	bool
-	default n
-	depends on NUMA
-	help
-	  Enable reporting for heterogeneous memory access attributes under
-	  their non-uniform memory nodes.
-
 config GENERIC_CPU_DEVICES
 	bool
 	default n

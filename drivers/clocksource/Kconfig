@@ -30,14 +30,4 @@ config ARM_ARCH_TIMER
 config ARM_ARCH_TIMER_OOL_WORKAROUND
 	bool
 
-config HISILICON_ERRATUM_161010101
-	bool "Workaround for Hisilicon Erratum 161010101"
-	default y
-	select ARM_ARCH_TIMER_OOL_WORKAROUND
-	depends on ARM_ARCH_TIMER && ARM64
-	help
-	  This option enables a workaround for Hisilicon Erratum
-	  161010101. The workaround will be active if the hisilicon,erratum-161010101
-	  property is found in the timer node.
-
 endmenu

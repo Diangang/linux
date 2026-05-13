@@ -15,17 +15,10 @@ struct ucode_cpu_info {
 	void			*mc;
 };
 
-#ifdef CONFIG_MICROCODE
-void load_ucode_bsp(void);
-void load_ucode_ap(void);
-void microcode_bsp_resume(void);
-bool __init microcode_loader_disabled(void);
-#else
 static inline void load_ucode_bsp(void)	{ }
 static inline void load_ucode_ap(void) { }
 static inline void microcode_bsp_resume(void) { }
 static inline bool __init microcode_loader_disabled(void) { return false; }
-#endif
 
 extern unsigned long initrd_start_early;
 
@@ -60,8 +53,6 @@ static inline int intel_microcode_get_datasize(struct microcode_header_intel *hd
 {
 	return hdr->datasize ? : DEFAULT_UCODE_DATASIZE;
 }
-
-extern u32 intel_get_platform_id(void);
 
 static inline u32 intel_get_microcode_revision(void)
 {

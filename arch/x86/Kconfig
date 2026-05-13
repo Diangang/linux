@@ -436,20 +436,6 @@ config PARAVIRT
 config X86_HV_CALLBACK_VECTOR
 	def_bool n
 
-config KVM_GUEST
-	bool "KVM Guest support (including kvmclock)"
-	depends on PARAVIRT
-	select PARAVIRT_CLOCK
-	select ARCH_CPUIDLE_HALTPOLL
-	select X86_HV_CALLBACK_VECTOR
-	default y
-	help
-	  This option enables various optimizations for running under the KVM
-	  hypervisor. It includes a paravirtualized clock, so that instead
-	  of relying on a PIT (or probably other) emulation by the
-	  underlying device model, the host provides the guest with
-	  timing infrastructure such as time of day, and system time
-
 config ARCH_CPUIDLE_HALTPOLL
 	def_bool n
 	prompt "Disable host haltpoll when loading haltpoll driver"
@@ -679,11 +665,6 @@ config X86_IOPL_IOPERM
 	  only allowing the full range I/O port access, but prevents the
 	  ability to disable interrupts from user space which would be
 	  granted if the hardware IOPL mechanism would be used.
-
-config MICROCODE
-	def_bool y
-	depends on CPU_SUP_AMD || CPU_SUP_INTEL
-	select CRYPTO_LIB_SHA256 if CPU_SUP_AMD
 
 config X86_MSR
 	tristate "/dev/cpu/*/msr - Model-specific register support"
