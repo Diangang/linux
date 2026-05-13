@@ -24,74 +24,6 @@ void __fw_load_abort(struct fw_priv *fw_priv)
 	fw_state_aborted(fw_priv);
 }
 
-#ifdef CONFIG_FW_LOADER_USER_HELPER
-static ssize_t timeout_show(const struct class *class, const struct class_attribute *attr,
-			    char *buf)
-{
-	return sysfs_emit(buf, "%d\n", __firmware_loading_timeout());
-}
-
-/**
- * timeout_store() - set number of seconds to wait for firmware
- * @class: device class pointer
- * @attr: device attribute pointer
- * @buf: buffer to scan for timeout value
- * @count: number of bytes in @buf
- *
- *	Sets the number of seconds to wait for the firmware.  Once
- *	this expires an error will be returned to the driver and no
- *	firmware will be provided.
- *
- *	Note: zero means 'wait forever'.
- **/
-static ssize_t timeout_store(const struct class *class, const struct class_attribute *attr,
-			     const char *buf, size_t count)
-{
-	int tmp_loading_timeout;
-
-	if (kstrtoint(buf, 10, &tmp_loading_timeout))
-		return -EINVAL;
-
-	if (tmp_loading_timeout < 0)
-		tmp_loading_timeout = 0;
-
-	__fw_fallback_set_timeout(tmp_loading_timeout);
-
-	return count;
-}
-static CLASS_ATTR_RW(timeout);
-
-static struct attribute *firmware_class_attrs[] = {
-	&class_attr_timeout.attr,
-	NULL,
-};
-ATTRIBUTE_GROUPS(firmware_class);
-
-static int do_firmware_uevent(const struct fw_sysfs *fw_sysfs, struct kobj_uevent_env *env)
-{
-	if (add_uevent_var(env, "FIRMWARE=%s", fw_sysfs->fw_priv->fw_name))
-		return -ENOMEM;
-	if (add_uevent_var(env, "TIMEOUT=%i", __firmware_loading_timeout()))
-		return -ENOMEM;
-	if (add_uevent_var(env, "ASYNC=%d", fw_sysfs->nowait))
-		return -ENOMEM;
-
-	return 0;
-}
-
-static int firmware_uevent(const struct device *dev, struct kobj_uevent_env *env)
-{
-	const struct fw_sysfs *fw_sysfs = to_fw_sysfs(dev);
-	int err = 0;
-
-	mutex_lock(&fw_lock);
-	if (fw_sysfs->fw_priv)
-		err = do_firmware_uevent(fw_sysfs, env);
-	mutex_unlock(&fw_lock);
-	return err;
-}
-#endif /* CONFIG_FW_LOADER_USER_HELPER */
-
 static void fw_dev_release(struct device *dev)
 {
 	struct fw_sysfs *fw_sysfs = to_fw_sysfs(dev);
@@ -104,10 +36,6 @@ static void fw_dev_release(struct device *dev)
 
 static struct class firmware_class = {
 	.name		= "firmware",
-#ifdef CONFIG_FW_LOADER_USER_HELPER
-	.class_groups	= firmware_class_groups,
-	.dev_uevent	= firmware_uevent,
-#endif
 	.dev_release	= fw_dev_release,
 };
 

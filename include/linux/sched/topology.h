@@ -99,40 +99,6 @@ struct sched_domain {
 	u64 max_newidle_lb_cost;
 	unsigned long last_decay_max_lb_cost;
 
-#ifdef CONFIG_SCHEDSTATS
-	/* sched_balance_rq() stats */
-	unsigned int lb_count[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_failed[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_balanced[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_imbalance_load[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_imbalance_util[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_imbalance_task[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_imbalance_misfit[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_gained[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_hot_gained[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_nobusyg[CPU_MAX_IDLE_TYPES];
-	unsigned int lb_nobusyq[CPU_MAX_IDLE_TYPES];
-
-	/* Active load balancing */
-	unsigned int alb_count;
-	unsigned int alb_failed;
-	unsigned int alb_pushed;
-
-	/* SD_BALANCE_EXEC stats */
-	unsigned int sbe_count;
-	unsigned int sbe_balanced;
-	unsigned int sbe_pushed;
-
-	/* SD_BALANCE_FORK stats */
-	unsigned int sbf_count;
-	unsigned int sbf_balanced;
-	unsigned int sbf_pushed;
-
-	/* try_to_wake_up() stats */
-	unsigned int ttwu_wake_remote;
-	unsigned int ttwu_move_affine;
-	unsigned int ttwu_move_balance;
-#endif
 	char *name;
 	union {
 		void *private;		/* used during construction */

@@ -53,7 +53,7 @@ void thread_group_sample_cputime(struct task_struct *tsk, u64 *samples);
 /*
  * The following are functions that support scheduler-internal time accounting.
  * These functions are generally called at the timer tick.  None of this depends
- * on CONFIG_SCHEDSTATS.
+ * on scheduler statistics.
  */
 
 /**

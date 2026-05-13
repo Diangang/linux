@@ -70,9 +70,6 @@
 
 #include "debug.c"
 
-#ifdef CONFIG_SCHEDSTATS
-# include "stats.c"
-#endif
 
 #include "loadavg.c"
 #include "completion.c"

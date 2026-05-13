@@ -320,70 +320,6 @@ static ssize_t sync_on_suspend_store(struct kobject *kobj,
 power_attr(sync_on_suspend);
 #endif /* CONFIG_SUSPEND */
 
-#ifdef CONFIG_PM_SLEEP_DEBUG
-int pm_test_level = TEST_NONE;
-
-static const char * const pm_tests[__TEST_AFTER_LAST] = {
-	[TEST_NONE] = "none",
-	[TEST_CORE] = "core",
-	[TEST_CPUS] = "processors",
-	[TEST_PLATFORM] = "platform",
-	[TEST_DEVICES] = "devices",
-	[TEST_FREEZER] = "freezer",
-};
-
-static ssize_t pm_test_show(struct kobject *kobj, struct kobj_attribute *attr,
-				char *buf)
-{
-	ssize_t count = 0;
-	int level;
-
-	for (level = TEST_FIRST; level <= TEST_MAX; level++)
-		if (pm_tests[level]) {
-			if (level == pm_test_level)
-				count += sysfs_emit_at(buf, count, "[%s] ", pm_tests[level]);
-			else
-				count += sysfs_emit_at(buf, count, "%s ", pm_tests[level]);
-		}
-
-	/* Convert the last space to a newline if needed. */
-	if (count > 0)
-		buf[count - 1] = '\n';
-
-	return count;
-}
-
-static ssize_t pm_test_store(struct kobject *kobj, struct kobj_attribute *attr,
-				const char *buf, size_t n)
-{
-	unsigned int sleep_flags;
-	const char * const *s;
-	int error = -EINVAL;
-	int level;
-	char *p;
-	int len;
-
-	p = memchr(buf, '\n', n);
-	len = p ? p - buf : n;
-
-	sleep_flags = lock_system_sleep();
-
-	level = TEST_FIRST;
-	for (s = &pm_tests[level]; level <= TEST_MAX; s++, level++)
-		if (*s && len == strlen(*s) && !strncmp(buf, *s, len)) {
-			pm_test_level = level;
-			error = 0;
-			break;
-		}
-
-	unlock_system_sleep(sleep_flags);
-
-	return error ? error : n;
-}
-
-power_attr(pm_test);
-#endif /* CONFIG_PM_SLEEP_DEBUG */
-
 #define SUSPEND_NR_STEPS	SUSPEND_RESUME
 #define REC_FAILED_NUM		2
 
@@ -585,98 +521,7 @@ bool pm_sleep_transition_in_progress(void)
 }
 #endif /* CONFIG_PM_SLEEP */
 
-#ifdef CONFIG_PM_SLEEP_DEBUG
-/*
- * pm_print_times: print time taken by devices to suspend and resume.
- *
- * show() returns whether printing of suspend and resume times is enabled.
- * store() accepts 0 or 1.  0 disables printing and 1 enables it.
- */
-bool pm_print_times_enabled;
-
-static ssize_t pm_print_times_show(struct kobject *kobj,
-				   struct kobj_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", pm_print_times_enabled);
-}
-
-static ssize_t pm_print_times_store(struct kobject *kobj,
-				    struct kobj_attribute *attr,
-				    const char *buf, size_t n)
-{
-	unsigned long val;
-
-	if (kstrtoul(buf, 10, &val))
-		return -EINVAL;
-
-	if (val > 1)
-		return -EINVAL;
-
-	pm_print_times_enabled = !!val;
-	return n;
-}
-
-power_attr(pm_print_times);
-
-static inline void pm_print_times_init(void)
-{
-	pm_print_times_enabled = initcall_debug;
-}
-
-static ssize_t pm_wakeup_irq_show(struct kobject *kobj,
-					struct kobj_attribute *attr,
-					char *buf)
-{
-	if (!pm_wakeup_irq())
-		return -ENODATA;
-
-	return sysfs_emit(buf, "%u\n", pm_wakeup_irq());
-}
-
-power_attr_ro(pm_wakeup_irq);
-
-bool pm_debug_messages_on __read_mostly;
-
-bool pm_debug_messages_should_print(void)
-{
-	return pm_debug_messages_on && pm_sleep_transition_in_progress();
-}
-EXPORT_SYMBOL_GPL(pm_debug_messages_should_print);
-
-static ssize_t pm_debug_messages_show(struct kobject *kobj,
-				      struct kobj_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", pm_debug_messages_on);
-}
-
-static ssize_t pm_debug_messages_store(struct kobject *kobj,
-				       struct kobj_attribute *attr,
-				       const char *buf, size_t n)
-{
-	unsigned long val;
-
-	if (kstrtoul(buf, 10, &val))
-		return -EINVAL;
-
-	if (val > 1)
-		return -EINVAL;
-
-	pm_debug_messages_on = !!val;
-	return n;
-}
-
-power_attr(pm_debug_messages);
-
-static int __init pm_debug_messages_setup(char *str)
-{
-	pm_debug_messages_on = true;
-	return 1;
-}
-__setup("pm_debug_messages", pm_debug_messages_setup);
-
-#else /* !CONFIG_PM_SLEEP_DEBUG */
 static inline void pm_print_times_init(void) {}
-#endif /* CONFIG_PM_SLEEP_DEBUG */
 
 struct kobject *power_kobj;
 
@@ -908,12 +753,6 @@ static struct attribute * g[] = {
 #ifdef CONFIG_SUSPEND
 	&mem_sleep_attr.attr,
 	&sync_on_suspend_attr.attr,
-#endif
-#ifdef CONFIG_PM_SLEEP_DEBUG
-	&pm_test_attr.attr,
-	&pm_print_times_attr.attr,
-	&pm_wakeup_irq_attr.attr,
-	&pm_debug_messages_attr.attr,
 #endif
 #endif
 #ifdef CONFIG_FREEZER

@@ -50,28 +50,6 @@ config ELFCORE
 	help
 	  This option enables kernel/elfcore.o.
 
-config CORE_DUMP_DEFAULT_ELF_HEADERS
-	bool "Write ELF core dumps with partial segments"
-	default y
-	depends on BINFMT_ELF && ELF_CORE
-	help
-	  ELF core dump files describe each memory mapping of the crashed
-	  process, and can contain or omit the memory contents of each one.
-	  The contents of an unmodified text mapping are omitted by default.
-
-	  For an unmodified text mapping of an ELF object, including just
-	  the first page of the file in a core dump makes it possible to
-	  identify the build ID bits in the file, without paying the i/o
-	  cost and disk space to dump all the text.  However, versions of
-	  GDB before 6.7 are confused by ELF core dump files in this format.
-
-	  The core dump behavior can be controlled per process using
-	  the /proc/PID/coredump_filter pseudo-file; this setting is
-	  inherited.  See Documentation/filesystems/proc.rst for details.
-
-	  This config option changes the default setting of coredump_filter
-	  seen at boot time.  If unsure, say Y.
-
 config BINFMT_SCRIPT
 	tristate "Kernel support for scripts starting with #!"
 	default y
@@ -85,32 +63,6 @@ config BINFMT_SCRIPT
 	  this module must consist of compiled binaries only.
 
 	  Most systems will not boot if you say M or N here.  If unsure, say Y.
-
-config BINFMT_MISC
-	tristate "Kernel support for MISC binaries"
-	help
-	  If you say Y here, it will be possible to plug wrapper-driven binary
-	  formats into the kernel. You will like this especially when you use
-	  programs that need an interpreter to run like Java, Python, .NET or
-	  Emacs-Lisp. It's also useful if you often run DOS executables under
-	  the Linux DOS emulator DOSEMU (read the DOSEMU-HOWTO, available from
-	  <http://www.tldp.org/docs.html#howto>). Once you have
-	  registered such a binary class with the kernel, you can start one of
-	  those programs simply by typing in its name at a shell prompt; Linux
-	  will automatically feed it to the correct interpreter.
-
-	  You can do other nice things, too. Read the file
-	  <file:Documentation/admin-guide/binfmt-misc.rst> to learn how to use this
-	  feature, <file:Documentation/admin-guide/java.rst> for information about how
-	  to include Java support. and <file:Documentation/admin-guide/mono.rst> for
-          information about how to include Mono-based .NET support.
-
-          To use binfmt_misc, you will need to mount it:
-		mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
-
-	  You may say M here for module support and later load the module when
-	  you have use for it; the module is called binfmt_misc. If you
-	  don't know what to answer at this point, say Y.
 
 config COREDUMP
 	bool "Enable core dump support" if EXPERT

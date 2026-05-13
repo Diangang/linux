@@ -331,30 +331,8 @@ static bool platform_suspend_again(suspend_state_t state)
 		suspend_ops->suspend_again() : false;
 }
 
-#ifdef CONFIG_PM_DEBUG
-static unsigned int pm_test_delay = 5;
-module_param(pm_test_delay, uint, 0644);
-MODULE_PARM_DESC(pm_test_delay,
-		 "Number of seconds to wait before resuming from suspend test");
-#endif
-
 static int suspend_test(int level)
 {
-#ifdef CONFIG_PM_DEBUG
-	int i;
-
-	if (pm_test_level == level) {
-		pr_info("suspend debug: Waiting for %d second(s).\n",
-				pm_test_delay);
-		for (i = 0; i < pm_test_delay && !pm_wakeup_pending(); i++) {
-			if (level > TEST_CORE)
-				msleep(1000);
-			else
-				mdelay(1000);
-		}
-		return 1;
-	}
-#endif /* !CONFIG_PM_DEBUG */
 	return 0;
 }
 
@@ -567,12 +545,6 @@ static int enter_state(suspend_state_t state)
 	int error;
 
 	if (state == PM_SUSPEND_TO_IDLE) {
-#ifdef CONFIG_PM_DEBUG
-		if (pm_test_level != TEST_NONE && pm_test_level <= TEST_CPUS) {
-			pr_warn("Unsupported test mode for suspend to idle, please choose none/freezer/devices/platform.\n");
-			return -EAGAIN;
-		}
-#endif
 	} else if (!valid_state(state)) {
 		return -EINVAL;
 	}

@@ -315,18 +315,6 @@ config BSD_PROCESS_ACCT
 	  scalability issues.  You probably want to use eBPF instead.  Say
 	  N unless you really need this.
 
-config BSD_PROCESS_ACCT_V3
-	bool "BSD Process Accounting version 3 file format"
-	depends on BSD_PROCESS_ACCT
-	default n
-	help
-	  If you say Y here, the process accounting information is written
-	  in a new file format that also logs the process IDs of each
-	  process and its parent. Note that this file format is incompatible
-	  with previous v0/v1/v2 file formats, so you will need updated tools
-	  for processing it. A preliminary version of these tools is available
-	  at <http://www.gnu.org/software/acct/>.
-
 endmenu # "CPU/Task time and stats accounting"
 
 config CPU_ISOLATION
@@ -342,25 +330,6 @@ config CPU_ISOLATION
 	  Say Y if unsure.
 
 source "kernel/rcu/Kconfig"
-
-config IKCONFIG
-	tristate "Kernel .config support"
-	help
-	  This option enables the complete Linux kernel ".config" file
-	  contents to be saved in the kernel. It provides documentation
-	  of which kernel options are used in a running kernel or in an
-	  on-disk kernel.  This information can be extracted from the kernel
-	  image file with the script scripts/extract-ikconfig and used as
-	  input to rebuild the current kernel or to build another kernel.
-	  It can also be extracted from a running kernel by reading
-	  /proc/config.gz if enabled (below).
-
-config IKCONFIG_PROC
-	bool "Enable access to .config through /proc/config.gz"
-	depends on IKCONFIG && PROC_FS
-	help
-	  This option enables access to the kernel configuration file
-	  through /proc/config.gz.
 
 config LOG_BUF_SHIFT
 	int "Kernel log buffer size (16 => 64KB, 17 => 128KB)"
@@ -539,9 +508,7 @@ config BLK_CGROUP
 
 	This option only enables generic Block IO controller infrastructure.
 	One needs to also enable actual IO controlling logic/policy. For
-	enabling proportional weight division of disk bandwidth in CFQ, set
-	CONFIG_BFQ_GROUP_IOSCHED=y; for enabling throttling policy, set
-	CONFIG_BLK_DEV_THROTTLING=y.
+	enabling throttling policy, set CONFIG_BLK_DEV_THROTTLING=y.
 
 	See Documentation/admin-guide/cgroup-v1/blkio-controller.rst for more information.
 
@@ -590,16 +557,6 @@ config CGROUP_PIDS
 	  since the PIDs limit only affects a process's ability to fork, not to
 	  attach to a cgroup.
 
-config CGROUP_RDMA
-	bool "RDMA controller"
-	help
-	  Provides enforcement of RDMA resources defined by IB stack.
-	  It is fairly easy for consumers to exhaust RDMA resources, which
-	  can result into resource unavailability to other consumers.
-	  RDMA controller is designed to stop this from happening.
-	  Attaching processes with active RDMA resources to the cgroup
-	  hierarchy is allowed even if can cross the hierarchy's limit.
-
 config CGROUP_FREEZER
 	bool "Freezer controller"
 	help
@@ -640,32 +597,6 @@ config CGROUP_PERF
 	  so that it can monitor performance events among cgroups.
 
 	  Say N if unsure.
-
-config CGROUP_MISC
-	bool "Misc resource controller"
-	default n
-	help
-	  Provides a controller for miscellaneous resources on a host.
-
-	  Miscellaneous scalar resources are the resources on the host system
-	  which cannot be abstracted like the other cgroups. This controller
-	  tracks and limits the miscellaneous resources used by a process
-	  attached to a cgroup hierarchy.
-
-	  For more information, please check misc cgroup section in
-	  /Documentation/admin-guide/cgroup-v2.rst.
-
-config CGROUP_DEBUG
-	bool "Debug controller"
-	default n
-	depends on DEBUG_KERNEL
-	help
-	  This option enables a simple controller that exports
-	  debugging information about the cgroups framework. This
-	  controller is for control cgroup debugging only. Its
-	  interfaces are not stable.
-
-	  Say N.
 
 endif # CGROUPS
 

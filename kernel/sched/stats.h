@@ -2,65 +2,6 @@
 #ifndef _KERNEL_STATS_H
 #define _KERNEL_STATS_H
 
-#ifdef CONFIG_SCHEDSTATS
-
-extern struct static_key_false sched_schedstats;
-
-/*
- * Expects runqueue lock to be held for atomicity of update
- */
-static inline void
-rq_sched_info_arrive(struct rq *rq, unsigned long long delta)
-{
-	if (rq) {
-		rq->rq_sched_info.run_delay += delta;
-		rq->rq_sched_info.pcount++;
-	}
-}
-
-/*
- * Expects runqueue lock to be held for atomicity of update
- */
-static inline void
-rq_sched_info_depart(struct rq *rq, unsigned long long delta)
-{
-	if (rq)
-		rq->rq_cpu_time += delta;
-}
-
-static inline void
-rq_sched_info_dequeue(struct rq *rq, unsigned long long delta)
-{
-	if (rq)
-		rq->rq_sched_info.run_delay += delta;
-}
-#define   schedstat_enabled()		static_branch_unlikely(&sched_schedstats)
-#define __schedstat_inc(var)		do { var++; } while (0)
-#define   schedstat_inc(var)		do { if (schedstat_enabled()) { var++; } } while (0)
-#define __schedstat_add(var, amt)	do { var += (amt); } while (0)
-#define   schedstat_add(var, amt)	do { if (schedstat_enabled()) { var += (amt); } } while (0)
-#define __schedstat_set(var, val)	do { var = (val); } while (0)
-#define   schedstat_set(var, val)	do { if (schedstat_enabled()) { var = (val); } } while (0)
-#define   schedstat_val(var)		(var)
-#define   schedstat_val_or_zero(var)	((schedstat_enabled()) ? (var) : 0)
-
-void __update_stats_wait_start(struct rq *rq, struct task_struct *p,
-			       struct sched_statistics *stats);
-
-void __update_stats_wait_end(struct rq *rq, struct task_struct *p,
-			     struct sched_statistics *stats);
-void __update_stats_enqueue_sleeper(struct rq *rq, struct task_struct *p,
-				    struct sched_statistics *stats);
-
-static inline void
-check_schedstat_required(void)
-{
-	if (schedstat_enabled())
-		return;
-}
-
-#else /* !CONFIG_SCHEDSTATS: */
-
 static inline void rq_sched_info_arrive  (struct rq *rq, unsigned long long delta) { }
 static inline void rq_sched_info_dequeue(struct rq *rq, unsigned long long delta) { }
 static inline void rq_sched_info_depart  (struct rq *rq, unsigned long long delta) { }
@@ -78,8 +19,6 @@ static inline void rq_sched_info_depart  (struct rq *rq, unsigned long long delt
 # define __update_stats_wait_end(rq, p, stats)         do { } while (0)
 # define __update_stats_enqueue_sleeper(rq, p, stats)  do { } while (0)
 # define check_schedstat_required()                    do { } while (0)
-
-#endif /* CONFIG_SCHEDSTATS */
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 struct sched_entity_stats {

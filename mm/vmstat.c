@@ -1446,30 +1446,6 @@ const char * const vmstat_text[] = {
 	[I(DIRECT_MAP_LEVEL2_COLLAPSE)]		= "direct_map_level2_collapses",
 	[I(DIRECT_MAP_LEVEL3_COLLAPSE)]		= "direct_map_level3_collapses",
 #endif
-#ifdef CONFIG_DEBUG_STACK_USAGE
-	[I(KSTACK_1K)]				= "kstack_1k",
-#if THREAD_SIZE > 1024
-	[I(KSTACK_2K)]				= "kstack_2k",
-#endif
-#if THREAD_SIZE > 2048
-	[I(KSTACK_4K)]				= "kstack_4k",
-#endif
-#if THREAD_SIZE > 4096
-	[I(KSTACK_8K)]				= "kstack_8k",
-#endif
-#if THREAD_SIZE > 8192
-	[I(KSTACK_16K)]				= "kstack_16k",
-#endif
-#if THREAD_SIZE > 16384
-	[I(KSTACK_32K)]				= "kstack_32k",
-#endif
-#if THREAD_SIZE > 32768
-	[I(KSTACK_64K)]				= "kstack_64k",
-#endif
-#if THREAD_SIZE > 65536
-	[I(KSTACK_REST)]			= "kstack_rest",
-#endif
-#endif
 #undef I
 #endif /* CONFIG_VM_EVENT_COUNTERS */
 };

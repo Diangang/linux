@@ -165,12 +165,6 @@ static const struct ctl_table fs_stat_sysctls[] = {
 static int __init init_fs_stat_sysctls(void)
 {
 	register_sysctl_init("fs", fs_stat_sysctls);
-	if (IS_ENABLED(CONFIG_BINFMT_MISC)) {
-		struct ctl_table_header *hdr;
-
-		hdr = register_sysctl_mount_point("fs/binfmt_misc");
-		kmemleak_not_leak(hdr);
-	}
 	return 0;
 }
 fs_initcall(init_fs_stat_sysctls);

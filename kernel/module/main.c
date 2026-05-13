@@ -727,20 +727,10 @@ static void module_unload_free(struct module *mod)
 	mutex_unlock(&module_mutex);
 }
 
-#ifdef CONFIG_MODULE_FORCE_UNLOAD
-static inline int try_force_unload(unsigned int flags)
-{
-	int ret = (flags & O_TRUNC);
-	if (ret)
-		add_taint(TAINT_FORCED_RMMOD, LOCKDEP_NOW_UNRELIABLE);
-	return ret;
-}
-#else
 static inline int try_force_unload(unsigned int flags)
 {
 	return 0;
 }
-#endif /* CONFIG_MODULE_FORCE_UNLOAD */
 
 /* Try to release refcount of module, 0 means success. */
 static int try_release_module_ref(struct module *mod)

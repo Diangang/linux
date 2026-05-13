@@ -56,20 +56,7 @@ void devres_set_node_dbginfo(struct devres_node *node, const char *name,
 	node->size = size;
 }
 
-#ifdef CONFIG_DEBUG_DEVRES
-static int log_devres = 0;
-module_param_named(log, log_devres, int, S_IRUGO | S_IWUSR);
-
-static void devres_dbg(struct device *dev, struct devres_node *node,
-		       const char *op)
-{
-	if (unlikely(log_devres))
-		dev_err(dev, "DEVRES %3s %p %s (%zu bytes)\n",
-			op, node, node->name, node->size);
-}
-#else /* CONFIG_DEBUG_DEVRES */
 #define devres_dbg(dev, node, op)	do {} while (0)
-#endif /* CONFIG_DEBUG_DEVRES */
 
 static void devres_log(struct device *dev, struct devres_node *node,
 		       const char *op)

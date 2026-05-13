@@ -12,13 +12,8 @@
 #define BASE_BAUD (1843200/16)
 
 /* Standard COM flags (except for COM4, because of the 8514 problem) */
-#ifdef CONFIG_SERIAL_8250_DETECT_IRQ
-# define STD_COMX_FLAGS	(UPF_BOOT_AUTOCONF |	UPF_SKIP_TEST	| UPF_AUTO_IRQ)
-# define STD_COM4_FLAGS	(UPF_BOOT_AUTOCONF |	0		| UPF_AUTO_IRQ)
-#else
 # define STD_COMX_FLAGS	(UPF_BOOT_AUTOCONF |	UPF_SKIP_TEST	| 0		)
 # define STD_COM4_FLAGS	(UPF_BOOT_AUTOCONF |	0		| 0		)
-#endif
 
 #define SERIAL_PORT_DFNS								\
 	/* UART		CLK		PORT	IRQ	FLAGS			    */	\

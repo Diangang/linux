@@ -431,7 +431,7 @@ static unsigned long wq_cpu_intensive_thresh_us = ULONG_MAX;
 module_param_named(cpu_intensive_thresh_us, wq_cpu_intensive_thresh_us, ulong, 0644);
 
 /* see the comment above the definition of WQ_POWER_EFFICIENT */
-static bool wq_power_efficient = IS_ENABLED(CONFIG_WQ_POWER_EFFICIENT_DEFAULT);
+static bool wq_power_efficient;
 module_param_named(power_efficient, wq_power_efficient, bool, 0444);
 
 static unsigned int wq_cache_shard_size = 8;

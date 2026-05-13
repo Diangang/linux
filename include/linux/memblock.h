@@ -602,13 +602,8 @@ extern bool hashdist;		/* Distribute hashes across NUMA nodes? */
 #define hashdist (false)
 #endif
 
-#ifdef CONFIG_MEMTEST
-void early_memtest(phys_addr_t start, phys_addr_t end);
-void memtest_report_meminfo(struct seq_file *m);
-#else
 static inline void early_memtest(phys_addr_t start, phys_addr_t end) { }
 static inline void memtest_report_meminfo(struct seq_file *m) { }
-#endif
 
 #if 0
 void memblock_set_kho_scratch_only(void);

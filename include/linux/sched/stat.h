@@ -27,8 +27,5 @@ static inline int sched_info_on(void)
 	return IS_ENABLED(CONFIG_SCHED_INFO);
 }
 
-#ifdef CONFIG_SCHEDSTATS
-void force_schedstat_enabled(void);
-#endif
 
 #endif /* _LINUX_SCHED_STAT_H */

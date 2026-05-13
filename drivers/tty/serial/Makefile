@@ -12,8 +12,6 @@ obj-$(CONFIG_SERIAL_EARLYCON) += earlycon.o
 obj-y += 8250/
 
 obj-$(CONFIG_SERIAL_AMBA_PL011)		+= amba-pl011.o
-obj-$(CONFIG_SERIAL_FSL_LINFLEXUART)	+= fsl_linflexuart.o
-obj-$(CONFIG_SERIAL_FSL_LPUART)		+= fsl_lpuart.o
 obj-$(CONFIG_SERIAL_XILINX_PS_UART)	+= xilinx_uartps.o
 
 # GPIOLIB helpers for modem control lines

@@ -3385,10 +3385,6 @@ static void __sched_fork(u64 clone_flags, struct task_struct *p)
 	p->se.cfs_rq			= NULL;
 #endif
 
-#ifdef CONFIG_SCHEDSTATS
-	/* Even if schedstat is disabled, there should not be garbage */
-	memset(&p->stats, 0, sizeof(p->stats));
-#endif
 
 	init_dl_entity(&p->dl);
 
@@ -3470,83 +3466,8 @@ static int sysctl_numa_balancing(const struct ctl_table *table, int write,
 #endif /* CONFIG_PROC_SYSCTL */
 #endif /* CONFIG_NUMA_BALANCING */
 
-#ifdef CONFIG_SCHEDSTATS
-
-DEFINE_STATIC_KEY_FALSE(sched_schedstats);
-
-static void set_schedstats(bool enabled)
-{
-	if (enabled)
-		static_branch_enable(&sched_schedstats);
-	else
-		static_branch_disable(&sched_schedstats);
-}
-
-void force_schedstat_enabled(void)
-{
-	if (!schedstat_enabled()) {
-		pr_info("kernel profiling enabled schedstats, disable via kernel.sched_schedstats.\n");
-		static_branch_enable(&sched_schedstats);
-	}
-}
-
-static int __init setup_schedstats(char *str)
-{
-	int ret = 0;
-	if (!str)
-		goto out;
-
-	if (!strcmp(str, "enable")) {
-		set_schedstats(true);
-		ret = 1;
-	} else if (!strcmp(str, "disable")) {
-		set_schedstats(false);
-		ret = 1;
-	}
-out:
-	if (!ret)
-		pr_warn("Unable to parse schedstats=\n");
-
-	return ret;
-}
-__setup("schedstats=", setup_schedstats);
-
-#ifdef CONFIG_PROC_SYSCTL
-static int sysctl_schedstats(const struct ctl_table *table, int write, void *buffer,
-		size_t *lenp, loff_t *ppos)
-{
-	struct ctl_table t;
-	int err;
-	int state = static_branch_likely(&sched_schedstats);
-
-	if (write && !capable(CAP_SYS_ADMIN))
-		return -EPERM;
-
-	t = *table;
-	t.data = &state;
-	err = proc_dointvec_minmax(&t, write, buffer, lenp, ppos);
-	if (err < 0)
-		return err;
-	if (write)
-		set_schedstats(state);
-	return err;
-}
-#endif /* CONFIG_PROC_SYSCTL */
-#endif /* CONFIG_SCHEDSTATS */
-
 #ifdef CONFIG_SYSCTL
 static const struct ctl_table sched_core_sysctls[] = {
-#ifdef CONFIG_SCHEDSTATS
-	{
-		.procname       = "sched_schedstats",
-		.data           = NULL,
-		.maxlen         = sizeof(unsigned int),
-		.mode           = 0644,
-		.proc_handler   = sysctl_schedstats,
-		.extra1         = SYSCTL_ZERO,
-		.extra2         = SYSCTL_ONE,
-	},
-#endif /* CONFIG_SCHEDSTATS */
 #ifdef CONFIG_NUMA_BALANCING
 	{
 		.procname	= "numa_balancing",

@@ -43,40 +43,9 @@ config PM
 	  responsible for the actual handling of device suspend requests and
 	  wake-up events.
 
-config PM_DEBUG
-	bool "Power Management Debug Support"
-	depends on PM
-	help
-	This option enables various debugging support in the Power Management
-	code. This is helpful when debugging and reporting PM bugs, like
-	suspend support.
-
-config PM_SLEEP_DEBUG
-	def_bool y
-	depends on PM_DEBUG && PM_SLEEP
-
 config PM_CLK
 	def_bool y
 	depends on PM && HAVE_CLK
-
-config WQ_POWER_EFFICIENT_DEFAULT
-	bool "Enable workqueue power-efficient mode by default"
-	depends on PM
-	help
-	  Per-cpu workqueues are generally preferred because they show
-	  better performance thanks to cache locality; unfortunately,
-	  per-cpu workqueues tend to be more power hungry than unbound
-	  workqueues.
-
-	  Enabling workqueue.power_efficient kernel parameter makes the
-	  per-cpu workqueues which were observed to contribute
-	  significantly to power consumption unbound, leading to measurably
-	  lower power usage at the cost of small performance overhead.
-
-	  This config option determines whether workqueue.power_efficient
-	  is enabled by default.
-
-	  If in doubt, say N.
 
 config CPU_PM
 	bool

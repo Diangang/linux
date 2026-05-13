@@ -10,36 +10,6 @@ config TTY
 
 if TTY
 
-config LEGACY_PTYS
-	bool "Legacy (BSD) PTY support"
-	default y
-	help
-	  A pseudo terminal (PTY) is a software device consisting of two
-	  halves: a master and a slave. The slave device behaves identical to
-	  a physical terminal; the master device is used by a process to
-	  read data from and write data to the slave, thereby emulating a
-	  terminal. Typical programs for the master side are telnet servers
-	  and xterms.
-
-	  Linux has traditionally used the BSD-like names /dev/ptyxx
-	  for masters and /dev/ttyxx for slaves of pseudo
-	  terminals. This scheme has a number of problems, including
-	  security.  This option enables these legacy devices; on most
-	  systems, it is safe to say N.
-
-config LEGACY_PTY_COUNT
-	int "Maximum number of legacy PTY in use"
-	depends on LEGACY_PTYS
-	range 0 256
-	default "256"
-	help
-	  The maximum number of legacy PTYs that can be used at any one time.
-	  The default is 256, and should be more than enough.  Embedded
-	  systems may want to reduce this to save memory.
-
-	  When not in use, each legacy PTY occupies 12 bytes on 32-bit
-	  architectures and 24 bytes on 64-bit architectures.
-
 config LEGACY_TIOCSTI
 	bool "Allow legacy TIOCSTI usage"
 	default y
@@ -87,36 +57,4 @@ config LDISC_AUTOLOAD
 
 source "drivers/tty/serial/Kconfig"
 
-config SERIAL_NONSTANDARD
-	bool "Non-standard serial port support"
-	depends on HAS_IOMEM
-	help
-	  Say Y here if you have any non-standard serial boards -- boards
-	  which aren't supported using the standard "dumb" serial driver.
-	  This includes intelligent serial boards such as
-	  Digiboards, etc. These are usually used for systems that need many
-	  serial ports because they serve many terminals or dial-in
-	  connections.
-
-	  Note that the answer to this question won't directly affect the
-	  kernel: saying N will just cause the configurator to skip all
-	  the questions about non-standard serial boards.
-
-	  Most people can say N here.
-
-	  if they are present. This can be useful when working with an EJTAG
-	  probe which supports it, to get console output and a login prompt via
-	  EJTAG without needing to connect a serial cable.
-
-	  TTY devices are named e.g. ttyFDC3c2 (for FDC channel 2 of the FDC on
-	  CPU3).
-
-	  The console can be enabled with console=fdc1 (for FDC channel 1 on all
-	  CPUs). Do not use the console unless there is a debug probe attached
-	  to drain the FDC TX FIFO.
-
-	  If unsure, say N.
-
 endif # TTY
-
-source "drivers/tty/serdev/Kconfig"

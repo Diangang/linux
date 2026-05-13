@@ -27,7 +27,6 @@ obj-$(CONFIG_TIMERFD)		+= timerfd.o
 obj-$(CONFIG_EVENTFD)		+= eventfd.o
 obj-$(CONFIG_AIO)               += aio.o
 obj-$(CONFIG_FILE_LOCKING)      += locks.o
-obj-$(CONFIG_BINFMT_MISC)	+= binfmt_misc.o
 obj-$(CONFIG_BINFMT_SCRIPT)	+= binfmt_script.o
 obj-$(CONFIG_BINFMT_ELF)	+= binfmt_elf.o
 obj-$(CONFIG_COMPAT_BINFMT_ELF)	+= compat_binfmt_elf.o
@@ -42,4 +41,3 @@ obj-$(CONFIG_SYSFS)		+= sysfs/
 # Do not add any filesystems before this line
 obj-y				+= ramfs/
 obj-$(CONFIG_MINIX_FS)		+= minix/
-obj-$(CONFIG_PSTORE)		+= pstore/

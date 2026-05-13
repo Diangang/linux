@@ -1267,9 +1267,6 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,
 
 void proc_sched_set_task(struct task_struct *p)
 {
-#ifdef CONFIG_SCHEDSTATS
-	memset(&p->stats, 0, sizeof(p->stats));
-#endif
 }
 
 void resched_latency_warn(int cpu, u64 latency)

@@ -8,17 +8,6 @@
 #include "firmware.h"
 #include "sysfs.h"
 
-#ifdef CONFIG_FW_LOADER_USER_HELPER
-int firmware_fallback_sysfs(struct firmware *fw, const char *name,
-			    struct device *device,
-			    u32 opt_flags,
-			    int ret);
-void kill_pending_fw_fallback_reqs(bool kill_all);
-
-void fw_fallback_set_cache_timeout(void);
-void fw_fallback_set_default_timeout(void);
-
-#else /* CONFIG_FW_LOADER_USER_HELPER */
 static inline int firmware_fallback_sysfs(struct firmware *fw, const char *name,
 					  struct device *device,
 					  u32 opt_flags,
@@ -31,7 +20,6 @@ static inline int firmware_fallback_sysfs(struct firmware *fw, const char *name,
 static inline void kill_pending_fw_fallback_reqs(bool kill_all) { }
 static inline void fw_fallback_set_cache_timeout(void) { }
 static inline void fw_fallback_set_default_timeout(void) { }
-#endif /* CONFIG_FW_LOADER_USER_HELPER */
 
 static inline int firmware_fallback_platform(struct fw_priv *fw_priv)
 {

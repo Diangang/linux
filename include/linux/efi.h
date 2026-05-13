@@ -20,7 +20,6 @@
 #include <linux/rtc.h>
 #include <linux/ioport.h>
 #include <linux/pfn.h>
-#include <linux/pstore.h>
 #include <linux/range.h>
 #include <linux/reboot.h>
 #include <linux/uuid.h>

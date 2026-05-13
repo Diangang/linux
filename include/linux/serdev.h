@@ -189,45 +189,6 @@ static inline size_t serdev_controller_receive_buf(struct serdev_controller *ctr
 	return serdev->ops->receive_buf(serdev, data, count);
 }
 
-#if IS_ENABLED(CONFIG_SERIAL_DEV_BUS)
-
-int serdev_device_open(struct serdev_device *);
-void serdev_device_close(struct serdev_device *);
-int devm_serdev_device_open(struct device *, struct serdev_device *);
-unsigned int serdev_device_set_baudrate(struct serdev_device *, unsigned int);
-void serdev_device_set_flow_control(struct serdev_device *, bool);
-int serdev_device_write_buf(struct serdev_device *, const u8 *, size_t);
-void serdev_device_wait_until_sent(struct serdev_device *, long);
-int serdev_device_get_tiocm(struct serdev_device *);
-int serdev_device_set_tiocm(struct serdev_device *, int, int);
-int serdev_device_break_ctl(struct serdev_device *serdev, int break_state);
-void serdev_device_write_wakeup(struct serdev_device *);
-ssize_t serdev_device_write(struct serdev_device *, const u8 *, size_t, long);
-void serdev_device_write_flush(struct serdev_device *);
-
-/*
- * serdev device driver functions
- */
-int __serdev_device_driver_register(struct serdev_device_driver *, struct module *);
-#define serdev_device_driver_register(sdrv) \
-	__serdev_device_driver_register(sdrv, THIS_MODULE)
-
-/**
- * serdev_device_driver_unregister() - unregister an serdev client driver
- * @sdrv:	the driver to unregister
- */
-static inline void serdev_device_driver_unregister(struct serdev_device_driver *sdrv)
-{
-	if (sdrv)
-		driver_unregister(&sdrv->driver);
-}
-
-#define module_serdev_device_driver(__serdev_device_driver) \
-	module_driver(__serdev_device_driver, serdev_device_driver_register, \
-			serdev_device_driver_unregister)
-
-#else
-
 static inline int serdev_device_open(struct serdev_device *sdev)
 {
 	return -ENODEV;
@@ -267,8 +228,6 @@ static inline void serdev_device_write_flush(struct serdev_device *sdev) {}
 
 #define serdev_device_driver_register(x)
 #define serdev_device_driver_unregister(x)
-
-#endif /* CONFIG_SERIAL_DEV_BUS */
 
 static inline bool serdev_device_get_cts(struct serdev_device *serdev)
 {

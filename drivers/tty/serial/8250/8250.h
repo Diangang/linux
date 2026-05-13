@@ -314,19 +314,11 @@ static inline int serial8250_pnp_init(void) { return 0; }
 static inline void serial8250_pnp_exit(void) { }
 #endif
 
-#ifdef CONFIG_SERIAL_8250_RSA
-void univ8250_rsa_support(struct uart_ops *ops, const struct uart_ops *core_ops);
-void rsa_enable(struct uart_8250_port *up);
-void rsa_disable(struct uart_8250_port *up);
-void rsa_autoconfig(struct uart_8250_port *up);
-void rsa_reset(struct uart_8250_port *up);
-#else
 static inline void univ8250_rsa_support(struct uart_ops *ops, const struct uart_ops *core_ops) { }
 static inline void rsa_enable(struct uart_8250_port *up) {}
 static inline void rsa_disable(struct uart_8250_port *up) {}
 static inline void rsa_autoconfig(struct uart_8250_port *up) {}
 static inline void rsa_reset(struct uart_8250_port *up) {}
-#endif
 
 static inline int fintek_8250_probe(struct uart_8250_port *uart) { return 0; }
 

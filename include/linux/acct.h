@@ -44,11 +44,6 @@ extern void acct_exit_ns(struct pid_namespace *);
 #undef ACCT_VERSION
 #undef AHZ
 
-#ifdef CONFIG_BSD_PROCESS_ACCT_V3
-#define ACCT_VERSION	3
-#define AHZ		100
-typedef struct acct_v3 acct_t;
-#else
 #ifdef CONFIG_M68K
 #define ACCT_VERSION	1
 #else
@@ -56,7 +51,6 @@ typedef struct acct_v3 acct_t;
 #endif
 #define AHZ		(USER_HZ)
 typedef struct acct acct_t;
-#endif
 
 #include <linux/jiffies.h>
 /*

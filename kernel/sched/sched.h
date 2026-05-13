@@ -1103,22 +1103,6 @@ struct rq {
 	unsigned int		hrtick_sched;
 #endif
 
-#ifdef CONFIG_SCHEDSTATS
-	/* latency stats */
-	struct sched_info	rq_sched_info;
-	unsigned long long	rq_cpu_time;
-
-	/* sys_sched_yield() stats */
-	unsigned int		yld_count;
-
-	/* schedule() stats */
-	unsigned int		sched_count;
-	unsigned int		sched_goidle;
-
-	/* try_to_wake_up() stats */
-	unsigned int		ttwu_count;
-	unsigned int		ttwu_local;
-#endif
 
 #ifdef CONFIG_CPU_IDLE
 	/* Must be inspected within a RCU lock section */
@@ -2937,31 +2921,9 @@ static inline void nohz_run_idle_balance(int cpu) { }
 
 #include "stats.h"
 
-#if defined(CONFIG_SCHED_CORE) && defined(CONFIG_SCHEDSTATS)
-
-extern void __sched_core_account_forceidle(struct rq *rq);
-
-static inline void sched_core_account_forceidle(struct rq *rq)
-{
-	if (schedstat_enabled())
-		__sched_core_account_forceidle(rq);
-}
-
-extern void __sched_core_tick(struct rq *rq);
-
-static inline void sched_core_tick(struct rq *rq)
-{
-	if (sched_core_enabled(rq) && schedstat_enabled())
-		__sched_core_tick(rq);
-}
-
-#else /* !(CONFIG_SCHED_CORE && CONFIG_SCHEDSTATS): */
-
 static inline void sched_core_account_forceidle(struct rq *rq) { }
 
 static inline void sched_core_tick(struct rq *rq) { }
-
-#endif /* !(CONFIG_SCHED_CORE && CONFIG_SCHEDSTATS) */
 
 #ifdef CONFIG_IRQ_TIME_ACCOUNTING
 

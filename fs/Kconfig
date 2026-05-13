@@ -50,7 +50,6 @@ menuconfig MISC_FILESYSTEMS
 
 if MISC_FILESYSTEMS
 source "fs/minix/Kconfig"
-source "fs/pstore/Kconfig"
 
 endif # MISC_FILESYSTEMS
 

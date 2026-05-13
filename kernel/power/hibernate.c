@@ -147,29 +147,7 @@ bool system_entering_hibernation(void)
 }
 EXPORT_SYMBOL(system_entering_hibernation);
 
-#ifdef CONFIG_PM_DEBUG
-static unsigned int pm_test_delay = 5;
-module_param(pm_test_delay, uint, 0644);
-MODULE_PARM_DESC(pm_test_delay,
-		 "Number of seconds to wait before resuming from hibernation test");
-static void hibernation_debug_sleep(void)
-{
-	pr_info("hibernation debug: Waiting for %d second(s).\n",
-		pm_test_delay);
-	mdelay(pm_test_delay * 1000);
-}
-
-static int hibernation_test(int level)
-{
-	if (pm_test_level == level) {
-		hibernation_debug_sleep();
-		return 1;
-	}
-	return 0;
-}
-#else /* !CONFIG_PM_DEBUG */
 static int hibernation_test(int level) { return 0; }
-#endif /* !CONFIG_PM_DEBUG */
 
 /**
  * platform_begin - Call platform to start hibernation.

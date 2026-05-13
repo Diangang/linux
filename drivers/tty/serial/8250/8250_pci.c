@@ -1301,7 +1301,7 @@ static void pci_oxsemi_tornado_set_mctrl(struct uart_port *port,
 
 /*
  * We require EFR features for clock programming, so set UPF_FULL_PROBE
- * for full probing regardless of CONFIG_SERIAL_8250_16550A_VARIANTS setting.
+ * for full probing.
  */
 static int pci_oxsemi_tornado_setup(struct serial_private *priv,
 				    const struct pciserial_board *board,

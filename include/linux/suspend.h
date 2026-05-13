@@ -505,30 +505,6 @@ static inline bool pm_hibernate_is_recovering(void) { return false; }
 
 #endif /* !CONFIG_PM_SLEEP */
 
-#ifdef CONFIG_PM_SLEEP_DEBUG
-extern bool pm_print_times_enabled;
-extern bool pm_debug_messages_on;
-extern bool pm_debug_messages_should_print(void);
-static inline int pm_dyn_debug_messages_on(void)
-{
-	return 0;
-}
-#ifndef pr_fmt
-#define pr_fmt(fmt) "PM: " fmt
-#endif
-#define __pm_pr_dbg(fmt, ...)					\
-	do {							\
-		if (pm_debug_messages_should_print())		\
-			printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__);	\
-		else if (pm_dyn_debug_messages_on())		\
-			pr_debug(fmt, ##__VA_ARGS__);	\
-	} while (0)
-#define __pm_deferred_pr_dbg(fmt, ...)				\
-	do {							\
-		if (pm_debug_messages_should_print())		\
-			printk_deferred(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__);	\
-	} while (0)
-#else
 #define pm_print_times_enabled	(false)
 #define pm_debug_messages_on	(false)
 
@@ -538,7 +514,6 @@ static inline int pm_dyn_debug_messages_on(void)
 	no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
 #define __pm_deferred_pr_dbg(fmt, ...) \
 	no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-#endif
 
 /**
  * pm_pr_dbg - print pm sleep debug messages

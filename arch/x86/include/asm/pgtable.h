@@ -41,11 +41,7 @@ void ptdump_walk_user_pgd_level_checkwx(void);
 #define pgprot_encrypted(prot)	__pgprot(cc_mkenc(pgprot_val(prot)))
 #define pgprot_decrypted(prot)	__pgprot(cc_mkdec(pgprot_val(prot)))
 
-#ifdef CONFIG_DEBUG_WX
-#define debug_checkwx_user()	ptdump_walk_user_pgd_level_checkwx()
-#else
 #define debug_checkwx_user()	do { } while (0)
-#endif
 
 extern spinlock_t pgd_lock;
 extern struct list_head pgd_list;
