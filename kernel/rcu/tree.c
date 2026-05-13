@@ -103,9 +103,6 @@ static struct rcu_state rcu_state = {
 	.srs_cleanup_work = __WORK_INITIALIZER(rcu_state.srs_cleanup_work,
 		rcu_sr_normal_gp_cleanup_work),
 	.srs_cleanups_pending = ATOMIC_INIT(0),
-#ifdef CONFIG_RCU_NOCB_CPU
-	.nocb_mutex = __MUTEX_INITIALIZER(rcu_state.nocb_mutex),
-#endif
 };
 
 /* Dump rcu_node combining tree at boot to verify correct setup. */
@@ -188,9 +185,6 @@ static int nohz_full_patience_delay_jiffies;
 
 // Add delay to rcu_read_unlock() for strict grace periods.
 static int rcu_unlock_delay;
-#ifdef CONFIG_RCU_STRICT_GRACE_PERIOD
-module_param(rcu_unlock_delay, int, 0444);
-#endif
 
 /* Retrieve RCU kthreads priority for rcutorture */
 int rcu_get_gp_kthreads_prio(void)
@@ -411,7 +405,7 @@ static int rcu_is_cpu_rrupt_from_idle(void)
 	return false;
 }
 
-#define DEFAULT_RCU_BLIMIT (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) ? 1000 : 10)
+#define DEFAULT_RCU_BLIMIT (0 ? 1000 : 10)
 				// Maximum callbacks per rcu_do_batch ...
 #define DEFAULT_MAX_RCU_BLIMIT 10000 // ... even during callback flood.
 static long blimit = DEFAULT_RCU_BLIMIT;
@@ -429,7 +423,7 @@ module_param(qhimark, long, 0444);
 module_param(qlowmark, long, 0444);
 module_param(qovld, long, 0444);
 
-static ulong jiffies_till_first_fqs = IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) ? 0 : ULONG_MAX;
+static ulong jiffies_till_first_fqs = 0 ? 0 : ULONG_MAX;
 static ulong jiffies_till_next_fqs = ULONG_MAX;
 static bool rcu_kick_kthreads;
 static int rcu_divisor = 7;
@@ -1145,7 +1139,7 @@ static void __maybe_unused rcu_advance_cbs_nowake(struct rcu_node *rnp,
  */
 static void rcu_strict_gp_check_qs(void)
 {
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD)) {
+	if (0) {
 		rcu_read_lock();
 		rcu_read_unlock();
 	}
@@ -1862,7 +1856,7 @@ static noinline_for_stack bool rcu_gp_init(void)
 	}
 
 	// If strict, make all CPUs aware of new grace period.
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+	if (0)
 		on_each_cpu(rcu_strict_gp_boundary, NULL, 0);
 
 	/*
@@ -2130,7 +2124,7 @@ static noinline void rcu_gp_cleanup(void)
 	rcu_sr_normal_gp_cleanup();
 
 	// If strict, make all CPUs aware of the end of the old grace period.
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+	if (0)
 		on_each_cpu(rcu_strict_gp_boundary, NULL, 0);
 }
 
@@ -2524,7 +2518,7 @@ static void rcu_do_batch(struct rcu_data *rdp)
 	 */
 	empty = rcu_segcblist_empty(&rdp->cblist);
 	WARN_ON_ONCE(count == 0 && !empty);
-	WARN_ON_ONCE(!IS_ENABLED(CONFIG_RCU_NOCB_CPU) &&
+	WARN_ON_ONCE(!0 &&
 		     count != 0 && empty);
 	WARN_ON_ONCE(count == 0 && rcu_segcblist_n_segment_cbs(&rdp->cblist) != 0);
 	WARN_ON_ONCE(!empty && rcu_segcblist_n_segment_cbs(&rdp->cblist) == 0);
@@ -2722,7 +2716,7 @@ static __latent_entropy void rcu_core(void)
 	do_nocb_deferred_wakeup(rdp);
 
 	// If strict GPs, schedule an RCU reader in a clean environment.
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+	if (0)
 		queue_work_on(rdp->cpu, rcu_gp_wq, &rdp->strict_work);
 }
 
@@ -2994,38 +2988,7 @@ __call_rcu_common(struct rcu_head *head, rcu_callback_t func, bool lazy_in)
 	local_irq_restore(flags);
 }
 
-#ifdef CONFIG_RCU_LAZY
-static bool enable_rcu_lazy __read_mostly = !IS_ENABLED(CONFIG_RCU_LAZY_DEFAULT_OFF);
-module_param(enable_rcu_lazy, bool, 0444);
-
-/**
- * call_rcu_hurry() - Queue RCU callback for invocation after grace period, and
- * flush all lazy callbacks (including the new one) to the main ->cblist while
- * doing so.
- *
- * @head: structure to be used for queueing the RCU updates.
- * @func: actual callback function to be invoked after the grace period
- *
- * The callback function will be invoked some time after a full grace
- * period elapses, in other words after all pre-existing RCU read-side
- * critical sections have completed.
- *
- * Use this API instead of call_rcu() if you don't want the callback to be
- * delayed for very long periods of time, which can happen on systems without
- * memory pressure and on systems which are lightly loaded or mostly idle.
- * This function will cause callbacks to be invoked sooner than later at the
- * expense of extra power. Other than that, this function is identical to, and
- * reuses call_rcu()'s logic. Refer to call_rcu() for more details about memory
- * ordering and other functionality.
- */
-void call_rcu_hurry(struct rcu_head *head, rcu_callback_t func)
-{
-	__call_rcu_common(head, func, false);
-}
-EXPORT_SYMBOL_GPL(call_rcu_hurry);
-#else
 #define enable_rcu_lazy		false
-#endif
 
 /**
  * call_rcu() - Queue an RCU callback for invocation after a grace period.
@@ -3990,7 +3953,7 @@ static void rcu_spawn_exp_par_gp_kworker(struct rcu_node *rnp)
 	}
 	WRITE_ONCE(rnp->exp_kworker, kworker);
 
-	if (IS_ENABLED(CONFIG_RCU_EXP_KTHREAD))
+	if (0)
 		sched_setscheduler_nocheck(kworker->task, SCHED_FIFO, &param);
 
 	rcu_thread_affine_rnp(kworker->task, rnp);
@@ -4009,7 +3972,7 @@ static void __init rcu_start_exp_gp_kworker(void)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_RCU_EXP_KTHREAD))
+	if (0)
 		sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_FIFO, &param);
 }
 

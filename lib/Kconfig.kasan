@@ -4,8 +4,7 @@
 menuconfig KASAN
 	bool "KASAN: dynamic memory safety error detector"
 	depends on n
-	depends on SYSFS && !SLUB_TINY
-	select STACKDEPOT_ALWAYS_INIT
+	depends on SYSFS
 	help
 	  Enables KASAN (Kernel Address Sanitizer) - a dynamic memory safety
 	  error detector designed to find out-of-bounds and use-after-free bugs.

@@ -26,31 +26,8 @@ config UBSAN_TRAP
 	  out the details of a UBSAN violation. It makes the kernel log
 	  output less useful for bug reports.
 
-config UBSAN_BOUNDS
-	bool "Perform array index bounds checking"
-	default UBSAN
-	depends on n
-	help
-	  This option enables detection of directly indexed out of bounds
-	  array accesses, where the array size is known at compile time.
-	  Note that this does not protect array overflows via bad calls
-	  to the {str,mem}*cpy() family of functions (that is addressed
-	  by CONFIG_FORTIFY_SOURCE).
-
-config UBSAN_BOUNDS_STRICT
-	def_bool n
-	help
-	  GCC's bounds sanitizer. This option is used to select the
-	  correct options in Makefile.ubsan.
-
-config UBSAN_ARRAY_BOUNDS
-	def_bool n
-	help
-	  Clang's array bounds sanitizer. This option is used to select
-	  the correct options in Makefile.ubsan.
-
 config UBSAN_LOCAL_BOUNDS
-	def_bool UBSAN_ARRAY_BOUNDS && UBSAN_TRAP
+	def_bool n && UBSAN_TRAP
 	help
 	  This option enables Clang's -fsanitize=local-bounds which traps
 	  when an access through a pointer that is derived from an object
@@ -66,22 +43,11 @@ config UBSAN_SHIFT
 	  operations that overflow to the left or go switch to negative
 	  for signed types.
 
-config UBSAN_DIV_ZERO
-	bool "Perform checking for integer divide-by-zero"
-	depends on $(cc-option,-fsanitize=integer-divide-by-zero)
-	# https://github.com/ClangBuiltLinux/linux/issues/1657
-	# https://github.com/llvm/llvm-project/issues/56289
-	help
-	  This option enables -fsanitize=integer-divide-by-zero which checks
-	  for integer division by zero. This is effectively redundant with the
-	  kernel's existing exception handling, though it can provide greater
-	  debugging information.
-
 config UBSAN_UNREACHABLE
 	bool "Perform checking for unreachable code"
 	# objtool already handles unreachable checking and gets angry about
 	# seeing UBSan instrumentation located in unreachable places.
-	depends on !(OBJTOOL && (STACK_VALIDATION || UNWINDER_ORC || HAVE_UACCESS_VALIDATION))
+	depends on !(OBJTOOL && (UNWINDER_ORC || HAVE_UACCESS_VALIDATION))
 	depends on $(cc-option,-fsanitize=unreachable)
 	help
 	  This option enables -fsanitize=unreachable which checks for control
@@ -105,14 +71,6 @@ config UBSAN_INTEGER_WRAP
 	  This is currently limited only to the size_t type while testing and
 	  compiler development continues.
 
-config UBSAN_BOOL
-	bool "Perform checking for non-boolean values used as boolean"
-	default UBSAN
-	depends on $(cc-option,-fsanitize=bool)
-	help
-	  This option enables -fsanitize=bool which checks for boolean values being
-	  loaded that are neither 0 nor 1.
-
 config UBSAN_ENUM
 	bool "Perform checking for out of bounds enum values"
 	default UBSAN
@@ -120,16 +78,6 @@ config UBSAN_ENUM
 	help
 	  This option enables -fsanitize=enum which checks for values being loaded
 	  into an enum that are outside the range of given values for the given enum.
-
-config UBSAN_ALIGNMENT
-	bool "Perform checking for misaligned pointer usage"
-	default !HAVE_EFFICIENT_UNALIGNED_ACCESS
-	depends on !UBSAN_TRAP && !COMPILE_TEST
-	depends on $(cc-option,-fsanitize=alignment)
-	help
-	  This option enables the check of unaligned memory accesses.
-	  Enabling this option on architectures that support unaligned
-	  accesses may produce a lot of false positives.
 
 config UBSAN_KVM_EL2
 	bool "UBSAN for KVM code at EL2"

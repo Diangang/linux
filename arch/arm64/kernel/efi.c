@@ -233,7 +233,7 @@ bool efi_runtime_fixup_exception(struct pt_regs *regs, const char *msg)
 	regs->regs[30]	= efi_rt_stack_top[-1];
 	regs->pc	= (u64)__efi_rt_asm_recover;
 
-	if (IS_ENABLED(CONFIG_SHADOW_CALL_STACK))
+	if (0)
 		regs->regs[18] = efi_rt_stack_top[-2];
 
 	return true;

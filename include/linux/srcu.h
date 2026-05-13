@@ -25,10 +25,8 @@ context_lock_struct(srcu_struct, __reentrant_ctx_lock);
 
 
 int init_srcu_struct(struct srcu_struct *ssp);
-#ifndef CONFIG_TINY_SRCU
 int init_srcu_struct_fast(struct srcu_struct *ssp);
 int init_srcu_struct_fast_updown(struct srcu_struct *ssp);
-#endif // #ifndef CONFIG_TINY_SRCU
 
 #define __SRCU_DEP_MAP_INIT(srcu_name)
 
@@ -46,9 +44,7 @@ int init_srcu_struct_fast_updown(struct srcu_struct *ssp);
 						// instead of smp_mb().
 void __srcu_read_unlock(struct srcu_struct *ssp, int idx) __releases_shared(ssp);
 
-#ifdef CONFIG_TINY_SRCU
-#include <linux/srcutiny.h>
-#elif defined(CONFIG_TREE_SRCU)
+#if   defined(CONFIG_TREE_SRCU)
 #include <linux/srcutree.h>
 #else
 #error "Unknown SRCU implementation specified to kernel configuration"

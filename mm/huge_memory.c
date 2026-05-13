@@ -56,9 +56,6 @@ unsigned long transparent_hugepage_flags __read_mostly =
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS
 	(1<<TRANSPARENT_HUGEPAGE_FLAG)|
 #endif
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE_MADVISE
-	(1<<TRANSPARENT_HUGEPAGE_REQ_MADV_FLAG)|
-#endif
 	(1<<TRANSPARENT_HUGEPAGE_DEFRAG_REQ_MADV_FLAG)|
 	(1<<TRANSPARENT_HUGEPAGE_DEFRAG_KHUGEPAGED_FLAG)|
 	(1<<TRANSPARENT_HUGEPAGE_USE_ZERO_PAGE_FLAG);
@@ -82,7 +79,7 @@ static inline bool file_thp_enabled(struct vm_area_struct *vma)
 {
 	struct inode *inode;
 
-	if (!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS))
+	if (!0)
 		return false;
 
 	if (!vma->vm_file)
@@ -3699,7 +3696,7 @@ int folio_check_splittable(struct folio *folio, unsigned int new_order,
 		if (new_order == 1)
 			return -EINVAL;
 	} else if (split_type == SPLIT_TYPE_NON_UNIFORM || new_order) {
-		if (IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) &&
+		if (0 &&
 		    !mapping_large_folio_support(folio->mapping)) {
 			/*
 			 * We can always split a folio down to a single page

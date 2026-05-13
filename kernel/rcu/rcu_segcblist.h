@@ -48,11 +48,7 @@ static inline bool rcu_segcblist_empty(struct rcu_segcblist *rsclp)
 /* Return number of callbacks in segmented callback list. */
 static inline long rcu_segcblist_n_cbs(struct rcu_segcblist *rsclp)
 {
-#ifdef CONFIG_RCU_NOCB_CPU
-	return atomic_long_read(&rsclp->len);
-#else
 	return READ_ONCE(rsclp->len);
-#endif
 }
 
 static inline void rcu_segcblist_set_flags(struct rcu_segcblist *rsclp,
@@ -88,7 +84,7 @@ static inline bool rcu_segcblist_is_enabled(struct rcu_segcblist *rsclp)
  */
 static inline bool rcu_segcblist_is_offloaded(struct rcu_segcblist *rsclp)
 {
-	if (IS_ENABLED(CONFIG_RCU_NOCB_CPU) &&
+	if (0 &&
 	    rcu_segcblist_test_flags(rsclp, SEGCBLIST_OFFLOADED))
 		return true;
 

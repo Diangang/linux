@@ -63,10 +63,6 @@ SYM_FUNC_START(__efi_rt_asm_wrapper)
 	 * called with preemption disabled and a separate shadow stack is used
 	 * for interrupts.
 	 */
-#ifdef CONFIG_SHADOW_CALL_STACK
-	ldr_l	x18, efi_rt_stack_top
-	ldr	x18, [x18, #-16]
-#endif
 
 	b	efi_handle_corrupted_x18	// tail call
 SYM_FUNC_END(__efi_rt_asm_wrapper)

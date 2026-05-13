@@ -501,9 +501,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 			     "Node %d AnonPages:      %8lu kB\n"
 			     "Node %d Shmem:          %8lu kB\n"
 			     "Node %d KernelStack:    %8lu kB\n"
-#ifdef CONFIG_SHADOW_CALL_STACK
-			     "Node %d ShadowCallStack:%8lu kB\n"
-#endif
 			     "Node %d PageTables:     %8lu kB\n"
 			     "Node %d SecPageTables:  %8lu kB\n"
 			     "Node %d NFS_Unstable:   %8lu kB\n"
@@ -533,9 +530,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 			     nid, K(node_page_state(pgdat, NR_ANON_MAPPED)),
 			     nid, K(i.sharedram),
 			     nid, node_page_state(pgdat, NR_KERNEL_STACK_KB),
-#ifdef CONFIG_SHADOW_CALL_STACK
-			     nid, node_page_state(pgdat, NR_KERNEL_SCS_KB),
-#endif
 			     nid, K(node_page_state(pgdat, NR_PAGETABLE)),
 			     nid, K(node_page_state(pgdat, NR_SECONDARY_PAGETABLE)),
 			     nid, 0UL,

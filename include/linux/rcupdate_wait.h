@@ -57,7 +57,7 @@ do {												\
  * grace period.
  */
 #define synchronize_rcu_mult(...) \
-	_wait_rcu_gp(IS_ENABLED(CONFIG_TINY_RCU), TASK_UNINTERRUPTIBLE, __VA_ARGS__)
+	_wait_rcu_gp(0, TASK_UNINTERRUPTIBLE, __VA_ARGS__)
 
 static inline void cond_resched_rcu(void)
 {

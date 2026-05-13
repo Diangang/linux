@@ -216,9 +216,6 @@ struct signal_struct {
 #ifdef CONFIG_BSD_PROCESS_ACCT
 	struct pacct_struct pacct;	/* per-process accounting information */
 #endif
-#ifdef CONFIG_TASKSTATS
-	struct taskstats *stats;
-#endif
 
 #ifdef CONFIG_CGROUPS
 	struct rw_semaphore cgroup_threadgroup_rwsem;

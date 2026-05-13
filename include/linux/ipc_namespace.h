@@ -80,11 +80,7 @@ struct ipc_namespace {
 extern struct ipc_namespace init_ipc_ns;
 extern spinlock_t mq_lock;
 
-#ifdef CONFIG_SYSVIPC
-extern void shm_destroy_orphaned(struct ipc_namespace *ns);
-#else /* CONFIG_SYSVIPC */
 static inline void shm_destroy_orphaned(struct ipc_namespace *ns) {}
-#endif /* CONFIG_SYSVIPC */
 
 static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
 
@@ -151,12 +147,6 @@ static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
 }
 
 
-#ifdef CONFIG_SYSVIPC_SYSCTL
-
-bool setup_ipc_sysctls(struct ipc_namespace *ns);
-void retire_ipc_sysctls(struct ipc_namespace *ns);
-
-#else /* CONFIG_SYSVIPC_SYSCTL */
 
 static inline void retire_ipc_sysctls(struct ipc_namespace *ns)
 {
@@ -167,5 +157,4 @@ static inline bool setup_ipc_sysctls(struct ipc_namespace *ns)
 	return true;
 }
 
-#endif /* CONFIG_SYSVIPC_SYSCTL */
 #endif

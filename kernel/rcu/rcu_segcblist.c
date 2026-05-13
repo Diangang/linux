@@ -81,11 +81,7 @@ struct rcu_head *rcu_cblist_dequeue(struct rcu_cblist *rclp)
 /* Set the length of an rcu_segcblist structure. */
 static void rcu_segcblist_set_len(struct rcu_segcblist *rsclp, long v)
 {
-#ifdef CONFIG_RCU_NOCB_CPU
-	atomic_long_set(&rsclp->len, v);
-#else
 	WRITE_ONCE(rsclp->len, v);
-#endif
 }
 
 /* Get the length of a segment of the rcu_segcblist structure. */
@@ -209,15 +205,9 @@ static void rcu_segcblist_inc_seglen(struct rcu_segcblist *rsclp, int seg)
  */
 void rcu_segcblist_add_len(struct rcu_segcblist *rsclp, long v)
 {
-#ifdef CONFIG_RCU_NOCB_CPU
-	smp_mb__before_atomic(); // Read header comment above.
-	atomic_long_add(v, &rsclp->len);
-	smp_mb__after_atomic();  // Read header comment above.
-#else
 	smp_mb(); // Read header comment above.
 	WRITE_ONCE(rsclp->len, rsclp->len + v);
 	smp_mb(); // Read header comment above.
-#endif
 }
 
 /*

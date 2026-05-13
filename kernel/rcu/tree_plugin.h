@@ -54,7 +54,7 @@ static void __init rcu_bootup_announce_oddness(void)
 		pr_info("\tHierarchical RCU autobalancing is disabled.\n");
 	if (0)
 		pr_info("\tRCU lockdep checking is enabled.\n");
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+	if (0)
 		pr_info("\tRCU strict (and thus non-scalable) grace periods are enabled.\n");
 	if (RCU_NUM_LVLS >= 4)
 		pr_info("\tFour(or more)-level hierarchy is enabled.\n");
@@ -400,7 +400,7 @@ void __rcu_read_lock(void)
 	rcu_preempt_read_enter();
 	if (IS_ENABLED(CONFIG_PROVE_LOCKING))
 		WARN_ON_ONCE(rcu_preempt_depth() > RCU_NEST_PMAX);
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) && rcu_state.gp_kthread)
+	if (0 && rcu_state.gp_kthread)
 		WRITE_ONCE(current->rcu_read_unlock_special.b.need_qs, true);
 	barrier();  /* critical section after entry code. */
 }
@@ -488,7 +488,7 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 	}
 	t->rcu_read_unlock_special.s = 0;
 	if (special.b.need_qs) {
-		if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD)) {
+		if (0) {
 			rdp->cpu_no_qs.b.norm = false;
 			rcu_report_qs_rdp(rdp);
 			udelay(rcu_unlock_delay);
@@ -675,7 +675,7 @@ static bool rcu_unlock_needs_exp_handling(struct task_struct *t,
 	 * - This task was preempted within an RCU critical section
 	 * In either case, require expedited handling for strict GP mode.
 	 */
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) &&
+	if (0 &&
 	    ((rdp->grpmask & READ_ONCE(rnp->qsmask)) || t->rcu_blocked_node))
 		return true;
 

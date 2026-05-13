@@ -244,9 +244,6 @@ static void show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_z
 			" anon_thp:%lukB"
 #endif
 			" kernel_stack:%lukB"
-#ifdef CONFIG_SHADOW_CALL_STACK
-			" shadow_call_stack:%lukB"
-#endif
 			" pagetables:%lukB"
 			" sec_pagetables:%lukB"
 			" all_unreclaimable? %s"
@@ -272,9 +269,6 @@ static void show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_z
 			K(node_page_state(pgdat, NR_ANON_THPS)),
 #endif
 			node_page_state(pgdat, NR_KERNEL_STACK_KB),
-#ifdef CONFIG_SHADOW_CALL_STACK
-			node_page_state(pgdat, NR_KERNEL_SCS_KB),
-#endif
 			K(node_page_state(pgdat, NR_PAGETABLE)),
 			K(node_page_state(pgdat, NR_SECONDARY_PAGETABLE)),
 			str_yes_no(kswapd_test_hopeless(pgdat)),

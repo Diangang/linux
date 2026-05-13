@@ -9,7 +9,5 @@ endif
 
 obj-y += update.o sync.o
 obj-$(CONFIG_TREE_SRCU) += srcutree.o
-obj-$(CONFIG_TINY_SRCU) += srcutiny.o
 obj-$(CONFIG_TREE_RCU) += tree.o
-obj-$(CONFIG_TINY_RCU) += tiny.o
 obj-$(CONFIG_RCU_NEED_SEGCBLIST) += rcu_segcblist.o

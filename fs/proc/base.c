@@ -2781,70 +2781,6 @@ static const struct file_operations proc_coredump_filter_operations = {
 };
 #endif
 
-#ifdef CONFIG_TASK_IO_ACCOUNTING
-static int do_io_accounting(struct task_struct *task, struct seq_file *m, int whole)
-{
-	struct task_io_accounting acct;
-	int result;
-
-	result = down_read_killable(&task->signal->exec_update_lock);
-	if (result)
-		return result;
-
-	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS)) {
-		result = -EACCES;
-		goto out_unlock;
-	}
-
-	if (whole) {
-		struct signal_struct *sig = task->signal;
-		struct task_struct *t;
-
-		guard(rcu)();
-		scoped_seqlock_read (&sig->stats_lock, ss_lock_irqsave) {
-			acct = sig->ioac;
-			__for_each_thread(sig, t)
-				task_io_accounting_add(&acct, &t->ioac);
-
-		}
-	} else {
-		acct = task->ioac;
-	}
-
-	seq_printf(m,
-		   "rchar: %llu\n"
-		   "wchar: %llu\n"
-		   "syscr: %llu\n"
-		   "syscw: %llu\n"
-		   "read_bytes: %llu\n"
-		   "write_bytes: %llu\n"
-		   "cancelled_write_bytes: %llu\n",
-		   (unsigned long long)acct.rchar,
-		   (unsigned long long)acct.wchar,
-		   (unsigned long long)acct.syscr,
-		   (unsigned long long)acct.syscw,
-		   (unsigned long long)acct.read_bytes,
-		   (unsigned long long)acct.write_bytes,
-		   (unsigned long long)acct.cancelled_write_bytes);
-	result = 0;
-
-out_unlock:
-	up_read(&task->signal->exec_update_lock);
-	return result;
-}
-
-static int proc_tid_io_accounting(struct seq_file *m, struct pid_namespace *ns,
-				  struct pid *pid, struct task_struct *task)
-{
-	return do_io_accounting(task, m, 0);
-}
-
-static int proc_tgid_io_accounting(struct seq_file *m, struct pid_namespace *ns,
-				   struct pid *pid, struct task_struct *task)
-{
-	return do_io_accounting(task, m, 1);
-}
-#endif /* CONFIG_TASK_IO_ACCOUNTING */
 
 #ifdef CONFIG_USER_NS
 static int proc_id_map_open(struct inode *inode, struct file *file,
@@ -3128,9 +3064,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 #ifdef CONFIG_ELF_CORE
 	REG("coredump_filter", S_IRUGO|S_IWUSR, proc_coredump_filter_operations),
 #endif
-#ifdef CONFIG_TASK_IO_ACCOUNTING
-	ONE("io",	S_IRUSR, proc_tgid_io_accounting),
-#endif
 #ifdef CONFIG_USER_NS
 	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
 	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
@@ -3149,9 +3082,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 #endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
-#endif
-#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
 #endif
 #ifdef CONFIG_KSM
 	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),
@@ -3449,9 +3379,6 @@ static const struct pid_entry tid_base_stuff[] = {
 	ONE("oom_score", S_IRUGO, proc_oom_score),
 	REG("oom_adj",   S_IRUGO|S_IWUSR, proc_oom_adj_operations),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
-#ifdef CONFIG_TASK_IO_ACCOUNTING
-	ONE("io",	S_IRUSR, proc_tid_io_accounting),
-#endif
 #ifdef CONFIG_USER_NS
 	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
 	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
@@ -3463,9 +3390,6 @@ static const struct pid_entry tid_base_stuff[] = {
 #endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
-#endif
-#ifdef CONFIG_SECCOMP_CACHE_DEBUG
-	ONE("seccomp_cache", S_IRUSR, proc_pid_seccomp_cache),
 #endif
 #ifdef CONFIG_KSM
 	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),

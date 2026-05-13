@@ -86,17 +86,6 @@ struct driver_private {
 };
 #define to_driver(obj) container_of(obj, struct driver_private, kobj)
 
-#ifdef CONFIG_RUST
-/**
- * struct driver_type - Representation of a Rust driver type.
- */
-struct driver_type {
-	/**
-	 * @id: Representation of core::any::TypeId.
-	 */
-	u8 id[16];
-} __packed;
-#endif
 
 /**
  * struct device_private - structure to hold the private to the driver core
@@ -132,9 +121,6 @@ struct device_private {
 	const struct device_driver *async_driver;
 	char *deferred_probe_reason;
 	struct device *device;
-#ifdef CONFIG_RUST
-	struct driver_type driver_type;
-#endif
 	u8 dead:1;
 };
 #define to_device_private_parent(obj)	\
@@ -151,11 +137,7 @@ int devices_init(void);
 int buses_init(void);
 int classes_init(void);
 int firmware_init(void);
-#ifdef CONFIG_SYS_HYPERVISOR
-int hypervisor_init(void);
-#else
 static inline int hypervisor_init(void) { return 0; }
-#endif
 int platform_bus_init(void);
 int faux_bus_init(void);
 void cpu_dev_init(void);

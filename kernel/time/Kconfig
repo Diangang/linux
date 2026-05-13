@@ -65,15 +65,6 @@ config POSIX_CPU_TIMERS_TASK_WORK
 	bool
 	default y if POSIX_TIMERS && HAVE_POSIX_CPU_TIMERS_TASK_WORK
 
-config TIME_KUNIT_TEST
-	tristate "KUnit test for kernel/time functions" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  Enable this option to test RTC library functions.
-
-	  If unsure, say N.
-
 config CONTEXT_TRACKING
 	bool
 

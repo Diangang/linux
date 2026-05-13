@@ -5,11 +5,6 @@
 
 menu "RCU Debugging"
 
-config TORTURE_TEST
-	tristate
-	default n
-
-
 config RCU_CPU_STALL_TIMEOUT
 	int "RCU CPU stall timeout in seconds"
 	depends on RCU_STALL_COMMON
@@ -45,32 +40,5 @@ config RCU_TRACE
 
 	  Say Y here if you want to enable RCU tracing
 	  Say N if you are unsure.
-
-config RCU_STRICT_GRACE_PERIOD
-	bool "Provide debug RCU implementation with short grace periods"
-	depends on DEBUG_KERNEL && RCU_EXPERT && NR_CPUS <= 4 && !TINY_RCU
-	default n
-	select PREEMPT_COUNT if PREEMPT=n
-	help
-	  Select this option to build an RCU variant that is strict about
-	  grace periods, making them as short as it can.  This limits
-	  scalability, destroys real-time response, degrades battery
-	  lifetime and kills performance.  Don't try this on large
-	  machines, as in systems with more than about 10 or 20 CPUs.
-	  But in conjunction with tools like KASAN, it can be helpful
-	  when looking for certain types of RCU usage bugs, for example,
-	  too-short RCU read-side critical sections.
-
-
-config TRIVIAL_PREEMPT_RCU
-	bool "Textbook trivial preemptible RCU in rcutorture"
-	depends on RCU_EXPERT && RCU_TORTURE_TEST
-	default n
-	help
-	  This option enables a textbook preemptible RCU that is
-	  implemented in rcutorture.  Its sole purpose is to validate
-	  code used in books, papers, and presentations.
-
-	  This has no value for production and is only for testing.
 
 endmenu # "RCU Debugging"

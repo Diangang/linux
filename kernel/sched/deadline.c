@@ -116,10 +116,6 @@ static inline u8 dl_get_type(struct sched_dl_entity *dl_se, struct rq *rq)
 		return DL_TASK;
 	if (dl_se == &rq->fair_server)
 		return DL_SERVER_FAIR;
-#ifdef CONFIG_SCHED_CLASS_EXT
-	if (dl_se == &rq->ext_server)
-		return DL_SERVER_EXT;
-#endif
 	return DL_OTHER;
 }
 
@@ -1829,17 +1825,6 @@ void sched_init_dl_servers(void)
 		dl_se->dl_defer = 1;
 		setup_new_dl_entity(dl_se);
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-		dl_se = &rq->ext_server;
-
-		WARN_ON(dl_server(dl_se));
-
-		dl_server_apply_params(dl_se, runtime, period, 1);
-
-		dl_se->dl_server = 1;
-		dl_se->dl_defer = 1;
-		setup_new_dl_entity(dl_se);
-#endif
 	}
 }
 
@@ -3203,11 +3188,6 @@ static void dl_server_add_bw(struct root_domain *rd, int cpu)
 	if (dl_server(dl_se) && cpu_active(cpu))
 		__dl_add(&rd->dl_bw, dl_se->dl_bw, dl_bw_cpus(cpu));
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-	dl_se = &cpu_rq(cpu)->ext_server;
-	if (dl_server(dl_se) && cpu_active(cpu))
-		__dl_add(&rd->dl_bw, dl_se->dl_bw, dl_bw_cpus(cpu));
-#endif
 }
 
 static u64 dl_server_read_bw(int cpu)
@@ -3217,10 +3197,6 @@ static u64 dl_server_read_bw(int cpu)
 	if (cpu_rq(cpu)->fair_server.dl_server)
 		dl_bw += cpu_rq(cpu)->fair_server.dl_bw;
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-	if (cpu_rq(cpu)->ext_server.dl_server)
-		dl_bw += cpu_rq(cpu)->ext_server.dl_bw;
-#endif
 
 	return dl_bw;
 }

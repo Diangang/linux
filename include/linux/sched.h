@@ -830,9 +830,6 @@ struct task_struct {
 	struct sched_rt_entity		rt;
 	struct sched_dl_entity		dl;
 	struct sched_dl_entity		*dl_server;
-#ifdef CONFIG_SCHED_CLASS_EXT
-	struct sched_ext_entity		scx;
-#endif
 	const struct sched_class	*sched_class;
 
 
@@ -888,14 +885,7 @@ struct task_struct {
 	struct list_head		rcu_tasks_exit_list;
 #endif /* #ifdef CONFIG_TASKS_RCU */
 
-#ifdef CONFIG_TASKS_TRACE_RCU
-	int				trc_reader_nesting;
-	struct srcu_ctr __percpu	*trc_reader_scp;
-#endif /* #ifdef CONFIG_TASKS_TRACE_RCU */
 
-#ifdef CONFIG_TRIVIAL_PREEMPT_RCU
-	int				rcu_trivial_preempt_nesting;
-#endif /* #ifdef CONFIG_TRIVIAL_PREEMPT_RCU */
 
 	struct sched_info		sched_info;
 
@@ -970,10 +960,6 @@ struct task_struct {
 #endif
 #ifdef CONFIG_X86_BUS_LOCK_DETECT
 	unsigned			reported_split_lock:1;
-#endif
-#ifdef CONFIG_TASK_DELAY_ACCT
-	/* delay due to memory thrashing */
-	unsigned                        in_thrashing:1;
 #endif
 	unsigned			in_nf_duplicate:1;
 	unsigned long			atomic_flags; /* Flags requiring atomic access. */
@@ -1088,10 +1074,6 @@ struct task_struct {
 
 	struct nameidata		*nameidata;
 
-#ifdef CONFIG_SYSVIPC
-	struct sysv_sem			sysvsem;
-	struct sysv_shm			sysvshm;
-#endif
 	/* Filesystem information: */
 	struct fs_struct		*fs;
 
@@ -1155,14 +1137,6 @@ struct task_struct {
 #endif
 
 
-#ifdef CONFIG_TRACE_IRQFLAGS
-	struct irqtrace_events		irqtrace;
-	unsigned int			hardirq_threaded;
-	u64				hardirq_chain_key;
-	int				softirqs_enabled;
-	int				softirq_context;
-	int				irq_config;
-#endif
 
 #if 0
 # define MAX_LOCK_DEPTH			48UL
@@ -1198,14 +1172,6 @@ struct task_struct {
 	kernel_siginfo_t		*last_siginfo;
 
 	struct task_io_accounting	ioac;
-#ifdef CONFIG_TASK_XACCT
-	/* Accumulated RSS usage: */
-	u64				acct_rss_mem1;
-	/* Accumulated virtual memory usage: */
-	u64				acct_vm_mem1;
-	/* stime + utime since last update: */
-	u64				acct_timexpd;
-#endif
 #ifdef CONFIG_CPUSETS
 	/* Protected by ->alloc_lock: */
 	nodemask_t			mems_allowed;
@@ -1311,9 +1277,6 @@ struct task_struct {
 	struct lazy_mmu_state		lazy_mmu_state;
 #endif
 
-#ifdef CONFIG_TASK_DELAY_ACCT
-	struct task_delay_info		*delays;
-#endif
 
 	/*
 	 * When (nr_dirtied >= nr_dirtied_pause), it's time to call
@@ -1337,9 +1300,6 @@ struct task_struct {
 
 #ifdef CONFIG_KCSAN
 	struct kcsan_ctx		kcsan_ctx;
-#ifdef CONFIG_TRACE_IRQFLAGS
-	struct irqtrace_events		kcsan_save_irqtrace;
-#endif
 #ifdef CONFIG_KCSAN_WEAK_MEMORY
 	int				kcsan_stack_depth;
 #endif
@@ -1518,18 +1478,10 @@ struct task_struct {
 	randomized_struct_fields_end
 } __attribute__ ((aligned (64)));
 
-#ifdef CONFIG_SCHED_PROXY_EXEC
-DECLARE_STATIC_KEY_TRUE(__sched_proxy_exec);
-static inline bool sched_proxy_exec(void)
-{
-	return static_branch_likely(&__sched_proxy_exec);
-}
-#else
 static inline bool sched_proxy_exec(void)
 {
 	return false;
 }
-#endif
 
 #define TASK_REPORT_IDLE	(TASK_REPORT + 1)
 #define TASK_REPORT_MAX		(TASK_REPORT_IDLE << 1)

@@ -1806,9 +1806,6 @@ static inline void rcu_copy_process(struct task_struct *p)
 	p->rcu_tasks_idle_cpu = -1;
 	INIT_LIST_HEAD(&p->rcu_tasks_exit_list);
 #endif /* #ifdef CONFIG_TASKS_RCU */
-#ifdef CONFIG_TASKS_TRACE_RCU
-	p->trc_reader_nesting = 0;
-#endif /* #ifdef CONFIG_TASKS_TRACE_RCU */
 }
 
 /**
@@ -2167,13 +2164,6 @@ __latent_entropy struct task_struct *copy_process(
 #ifdef CONFIG_CPUSETS
 	p->cpuset_mem_spread_rotor = NUMA_NO_NODE;
 	seqcount_spinlock_init(&p->mems_allowed_seq, &p->alloc_lock);
-#endif
-#ifdef CONFIG_TRACE_IRQFLAGS
-	memset(&p->irqtrace, 0, sizeof(p->irqtrace));
-	p->irqtrace.hardirq_disable_ip	= _THIS_IP_;
-	p->irqtrace.softirq_enable_ip	= _THIS_IP_;
-	p->softirqs_enabled		= 1;
-	p->softirq_context		= 0;
 #endif
 
 	p->pagefault_disabled = 0;

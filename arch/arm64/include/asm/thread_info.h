@@ -38,10 +38,6 @@ struct thread_info {
 #endif
 		} preempt;
 	};
-#ifdef CONFIG_SHADOW_CALL_STACK
-	void			*scs_base;
-	void			*scs_sp;
-#endif
 	u32			cpu;
 };
 
@@ -106,13 +102,7 @@ void arch_setup_new_exec(void);
 #define _TIF_SYSCALL_WORK	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
 				 _TIF_SECCOMP | _TIF_SYSCALL_EMU)
 
-#ifdef CONFIG_SHADOW_CALL_STACK
-#define INIT_SCS							\
-	.scs_base	= init_shadow_call_stack,			\
-	.scs_sp		= init_shadow_call_stack,
-#else
 #define INIT_SCS
-#endif
 
 #define INIT_THREAD_INFO(tsk)						\
 {									\

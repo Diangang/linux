@@ -30,21 +30,13 @@
  * Of course, your mileage may vary.
  */
 
-#ifdef CONFIG_RCU_FANOUT
-#define RCU_FANOUT CONFIG_RCU_FANOUT
-#else /* #ifdef CONFIG_RCU_FANOUT */
 # ifdef CONFIG_64BIT
 # define RCU_FANOUT 64
 # else
 # define RCU_FANOUT 32
 # endif
-#endif /* #else #ifdef CONFIG_RCU_FANOUT */
 
-#ifdef CONFIG_RCU_FANOUT_LEAF
-#define RCU_FANOUT_LEAF CONFIG_RCU_FANOUT_LEAF
-#else /* #ifdef CONFIG_RCU_FANOUT_LEAF */
 #define RCU_FANOUT_LEAF 16
-#endif /* #else #ifdef CONFIG_RCU_FANOUT_LEAF */
 
 #define RCU_FANOUT_1	      (RCU_FANOUT_LEAF)
 #define RCU_FANOUT_2	      (RCU_FANOUT_1 * RCU_FANOUT)

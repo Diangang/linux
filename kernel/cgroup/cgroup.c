@@ -7005,58 +7005,6 @@ int cgroup_parse_float(const char *input, unsigned dec_shift, s64 *v)
  * sock->sk_cgrp_data handling.  For more info, see sock_cgroup_data
  * definition in cgroup-defs.h.
  */
-#ifdef CONFIG_SOCK_CGROUP_DATA
-
-void cgroup_sk_alloc(struct sock_cgroup_data *skcd)
-{
-	struct cgroup *cgroup;
-
-	rcu_read_lock();
-	/* Don't associate the sock with unrelated interrupted task's cgroup. */
-	if (in_interrupt()) {
-		cgroup = &cgrp_dfl_root.cgrp;
-		cgroup_get(cgroup);
-		goto out;
-	}
-
-	while (true) {
-		struct css_set *cset;
-
-		cset = task_css_set(current);
-		if (likely(cgroup_tryget(cset->dfl_cgrp))) {
-			cgroup = cset->dfl_cgrp;
-			break;
-		}
-		cpu_relax();
-	}
-out:
-	skcd->cgroup = cgroup;
-	cgroup_bpf_get(cgroup);
-	rcu_read_unlock();
-}
-
-void cgroup_sk_clone(struct sock_cgroup_data *skcd)
-{
-	struct cgroup *cgrp = sock_cgroup_ptr(skcd);
-
-	/*
-	 * We might be cloning a socket which is left in an empty
-	 * cgroup and the cgroup might have already been rmdir'd.
-	 * Don't use cgroup_get_live().
-	 */
-	cgroup_get(cgrp);
-	cgroup_bpf_get(cgrp);
-}
-
-void cgroup_sk_free(struct sock_cgroup_data *skcd)
-{
-	struct cgroup *cgrp = sock_cgroup_ptr(skcd);
-
-	cgroup_bpf_put(cgrp);
-	cgroup_put(cgrp);
-}
-
-#endif	/* CONFIG_SOCK_CGROUP_DATA */
 
 #ifdef CONFIG_SYSFS
 static ssize_t show_delegatable_files(struct cftype *files, char *buf,

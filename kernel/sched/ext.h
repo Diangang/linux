@@ -6,37 +6,6 @@
  * Copyright (c) 2022 Tejun Heo <tj@kernel.org>
  * Copyright (c) 2022 David Vernet <dvernet@meta.com>
  */
-#ifdef CONFIG_SCHED_CLASS_EXT
-
-void scx_tick(struct rq *rq);
-void init_scx_entity(struct sched_ext_entity *scx);
-void scx_pre_fork(struct task_struct *p);
-int scx_fork(struct task_struct *p, struct kernel_clone_args *kargs);
-void scx_post_fork(struct task_struct *p);
-void scx_cancel_fork(struct task_struct *p);
-bool scx_can_stop_tick(struct rq *rq);
-void scx_rq_activate(struct rq *rq);
-void scx_rq_deactivate(struct rq *rq);
-int scx_check_setscheduler(struct task_struct *p, int policy);
-bool task_should_scx(int policy);
-bool scx_allow_ttwu_queue(const struct task_struct *p);
-void init_sched_ext_class(void);
-
-static inline u32 scx_cpuperf_target(s32 cpu)
-{
-	if (scx_enabled())
-		return cpu_rq(cpu)->scx.cpuperf_target;
-	else
-		return 0;
-}
-
-static inline bool task_on_scx(const struct task_struct *p)
-{
-	return scx_enabled() && p->sched_class == &ext_sched_class;
-}
-
-
-#else	/* CONFIG_SCHED_CLASS_EXT */
 
 static inline void scx_tick(struct rq *rq) {}
 static inline void scx_pre_fork(struct task_struct *p) {}
@@ -52,19 +21,8 @@ static inline bool task_on_scx(const struct task_struct *p) { return false; }
 static inline bool scx_allow_ttwu_queue(const struct task_struct *p) { return true; }
 static inline void init_sched_ext_class(void) {}
 
-#endif	/* CONFIG_SCHED_CLASS_EXT */
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-void __scx_update_idle(struct rq *rq, bool idle, bool do_notify);
-
-static inline void scx_update_idle(struct rq *rq, bool idle, bool do_notify)
-{
-	if (scx_enabled())
-		__scx_update_idle(rq, idle, do_notify);
-}
-#else
 static inline void scx_update_idle(struct rq *rq, bool idle, bool do_notify) {}
-#endif
 
 #ifdef CONFIG_CGROUP_SCHED
 #ifdef CONFIG_EXT_GROUP_SCHED

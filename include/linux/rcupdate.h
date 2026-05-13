@@ -92,11 +92,7 @@ void __rcu_read_unlock(void);
 
 #else /* #ifdef CONFIG_PREEMPT_RCU */
 
-#ifdef CONFIG_TINY_RCU
-#define rcu_read_unlock_strict() do { } while (0)
-#else
 void rcu_read_unlock_strict(void);
-#endif
 
 static inline void __rcu_read_lock(void)
 {
@@ -105,7 +101,7 @@ static inline void __rcu_read_lock(void)
 
 static inline void __rcu_read_unlock(void)
 {
-	if (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD))
+	if (0)
 		rcu_read_unlock_strict();
 	preempt_enable();
 }
@@ -117,14 +113,10 @@ static inline int rcu_preempt_depth(void)
 
 #endif /* #else #ifdef CONFIG_PREEMPT_RCU */
 
-#ifdef CONFIG_RCU_LAZY
-void call_rcu_hurry(struct rcu_head *head, rcu_callback_t func);
-#else
 static inline void call_rcu_hurry(struct rcu_head *head, rcu_callback_t func)
 {
 	call_rcu(head, func);
 }
-#endif
 
 /* Internal to kernel */
 void rcu_init(void);
@@ -145,15 +137,6 @@ void rcu_irq_work_resched(void);
 static __always_inline void rcu_irq_work_resched(void) { }
 #endif
 
-#ifdef CONFIG_RCU_NOCB_CPU
-void rcu_init_nohz(void);
-int rcu_nocb_cpu_offload(int cpu);
-int rcu_nocb_cpu_deoffload(int cpu);
-void rcu_nocb_flush_deferred_wakeup(void);
-
-#define RCU_NOCB_LOCKDEP_WARN(c, s) RCU_LOCKDEP_WARN(c, s)
-
-#else /* #ifdef CONFIG_RCU_NOCB_CPU */
 
 static inline void rcu_init_nohz(void) { }
 static inline int rcu_nocb_cpu_offload(int cpu) { return -EINVAL; }
@@ -162,7 +145,6 @@ static inline void rcu_nocb_flush_deferred_wakeup(void) { }
 
 #define RCU_NOCB_LOCKDEP_WARN(c, s)
 
-#endif /* #else #ifdef CONFIG_RCU_NOCB_CPU */
 
 /*
  * Note a quasi-voluntary context switch for RCU-tasks's benefit.
@@ -187,10 +169,6 @@ void rcu_tasks_torture_stats_print(char *tt, char *tf);
 
 #define rcu_tasks_qs(t, preempt) rcu_tasks_classic_qs((t), (preempt))
 
-# ifdef CONFIG_TASKS_RUDE_RCU
-void synchronize_rcu_tasks_rude(void);
-void rcu_tasks_rude_torture_stats_print(char *tt, char *tf);
-# endif
 
 #define rcu_note_voluntary_context_switch(t) rcu_tasks_qs(t, false)
 void exit_tasks_rcu_start(void);
@@ -256,7 +234,7 @@ do { \
 
 #if defined(CONFIG_TREE_RCU)
 #include <linux/rcutree.h>
-#elif defined(CONFIG_TINY_RCU)
+#elif 0
 #include <linux/rcutiny.h>
 #else
 #error "Unknown RCU implementation specified to kernel configuration"

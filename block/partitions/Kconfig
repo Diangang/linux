@@ -10,16 +10,6 @@ config MSDOS_PARTITION
 	help
 	  Say Y here.
 
-config SOLARIS_X86_PARTITION
-	bool "Solaris (x86) partition table support"
-	depends on PARTITION_ADVANCED && MSDOS_PARTITION
-	help
-	  Like most systems, Solaris x86 uses its own hard disk partition
-	  table format, incompatible with all others. Saying Y here allows you
-	  to read these partition tables and further mount Solaris x86
-	  partitions from within Linux if you have also said Y to "UFS
-	  file system support", above.
-
 config UNIXWARE_DISKLABEL
 	bool "Unixware slices support"
 	depends on PARTITION_ADVANCED && MSDOS_PARTITION

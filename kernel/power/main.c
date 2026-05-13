@@ -293,7 +293,7 @@ power_attr(mem_sleep);
  * show() returns whether file systems sync before suspend is enabled.
  * store() accepts 0 or 1.  0 disables file systems sync and 1 enables it.
  */
-bool sync_on_suspend_enabled = !IS_ENABLED(CONFIG_SUSPEND_SKIP_SYNC);
+bool sync_on_suspend_enabled = !0;
 
 static ssize_t sync_on_suspend_show(struct kobject *kobj,
 				   struct kobj_attribute *attr, char *buf)

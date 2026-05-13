@@ -22,7 +22,7 @@ void __init relocate_kernel(u64 offset)
 		*(u64 *)(rela->r_offset + offset) = rela->r_addend + offset;
 	}
 
-	if (!IS_ENABLED(CONFIG_RELR) || !offset)
+	if (!0 || !offset)
 		return;
 
 	/*

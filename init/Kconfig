@@ -52,19 +52,8 @@ config RUSTC_VERSION
 	int
 	default $(rustc-version)
 	help
-	  It does not depend on `RUST` since that one may need to use the version
+	  It does not depend on `n` since that one may need to use the version
 	  in a `depends on`.
-
-config RUST_IS_AVAILABLE
-	def_bool $(success,$(srctree)/scripts/rust_is_available.sh)
-	help
-	  This shows whether a suitable Rust toolchain is available (found).
-
-	  Please see Documentation/rust/quick-start.rst for instructions on how
-	  to satisfy the build requirements of Rust support.
-
-	  In particular, the Makefile target 'rustavailable' is useful to check
-	  why the Rust toolchain is not being detected.
 
 config RUSTC_LLVM_VERSION
 	int
@@ -73,17 +62,6 @@ config RUSTC_LLVM_VERSION
 config RUSTC_LLVM_MAJOR_VERSION
 	int
 	default $(shell,expr $(rustc-llvm-version) / 10000)
-
-config RUSTC_CLANG_LLVM_COMPATIBLE
-	bool
-	default n
-	help
-	  This indicates whether Rust and Clang use LLVM of the same major
-	  version.
-
-	  Operations involving handling LLVM IR or bitcode (e.g. cross-language
-	  LTO) require the same LLVM major version to work properly. For best
-	  compatibility it is recommended that the exact same LLVM is used.
 
 config CC_CAN_LINK
 	bool
@@ -98,9 +76,6 @@ config GCC_ASM_GOTO_OUTPUT_BROKEN
 	default y if GCC_VERSION < 110500
 	default y if GCC_VERSION >= 120000 && GCC_VERSION < 120400
 	default y if GCC_VERSION >= 130000 && GCC_VERSION < 130300
-
-config TOOLS_SUPPORT_RELR
-	def_bool $(success,env "CC=$(CC)" "LD=$(LD)" "NM=$(NM)" "OBJCOPY=$(OBJCOPY)" $(srctree)/scripts/tools-support-relr.sh)
 
 config CC_HAS_ASM_INLINE
 	def_bool $(success,echo 'void foo(void) { asm inline (""); }' | $(CC) -x c - -c -o /dev/null)
@@ -271,32 +246,6 @@ config DEFAULT_HOSTNAME
 	  but you may wish to use a different default here to make a minimal
 	  system more usable with less configuration.
 
-config SYSVIPC
-	bool "System V IPC"
-	depends on n
-	help
-	  Inter Process Communication is a suite of library functions and
-	  system calls which let processes (running programs) synchronize and
-	  exchange information. It is generally considered to be a good thing,
-	  and some programs won't run unless you say Y here. In particular, if
-	  you want to run the DOS emulator dosemu under Linux (read the
-	  DOSEMU-HOWTO, available from <http://www.tldp.org/docs.html#howto>),
-	  you'll need to say Y here.
-
-	  You can find documentation about IPC with "info ipc" and also in
-	  section 6.4 of the Linux Programmer's Guide, available from
-	  <http://www.tldp.org/guides.html>.
-
-config SYSVIPC_SYSCTL
-	bool
-	depends on SYSVIPC
-	depends on SYSCTL
-	default y
-
-config SYSVIPC_COMPAT
-	def_bool y
-	depends on COMPAT && SYSVIPC
-
 config CROSS_MEMORY_ATTACH
 	bool "Enable process_vm_readv/writev syscalls"
 	depends on MMU
@@ -365,25 +314,6 @@ config HAVE_SCHED_AVG_IRQ
 	depends on IRQ_TIME_ACCOUNTING || PARAVIRT_TIME_ACCOUNTING
 	depends on SMP
 
-config SCHED_HW_PRESSURE
-	bool
-	default y if ARM && ARM_CPU_TOPOLOGY
-	default y if ARM64
-	depends on SMP
-	depends on CPU_FREQ_THERMAL
-	help
-	  Select this option to enable HW pressure accounting in the
-	  scheduler. HW pressure is the value conveyed to the scheduler
-	  that reflects the reduction in CPU compute capacity resulted from
-	  HW throttling. HW throttling occurs when the performance of
-	  a CPU is capped due to high operating temperatures as an example.
-
-	  If selected, the scheduler will be able to balance tasks accordingly,
-	  i.e. put less load on throttled CPUs than on non/less throttled ones.
-
-	  This requires the architecture to implement
-	  arch_update_hw_pressure() and arch_scale_thermal_pressure().
-
 config BSD_PROCESS_ACCT
 	bool "BSD Process Accounting (DEPRECATED)"
 	depends on MULTIUSER
@@ -412,50 +342,6 @@ config BSD_PROCESS_ACCT_V3
 	  with previous v0/v1/v2 file formats, so you will need updated tools
 	  for processing it. A preliminary version of these tools is available
 	  at <http://www.gnu.org/software/acct/>.
-
-config TASKSTATS
-	bool "Export task/process statistics through netlink"
-	depends on NET
-	depends on MULTIUSER
-	default n
-	help
-	  Export selected statistics for tasks/processes through the
-	  generic netlink interface. Unlike BSD process accounting, the
-	  statistics are available during the lifetime of tasks/processes as
-	  responses to commands. Like BSD accounting, they are sent to user
-	  space on task exit.
-
-	  Say N if unsure.
-
-config TASK_DELAY_ACCT
-	bool "Enable per-task delay accounting"
-	depends on TASKSTATS
-	select SCHED_INFO
-	help
-	  Collect information on time spent by a task waiting for system
-	  resources like cpu, synchronous block I/O completion and swapping
-	  in pages. Such statistics can help in setting a task's priorities
-	  relative to other tasks for cpu, io, rss limits etc.
-
-	  Say N if unsure.
-
-config TASK_XACCT
-	bool "Enable extended accounting over taskstats"
-	depends on TASKSTATS
-	help
-	  Collect extended task accounting data and send the data
-	  to userland for processing over the taskstats interface.
-
-	  Say N if unsure.
-
-config TASK_IO_ACCOUNTING
-	bool "Enable per-task storage I/O accounting"
-	depends on TASK_XACCT
-	help
-	  Collect information on the number of bytes of storage I/O which this
-	  task has caused.
-
-	  Say N if unsure.
 
 endmenu # "CPU/Task time and stats accounting"
 
@@ -602,18 +488,6 @@ config UCLAMP_BUCKETS_COUNT
 	  precision.
 
 	  If in doubt, use the default value.
-
-config SCHED_PROXY_EXEC
-	bool "Proxy Execution"
-	# Avoid some build failures w/ n until it can be fixed
-	depends on y
-	# Need to investigate how to inform sched_ext of split contexts
-	depends on !SCHED_CLASS_EXT
-	# Not particularly useful until we get to multi-rq proxying
-	depends on EXPERT
-	help
-	  This option enables proxy execution, a mechanism for mutex-owning
-	  tasks to inherit the scheduling context of higher priority waiters.
 
 endmenu
 
@@ -880,10 +754,6 @@ config CGROUP_DEBUG
 
 	  Say N.
 
-config SOCK_CGROUP_DATA
-	bool
-	default n
-
 endif # CGROUPS
 
 menuconfig NAMESPACES
@@ -1036,21 +906,6 @@ config SYSCTL_EXCEPTION_TRACE
 	bool
 	help
 	  Enable support for /proc/sys/debug/exception-trace.
-
-config SYSCTL_ARCH_UNALIGN_NO_WARN
-	bool
-	help
-	  Enable support for /proc/sys/kernel/ignore-unaligned-usertrap
-	  Allows arch to define/use @no_unaligned_warning to possibly warn
-	  about unaligned access emulation going on under the hood.
-
-config SYSCTL_ARCH_UNALIGN_ALLOW
-	bool
-	help
-	  Enable support for /proc/sys/kernel/unaligned-trap
-	  Allows arches to define/use @unaligned_enabled to runtime toggle
-	  the unaligned access emulation.
-	  see arch/parisc/kernel/unaligned.c for reference
 
 config HAVE_PCSPKR_PLATFORM
 	bool
@@ -1254,42 +1109,6 @@ config RSEQ
 
 	  If unsure, say Y.
 
-config RSEQ_SLICE_EXTENSION
-	bool "Enable rseq-based time slice extension mechanism"
-	depends on RSEQ && HIGH_RES_TIMERS && GENERIC_ENTRY && HAVE_GENERIC_TIF_BITS
-	help
-	  Allows userspace to request a limited time slice extension when
-	  returning from an interrupt to user space via the RSEQ shared
-	  data ABI. If granted, that allows to complete a critical section,
-	  so that other threads are not stuck on a conflicted resource,
-	  while the task is scheduled out.
-
-	  If unsure, say N.
-
-config RSEQ_STATS
-	default n
-	bool "Enable lightweight statistics of restartable sequences" if EXPERT
-	help
-	  Enable lightweight counters which expose information about the
-	  frequency of RSEQ operations via debugfs. Mostly interesting for
-	  kernel debugging or performance analysis. While lightweight it's
-	  still adding code into the user/kernel mode transitions.
-
-	  If unsure, say N.
-
-config RSEQ_DEBUG_DEFAULT_ENABLE
-	default n
-	bool "Enable restartable sequences debug mode by default" if EXPERT
-	depends on RSEQ
-	help
-	  This enables the static branch for debug mode of restartable
-	  sequences.
-
-	  This also can be controlled on the kernel command line via the
-	  command line parameter "rseq_debug=0/1" and through debugfs.
-
-	  If unsure, say N.
-
 config CACHESTAT_SYSCALL
 	bool "Enable cachestat() system call" if EXPERT
 	default y
@@ -1395,26 +1214,6 @@ config PROFILING
 	help
 	  Say Y here to enable the extended profiling support mechanisms used
 	  by profilers.
-
-config RUST
-	bool "Rust support"
-	depends on HAVE_RUST
-	depends on RUST_IS_AVAILABLE
-	depends on !GCC_PLUGIN_RANDSTRUCT
-	depends on !RANDSTRUCT
-	depends on !n
-	help
-	  Enables Rust support in the kernel.
-
-	  This allows other Rust-related options, like drivers written in Rust,
-	  to be selected.
-
-	  It is also required to be able to load external kernel modules
-	  written in Rust.
-
-	  See Documentation/rust/ for more information.
-
-	  If unsure, say N.
 
 source "kernel/Kconfig.kexec"
 

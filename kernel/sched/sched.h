@@ -188,10 +188,6 @@ static inline int idle_policy(int policy)
 
 static inline int normal_policy(int policy)
 {
-#ifdef CONFIG_SCHED_CLASS_EXT
-	if (policy == SCHED_EXT)
-		return true;
-#endif
 	return policy == SCHED_NORMAL;
 }
 
@@ -714,57 +710,6 @@ struct cfs_rq {
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 };
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-/* scx_rq->flags, protected by the rq lock */
-enum scx_rq_flags {
-	/*
-	 * A hotplugged CPU starts scheduling before rq_online_scx(). Track
-	 * ops.cpu_on/offline() state so that ops.enqueue/dispatch() are called
-	 * only while the BPF scheduler considers the CPU to be online.
-	 */
-	SCX_RQ_ONLINE		= 1 << 0,
-	SCX_RQ_CAN_STOP_TICK	= 1 << 1,
-	SCX_RQ_BAL_KEEP		= 1 << 3, /* balance decided to keep current */
-	SCX_RQ_CLK_VALID	= 1 << 5, /* RQ clock is fresh and valid */
-	SCX_RQ_BAL_CB_PENDING	= 1 << 6, /* must queue a cb after dispatching */
-
-	SCX_RQ_IN_WAKEUP	= 1 << 16,
-	SCX_RQ_IN_BALANCE	= 1 << 17,
-};
-
-struct scx_rq {
-	struct scx_dispatch_q	local_dsq;
-	struct list_head	runnable_list;		/* runnable tasks on this rq */
-	struct list_head	ddsp_deferred_locals;	/* deferred ddsps from enq */
-	unsigned long		ops_qseq;
-	u64			extra_enq_flags;	/* see move_task_to_local_dsq() */
-	u32			nr_running;
-	u32			cpuperf_target;		/* [0, SCHED_CAPACITY_SCALE] */
-	bool			in_select_cpu;
-	bool			cpu_released;
-	u32			flags;
-	u32			nr_immed;		/* ENQ_IMMED tasks on local_dsq */
-	u64			clock;			/* current per-rq clock -- see scx_bpf_now() */
-	cpumask_var_t		cpus_to_kick;
-	cpumask_var_t		cpus_to_kick_if_idle;
-	cpumask_var_t		cpus_to_preempt;
-	cpumask_var_t		cpus_to_wait;
-	cpumask_var_t		cpus_to_sync;
-	bool			kick_sync_pending;
-	unsigned long		kick_sync;
-
-	struct task_struct	*sub_dispatch_prev;
-
-	raw_spinlock_t		deferred_reenq_lock;
-	u64			deferred_reenq_locals_seq;
-	struct list_head	deferred_reenq_locals;	/* scheds requesting reenq of local DSQ */
-	struct list_head	deferred_reenq_users;	/* user DSQs requesting reenq */
-	struct balance_callback	deferred_bal_cb;
-	struct balance_callback	kick_sync_bal_cb;
-	struct irq_work		deferred_irq_work;
-	struct irq_work		kick_cpus_irq_work;
-};
-#endif /* CONFIG_SCHED_CLASS_EXT */
 
 static inline int rt_bandwidth_enabled(void)
 {
@@ -1075,15 +1020,10 @@ struct rq {
 #endif
 	unsigned int		ttwu_pending;
 	unsigned long		cpu_capacity;
-#ifdef CONFIG_SCHED_PROXY_EXEC
-	struct task_struct __rcu	*donor;  /* Scheduling context */
-	struct task_struct __rcu	*curr;   /* Execution context */
-#else
 	union {
 		struct task_struct __rcu *donor; /* Scheduler context */
 		struct task_struct __rcu *curr;  /* Execution context */
 	};
-#endif
 	struct task_struct	*idle;
 	/* padding left here deliberately */
 
@@ -1114,10 +1054,6 @@ struct rq {
 	struct cfs_rq		cfs;
 	struct rt_rq		rt;
 	struct dl_rq		dl;
-#ifdef CONFIG_SCHED_CLASS_EXT
-	struct scx_rq		scx;
-	struct sched_dl_entity	ext_server;
-#endif
 
 	struct sched_dl_entity	fair_server;
 
@@ -1193,9 +1129,6 @@ struct rq {
 	struct sched_avg	avg_dl;
 #ifdef CONFIG_HAVE_SCHED_AVG_IRQ
 	struct sched_avg	avg_irq;
-#endif
-#ifdef CONFIG_SCHED_HW_PRESSURE
-	struct sched_avg	avg_hw;
 #endif
 	u64			idle_stamp;
 	u64			avg_idle;
@@ -1330,17 +1263,10 @@ static inline bool available_idle_cpu(int cpu)
 	return 1;
 }
 
-#ifdef CONFIG_SCHED_PROXY_EXEC
-static inline void rq_set_donor(struct rq *rq, struct task_struct *t)
-{
-	rcu_assign_pointer(rq->donor, t);
-}
-#else
 static inline void rq_set_donor(struct rq *rq, struct task_struct *t)
 {
 	/* Do nothing */
 }
-#endif
 
 
 static inline bool sched_core_enabled(struct rq *rq)
@@ -1614,37 +1540,11 @@ struct rq_flags {
 
 extern struct balance_callback balance_push_callback;
 
-#ifdef CONFIG_SCHED_CLASS_EXT
-extern const struct sched_class ext_sched_class;
-
-DECLARE_STATIC_KEY_FALSE(__scx_enabled);	/* SCX BPF scheduler loaded */
-DECLARE_STATIC_KEY_FALSE(__scx_switched_all);	/* all fair class tasks on SCX */
-
-#define scx_enabled()		static_branch_unlikely(&__scx_enabled)
-#define scx_switched_all()	static_branch_unlikely(&__scx_switched_all)
-
-static inline void scx_rq_clock_update(struct rq *rq, u64 clock)
-{
-	if (!scx_enabled())
-		return;
-	WRITE_ONCE(rq->scx.clock, clock);
-	smp_store_release(&rq->scx.flags, rq->scx.flags | SCX_RQ_CLK_VALID);
-}
-
-static inline void scx_rq_clock_invalidate(struct rq *rq)
-{
-	if (!scx_enabled())
-		return;
-	WRITE_ONCE(rq->scx.flags, rq->scx.flags & ~SCX_RQ_CLK_VALID);
-}
-
-#else /* !CONFIG_SCHED_CLASS_EXT: */
 #define scx_enabled()		false
 #define scx_switched_all()	false
 
 static inline void scx_rq_clock_update(struct rq *rq, u64 clock) {}
 static inline void scx_rq_clock_invalidate(struct rq *rq) {}
-#endif /* !CONFIG_SCHED_CLASS_EXT */
 
 static inline void assert_balance_callbacks_empty(struct rq *rq)
 {
@@ -2507,12 +2407,6 @@ extern const struct sched_class idle_sched_class;
 static inline const struct sched_class *next_active_class(const struct sched_class *class)
 {
 	class++;
-#ifdef CONFIG_SCHED_CLASS_EXT
-	if (scx_switched_all() && class == &fair_sched_class)
-		class++;
-	if (!scx_enabled() && class == &ext_sched_class)
-		class++;
-#endif
 	return class;
 }
 

@@ -52,15 +52,12 @@
 #endif
 #define MODULE_PARAM_PREFIX "rcupdate."
 
-#ifndef CONFIG_TINY_RCU
 module_param(rcu_expedited, int, 0444);
 module_param(rcu_normal, int, 0444);
 static int rcu_normal_after_boot = 0;
 module_param(rcu_normal_after_boot, int, 0444);
-#endif /* #ifndef CONFIG_TINY_RCU */
 
 
-#ifndef CONFIG_TINY_RCU
 
 /*
  * Should expedited grace-period primitives always fall back to their
@@ -84,7 +81,7 @@ static atomic_t rcu_async_hurry_nesting = ATOMIC_INIT(1);
  */
 bool rcu_async_should_hurry(void)
 {
-	return !IS_ENABLED(CONFIG_RCU_LAZY) ||
+	return !0 ||
 	       atomic_read(&rcu_async_hurry_nesting);
 }
 EXPORT_SYMBOL_GPL(rcu_async_should_hurry);
@@ -97,7 +94,7 @@ EXPORT_SYMBOL_GPL(rcu_async_should_hurry);
  */
 void rcu_async_hurry(void)
 {
-	if (IS_ENABLED(CONFIG_RCU_LAZY))
+	if (0)
 		atomic_inc(&rcu_async_hurry_nesting);
 }
 EXPORT_SYMBOL_GPL(rcu_async_hurry);
@@ -110,7 +107,7 @@ EXPORT_SYMBOL_GPL(rcu_async_hurry);
  */
 void rcu_async_relax(void)
 {
-	if (IS_ENABLED(CONFIG_RCU_LAZY))
+	if (0)
 		atomic_dec(&rcu_async_hurry_nesting);
 }
 EXPORT_SYMBOL_GPL(rcu_async_relax);
@@ -180,7 +177,6 @@ bool rcu_inkernel_boot_has_ended(void)
 }
 EXPORT_SYMBOL_GPL(rcu_inkernel_boot_has_ended);
 
-#endif /* #ifndef CONFIG_TINY_RCU */
 
 /*
  * Test each non-SRCU synchronous grace-period wait API.  This is
@@ -196,7 +192,7 @@ void rcu_test_sync_prims(void)
 	synchronize_rcu_expedited();
 }
 
-#if !defined(CONFIG_TINY_RCU)
+#if !0
 
 /*
  * Switch to run-time mode once RCU has fully initialized.
@@ -211,7 +207,7 @@ static int __init rcu_set_runtime_mode(void)
 }
 core_initcall(rcu_set_runtime_mode);
 
-#endif /* #if !defined(CONFIG_TINY_RCU) */
+#endif /* #if !0 */
 
 
 /**
@@ -358,7 +354,7 @@ long torture_sched_setaffinity(pid_t pid, const struct cpumask *in_mask, bool do
 EXPORT_SYMBOL_GPL(torture_sched_setaffinity);
 #endif
 
-#if IS_ENABLED(CONFIG_TRIVIAL_PREEMPT_RCU)
+#if 0
 // Trivial and stupid grace-period wait.  Defined here so that lockdep
 // kernels can find tasklist_lock.
 void synchronize_rcu_trivial_preempt(void)
@@ -378,7 +374,7 @@ void synchronize_rcu_trivial_preempt(void)
 	rcu_read_unlock();
 }
 EXPORT_SYMBOL_GPL(synchronize_rcu_trivial_preempt);
-#endif // #if IS_ENABLED(CONFIG_TRIVIAL_PREEMPT_RCU)
+#endif // #if 0
 
 int rcu_cpu_stall_notifiers __read_mostly; // !0 = provide stall notifiers (rarely useful)
 EXPORT_SYMBOL_GPL(rcu_cpu_stall_notifiers);
@@ -422,7 +418,6 @@ void rcu_early_boot_tests(void) {}
 
 #include "tasks.h"
 
-#ifndef CONFIG_TINY_RCU
 
 /*
  * Print any significant non-default boot-time settings.
@@ -441,5 +436,3 @@ void __init rcupdate_announce_bootup_oddness(void)
 		pr_info("\tRCU CPU stall warnings timeout set to %d (rcu_cpu_stall_timeout).\n", rcu_cpu_stall_timeout);
 	rcu_tasks_bootup_oddness();
 }
-
-#endif /* #ifndef CONFIG_TINY_RCU */

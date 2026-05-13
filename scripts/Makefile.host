@@ -23,7 +23,6 @@ $(obj)/%.tab.c $(obj)/%.tab.h: $(src)/%.y FORCE
 #
 # Both C and C++ are supported, but preferred language is C for such utilities.
 # Rust is also supported, but it may only be used in scenarios where a Rust
-# toolchain is required to be available (e.g. when  `CONFIG_RUST` is enabled).
 #
 # Sample syntax (see Documentation/kbuild/makefiles.rst for reference)
 # hostprogs := bin2hex

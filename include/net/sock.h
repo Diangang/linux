@@ -1436,12 +1436,7 @@ static inline bool sk_stream_is_writeable(const struct sock *sk)
 static inline int sk_under_cgroup_hierarchy(struct sock *sk,
 					    struct cgroup *ancestor)
 {
-#ifdef CONFIG_SOCK_CGROUP_DATA
-	return cgroup_is_descendant(sock_cgroup_ptr(&sk->sk_cgrp_data),
-				    ancestor);
-#else
 	return -ENOTSUPP;
-#endif
 }
 
 #define SK_ALLOC_PERCPU_COUNTER_BATCH 16

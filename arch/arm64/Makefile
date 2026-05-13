@@ -61,16 +61,6 @@ KBUILD_AFLAGS	+= -fasynchronous-unwind-tables
 KBUILD_RUSTFLAGS += -Cforce-unwind-tables=y -Zuse-sync-unwind=n
 endif
 
-ifeq ($(CONFIG_STACKPROTECTOR_PER_TASK),y)
-prepare: stack_protector_prepare
-stack_protector_prepare: prepare0
-	$(eval KBUILD_CFLAGS += -mstack-protector-guard=sysreg		  \
-				-mstack-protector-guard-reg=sp_el0	  \
-				-mstack-protector-guard-offset=$(shell	  \
-			awk '{if ($$2 == "TSK_STACK_CANARY") print $$3;}' \
-				$(objtree)/include/generated/asm-offsets.h))
-endif
-
 ifeq ($(CONFIG_ARM64_BTI_KERNEL),y)
   KBUILD_CFLAGS += -mbranch-protection=pac-ret+bti
   KBUILD_RUSTFLAGS += -Zbranch-protection=bti,pac-ret
@@ -97,11 +87,6 @@ asm-arch := armv8.4-a
 ifdef asm-arch
 KBUILD_CFLAGS	+= -Wa,-march=$(asm-arch) \
 		   -DARM64_ASM_ARCH='"$(asm-arch)"'
-endif
-
-ifeq ($(CONFIG_SHADOW_CALL_STACK), y)
-KBUILD_CFLAGS	+= -ffixed-x18
-KBUILD_RUSTFLAGS += -Zfixed-x18
 endif
 
 KBUILD_CPPFLAGS	+= -mlittle-endian

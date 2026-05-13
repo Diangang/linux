@@ -121,10 +121,6 @@ struct rcu_node {
 	unsigned int boost_kthread_status;
 				/* State of boost_kthread_task for tracing. */
 	unsigned long n_boosts;	/* Number of boosts for this rcu_node structure. */
-#ifdef CONFIG_RCU_NOCB_CPU
-	struct swait_queue_head nocb_gp_wq[2];
-				/* Place for rcu_nocb_kthread() to wait GP. */
-#endif /* #ifdef CONFIG_RCU_NOCB_CPU */
 	raw_spinlock_t fqslock ____cacheline_internodealigned_in_smp;
 
 	spinlock_t exp_lock ____cacheline_internodealigned_in_smp;
@@ -230,45 +226,6 @@ struct rcu_data {
 	int exp_watching_snap;		/* Double-check need for IPI. */
 
 	/* 5) Callback offloading. */
-#ifdef CONFIG_RCU_NOCB_CPU
-	struct swait_queue_head nocb_cb_wq; /* For nocb kthreads to sleep on. */
-	struct swait_queue_head nocb_state_wq; /* For offloading state changes */
-	struct task_struct *nocb_gp_kthread;
-	raw_spinlock_t nocb_lock;	/* Guard following pair of fields. */
-	int nocb_defer_wakeup;		/* Defer wakeup of nocb_kthread. */
-	struct timer_list nocb_timer;	/* Enforce finite deferral. */
-	unsigned long nocb_gp_adv_time;	/* Last call_rcu() CB adv (jiffies). */
-	struct mutex nocb_gp_kthread_mutex; /* Exclusion for nocb gp kthread */
-					    /* spawning */
-
-	/* The following fields are used by call_rcu, hence own cacheline. */
-	raw_spinlock_t nocb_bypass_lock ____cacheline_internodealigned_in_smp;
-	struct rcu_cblist nocb_bypass;	/* Lock-contention-bypass CB list. */
-	unsigned long nocb_bypass_first; /* Time (jiffies) of first enqueue. */
-	unsigned long nocb_nobypass_last; /* Last ->cblist enqueue (jiffies). */
-	int nocb_nobypass_count;	/* # ->cblist enqueues at ^^^ time. */
-
-	/* The following fields are used by GP kthread, hence own cacheline. */
-	raw_spinlock_t nocb_gp_lock ____cacheline_internodealigned_in_smp;
-	u8 nocb_gp_sleep;		/* Is the nocb GP thread asleep? */
-	u8 nocb_gp_bypass;		/* Found a bypass on last scan? */
-	u8 nocb_gp_gp;			/* GP to wait for on last scan? */
-	unsigned long nocb_gp_seq;	/*  If so, ->gp_seq to wait for. */
-	unsigned long nocb_gp_loops;	/* # passes through wait code. */
-	struct swait_queue_head nocb_gp_wq; /* For nocb kthreads to sleep on. */
-	bool nocb_cb_sleep;		/* Is the nocb CB thread asleep? */
-	struct task_struct *nocb_cb_kthread;
-	struct list_head nocb_head_rdp; /*
-					 * Head of rcu_data list in wakeup chain,
-					 * if rdp_gp.
-					 */
-	struct list_head nocb_entry_rdp; /* rcu_data node in wakeup chain. */
-	struct rcu_data *nocb_toggling_rdp; /* rdp queued for (de-)offloading */
-
-	/* The following fields are used by CB kthread, hence new cacheline. */
-	struct rcu_data *nocb_gp_rdp ____cacheline_internodealigned_in_smp;
-					/* GP rdp takes GP-end wakeups. */
-#endif /* #ifdef CONFIG_RCU_NOCB_CPU */
 
 	/* 6) RCU priority boosting. */
 	struct task_struct *rcu_cpu_kthread_task;
@@ -431,10 +388,6 @@ struct rcu_state {
 	struct work_struct srs_cleanup_work;
 	atomic_t srs_cleanups_pending; /* srs inflight worker cleanups. */
 
-#ifdef CONFIG_RCU_NOCB_CPU
-	struct mutex nocb_mutex;		/* Guards (de-)offloading */
-	int nocb_is_setup;			/* nocb is setup from boot */
-#endif
 };
 
 /* Values for rcu_state structure's gp_flags field. */
@@ -509,22 +462,7 @@ static void rcu_nocb_unlock(struct rcu_data *rdp);
 static void rcu_nocb_unlock_irqrestore(struct rcu_data *rdp,
 				       unsigned long flags);
 static void rcu_lockdep_assert_cblist_protected(struct rcu_data *rdp);
-#ifdef CONFIG_RCU_NOCB_CPU
-static void __init rcu_organize_nocb_kthreads(void);
-
-/*
- * Disable IRQs before checking offloaded state so that local
- * locking is safe against concurrent de-offloading.
- */
-#define rcu_nocb_lock_irqsave(rdp, flags)			\
-do {								\
-	local_irq_save(flags);					\
-	if (rcu_segcblist_is_offloaded(&(rdp)->cblist))	\
-		raw_spin_lock(&(rdp)->nocb_lock);		\
-} while (0)
-#else /* #ifdef CONFIG_RCU_NOCB_CPU */
 #define rcu_nocb_lock_irqsave(rdp, flags) local_irq_save(flags)
-#endif /* #else #ifdef CONFIG_RCU_NOCB_CPU */
 
 static void rcu_bind_gp_kthread(void);
 static bool rcu_nohz_full_cpu(void);

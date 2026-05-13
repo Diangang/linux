@@ -7,12 +7,6 @@
 
 struct task_struct;
 
-#ifdef CONFIG_SYSVIPC
-
-extern int copy_semundo(u64 clone_flags, struct task_struct *tsk);
-extern void exit_sem(struct task_struct *tsk);
-
-#else
 
 static inline int copy_semundo(u64 clone_flags, struct task_struct *tsk)
 {
@@ -23,6 +17,5 @@ static inline void exit_sem(struct task_struct *tsk)
 {
 	return;
 }
-#endif
 
 #endif /* _LINUX_SEM_H */

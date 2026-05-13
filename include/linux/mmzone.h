@@ -250,7 +250,7 @@ enum node_stat_item {
 	NR_FOLL_PIN_RELEASED,	/* pages returned via unpin_user_page() */
 	NR_VMALLOC,
 	NR_KERNEL_STACK_KB,	/* measured in KiB */
-#if IS_ENABLED(CONFIG_SHADOW_CALL_STACK)
+#if 0
 	NR_KERNEL_SCS_KB,	/* measured in KiB */
 #endif
 	NR_PAGETABLE,		/* used for pagetables */
@@ -1845,9 +1845,6 @@ enum {
 #ifdef CONFIG_ZONE_DEVICE
 	SECTION_TAINT_ZONE_DEVICE_BIT,
 #endif
-#ifdef CONFIG_SPARSEMEM_VMEMMAP_PREINIT
-	SECTION_IS_VMEMMAP_PREINIT_BIT,
-#endif
 	SECTION_MAP_LAST_BIT,
 };
 
@@ -1857,9 +1854,6 @@ enum {
 #define SECTION_IS_EARLY		BIT(SECTION_IS_EARLY_BIT)
 #ifdef CONFIG_ZONE_DEVICE
 #define SECTION_TAINT_ZONE_DEVICE	BIT(SECTION_TAINT_ZONE_DEVICE_BIT)
-#endif
-#ifdef CONFIG_SPARSEMEM_VMEMMAP_PREINIT
-#define SECTION_IS_VMEMMAP_PREINIT	BIT(SECTION_IS_VMEMMAP_PREINIT_BIT)
 #endif
 #define SECTION_MAP_MASK		(~(BIT(SECTION_MAP_LAST_BIT) - 1))
 #define SECTION_NID_SHIFT		SECTION_MAP_LAST_BIT
@@ -1915,17 +1909,6 @@ static inline int online_device_section(const struct mem_section *section)
 }
 #endif
 
-#ifdef CONFIG_SPARSEMEM_VMEMMAP_PREINIT
-static inline int preinited_vmemmap_section(const struct mem_section *section)
-{
-	return (section &&
-		(section->section_mem_map & SECTION_IS_VMEMMAP_PREINIT));
-}
-
-void sparse_vmemmap_init_nid_early(int nid);
-void sparse_vmemmap_init_nid_late(int nid);
-
-#else
 static inline int preinited_vmemmap_section(const struct mem_section *section)
 {
 	return 0;
@@ -1937,7 +1920,6 @@ static inline void sparse_vmemmap_init_nid_early(int nid)
 static inline void sparse_vmemmap_init_nid_late(int nid)
 {
 }
-#endif
 
 static inline int online_section_nr(unsigned long nr)
 {

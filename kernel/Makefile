@@ -82,13 +82,10 @@ obj-$(CONFIG_SMP) += stop_machine.o
 obj-$(CONFIG_KPROBES) += kprobes.o
 obj-$(CONFIG_SECCOMP) += seccomp.o
 obj-$(CONFIG_SYSCTL) += utsname_sysctl.o
-obj-$(CONFIG_TASK_DELAY_ACCT) += delayacct.o
-obj-$(CONFIG_TASKSTATS) += taskstats.o tsacct.o
 obj-$(CONFIG_TRACE_CLOCK) += trace/
 obj-$(CONFIG_RETHOOK) += trace/
 obj-$(CONFIG_IRQ_WORK) += irq_work.o
 obj-$(CONFIG_CPU_PM) += cpu_pm.o
-obj-$(CONFIG_SHADOW_CALL_STACK) += scs.o
 obj-$(CONFIG_HAVE_STATIC_CALL) += static_call.o
 obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 
@@ -97,13 +94,10 @@ obj-$(CONFIG_PERF_EVENTS) += events/
 obj-$(CONFIG_USER_RETURN_NOTIFIER) += user-return-notifier.o
 obj-$(CONFIG_JUMP_LABEL) += jump_label.o
 obj-$(CONFIG_CONTEXT_TRACKING) += context_tracking.o
-obj-$(CONFIG_TORTURE_TEST) += torture.o
 
 obj-$(CONFIG_HAS_IOMEM) += iomem.o
 obj-$(CONFIG_RSEQ) += rseq.o
 
-obj-$(CONFIG_RESOURCE_KUNIT_TEST) += resource_kunit.o
-obj-$(CONFIG_SYSCTL_KUNIT_TEST) += sysctl-test.o
 
 CFLAGS_kstack_erase.o += $(DISABLE_KSTACK_ERASE)
 CFLAGS_kstack_erase.o += $(call cc-option,-mgeneral-regs-only)

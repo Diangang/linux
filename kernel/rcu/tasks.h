@@ -198,7 +198,6 @@ static int rcu_task_cpu_ids;
 #define RTGS_WAIT_READERS	 9
 #define RTGS_INVOKE_CBS		10
 #define RTGS_WAIT_CBS		11
-#ifndef CONFIG_TINY_RCU
 static const char * const rcu_tasks_gp_state_names[] = {
 	"RTGS_INIT",
 	"RTGS_WAIT_WAIT_CBS",
@@ -213,7 +212,6 @@ static const char * const rcu_tasks_gp_state_names[] = {
 	"RTGS_INVOKE_CBS",
 	"RTGS_WAIT_CBS",
 };
-#endif /* #ifndef CONFIG_TINY_RCU */
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -228,7 +226,6 @@ static void set_tasks_gp_state(struct rcu_tasks *rtp, int newstate)
 	rtp->gp_jiffies = jiffies;
 }
 
-#ifndef CONFIG_TINY_RCU
 /* Return state name. */
 static const char *tasks_gp_state_getname(struct rcu_tasks *rtp)
 {
@@ -239,7 +236,6 @@ static const char *tasks_gp_state_getname(struct rcu_tasks *rtp)
 		return "???";
 	return rcu_tasks_gp_state_names[j];
 }
-#endif /* #ifndef CONFIG_TINY_RCU */
 
 // Initialize per-CPU callback lists for the specified flavor of
 // Tasks RCU.  Do not enqueue callbacks before this function is invoked.
@@ -685,14 +681,13 @@ static void __init rcu_spawn_tasks_kthread_generic(struct rcu_tasks *rtp)
 	smp_mb(); /* Ensure others see full kthread. */
 }
 
-#ifndef CONFIG_TINY_RCU
 
 /*
  * Print any non-default Tasks RCU settings.
  */
 static void __init rcu_tasks_bootup_oddness(void)
 {
-#if defined(CONFIG_TASKS_RCU) || defined(CONFIG_TASKS_TRACE_RCU)
+#if defined(CONFIG_TASKS_RCU) || 0
 	int rtsimc;
 
 	if (rcu_task_stall_timeout != RCU_TASK_STALL_TIMEOUT)
@@ -706,12 +701,6 @@ static void __init rcu_tasks_bootup_oddness(void)
 #ifdef CONFIG_TASKS_RCU
 	pr_info("\tTrampoline variant of Tasks RCU enabled.\n");
 #endif /* #ifdef CONFIG_TASKS_RCU */
-#ifdef CONFIG_TASKS_RUDE_RCU
-	pr_info("\tRude variant of Tasks RCU enabled.\n");
-#endif /* #ifdef CONFIG_TASKS_RUDE_RCU */
-#ifdef CONFIG_TASKS_TRACE_RCU
-	pr_info("\tTracing variant of Tasks RCU enabled.\n");
-#endif /* #ifdef CONFIG_TASKS_TRACE_RCU */
 }
 
 /* Dump out rcutorture-relevant state common to all RCU-tasks flavors. */
@@ -794,7 +783,6 @@ static void rcu_tasks_torture_stats_print_generic(struct rcu_tasks *rtp, char *t
 	free_cpumask_var(cm);
 }
 
-#endif // #ifndef CONFIG_TINY_RCU
 
 #if defined(CONFIG_TASKS_RCU)
 
@@ -1025,7 +1013,7 @@ static void rcu_tasks_postscan(struct list_head *hop)
 	int cpu;
 	int rtsi = READ_ONCE(rcu_task_stall_info);
 
-	if (!IS_ENABLED(CONFIG_TINY_RCU)) {
+	if (!0) {
 		tasks_rcu_exit_srcu_stall_timer.expires = jiffies + rtsi;
 		add_timer(&tasks_rcu_exit_srcu_stall_timer);
 	}
@@ -1079,7 +1067,7 @@ static void rcu_tasks_postscan(struct list_head *hop)
 		raw_spin_unlock_irq_rcu_node(rtpcp);
 	}
 
-	if (!IS_ENABLED(CONFIG_TINY_RCU))
+	if (!0)
 		timer_delete_sync(&tasks_rcu_exit_srcu_stall_timer);
 }
 
@@ -1154,7 +1142,6 @@ static void rcu_tasks_postgp(struct rcu_tasks *rtp)
 
 static void tasks_rcu_exit_srcu_stall(struct timer_list *unused)
 {
-#ifndef CONFIG_TINY_RCU
 	int rtsi;
 
 	rtsi = READ_ONCE(rcu_task_stall_info);
@@ -1164,7 +1151,6 @@ static void tasks_rcu_exit_srcu_stall(struct timer_list *unused)
 	pr_info("Please check any exiting tasks stuck between calls to exit_tasks_rcu_start() and exit_tasks_rcu_finish()\n");
 	tasks_rcu_exit_srcu_stall_timer.expires = jiffies + rtsi;
 	add_timer(&tasks_rcu_exit_srcu_stall_timer);
-#endif // #ifndef CONFIG_TINY_RCU
 }
 
 /**
@@ -1246,7 +1232,7 @@ static int __init rcu_spawn_tasks_kthread(void)
 	return 0;
 }
 
-#if !defined(CONFIG_TINY_RCU)
+#if !0
 void show_rcu_tasks_classic_gp_kthread(void)
 {
 	show_rcu_tasks_generic_gp_kthread(&rcu_tasks, "");
@@ -1258,7 +1244,7 @@ void rcu_tasks_torture_stats_print(char *tt, char *tf)
 	rcu_tasks_torture_stats_print_generic(&rcu_tasks, tt, tf, "");
 }
 EXPORT_SYMBOL_GPL(rcu_tasks_torture_stats_print);
-#endif // !defined(CONFIG_TINY_RCU)
+#endif // !0
 
 struct task_struct *get_rcu_tasks_gp_kthread(void)
 {
@@ -1322,131 +1308,12 @@ void exit_tasks_rcu_start(void) { }
 void exit_tasks_rcu_finish(void) { }
 #endif /* #else #ifdef CONFIG_TASKS_RCU */
 
-#ifdef CONFIG_TASKS_RUDE_RCU
 
-////////////////////////////////////////////////////////////////////////
-//
-// "Rude" variant of Tasks RCU, inspired by Steve Rostedt's
-// trick of passing an empty function to schedule_on_each_cpu().
-// This approach provides batching of concurrent calls to the synchronous
-// synchronize_rcu_tasks_rude() API.  This invokes schedule_on_each_cpu()
-// in order to send IPIs far and wide and induces otherwise unnecessary
-// context switches on all online CPUs, whether idle or not.
-//
-// Callback handling is provided by the rcu_tasks_kthread() function.
-//
-// Ordering is provided by the scheduler's context-switch code.
-
-// Empty function to allow workqueues to force a context switch.
-static void rcu_tasks_be_rude(struct work_struct *work)
-{
-}
-
-// Wait for one rude RCU-tasks grace period.
-static void rcu_tasks_rude_wait_gp(struct rcu_tasks *rtp)
-{
-	rtp->n_ipis += cpumask_weight(cpu_online_mask);
-	schedule_on_each_cpu(rcu_tasks_be_rude);
-}
-
-static void call_rcu_tasks_rude(struct rcu_head *rhp, rcu_callback_t func);
-DEFINE_RCU_TASKS(rcu_tasks_rude, rcu_tasks_rude_wait_gp, call_rcu_tasks_rude,
-		 "RCU Tasks Rude");
-
-/*
- * call_rcu_tasks_rude() - Queue a callback rude task-based grace period
- * @rhp: structure to be used for queueing the RCU updates.
- * @func: actual callback function to be invoked after the grace period
- *
- * The callback function will be invoked some time after a full grace
- * period elapses, in other words after all currently executing RCU
- * read-side critical sections have completed. call_rcu_tasks_rude()
- * assumes that the read-side critical sections end at context switch,
- * cond_resched_tasks_rcu_qs(), or transition to usermode execution (as
- * usermode execution is schedulable). As such, there are no read-side
- * primitives analogous to rcu_read_lock() and rcu_read_unlock() because
- * this primitive is intended to determine that all tasks have passed
- * through a safe state, not so much for data-structure synchronization.
- *
- * See the description of call_rcu() for more detailed information on
- * memory ordering guarantees.
- *
- * This is no longer exported, and is instead reserved for use by
- * synchronize_rcu_tasks_rude().
- */
-static void call_rcu_tasks_rude(struct rcu_head *rhp, rcu_callback_t func)
-{
-	call_rcu_tasks_generic(rhp, func, &rcu_tasks_rude);
-}
-
-/**
- * synchronize_rcu_tasks_rude - wait for a rude rcu-tasks grace period
- *
- * Control will return to the caller some time after a rude rcu-tasks
- * grace period has elapsed, in other words after all currently
- * executing rcu-tasks read-side critical sections have elapsed.  These
- * read-side critical sections are delimited by calls to schedule(),
- * cond_resched_tasks_rcu_qs(), userspace execution (which is a schedulable
- * context), and (in theory, anyway) cond_resched().
- *
- * This is a very specialized primitive, intended only for a few uses in
- * tracing and other situations requiring manipulation of function preambles
- * and profiling hooks.  The synchronize_rcu_tasks_rude() function is not
- * (yet) intended for heavy use from multiple CPUs.
- *
- * See the description of synchronize_rcu() for more detailed information
- * on memory ordering guarantees.
- */
-void synchronize_rcu_tasks_rude(void)
-{
-	if (!IS_ENABLED(CONFIG_ARCH_WANTS_NO_INSTR) || IS_ENABLED(CONFIG_FORCE_TASKS_RUDE_RCU))
-		synchronize_rcu_tasks_generic(&rcu_tasks_rude);
-}
-EXPORT_SYMBOL_GPL(synchronize_rcu_tasks_rude);
-
-static int __init rcu_spawn_tasks_rude_kthread(void)
-{
-	rcu_tasks_rude.gp_sleep = HZ / 10;
-	rcu_spawn_tasks_kthread_generic(&rcu_tasks_rude);
-	return 0;
-}
-
-#if !defined(CONFIG_TINY_RCU)
-void show_rcu_tasks_rude_gp_kthread(void)
-{
-	show_rcu_tasks_generic_gp_kthread(&rcu_tasks_rude, "");
-}
-EXPORT_SYMBOL_GPL(show_rcu_tasks_rude_gp_kthread);
-
-void rcu_tasks_rude_torture_stats_print(char *tt, char *tf)
-{
-	rcu_tasks_torture_stats_print_generic(&rcu_tasks_rude, tt, tf, "");
-}
-EXPORT_SYMBOL_GPL(rcu_tasks_rude_torture_stats_print);
-#endif // !defined(CONFIG_TINY_RCU)
-
-struct task_struct *get_rcu_tasks_rude_gp_kthread(void)
-{
-	return rcu_tasks_rude.kthread_ptr;
-}
-EXPORT_SYMBOL_GPL(get_rcu_tasks_rude_gp_kthread);
-
-void rcu_tasks_rude_get_gp_data(int *flags, unsigned long *gp_seq)
-{
-	*flags = 0;
-	*gp_seq = rcu_seq_current(&rcu_tasks_rude.tasks_gp_seq);
-}
-EXPORT_SYMBOL_GPL(rcu_tasks_rude_get_gp_data);
-
-#endif /* #ifdef CONFIG_TASKS_RUDE_RCU */
-
-#ifndef CONFIG_TINY_RCU
 void show_rcu_tasks_gp_kthreads(void)
 {
 	show_rcu_tasks_classic_gp_kthread();
 	show_rcu_tasks_rude_gp_kthread();
 }
-#endif /* #ifndef CONFIG_TINY_RCU */
 
 static void rcu_tasks_initiate_self_tests(void) { }
 
@@ -1459,9 +1326,6 @@ void __init tasks_cblist_init_generic(void)
 	cblist_init_generic(&rcu_tasks);
 #endif
 
-#ifdef CONFIG_TASKS_RUDE_RCU
-	cblist_init_generic(&rcu_tasks_rude);
-#endif
 }
 
 static int __init rcu_init_tasks_generic(void)
@@ -1470,9 +1334,6 @@ static int __init rcu_init_tasks_generic(void)
 	rcu_spawn_tasks_kthread();
 #endif
 
-#ifdef CONFIG_TASKS_RUDE_RCU
-	rcu_spawn_tasks_rude_kthread();
-#endif
 
 	// Run the self-tests.
 	rcu_tasks_initiate_self_tests();
@@ -1484,16 +1345,3 @@ core_initcall(rcu_init_tasks_generic);
 #else /* #ifdef CONFIG_TASKS_RCU_GENERIC */
 static inline void rcu_tasks_bootup_oddness(void) {}
 #endif /* #else #ifdef CONFIG_TASKS_RCU_GENERIC */
-
-#ifdef CONFIG_TASKS_TRACE_RCU
-
-////////////////////////////////////////////////////////////////////////
-//
-// Tracing variant of Tasks RCU.  This variant is designed to be used
-// to protect tracing hooks, including those of BPF.  This variant
-// is implemented via a straightforward mapping onto SRCU-fast.
-
-DEFINE_SRCU_FAST(rcu_tasks_trace_srcu_struct);
-EXPORT_SYMBOL_GPL(rcu_tasks_trace_srcu_struct);
-
-#endif /* #else #ifdef CONFIG_TASKS_TRACE_RCU */

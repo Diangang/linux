@@ -1397,24 +1397,6 @@ static const struct ctl_table sysctl_subsys_table[] = {
 		.mode		= 0444,
 		.proc_handler	= proc_dointvec,
 	},
-#ifdef CONFIG_SYSCTL_ARCH_UNALIGN_ALLOW
-	{
-		.procname	= "unaligned-trap",
-		.data		= &unaligned_enabled,
-		.maxlen		= sizeof(int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
-	},
-#endif
-#ifdef CONFIG_SYSCTL_ARCH_UNALIGN_NO_WARN
-	{
-		.procname	= "ignore-unaligned-usertrap",
-		.data		= &no_unaligned_warning,
-		.maxlen		= sizeof (int),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec,
-	},
-#endif
 };
 
 int __init sysctl_init_bases(void)

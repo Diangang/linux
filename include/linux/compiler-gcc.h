@@ -60,9 +60,6 @@
 #define KASAN_ABI_VERSION 4
 #endif
 
-#ifdef CONFIG_SHADOW_CALL_STACK
-#define __noscs __attribute__((__no_sanitize__("shadow-call-stack")))
-#endif
 
 #ifdef __SANITIZE_HWADDRESS__
 #define __no_sanitize_address __attribute__((__no_sanitize__("hwaddress")))
@@ -81,11 +78,7 @@
 /*
  * Only supported since gcc >= 12
  */
-#if 0 && __has_attribute(__no_sanitize_coverage__)
-#define __no_sanitize_coverage __attribute__((__no_sanitize_coverage__))
-#else
 #define __no_sanitize_coverage
-#endif
 
 /*
  * Treat __SANITIZE_HWADDRESS__ the same as __SANITIZE_ADDRESS__ in the kernel,

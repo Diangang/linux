@@ -113,9 +113,6 @@ struct rseq_data {
 	u32				sig;
 	struct rseq_event		event;
 	struct rseq_ids			ids;
-#ifdef CONFIG_RSEQ_SLICE_EXTENSION
-	struct rseq_slice		slice;
-#endif
 };
 
 #else /* CONFIG_RSEQ */

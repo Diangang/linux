@@ -499,7 +499,7 @@ void kmem_cache_destroy(struct kmem_cache *s)
 	/* in-flight kfree_rcu()'s may include objects from our cache */
 	kvfree_rcu_barrier_on_cache(s);
 
-	if (IS_ENABLED(CONFIG_SLUB_RCU_DEBUG) &&
+	if (0 &&
 	    (s->flags & SLAB_TYPESAFE_BY_RCU)) {
 		/*
 		 * Under CONFIG_SLUB_RCU_DEBUG, when objects in a
@@ -776,11 +776,7 @@ EXPORT_SYMBOL(kmalloc_size_roundup);
 #define KMALLOC_CGROUP_NAME(sz)
 #endif
 
-#ifndef CONFIG_SLUB_TINY
 #define KMALLOC_RCL_NAME(sz)	.name[KMALLOC_RECLAIM] = "kmalloc-rcl-" #sz,
-#else
-#define KMALLOC_RCL_NAME(sz)
-#endif
 
 #define KMALLOC_RANDOM_NAME(N, sz)
 

@@ -209,18 +209,6 @@ config FRAME_POINTER
 config OBJTOOL
 	bool
 
-config STACK_VALIDATION
-	bool "Compile-time stack metadata validation"
-	depends on HAVE_STACK_VALIDATION && UNWINDER_FRAME_POINTER
-	select OBJTOOL
-	default n
-	help
-	  Validate frame pointer rules at compile-time.  This helps ensure that
-	  runtime stack traces are more reliable.
-
-	  For more information, see
-	  tools/objtool/Documentation/objtool.txt.
-
 config NOINSTR_VALIDATION
 	bool
 	depends on HAVE_NOINSTR_VALIDATION && DEBUG_ENTRY
@@ -376,19 +364,6 @@ config PANIC_TIMEOUT
 	  with the kernel command line option panic=, and from userspace via
 	  /proc/sys/kernel/panic.
 
-config SOFTLOCKUP_DETECTOR_INTR_STORM
-	bool "Detect Interrupt Storm in Soft Lockups"
-	depends on SOFTLOCKUP_DETECTOR && IRQ_TIME_ACCOUNTING
-	default y if NR_CPUS <= 128
-	help
-	  Say Y here to enable the kernel to detect interrupt storm
-	  during "soft lockups".
-
-	  "soft lockups" can be caused by a variety of reasons. If one is
-	  caused by an interrupt storm, then the storming interrupts will not
-	  be on the callstack. To detect this case, it is necessary to report
-	  the CPU stats and the interrupt counts during the "soft lockups".
-
 config HAVE_HARDLOCKUP_DETECTOR_BUDDY
 	bool
 	depends on SMP
@@ -438,18 +413,6 @@ config LOCK_DEBUGGING_SUPPORT
 	default y
 
 endmenu # lock debugging
-
-config TRACE_IRQFLAGS
-	depends on TRACE_IRQFLAGS_SUPPORT
-	bool
-	help
-	  Enables hooks to interrupt enabling and disabling for
-	  either tracing or lock debugging.
-
-config TRACE_IRQFLAGS_NMI
-	def_bool y
-	depends on TRACE_IRQFLAGS
-	depends on TRACE_IRQFLAGS_NMI_SUPPORT
 
 config STACKTRACE
 	bool "Stack backtrace support"
@@ -508,105 +471,8 @@ menuconfig RUNTIME_TESTING_MENU
 
 if RUNTIME_TESTING_MENU
 
-config STRING_KUNIT_TEST
-	tristate "KUnit test string functions at runtime" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-
-config RESOURCE_KUNIT_TEST
-	tristate "KUnit test for resource API" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the resource API unit test.
-	  Tests the logic of API provided by resource.c and ioport.h.
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
-config SYSCTL_KUNIT_TEST
-	tristate "KUnit test for sysctl" if !KUNIT_ALL_TESTS
-	depends on KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the proc sysctl unit test, which runs on boot.
-	  Tests the API contract and implementation correctness of sysctl.
-	  For more information on KUnit and unit tests in general please refer
-	  to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
 config TEST_RUNTIME
 	bool
-
-if TEST_KALLSYMS
-
-config TEST_KALLSYMS_A
-	tristate
-	depends on m
-
-config TEST_KALLSYMS_B
-	tristate
-	depends on m
-
-config TEST_KALLSYMS_C
-	tristate
-	depends on m
-
-config TEST_KALLSYMS_D
-	tristate
-	depends on m
-
-choice
-	prompt "Kallsym test range"
-	default TEST_KALLSYMS_LARGE
-	help
-	  Selecting something other than "Fast" will enable tests which slow
-	  down the build and may crash your build.
-
-config TEST_KALLSYMS_FAST
-	bool "Fast builds"
-	help
-	  You won't really be testing kallsysms, so this just helps fast builds
-	  when allmodconfig is used..
-
-config TEST_KALLSYMS_LARGE
-	bool "Enable testing kallsyms with large exports"
-	help
-	  This will enable larger number of symbols. This will slow down
-	  your build considerably.
-
-config TEST_KALLSYMS_MAX
-	bool "Known kallsysms limits"
-	help
-	  This will enable exports to the point we know we'll start crashing
-	  builds.
-
-endchoice
-
-config TEST_KALLSYMS_SCALE_FACTOR
-	int "test kallsyms scale factor"
-	default 8
-	help
-	  How many more unusued symbols will TEST_KALLSYSMS_C have than
-	  TEST_KALLSYMS_A. If 8, then module C will have 8 * syms
-	  than module A. Then TEST_KALLSYMS_D will have double the amount
-	  of symbols than C so to allow projections.
-
-endif # TEST_KALLSYMS
-
-config TEST_CLOCKSOURCE_WATCHDOG
-	tristate "Test clocksource watchdog in kernel space"
-	depends on CLOCKSOURCE_WATCHDOG
-	help
-	  Enable this option to create a kernel module that will trigger
-	  a test of the clocksource watchdog.  This module may be loaded
-	  via modprobe or insmod in which case it will run upon being
-	  loaded, or it may be built in, in which case it will run
-	  shortly after boot.
-
-	  If unsure, say N.
 
 endif # RUNTIME_TESTING_MENU
 
@@ -631,66 +497,6 @@ config MEMTEST
 endmenu # "Kernel Testing and Coverage"
 
 menu "Rust hacking"
-
-config RUST_DEBUG_ASSERTIONS
-	bool "Debug assertions"
-	depends on RUST
-	help
-	  Enables rustc's `-Cdebug-assertions` codegen option.
-
-	  This flag lets you turn `cfg(debug_assertions)` conditional
-	  compilation on or off. This can be used to enable extra debugging
-	  code in development but not in production. For example, it controls
-	  the behavior of the standard library's `debug_assert!` macro.
-
-	  Note that this will apply to all Rust code, including `core`.
-
-	  If unsure, say N.
-
-config RUST_OVERFLOW_CHECKS
-	bool "Overflow checks"
-	default y
-	depends on RUST
-	help
-	  Enables rustc's `-Coverflow-checks` codegen option.
-
-	  This flag allows you to control the behavior of runtime integer
-	  overflow. When overflow-checks are enabled, a Rust panic will occur
-	  on overflow.
-
-	  Note that this will apply to all Rust code, including `core`.
-
-	  If unsure, say Y.
-
-config RUST_KERNEL_DOCTESTS
-	bool "Doctests for the `kernel` crate" if !KUNIT_ALL_TESTS
-	depends on RUST && KUNIT=y
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the documentation tests of the `kernel` crate
-	  as KUnit tests.
-
-	  For more information on KUnit and unit tests in general,
-	  please refer to the KUnit documentation in Documentation/dev-tools/kunit/.
-
-	  If unsure, say N.
-
-config RUST_INLINE_HELPERS
-	bool "Inline C helpers into Rust code (EXPERIMENTAL)"
-	depends on RUST && RUSTC_CLANG_LLVM_COMPATIBLE
-	depends on EXPERT
-	depends on ARM64 || X86_64
-	depends on !UML
-	help
-	  Inlines C helpers into Rust code using Link Time Optimization.
-
-	  If this option is enabled, C helper functions declared in
-	  rust/helpers/ are inlined into Rust code, which is helpful for
-	  performance of Rust code. This requires a matching LLVM version for
-	  Clang and rustc.
-
-	  If you are sure that you're using Clang and rustc with matching LLVM
-	  versions, say Y. Otherwise say N.
 
 endmenu # "Rust"
 

@@ -232,7 +232,7 @@ config X86
 	select MMU_GATHER_MERGE_VMAS
 	select HAVE_POSIX_CPU_TIMERS_TASK_WORK
 	select HAVE_REGS_AND_STACK_ACCESS_API
-	select HAVE_RELIABLE_STACKTRACE		if UNWINDER_ORC || STACK_VALIDATION
+	select HAVE_RELIABLE_STACKTRACE		if UNWINDER_ORC || n
 	select HAVE_FUNCTION_ARG_ACCESS_API
 	select HAVE_SETUP_PER_CPU_AREA
 	select HAVE_SOFTIRQ_ON_OWN_STACK
@@ -943,22 +943,6 @@ config X86_IOPL_IOPERM
 	  ability to disable interrupts from user space which would be
 	  granted if the hardware IOPL mechanism would be used.
 
-config TOSHIBA
-	tristate "Toshiba Laptop support"
-	depends on X86_32
-	help
-	  This adds a driver to safely access the System Management Mode of
-	  the CPU on Toshiba portables with a genuine Toshiba BIOS. It does
-	  not work on models with a Phoenix BIOS. The System Management Mode
-	  is used to set the BIOS and power saving options on Toshiba portables.
-
-	  For information on utilities to make use of this driver see the
-	  Toshiba Linux utilities web site at:
-	  <http://www.buzzard.org.uk/toshiba/>.
-
-	  Say Y if you intend to run this kernel on a Toshiba portable.
-	  Say N otherwise.
-
 config X86_REBOOTFIXUPS
 	bool "Enable X86 board specific fixups for reboot"
 	depends on X86_32
@@ -1113,7 +1097,6 @@ config NODES_SHIFT
 
 config ARCH_SPARSEMEM_ENABLE
 	def_bool y
-	select SPARSEMEM_STATIC if X86_32
 	select SPARSEMEM_VMEMMAP_ENABLE if X86_64
 
 config ARCH_SPARSEMEM_DEFAULT
@@ -1695,22 +1678,6 @@ config MODIFY_LDT_SYSCALL
 
 	  Saying 'N' here may make sense for embedded or server kernels.
 
-config STRICT_SIGALTSTACK_SIZE
-	bool "Enforce strict size checking for sigaltstack"
-	depends on DYNAMIC_SIGFRAME
-	help
-	  For historical reasons MINSIGSTKSZ is a constant which became
-	  already too small with AVX512 support. Add a mechanism to
-	  enforce strict checking of the sigaltstack size against the
-	  real size of the FPU frame. This option enables the check
-	  by default. It can also be controlled via the kernel command
-	  line option 'strict_sas_size' independent of this config
-	  switch. Enabling it might break existing applications which
-	  allocate a too small sigaltstack but 'work' because they
-	  never get a signal delivered.
-
-	  Say 'N' unless you want to really enforce this check.
-
 config X86_BUS_LOCK_DETECT
 	bool "Split Lock Detect and Bus Lock Detect support"
 	depends on CPU_SUP_INTEL || CPU_SUP_AMD
@@ -1734,7 +1701,7 @@ config CC_HAS_NAMED_AS
 config CC_HAS_NAMED_AS_FIXED_SANITIZERS
 	def_bool y
 	depends on !(KASAN || KCSAN) || GCC_VERSION >= 130300
-	depends on !(UBSAN_BOOL && KASAN) || GCC_VERSION >= 140200
+	depends on !(n && KASAN) || GCC_VERSION >= 140200
 
 config USE_X86_SEG_SUPPORT
 	def_bool CC_HAS_NAMED_AS

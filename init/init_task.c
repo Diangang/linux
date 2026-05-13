@@ -56,11 +56,6 @@ static struct sighand_struct init_sighand = {
 	.signalfd_wqh	= __WAIT_QUEUE_HEAD_INITIALIZER(init_sighand.signalfd_wqh),
 };
 
-#ifdef CONFIG_SHADOW_CALL_STACK
-unsigned long init_shadow_call_stack[SCS_SIZE / sizeof(long)] = {
-	[(SCS_SIZE / sizeof(long)) - 1] = SCS_END_MAGIC
-};
-#endif
 
 /* init to 2 - one for init_task, one to ensure it is never freed */
 static struct group_info init_groups = { .usage = REFCOUNT_INIT(2) };
@@ -130,17 +125,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 #ifdef CONFIG_CGROUP_SCHED
 	.sched_task_group = &root_task_group,
 #endif
-#ifdef CONFIG_SCHED_CLASS_EXT
-	.scx		= {
-		.dsq_list.node	= LIST_HEAD_INIT(init_task.scx.dsq_list.node),
-		.sticky_cpu	= -1,
-		.holding_cpu	= -1,
-		.runnable_node	= LIST_HEAD_INIT(init_task.scx.runnable_node),
-		.runnable_at	= INITIAL_JIFFIES,
-		.ddsp_dsq_id	= SCX_DSQ_INVALID,
-		.slice		= SCX_SLICE_DFL,
-	},
-#endif
 	.ptraced	= LIST_HEAD_INIT(init_task.ptraced),
 	.ptrace_entry	= LIST_HEAD_INIT(init_task.ptrace_entry),
 	.real_parent	= &init_task,
@@ -189,9 +173,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 	.rcu_tasks_idle_cpu = -1,
 	.rcu_tasks_exit_list = LIST_HEAD_INIT(init_task.rcu_tasks_exit_list),
 #endif
-#ifdef CONFIG_TASKS_TRACE_RCU
-	.trc_reader_nesting = 0,
-#endif
 #ifdef CONFIG_CPUSETS
 	.mems_allowed_seq = SEQCNT_SPINLOCK_ZERO(init_task.mems_allowed_seq,
 						 &init_task.alloc_lock),
@@ -214,9 +195,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 		.scoped_accesses	= {LIST_POISON1, NULL},
 	},
 #endif
-#ifdef CONFIG_TRACE_IRQFLAGS
-	.softirqs_enabled = 1,
-#endif
 #if 0
 	.lockdep_depth = 0, /* no locks held yet */
 	.curr_chain_key = INITIAL_CHAIN_KEY,
@@ -231,9 +209,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 #endif
 #ifdef CONFIG_SECURITY
 	.security	= NULL,
-#endif
-#ifdef CONFIG_SECCOMP_FILTER
-	.seccomp	= { .filter_count = ATOMIC_INIT(0) },
 #endif
 #ifdef CONFIG_SCHED_MM_CID
 	.mm_cid		= { .cid = MM_CID_UNSET, },

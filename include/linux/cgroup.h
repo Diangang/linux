@@ -825,24 +825,11 @@ static inline void cgroup_account_cputime_field(struct task_struct *task,
  * sock->sk_cgrp_data handling.  For more info, see sock_cgroup_data
  * definition in cgroup-defs.h.
  */
-#ifdef CONFIG_SOCK_CGROUP_DATA
-
-void cgroup_sk_alloc(struct sock_cgroup_data *skcd);
-void cgroup_sk_clone(struct sock_cgroup_data *skcd);
-void cgroup_sk_free(struct sock_cgroup_data *skcd);
-
-static inline struct cgroup *sock_cgroup_ptr(struct sock_cgroup_data *skcd)
-{
-	return skcd->cgroup;
-}
-
-#else	/* CONFIG_CGROUP_DATA */
 
 static inline void cgroup_sk_alloc(struct sock_cgroup_data *skcd) {}
 static inline void cgroup_sk_clone(struct sock_cgroup_data *skcd) {}
 static inline void cgroup_sk_free(struct sock_cgroup_data *skcd) {}
 
-#endif	/* CONFIG_CGROUP_DATA */
 
 #ifdef CONFIG_CGROUPS
 

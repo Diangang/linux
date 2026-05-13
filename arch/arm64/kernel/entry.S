@@ -833,11 +833,6 @@ NOKPROBE(ret_from_fork)
  */
 SYM_FUNC_START(call_on_irq_stack)
 	save_and_disable_daif x9
-#ifdef CONFIG_SHADOW_CALL_STACK
-	get_current_task x16
-	scs_save x16
-	ldr_this_cpu scs_sp, irq_shadow_call_stack_ptr, x17
-#endif
 
 	/* Create a frame record to save our LR and SP (implicit in FP) */
 	stp	x29, x30, [sp, #-16]!
@@ -978,14 +973,6 @@ SYM_CODE_START(__sdei_asm_handler)
 	add	x5, x5, x6
 	mov	sp, x5
 
-#ifdef CONFIG_SHADOW_CALL_STACK
-	/* Use a separate shadow call stack for normal and critical events */
-	cbnz	w4, 3f
-	ldr_this_cpu dst=scs_sp, sym=sdei_shadow_call_stack_normal_ptr, tmp=x6
-	b	4f
-3:	ldr_this_cpu dst=scs_sp, sym=sdei_shadow_call_stack_critical_ptr, tmp=x6
-4:
-#endif
 
 	/*
 	 * We may have interrupted userspace, or a guest, or exit-from or

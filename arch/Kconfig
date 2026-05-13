@@ -22,9 +22,6 @@ menu "General architecture-dependent options"
 config HOTPLUG_SMT
 	bool
 
-config SMT_NUM_THREADS_DYNAMIC
-	bool
-
 config ARCH_SUPPORTS_SCHED_SMT
 	bool
 
@@ -137,12 +134,6 @@ config JUMP_LABEL
 	  ( On 32-bit x86, the necessary options added to the compiler
 	    flags may increase the size of the kernel slightly. )
 
-config STATIC_CALL_SELFTEST
-	bool "Static call selftest"
-	depends on HAVE_STATIC_CALL
-	help
-	  Boot time self-test of the call patching code.
-
 config OPTPROBES
 	def_bool y
 	depends on KPROBES && HAVE_OPTPROBES
@@ -151,7 +142,6 @@ config OPTPROBES
 config UPROBES
 	def_bool n
 	depends on ARCH_SUPPORTS_UPROBES
-	select TASKS_TRACE_RCU
 	help
 	  Uprobes is the user-space counterpart to kprobes: they
 	  enable instrumentation applications (such as 'perf probe')
@@ -542,30 +532,6 @@ config SECCOMP
 	  syscalls defined by each seccomp mode.
 
 	  If unsure, say Y.
-
-config SECCOMP_FILTER
-	def_bool y
-	depends on HAVE_ARCH_SECCOMP_FILTER && SECCOMP && NET
-	help
-	  Enable tasks to build secure computing environments defined
-	  in terms of Berkeley Packet Filter programs which implement
-	  task-defined system call filtering polices.
-
-	  See Documentation/userspace-api/seccomp_filter.rst for details.
-
-config SECCOMP_CACHE_DEBUG
-	bool "Show seccomp filter cache status in /proc/pid/seccomp_cache"
-	depends on SECCOMP_FILTER && !n
-	depends on PROC_FS
-	help
-	  This enables the /proc/pid/seccomp_cache interface to monitor
-	  seccomp cache data. The file format is subject to change. Reading
-	  the file requires CAP_SYS_ADMIN.
-
-	  This option is for debugging only. Enabling presents the risk that
-	  an adversary may be able to infer the seccomp filter logic.
-
-	  If unsure, say N.
 
 config HAVE_ARCH_KSTACK_ERASE
 	bool
@@ -1112,16 +1078,6 @@ config ARCH_USE_MEMREMAP_PROT
 
 config ARCH_HAS_RELR
 	bool
-
-config RELR
-	bool "Use RELR relocation packing"
-	depends on ARCH_HAS_RELR && TOOLS_SUPPORT_RELR
-	default y
-	help
-	  Store the kernel's dynamic relocations in the RELR relocation packing
-	  format. Requires a compatible linker (LLD supports this feature), as
-	  well as compatible NM and OBJCOPY utilities (llvm-nm and llvm-objcopy
-	  are compatible).
 
 config ARCH_HAS_MEM_ENCRYPT
 	bool

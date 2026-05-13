@@ -87,28 +87,10 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
 cpumask_t cpus_booted_once_mask;
 #endif
 
-#if 0 && defined(CONFIG_SMP)
-static struct lockdep_map cpuhp_state_up_map =
-	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-up", &cpuhp_state_up_map);
-static struct lockdep_map cpuhp_state_down_map =
-	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-down", &cpuhp_state_down_map);
-
-
-static inline void cpuhp_lock_acquire(bool bringup)
-{
-	lock_map_acquire(bringup ? &cpuhp_state_up_map : &cpuhp_state_down_map);
-}
-
-static inline void cpuhp_lock_release(bool bringup)
-{
-	lock_map_release(bringup ? &cpuhp_state_up_map : &cpuhp_state_down_map);
-}
-#else
 
 static inline void cpuhp_lock_acquire(bool bringup) { }
 static inline void cpuhp_lock_release(bool bringup) { }
 
-#endif
 
 /**
  * struct cpuhp_step - Hotplug state machine step
@@ -655,11 +637,7 @@ early_param("nosmt", smt_cmdline_disable);
  */
 static inline bool cpu_smt_thread_allowed(unsigned int cpu)
 {
-#ifdef CONFIG_SMT_NUM_THREADS_DYNAMIC
-	return topology_smt_thread_allowed(cpu);
-#else
 	return true;
-#endif
 }
 
 static inline bool cpu_bootable(unsigned int cpu)
@@ -2860,7 +2838,7 @@ static const struct attribute_group cpuhp_cpu_root_attr_group = {
 
 static bool cpu_smt_num_threads_valid(unsigned int threads)
 {
-	if (IS_ENABLED(CONFIG_SMT_NUM_THREADS_DYNAMIC))
+	if (0)
 		return threads >= 1 && threads <= cpu_smt_max_threads;
 	return threads == 1 || threads == cpu_smt_max_threads;
 }

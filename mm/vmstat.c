@@ -1257,7 +1257,7 @@ const char * const vmstat_text[] = {
 	[I(NR_FOLL_PIN_RELEASED)]		= "nr_foll_pin_released",
 	[I(NR_VMALLOC)]				= "nr_vmalloc",
 	[I(NR_KERNEL_STACK_KB)]			= "nr_kernel_stack",
-#if IS_ENABLED(CONFIG_SHADOW_CALL_STACK)
+#if 0
 	[I(NR_KERNEL_SCS_KB)]			= "nr_shadow_call_stack",
 #endif
 	[I(NR_PAGETABLE)]			= "nr_page_table_pages",

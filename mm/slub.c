@@ -194,11 +194,7 @@ enum slab_flags {
 	SL_pfmemalloc = PG_active,	/* Historical reasons for this bit */
 };
 
-#ifndef CONFIG_SLUB_TINY
 #define __fastpath_inline __always_inline
-#else
-#define __fastpath_inline
-#endif
 
 #ifdef CONFIG_SLUB_DEBUG
 DEFINE_STATIC_KEY_FALSE(slub_debug_enabled);
@@ -246,7 +242,6 @@ void *fixup_red_left(struct kmem_cache *s, void *p)
 /* Enable to log cmpxchg failures */
 #undef SLUB_DEBUG_CMPXCHG
 
-#ifndef CONFIG_SLUB_TINY
 /*
  * Minimum number of partial slabs. These will be left on the partial
  * lists even if they are empty. kmem_cache_shrink may reclaim them.
@@ -259,10 +254,6 @@ void *fixup_red_left(struct kmem_cache *s, void *p)
  * sort the partial list by the number of objects in use.
  */
 #define MAX_PARTIAL 10
-#else
-#define MIN_PARTIAL 0
-#define MAX_PARTIAL 0
-#endif
 
 #define DEBUG_DEFAULT_FLAGS (SLAB_CONSISTENCY_CHECKS | SLAB_RED_ZONE | \
 				SLAB_POISON | SLAB_STORE_USER)
@@ -2435,14 +2426,6 @@ static inline bool memcg_slab_post_charge(void *p, gfp_t flags)
 }
 #endif /* CONFIG_MEMCG */
 
-#ifdef CONFIG_SLUB_RCU_DEBUG
-static void slab_free_after_rcu_debug(struct rcu_head *rcu_head);
-
-struct rcu_delayed_free {
-	struct rcu_head head;
-	void *object;
-};
-#endif
 
 /*
  * Hooks for other subsystems that check memory allocations. In a typical
@@ -2500,27 +2483,6 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 	if (kasan_slab_pre_free(s, x))
 		return false;
 
-#ifdef CONFIG_SLUB_RCU_DEBUG
-	if (still_accessible) {
-		struct rcu_delayed_free *delayed_free;
-
-		delayed_free = kmalloc_obj(*delayed_free, GFP_NOWAIT);
-		if (delayed_free) {
-			/*
-			 * Let KASAN track our call stack as a "related work
-			 * creation", just like if the object had been freed
-			 * normally via kfree_rcu().
-			 * We have to do this manually because the rcu_head is
-			 * not located inside the object.
-			 */
-			kasan_record_aux_stack(x);
-
-			delayed_free->object = x;
-			call_rcu(&delayed_free->head, slab_free_after_rcu_debug);
-			return false;
-		}
-	}
-#endif /* CONFIG_SLUB_RCU_DEBUG */
 
 	/*
 	 * As memory initialization might be integrated into KASAN,
@@ -3556,7 +3518,7 @@ static void *get_from_partial_node(struct kmem_cache *s,
 		if (!pfmemalloc_match(slab, pc->flags))
 			continue;
 
-		if (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {
+		if (0 || kmem_cache_debug(s)) {
 			object = alloc_single_from_partial(s, n, slab,
 							pc->orig_size);
 			if (object)
@@ -4208,7 +4170,7 @@ new_objects:
 
 	stat(s, ALLOC_SLAB);
 
-	if (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {
+	if (0 || kmem_cache_debug(s)) {
 		object = alloc_single_from_new_slab(s, slab, orig_size, gfpflags);
 
 		if (likely(object))
@@ -5253,7 +5215,7 @@ static void __slab_free(struct kmem_cache *s, struct slab *slab,
 	unsigned long flags;
 	bool on_node_partial;
 
-	if (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {
+	if (0 || kmem_cache_debug(s)) {
 		free_to_partial_list(s, slab, head, tail, cnt, addr);
 		return;
 	}
@@ -6023,34 +5985,6 @@ void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
 	}
 }
 
-#ifdef CONFIG_SLUB_RCU_DEBUG
-static void slab_free_after_rcu_debug(struct rcu_head *rcu_head)
-{
-	struct rcu_delayed_free *delayed_free =
-			container_of(rcu_head, struct rcu_delayed_free, head);
-	void *object = delayed_free->object;
-	struct slab *slab = virt_to_slab(object);
-	struct kmem_cache *s;
-
-	kfree(delayed_free);
-
-	if (WARN_ON(is_kfence_address(object)))
-		return;
-
-	/* find the object and the cache again */
-	if (WARN_ON(!slab))
-		return;
-	s = slab->slab_cache;
-	if (WARN_ON(!(s->flags & SLAB_TYPESAFE_BY_RCU)))
-		return;
-
-	/* resume freeing */
-	if (slab_free_hook(s, object, slab_want_init_on_free(s), true)) {
-		__slab_free(s, slab, object, object, 1, _THIS_IP_);
-		stat(s, FREE_SLOWPATH);
-	}
-}
-#endif /* CONFIG_SLUB_RCU_DEBUG */
 
 #if 0
 void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr)
@@ -7012,7 +6946,7 @@ int __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 {
 	int i;
 
-	if (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {
+	if (0 || kmem_cache_debug(s)) {
 		for (i = 0; i < size; i++) {
 
 			p[i] = ___slab_alloc(s, flags, NUMA_NO_NODE, _RET_IP_,
@@ -7129,7 +7063,7 @@ EXPORT_SYMBOL(kmem_cache_alloc_bulk_noprof);
  */
 static unsigned int slub_min_order;
 static unsigned int slub_max_order =
-	IS_ENABLED(CONFIG_SLUB_TINY) ? 1 : PAGE_ALLOC_COSTLY_ORDER;
+	0 ? 1 : PAGE_ALLOC_COSTLY_ORDER;
 static unsigned int slub_min_objects;
 
 /*
@@ -7418,7 +7352,7 @@ static unsigned int calculate_sheaf_capacity(struct kmem_cache *s,
 	size_t size;
 
 
-	if (IS_ENABLED(CONFIG_SLUB_TINY) || s->flags & SLAB_DEBUG_FLAGS)
+	if (0 || s->flags & SLAB_DEBUG_FLAGS)
 		return 0;
 
 	/*

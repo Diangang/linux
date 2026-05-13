@@ -20,21 +20,8 @@ config SLUB
 
 config KVFREE_RCU_BATCHED
 	def_bool y
-	depends on !SLUB_TINY && !TINY_RCU
-	depends on !RCU_STRICT_GRACE_PERIOD
-
-config SLUB_TINY
-	bool "Configure for minimal memory footprint"
-	depends on EXPERT && !COMPILE_TEST
-	select SLAB_MERGE_DEFAULT
-	help
-	   Configures the slab allocator in a way to achieve minimal memory
-	   footprint, sacrificing scalability, debugging and other features.
-	   This is intended only for the smallest system that had used the
-	   SLOB allocator and is not recommended for systems with more than
-	   16MB RAM.
-
-	   If unsure, say N.
+	depends on y
+	depends on y
 
 config SLAB_MERGE_DEFAULT
 	bool "Allow slab caches to be merged"
@@ -56,17 +43,9 @@ config SPARSEMEM
 	def_bool y
 	depends on ARCH_SPARSEMEM_ENABLE
 
-config SPARSEMEM_STATIC
-	bool
-
-#
-# Architecture platforms which require a two level mem_section in SPARSEMEM
-# must select this option. This is usually for architecture platforms with
-# an extremely sparse physical address space.
-#
 config SPARSEMEM_EXTREME
 	def_bool y
-	depends on SPARSEMEM && !SPARSEMEM_STATIC
+	depends on SPARSEMEM
 
 config SPARSEMEM_VMEMMAP_ENABLE
 	bool
@@ -79,12 +58,6 @@ config SPARSEMEM_VMEMMAP
 	  pfn_to_page and page_to_pfn operations.  This is the most
 	  efficient option when sufficient kernel resources are available.
 
-config SPARSEMEM_VMEMMAP_PREINIT
-	bool
-#
-# Select this config option from the architecture Kconfig, if it is preferred
-# to enable the feature of HugeTLB/dev_dax vmemmap optimization.
-#
 config ARCH_WANT_OPTIMIZE_DAX_VMEMMAP
 	bool
 
@@ -382,20 +355,6 @@ choice
 	  memory footprint of applications without a guaranteed
 	  benefit but it will work automatically for all applications.
 
-	config TRANSPARENT_HUGEPAGE_MADVISE
-		bool "madvise"
-	help
-	  Enabling Transparent Hugepage madvise, will only provide a
-	  performance improvement benefit to the applications using
-	  madvise(MADV_HUGEPAGE) but it won't risk to increase the
-	  memory footprint of applications without a guaranteed
-	  benefit.
-
-	config TRANSPARENT_HUGEPAGE_NEVER
-		bool "never"
-	help
-	  Disable Transparent Hugepage by default. It can still be
-	  enabled at runtime via sysfs.
 endchoice
 
 choice
@@ -419,29 +378,6 @@ choice
 	  transparent huge pages to be obtained even if this mode is
 	  specified.
 
-	config TRANSPARENT_HUGEPAGE_SHMEM_HUGE_ALWAYS
-		bool "always"
-	help
-	  Always attempt to allocate hugepage for shmem mount, can
-	  increase the memory footprint of applications without a
-	  guaranteed benefit but it will work automatically for all
-	  applications.
-
-	config TRANSPARENT_HUGEPAGE_SHMEM_HUGE_WITHIN_SIZE
-		bool "within_size"
-	help
-	  Enable hugepage allocation for shmem mount if the allocation
-	  will be fully within the i_size. This configuration also takes
-	  into account any madvise(MADV_HUGEPAGE) hints that may be
-	  provided by the applications.
-
-	config TRANSPARENT_HUGEPAGE_SHMEM_HUGE_ADVISE
-		bool "advise"
-	help
-	  Enable hugepage allocation for the shmem mount exclusively when
-	  applications supply the madvise(MADV_HUGEPAGE) hint.
-	  This ensures that hugepages are used only in response to explicit
-	  requests from applications.
 endchoice
 
 choice
@@ -464,29 +400,6 @@ choice
 	  madvise(MADV_COLLAPSE) can still cause transparent huge pages
 	  to be obtained even if this mode is specified.
 
-	config TRANSPARENT_HUGEPAGE_TMPFS_HUGE_ALWAYS
-		bool "always"
-	help
-	  Always attempt to allocate hugepage for tmpfs mount, can
-	  increase the memory footprint of applications without a
-	  guaranteed benefit but it will work automatically for all
-	  applications.
-
-	config TRANSPARENT_HUGEPAGE_TMPFS_HUGE_WITHIN_SIZE
-		bool "within_size"
-	help
-	  Enable hugepage allocation for tmpfs mount if the allocation
-	  will be fully within the i_size. This configuration also takes
-	  into account any madvise(MADV_HUGEPAGE) hints that may be
-	  provided by the applications.
-
-	config TRANSPARENT_HUGEPAGE_TMPFS_HUGE_ADVISE
-		bool "advise"
-	help
-	  Enable hugepage allocation for the tmpfs mount exclusively when
-	  applications supply the madvise(MADV_HUGEPAGE) hint.
-	  This ensures that hugepages are used only in response to explicit
-	  requests from applications.
 endchoice
 
 config THP_SWAP
@@ -498,17 +411,6 @@ config THP_SWAP
 	  will be split after swapout.
 
 	  For selection by architectures with reasonable THP sizes.
-
-config READ_ONLY_THP_FOR_FS
-	bool "Read-only THP for filesystems (EXPERIMENTAL)"
-	depends on TRANSPARENT_HUGEPAGE
-
-	help
-	  Allow khugepaged to put read-only file-backed pages in THP.
-
-	  This is marked experimental because it is a new feature. Write
-	  support of file THPs will be developed in the next few release
-	  cycles.
 
 endif # TRANSPARENT_HUGEPAGE
 
@@ -578,18 +480,6 @@ config PAGE_BLOCK_MAX_ORDER
 
 config GENERIC_EARLY_IOREMAP
 	bool
-
-config STACK_MAX_DEFAULT_SIZE_MB
-	int "Default maximum user stack size for 32-bit processes (MB)"
-	default 100
-	range 8 2048
-	depends on STACK_GROWSUP && (!64BIT || COMPAT)
-	help
-	  This is the maximum stack size in Megabytes in the VM layout of 32-bit
-	  user processes when the stack grows upwards (currently only on parisc
-	  arch) when the RLIMIT_STACK hard limit is unlimited.
-
-	  A sane initial value is 100 MB.
 
 config ARCH_HAS_CACHE_LINE_SIZE
 	bool

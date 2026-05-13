@@ -557,11 +557,11 @@ static int shmem_confirm_swap(struct address_space *mapping, pgoff_t index,
 
 #if defined(CONFIG_TRANSPARENT_HUGEPAGE_SHMEM_HUGE_NEVER)
 #define SHMEM_HUGE_DEFAULT SHMEM_HUGE_NEVER
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_SHMEM_HUGE_ALWAYS)
+#elif 0
 #define SHMEM_HUGE_DEFAULT SHMEM_HUGE_ALWAYS
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_SHMEM_HUGE_WITHIN_SIZE)
+#elif 0
 #define SHMEM_HUGE_DEFAULT SHMEM_HUGE_WITHIN_SIZE
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_SHMEM_HUGE_ADVISE)
+#elif 0
 #define SHMEM_HUGE_DEFAULT SHMEM_HUGE_ADVISE
 #else
 #define SHMEM_HUGE_DEFAULT SHMEM_HUGE_NEVER
@@ -573,11 +573,11 @@ static int shmem_huge __read_mostly = SHMEM_HUGE_DEFAULT;
 
 #if defined(CONFIG_TRANSPARENT_HUGEPAGE_TMPFS_HUGE_NEVER)
 #define TMPFS_HUGE_DEFAULT SHMEM_HUGE_NEVER
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_TMPFS_HUGE_ALWAYS)
+#elif 0
 #define TMPFS_HUGE_DEFAULT SHMEM_HUGE_ALWAYS
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_TMPFS_HUGE_WITHIN_SIZE)
+#elif 0
 #define TMPFS_HUGE_DEFAULT SHMEM_HUGE_WITHIN_SIZE
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE_TMPFS_HUGE_ADVISE)
+#elif 0
 #define TMPFS_HUGE_DEFAULT SHMEM_HUGE_ADVISE
 #else
 #define TMPFS_HUGE_DEFAULT SHMEM_HUGE_NEVER
@@ -2959,85 +2959,10 @@ static int shmem_file_open(struct inode *inode, struct file *file)
 	return generic_file_open(inode, file);
 }
 
-#ifdef CONFIG_TMPFS_XATTR
-static int shmem_initxattrs(struct inode *, const struct xattr *, void *);
-
-#if IS_ENABLED(CONFIG_UNICODE)
-/*
- * shmem_inode_casefold_flags - Deal with casefold file attribute flag
- *
- * The casefold file attribute needs some special checks. I can just be added to
- * an empty dir, and can't be removed from a non-empty dir.
- */
-static int shmem_inode_casefold_flags(struct inode *inode, unsigned int fsflags,
-				      struct dentry *dentry, unsigned int *i_flags)
-{
-	unsigned int old = inode->i_flags;
-	struct super_block *sb = inode->i_sb;
-
-	if (fsflags & FS_CASEFOLD_FL) {
-		if (!(old & S_CASEFOLD)) {
-			if (!sb->s_encoding)
-				return -EOPNOTSUPP;
-
-			if (!S_ISDIR(inode->i_mode))
-				return -ENOTDIR;
-
-			if (dentry && !simple_empty(dentry))
-				return -ENOTEMPTY;
-		}
-
-		*i_flags = *i_flags | S_CASEFOLD;
-	} else if (old & S_CASEFOLD) {
-		if (dentry && !simple_empty(dentry))
-			return -ENOTEMPTY;
-	}
-
-	return 0;
-}
-#else
-static int shmem_inode_casefold_flags(struct inode *inode, unsigned int fsflags,
-				      struct dentry *dentry, unsigned int *i_flags)
-{
-	if (fsflags & FS_CASEFOLD_FL)
-		return -EOPNOTSUPP;
-
-	return 0;
-}
-#endif
-
-/*
- * chattr's fsflags are unrelated to extended attributes,
- * but tmpfs has chosen to enable them under the same config option.
- */
-static int shmem_set_inode_flags(struct inode *inode, unsigned int fsflags, struct dentry *dentry)
-{
-	unsigned int i_flags = 0;
-	int ret;
-
-	ret = shmem_inode_casefold_flags(inode, fsflags, dentry, &i_flags);
-	if (ret)
-		return ret;
-
-	if (fsflags & FS_NOATIME_FL)
-		i_flags |= S_NOATIME;
-	if (fsflags & FS_APPEND_FL)
-		i_flags |= S_APPEND;
-	if (fsflags & FS_IMMUTABLE_FL)
-		i_flags |= S_IMMUTABLE;
-	/*
-	 * But FS_NODUMP_FL does not require any action in i_flags.
-	 */
-	inode_set_flags(inode, i_flags, S_NOATIME | S_APPEND | S_IMMUTABLE | S_CASEFOLD);
-
-	return 0;
-}
-#else
 static void shmem_set_inode_flags(struct inode *inode, unsigned int fsflags, struct dentry *dentry)
 {
 }
 #define shmem_initxattrs NULL
-#endif
 
 static struct offset_ctx *shmem_get_offset_ctx(struct inode *inode)
 {
@@ -3240,12 +3165,6 @@ static int shmem_fill_super(struct super_block *sb, struct fs_context *fc)
 	sb->s_magic = TMPFS_MAGIC;
 	sb->s_op = &shmem_ops;
 	sb->s_time_gran = 1;
-#ifdef CONFIG_TMPFS_XATTR
-	sb->s_xattr = shmem_xattr_handlers;
-#endif
-#ifdef CONFIG_TMPFS_POSIX_ACL
-	sb->s_flags |= SB_POSIXACL;
-#endif
 	uuid_t uuid;
 	uuid_gen(&uuid);
 	super_set_uuid(sb, uuid.b, sizeof(uuid));
@@ -3372,35 +3291,13 @@ static const struct file_operations shmem_file_operations = {
 static const struct inode_operations shmem_inode_operations = {
 	.getattr	= shmem_getattr,
 	.setattr	= shmem_setattr,
-#ifdef CONFIG_TMPFS_XATTR
-	.listxattr	= shmem_listxattr,
-	.set_acl	= simple_set_acl,
-	.fileattr_get	= shmem_fileattr_get,
-	.fileattr_set	= shmem_fileattr_set,
-#endif
 };
 
 static const struct inode_operations shmem_dir_inode_operations = {
-#ifdef CONFIG_TMPFS_XATTR
-	.listxattr	= shmem_listxattr,
-	.fileattr_get	= shmem_fileattr_get,
-	.fileattr_set	= shmem_fileattr_set,
-#endif
-#ifdef CONFIG_TMPFS_POSIX_ACL
-	.setattr	= shmem_setattr,
-	.set_acl	= simple_set_acl,
-#endif
 };
 
 static const struct inode_operations shmem_special_inode_operations = {
 	.getattr	= shmem_getattr,
-#ifdef CONFIG_TMPFS_XATTR
-	.listxattr	= shmem_listxattr,
-#endif
-#ifdef CONFIG_TMPFS_POSIX_ACL
-	.setattr	= shmem_setattr,
-	.set_acl	= simple_set_acl,
-#endif
 };
 
 static const struct super_operations shmem_ops = {

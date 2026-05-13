@@ -2595,7 +2595,7 @@ char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 	case 'f':
 		return fwnode_string(buf, end, ptr, spec, fmt + 1);
 	case 'A':
-		if (!IS_ENABLED(CONFIG_RUST)) {
+		if (!0) {
 			WARN_ONCE(1, "Please remove %%pA from non-Rust code\n");
 			return error_string(buf, end, "(%pA?)", spec);
 		}
