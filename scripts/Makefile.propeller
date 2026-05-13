@@ -16,12 +16,9 @@ else
 endif
 
 # Propeller requires debug information to embed module names in the profiles.
-# If CONFIG_DEBUG_INFO is not enabled, set -gmlt option. Skip this for AutoFDO,
-# as the option should already be set.
-ifndef CONFIG_DEBUG_INFO
-  ifndef CONFIG_AUTOFDO_CLANG
-    CFLAGS_PROPELLER_CLANG += -gmlt
-  endif
+# AutoFDO already sets the option.
+ifndef CONFIG_AUTOFDO_CLANG
+  CFLAGS_PROPELLER_CLANG += -gmlt
 endif
 
 ifdef CONFIG_LTO_CLANG_THIN

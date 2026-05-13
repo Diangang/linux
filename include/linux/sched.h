@@ -383,33 +383,6 @@ struct sched_param {
 };
 
 struct sched_info {
-#ifdef CONFIG_SCHED_INFO
-	/* Cumulative counters: */
-
-	/* # of times we have run on this CPU: */
-	unsigned long			pcount;
-
-	/* Time spent waiting on a runqueue: */
-	unsigned long long		run_delay;
-
-	/* Max time spent waiting on a runqueue: */
-	unsigned long long		max_run_delay;
-
-	/* Min time spent waiting on a runqueue: */
-	unsigned long long		min_run_delay;
-
-	/* Timestamps: */
-
-	/* When did we last run on a CPU? */
-	unsigned long long		last_arrival;
-
-	/* When were we last queued to run? */
-	unsigned long long		last_queued;
-
-	/* Timestamp of max time spent waiting on a runqueue: */
-	struct timespec64		max_run_delay_ts;
-
-#endif /* CONFIG_SCHED_INFO */
 };
 
 /*

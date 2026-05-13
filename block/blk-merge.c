@@ -11,6 +11,7 @@
 #include <linux/blk-cgroup.h>
 
 #include "blk.h"
+#include "blk-cgroup.h"
 #include "blk-mq-sched.h"
 #include "blk-rq-qos.h"
 #include "blk-throttle.h"

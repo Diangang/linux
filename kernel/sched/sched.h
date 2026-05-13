@@ -1066,9 +1066,6 @@ struct rq {
 
 	struct sched_avg	avg_rt;
 	struct sched_avg	avg_dl;
-#ifdef CONFIG_HAVE_SCHED_AVG_IRQ
-	struct sched_avg	avg_irq;
-#endif
 	u64			idle_stamp;
 	u64			avg_idle;
 
@@ -3052,25 +3049,6 @@ static inline bool uclamp_rq_is_idle(struct rq *rq)
 }
 
 
-#ifdef CONFIG_HAVE_SCHED_AVG_IRQ
-
-static inline unsigned long cpu_util_irq(struct rq *rq)
-{
-	return READ_ONCE(rq->avg_irq.util_avg);
-}
-
-static inline
-unsigned long scale_irq_capacity(unsigned long util, unsigned long irq, unsigned long max)
-{
-	util *= (max - irq);
-	util /= max;
-
-	return util;
-
-}
-
-#else /* !CONFIG_HAVE_SCHED_AVG_IRQ: */
-
 static inline unsigned long cpu_util_irq(struct rq *rq)
 {
 	return 0;
@@ -3081,8 +3059,6 @@ unsigned long scale_irq_capacity(unsigned long util, unsigned long irq, unsigned
 {
 	return util;
 }
-
-#endif /* !CONFIG_HAVE_SCHED_AVG_IRQ */
 
 extern void __setparam_fair(struct task_struct *p, const struct sched_attr *attr);
 

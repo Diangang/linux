@@ -183,21 +183,6 @@ config SPLIT_PMD_PTLOCKS
 
 #
 # support for memory balloon
-config BALLOON
-	bool
-
-#
-# support for memory balloon page migration
-config BALLOON_MIGRATION
-	bool "Allow for balloon memory migration"
-	default y
-	depends on MIGRATION && BALLOON
-	help
-	  Allow for migration of pages inflated in a memory balloon such that
-	  they can be allocated from memory areas only available for movable
-	  allocations (e.g., ZONE_MOVABLE, CMA) and such that they can be
-	  migrated for memory defragmentation purposes by memory compaction.
-
 #
 # support for memory compaction
 config COMPACTION

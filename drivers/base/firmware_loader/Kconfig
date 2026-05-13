@@ -26,12 +26,6 @@ config FW_LOADER
 
 if FW_LOADER
 
-config FW_LOADER_PAGED_BUF
-	bool
-
-config FW_LOADER_SYSFS
-	bool
-
 config EXTRA_FIRMWARE
 	string "Build named firmware blobs into the kernel binary"
 	help

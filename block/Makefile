@@ -12,7 +12,6 @@ obj-y		:= bdev.o fops.o bio.o elevator.o blk-core.o blk-sysfs.o \
 			disk-events.o blk-ia-ranges.o early-lookup.o
 
 obj-$(CONFIG_BLK_CGROUP)	+= blk-cgroup.o
-obj-$(CONFIG_BLK_CGROUP_RWSTAT)	+= blk-cgroup-rwstat.o
 obj-$(CONFIG_MQ_IOSCHED_DEADLINE)	+= mq-deadline.o
 obj-$(CONFIG_MQ_IOSCHED_KYBER)	+= kyber-iosched.o
 obj-$(CONFIG_BLK_PM)		+= blk-pm.o

@@ -23,15 +23,11 @@ static inline u64 hw_load_avg(struct rq *rq)
 	return 0;
 }
 
-#ifdef CONFIG_HAVE_SCHED_AVG_IRQ
-int update_irq_load_avg(struct rq *rq, u64 running);
-#else
 static inline int
 update_irq_load_avg(struct rq *rq, u64 running)
 {
 	return 0;
 }
-#endif
 
 #define PELT_MIN_DIVIDER	(LOAD_AVG_MAX - 1024)
 

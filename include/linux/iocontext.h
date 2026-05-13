@@ -102,16 +102,6 @@ struct io_context {
 
 	unsigned short ioprio;
 
-#ifdef CONFIG_BLK_ICQ
-	/* all the fields below are protected by this lock */
-	spinlock_t lock;
-
-	struct radix_tree_root	icq_tree;
-	struct io_cq __rcu	*icq_hint;
-	struct hlist_head	icq_list;
-
-	struct work_struct release_work;
-#endif /* CONFIG_BLK_ICQ */
 };
 
 struct task_struct;

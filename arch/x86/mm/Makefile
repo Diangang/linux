@@ -19,9 +19,6 @@ obj-y				+= pat/
 CFLAGS_physaddr.o		:= -fno-stack-protector
 
 
-obj-$(CONFIG_PTDUMP)		+= dump_pagetables.o
-
-
 KMSAN_SANITIZE_kmsan_shadow.o	:= n
 
 

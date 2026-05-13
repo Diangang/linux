@@ -101,13 +101,6 @@ enum vm_event_item { PGPGIN, PGPGOUT, PSWPIN, PSWPOUT,
 		THP_SWPOUT,
 		THP_SWPOUT_FALLBACK,
 #endif
-#ifdef CONFIG_BALLOON
-		BALLOON_INFLATE,
-		BALLOON_DEFLATE,
-#ifdef CONFIG_BALLOON_MIGRATION
-		BALLOON_MIGRATE,
-#endif /* CONFIG_BALLOON_MIGRATION */
-#endif /* CONFIG_BALLOON */
 #if 0
 		NR_TLB_REMOTE_FLUSH,	/* cpu tried to flush others' tlbs */
 		NR_TLB_REMOTE_FLUSH_RECEIVED,/* cpu received ipi for flush */

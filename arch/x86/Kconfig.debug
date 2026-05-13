@@ -21,9 +21,6 @@ config EARLY_PRINTK
 	  with klogd/syslogd or the X server. You should normally say N here,
 	  unless you want to debug such a crash.
 
-config HAVE_MMIOTRACE_SUPPORT
-	def_bool y
-
 choice
 	prompt "IO delay type"
 	default IO_DELAY_0X80

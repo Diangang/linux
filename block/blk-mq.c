@@ -388,12 +388,6 @@ EXPORT_SYMBOL(blk_rq_init);
 /* Set start and alloc time when the allocated request is actually used */
 static inline void blk_mq_rq_time_init(struct request *rq, u64 alloc_time_ns)
 {
-#ifdef CONFIG_BLK_RQ_ALLOC_TIME
-	if (blk_queue_rq_alloc_time(rq->q))
-		rq->alloc_time_ns = alloc_time_ns;
-	else
-		rq->alloc_time_ns = 0;
-#endif
 }
 
 static inline void blk_mq_bio_issue_init(struct request_queue *q,

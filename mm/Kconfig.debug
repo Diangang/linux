@@ -16,8 +16,5 @@ config ARCH_HAS_DEBUG_WX
 config ARCH_HAS_PTDUMP
 	bool
 
-config PTDUMP
-	bool
-
 config HAVE_DEBUG_KMEMLEAK
 	bool

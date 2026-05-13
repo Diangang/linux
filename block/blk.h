@@ -438,15 +438,9 @@ static inline void req_set_nomerge(struct request_queue *q, struct request *req)
 /*
  * Internal io_context interface
  */
-struct io_cq *ioc_find_get_icq(struct request_queue *q);
-struct io_cq *ioc_lookup_icq(struct request_queue *q);
-#ifdef CONFIG_BLK_ICQ
-void ioc_clear_queue(struct request_queue *q);
-#else
 static inline void ioc_clear_queue(struct request_queue *q)
 {
 }
-#endif /* CONFIG_BLK_ICQ */
 
 static inline void disk_init_zone_resources(struct gendisk *disk)
 {

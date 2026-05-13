@@ -209,9 +209,7 @@ static void __free_fw_priv(struct kref *ref)
 	list_del(&fw_priv->list);
 	spin_unlock(&fwc->lock);
 
-	if (fw_is_paged_buf(fw_priv))
-		fw_free_paged_buf(fw_priv);
-	else if (!fw_priv->allocated_size)
+	if (!fw_priv->allocated_size)
 		vfree(fw_priv->data);
 
 	kfree_const(fw_priv->fw_name);
@@ -225,80 +223,6 @@ void free_fw_priv(struct fw_priv *fw_priv)
 	if (!kref_put(&fw_priv->ref, __free_fw_priv))
 		spin_unlock(&fwc->lock);
 }
-
-#ifdef CONFIG_FW_LOADER_PAGED_BUF
-bool fw_is_paged_buf(struct fw_priv *fw_priv)
-{
-	return fw_priv->is_paged_buf;
-}
-
-void fw_free_paged_buf(struct fw_priv *fw_priv)
-{
-	int i;
-
-	if (!fw_priv->pages)
-		return;
-
-	vunmap(fw_priv->data);
-
-	for (i = 0; i < fw_priv->nr_pages; i++)
-		__free_page(fw_priv->pages[i]);
-	kvfree(fw_priv->pages);
-	fw_priv->pages = NULL;
-	fw_priv->page_array_size = 0;
-	fw_priv->nr_pages = 0;
-	fw_priv->data = NULL;
-	fw_priv->size = 0;
-}
-
-int fw_grow_paged_buf(struct fw_priv *fw_priv, int pages_needed)
-{
-	/* If the array of pages is too small, grow it */
-	if (fw_priv->page_array_size < pages_needed) {
-		int new_array_size = max(pages_needed,
-					 fw_priv->page_array_size * 2);
-		struct page **new_pages;
-
-		new_pages = kvmalloc_array(new_array_size, sizeof(void *),
-					   GFP_KERNEL);
-		if (!new_pages)
-			return -ENOMEM;
-		memcpy(new_pages, fw_priv->pages,
-		       fw_priv->page_array_size * sizeof(void *));
-		memset(&new_pages[fw_priv->page_array_size], 0, sizeof(void *) *
-		       (new_array_size - fw_priv->page_array_size));
-		kvfree(fw_priv->pages);
-		fw_priv->pages = new_pages;
-		fw_priv->page_array_size = new_array_size;
-	}
-
-	while (fw_priv->nr_pages < pages_needed) {
-		fw_priv->pages[fw_priv->nr_pages] =
-			alloc_page(GFP_KERNEL | __GFP_HIGHMEM);
-
-		if (!fw_priv->pages[fw_priv->nr_pages])
-			return -ENOMEM;
-		fw_priv->nr_pages++;
-	}
-
-	return 0;
-}
-
-int fw_map_paged_buf(struct fw_priv *fw_priv)
-{
-	/* one pages buffer should be mapped/unmapped only once */
-	if (!fw_priv->pages)
-		return 0;
-
-	vunmap(fw_priv->data);
-	fw_priv->data = vmap(fw_priv->pages, fw_priv->nr_pages, 0,
-			     PAGE_KERNEL_RO);
-	if (!fw_priv->data)
-		return -ENOMEM;
-
-	return 0;
-}
-#endif
 
 /*
  * ZSTD-compressed firmware support
@@ -404,62 +328,14 @@ static int fw_decompress_xz_single(struct device *dev, struct fw_priv *fw_priv,
 	return fw_decompress_xz_error(dev, xz_ret);
 }
 
-/* decompression on paged buffer and map it */
-static int fw_decompress_xz_pages(struct device *dev, struct fw_priv *fw_priv,
-				  size_t in_size, const void *in_buffer)
-{
-	struct xz_dec *xz_dec;
-	struct xz_buf xz_buf;
-	enum xz_ret xz_ret;
-	struct page *page;
-	int err = 0;
-
-	xz_dec = xz_dec_init(XZ_DYNALLOC, (u32)-1);
-	if (!xz_dec)
-		return -ENOMEM;
-
-	xz_buf.in_size = in_size;
-	xz_buf.in = in_buffer;
-	xz_buf.in_pos = 0;
-
-	fw_priv->is_paged_buf = true;
-	fw_priv->size = 0;
-	do {
-		if (fw_grow_paged_buf(fw_priv, fw_priv->nr_pages + 1)) {
-			err = -ENOMEM;
-			goto out;
-		}
-
-		/* decompress onto the new allocated page */
-		page = fw_priv->pages[fw_priv->nr_pages - 1];
-		xz_buf.out = kmap_local_page(page);
-		xz_buf.out_pos = 0;
-		xz_buf.out_size = PAGE_SIZE;
-		xz_ret = xz_dec_run(xz_dec, &xz_buf);
-		kunmap_local(xz_buf.out);
-		fw_priv->size += xz_buf.out_pos;
-		/* partial decompression means either end or error */
-		if (xz_buf.out_pos != PAGE_SIZE)
-			break;
-	} while (xz_ret == XZ_OK);
-
-	err = fw_decompress_xz_error(dev, xz_ret);
-	if (!err)
-		err = fw_map_paged_buf(fw_priv);
-
- out:
-	xz_dec_end(xz_dec);
-	return err;
-}
-
 static int fw_decompress_xz(struct device *dev, struct fw_priv *fw_priv,
 			    size_t in_size, const void *in_buffer)
 {
 	/* if the buffer is pre-allocated, we can perform in single-shot mode */
 	if (fw_priv->data)
 		return fw_decompress_xz_single(dev, fw_priv, in_size, in_buffer);
-	else
-		return fw_decompress_xz_pages(dev, fw_priv, in_size, in_buffer);
+
+	return -ENXIO;
 }
 #endif /* CONFIG_FW_LOADER_COMPRESS_XZ */
 
@@ -571,7 +447,11 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv,
 			vfree(buffer);
 			buffer = NULL;
 			if (rc) {
-				fw_free_paged_buf(fw_priv);
+				if (!fw_priv->allocated_size) {
+					vfree(fw_priv->data);
+					fw_priv->data = NULL;
+					fw_priv->size = 0;
+				}
 				continue;
 			}
 		} else {

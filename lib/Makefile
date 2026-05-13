@@ -56,9 +56,6 @@ CFLAGS_kobject.o += -DDEBUG
 CFLAGS_kobject_uevent.o += -DDEBUG
 endif
 
-obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
-CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
-
 obj-y += math/ crc/ crypto/ vdso/
 
 obj-$(CONFIG_GENERIC_IOMAP) += iomap.o
@@ -77,7 +74,6 @@ obj-$(CONFIG_XXHASH)	+= xxhash.o
 obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
 
 obj-$(CONFIG_ZLIB_INFLATE) += zlib_inflate/
-obj-$(CONFIG_ZLIB_DEFLATE) += zlib_deflate/
 obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
 obj-$(CONFIG_LZ4_DECOMPRESS) += lz4/
 obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/

@@ -660,12 +660,7 @@ void blk_queue_flag_clear(unsigned int flag, struct request_queue *q);
 	((q)->limits.flags & BLK_FLAG_IOSTATS_PASSTHROUGH)
 #define blk_queue_dax(q)	((q)->limits.features & BLK_FEAT_DAX)
 #define blk_queue_pci_p2pdma(q)	((q)->limits.features & BLK_FEAT_PCI_P2PDMA)
-#ifdef CONFIG_BLK_RQ_ALLOC_TIME
-#define blk_queue_rq_alloc_time(q)	\
-	test_bit(QUEUE_FLAG_RQ_ALLOC_TIME, &(q)->queue_flags)
-#else
 #define blk_queue_rq_alloc_time(q)	false
-#endif
 
 #define blk_noretry_request(rq) \
 	((rq)->cmd_flags & (REQ_FAILFAST_DEV|REQ_FAILFAST_TRANSPORT| \

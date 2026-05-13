@@ -396,14 +396,10 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
  * In theory, the compile should just see 0 here, and optimize out the call
  * to sched_rt_avg_update. But I don't trust it...
  */
-	s64 __maybe_unused steal = 0, irq_delta = 0;
+	s64 __maybe_unused steal = 0;
 
 	rq->clock_task += delta;
 
-#ifdef CONFIG_HAVE_SCHED_AVG_IRQ
-	if ((irq_delta + steal) && sched_feat(NONTASK_CAPACITY))
-		update_irq_load_avg(rq, irq_delta + steal);
-#endif
 	update_rq_clock_pelt(rq, delta);
 }
 
@@ -3517,10 +3513,6 @@ int sched_fork(u64 clone_flags, struct task_struct *p)
 	init_entity_runnable_average(&p->se);
 
 
-#ifdef CONFIG_SCHED_INFO
-	if (likely(sched_info_on()))
-		memset(&p->sched_info, 0, sizeof(p->sched_info));
-#endif
 	p->on_cpu = 0;
 	init_task_preempt_count(p);
 	plist_node_init(&p->pushable_tasks, MAX_PRIO);

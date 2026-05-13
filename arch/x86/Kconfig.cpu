@@ -1,16 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 # Put here option for CPU selection and depending optimization
 
-config CC_HAS_MARCH_NATIVE
-	# This flag might not be available in cross-compilers:
-	def_bool $(cc-option, -march=native)
-	# LLVM 18 has an easily triggered internal compiler error in core
-	# networking code with '-march=native' on certain systems:
-	# https://github.com/llvm/llvm-project/issues/72026
-	# LLVM 19 introduces an optimization that resolves some high stack
-	# usage warnings that only appear wth '-march=native'.
-	depends on CC_IS_GCC || CLANG_VERSION >= 190100
-
 config X86_INTERNODE_CACHE_SHIFT
 	int
 	default "12" if n

@@ -8,18 +8,6 @@
 
 MODULE_IMPORT_NS("FIRMWARE_LOADER_PRIVATE");
 
-extern struct device_attribute dev_attr_loading;
-
-#ifdef CONFIG_FW_LOADER_SYSFS
-int register_sysfs_loader(void);
-void unregister_sysfs_loader(void);
-static inline int register_firmware_config_sysctl(void)
-{
-	return 0;
-}
-
-static inline void unregister_firmware_config_sysctl(void) { }
-#else /* CONFIG_FW_LOADER_SYSFS */
 static inline int register_sysfs_loader(void)
 {
 	return 0;
@@ -28,7 +16,6 @@ static inline int register_sysfs_loader(void)
 static inline void unregister_sysfs_loader(void)
 {
 }
-#endif /* CONFIG_FW_LOADER_SYSFS */
 
 struct fw_sysfs {
 	bool nowait;

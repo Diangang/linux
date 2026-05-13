@@ -267,11 +267,6 @@ config TICK_CPU_ACCOUNTING
 
 endchoice
 
-config HAVE_SCHED_AVG_IRQ
-	def_bool y
-	depends on PARAVIRT_TIME_ACCOUNTING
-	depends on SMP
-
 config BSD_PROCESS_ACCT
 	bool "BSD Process Accounting (DEPRECATED)"
 	depends on MULTIUSER

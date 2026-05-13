@@ -95,13 +95,6 @@ config DEBUG_MISC
 
 menu "Compile-time checks and compiler options"
 
-config DEBUG_INFO
-	bool
-	help
-	  A kernel debug info option other than "None" has been selected
-	  in the "Debug information" choice below, indicating that debug
-	  information will be generated for build targets.
-
 # Clang generates .uleb128 with label differences for DWARF v5, a feature that
 # older binutils ports do not support when utilizing RISC-V style linker
 # relaxation: https://sourceware.org/bugzilla/show_bug.cgi?id=27215
@@ -128,37 +121,6 @@ config DEBUG_INFO_NONE
 	  result in a faster and smaller build.
 
 endchoice # "Debug information"
-
-if DEBUG_INFO
-
-config DEBUG_INFO_REDUCED
-	bool "Reduce debugging information"
-	help
-	  If you say Y here gcc is instructed to generate less debugging
-	  information for structure types. This means that tools that
-	  need full debugging information (like kgdb or systemtap) won't
-	  be happy. But if you merely need debugging information to
-	  resolve line numbers there is no loss. Advantage is that
-	  build directory object sizes shrink dramatically over a full
-	  DEBUG_INFO build and compile times are reduced too.
-	  Only works with newer gcc versions.
-
-choice
-	prompt "Compressed Debug information"
-	help
-	  Compress the resulting debug info. Results in smaller debug info sections,
-	  but requires that consumers are able to decompress the results.
-
-	  If unsure, choose DEBUG_INFO_COMPRESSED_NONE.
-
-config DEBUG_INFO_COMPRESSED_NONE
-	bool "Don't compress debug information"
-	help
-	  Don't compress debug info sections.
-
-endchoice # "Compressed Debug information"
-
-endif # DEBUG_INFO
 
 config FRAME_WARN
 	int "Warn for stack frames larger than"
@@ -321,14 +283,6 @@ config HARDLOCKUP_CHECK_TIMESTAMP
 	bool
 
 endmenu # "Debug lockups and hangs"
-
-menu "Scheduler Debugging"
-
-config SCHED_INFO
-	bool
-	default n
-
-endmenu
 
 menu "Lock Debugging (spinlocks, mutexes, etc...)"
 

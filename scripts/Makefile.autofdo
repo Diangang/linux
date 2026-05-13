@@ -4,9 +4,7 @@
 
 CFLAGS_AUTOFDO_CLANG := -fdebug-info-for-profiling -mllvm -enable-fs-discriminator=true -mllvm -improved-fs-discriminator=true
 
-ifndef CONFIG_DEBUG_INFO
-  CFLAGS_AUTOFDO_CLANG += -gmlt
-endif
+CFLAGS_AUTOFDO_CLANG += -gmlt
 
 ifdef CLANG_AUTOFDO_PROFILE
   CFLAGS_AUTOFDO_CLANG += -fprofile-sample-use=$(CLANG_AUTOFDO_PROFILE) -ffunction-sections

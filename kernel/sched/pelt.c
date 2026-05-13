@@ -381,58 +381,6 @@ int update_dl_rq_load_avg(u64 now, struct rq *rq, int running)
 }
 
 
-#ifdef CONFIG_HAVE_SCHED_AVG_IRQ
-/*
- * IRQ:
- *
- *   util_sum = \Sum se->avg.util_sum but se->avg.util_sum is not tracked
- *   util_sum = cpu_scale * load_sum
- *   runnable_sum = util_sum
- *
- *   load_avg and runnable_avg are not supported and meaningless.
- *
- */
-
-int update_irq_load_avg(struct rq *rq, u64 running)
-{
-	int ret = 0;
-
-	/*
-	 * We can't use clock_pelt because IRQ time is not accounted in
-	 * clock_task. Instead we directly scale the running time to
-	 * reflect the real amount of computation
-	 */
-	running = cap_scale(running, arch_scale_freq_capacity(cpu_of(rq)));
-	running = cap_scale(running, arch_scale_cpu_capacity(cpu_of(rq)));
-
-	/*
-	 * We know the time that has been used by interrupt since last update
-	 * but we don't when. Let be pessimistic and assume that interrupt has
-	 * happened just before the update. This is not so far from reality
-	 * because interrupt will most probably wake up task and trig an update
-	 * of rq clock during which the metric is updated.
-	 * We start to decay with normal context time and then we add the
-	 * interrupt context time.
-	 * We can safely remove running from rq->clock because
-	 * rq->clock += delta with delta >= running
-	 */
-	ret = ___update_load_sum(rq->clock - running, &rq->avg_irq,
-				0,
-				0,
-				0);
-	ret += ___update_load_sum(rq->clock, &rq->avg_irq,
-				1,
-				1,
-				1);
-
-	if (ret) {
-		___update_load_avg(&rq->avg_irq, 1);
-	}
-
-	return ret;
-}
-#endif /* CONFIG_HAVE_SCHED_AVG_IRQ */
-
 /*
  * Load avg and utiliztion metrics need to be updated periodically and before
  * consumption. This function updates the metrics for all subsystems except for
