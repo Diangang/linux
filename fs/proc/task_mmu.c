@@ -963,7 +963,7 @@ static void smaps_account(struct mem_size_stats *mss, struct page *page,
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT)) {
+	if (0) {
 		mapcount = folio_average_page_mapcount(folio);
 		exclusive = !folio_maybe_mapped_shared(folio);
 	}

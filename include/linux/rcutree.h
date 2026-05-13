@@ -84,11 +84,7 @@ bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
 void cond_synchronize_rcu(unsigned long oldstate);
 void cond_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
 
-#ifdef CONFIG_PROVE_RCU
-void rcu_irq_exit_check_preempt(void);
-#else
 static inline void rcu_irq_exit_check_preempt(void) { }
-#endif
 
 struct task_struct;
 void rcu_preempt_deferred_qs(struct task_struct *t);

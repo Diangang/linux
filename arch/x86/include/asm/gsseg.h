@@ -42,15 +42,8 @@ static inline void native_load_gs_index(unsigned int selector)
 
 static inline void __init lkgs_init(void)
 {
-#ifdef CONFIG_PARAVIRT_XXL
-#ifdef CONFIG_X86_64
-	if (cpu_feature_enabled(X86_FEATURE_LKGS))
-		pv_ops.cpu.load_gs_index = native_lkgs;
-#endif
-#endif
 }
 
-#ifndef CONFIG_PARAVIRT_XXL
 
 static inline void load_gs_index(unsigned int selector)
 {
@@ -61,6 +54,5 @@ static inline void load_gs_index(unsigned int selector)
 #endif
 }
 
-#endif /* CONFIG_PARAVIRT_XXL */
 
 #endif /* _ASM_X86_GSSEG_H */

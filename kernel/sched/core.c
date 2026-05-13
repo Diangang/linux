@@ -4019,9 +4019,6 @@ static void __sched_fork(u64 clone_flags, struct task_struct *p)
 	init_scx_entity(&p->scx);
 #endif
 
-#ifdef CONFIG_PREEMPT_NOTIFIERS
-	INIT_HLIST_HEAD(&p->preempt_notifiers);
-#endif
 
 #ifdef CONFIG_COMPACTION
 	p->capture_control = NULL;
@@ -4389,80 +4386,6 @@ void wake_up_new_task(struct task_struct *p)
 	task_rq_unlock(rq, p, &rf);
 }
 
-#ifdef CONFIG_PREEMPT_NOTIFIERS
-
-static DEFINE_STATIC_KEY_FALSE(preempt_notifier_key);
-
-void preempt_notifier_inc(void)
-{
-	static_branch_inc(&preempt_notifier_key);
-}
-EXPORT_SYMBOL_GPL(preempt_notifier_inc);
-
-void preempt_notifier_dec(void)
-{
-	static_branch_dec(&preempt_notifier_key);
-}
-EXPORT_SYMBOL_GPL(preempt_notifier_dec);
-
-/**
- * preempt_notifier_register - tell me when current is being preempted & rescheduled
- * @notifier: notifier struct to register
- */
-void preempt_notifier_register(struct preempt_notifier *notifier)
-{
-	if (!static_branch_unlikely(&preempt_notifier_key))
-		WARN(1, "registering preempt_notifier while notifiers disabled\n");
-
-	hlist_add_head(&notifier->link, &current->preempt_notifiers);
-}
-EXPORT_SYMBOL_GPL(preempt_notifier_register);
-
-/**
- * preempt_notifier_unregister - no longer interested in preemption notifications
- * @notifier: notifier struct to unregister
- *
- * This is *not* safe to call from within a preemption notifier.
- */
-void preempt_notifier_unregister(struct preempt_notifier *notifier)
-{
-	hlist_del(&notifier->link);
-}
-EXPORT_SYMBOL_GPL(preempt_notifier_unregister);
-
-static void __fire_sched_in_preempt_notifiers(struct task_struct *curr)
-{
-	struct preempt_notifier *notifier;
-
-	hlist_for_each_entry(notifier, &curr->preempt_notifiers, link)
-		notifier->ops->sched_in(notifier, raw_smp_processor_id());
-}
-
-static __always_inline void fire_sched_in_preempt_notifiers(struct task_struct *curr)
-{
-	if (static_branch_unlikely(&preempt_notifier_key))
-		__fire_sched_in_preempt_notifiers(curr);
-}
-
-static void
-__fire_sched_out_preempt_notifiers(struct task_struct *curr,
-				   struct task_struct *next)
-{
-	struct preempt_notifier *notifier;
-
-	hlist_for_each_entry(notifier, &curr->preempt_notifiers, link)
-		notifier->ops->sched_out(notifier, next);
-}
-
-static __always_inline void
-fire_sched_out_preempt_notifiers(struct task_struct *curr,
-				 struct task_struct *next)
-{
-	if (static_branch_unlikely(&preempt_notifier_key))
-		__fire_sched_out_preempt_notifiers(curr, next);
-}
-
-#else /* !CONFIG_PREEMPT_NOTIFIERS: */
 
 static inline void fire_sched_in_preempt_notifiers(struct task_struct *curr)
 {
@@ -4474,7 +4397,6 @@ fire_sched_out_preempt_notifiers(struct task_struct *curr,
 {
 }
 
-#endif /* !CONFIG_PREEMPT_NOTIFIERS */
 
 static inline void prepare_task(struct task_struct *next)
 {
@@ -6145,24 +6067,6 @@ void __sched schedule_idle(void)
 	} while (need_resched());
 }
 
-#if 0 && !defined(CONFIG_HAVE_CONTEXT_TRACKING_USER_OFFSTACK)
-asmlinkage __visible void __sched schedule_user(void)
-{
-	/*
-	 * If we come here after a random call to set_need_resched(),
-	 * or we have been woken up remotely but the IPI has not yet arrived,
-	 * we haven't yet exited the RCU idle mode. Do it here manually until
-	 * we find a better solution.
-	 *
-	 * NB: There are buggy callers of this function.  Ideally we
-	 * should warn if prev_state != CT_STATE_USER, but that will trigger
-	 * too frequently to make sense yet.
-	 */
-	enum ctx_state prev_state = exception_enter();
-	schedule();
-	exception_exit(prev_state);
-}
-#endif
 
 /**
  * schedule_preempt_disabled - called with preemption disabled
@@ -6176,13 +6080,6 @@ void __sched schedule_preempt_disabled(void)
 	preempt_disable();
 }
 
-#ifdef CONFIG_PREEMPT_RT
-void __sched notrace schedule_rtlock(void)
-{
-	__schedule_loop(SM_RTLOCK_WAIT);
-}
-NOKPROBE_SYMBOL(schedule_rtlock);
-#endif
 
 static void __sched notrace preempt_schedule_common(void)
 {
@@ -6705,7 +6602,7 @@ int preempt_dynamic_mode = preempt_dynamic_undefined;
 
 int sched_dynamic_mode(const char *str)
 {
-# if !(defined(CONFIG_PREEMPT_RT) || defined(CONFIG_ARCH_HAS_PREEMPT_LAZY))
+# if !(0 || defined(CONFIG_ARCH_HAS_PREEMPT_LAZY))
 	if (!strcmp(str, "none"))
 		return preempt_dynamic_none;
 
@@ -6824,9 +6721,9 @@ __setup("preempt=", setup_preempt_mode);
 static void __init preempt_dynamic_init(void)
 {
 	if (preempt_dynamic_mode == preempt_dynamic_undefined) {
-		if (IS_ENABLED(CONFIG_PREEMPT_NONE)) {
+		if (0) {
 			sched_dynamic_update(preempt_dynamic_none);
-		} else if (IS_ENABLED(CONFIG_PREEMPT_VOLUNTARY)) {
+		} else if (0) {
 			sched_dynamic_update(preempt_dynamic_voluntary);
 		} else if (IS_ENABLED(CONFIG_PREEMPT_LAZY)) {
 			sched_dynamic_update(preempt_dynamic_lazy);
@@ -6866,7 +6763,7 @@ const char *preempt_modes[] = {
 
 const char *preempt_model_str(void)
 {
-	bool brace = IS_ENABLED(CONFIG_PREEMPT_RT) &&
+	bool brace = 0 &&
 		(IS_ENABLED(CONFIG_PREEMPT_DYNAMIC) ||
 		 IS_ENABLED(CONFIG_PREEMPT_LAZY));
 	static char buf[128];
@@ -6877,7 +6774,7 @@ const char *preempt_model_str(void)
 		seq_buf_init(&s, buf, sizeof(buf));
 		seq_buf_puts(&s, "PREEMPT");
 
-		if (IS_ENABLED(CONFIG_PREEMPT_RT))
+		if (0)
 			seq_buf_printf(&s, "%sRT%s",
 				       brace ? "_{" : "_",
 				       brace ? "," : "");
@@ -6899,7 +6796,7 @@ const char *preempt_model_str(void)
 		return seq_buf_str(&s);
 	}
 
-	if (IS_ENABLED(CONFIG_PREEMPT_VOLUNTARY_BUILD))
+	if (0)
 		return "VOLUNTARY";
 
 	return "NONE";

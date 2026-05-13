@@ -3253,7 +3253,7 @@ static int proc_dointvec_minmax_warn_RT_change(const struct ctl_table *table,
 {
 	int ret, old;
 
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT) || !write)
+	if (!0 || !write)
 		return proc_dointvec_minmax(table, write, buffer, lenp, ppos);
 
 	old = *(int *)table->data;

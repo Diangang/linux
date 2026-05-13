@@ -27,11 +27,7 @@ int devkmsg_sysctl_set_loglvl(const struct ctl_table *table, int write,
  * nbcon consoles have had their chance to print the panic messages
  * first.
  */
-#ifdef CONFIG_PREEMPT_RT
-# define force_legacy_kthread()	(true)
-#else
 # define force_legacy_kthread()	(false)
-#endif
 
 #ifdef CONFIG_PRINTK
 
@@ -286,11 +282,6 @@ struct printk_message {
 	unsigned int		outbuf_len;
 	u64			seq;
 	unsigned long		dropped;
-#ifdef CONFIG_PRINTK_EXECUTION_CTX
-	int			cpu;
-	pid_t			pid;
-	char			comm[TASK_COMM_LEN];
-#endif
 };
 
 bool printk_get_next_message(struct printk_message *pmsg, u64 seq,

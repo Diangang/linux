@@ -126,7 +126,7 @@ void page_writeback_init(void);
  */
 static inline int folio_nr_pages_mapped(const struct folio *folio)
 {
-	if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT))
+	if (0)
 		return -1;
 	return atomic_read(&folio->_nr_pages_mapped) & FOLIO_PAGES_MAPPED;
 }
@@ -1875,56 +1875,12 @@ static inline void maybe_rmap_unlock_action(struct vm_area_struct *vma,
 	action->hide_from_rmap_until_complete = false;
 }
 
-#ifdef CONFIG_MMU_NOTIFIER
-static inline bool clear_flush_young_ptes_notify(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep, unsigned int nr)
-{
-	bool young;
-
-	young = clear_flush_young_ptes(vma, addr, ptep, nr);
-	young |= mmu_notifier_clear_flush_young(vma->vm_mm, addr,
-						addr + nr * PAGE_SIZE);
-	return young;
-}
-
-static inline bool pmdp_clear_flush_young_notify(struct vm_area_struct *vma,
-		unsigned long addr, pmd_t *pmdp)
-{
-	bool young;
-
-	young = pmdp_clear_flush_young(vma, addr, pmdp);
-	young |= mmu_notifier_clear_flush_young(vma->vm_mm, addr, addr + PMD_SIZE);
-	return young;
-}
-
-static inline bool test_and_clear_young_ptes_notify(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep, unsigned int nr)
-{
-	bool young;
-
-	young = test_and_clear_young_ptes(vma, addr, ptep, nr);
-	young |= mmu_notifier_clear_young(vma->vm_mm, addr, addr + nr * PAGE_SIZE);
-	return young;
-}
-
-static inline bool pmdp_test_and_clear_young_notify(struct vm_area_struct *vma,
-		unsigned long addr, pmd_t *pmdp)
-{
-	bool young;
-
-	young = pmdp_test_and_clear_young(vma, addr, pmdp);
-	young |= mmu_notifier_clear_young(vma->vm_mm, addr, addr + PMD_SIZE);
-	return young;
-}
-
-#else /* CONFIG_MMU_NOTIFIER */
 
 #define clear_flush_young_ptes_notify	clear_flush_young_ptes
 #define pmdp_clear_flush_young_notify	pmdp_clear_flush_young
 #define test_and_clear_young_ptes_notify	test_and_clear_young_ptes
 #define pmdp_test_and_clear_young_notify	pmdp_test_and_clear_young
 
-#endif /* CONFIG_MMU_NOTIFIER */
 
 extern int sysctl_max_map_count;
 static inline int get_sysctl_max_map_count(void)

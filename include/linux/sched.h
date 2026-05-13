@@ -311,9 +311,6 @@ extern long schedule_timeout_idle(long timeout);
 asmlinkage void schedule(void);
 extern void schedule_preempt_disabled(void);
 asmlinkage void preempt_schedule_irq(void);
-#ifdef CONFIG_PREEMPT_RT
- extern void schedule_rtlock(void);
-#endif
 
 extern int __must_check io_schedule_prepare(void);
 extern void io_schedule_finish(int token);
@@ -859,10 +856,6 @@ struct task_struct {
 
 	struct sched_statistics         stats;
 
-#ifdef CONFIG_PREEMPT_NOTIFIERS
-	/* List of struct preempt_notifier: */
-	struct hlist_head		preempt_notifiers;
-#endif
 
 #ifdef CONFIG_BLK_DEV_IO_TRACE
 	unsigned int			btrace_seq;
@@ -983,9 +976,6 @@ struct task_struct {
 	unsigned                        in_thrashing:1;
 #endif
 	unsigned			in_nf_duplicate:1;
-#ifdef CONFIG_PREEMPT_RT
-	struct netdev_xmit		net_xmit;
-#endif
 	unsigned long			atomic_flags; /* Flags requiring atomic access. */
 
 	struct restart_block		restart_block;
@@ -1173,9 +1163,6 @@ struct task_struct {
 	int				softirq_context;
 	int				irq_config;
 #endif
-#ifdef CONFIG_PREEMPT_RT
-	int				softirq_disable_cnt;
-#endif
 
 #if 0
 # define MAX_LOCK_DEPTH			48UL
@@ -1231,9 +1218,6 @@ struct task_struct {
 	struct css_set __rcu		*cgroups;
 	/* cg_list protected by css_set_lock and tsk->alloc_lock: */
 	struct list_head		cg_list;
-#ifdef CONFIG_PREEMPT_RT
-	struct llist_node		cg_dead_lnode;
-#endif	/* CONFIG_PREEMPT_RT */
 #endif	/* CONFIG_CGROUPS */
 #ifdef CONFIG_X86_CPU_RESCTRL
 	u32				closid;
@@ -2035,21 +2019,11 @@ extern int __cond_resched_rwlock_write(rwlock_t *lock) __must_hold(lock);
 #define MIGHT_RESCHED_RCU_SHIFT		8
 #define MIGHT_RESCHED_PREEMPT_MASK	((1U << MIGHT_RESCHED_RCU_SHIFT) - 1)
 
-#ifndef CONFIG_PREEMPT_RT
 /*
  * Non RT kernels have an elevated preempt count due to the held lock,
  * but are not allowed to be inside a RCU read side critical section
  */
 # define PREEMPT_LOCK_RESCHED_OFFSETS	PREEMPT_LOCK_OFFSET
-#else
-/*
- * spin/rw_lock() on RT implies rcu_read_lock(). The might_sleep() check in
- * cond_resched*lock() has to take that into account because it checks for
- * preempt_count() and rcu_preempt_depth().
- */
-# define PREEMPT_LOCK_RESCHED_OFFSETS	\
-	(PREEMPT_LOCK_OFFSET + (1U << MIGHT_RESCHED_RCU_SHIFT))
-#endif
 
 #define cond_resched_lock(lock) ({						\
 	__might_resched(__FILE__, __LINE__, PREEMPT_LOCK_RESCHED_OFFSETS);	\
@@ -2066,7 +2040,6 @@ extern int __cond_resched_rwlock_write(rwlock_t *lock) __must_hold(lock);
 	__cond_resched_rwlock_write(lock);					\
 })
 
-#ifndef CONFIG_PREEMPT_RT
 
 /*
  * With proxy exec, if a task has been proxy-migrated, it may be a donor
@@ -2146,23 +2119,6 @@ static inline void set_task_blocked_on_waking(struct task_struct *p, struct mute
 	__set_task_blocked_on_waking(p, m);
 }
 
-#else
-static inline void __clear_task_blocked_on(struct task_struct *p, struct rt_mutex *m)
-{
-}
-
-static inline void clear_task_blocked_on(struct task_struct *p, struct rt_mutex *m)
-{
-}
-
-static inline void __set_task_blocked_on_waking(struct task_struct *p, struct rt_mutex *m)
-{
-}
-
-static inline void set_task_blocked_on_waking(struct task_struct *p, struct rt_mutex *m)
-{
-}
-#endif /* !CONFIG_PREEMPT_RT */
 
 static __always_inline bool need_resched(void)
 {

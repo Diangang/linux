@@ -781,10 +781,6 @@ static inline void perf_events_lapic_init(void)	{ }
 static inline void perf_check_microcode(void) { }
 #endif
 
-#ifdef CONFIG_PERF_GUEST_MEDIATED_PMU
-extern void perf_load_guest_lvtpc(u32 guest_lvtpc);
-extern void perf_put_guest_lvtpc(void);
-#endif
 
 #if defined(CONFIG_PERF_EVENTS) && defined(CONFIG_CPU_SUP_INTEL)
 extern struct perf_guest_switch_msr *perf_guest_get_msrs(int *nr, void *data);
@@ -810,25 +806,6 @@ static inline void intel_pt_handle_vmx(int on)
  extern void amd_pmu_enable_virt(void);
  extern void amd_pmu_disable_virt(void);
 
-#if defined(CONFIG_PERF_EVENTS_AMD_BRS)
-
-#define PERF_NEEDS_LOPWR_CB 1
-
-/*
- * architectural low power callback impacts
- * drivers/acpi/processor_idle.c
- * drivers/acpi/acpi_pad.c
- */
-extern void perf_amd_brs_lopwr_cb(bool lopwr_in);
-
-DECLARE_STATIC_CALL(perf_lopwr_cb, perf_amd_brs_lopwr_cb);
-
-static __always_inline void perf_lopwr_cb(bool lopwr_in)
-{
-	static_call_mod(perf_lopwr_cb)(lopwr_in);
-}
-
-#endif /* PERF_NEEDS_LOPWR_CB */
 
 #else
  static inline void amd_pmu_enable_virt(void) { }

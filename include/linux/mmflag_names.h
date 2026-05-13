@@ -122,11 +122,7 @@ TRACE_DEFINE_ENUM(___GFP_LAST_BIT);
 #define IF_HAVE_PG_HWPOISON(_name)
 #endif
 
-#if defined(CONFIG_PAGE_IDLE_FLAG) && defined(CONFIG_64BIT)
-#define IF_HAVE_PG_IDLE(_name) ,{1UL << PG_##_name, __stringify(_name)}
-#else
 #define IF_HAVE_PG_IDLE(_name)
-#endif
 
 #ifdef CONFIG_ARCH_USES_PG_ARCH_2
 #define IF_HAVE_PG_ARCH_2(_name) ,{1UL << PG_##_name, __stringify(_name)}

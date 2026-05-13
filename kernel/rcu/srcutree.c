@@ -440,10 +440,10 @@ static bool srcu_readers_lock_idx(struct srcu_struct *ssp, int idx, bool gp, uns
 		struct srcu_data *sdp = per_cpu_ptr(ssp->sda, cpu);
 
 		sum += atomic_long_read(&sdp->srcu_ctrs[idx].srcu_locks);
-		if (IS_ENABLED(CONFIG_PROVE_RCU))
+		if (0)
 			mask = mask | READ_ONCE(sdp->srcu_reader_flavor);
 	}
-	WARN_ONCE(IS_ENABLED(CONFIG_PROVE_RCU) && (mask & (mask - 1)),
+	WARN_ONCE(0 && (mask & (mask - 1)),
 		  "Mixed reader flavors for srcu_struct at %ps.\n", ssp);
 	if (mask & SRCU_READ_FLAVOR_SLOWGP && !gp)
 		return false;
@@ -466,7 +466,7 @@ static unsigned long srcu_readers_unlock_idx(struct srcu_struct *ssp, int idx, u
 		sum += atomic_long_read(&sdp->srcu_ctrs[idx].srcu_unlocks);
 		mask = mask | READ_ONCE(sdp->srcu_reader_flavor);
 	}
-	WARN_ONCE(IS_ENABLED(CONFIG_PROVE_RCU) && (mask & (mask - 1)),
+	WARN_ONCE(0 && (mask & (mask - 1)),
 		  "Mixed reader flavors for srcu_struct at %ps.\n", ssp);
 	*rdm = mask;
 	return sum;

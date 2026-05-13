@@ -34,7 +34,7 @@ static struct kmem_cache *nsproxy_cachep;
 struct nsproxy init_nsproxy = {
 	.count			= REFCOUNT_INIT(1),
 	.uts_ns			= &init_uts_ns,
-#if defined(CONFIG_POSIX_MQUEUE) || defined(CONFIG_SYSVIPC)
+#if 0 || defined(CONFIG_SYSVIPC)
 	.ipc_ns			= &init_ipc_ns,
 #endif
 	.mnt_ns			= NULL,
@@ -323,10 +323,8 @@ static int check_setns_flags(unsigned long flags)
 	if (flags & CLONE_NEWCGROUP)
 		return -EINVAL;
 #endif
-#ifndef CONFIG_NET_NS
 	if (flags & CLONE_NEWNET)
 		return -EINVAL;
-#endif
 #ifndef CONFIG_TIME_NS
 	if (flags & CLONE_NEWTIME)
 		return -EINVAL;
@@ -497,13 +495,6 @@ static int validate_nsset(struct nsset *nsset, struct pid *pid)
 	}
 #endif
 
-#ifdef CONFIG_NET_NS
-	if (flags & CLONE_NEWNET) {
-		ret = validate_ns(nsset, &nsp->net_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
 
 #ifdef CONFIG_TIME_NS
 	if (flags & CLONE_NEWTIME) {

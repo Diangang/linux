@@ -642,7 +642,7 @@ static inline bool __slab_update_freelist(struct kmem_cache *s, struct slab *sla
 {
 	bool ret;
 
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		lockdep_assert_irqs_disabled();
 
 	if (s->flags & __CMPXCHG_DOUBLE)
@@ -5078,7 +5078,7 @@ void *kmalloc_nolock_noprof(size_t size, gfp_t gfp_flags, int node)
 	 * See the comment for the same check in
 	 * alloc_frozen_pages_nolock_noprof()
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && (in_nmi() || in_hardirq()))
+	if (0 && (in_nmi() || in_hardirq()))
 		return NULL;
 
 retry:
@@ -5636,7 +5636,7 @@ bool __kfree_rcu_sheaf(struct kmem_cache *s, void *obj)
 	struct slub_percpu_sheaves *pcs;
 	struct slab_sheaf *rcu_sheaf;
 
-	if (WARN_ON_ONCE(IS_ENABLED(CONFIG_PREEMPT_RT)))
+	if (WARN_ON_ONCE(0))
 		return false;
 
 	lock_map_acquire_try(&kfree_rcu_sheaf_map);

@@ -132,7 +132,7 @@ __seqprop_##lockname##_sequence(const seqcount_##lockname##_t *s)	\
 {									\
 	unsigned seq = smp_load_acquire(&s->seqcount.sequence);		\
 									\
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))				\
+	if (!0)				\
 		return seq;						\
 									\
 	if (preemptible && unlikely(seq & 1)) {				\
@@ -152,7 +152,7 @@ __seqprop_##lockname##_sequence(const seqcount_##lockname##_t *s)	\
 static __always_inline bool						\
 __seqprop_##lockname##_preemptible(const seqcount_##lockname##_t *s)	\
 {									\
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))				\
+	if (!0)				\
 		return preemptible;					\
 									\
 	/* PREEMPT_RT relies on the above LOCK+UNLOCK */		\
@@ -194,7 +194,7 @@ static inline void __seqprop_assert(const seqcount_t *s)
 	lockdep_assert_preemption_disabled();
 }
 
-#define __SEQ_RT	IS_ENABLED(CONFIG_PREEMPT_RT)
+#define __SEQ_RT	0
 
 SEQCOUNT_LOCKNAME(raw_spinlock, raw_spinlock_t,  false,    raw_spin)
 SEQCOUNT_LOCKNAME(spinlock,     spinlock_t,      __SEQ_RT, spin)

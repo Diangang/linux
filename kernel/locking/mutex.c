@@ -30,7 +30,6 @@
 #include <linux/debug_locks.h>
 #include <linux/osq_lock.h>
 #include <linux/hung_task.h>
-#ifndef CONFIG_PREEMPT_RT
 #include "mutex.h"
 
 # define MUTEX_WARN_ON(cond)
@@ -1053,7 +1052,6 @@ ww_mutex_lock_interruptible(struct ww_mutex *lock, struct ww_acquire_ctx *ctx)
 }
 EXPORT_SYMBOL(ww_mutex_lock_interruptible);
 
-#endif /* !CONFIG_PREEMPT_RT */
 /**
  * atomic_dec_and_mutex_lock - return holding mutex if we dec to 0
  * @cnt: the atomic which we are to dec

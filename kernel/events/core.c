@@ -471,19 +471,10 @@ static cpumask_var_t perf_online_pkg_mask;
 static cpumask_var_t perf_online_sys_mask;
 static struct kmem_cache *perf_event_cache;
 
-#ifdef CONFIG_PERF_GUEST_MEDIATED_PMU
-static DEFINE_PER_CPU(bool, guest_ctx_loaded);
-
-static __always_inline bool is_guest_mediated_pmu_loaded(void)
-{
-	return __this_cpu_read(guest_ctx_loaded);
-}
-#else
 static __always_inline bool is_guest_mediated_pmu_loaded(void)
 {
 	return false;
 }
-#endif
 
 /*
  * perf event paranoia level:
@@ -6325,137 +6316,8 @@ u64 perf_event_pause(struct perf_event *event, bool reset)
 }
 EXPORT_SYMBOL_GPL(perf_event_pause);
 
-#ifdef CONFIG_PERF_GUEST_MEDIATED_PMU
-static atomic_t nr_include_guest_events __read_mostly;
-
-static atomic_t nr_mediated_pmu_vms __read_mostly;
-static DEFINE_MUTEX(perf_mediated_pmu_mutex);
-
-/* !exclude_guest event of PMU with PERF_PMU_CAP_MEDIATED_VPMU */
-static inline bool is_include_guest_event(struct perf_event *event)
-{
-	if ((event->pmu->capabilities & PERF_PMU_CAP_MEDIATED_VPMU) &&
-	    !event->attr.exclude_guest)
-		return true;
-
-	return false;
-}
-
-static int mediated_pmu_account_event(struct perf_event *event)
-{
-	if (!is_include_guest_event(event))
-		return 0;
-
-	if (atomic_inc_not_zero(&nr_include_guest_events))
-		return 0;
-
-	guard(mutex)(&perf_mediated_pmu_mutex);
-	if (atomic_read(&nr_mediated_pmu_vms))
-		return -EOPNOTSUPP;
-
-	atomic_inc(&nr_include_guest_events);
-	return 0;
-}
-
-static void mediated_pmu_unaccount_event(struct perf_event *event)
-{
-	if (!is_include_guest_event(event))
-		return;
-
-	if (WARN_ON_ONCE(!atomic_read(&nr_include_guest_events)))
-		return;
-
-	atomic_dec(&nr_include_guest_events);
-}
-
-/*
- * Currently invoked at VM creation to
- * - Check whether there are existing !exclude_guest events of PMU with
- *   PERF_PMU_CAP_MEDIATED_VPMU
- * - Set nr_mediated_pmu_vms to prevent !exclude_guest event creation on
- *   PMUs with PERF_PMU_CAP_MEDIATED_VPMU
- *
- * No impact for the PMU without PERF_PMU_CAP_MEDIATED_VPMU. The perf
- * still owns all the PMU resources.
- */
-int perf_create_mediated_pmu(void)
-{
-	if (atomic_inc_not_zero(&nr_mediated_pmu_vms))
-		return 0;
-
-	guard(mutex)(&perf_mediated_pmu_mutex);
-	if (atomic_read(&nr_include_guest_events))
-		return -EBUSY;
-
-	atomic_inc(&nr_mediated_pmu_vms);
-	return 0;
-}
-EXPORT_SYMBOL_FOR_KVM(perf_create_mediated_pmu);
-
-void perf_release_mediated_pmu(void)
-{
-	if (WARN_ON_ONCE(!atomic_read(&nr_mediated_pmu_vms)))
-		return;
-
-	atomic_dec(&nr_mediated_pmu_vms);
-}
-EXPORT_SYMBOL_FOR_KVM(perf_release_mediated_pmu);
-
-/* When loading a guest's mediated PMU, schedule out all exclude_guest events. */
-void perf_load_guest_context(void)
-{
-	struct perf_cpu_context *cpuctx = this_cpu_ptr(&perf_cpu_context);
-
-	lockdep_assert_irqs_disabled();
-
-	guard(perf_ctx_lock)(cpuctx, cpuctx->task_ctx);
-
-	if (WARN_ON_ONCE(__this_cpu_read(guest_ctx_loaded)))
-		return;
-
-	perf_ctx_disable(&cpuctx->ctx, EVENT_GUEST);
-	ctx_sched_out(&cpuctx->ctx, NULL, EVENT_GUEST);
-	if (cpuctx->task_ctx) {
-		perf_ctx_disable(cpuctx->task_ctx, EVENT_GUEST);
-		task_ctx_sched_out(cpuctx->task_ctx, NULL, EVENT_GUEST);
-	}
-
-	perf_ctx_enable(&cpuctx->ctx, EVENT_GUEST);
-	if (cpuctx->task_ctx)
-		perf_ctx_enable(cpuctx->task_ctx, EVENT_GUEST);
-
-	__this_cpu_write(guest_ctx_loaded, true);
-}
-EXPORT_SYMBOL_GPL(perf_load_guest_context);
-
-void perf_put_guest_context(void)
-{
-	struct perf_cpu_context *cpuctx = this_cpu_ptr(&perf_cpu_context);
-
-	lockdep_assert_irqs_disabled();
-
-	guard(perf_ctx_lock)(cpuctx, cpuctx->task_ctx);
-
-	if (WARN_ON_ONCE(!__this_cpu_read(guest_ctx_loaded)))
-		return;
-
-	perf_ctx_disable(&cpuctx->ctx, EVENT_GUEST);
-	if (cpuctx->task_ctx)
-		perf_ctx_disable(cpuctx->task_ctx, EVENT_GUEST);
-
-	perf_event_sched_in(cpuctx, cpuctx->task_ctx, NULL, EVENT_GUEST);
-
-	if (cpuctx->task_ctx)
-		perf_ctx_enable(cpuctx->task_ctx, EVENT_GUEST);
-	perf_ctx_enable(&cpuctx->ctx, EVENT_GUEST);
-
-	__this_cpu_write(guest_ctx_loaded, false);
-}
-EXPORT_SYMBOL_GPL(perf_put_guest_context);
-#else
 static int mediated_pmu_account_event(struct perf_event *event) { return 0; }
 static void mediated_pmu_unaccount_event(struct perf_event *event) {}
-#endif
 
 /*
  * Holding the top-level event's child_mutex means that any
@@ -9440,10 +9302,6 @@ void perf_event_namespaces(struct task_struct *task)
 #ifdef CONFIG_USER_NS
 	perf_fill_ns_link_info(&ns_link_info[USER_NS_INDEX],
 			       task, &userns_operations);
-#endif
-#ifdef CONFIG_NET_NS
-	perf_fill_ns_link_info(&ns_link_info[NET_NS_INDEX],
-			       task, &netns_operations);
 #endif
 #ifdef CONFIG_UTS_NS
 	perf_fill_ns_link_info(&ns_link_info[UTS_NS_INDEX],

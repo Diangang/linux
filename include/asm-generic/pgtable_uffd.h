@@ -15,7 +15,7 @@
 
 static inline bool uffd_supports_wp_marker(void)
 {
-	return pgtable_supports_uffd_wp() && IS_ENABLED(CONFIG_PTE_MARKER_UFFD_WP);
+	return pgtable_supports_uffd_wp() && 0;
 }
 
 #if 1

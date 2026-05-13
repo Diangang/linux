@@ -86,44 +86,7 @@ extern void shm_destroy_orphaned(struct ipc_namespace *ns);
 static inline void shm_destroy_orphaned(struct ipc_namespace *ns) {}
 #endif /* CONFIG_SYSVIPC */
 
-#ifdef CONFIG_POSIX_MQUEUE
-extern int mq_init_ns(struct ipc_namespace *ns);
-/*
- * POSIX Message Queue default values:
- *
- * MIN_*: Lowest value an admin can set the maximum unprivileged limit to
- * DFLT_*MAX: Default values for the maximum unprivileged limits
- * DFLT_{MSG,MSGSIZE}: Default values used when the user doesn't supply
- *   an attribute to the open call and the queue must be created
- * HARD_*: Highest value the maximums can be set to.  These are enforced
- *   on CAP_SYS_RESOURCE apps as well making them inviolate (so make them
- *   suitably high)
- *
- * POSIX Requirements:
- *   Per app minimum openable message queues - 8.  This does not map well
- *     to the fact that we limit the number of queues on a per namespace
- *     basis instead of a per app basis.  So, make the default high enough
- *     that no given app should have a hard time opening 8 queues.
- *   Minimum maximum for HARD_MSGMAX - 32767.  I bumped this to 65536.
- *   Minimum maximum for HARD_MSGSIZEMAX - POSIX is silent on this.  However,
- *     we have run into a situation where running applications in the wild
- *     require this to be at least 5MB, and preferably 10MB, so I set the
- *     value to 16MB in hopes that this user is the worst of the bunch and
- *     the new maximum will handle anyone else.  I may have to revisit this
- *     in the future.
- */
-#define DFLT_QUEUESMAX		      256
-#define MIN_MSGMAX			1
-#define DFLT_MSG		       10U
-#define DFLT_MSGMAX		       10
-#define HARD_MSGMAX		    65536
-#define MIN_MSGSIZEMAX		      128
-#define DFLT_MSGSIZE		     8192U
-#define DFLT_MSGSIZEMAX		     8192
-#define HARD_MSGSIZEMAX	    (16*1024*1024)
-#else
 static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
-#endif
 
 #if 0
 static inline struct ipc_namespace *to_ipc_ns(struct ns_common *ns)
@@ -177,12 +140,6 @@ static inline void put_ipc_ns(struct ipc_namespace *ns)
 }
 #endif
 
-#ifdef CONFIG_POSIX_MQUEUE_SYSCTL
-
-void retire_mq_sysctls(struct ipc_namespace *ns);
-bool setup_mq_sysctls(struct ipc_namespace *ns);
-
-#else /* CONFIG_POSIX_MQUEUE_SYSCTL */
 
 static inline void retire_mq_sysctls(struct ipc_namespace *ns)
 {
@@ -193,7 +150,6 @@ static inline bool setup_mq_sysctls(struct ipc_namespace *ns)
 	return true;
 }
 
-#endif /* CONFIG_POSIX_MQUEUE_SYSCTL */
 
 #ifdef CONFIG_SYSVIPC_SYSCTL
 

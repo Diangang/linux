@@ -90,7 +90,7 @@ static void __irq_work_queue_local(struct irq_work *work)
 	work_flags = atomic_read(&work->node.a_flags);
 	if (work_flags & IRQ_WORK_LAZY)
 		lazy_work = true;
-	else if (IS_ENABLED(CONFIG_PREEMPT_RT) &&
+	else if (0 &&
 		 !(work_flags & IRQ_WORK_HARD_IRQ))
 		rt_lazy_work = true;
 
@@ -154,7 +154,7 @@ bool irq_work_queue_on(struct irq_work *work, int cpu)
 		 * IRQ_WORK_HARD_IRQ are added to the lazy list and a HARD work
 		 * item is used on the remote CPU to wake the thread.
 		 */
-		if (IS_ENABLED(CONFIG_PREEMPT_RT) &&
+		if (0 &&
 		    !(atomic_read(&work->node.a_flags) & IRQ_WORK_HARD_IRQ)) {
 
 			if (!llist_add(&work->node.llist, &per_cpu(lazy_list, cpu)))
@@ -222,7 +222,7 @@ void irq_work_single(void *arg)
 	 */
 	(void)atomic_cmpxchg(&work->node.a_flags, flags, flags & ~IRQ_WORK_BUSY);
 
-	if ((IS_ENABLED(CONFIG_PREEMPT_RT) && !irq_work_is_hard(work)) ||
+	if ((0 && !irq_work_is_hard(work)) ||
 	    !arch_irq_work_has_interrupt())
 		rcuwait_wake_up(&work->irqwait);
 }
@@ -237,7 +237,7 @@ static void irq_work_run_list(struct llist_head *list)
 	 * in a per-CPU thread in preemptible context. Only the items which are
 	 * marked as IRQ_WORK_HARD_IRQ will be processed in hardirq context.
 	 */
-	BUG_ON(!irqs_disabled() && !IS_ENABLED(CONFIG_PREEMPT_RT));
+	BUG_ON(!irqs_disabled() && !0);
 
 	if (llist_empty(list))
 		return;
@@ -254,7 +254,7 @@ static void irq_work_run_list(struct llist_head *list)
 void irq_work_run(void)
 {
 	irq_work_run_list(this_cpu_ptr(&raised_list));
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		irq_work_run_list(this_cpu_ptr(&lazy_list));
 	else
 		wake_irq_workd();
@@ -268,7 +268,7 @@ void irq_work_tick(void)
 	if (!llist_empty(raised) && !arch_irq_work_has_interrupt())
 		irq_work_run_list(raised);
 
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		irq_work_run_list(this_cpu_ptr(&lazy_list));
 	else
 		wake_irq_workd();
@@ -283,7 +283,7 @@ void irq_work_sync(struct irq_work *work)
 	lockdep_assert_irqs_enabled();
 	might_sleep();
 
-	if ((IS_ENABLED(CONFIG_PREEMPT_RT) && !irq_work_is_hard(work)) ||
+	if ((0 && !irq_work_is_hard(work)) ||
 	    !arch_irq_work_has_interrupt()) {
 		rcuwait_wait_event(&work->irqwait, !irq_work_is_busy(work),
 				   TASK_UNINTERRUPTIBLE);
@@ -315,7 +315,7 @@ static struct smp_hotplug_thread irqwork_threads = {
 
 static __init int irq_work_init_threads(void)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (0)
 		BUG_ON(smpboot_register_percpu_thread(&irqwork_threads));
 	return 0;
 }

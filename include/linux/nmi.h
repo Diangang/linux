@@ -124,12 +124,7 @@ static inline bool trigger_single_cpu_backtrace(int cpu)
 #include <asm/nmi.h>
 #endif
 
-#ifdef CONFIG_NMI_CHECK_CPU
-void nmi_backtrace_stall_snap(const struct cpumask *btp);
-void nmi_backtrace_stall_check(const struct cpumask *btp);
-#else
 static inline void nmi_backtrace_stall_snap(const struct cpumask *btp) {}
 static inline void nmi_backtrace_stall_check(const struct cpumask *btp) {}
-#endif
 
 #endif

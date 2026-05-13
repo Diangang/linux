@@ -534,10 +534,6 @@ struct module {
 	struct klp_modinfo *klp_info;
 #endif
 
-#ifdef CONFIG_PRINTK_INDEX
-	unsigned int printk_index_size;
-	struct pi_entry **printk_index_start;
-#endif
 
 #ifdef CONFIG_MODULE_UNLOAD
 	/* What modules depend on me? */

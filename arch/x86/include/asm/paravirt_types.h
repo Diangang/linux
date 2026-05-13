@@ -19,85 +19,12 @@ struct cpumask;
 struct flush_tlb_info;
 struct vm_area_struct;
 
-#ifdef CONFIG_PARAVIRT_XXL
-struct pv_lazy_ops {
-	/* Set deferred update mode, used for batching operations. */
-	void (*enter)(void);
-	void (*leave)(void);
-	void (*flush)(void);
-} __no_randomize_layout;
-#endif
 
 struct pv_cpu_ops {
 	/* hooks for various privileged instructions */
-#ifdef CONFIG_PARAVIRT_XXL
-	unsigned long (*get_debugreg)(int regno);
-	void (*set_debugreg)(int regno, unsigned long value);
-
-	unsigned long (*read_cr0)(void);
-	void (*write_cr0)(unsigned long);
-
-	void (*write_cr4)(unsigned long);
-
-	/* Segment descriptor handling */
-	void (*load_tr_desc)(void);
-	void (*load_gdt)(const struct desc_ptr *);
-	void (*load_idt)(const struct desc_ptr *);
-	void (*set_ldt)(const void *desc, unsigned entries);
-	unsigned long (*store_tr)(void);
-	void (*load_tls)(struct thread_struct *t, unsigned int cpu);
-	void (*load_gs_index)(unsigned int idx);
-	void (*write_ldt_entry)(struct desc_struct *ldt, int entrynum,
-				const void *desc);
-	void (*write_gdt_entry)(struct desc_struct *,
-				int entrynum, const void *desc, int size);
-	void (*write_idt_entry)(gate_desc *,
-				int entrynum, const gate_desc *gate);
-	void (*alloc_ldt)(struct desc_struct *ldt, unsigned entries);
-	void (*free_ldt)(struct desc_struct *ldt, unsigned entries);
-
-	void (*load_sp0)(unsigned long sp0);
-
-#ifdef CONFIG_X86_IOPL_IOPERM
-	void (*invalidate_io_bitmap)(void);
-	void (*update_io_bitmap)(void);
-#endif
-
-	/* cpuid emulation, mostly so that caps bits can be disabled */
-	void (*cpuid)(unsigned int *eax, unsigned int *ebx,
-		      unsigned int *ecx, unsigned int *edx);
-
-	/* Unsafe MSR operations.  These will warn or panic on failure. */
-	u64 (*read_msr)(u32 msr);
-	void (*write_msr)(u32 msr, u64 val);
-
-	/*
-	 * Safe MSR operations.
-	 * Returns 0 or -EIO.
-	 */
-	int (*read_msr_safe)(u32 msr, u64 *val);
-	int (*write_msr_safe)(u32 msr, u64 val);
-
-	u64 (*read_pmc)(int counter);
-
-	void (*start_context_switch)(struct task_struct *prev);
-	void (*end_context_switch)(struct task_struct *next);
-#endif
 } __no_randomize_layout;
 
 struct pv_irq_ops {
-#ifdef CONFIG_PARAVIRT_XXL
-	/*
-	 * Get/set interrupt state.  save_fl is expected to use X86_EFLAGS_IF;
-	 * all other bits returned from save_fl are undefined.
-	 *
-	 * NOTE: These functions callers expect the callee to preserve
-	 * more registers than the standard C calling convention.
-	 */
-	struct paravirt_callee_save save_fl;
-	struct paravirt_callee_save irq_disable;
-	struct paravirt_callee_save irq_enable;
-#endif
 	void (*safe_halt)(void);
 	void (*halt)(void);
 } __no_randomize_layout;
@@ -114,72 +41,6 @@ struct pv_mmu_ops {
 	void (*exit_mmap)(struct mm_struct *mm);
 	void (*notify_page_enc_status_changed)(unsigned long pfn, int npages, bool enc);
 
-#ifdef CONFIG_PARAVIRT_XXL
-	struct paravirt_callee_save read_cr2;
-	void (*write_cr2)(unsigned long);
-
-	unsigned long (*read_cr3)(void);
-	void (*write_cr3)(unsigned long);
-
-	/* Hook for intercepting the creation/use of an mm_struct. */
-	void (*enter_mmap)(struct mm_struct *mm);
-
-	/* Hooks for allocating and freeing a pagetable top-level */
-	int  (*pgd_alloc)(struct mm_struct *mm);
-	void (*pgd_free)(struct mm_struct *mm, pgd_t *pgd);
-
-	/*
-	 * Hooks for allocating/releasing pagetable pages when they're
-	 * attached to a pagetable
-	 */
-	void (*alloc_pte)(struct mm_struct *mm, unsigned long pfn);
-	void (*alloc_pmd)(struct mm_struct *mm, unsigned long pfn);
-	void (*alloc_pud)(struct mm_struct *mm, unsigned long pfn);
-	void (*alloc_p4d)(struct mm_struct *mm, unsigned long pfn);
-	void (*release_pte)(unsigned long pfn);
-	void (*release_pmd)(unsigned long pfn);
-	void (*release_pud)(unsigned long pfn);
-	void (*release_p4d)(unsigned long pfn);
-
-	/* Pagetable manipulation functions */
-	void (*set_pte)(pte_t *ptep, pte_t pteval);
-	void (*set_pmd)(pmd_t *pmdp, pmd_t pmdval);
-
-	pte_t (*ptep_modify_prot_start)(struct vm_area_struct *vma, unsigned long addr,
-					pte_t *ptep);
-	void (*ptep_modify_prot_commit)(struct vm_area_struct *vma, unsigned long addr,
-					pte_t *ptep, pte_t pte);
-
-	struct paravirt_callee_save pte_val;
-	struct paravirt_callee_save make_pte;
-
-	struct paravirt_callee_save pgd_val;
-	struct paravirt_callee_save make_pgd;
-
-	void (*set_pud)(pud_t *pudp, pud_t pudval);
-
-	struct paravirt_callee_save pmd_val;
-	struct paravirt_callee_save make_pmd;
-
-	struct paravirt_callee_save pud_val;
-	struct paravirt_callee_save make_pud;
-
-	void (*set_p4d)(p4d_t *p4dp, p4d_t p4dval);
-
-	struct paravirt_callee_save p4d_val;
-	struct paravirt_callee_save make_p4d;
-
-	void (*set_pgd)(pgd_t *pgdp, pgd_t pgdval);
-
-	struct pv_lazy_ops lazy_mode;
-
-	/* dom0 ops */
-
-	/* Sometimes the physical address is a pfn, and sometimes its
-	   an mfn.  We can tell which is which from the index. */
-	void (*set_fixmap)(unsigned /* enum fixed_addresses */ idx,
-			   phys_addr_t phys, pgprot_t flags);
-#endif
 } __no_randomize_layout;
 
 /* This contains all the paravirt structures: we get a convenient

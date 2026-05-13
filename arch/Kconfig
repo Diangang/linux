@@ -421,22 +421,8 @@ config MMU_GATHER_RCU_TABLE_FREE
 	bool
 	select MMU_GATHER_TABLE_FREE
 
-config MMU_GATHER_PAGE_SIZE
-	bool
-
-config MMU_GATHER_NO_RANGE
-	bool
-	select MMU_GATHER_MERGE_VMAS
-
-config MMU_GATHER_NO_FLUSH_CACHE
-	bool
-
 config MMU_GATHER_MERGE_VMAS
 	bool
-
-config MMU_GATHER_NO_GATHER
-	bool
-	depends on MMU_GATHER_TABLE_FREE
 
 config ARCH_WANT_IRQS_OFF_ACTIVATE_MM
 	bool
@@ -461,7 +447,7 @@ config ARCH_WANT_IRQS_OFF_ACTIVATE_MM
 # converted already).
 config MMU_LAZY_TLB_REFCOUNT
 	def_bool y
-	depends on !MMU_LAZY_TLB_SHOOTDOWN
+	depends on y
 
 # This option allows MMU_LAZY_TLB_REFCOUNT=n. It ensures no CPUs are using an
 # mm as a lazy tlb beyond its last reference count, by shooting down these
@@ -474,9 +460,6 @@ config MMU_LAZY_TLB_REFCOUNT
 # - At the time of the final mmdrop of the mm, ensure mm_cpumask(mm) contains
 #   at least all possible CPUs in which the mm is lazy.
 # - It must meet the requirements for MMU_LAZY_TLB_REFCOUNT=n (see above).
-config MMU_LAZY_TLB_SHOOTDOWN
-	bool
-
 config ARCH_HAVE_NMI_SAFE_CMPXCHG
 	bool
 
@@ -680,22 +663,6 @@ config ARCH_SUPPORTS_AUTOFDO_CLANG
 config ARCH_SUPPORTS_PROPELLER_CLANG
 	bool
 
-config PROPELLER_CLANG
-	bool "Enable Clang's Propeller build"
-	depends on ARCH_SUPPORTS_PROPELLER_CLANG
-	depends on n
-	help
-	  This option enables Clang’s Propeller build. When the Propeller
-	  profiles is specified in variable CLANG_PROPELLER_PROFILE_PREFIX
-	  during the build process, Clang uses the profiles to optimize
-	  the kernel.
-
-	  If no profile is specified, Propeller options are still passed
-	  to Clang to facilitate the collection of perf data for creating
-	  the Propeller profiles in subsequent builds.
-
-	  If unsure, say N.
-
 config ARCH_SUPPORTS_CFI
 	bool
 	help
@@ -811,12 +778,6 @@ config MODULES_USE_ELF_RELA
 	  Modules only use ELF RELA relocations.  Modules with ELF REL
 	  relocations will give an error.
 
-config MODULES_USE_ELF_REL
-	bool
-	help
-	  Modules only use ELF REL relocations.  Modules with ELF RELA
-	  relocations will give an error.
-
 config ARCH_WANTS_EXECMEM_LATE
 	bool
 	help
@@ -850,7 +811,7 @@ config HAVE_SOFTIRQ_ON_OWN_STACK
 	  separate stack.
 
 config SOFTIRQ_ON_OWN_STACK
-	def_bool HAVE_SOFTIRQ_ON_OWN_STACK && !PREEMPT_RT
+	def_bool HAVE_SOFTIRQ_ON_OWN_STACK && y
 
 config PGTABLE_LEVELS
 	int
@@ -953,74 +914,25 @@ config PAGE_SIZE_4KB
 	  Some software that is written for x86 systems makes incorrect
 	  assumptions about the page size and only runs on 4KiB pages.
 
-config PAGE_SIZE_8KB
-	bool "8KiB pages"
-	depends on n
-	help
-	  This option is the only supported page size on a few older
-	  processors, and can be slightly faster than 4KiB pages.
-
-config PAGE_SIZE_16KB
-	bool "16KiB pages"
-	depends on n
-	help
-	  This option is usually a good compromise between memory
-	  consumption and performance for typical desktop and server
-	  workloads, often saving a level of page table lookups compared
-	  to 4KB pages as well as reducing TLB pressure and overhead of
-	  per-page operations in the kernel at the expense of a larger
-	  page cache.
-
-config PAGE_SIZE_32KB
-	bool "32KiB pages"
-	depends on n
-	help
-	  Using 32KiB page size will result in slightly higher performance
-	  kernel at the price of higher memory consumption compared to
-	  16KiB pages.	This option is available only on cnMIPS cores.
-	  Note that you will need a suitable Linux distribution to
-	  support this.
-
-config PAGE_SIZE_64KB
-	bool "64KiB pages"
-	depends on n
-	help
-	  Using 64KiB page size will result in slightly higher performance
-	  kernel at the price of much higher memory consumption compared to
-	  4KiB or 16KiB pages.
-	  This is not suitable for general-purpose workloads but the
-	  better performance may be worth the cost for certain types of
-	  supercomputing or database applications that work mostly with
-	  large in-memory data rather than small files.
-
-config PAGE_SIZE_256KB
-	bool "256KiB pages"
-	depends on n
-	help
-	  256KiB pages have little practical value due to their extreme
-	  memory usage.  The kernel will only be able to run applications
-	  that have been compiled with '-zmax-page-size' set to 256KiB
-	  (the default is 64KiB or 4KiB on most architectures).
-
 endchoice
 
 config PAGE_SIZE_LESS_THAN_64KB
 	def_bool y
-	depends on !PAGE_SIZE_64KB
+	depends on y
 	depends on PAGE_SIZE_LESS_THAN_256KB
 
 config PAGE_SIZE_LESS_THAN_256KB
 	def_bool y
-	depends on !PAGE_SIZE_256KB
+	depends on y
 
 config PAGE_SHIFT
 	int
 	default	12 if PAGE_SIZE_4KB
-	default	13 if PAGE_SIZE_8KB
-	default	14 if PAGE_SIZE_16KB
-	default	15 if PAGE_SIZE_32KB
-	default	16 if PAGE_SIZE_64KB
-	default	18 if PAGE_SIZE_256KB
+	default	13 if n
+	default	14 if n
+	default	15 if n
+	default	16 if n
+	default	18 if n
 
 # This allows to use a set of generic functions to determine mmap base
 # address by giving priority to top-down scheme only if the process
@@ -1068,28 +980,10 @@ config CLONE_BACKWARDS
 	  Architecture has tls passed as the 4th argument of clone(2),
 	  not the 5th one.
 
-config ODD_RT_SIGACTION
-	bool
-	help
-	  Architecture has unusual rt_sigaction(2) arguments
-
-config OLD_SIGSUSPEND
-	bool
-	help
-	  Architecture has old sigsuspend(2) syscall, of one-argument variety
-
 config OLD_SIGSUSPEND3
 	bool
 	help
 	  Even weirder antique ABI - three-argument sigsuspend(2)
-
-config OLD_SIGACTION
-	bool
-	help
-	  Architecture has old sigaction(2) syscall.  Nope, not the same
-	  as OLD_SIGSUSPEND | OLD_SIGSUSPEND3 - alpha has sigsuspend(2),
-	  but fairly different variant of sigaction(2), thanks to OSF/1
-	  compatibility...
 
 config COMPAT_OLD_SIGACTION
 	bool

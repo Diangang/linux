@@ -23,18 +23,9 @@ menuconfig MODULES
 
 if MODULES
 
-config MODULE_DEBUGFS
-	bool
+if n
 
-config MODULE_DEBUG
-	bool "Module debugging"
-	help
-	  Allows you to enable / disable features which can help you debug
-	  modules. You don't need these options on production systems.
-
-if MODULE_DEBUG
-
-endif # MODULE_DEBUG
+endif # n
 
 config MODULE_UNLOAD
 	bool "Module unloading"
@@ -73,24 +64,6 @@ choice
 	prompt "Module compression type"
 	help
 	  Choose the supported algorithm for module compression.
-
-config MODULE_COMPRESS_GZIP
-	bool "GZIP"
-	help
-	  Support modules compressed with GZIP. The installed modules are
-	  suffixed with .ko.gz.
-
-config MODULE_COMPRESS_XZ
-	bool "XZ"
-	help
-	  Support modules compressed with XZ. The installed modules are
-	  suffixed with .ko.xz.
-
-config MODULE_COMPRESS_ZSTD
-	bool "ZSTD"
-	help
-	  Support modules compressed with ZSTD. The installed modules are
-	  suffixed with .ko.zst.
 
 endchoice
 

@@ -13,10 +13,6 @@
 struct perf_buffer {
 	refcount_t			refcount;
 	struct rcu_head			rcu_head;
-#ifdef CONFIG_PERF_USE_VMALLOC
-	struct work_struct		work;
-	int				page_order;	/* allocation order  */
-#endif
 	int				nr_pages;	/* nr of data pages  */
 	int				overwrite;	/* can overwrite itself */
 	int				paused;		/* can write into ring buffer */
@@ -98,25 +94,11 @@ void perf_event_aux_event(struct perf_event *event, unsigned long head,
 extern struct page *
 perf_mmap_to_page(struct perf_buffer *rb, unsigned long pgoff);
 
-#ifdef CONFIG_PERF_USE_VMALLOC
-/*
- * Back perf_mmap() with vmalloc memory.
- *
- * Required for architectures that have d-cache aliasing issues.
- */
-
-static inline int page_order(struct perf_buffer *rb)
-{
-	return rb->page_order;
-}
-
-#else
 
 static inline int page_order(struct perf_buffer *rb)
 {
 	return 0;
 }
-#endif
 
 static inline int data_page_nr(struct perf_buffer *rb)
 {

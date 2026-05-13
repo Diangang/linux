@@ -1474,7 +1474,7 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim, u64 delta_ns,
 	 * match on CONFIG_PREEMPT_RT = n. With PREEMPT_RT check the hard
 	 * expiry mode because unmarked timers are moved to softirq expiry.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
 	else
 		WARN_ON_ONCE(!(mode & HRTIMER_MODE_HARD) ^ !timer->is_hard);
@@ -1527,101 +1527,10 @@ int hrtimer_try_to_cancel(struct hrtimer *timer)
 }
 EXPORT_SYMBOL_GPL(hrtimer_try_to_cancel);
 
-#ifdef CONFIG_PREEMPT_RT
-static void hrtimer_cpu_base_init_expiry_lock(struct hrtimer_cpu_base *base)
-{
-	spin_lock_init(&base->softirq_expiry_lock);
-}
-
-static void hrtimer_cpu_base_lock_expiry(struct hrtimer_cpu_base *base)
-	__acquires(&base->softirq_expiry_lock)
-{
-	spin_lock(&base->softirq_expiry_lock);
-}
-
-static void hrtimer_cpu_base_unlock_expiry(struct hrtimer_cpu_base *base)
-	__releases(&base->softirq_expiry_lock)
-{
-	spin_unlock(&base->softirq_expiry_lock);
-}
-
-/*
- * The counterpart to hrtimer_cancel_wait_running().
- *
- * If there is a waiter for cpu_base->expiry_lock, then it was waiting for
- * the timer callback to finish. Drop expiry_lock and reacquire it. That
- * allows the waiter to acquire the lock and make progress.
- */
-static void hrtimer_sync_wait_running(struct hrtimer_cpu_base *cpu_base, unsigned long flags)
-{
-	if (atomic_read(&cpu_base->timer_waiters)) {
-		raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
-		spin_unlock(&cpu_base->softirq_expiry_lock);
-		spin_lock(&cpu_base->softirq_expiry_lock);
-		raw_spin_lock_irq(&cpu_base->lock);
-	}
-}
-
-#ifdef CONFIG_SMP
-static __always_inline bool is_migration_base(struct hrtimer_clock_base *base)
-{
-	return base == &migration_base;
-}
-#else
-static __always_inline bool is_migration_base(struct hrtimer_clock_base *base)
-{
-	return false;
-}
-#endif
-
-/*
- * This function is called on PREEMPT_RT kernels when the fast path
- * deletion of a timer failed because the timer callback function was
- * running.
- *
- * This prevents priority inversion: if the soft irq thread is preempted
- * in the middle of a timer callback, then calling hrtimer_cancel() can
- * lead to two issues:
- *
- *  - If the caller is on a remote CPU then it has to spin wait for the timer
- *    handler to complete. This can result in unbound priority inversion.
- *
- *  - If the caller originates from the task which preempted the timer
- *    handler on the same CPU, then spin waiting for the timer handler to
- *    complete is never going to end.
- */
-void hrtimer_cancel_wait_running(const struct hrtimer *timer)
-{
-	/* Lockless read. Prevent the compiler from reloading it below */
-	struct hrtimer_clock_base *base = READ_ONCE(timer->base);
-
-	/*
-	 * Just relax if the timer expires in hard interrupt context or if
-	 * it is currently on the migration base.
-	 */
-	if (!timer->is_soft || is_migration_base(base)) {
-		cpu_relax();
-		return;
-	}
-
-	/*
-	 * Mark the base as contended and grab the expiry lock, which is
-	 * held by the softirq across the timer callback. Drop the lock
-	 * immediately so the softirq can expire the next timer. In theory
-	 * the timer could already be running again, but that's more than
-	 * unlikely and just causes another wait loop.
-	 */
-	atomic_inc(&base->cpu_base->timer_waiters);
-	spin_lock_bh(&base->cpu_base->softirq_expiry_lock);
-	atomic_dec(&base->cpu_base->timer_waiters);
-	spin_unlock_bh(&base->cpu_base->softirq_expiry_lock);
-}
-#else
 static inline void hrtimer_cpu_base_init_expiry_lock(struct hrtimer_cpu_base *base) { }
 static inline void hrtimer_cpu_base_lock_expiry(struct hrtimer_cpu_base *base) { }
 static inline void hrtimer_cpu_base_unlock_expiry(struct hrtimer_cpu_base *base) { }
 static inline void hrtimer_sync_wait_running(struct hrtimer_cpu_base *base, unsigned long fl) { }
-#endif
 
 /**
  * hrtimer_cancel - cancel a timer and wait for the handler to finish.
@@ -1765,7 +1674,7 @@ static void __hrtimer_setup(struct hrtimer *timer, enum hrtimer_restart (*fn)(st
 	 * interrupt context for latency reasons and because the callbacks
 	 * can invoke functions which might sleep on RT, e.g. spin_lock().
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && !(mode & HRTIMER_MODE_HARD))
+	if (0 && !(mode & HRTIMER_MODE_HARD))
 		softtimer = true;
 
 	memset(timer, 0, sizeof(struct hrtimer));
@@ -2199,7 +2108,7 @@ void hrtimer_sleeper_start_expires(struct hrtimer_sleeper *sl, enum hrtimer_mode
 	 * __hrtimer_setup_sleeper() determines the delivery mode on RT so the
 	 * fiddling with this decision is avoided at the call sites.
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && sl->timer.is_hard)
+	if (0 && sl->timer.is_hard)
 		mode |= HRTIMER_MODE_HARD;
 
 	hrtimer_start_expires(&sl->timer, mode);
@@ -2228,7 +2137,7 @@ static void __hrtimer_setup_sleeper(struct hrtimer_sleeper *sl, clockid_t clock_
 	 * a real-time scheduling class, mark the mode for hard interrupt
 	 * expiry.
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
+	if (0) {
 		if (rt_or_dl_task_policy(current) && !(mode & HRTIMER_MODE_SOFT))
 			mode |= HRTIMER_MODE_HARD;
 	}

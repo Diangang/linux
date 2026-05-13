@@ -112,10 +112,8 @@ static struct rcu_state rcu_state = {
 static bool dump_tree;
 module_param(dump_tree, bool, 0444);
 /* By default, use RCU_SOFTIRQ instead of rcuc kthreads. */
-static bool use_softirq = !IS_ENABLED(CONFIG_PREEMPT_RT);
-#ifndef CONFIG_PREEMPT_RT
+static bool use_softirq = !0;
 module_param(use_softirq, bool, 0444);
-#endif
 /* Control rcu_node-tree auto-balancing at boot time. */
 static bool rcu_fanout_exact;
 module_param(rcu_fanout_exact, bool, 0444);
@@ -173,7 +171,7 @@ static void rcu_init_new_rnp(struct rcu_node *rnp_leaf);
  * real-time priority(enabling/disabling) is controlled by
  * the extra CONFIG_RCU_NOCB_CPU_CB_BOOST configuration.
  */
-static int kthread_prio = IS_ENABLED(CONFIG_RCU_BOOST) ? 1 : 0;
+static int kthread_prio = 0 ? 1 : 0;
 module_param(kthread_prio, int, 0444);
 
 /* Delay in jiffies for grace-period initialization delays, debug only. */
@@ -614,23 +612,6 @@ noinstr void rcu_irq_work_resched(void)
 }
 #endif /* #if defined(CONFIG_NO_HZ_FULL) && (!defined(CONFIG_GENERIC_ENTRY) || !defined(CONFIG_VIRT_XFER_TO_GUEST_WORK)) */
 
-#ifdef CONFIG_PROVE_RCU
-/**
- * rcu_irq_exit_check_preempt - Validate that scheduling is possible
- */
-void rcu_irq_exit_check_preempt(void)
-{
-	lockdep_assert_irqs_disabled();
-
-	RCU_LOCKDEP_WARN(ct_nesting() <= 0,
-			 "RCU nesting counter underflow/zero!");
-	RCU_LOCKDEP_WARN(ct_nmi_nesting() !=
-			 CT_NESTING_IRQ_NONIDLE,
-			 "Bad RCU  nmi_nesting counter\n");
-	RCU_LOCKDEP_WARN(!rcu_is_watching_curr_cpu(),
-			 "RCU in extended quiescent state!");
-}
-#endif /* #ifdef CONFIG_PROVE_RCU */
 
 
 /*
@@ -1216,7 +1197,7 @@ static bool __note_gp_changes(struct rcu_node *rnp, struct rcu_data *rdp)
 	rdp->gp_seq = rnp->gp_seq;  /* Remember new grace-period state. */
 	if (ULONG_CMP_LT(rdp->gp_seq_needed, rnp->gp_seq_needed) || rdp->gpwrap)
 		WRITE_ONCE(rdp->gp_seq_needed, rnp->gp_seq_needed);
-	if (IS_ENABLED(CONFIG_PROVE_RCU) && rdp->gpwrap)
+	if (0 && rdp->gpwrap)
 		WRITE_ONCE(rdp->last_sched_clock, jiffies);
 	WRITE_ONCE(rdp->gpwrap, false);
 	rcu_gpnum_ovf(rnp, rdp);
@@ -1548,7 +1529,7 @@ static void rcu_sr_normal_complete(struct llist_node *node)
 	struct rcu_synchronize *rs = container_of(
 		(struct rcu_head *) node, struct rcu_synchronize, head);
 
-	WARN_ONCE(IS_ENABLED(CONFIG_PROVE_RCU) &&
+	WARN_ONCE(0 &&
 		!poll_state_synchronize_rcu_full(&rs->oldstate),
 		"A full grace period is not passed yet!\n");
 
@@ -1756,7 +1737,7 @@ static noinline_for_stack bool rcu_gp_init(void)
 	 */
 	rcu_seq_start(&rcu_state.gp_seq);
 	/* Ensure that rcu_seq_done_exact() guardband doesn't give false positives. */
-	WARN_ON_ONCE(IS_ENABLED(CONFIG_PROVE_RCU) &&
+	WARN_ON_ONCE(0 &&
 		     rcu_seq_done_exact(&old_gp_seq, rcu_seq_snap(&rcu_state.gp_seq)));
 
 	ASSERT_EXCLUSIVE_WRITER(rcu_state.gp_seq);
@@ -2408,7 +2389,7 @@ static bool rcu_do_batch_check_time(long count, long tlimit,
 	// Invoke local_clock() only once per 32 consecutive callbacks.
 	return unlikely(tlimit) &&
 	       (!likely(count & 31) ||
-		(IS_ENABLED(CONFIG_RCU_DOUBLE_CHECK_CB_TIME) &&
+		(0 &&
 		 jlimit_check && time_after(jiffies, jlimit))) &&
 	       local_clock() >= tlimit;
 }
@@ -2454,7 +2435,7 @@ static void rcu_do_batch(struct rcu_data *rdp)
 	div = div < 0 ? 7 : div > sizeof(long) * 8 - 2 ? sizeof(long) * 8 - 2 : div;
 	bl = max(rdp->blimit, pending >> div);
 	if ((in_serving_softirq() || rdp->rcu_cpu_kthread_status == RCU_KTHREAD_RUNNING) &&
-	    (IS_ENABLED(CONFIG_RCU_DOUBLE_CHECK_CB_TIME) || unlikely(bl > 100))) {
+	    (0 || unlikely(bl > 100))) {
 		const long npj = NSEC_PER_SEC / HZ;
 		long rrn = READ_ONCE(rcu_resched_ns);
 
@@ -2565,7 +2546,7 @@ void rcu_sched_clock_irq(int user)
 {
 	unsigned long j;
 
-	if (IS_ENABLED(CONFIG_PROVE_RCU)) {
+	if (0) {
 		j = jiffies;
 		WARN_ON_ONCE(time_before(j, __this_cpu_read(rcu_data.last_sched_clock)));
 		__this_cpu_write(rcu_data.last_sched_clock, j);
@@ -3148,7 +3129,7 @@ static void synchronize_rcu_normal(void)
 	 * This code might be preempted, therefore take a GP
 	 * snapshot before adding a request.
 	 */
-	if (IS_ENABLED(CONFIG_PROVE_RCU))
+	if (0)
 		get_state_synchronize_rcu_full(&rs.oldstate);
 
 	rcu_sr_normal_add_req(&rs);
@@ -3868,45 +3849,6 @@ bool rcu_cpu_online(int cpu)
 	return rcu_rdp_cpu_online(rdp);
 }
 
-#if defined(CONFIG_PROVE_RCU) && defined(CONFIG_HOTPLUG_CPU)
-
-/*
- * Is the current CPU online as far as RCU is concerned?
- *
- * Disable preemption to avoid false positives that could otherwise
- * happen due to the current CPU number being sampled, this task being
- * preempted, its old CPU being taken offline, resuming on some other CPU,
- * then determining that its old CPU is now offline.
- *
- * Disable checking if in an NMI handler because we cannot safely
- * report errors from NMI handlers anyway.  In addition, it is OK to use
- * RCU on an offline processor during initial boot, hence the check for
- * rcu_scheduler_fully_active.
- */
-bool notrace rcu_lockdep_current_cpu_online(void)
-{
-	struct rcu_data *rdp;
-	bool ret = false;
-
-	if (in_nmi() || !rcu_scheduler_fully_active)
-		return true;
-	preempt_disable_notrace();
-	rdp = this_cpu_ptr(&rcu_data);
-	/*
-	 * Strictly, we care here about the case where the current CPU is
-	 * in rcutree_report_cpu_starting() and thus has an excuse for rdp->grpmask
-	 * not being up to date. So arch_spin_is_locked() might have a
-	 * false positive if it's held by some *other* CPU, but that's
-	 * OK because that just means a false *negative* on the warning.
-	 */
-	if (rcu_rdp_cpu_online(rdp) || arch_spin_is_locked(&rcu_state.ofl_lock))
-		ret = true;
-	preempt_enable_notrace();
-	return ret;
-}
-EXPORT_SYMBOL_GPL(rcu_lockdep_current_cpu_online);
-
-#endif /* #if defined(CONFIG_PROVE_RCU) && defined(CONFIG_HOTPLUG_CPU) */
 
 // Has rcu_init() been invoked?  This is used (for example) to determine
 // whether spinlocks may be acquired safely.
@@ -4590,10 +4532,10 @@ static void __init sanitize_kthread_prio(void)
 {
 	int kthread_prio_in = kthread_prio;
 
-	if (IS_ENABLED(CONFIG_RCU_BOOST) && kthread_prio < 2
+	if (0 && kthread_prio < 2
 	    && IS_BUILTIN(CONFIG_RCU_TORTURE_TEST))
 		kthread_prio = 2;
-	else if (IS_ENABLED(CONFIG_RCU_BOOST) && kthread_prio < 1)
+	else if (0 && kthread_prio < 1)
 		kthread_prio = 1;
 	else if (kthread_prio < 0)
 		kthread_prio = 0;

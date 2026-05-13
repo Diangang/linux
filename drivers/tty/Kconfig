@@ -198,23 +198,6 @@ config SERIAL_NONSTANDARD
 
 	  Most people can say N here.
 
-config PPC_EPAPR_HV_BYTECHAN
-	bool "ePAPR hypervisor byte channel driver"
-	depends on PPC
-	select EPAPR_PARAVIRT
-	help
-	  This driver creates /dev entries for each ePAPR hypervisor byte
-	  channel, thereby allowing applications to communicate with byte
-	  channels as if they were serial ports.
-
-config PPC_EARLY_DEBUG_EHV_BC
-	bool "Early console (udbg) support for ePAPR hypervisors"
-	depends on PPC_EPAPR_HV_BYTECHAN=y
-	help
-	  Select this option to enable early console (a.k.a. "udbg") support
-	  via an ePAPR byte channel.  You also need to choose the byte channel
-	  handle below.
-
 	  if they are present. This can be useful when working with an EJTAG
 	  probe which supports it, to get console output and a login prompt via
 	  EJTAG without needing to connect a serial cable.
@@ -225,22 +208,6 @@ config PPC_EARLY_DEBUG_EHV_BC
 	  The console can be enabled with console=fdc1 (for FDC channel 1 on all
 	  CPUs). Do not use the console unless there is a debug probe attached
 	  to drain the FDC TX FIFO.
-
-	  If unsure, say N.
-
-config NULL_TTY_DEFAULT_CONSOLE
-	bool "Support for console on ttynull"
-	depends on NULL_TTY=y && !VT_CONSOLE
-	help
-	  Say Y here if you want the NULL TTY to be used as a /dev/console
-	  device by default.
-
-	  For example, it might be useful to prevent a VT-less kernel from
-	  writing the system log to a random device connected to the serial
-	  port.
-
-	  Another console driver still might get preferred via the command
-	  line, SPCR, or the device tree.
 
 	  If unsure, say N.
 

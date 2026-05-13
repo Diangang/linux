@@ -54,9 +54,6 @@ extern struct mm_struct *pgd_page_get_mm(struct page *page);
 
 extern pmdval_t early_pmd_flags;
 
-#ifdef CONFIG_PARAVIRT_XXL
-#include <asm/paravirt.h>
-#else  /* !CONFIG_PARAVIRT_XXL */
 #define set_pte(ptep, pte)		native_set_pte(ptep, pte)
 
 #define set_pte_atomic(ptep, pte)					\
@@ -111,7 +108,6 @@ extern pmdval_t early_pmd_flags;
 
 #define arch_end_context_switch(prev)	do {} while(0)
 static inline void arch_flush_lazy_mmu_mode(void) {}
-#endif	/* CONFIG_PARAVIRT_XXL */
 
 static inline pmd_t pmd_set_flags(pmd_t pmd, pmdval_t set)
 {

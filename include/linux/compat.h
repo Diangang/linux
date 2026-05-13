@@ -701,12 +701,10 @@ asmlinkage long compat_sys_sigaltstack(const compat_stack_t __user *uss_ptr,
 				       compat_stack_t __user *uoss_ptr);
 asmlinkage long compat_sys_rt_sigsuspend(compat_sigset_t __user *unewset,
 					 compat_size_t sigsetsize);
-#ifndef CONFIG_ODD_RT_SIGACTION
 asmlinkage long compat_sys_rt_sigaction(int,
 				 const struct compat_sigaction __user *,
 				 struct compat_sigaction __user *,
 				 compat_size_t);
-#endif
 asmlinkage long compat_sys_rt_sigprocmask(int how, compat_sigset_t __user *set,
 					  compat_sigset_t __user *oset,
 					  compat_size_t sigsetsize);

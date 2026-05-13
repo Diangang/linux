@@ -403,59 +403,7 @@ extern int kptr_restrict;
 
 struct module;
 
-#ifdef CONFIG_PRINTK_INDEX
-struct pi_entry {
-	const char *fmt;
-	const char *func;
-	const char *file;
-	unsigned int line;
-
-	/*
-	 * While printk and pr_* have the level stored in the string at compile
-	 * time, some subsystems dynamically add it at runtime through the
-	 * format string. For these dynamic cases, we allow the subsystem to
-	 * tell us the level at compile time.
-	 *
-	 * NULL indicates that the level, if any, is stored in fmt.
-	 */
-	const char *level;
-
-	/*
-	 * The format string used by various subsystem specific printk()
-	 * wrappers to prefix the message.
-	 *
-	 * Note that the static prefix defined by the pr_fmt() macro is stored
-	 * directly in the message format (@fmt), not here.
-	 */
-	const char *subsys_fmt_prefix;
-} __packed;
-
-#define __printk_index_emit(_fmt, _level, _subsys_fmt_prefix)		\
-	do {								\
-		if (__builtin_constant_p(_fmt) && __builtin_constant_p(_level)) { \
-			/*
-			 * We check __builtin_constant_p multiple times here
-			 * for the same input because GCC will produce an error
-			 * if we try to assign a static variable to fmt if it
-			 * is not a constant, even with the outer if statement.
-			 */						\
-			static const struct pi_entry _entry		\
-			__used = {					\
-				.fmt = __builtin_constant_p(_fmt) ? (_fmt) : NULL, \
-				.func = __func__,			\
-				.file = __FILE__,			\
-				.line = __LINE__,			\
-				.level = __builtin_constant_p(_level) ? (_level) : NULL, \
-				.subsys_fmt_prefix = _subsys_fmt_prefix,\
-			};						\
-			static const struct pi_entry *_entry_ptr	\
-			__used __section(".printk_index") = &_entry;	\
-		}							\
-	} while (0)
-
-#else /* !CONFIG_PRINTK_INDEX */
 #define __printk_index_emit(...) do {} while (0)
-#endif /* CONFIG_PRINTK_INDEX */
 
 /*
  * Some subsystems have their own custom printk that applies a va_format to a

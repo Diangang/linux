@@ -8,7 +8,6 @@
 #include <linux/spinlock_types.h>
 #include <linux/types.h>
 
-#ifndef CONFIG_PREEMPT_RT
 
 /*
  * Simple, straightforward mutexes with strict semantics:
@@ -47,16 +46,5 @@ context_lock_struct(mutex) {
 	struct mutex_waiter	*first_waiter __guarded_by(&wait_lock);
 };
 
-#else /* !CONFIG_PREEMPT_RT */
-/*
- * Preempt-RT variant based on rtmutexes.
- */
-#include <linux/rtmutex.h>
-
-context_lock_struct(mutex) {
-	struct rt_mutex_base	rtmutex;
-};
-
-#endif /* CONFIG_PREEMPT_RT */
 
 #endif /* __LINUX_MUTEX_TYPES_H */

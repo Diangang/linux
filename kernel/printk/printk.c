@@ -2057,31 +2057,6 @@ static inline u32 printk_caller_id(void)
 		CALLER_ID_MASK + smp_processor_id();
 }
 
-#ifdef CONFIG_PRINTK_EXECUTION_CTX
-/* Store the opposite info than caller_id. */
-static u32 printk_caller_id2(void)
-{
-	return !in_task() ? task_pid_nr(current) :
-		CALLER_ID_MASK + smp_processor_id();
-}
-
-static pid_t printk_info_get_pid(const struct printk_info *info)
-{
-	u32 caller_id = info->caller_id;
-	u32 caller_id2 = info->caller_id2;
-
-	return caller_id & CALLER_ID_MASK ? caller_id2 : caller_id;
-}
-
-static int printk_info_get_cpu(const struct printk_info *info)
-{
-	u32 caller_id = info->caller_id;
-	u32 caller_id2 = info->caller_id2;
-
-	return ((caller_id & CALLER_ID_MASK ?
-		 caller_id : caller_id2) & ~CALLER_ID_MASK);
-}
-#endif
 
 /**
  * printk_parse_prefix - Parse level and control flags.
@@ -2158,27 +2133,10 @@ static u16 printk_sprint(char *text, u16 size, int facility,
 	return text_len;
 }
 
-#ifdef CONFIG_PRINTK_EXECUTION_CTX
-static void printk_store_execution_ctx(struct printk_info *info)
-{
-	info->caller_id2 = printk_caller_id2();
-	get_task_comm(info->comm, current);
-}
-
-static void pmsg_load_execution_ctx(struct printk_message *pmsg,
-				    const struct printk_info *info)
-{
-	pmsg->cpu = printk_info_get_cpu(info);
-	pmsg->pid = printk_info_get_pid(info);
-	memcpy(pmsg->comm, info->comm, sizeof(pmsg->comm));
-	static_assert(sizeof(pmsg->comm) == sizeof(info->comm));
-}
-#else
 static void printk_store_execution_ctx(struct printk_info *info) {}
 
 static void pmsg_load_execution_ctx(struct printk_message *pmsg,
 				    const struct printk_info *info) {}
-#endif
 
 __printf(4, 0)
 int vprintk_store(int facility, int level,
@@ -2986,10 +2944,6 @@ out:
  * dedicated thread and never from within printk(). Therefore we tell
  * lockdep that a sleeping spin lock (spinlock_t) is valid here.
  */
-#ifdef CONFIG_PREEMPT_RT
-static inline void printk_legacy_allow_spinlock_enter(void) { }
-static inline void printk_legacy_allow_spinlock_exit(void) { }
-#else
 static DEFINE_WAIT_OVERRIDE_MAP(printk_legacy_map, LD_WAIT_CONFIG);
 
 static inline void printk_legacy_allow_spinlock_enter(void)
@@ -3001,7 +2955,6 @@ static inline void printk_legacy_allow_spinlock_exit(void)
 {
 	lock_map_release(&printk_legacy_map);
 }
-#endif /* CONFIG_PREEMPT_RT */
 
 /*
  * Used as the printk buffers for non-panic, serialized console printing.
@@ -4289,10 +4242,6 @@ void __init console_init(void)
 	initcall_t call;
 	initcall_entry_t *ce;
 
-#ifdef CONFIG_NULL_TTY_DEFAULT_CONSOLE
-	if (!console_set_on_cmdline)
-		add_preferred_console("ttynull", 0, NULL);
-#endif
 
 	/* Setup the default TTY line discipline. */
 	n_tty_init();

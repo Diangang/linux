@@ -129,10 +129,8 @@ static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
  */
 BUILD_LOCK_OPS(spin, raw_spinlock, __acquires);
 
-#ifndef CONFIG_PREEMPT_RT
 BUILD_LOCK_OPS(read, rwlock, __acquires_shared);
 BUILD_LOCK_OPS(write, rwlock, __acquires);
-#endif
 
 #endif
 
@@ -198,7 +196,6 @@ noinline void __lockfunc _raw_spin_unlock_bh(raw_spinlock_t *lock)
 }
 EXPORT_SYMBOL(_raw_spin_unlock_bh);
 
-#ifndef CONFIG_PREEMPT_RT
 
 noinline int __lockfunc _raw_read_trylock(rwlock_t *lock)
 {
@@ -316,7 +313,6 @@ noinline void __lockfunc _raw_write_unlock_bh(rwlock_t *lock)
 }
 EXPORT_SYMBOL(_raw_write_unlock_bh);
 
-#endif /* !CONFIG_PREEMPT_RT */
 
 
 notrace int in_lock_functions(unsigned long addr)
@@ -328,11 +324,3 @@ notrace int in_lock_functions(unsigned long addr)
 	&& addr < (unsigned long)__lock_text_end;
 }
 EXPORT_SYMBOL(in_lock_functions);
-
-#if defined(CONFIG_PROVE_LOCKING) && defined(CONFIG_PREEMPT_RT)
-void notrace lockdep_assert_in_softirq_func(void)
-{
-	lockdep_assert_in_softirq();
-}
-EXPORT_SYMBOL(lockdep_assert_in_softirq_func);
-#endif

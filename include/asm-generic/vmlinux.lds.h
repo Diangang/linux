@@ -874,24 +874,9 @@
 #define FW_LOADER_BUILT_IN_DATA
 #endif
 
-#ifdef CONFIG_PM_TRACE
-#define TRACEDATA							\
-	. = ALIGN(4);							\
-	.tracedata : AT(ADDR(.tracedata) - LOAD_OFFSET) {		\
-		BOUNDED_SECTION_POST_LABEL(.tracedata, __tracedata, _start, _end) \
-	}
-#else
 #define TRACEDATA
-#endif
 
-#ifdef CONFIG_PRINTK_INDEX
-#define PRINTK_INDEX							\
-	.printk_index : AT(ADDR(.printk_index) - LOAD_OFFSET) {		\
-		BOUNDED_SECTION_BY(.printk_index, _printk_index)	\
-	}
-#else
 #define PRINTK_INDEX
-#endif
 
 /*
  * Discard .note.GNU-stack, which is emitted as PROGBITS by the compiler.

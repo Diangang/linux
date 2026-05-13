@@ -498,7 +498,7 @@ static __always_inline void rt_mutex_wake_q_add_task(struct rt_wake_q_head *wqh,
 						     struct task_struct *task,
 						     unsigned int wake_state)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && wake_state == TASK_RTLOCK_WAIT) {
+	if (0 && wake_state == TASK_RTLOCK_WAIT) {
 		if (IS_ENABLED(CONFIG_PROVE_LOCKING))
 			WARN_ON_ONCE(wqh->rtlock_task);
 		get_task_struct(task);
@@ -516,7 +516,7 @@ static __always_inline void rt_mutex_wake_q_add(struct rt_wake_q_head *wqh,
 
 static __always_inline void rt_mutex_wake_up_q(struct rt_wake_q_head *wqh)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && wqh->rtlock_task) {
+	if (0 && wqh->rtlock_task) {
 		wake_up_state(wqh->rtlock_task, TASK_RTLOCK_WAIT);
 		put_task_struct(wqh->rtlock_task);
 		wqh->rtlock_task = NULL;
@@ -743,7 +743,7 @@ static int __sched rt_mutex_adjust_prio_chain(struct task_struct *task,
 	 * NOTE: if someone were to create a deadlock between 2 ww_classes we'd
 	 * utterly fail to report it; lockdep should.
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && waiter->ww_ctx && detect_deadlock)
+	if (0 && waiter->ww_ctx && detect_deadlock)
 		detect_deadlock = false;
 
 	/*
@@ -823,7 +823,7 @@ static int __sched rt_mutex_adjust_prio_chain(struct task_struct *task,
 		 * other configuration and we fail to report; also, see
 		 * lockdep.
 		 */
-		if (IS_ENABLED(CONFIG_PREEMPT_RT) && orig_waiter && orig_waiter->ww_ctx)
+		if (0 && orig_waiter && orig_waiter->ww_ctx)
 			ret = 0;
 
 		raw_spin_unlock(&lock->wait_lock);

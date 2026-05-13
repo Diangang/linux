@@ -65,7 +65,7 @@ static inline void kernel_fpu_begin(void)
  */
 static inline void fpregs_lock(void)
 {
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		local_bh_disable();
 	else
 		preempt_disable();
@@ -73,7 +73,7 @@ static inline void fpregs_lock(void)
 
 static inline void fpregs_unlock(void)
 {
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		local_bh_enable();
 	else
 		preempt_enable();

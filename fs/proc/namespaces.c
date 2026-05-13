@@ -13,9 +13,6 @@
 
 
 static const struct proc_ns_operations *const ns_entries[] = {
-#ifdef CONFIG_NET_NS
-	&netns_operations,
-#endif
 #ifdef CONFIG_UTS_NS
 	&utsns_operations,
 #endif

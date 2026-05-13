@@ -58,7 +58,6 @@ do {									\
  */
 #define mutex_init_with_key(mutex, key) __mutex_init((mutex), #mutex, (key))
 
-#ifndef CONFIG_PREEMPT_RT
 #define __MUTEX_INITIALIZER(lockname) \
 		{ .owner = ATOMIC_LONG_INIT(0) \
 		, .wait_lock = __RAW_SPIN_LOCK_UNLOCKED(lockname.wait_lock) \
@@ -85,30 +84,6 @@ static inline void __mutex_init(struct mutex *lock, const char *name,
  */
 extern bool mutex_is_locked(struct mutex *lock);
 
-#else /* !CONFIG_PREEMPT_RT */
-/*
- * Preempt-RT variant based on rtmutexes.
- */
-
-#define __MUTEX_INITIALIZER(mutexname)					\
-{									\
-	.rtmutex = __RT_MUTEX_BASE_INITIALIZER(mutexname.rtmutex)	\
-	__DEP_MAP_MUTEX_INITIALIZER(mutexname)				\
-}
-
-#define DEFINE_MUTEX(mutexname)						\
-	struct mutex mutexname = __MUTEX_INITIALIZER(mutexname)
-
-#define mutex_is_locked(l)	rt_mutex_base_is_locked(&(l)->rtmutex)
-
-extern void mutex_rt_init_generic(struct mutex *mutex);
-
-static inline void __mutex_init(struct mutex *lock, const char *name,
-				struct lock_class_key *key)
-{
-	mutex_rt_init_generic(lock);
-}
-#endif /* CONFIG_PREEMPT_RT */
 
 
 static inline int __must_check __devm_mutex_init(struct device *dev, struct mutex *lock)

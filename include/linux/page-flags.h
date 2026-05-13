@@ -117,10 +117,6 @@ enum pageflags {
 #ifdef CONFIG_MEMORY_FAILURE
 	PG_hwpoison,		/* hardware poisoned page. Don't touch */
 #endif
-#if defined(CONFIG_PAGE_IDLE_FLAG) && defined(CONFIG_64BIT)
-	PG_young,
-	PG_idle,
-#endif
 #ifdef CONFIG_ARCH_USES_PG_ARCH_2
 	PG_arch_2,
 #endif
@@ -652,19 +648,9 @@ PAGEFLAG_FALSE(HWPoison, hwpoison)
 #define __PG_HWPOISON 0
 #endif
 
-#ifdef CONFIG_PAGE_IDLE_FLAG
-#ifdef CONFIG_64BIT
-FOLIO_TEST_FLAG(young, FOLIO_HEAD_PAGE)
-FOLIO_SET_FLAG(young, FOLIO_HEAD_PAGE)
-FOLIO_TEST_CLEAR_FLAG(young, FOLIO_HEAD_PAGE)
-FOLIO_FLAG(idle, FOLIO_HEAD_PAGE)
-#endif
-/* See page_idle.h for !64BIT workaround */
-#else /* !CONFIG_PAGE_IDLE_FLAG */
 FOLIO_FLAG_FALSE(young)
 FOLIO_TEST_CLEAR_FLAG_FALSE(young)
 FOLIO_FLAG_FALSE(idle)
-#endif
 
 /*
  * PageReported() is used to track reported free pages within the Buddy

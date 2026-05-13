@@ -189,9 +189,6 @@ enum fail_dup_mod_reason {
 	FAIL_DUP_MOD_LOAD,
 };
 
-#ifdef CONFIG_MODULE_DEBUGFS
-extern struct dentry *mod_debugfs_root;
-#endif
 
 #ifdef CONFIG_MODULE_STATS
 

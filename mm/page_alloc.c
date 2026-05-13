@@ -100,13 +100,8 @@ static DEFINE_MUTEX(pcp_batch_high_lock);
  * migrate_disable is used on RT because otherwise RT spinlock usage is
  * interfered with and a high priority task cannot preempt the allocator.
  */
-#ifndef CONFIG_PREEMPT_RT
 #define pcpu_task_pin()		preempt_disable()
 #define pcpu_task_unpin()	preempt_enable()
-#else
-#define pcpu_task_pin()		migrate_disable()
-#define pcpu_task_unpin()	migrate_enable()
-#endif
 
 /*
  * A helper to lookup and trylock pcp with embedded spinlock.
@@ -2804,7 +2799,7 @@ static void __free_frozen_pages(struct page *page, unsigned int order,
 		migratetype = MIGRATE_MOVABLE;
 	}
 
-	if (unlikely((fpi_flags & FPI_TRYLOCK) && IS_ENABLED(CONFIG_PREEMPT_RT)
+	if (unlikely((fpi_flags & FPI_TRYLOCK) && 0
 		     && (in_nmi() || in_hardirq()))) {
 		add_page_to_zone_llist(zone, page, order);
 		return;
@@ -4163,10 +4158,6 @@ void fs_reclaim_acquire(gfp_t gfp_mask)
 		if (gfp_mask & __GFP_FS)
 			__fs_reclaim_acquire(_RET_IP_);
 
-#ifdef CONFIG_MMU_NOTIFIER
-		lock_map_acquire(&__mmu_notifier_invalidate_range_start_map);
-		lock_map_release(&__mmu_notifier_invalidate_range_start_map);
-#endif
 
 	}
 }
@@ -7542,7 +7533,7 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
 	 * Note, irqs_disabled() case is ok. This function can be called
 	 * from raw_spin_lock_irqsave region.
 	 */
-	if (IS_ENABLED(CONFIG_PREEMPT_RT) && (in_nmi() || in_hardirq()))
+	if (0 && (in_nmi() || in_hardirq()))
 		return NULL;
 	if (!pcp_allowed_order(order))
 		return NULL;

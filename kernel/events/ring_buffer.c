@@ -795,7 +795,6 @@ void rb_free_aux(struct perf_buffer *rb)
 		__rb_free_aux(rb);
 }
 
-#ifndef CONFIG_PERF_USE_VMALLOC
 
 /*
  * Back perf_mmap() with regular GFP_KERNEL-0 pages.
@@ -889,72 +888,6 @@ void rb_free(struct perf_buffer *rb)
 	kfree(rb);
 }
 
-#else
-static struct page *
-__perf_mmap_to_page(struct perf_buffer *rb, unsigned long pgoff)
-{
-	/* The '>' counts in the user page. */
-	if (pgoff > data_page_nr(rb))
-		return NULL;
-
-	return vmalloc_to_page((void *)rb->user_page + pgoff * PAGE_SIZE);
-}
-
-static void rb_free_work(struct work_struct *work)
-{
-	struct perf_buffer *rb;
-
-	rb = container_of(work, struct perf_buffer, work);
-
-	vfree(rb->user_page);
-	kfree(rb);
-}
-
-void rb_free(struct perf_buffer *rb)
-{
-	schedule_work(&rb->work);
-}
-
-struct perf_buffer *rb_alloc(int nr_pages, long watermark, int cpu, int flags)
-{
-	struct perf_buffer *rb;
-	unsigned long size;
-	void *all_buf;
-	int node;
-
-	size = sizeof(struct perf_buffer);
-	size += sizeof(void *);
-
-	node = (cpu == -1) ? cpu : cpu_to_node(cpu);
-	rb = kzalloc_node(size, GFP_KERNEL, node);
-	if (!rb)
-		goto fail;
-
-	INIT_WORK(&rb->work, rb_free_work);
-
-	all_buf = vmalloc_user((nr_pages + 1) * PAGE_SIZE);
-	if (!all_buf)
-		goto fail_all_buf;
-
-	rb->user_page = all_buf;
-	rb->data_pages[0] = all_buf + PAGE_SIZE;
-	if (nr_pages) {
-		rb->nr_pages = 1;
-		rb->page_order = ilog2(nr_pages);
-	}
-
-	ring_buffer_init(rb, watermark, flags);
-
-	return rb;
-
-fail_all_buf:
-	kfree(rb);
-
-fail:
-	return NULL;
-}
-
-#endif
 
 struct page *
 perf_mmap_to_page(struct perf_buffer *rb, unsigned long pgoff)

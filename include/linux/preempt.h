@@ -107,13 +107,8 @@ static __always_inline unsigned char interrupt_context_level(void)
 
 #define nmi_count()	(preempt_count() & NMI_MASK)
 #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
-#ifdef CONFIG_PREEMPT_RT
-# define softirq_count()	(current->softirq_disable_cnt & SOFTIRQ_MASK)
-# define irq_count()		((preempt_count() & (NMI_MASK | HARDIRQ_MASK)) | softirq_count())
-#else
 # define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
 # define irq_count()		(preempt_count() & (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_MASK))
-#endif
 
 /*
  * Macros to retrieve the current execution context:
@@ -126,11 +121,7 @@ static __always_inline unsigned char interrupt_context_level(void)
 #define in_nmi()		(nmi_count())
 #define in_hardirq()		(hardirq_count())
 #define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)
-#ifdef CONFIG_PREEMPT_RT
-# define in_task()		(!((preempt_count() & (NMI_MASK | HARDIRQ_MASK)) | in_serving_softirq()))
-#else
 # define in_task()		(!(preempt_count() & (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
-#endif
 
 /*
  * The following macros are deprecated and should not be used in new code:
@@ -152,12 +143,7 @@ static __always_inline unsigned char interrupt_context_level(void)
 /*
  * The preempt_count offset after spin_lock()
  */
-#if !defined(CONFIG_PREEMPT_RT)
 #define PREEMPT_LOCK_OFFSET		PREEMPT_DISABLE_OFFSET
-#else
-/* Locks on RT do not disable preemption */
-#define PREEMPT_LOCK_OFFSET		0
-#endif
 
 /*
  * The preempt_count offset needed for things like:
@@ -314,58 +300,6 @@ do { \
 		set_preempt_need_resched(); \
 } while (0)
 
-#ifdef CONFIG_PREEMPT_NOTIFIERS
-
-struct preempt_notifier;
-struct task_struct;
-
-/**
- * preempt_ops - notifiers called when a task is preempted and rescheduled
- * @sched_in: we're about to be rescheduled:
- *    notifier: struct preempt_notifier for the task being scheduled
- *    cpu:  cpu we're scheduled on
- * @sched_out: we've just been preempted
- *    notifier: struct preempt_notifier for the task being preempted
- *    next: the task that's kicking us out
- *
- * Please note that sched_in and out are called under different
- * contexts.  sched_out is called with rq lock held and irq disabled
- * while sched_in is called without rq lock and irq enabled.  This
- * difference is intentional and depended upon by its users.
- */
-struct preempt_ops {
-	void (*sched_in)(struct preempt_notifier *notifier, int cpu);
-	void (*sched_out)(struct preempt_notifier *notifier,
-			  struct task_struct *next);
-};
-
-/**
- * preempt_notifier - key for installing preemption notifiers
- * @link: internal use
- * @ops: defines the notifier functions to be called
- *
- * Usually used in conjunction with container_of().
- */
-struct preempt_notifier {
-	struct hlist_node link;
-	struct preempt_ops *ops;
-};
-
-void preempt_notifier_inc(void);
-void preempt_notifier_dec(void);
-void preempt_notifier_register(struct preempt_notifier *notifier);
-void preempt_notifier_unregister(struct preempt_notifier *notifier);
-
-static inline void preempt_notifier_init(struct preempt_notifier *notifier,
-				     struct preempt_ops *ops)
-{
-	/* INIT_HLIST_NODE() open coded, to avoid dependency on list.h */
-	notifier->link.next = NULL;
-	notifier->link.pprev = NULL;
-	notifier->ops = ops;
-}
-
-#endif
 
 /*
  * Migrate-Disable and why it is undesired.
@@ -450,7 +384,7 @@ static inline void preempt_notifier_init(struct preempt_notifier *notifier,
 /* Macro to avoid header recursion hell vs. lockdep */
 #define preempt_disable_nested()				\
 do {								\
-	if (IS_ENABLED(CONFIG_PREEMPT_RT))			\
+	if (0)			\
 		preempt_disable();				\
 	else							\
 		lockdep_assert_preemption_disabled();		\
@@ -461,7 +395,7 @@ do {								\
  */
 static __always_inline void preempt_enable_nested(void)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (0)
 		preempt_enable();
 }
 
@@ -479,11 +413,11 @@ extern bool preempt_model_lazy(void);
 
 static inline bool preempt_model_none(void)
 {
-	return IS_ENABLED(CONFIG_PREEMPT_NONE);
+	return 0;
 }
 static inline bool preempt_model_voluntary(void)
 {
-	return IS_ENABLED(CONFIG_PREEMPT_VOLUNTARY);
+	return 0;
 }
 static inline bool preempt_model_full(void)
 {
@@ -499,7 +433,7 @@ static inline bool preempt_model_lazy(void)
 
 static inline bool preempt_model_rt(void)
 {
-	return IS_ENABLED(CONFIG_PREEMPT_RT);
+	return 0;
 }
 
 extern const char *preempt_model_str(void);

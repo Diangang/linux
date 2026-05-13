@@ -16,9 +16,6 @@ struct scatterlist {
 #ifdef CONFIG_NEED_SG_DMA_LENGTH
 	unsigned int	dma_length;
 #endif
-#ifdef CONFIG_NEED_SG_DMA_FLAGS
-	unsigned int    dma_flags;
-#endif
 };
 
 /*
@@ -292,81 +289,6 @@ static inline void sg_unmark_end(struct scatterlist *sg)
  * flags bits to indicate when a specific dma address is a bus address or the
  * buffer may have been bounced via SWIOTLB.
  */
-#ifdef CONFIG_NEED_SG_DMA_FLAGS
-
-#define SG_DMA_BUS_ADDRESS	(1 << 0)
-#define SG_DMA_SWIOTLB		(1 << 1)
-
-/**
- * sg_dma_is_bus_address - Return whether a given segment was marked
- *			   as a bus address
- * @sg:		 SG entry
- *
- * Description:
- *   Returns true if sg_dma_mark_bus_address() has been called on
- *   this segment.
- **/
-static inline bool sg_dma_is_bus_address(struct scatterlist *sg)
-{
-	return sg->dma_flags & SG_DMA_BUS_ADDRESS;
-}
-
-/**
- * sg_dma_mark_bus_address - Mark the scatterlist entry as a bus address
- * @sg:		 SG entry
- *
- * Description:
- *   Marks the passed in sg entry to indicate that the dma_address is
- *   a bus address and doesn't need to be unmapped. This should only be
- *   used by dma_map_sg() implementations to mark bus addresses
- *   so they can be properly cleaned up in dma_unmap_sg().
- **/
-static inline void sg_dma_mark_bus_address(struct scatterlist *sg)
-{
-	sg->dma_flags |= SG_DMA_BUS_ADDRESS;
-}
-
-/**
- * sg_dma_unmark_bus_address - Unmark the scatterlist entry as a bus address
- * @sg:		 SG entry
- *
- * Description:
- *   Clears the bus address mark.
- **/
-static inline void sg_dma_unmark_bus_address(struct scatterlist *sg)
-{
-	sg->dma_flags &= ~SG_DMA_BUS_ADDRESS;
-}
-
-/**
- * sg_dma_is_swiotlb - Return whether the scatterlist was marked for SWIOTLB
- *			bouncing
- * @sg:		SG entry
- *
- * Description:
- *   Returns true if the scatterlist was marked for SWIOTLB bouncing. Not all
- *   elements may have been bounced, so the caller would have to check
- *   individual SG entries with swiotlb_find_pool().
- */
-static inline bool sg_dma_is_swiotlb(struct scatterlist *sg)
-{
-	return sg->dma_flags & SG_DMA_SWIOTLB;
-}
-
-/**
- * sg_dma_mark_swiotlb - Mark the scatterlist for SWIOTLB bouncing
- * @sg:		SG entry
- *
- * Description:
- *   Marks a a scatterlist for SWIOTLB bounce. Not all SG entries may be
- *   bounced.
- */
-static inline void sg_dma_mark_swiotlb(struct scatterlist *sg)
-{
-	sg->dma_flags |= SG_DMA_SWIOTLB;
-}
-
-#else
 
 static inline bool sg_dma_is_bus_address(struct scatterlist *sg)
 {
@@ -386,7 +308,6 @@ static inline void sg_dma_mark_swiotlb(struct scatterlist *sg)
 {
 }
 
-#endif	/* CONFIG_NEED_SG_DMA_FLAGS */
 
 /**
  * sg_phys - Return physical address of an sg entry

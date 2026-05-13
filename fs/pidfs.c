@@ -599,11 +599,6 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		ns_common = to_ns_common(nsp->mnt_ns);
 		break;
 	case PIDFD_GET_NET_NAMESPACE:
-#ifdef CONFIG_NET_NS
-		if (!ns_ref_get(nsp->net_ns))
-			break;
-		ns_common = to_ns_common(nsp->net_ns);
-#endif
 		break;
 	case PIDFD_GET_PID_FOR_CHILDREN_NAMESPACE:
 #ifdef CONFIG_PID_NS

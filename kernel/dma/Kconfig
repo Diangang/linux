@@ -1,15 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config NO_DMA
-	bool
-
 config HAS_DMA
 	bool
-	depends on !NO_DMA
+	depends on y
 	default y
-
-config NEED_SG_DMA_FLAGS
-	bool
 
 config NEED_SG_DMA_LENGTH
 	bool

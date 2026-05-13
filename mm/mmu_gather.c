@@ -15,7 +15,6 @@
 
 #include <asm/tlb.h>
 
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 
 static bool tlb_next_batch(struct mmu_gather *tlb)
 {
@@ -172,11 +171,6 @@ static bool __tlb_remove_folio_pages_size(struct mmu_gather *tlb,
 
 	VM_BUG_ON(!tlb->end);
 
-#ifdef CONFIG_MMU_GATHER_PAGE_SIZE
-	VM_WARN_ON(tlb->page_size != page_size);
-	VM_WARN_ON_ONCE(nr_pages != 1 && page_size != PAGE_SIZE);
-	VM_WARN_ON_ONCE(page_folio(page) != page_folio(page + nr_pages - 1));
-#endif
 
 	batch = tlb->active;
 	/*
@@ -216,7 +210,6 @@ bool __tlb_remove_page_size(struct mmu_gather *tlb, struct page *page, int page_
 	return __tlb_remove_folio_pages_size(tlb, page, 1, false, page_size);
 }
 
-#endif /* MMU_GATHER_NO_GATHER */
 
 #ifdef CONFIG_MMU_GATHER_TABLE_FREE
 
@@ -413,9 +406,7 @@ static inline void tlb_table_init(struct mmu_gather *tlb) { }
 static void tlb_flush_mmu_free(struct mmu_gather *tlb)
 {
 	tlb_table_flush(tlb);
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 	tlb_batch_pages_flush(tlb);
-#endif
 }
 
 void tlb_flush_mmu(struct mmu_gather *tlb)
@@ -430,20 +421,15 @@ static void __tlb_gather_mmu(struct mmu_gather *tlb, struct mm_struct *mm,
 	tlb->mm = mm;
 	tlb->fullmm = fullmm;
 
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 	tlb->need_flush_all = 0;
 	tlb->local.next = NULL;
 	tlb->local.nr   = 0;
 	tlb->local.max  = ARRAY_SIZE(tlb->__pages);
 	tlb->active     = &tlb->local;
 	tlb->batch_count = 0;
-#endif
 	tlb->delayed_rmap = 0;
 
 	tlb_table_init(tlb);
-#ifdef CONFIG_MMU_GATHER_PAGE_SIZE
-	tlb->page_size = 0;
-#endif
 	tlb->vma_pfn = 0;
 
 	tlb->fully_unshared_tables = 0;
@@ -548,8 +534,6 @@ void tlb_finish_mmu(struct mmu_gather *tlb)
 
 	tlb_flush_mmu(tlb);
 
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 	tlb_batch_list_free(tlb);
-#endif
 	dec_tlb_flush_pending(tlb->mm);
 }

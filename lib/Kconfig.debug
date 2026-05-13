@@ -18,18 +18,6 @@ config PRINTK_TIME
 	  The behavior is also controlled by the kernel command line
 	  parameter printk.time=1. See Documentation/admin-guide/kernel-parameters.rst
 
-config PRINTK_EXECUTION_CTX
-	bool
-	depends on PRINTK
-	help
-	  This option extends struct printk_info to include extra execution
-	  context in printk, such as task name and CPU number from where the
-	  message originated. This is useful for correlating printk messages
-	  with specific execution contexts.
-
-	  This is automatically enabled when a console driver that supports
-	  execution context is selected.
-
 config CONSOLE_LOGLEVEL_DEFAULT
 	int "Default console loglevel (1-15)"
 	range 1 15
@@ -220,17 +208,6 @@ config FRAME_POINTER
 
 config OBJTOOL
 	bool
-
-config OBJTOOL_WERROR
-	bool "Upgrade objtool warnings to errors"
-	depends on OBJTOOL && !COMPILE_TEST
-	help
-	  Fail the build on objtool warnings.
-
-	  Objtool warnings can indicate kernel instability, including boot
-	  failures.  This option is highly recommended.
-
-	  If unsure, say Y.
 
 config STACK_VALIDATION
 	bool "Compile-time stack metadata validation"
@@ -460,15 +437,6 @@ config LOCK_DEBUGGING_SUPPORT
 	depends on TRACE_IRQFLAGS_SUPPORT && STACKTRACE_SUPPORT && LOCKDEP_SUPPORT
 	default y
 
-config PROVE_RAW_LOCK_NESTING
-	bool "Enable raw_spinlock - spinlock nesting checks" if !ARCH_SUPPORTS_RT
-	depends on PROVE_LOCKING
-	default y if ARCH_SUPPORTS_RT
-	help
-	 Enable the raw_spinlock vs. spinlock nesting checks which ensure
-	 that the lock nesting rules for PREEMPT_RT enabled kernels are
-	 not violated.
-
 endmenu # lock debugging
 
 config TRACE_IRQFLAGS
@@ -483,17 +451,6 @@ config TRACE_IRQFLAGS_NMI
 	depends on TRACE_IRQFLAGS
 	depends on TRACE_IRQFLAGS_NMI_SUPPORT
 
-config NMI_CHECK_CPU
-	bool "Debugging for CPUs failing to respond to backtrace requests"
-	depends on DEBUG_KERNEL
-	depends on X86
-	default n
-	help
-	  Enables debug prints when a CPU fails to respond to a given
-	  backtrace NMI.  These prints provide some reasons why a CPU
-	  might legitimately be failing to respond, for example, if it
-	  is offline of if ignore_nmis is set.
-
 config STACKTRACE
 	bool "Stack backtrace support"
 	depends on STACKTRACE_SUPPORT
@@ -506,36 +463,6 @@ config STACKTRACE
 source "kernel/rcu/Kconfig.debug"
 
 source "kernel/trace/Kconfig"
-
-config PROVIDE_OHCI1394_DMA_INIT
-	bool "Remote debugging over FireWire early on boot"
-	depends on PCI && X86
-	depends on FIREWIRE
-	help
-	  If you want to debug problems which hang or crash the kernel early
-	  on boot and the crashing machine has a FireWire port, you can use
-	  this feature to remotely access the memory of the crashed machine
-	  over FireWire. This employs remote DMA as part of the OHCI1394
-	  specification which is now the standard for FireWire controllers.
-
-	  With remote DMA, you can monitor the printk buffer remotely using
-	  firescope and access all memory below 4GB using fireproxy from gdb.
-	  Even controlling a kernel debugger is possible using remote DMA.
-
-	  Usage:
-
-	  If ohci1394_dma=early is used as boot parameter, it will initialize
-	  all OHCI1394 controllers which are found in the PCI config space.
-
-	  As all changes to the FireWire bus such as enabling and disabling
-	  devices cause a bus reset and thereby disable remote DMA for all
-	  devices, be sure to have the cable plugged and FireWire enabled on
-	  the debugging host before booting the debug target for debugging.
-
-	  This code (~1k) is freed after boot. By then, the firewire stack
-	  in charge of the OHCI-1394 controllers should be used instead.
-
-	  See Documentation/core-api/debugging-via-ohci1394.rst for more information.
 
 config ARCH_HAS_DEVMEM_IS_ALLOWED
 	bool

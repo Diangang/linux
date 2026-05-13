@@ -836,10 +836,6 @@ static void __init kvm_guest_init(void)
 		has_steal_clock = 1;
 		static_call_update(pv_steal_clock, kvm_steal_clock);
 
-#ifdef CONFIG_PARAVIRT_SPINLOCKS
-		pv_ops_lock.vcpu_is_preempted =
-			PV_CALLEE_SAVE(__kvm_vcpu_is_preempted);
-#endif
 	}
 
 	if (kvm_para_has_feature(KVM_FEATURE_PV_EOI))
@@ -1060,97 +1056,6 @@ static __init int activate_jump_labels(void)
 }
 arch_initcall(activate_jump_labels);
 
-#ifdef CONFIG_PARAVIRT_SPINLOCKS
-
-/* Kick a cpu by its apicid. Used to wake up a halted vcpu */
-static void kvm_kick_cpu(int cpu)
-{
-	unsigned long flags = 0;
-	u32 apicid;
-
-	apicid = per_cpu(x86_cpu_to_apicid, cpu);
-	kvm_hypercall2(KVM_HC_KICK_CPU, flags, apicid);
-}
-
-#include <asm/qspinlock.h>
-
-static void kvm_wait(u8 *ptr, u8 val)
-{
-	if (in_nmi())
-		return;
-
-	/*
-	 * halt until it's our turn and kicked. Note that we do safe halt
-	 * for irq enabled case to avoid hang when lock info is overwritten
-	 * in irq spinlock slowpath and no spurious interrupt occur to save us.
-	 */
-	if (irqs_disabled()) {
-		if (READ_ONCE(*ptr) == val)
-			halt();
-	} else {
-		local_irq_disable();
-
-		/* safe_halt() will enable IRQ */
-		if (READ_ONCE(*ptr) == val)
-			safe_halt();
-		else
-			local_irq_enable();
-	}
-}
-
-/*
- * Setup pv_lock_ops to exploit KVM_FEATURE_PV_UNHALT if present.
- */
-void __init kvm_spinlock_init(void)
-{
-	/*
-	 * Disable PV spinlocks and use native qspinlock when dedicated pCPUs
-	 * are available.
-	 */
-	if (kvm_para_has_hint(KVM_HINTS_REALTIME)) {
-		pr_info("PV spinlocks disabled with KVM_HINTS_REALTIME hints\n");
-		goto out;
-	}
-
-	if (num_possible_cpus() == 1) {
-		pr_info("PV spinlocks disabled, single CPU\n");
-		goto out;
-	}
-
-	if (nopvspin) {
-		pr_info("PV spinlocks disabled, forced by \"nopvspin\" parameter\n");
-		goto out;
-	}
-
-	/*
-	 * In case host doesn't support KVM_FEATURE_PV_UNHALT there is still an
-	 * advantage of keeping virt_spin_lock_key enabled: virt_spin_lock() is
-	 * preferred over native qspinlock when vCPU is preempted.
-	 */
-	if (!kvm_para_has_feature(KVM_FEATURE_PV_UNHALT)) {
-		pr_info("PV spinlocks disabled, no host support\n");
-		return;
-	}
-
-	pr_info("PV spinlocks enabled\n");
-
-	__pv_init_lock_hash();
-	pv_ops_lock.queued_spin_lock_slowpath = __pv_queued_spin_lock_slowpath;
-	pv_ops_lock.queued_spin_unlock =
-		PV_CALLEE_SAVE(__pv_queued_spin_unlock);
-	pv_ops_lock.wait = kvm_wait;
-	pv_ops_lock.kick = kvm_kick_cpu;
-
-	/*
-	 * When PV spinlock is enabled which is preferred over
-	 * virt_spin_lock(), virt_spin_lock_key's value is meaningless.
-	 * Just disable it anyway.
-	 */
-out:
-	static_branch_disable(&virt_spin_lock_key);
-}
-
-#endif	/* CONFIG_PARAVIRT_SPINLOCKS */
 
 #ifdef CONFIG_ARCH_CPUIDLE_HALTPOLL
 

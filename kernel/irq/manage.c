@@ -24,7 +24,7 @@
 
 #include "internals.h"
 
-#if defined(CONFIG_IRQ_FORCED_THREADING) && !defined(CONFIG_PREEMPT_RT)
+#if defined(CONFIG_IRQ_FORCED_THREADING) && !0
 DEFINE_STATIC_KEY_FALSE(force_irqthreads_key);
 
 static int __init setup_forced_irqthreads(char *arg)
@@ -1160,10 +1160,10 @@ static irqreturn_t irq_forced_thread_fn(struct irq_desc *desc, struct irqaction 
 	irqreturn_t ret;
 
 	local_bh_disable();
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		local_irq_disable();
 	ret = irq_thread_fn(desc, action);
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		local_irq_enable();
 	local_bh_enable();
 	return ret;

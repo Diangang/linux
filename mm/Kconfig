@@ -163,33 +163,6 @@ config MHP_DEFAULT_ONLINE_TYPE_OFFLINE
 	  Choose this for systems with drivers and user policy that
 	  handle onlining of hotplug memory policy.
 
-config MHP_DEFAULT_ONLINE_TYPE_ONLINE_AUTO
-	bool "auto"
-	help
-	  Select this if you want the kernel to automatically online
-	  hotplugged memory into the zone it thinks is reasonable.
-	  This memory may be utilized for kernel data.
-
-config MHP_DEFAULT_ONLINE_TYPE_ONLINE_KERNEL
-	bool "kernel"
-	help
-	  Select this if you want the kernel to automatically online
-	  hotplugged memory into a zone capable of being used for kernel
-	  data. This typically means ZONE_NORMAL.
-
-config MHP_DEFAULT_ONLINE_TYPE_ONLINE_MOVABLE
-	bool "movable"
-	help
-	  Select this if you want the kernel to automatically online
-	  hotplug memory into ZONE_MOVABLE. This memory will generally
-	  not be utilized for kernel data.
-
-	  This should only be used when the admin knows sufficient
-	  ZONE_NORMAL memory is available to describe hotplug memory,
-	  otherwise hotplug memory may fail to online. For example,
-	  sufficient kernel-capable memory (ZONE_NORMAL) must be
-	  available to allocate page structs to describe ZONE_MOVABLE.
-
 endchoice
 
 config MEMORY_HOTREMOVE
@@ -272,7 +245,7 @@ config COMPACTION
 config COMPACT_UNEVICTABLE_DEFAULT
 	int
 	depends on COMPACTION
-	default 0 if PREEMPT_RT
+	default 0 if n
 	default 1
 
 #
@@ -319,10 +292,6 @@ config PCP_BATCH_SCALE_MAX
 
 config PHYS_ADDR_T_64BIT
 	def_bool 64BIT
-
-config MMU_NOTIFIER
-	bool
-	select INTERVAL_TREE
 
 config KSM
 	bool "Enable KSM for page merging"
@@ -378,28 +347,12 @@ config ARCH_WANT_GENERAL_HUGETLB
 config ARCH_WANTS_THP_SWAP
 	def_bool n
 
-config PERSISTENT_HUGE_ZERO_FOLIO
-	bool "Allocate a PMD sized folio for zeroing"
-	depends on TRANSPARENT_HUGEPAGE
-	help
-	  Enable this option to reduce the runtime refcounting overhead
-	  of the huge zero folio and expand the places in the kernel
-	  that can use huge zero folios. For instance, block I/O benefits
-	  from access to large folios for zeroing memory.
-
-	  With this option enabled, the huge zero folio is allocated
-	  once and never freed. One full huge page's worth of memory shall
-	  be used.
-
-	  Say Y if your system has lots of memory. Say N if you are
-	  memory constrained.
-
 config MM_ID
 	def_bool n
 
 menuconfig TRANSPARENT_HUGEPAGE
 	bool "Transparent Hugepage Support"
-	depends on HAVE_ARCH_TRANSPARENT_HUGEPAGE && !PREEMPT_RT
+	depends on HAVE_ARCH_TRANSPARENT_HUGEPAGE && y
 	select COMPACTION
 	select XARRAY_MULTI
 	select MM_ID
@@ -557,24 +510,11 @@ config READ_ONLY_THP_FOR_FS
 	  support of file THPs will be developed in the next few release
 	  cycles.
 
-config NO_PAGE_MAPCOUNT
-	bool "No per-page mapcount (EXPERIMENTAL)"
-	help
-	  Do not maintain per-page mapcounts for pages part of larger
-	  allocations, such as transparent huge pages.
-
-	  When this config option is enabled, some interfaces that relied on
-	  this information will rely on less-precise per-allocation information
-	  instead: for example, using the average per-page mapcount in such
-	  a large allocation instead of the per-page mapcount.
-
-	  EXPERIMENTAL because the impact of some changes is still unclear.
-
 endif # TRANSPARENT_HUGEPAGE
 
 # simple helper to make the code a bit easier to read
 config PAGE_MAPCOUNT
-	def_bool !NO_PAGE_MAPCOUNT
+	def_bool y
 
 #
 # The architecture supports pgtable leaves that is larger than PAGE_SIZE
@@ -650,14 +590,6 @@ config STACK_MAX_DEFAULT_SIZE_MB
 	  arch) when the RLIMIT_STACK hard limit is unlimited.
 
 	  A sane initial value is 100 MB.
-
-config PAGE_IDLE_FLAG
-	bool
-	select PAGE_EXTENSION if !64BIT
-	help
-	  This adds PG_idle and PG_young flags to 'struct page'.  PTE Accessed
-	  bit writers can set the state of the bit in the flags so that PTE
-	  Accessed bit readers may avoid disturbance.
 
 config ARCH_HAS_CACHE_LINE_SIZE
 	bool
@@ -737,15 +669,6 @@ config SECRETMEM
 	  not mapped to other processes and other kernel page tables.
 
 if USERFAULTFD
-config PTE_MARKER_UFFD_WP
-	bool "Userfaultfd write protection support for shmem/hugetlbfs"
-	default y
-	depends on n
-
-	help
-	  Allows to create marker PTEs for userfaultfd write protection
-	  purposes.  It is required to enable userfaultfd write protection on
-	  file-backed memory types like shmem and hugetlbfs.
 endif # USERFAULTFD
 
 # multi-gen LRU {

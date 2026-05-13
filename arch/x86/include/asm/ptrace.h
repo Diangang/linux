@@ -227,16 +227,11 @@ static __always_inline int v8086_mode(struct pt_regs *regs)
 static inline bool user_64bit_mode(struct pt_regs *regs)
 {
 #ifdef CONFIG_X86_64
-#ifndef CONFIG_PARAVIRT_XXL
 	/*
 	 * On non-paravirt systems, this is the only long mode CPL 3
 	 * selector.  We do not allow long mode selectors in the LDT.
 	 */
 	return regs->cs == __USER_CS;
-#else
-	/* Headers are too twisted for this to go in paravirt.h. */
-	return regs->cs == __USER_CS || regs->cs == pv_info.extra_user_64bit_cs;
-#endif
 #else /* !CONFIG_X86_64 */
 	return false;
 #endif

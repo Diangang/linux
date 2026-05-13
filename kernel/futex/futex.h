@@ -9,9 +9,6 @@
 #include <linux/uaccess.h>
 #include <linux/cleanup.h>
 
-#ifdef CONFIG_PREEMPT_RT
-#include <linux/rcuwait.h>
-#endif
 
 #include <asm/futex.h>
 
@@ -203,9 +200,6 @@ struct futex_q {
 	u32 bitset;
 	atomic_t requeue_state;
 	bool drop_hb_ref;
-#ifdef CONFIG_PREEMPT_RT
-	struct rcuwait requeue_wait;
-#endif
 } __randomize_layout;
 
 extern const struct futex_q futex_q_init;

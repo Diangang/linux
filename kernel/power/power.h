@@ -211,14 +211,8 @@ static inline int suspend_devices_and_enter(suspend_state_t state)
 }
 #endif /* !CONFIG_SUSPEND */
 
-#ifdef CONFIG_PM_TEST_SUSPEND
-/* kernel/power/suspend_test.c */
-extern void suspend_test_start(void);
-extern void suspend_test_finish(const char *label);
-#else /* !CONFIG_PM_TEST_SUSPEND */
 static inline void suspend_test_start(void) {}
 static inline void suspend_test_finish(const char *label) {}
-#endif /* !CONFIG_PM_TEST_SUSPEND */
 
 #ifdef CONFIG_PM_SLEEP
 /* kernel/power/main.c */

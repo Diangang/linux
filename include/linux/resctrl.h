@@ -14,14 +14,6 @@
 
 #define RESCTRL_PICK_ANY_CPU		-1
 
-#ifdef CONFIG_PROC_CPU_RESCTRL
-
-int proc_resctrl_show(struct seq_file *m,
-		      struct pid_namespace *ns,
-		      struct pid *pid,
-		      struct task_struct *tsk);
-
-#endif
 
 /* max value for struct rdt_domain's mbps_val */
 #define MBA_MAX_MBPS   U32_MAX

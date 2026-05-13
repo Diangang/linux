@@ -19,7 +19,6 @@
 
 DECLARE_PER_CPU(unsigned long, cpu_dr7);
 
-#ifndef CONFIG_PARAVIRT_XXL
 /*
  * These special macros can be used to get or set a debugging register
  */
@@ -27,7 +26,6 @@ DECLARE_PER_CPU(unsigned long, cpu_dr7);
 	(var) = native_get_debugreg(register)
 #define set_debugreg(value, register)				\
 	native_set_debugreg(register, value)
-#endif
 
 static __always_inline unsigned long native_get_debugreg(int regno)
 {

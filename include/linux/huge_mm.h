@@ -547,7 +547,7 @@ void mm_put_huge_zero_folio(struct mm_struct *mm);
 
 static inline struct folio *get_persistent_huge_zero_folio(void)
 {
-	if (!IS_ENABLED(CONFIG_PERSISTENT_HUGE_ZERO_FOLIO))
+	if (!0)
 		return NULL;
 
 	if (unlikely(!huge_zero_folio))

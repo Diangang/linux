@@ -208,12 +208,8 @@ u64 stable_page_flags(const struct page *page)
 	if (folio_test_slab(folio))
 		u |= 1 << KPF_SLAB;
 
-#if defined(CONFIG_PAGE_IDLE_FLAG) && defined(CONFIG_64BIT)
-	u |= kpf_copy_bit(k, KPF_IDLE,          PG_idle);
-#else
 	if (ps.flags & PAGE_SNAPSHOT_PG_IDLE)
 		u |= 1 << KPF_IDLE;
-#endif
 
 	u |= kpf_copy_bit(k, KPF_LOCKED,	PG_locked);
 	u |= kpf_copy_bit(k, KPF_DIRTY,		PG_dirty);

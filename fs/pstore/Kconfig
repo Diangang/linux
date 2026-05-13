@@ -23,10 +23,3 @@ config PSTORE_COMPRESS
 	help
 	  Whether pstore records should be compressed before being written to
 	  the backing store.
-
-config PSTORE_CONSOLE
-	bool "Log kernel console messages"
-	depends on PSTORE
-	help
-	  When the option is enabled, pstore will log all kernel
-	  messages, even if no oops or panic happened.

@@ -240,7 +240,7 @@ do { \
  */
 #define rcu_softirq_qs_periodic(old_ts) \
 do { \
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT) && \
+	if (!0 && \
 	    time_after(jiffies, (old_ts) + HZ / 10)) { \
 		preempt_disable(); \
 		rcu_softirq_qs(); \
@@ -282,11 +282,7 @@ static inline void init_rcu_head_on_stack(struct rcu_head *head) { }
 static inline void destroy_rcu_head_on_stack(struct rcu_head *head) { }
 #endif	/* #else !CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 
-#if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_PROVE_RCU)
-bool rcu_lockdep_current_cpu_online(void);
-#else /* #if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_PROVE_RCU) */
 static inline bool rcu_lockdep_current_cpu_online(void) { return true; }
-#endif /* #else #if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_PROVE_RCU) */
 
 extern struct lockdep_map rcu_lock_map;
 extern struct lockdep_map rcu_bh_lock_map;
@@ -324,106 +320,6 @@ static inline int debug_lockdep_rcu_enabled(void)
 }
 
 
-#ifdef CONFIG_PROVE_RCU
-
-/**
- * RCU_LOCKDEP_WARN - emit lockdep splat if specified condition is met
- * @c: condition to check
- * @s: informative message
- *
- * This checks debug_lockdep_rcu_enabled() before checking (c) to
- * prevent early boot splats due to lockdep not yet being initialized,
- * and rechecks it after checking (c) to prevent false-positive splats
- * due to races with lockdep being disabled.  See commit 3066820034b5dd
- * ("rcu: Reject RCU_LOCKDEP_WARN() false positives") for more detail.
- */
-#define RCU_LOCKDEP_WARN(c, s)						\
-	do {								\
-		static bool __section(".data..unlikely") __warned;	\
-		if (debug_lockdep_rcu_enabled() && (c) &&		\
-		    debug_lockdep_rcu_enabled() && !__warned) {		\
-			__warned = true;				\
-			lockdep_rcu_suspicious(__FILE__, __LINE__, s);	\
-		}							\
-	} while (0)
-
-#ifndef CONFIG_PREEMPT_RCU
-static inline void rcu_preempt_sleep_check(void)
-{
-	RCU_LOCKDEP_WARN(lock_is_held(&rcu_lock_map),
-			 "Illegal context switch in RCU read-side critical section");
-}
-#else // #ifndef CONFIG_PREEMPT_RCU
-static inline void rcu_preempt_sleep_check(void) { }
-#endif // #else // #ifndef CONFIG_PREEMPT_RCU
-
-#define rcu_sleep_check()						\
-	do {								\
-		rcu_preempt_sleep_check();				\
-		if (!IS_ENABLED(CONFIG_PREEMPT_RT))			\
-		    RCU_LOCKDEP_WARN(lock_is_held(&rcu_bh_lock_map),	\
-				 "Illegal context switch in RCU-bh read-side critical section"); \
-		RCU_LOCKDEP_WARN(lock_is_held(&rcu_sched_lock_map),	\
-				 "Illegal context switch in RCU-sched read-side critical section"); \
-	} while (0)
-
-// See RCU_LOCKDEP_WARN() for an explanation of the double call to
-// debug_lockdep_rcu_enabled().
-static __always_inline bool lockdep_assert_rcu_helper(bool c, const struct __ctx_lock_RCU *ctx)
-	__assumes_shared_ctx_lock(RCU) __assumes_shared_ctx_lock(ctx)
-{
-	return debug_lockdep_rcu_enabled() &&
-	       (c || !rcu_is_watching() || !rcu_lockdep_current_cpu_online()) &&
-	       debug_lockdep_rcu_enabled();
-}
-
-/**
- * lockdep_assert_in_rcu_read_lock - WARN if not protected by rcu_read_lock()
- *
- * Splats if lockdep is enabled and there is no rcu_read_lock() in effect.
- */
-#define lockdep_assert_in_rcu_read_lock() \
-	WARN_ON_ONCE(lockdep_assert_rcu_helper(!lock_is_held(&rcu_lock_map), RCU))
-
-/**
- * lockdep_assert_in_rcu_read_lock_bh - WARN if not protected by rcu_read_lock_bh()
- *
- * Splats if lockdep is enabled and there is no rcu_read_lock_bh() in effect.
- * Note that local_bh_disable() and friends do not suffice here, instead an
- * actual rcu_read_lock_bh() is required.
- */
-#define lockdep_assert_in_rcu_read_lock_bh() \
-	WARN_ON_ONCE(lockdep_assert_rcu_helper(!lock_is_held(&rcu_bh_lock_map), RCU_BH))
-
-/**
- * lockdep_assert_in_rcu_read_lock_sched - WARN if not protected by rcu_read_lock_sched()
- *
- * Splats if lockdep is enabled and there is no rcu_read_lock_sched()
- * in effect.  Note that preempt_disable() and friends do not suffice here,
- * instead an actual rcu_read_lock_sched() is required.
- */
-#define lockdep_assert_in_rcu_read_lock_sched() \
-	WARN_ON_ONCE(lockdep_assert_rcu_helper(!lock_is_held(&rcu_sched_lock_map), RCU_SCHED))
-
-/**
- * lockdep_assert_in_rcu_reader - WARN if not within some type of RCU reader
- *
- * Splats if lockdep is enabled and there is no RCU reader of any
- * type in effect.  Note that regions of code protected by things like
- * preempt_disable, local_bh_disable(), and local_irq_disable() all qualify
- * as RCU readers.
- *
- * Note that this will never trigger in PREEMPT_NONE or PREEMPT_VOLUNTARY
- * kernels that are not also built with PREEMPT_COUNT.  But if you have
- * lockdep enabled, you might as well also enable PREEMPT_COUNT.
- */
-#define lockdep_assert_in_rcu_reader()								\
-	WARN_ON_ONCE(lockdep_assert_rcu_helper(!lock_is_held(&rcu_lock_map) &&			\
-					       !lock_is_held(&rcu_bh_lock_map) &&		\
-					       !lock_is_held(&rcu_sched_lock_map) &&		\
-					       preemptible(), RCU))
-
-#else /* #ifdef CONFIG_PROVE_RCU */
 
 #define RCU_LOCKDEP_WARN(c, s) do { } while (0 && (c))
 #define rcu_sleep_check() do { } while (0)
@@ -433,7 +329,6 @@ static __always_inline bool lockdep_assert_rcu_helper(bool c, const struct __ctx
 #define lockdep_assert_in_rcu_read_lock_sched() __assume_shared_ctx_lock(RCU_SCHED)
 #define lockdep_assert_in_rcu_reader() __assume_shared_ctx_lock(RCU)
 
-#endif /* #else #ifdef CONFIG_PROVE_RCU */
 
 /*
  * Helper functions for rcu_dereference_check(), rcu_dereference_protected()

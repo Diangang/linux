@@ -667,12 +667,10 @@ asmlinkage long sys_tgkill(pid_t tgid, pid_t pid, int sig);
 asmlinkage long sys_sigaltstack(const struct sigaltstack __user *uss,
 				struct sigaltstack __user *uoss);
 asmlinkage long sys_rt_sigsuspend(sigset_t __user *unewset, size_t sigsetsize);
-#ifndef CONFIG_ODD_RT_SIGACTION
 asmlinkage long sys_rt_sigaction(int,
 				 const struct sigaction __user *,
 				 struct sigaction __user *,
 				 size_t);
-#endif
 asmlinkage long sys_rt_sigprocmask(int how, sigset_t __user *set,
 				sigset_t __user *oset, size_t sigsetsize);
 asmlinkage long sys_rt_sigpending(sigset_t __user *set, size_t sigsetsize);
@@ -1118,18 +1116,11 @@ asmlinkage long sys_stime32(old_time32_t __user *tptr);
 asmlinkage long sys_sigpending(old_sigset_t __user *uset);
 asmlinkage long sys_sigprocmask(int how, old_sigset_t __user *set,
 				old_sigset_t __user *oset);
-#ifdef CONFIG_OLD_SIGSUSPEND
-asmlinkage long sys_sigsuspend(old_sigset_t mask);
-#endif
 
 #ifdef CONFIG_OLD_SIGSUSPEND3
 asmlinkage long sys_sigsuspend(int unused1, int unused2, old_sigset_t mask);
 #endif
 
-#ifdef CONFIG_OLD_SIGACTION
-asmlinkage long sys_sigaction(int, const struct old_sigaction __user *,
-				struct old_sigaction __user *);
-#endif
 asmlinkage long sys_sgetmask(void);
 asmlinkage long sys_ssetmask(int newmask);
 asmlinkage long sys_signal(int sig, __sighandler_t handler);

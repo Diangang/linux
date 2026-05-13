@@ -1482,45 +1482,6 @@ static __always_inline void __amd_pmu_lbr_disable(void)
 	}
 }
 
-#ifdef CONFIG_PERF_EVENTS_AMD_BRS
-
-#define AMD_FAM19H_BRS_EVENT 0xc4 /* RETIRED_TAKEN_BRANCH_INSTRUCTIONS */
-
-int amd_brs_init(void);
-void amd_brs_disable(void);
-void amd_brs_enable(void);
-void amd_brs_enable_all(void);
-void amd_brs_disable_all(void);
-void amd_brs_drain(void);
-void amd_brs_lopwr_init(void);
-int amd_brs_hw_config(struct perf_event *event);
-void amd_brs_reset(void);
-
-static inline void amd_pmu_brs_add(struct perf_event *event)
-{
-	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
-
-	perf_sched_cb_inc(event->pmu);
-	cpuc->lbr_users++;
-	/*
-	 * No need to reset BRS because it is reset
-	 * on brs_enable() and it is saturating
-	 */
-}
-
-static inline void amd_pmu_brs_del(struct perf_event *event)
-{
-	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
-
-	cpuc->lbr_users--;
-	WARN_ON_ONCE(cpuc->lbr_users < 0);
-
-	perf_sched_cb_dec(event->pmu);
-}
-
-void amd_pmu_brs_sched_task(struct perf_event_pmu_context *pmu_ctx,
-			    struct task_struct *task, bool sched_in);
-#else
 static inline int amd_brs_init(void)
 {
 	return 0;
@@ -1553,7 +1514,6 @@ static inline void amd_brs_enable_all(void)
 {
 }
 
-#endif
 
 #else /* CONFIG_CPU_SUP_AMD */
 

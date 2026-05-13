@@ -443,7 +443,7 @@ int mnt_get_write_access(struct vfsmount *m)
 	smp_mb();
 	might_lock(&mount_lock.lock);
 	while (__test_write_hold(READ_ONCE(mnt->mnt_pprev_for_sb))) {
-		if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
+		if (!0) {
 			cpu_relax();
 		} else {
 			/*

@@ -22,19 +22,13 @@
 #include <linux/rtmutex.h>
 
 #if defined(CONFIG_DEBUG_MUTEXES) || \
-   (defined(CONFIG_PREEMPT_RT) && defined(CONFIG_DEBUG_RT_MUTEXES))
+   (0 && defined(CONFIG_DEBUG_RT_MUTEXES))
 #define DEBUG_WW_MUTEXES
 #endif
 
-#ifndef CONFIG_PREEMPT_RT
 #define WW_MUTEX_BASE			mutex
 #define ww_mutex_base_init(l,n,k)	__mutex_init(l,n,k)
 #define ww_mutex_base_is_locked(b)	mutex_is_locked((b))
-#else
-#define WW_MUTEX_BASE			rt_mutex
-#define ww_mutex_base_init(l,n,k)	__rt_mutex_init(l,n,k)
-#define ww_mutex_base_is_locked(b)	rt_mutex_base_is_locked(&(b)->rtmutex)
-#endif
 
 struct ww_class {
 	atomic_long_t stamp;
@@ -340,9 +334,7 @@ extern int __must_check ww_mutex_trylock(struct ww_mutex *lock,
 static inline void ww_mutex_destroy(struct ww_mutex *lock)
 	__must_not_hold(lock)
 {
-#ifndef CONFIG_PREEMPT_RT
 	mutex_destroy(&lock->base);
-#endif
 }
 
 /**

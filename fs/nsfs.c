@@ -489,10 +489,6 @@ bool is_current_namespace(struct ns_common *ns)
 #endif
 	case CLONE_NEWNS:
 		return current_in_namespace(to_mnt_ns(ns));
-#ifdef CONFIG_NET_NS
-	case CLONE_NEWNET:
-		return current_in_namespace(to_net_ns(ns));
-#endif
 #ifdef CONFIG_PID_NS
 	case CLONE_NEWPID:
 		return current_in_namespace(to_pid_ns(ns));
@@ -589,12 +585,6 @@ static struct dentry *nsfs_fh_to_dentry(struct super_block *sb, struct fid *fh,
 		if (!current_in_namespace(to_mnt_ns(ns)))
 			owning_ns = to_mnt_ns(ns)->user_ns;
 		break;
-#ifdef CONFIG_NET_NS
-	case CLONE_NEWNET:
-		if (!current_in_namespace(to_net_ns(ns)))
-			owning_ns = to_net_ns(ns)->user_ns;
-		break;
-#endif
 #ifdef CONFIG_PID_NS
 	case CLONE_NEWPID:
 		if (!current_in_namespace(to_pid_ns(ns))) {

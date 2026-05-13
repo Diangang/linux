@@ -55,10 +55,8 @@
 #ifndef CONFIG_TINY_RCU
 module_param(rcu_expedited, int, 0444);
 module_param(rcu_normal, int, 0444);
-static int rcu_normal_after_boot = IS_ENABLED(CONFIG_PREEMPT_RT);
-#if !defined(CONFIG_PREEMPT_RT) || defined(CONFIG_NO_HZ_FULL)
+static int rcu_normal_after_boot = 0;
 module_param(rcu_normal_after_boot, int, 0444);
-#endif
 #endif /* #ifndef CONFIG_TINY_RCU */
 
 
@@ -191,7 +189,7 @@ EXPORT_SYMBOL_GPL(rcu_inkernel_boot_has_ended);
  */
 void rcu_test_sync_prims(void)
 {
-	if (!IS_ENABLED(CONFIG_PROVE_RCU))
+	if (!0)
 		return;
 	pr_info("Running RCU synchronous self tests\n");
 	synchronize_rcu();
@@ -388,9 +386,6 @@ EXPORT_SYMBOL_GPL(rcu_cpu_stall_notifiers);
 #ifdef CONFIG_RCU_STALL_COMMON
 int rcu_cpu_stall_ftrace_dump __read_mostly;
 module_param(rcu_cpu_stall_ftrace_dump, int, 0644);
-#ifdef CONFIG_RCU_CPU_STALL_NOTIFIER
-module_param(rcu_cpu_stall_notifiers, int, 0444);
-#endif // #ifdef CONFIG_RCU_CPU_STALL_NOTIFIER
 int rcu_cpu_stall_suppress __read_mostly; // !0 = suppress stall warnings.
 EXPORT_SYMBOL_GPL(rcu_cpu_stall_suppress);
 module_param(rcu_cpu_stall_suppress, int, 0644);
@@ -423,79 +418,7 @@ unsigned long get_completed_synchronize_rcu(void)
 }
 EXPORT_SYMBOL_GPL(get_completed_synchronize_rcu);
 
-#ifdef CONFIG_PROVE_RCU
-
-/*
- * Early boot self test parameters.
- */
-static bool rcu_self_test;
-module_param(rcu_self_test, bool, 0444);
-
-static int rcu_self_test_counter;
-
-static void test_callback(struct rcu_head *r)
-{
-	rcu_self_test_counter++;
-	pr_info("RCU test callback executed %d\n", rcu_self_test_counter);
-}
-
-DEFINE_STATIC_SRCU(early_srcu);
-static unsigned long early_srcu_cookie;
-
-struct early_boot_kfree_rcu {
-	struct rcu_head rh;
-};
-
-static void early_boot_test_call_rcu(void)
-{
-	static struct rcu_head head;
-	int idx;
-	static struct rcu_head shead;
-	struct early_boot_kfree_rcu *rhp;
-
-	idx = srcu_down_read(&early_srcu);
-	srcu_up_read(&early_srcu, idx);
-	call_rcu(&head, test_callback);
-	early_srcu_cookie = start_poll_synchronize_srcu(&early_srcu);
-	call_srcu(&early_srcu, &shead, test_callback);
-	rhp = kmalloc_obj(*rhp);
-	if (!WARN_ON_ONCE(!rhp))
-		kfree_rcu(rhp, rh);
-}
-
-void rcu_early_boot_tests(void)
-{
-	pr_info("Running RCU self tests\n");
-
-	if (rcu_self_test)
-		early_boot_test_call_rcu();
-	rcu_test_sync_prims();
-}
-
-static int rcu_verify_early_boot_tests(void)
-{
-	int ret = 0;
-	int early_boot_test_counter = 0;
-
-	if (rcu_self_test) {
-		early_boot_test_counter++;
-		rcu_barrier();
-		early_boot_test_counter++;
-		srcu_barrier(&early_srcu);
-		WARN_ON_ONCE(!poll_state_synchronize_srcu(&early_srcu, early_srcu_cookie));
-		cleanup_srcu_struct(&early_srcu);
-	}
-	if (rcu_self_test_counter != early_boot_test_counter) {
-		WARN_ON(1);
-		ret = -1;
-	}
-
-	return ret;
-}
-late_initcall(rcu_verify_early_boot_tests);
-#else
 void rcu_early_boot_tests(void) {}
-#endif /* CONFIG_PROVE_RCU */
 
 #include "tasks.h"
 

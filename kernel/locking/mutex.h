@@ -6,7 +6,6 @@
  *
  *  Copyright (C) 2004, 2005, 2006 Red Hat, Inc., Ingo Molnar <mingo@redhat.com>
  */
-#ifndef CONFIG_PREEMPT_RT
 #include <linux/mutex.h>
 /*
  * This is the control structure for tasks blocked on mutex, which resides
@@ -58,4 +57,3 @@ static inline struct mutex *get_task_blocked_on(struct task_struct *p)
 # define debug_mutex_remove_waiter(lock, waiter, ti)	do { } while (0)
 # define debug_mutex_unlock(lock)			do { } while (0)
 # define debug_mutex_init(lock)				do { } while (0)
-#endif /* CONFIG_PREEMPT_RT */

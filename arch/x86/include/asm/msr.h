@@ -146,9 +146,6 @@ static inline u64 native_read_pmc(int counter)
 	return EAX_EDX_VAL(val, low, high);
 }
 
-#ifdef CONFIG_PARAVIRT_XXL
-#include <asm/paravirt.h>
-#else
 #include <linux/errno.h>
 /*
  * Access to machine-specific registers (available on 586 and better only)
@@ -202,7 +199,6 @@ static __always_inline u64 rdpmc(int counter)
 	return native_read_pmc(counter);
 }
 
-#endif	/* !CONFIG_PARAVIRT_XXL */
 
 /* Instruction opcode for WRMSRNS supported in binutils >= 2.40 */
 #define ASM_WRMSRNS _ASM_BYTES(0x0f,0x01,0xc6)

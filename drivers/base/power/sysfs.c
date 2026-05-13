@@ -527,71 +527,8 @@ static inline int dpm_sysfs_wakeup_change_owner(struct device *dev, kuid_t kuid,
 }
 #endif
 
-#ifdef CONFIG_PM_ADVANCED_DEBUG
-static ssize_t runtime_usage_show(struct device *dev,
-				  struct device_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", atomic_read(&dev->power.usage_count));
-}
-static DEVICE_ATTR_RO(runtime_usage);
-
-static ssize_t runtime_active_kids_show(struct device *dev,
-					struct device_attribute *attr,
-					char *buf)
-{
-	return sysfs_emit(buf, "%d\n", dev->power.ignore_children ?
-			  0 : atomic_read(&dev->power.child_count));
-}
-static DEVICE_ATTR_RO(runtime_active_kids);
-
-static ssize_t runtime_enabled_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
-{
-	const char *output;
-
-	if (dev->power.disable_depth && !dev->power.runtime_auto)
-		output = "disabled & forbidden";
-	else if (dev->power.disable_depth)
-		output = "disabled";
-	else if (!dev->power.runtime_auto)
-		output = "forbidden";
-	else
-		output = "enabled";
-
-	return sysfs_emit(buf, "%s\n", output);
-}
-static DEVICE_ATTR_RO(runtime_enabled);
-
-#ifdef CONFIG_PM_SLEEP
-static ssize_t async_show(struct device *dev, struct device_attribute *attr,
-			  char *buf)
-{
-	return sysfs_emit(buf, "%s\n",
-			  device_async_suspend_enabled(dev) ?
-			  _enabled : _disabled);
-}
-
-static ssize_t async_store(struct device *dev, struct device_attribute *attr,
-			   const char *buf, size_t n)
-{
-	if (sysfs_streq(buf, _enabled))
-		device_enable_async_suspend(dev);
-	else if (sysfs_streq(buf, _disabled))
-		device_disable_async_suspend(dev);
-	else
-		return -EINVAL;
-	return n;
-}
-
-static DEVICE_ATTR_RW(async);
-
-#endif /* CONFIG_PM_SLEEP */
-#endif /* CONFIG_PM_ADVANCED_DEBUG */
 
 static struct attribute *power_attrs[] = {
-#if defined(CONFIG_PM_ADVANCED_DEBUG) && defined(CONFIG_PM_SLEEP)
-	&dev_attr_async.attr,
-#endif
 	NULL,
 };
 static const struct attribute_group pm_attr_group = {
@@ -624,11 +561,6 @@ static struct attribute *runtime_attrs[] = {
 	&dev_attr_runtime_suspended_time.attr,
 	&dev_attr_runtime_active_time.attr,
 	&dev_attr_autosuspend_delay_ms.attr,
-#ifdef CONFIG_PM_ADVANCED_DEBUG
-	&dev_attr_runtime_usage.attr,
-	&dev_attr_runtime_active_kids.attr,
-	&dev_attr_runtime_enabled.attr,
-#endif
 	NULL,
 };
 static const struct attribute_group pm_runtime_attr_group = {

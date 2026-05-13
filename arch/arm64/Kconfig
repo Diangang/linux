@@ -229,19 +229,19 @@ config MMU
 
 config ARM64_CONT_PTE_SHIFT
 	int
-	default 5 if PAGE_SIZE_64KB
-	default 7 if PAGE_SIZE_16KB
+	default 5 if n
+	default 7 if n
 	default 4
 
 config ARM64_CONT_PMD_SHIFT
 	int
-	default 5 if PAGE_SIZE_64KB
-	default 5 if PAGE_SIZE_16KB
+	default 5 if n
+	default 5 if n
 	default 4
 
 config ARCH_MMAP_RND_BITS_MIN
-	default 14 if PAGE_SIZE_64KB
-	default 16 if PAGE_SIZE_16KB
+	default 14 if n
+	default 16 if n
 	default 18
 
 # max bits determined by the following formula:
@@ -259,9 +259,6 @@ config ARCH_MMAP_RND_COMPAT_BITS_MIN
 
 config ARCH_MMAP_RND_COMPAT_BITS_MAX
 	default 16
-
-config NO_IOPORT_MAP
-	def_bool y if !PCI
 
 config STACKTRACE_SUPPORT
 	def_bool y

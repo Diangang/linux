@@ -423,9 +423,6 @@ SECTIONS
 
 	STABS_DEBUG
 	DWARF_DEBUG
-#ifdef CONFIG_PROPELLER_CLANG
-	.llvm_bb_addr_map : { *(.llvm_bb_addr_map) }
-#endif
 
 	MODINFO
 	ELF_DETAILS

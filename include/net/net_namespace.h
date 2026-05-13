@@ -208,19 +208,6 @@ struct net {
 /* Init's network namespace */
 extern struct net init_net;
 
-#ifdef CONFIG_NET_NS
-struct net *copy_net_ns(u64 flags, struct user_namespace *user_ns,
-			struct net *old_net);
-
-void net_ns_get_ownership(const struct net *net, kuid_t *uid, kgid_t *gid);
-
-void net_ns_barrier(void);
-
-struct ns_common *get_net_ns(struct ns_common *ns);
-struct net *get_net_ns_by_fd(int fd);
-extern struct task_struct *cleanup_net_task;
-
-#else /* CONFIG_NET_NS */
 #include <linux/sched.h>
 #include <linux/nsproxy.h>
 static inline struct net *copy_net_ns(u64 flags,
@@ -249,7 +236,6 @@ static inline struct net *get_net_ns_by_fd(int fd)
 {
 	return ERR_PTR(-EINVAL);
 }
-#endif /* CONFIG_NET_NS */
 
 
 extern struct list_head net_namespace_list;
@@ -269,50 +255,6 @@ static inline struct net *to_net_ns(struct ns_common *ns)
 	return container_of(ns, struct net, ns);
 }
 
-#ifdef CONFIG_NET_NS
-void __put_net(struct net *net);
-
-/* Try using get_net_track() instead */
-static inline struct net *get_net(struct net *net)
-{
-	ns_ref_inc(net);
-	return net;
-}
-
-static inline struct net *maybe_get_net(struct net *net)
-{
-	/* Used when we know struct net exists but we
-	 * aren't guaranteed a previous reference count
-	 * exists.  If the reference count is zero this
-	 * function fails and returns NULL.
-	 */
-	if (!ns_ref_get(net))
-		net = NULL;
-	return net;
-}
-
-/* Try using put_net_track() instead */
-static inline void put_net(struct net *net)
-{
-	if (ns_ref_put(net))
-		__put_net(net);
-}
-
-static inline
-int net_eq(const struct net *net1, const struct net *net2)
-{
-	return net1 == net2;
-}
-
-static inline int check_net(const struct net *net)
-{
-	return ns_ref_read(net) != 0;
-}
-
-void net_drop_ns(struct ns_common *);
-void net_passive_dec(struct net *net);
-
-#else
 
 static inline struct net *get_net(struct net *net)
 {
@@ -345,7 +287,6 @@ static inline void net_passive_dec(struct net *net)
 {
 	refcount_dec(&net->passive);
 }
-#endif
 
 static inline void net_passive_inc(struct net *net)
 {
@@ -401,34 +342,20 @@ static inline void put_net_track(struct net *net, netns_tracker *tracker)
 }
 
 typedef struct {
-#ifdef CONFIG_NET_NS
-	struct net __rcu *net;
-#endif
 } possible_net_t;
 
 static inline void write_pnet(possible_net_t *pnet, struct net *net)
 {
-#ifdef CONFIG_NET_NS
-	rcu_assign_pointer(pnet->net, net);
-#endif
 }
 
 static inline struct net *read_pnet(const possible_net_t *pnet)
 {
-#ifdef CONFIG_NET_NS
-	return rcu_dereference_protected(pnet->net, true);
-#else
 	return &init_net;
-#endif
 }
 
 static inline struct net *read_pnet_rcu(const possible_net_t *pnet)
 {
-#ifdef CONFIG_NET_NS
-	return rcu_dereference(pnet->net);
-#else
 	return &init_net;
-#endif
 }
 
 /* Protected by net_rwsem */
@@ -439,17 +366,10 @@ static inline struct net *read_pnet_rcu(const possible_net_t *pnet)
 #define for_each_net_rcu(VAR)				\
 	list_for_each_entry_rcu(VAR, &net_namespace_list, list)
 
-#ifdef CONFIG_NET_NS
-#define __net_init
-#define __net_exit
-#define __net_initdata
-#define __net_initconst
-#else
 #define __net_init	__init
 #define __net_exit	__ref
 #define __net_initdata	__initdata
 #define __net_initconst	__initconst
-#endif
 
 int peernet2id_alloc(struct net *net, struct net *peer, gfp_t gfp);
 int peernet2id(const struct net *net, struct net *peer);

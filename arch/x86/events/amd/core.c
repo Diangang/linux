@@ -1373,36 +1373,9 @@ static struct attribute_group group_caps_amd_branches = {
 	.is_visible = amd_branches_is_visible,
 };
 
-#ifdef CONFIG_PERF_EVENTS_AMD_BRS
-
-EVENT_ATTR_STR(branch-brs, amd_branch_brs,
-	       "event=" __stringify(AMD_FAM19H_BRS_EVENT)"\n");
-
-static struct attribute *amd_brs_events_attrs[] = {
-	EVENT_PTR(amd_branch_brs),
-	NULL,
-};
-
-static umode_t
-amd_brs_is_visible(struct kobject *kobj, struct attribute *attr, int i)
-{
-	return static_cpu_has(X86_FEATURE_BRS) && x86_pmu.lbr_nr ?
-	       attr->mode : 0;
-}
-
-static struct attribute_group group_events_amd_brs = {
-	.name       = "events",
-	.attrs      = amd_brs_events_attrs,
-	.is_visible = amd_brs_is_visible,
-};
-
-#endif	/* CONFIG_PERF_EVENTS_AMD_BRS */
 
 static const struct attribute_group *amd_attr_update[] = {
 	&group_caps_amd_branches,
-#ifdef CONFIG_PERF_EVENTS_AMD_BRS
-	&group_events_amd_brs,
-#endif
 	NULL,
 };
 

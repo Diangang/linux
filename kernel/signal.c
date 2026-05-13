@@ -2451,11 +2451,11 @@ static int ptrace_stop(int exit_code, int why, unsigned long message,
 	 * with preemption disabled due to the 'sleeping' spinlock
 	 * substitution of RT.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		preempt_disable();
 	read_unlock(&tasklist_lock);
 	cgroup_enter_frozen();
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
+	if (!0)
 		preempt_enable_no_resched();
 	schedule();
 	cgroup_leave_frozen(true);
@@ -4600,7 +4600,6 @@ SYSCALL_DEFINE3(sigprocmask, int, how, old_sigset_t __user *, nset,
 }
 #endif /* __ARCH_WANT_SYS_SIGPROCMASK */
 
-#ifndef CONFIG_ODD_RT_SIGACTION
 /**
  *  sys_rt_sigaction - alter an action taken by a process
  *  @sig: signal to be sent
@@ -4677,44 +4676,7 @@ COMPAT_SYSCALL_DEFINE4(rt_sigaction, int, sig,
 	return ret;
 }
 #endif
-#endif /* !CONFIG_ODD_RT_SIGACTION */
 
-#ifdef CONFIG_OLD_SIGACTION
-SYSCALL_DEFINE3(sigaction, int, sig,
-		const struct old_sigaction __user *, act,
-	        struct old_sigaction __user *, oact)
-{
-	struct k_sigaction new_ka, old_ka;
-	int ret;
-
-	if (act) {
-		old_sigset_t mask;
-		if (!access_ok(act, sizeof(*act)) ||
-		    __get_user(new_ka.sa.sa_handler, &act->sa_handler) ||
-		    __get_user(new_ka.sa.sa_restorer, &act->sa_restorer) ||
-		    __get_user(new_ka.sa.sa_flags, &act->sa_flags) ||
-		    __get_user(mask, &act->sa_mask))
-			return -EFAULT;
-#ifdef __ARCH_HAS_KA_RESTORER
-		new_ka.ka_restorer = NULL;
-#endif
-		siginitset(&new_ka.sa.sa_mask, mask);
-	}
-
-	ret = do_sigaction(sig, act ? &new_ka : NULL, oact ? &old_ka : NULL);
-
-	if (!ret && oact) {
-		if (!access_ok(oact, sizeof(*oact)) ||
-		    __put_user(old_ka.sa.sa_handler, &oact->sa_handler) ||
-		    __put_user(old_ka.sa.sa_restorer, &oact->sa_restorer) ||
-		    __put_user(old_ka.sa.sa_flags, &oact->sa_flags) ||
-		    __put_user(old_ka.sa.sa_mask.sig[0], &oact->sa_mask))
-			return -EFAULT;
-	}
-
-	return ret;
-}
-#endif
 #ifdef CONFIG_COMPAT_OLD_SIGACTION
 COMPAT_SYSCALL_DEFINE3(sigaction, int, sig,
 		const struct compat_old_sigaction __user *, act,
@@ -4859,14 +4821,6 @@ COMPAT_SYSCALL_DEFINE2(rt_sigsuspend, compat_sigset_t __user *, unewset, compat_
 }
 #endif
 
-#ifdef CONFIG_OLD_SIGSUSPEND
-SYSCALL_DEFINE1(sigsuspend, old_sigset_t, mask)
-{
-	sigset_t blocked;
-	siginitset(&blocked, mask);
-	return sigsuspend(&blocked);
-}
-#endif
 #ifdef CONFIG_OLD_SIGSUSPEND3
 SYSCALL_DEFINE3(sigsuspend, int, unused1, int, unused2, old_sigset_t, mask)
 {

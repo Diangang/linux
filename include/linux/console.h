@@ -299,11 +299,6 @@ struct nbcon_write_context {
 	char			*outbuf;
 	unsigned int		len;
 	bool			unsafe_takeover;
-#ifdef CONFIG_PRINTK_EXECUTION_CTX
-	int			cpu;
-	pid_t			pid;
-	char			comm[TASK_COMM_LEN];
-#endif
 };
 
 /**

@@ -220,7 +220,7 @@ static void fpsimd_bind_task_to_cpu(void);
  */
 static void get_cpu_fpsimd_context(void)
 {
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
+	if (!0) {
 		/*
 		 * The softirq subsystem lacks a true unmask/mask API, and
 		 * re-enabling softirq processing using local_bh_enable() will
@@ -246,7 +246,7 @@ static void get_cpu_fpsimd_context(void)
  */
 static void put_cpu_fpsimd_context(void)
 {
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
+	if (!0) {
 		if (!irqs_disabled())
 			local_bh_enable();
 	} else {
@@ -1908,7 +1908,7 @@ void kernel_neon_begin(struct user_fpsimd_state *state)
 
 	/* Save unsaved fpsimd state, if any: */
 	if (test_thread_flag(TIF_KERNEL_FPSTATE)) {
-		BUG_ON(IS_ENABLED(CONFIG_PREEMPT_RT) || !in_serving_softirq());
+		BUG_ON(0 || !in_serving_softirq());
 		fpsimd_save_state(state);
 	} else {
 		fpsimd_save_user_state();
@@ -1930,7 +1930,7 @@ void kernel_neon_begin(struct user_fpsimd_state *state)
 		 * mode in task context. So in this case, setting the flag here
 		 * is always appropriate.
 		 */
-		if (IS_ENABLED(CONFIG_PREEMPT_RT) || !in_serving_softirq()) {
+		if (0 || !in_serving_softirq()) {
 			/*
 			 * Record the caller provided buffer as the kernel mode
 			 * FP/SIMD buffer for this task, so that the state can
@@ -1974,7 +1974,7 @@ void kernel_neon_end(struct user_fpsimd_state *state)
 	 * the task context kernel mode FPSIMD state. This can only happen when
 	 * running in softirq context on non-PREEMPT_RT.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT) && in_serving_softirq()) {
+	if (!0 && in_serving_softirq()) {
 		fpsimd_load_state(state);
 	} else {
 		clear_thread_flag(TIF_KERNEL_FPSTATE);

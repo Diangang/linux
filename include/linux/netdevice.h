@@ -3614,7 +3614,6 @@ DECLARE_PER_CPU(struct page_pool_bh, system_page_pool);
 
 #define XMIT_RECURSION_LIMIT	8
 
-#ifndef CONFIG_PREEMPT_RT
 static inline int dev_recursion_level(void)
 {
 	return this_cpu_read(softnet_data.xmit.recursion);
@@ -3635,27 +3634,6 @@ static inline void dev_xmit_recursion_dec(void)
 {
 	__this_cpu_dec(softnet_data.xmit.recursion);
 }
-#else
-static inline int dev_recursion_level(void)
-{
-	return current->net_xmit.recursion;
-}
-
-static inline bool dev_xmit_recursion(void)
-{
-	return unlikely(current->net_xmit.recursion > XMIT_RECURSION_LIMIT);
-}
-
-static inline void dev_xmit_recursion_inc(void)
-{
-	current->net_xmit.recursion++;
-}
-
-static inline void dev_xmit_recursion_dec(void)
-{
-	current->net_xmit.recursion--;
-}
-#endif
 
 void __netif_schedule(struct Qdisc *q);
 void netif_schedule_queue(struct netdev_queue *txq);
@@ -4914,7 +4892,6 @@ static inline void netif_tx_disable(struct net_device *dev)
 	local_bh_enable();
 }
 
-#ifndef CONFIG_PREEMPT_RT
 static inline bool netif_tx_owned(struct netdev_queue *txq, unsigned int cpu)
 {
 	/* Other cpus might concurrently change txq->xmit_lock_owner
@@ -4923,13 +4900,6 @@ static inline bool netif_tx_owned(struct netdev_queue *txq, unsigned int cpu)
 	return READ_ONCE(txq->xmit_lock_owner) == cpu;
 }
 
-#else
-static inline bool netif_tx_owned(struct netdev_queue *txq, unsigned int cpu)
-{
-	return rt_mutex_owner(&txq->_xmit_lock.lock) == current;
-}
-
-#endif
 
 static inline void netif_addr_lock(struct net_device *dev)
 {
@@ -5334,7 +5304,6 @@ static inline ktime_t netdev_get_tstamp(struct net_device *dev,
 	return hwtstamps->hwtstamp;
 }
 
-#ifndef CONFIG_PREEMPT_RT
 static inline void netdev_xmit_set_more(bool more)
 {
 	__this_cpu_write(softnet_data.xmit.more, more);
@@ -5344,17 +5313,6 @@ static inline bool netdev_xmit_more(void)
 {
 	return __this_cpu_read(softnet_data.xmit.more);
 }
-#else
-static inline void netdev_xmit_set_more(bool more)
-{
-	current->net_xmit.more = more;
-}
-
-static inline bool netdev_xmit_more(void)
-{
-	return current->net_xmit.more;
-}
-#endif
 
 static inline netdev_tx_t __netdev_start_xmit(const struct net_device_ops *ops,
 					      struct sk_buff *skb, struct net_device *dev,

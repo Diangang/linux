@@ -68,25 +68,10 @@ static inline void INIT_LIST_HEAD_RCU(struct list_head *list)
 
 #define check_arg_count_one(dummy)
 
-#ifdef CONFIG_PROVE_RCU_LIST
-#define __list_check_rcu(dummy, cond, extra...)				\
-	({								\
-	check_arg_count_one(extra);					\
-	RCU_LOCKDEP_WARN(!(cond) && !rcu_read_lock_any_held(),		\
-			 "RCU-list traversed in non-reader section!");	\
-	})
-
-#define __list_check_srcu(cond)					 \
-	({								 \
-	RCU_LOCKDEP_WARN(!(cond),					 \
-		"RCU-list traversed without holding the required lock!");\
-	})
-#else
 #define __list_check_rcu(dummy, cond, extra...)				\
 	({ check_arg_count_one(extra); })
 
 #define __list_check_srcu(cond) ({ })
-#endif
 
 /*
  * Insert a new entry between two known consecutive entries.

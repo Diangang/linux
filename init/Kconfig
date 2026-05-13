@@ -297,28 +297,6 @@ config SYSVIPC_COMPAT
 	def_bool y
 	depends on COMPAT && SYSVIPC
 
-config POSIX_MQUEUE
-	bool "POSIX Message Queues"
-	depends on NET
-	help
-	  POSIX variant of message queues is a part of IPC. In POSIX message
-	  queues every message has a priority which decides about succession
-	  of receiving it by a process. If you want to compile and run
-	  programs written e.g. for Solaris with use of its POSIX message
-	  queues (functions mq_*) say Y here.
-
-	  POSIX message queues are visible as a filesystem called 'mqueue'
-	  and can be mounted somewhere if you want to do filesystem
-	  operations on message queues.
-
-	  If unsure, say Y.
-
-config POSIX_MQUEUE_SYSCTL
-	bool
-	depends on POSIX_MQUEUE
-	depends on SYSCTL
-	default y
-
 config CROSS_MEMORY_ATTACH
 	bool "Enable process_vm_readv/writev syscalls"
 	depends on MMU
@@ -568,22 +546,6 @@ config LOG_CPU_MAX_BUF_SHIFT
 		     13 =>   8 KB for each CPU
 		     12 =>   4 KB for each CPU
 
-config PRINTK_INDEX
-	bool "Printk indexing debugfs interface"
-	help
-	  Add support for indexing of all printk formats known at compile time
-	  at <debugfs>/printk/index/<module>.
-
-	  This can be used as part of maintaining daemons which monitor
-	  /dev/kmsg, as it permits auditing the printk formats present in a
-	  kernel, allowing detection of cases where monitored printks are
-	  changed or no longer present.
-
-	  There is no additional runtime cost to printk with this enabled.
-
-#
-# Architectures with an unreliable sched_clock() should select this:
-#
 config HAVE_UNSTABLE_SCHED_CLOCK
 	bool
 
@@ -643,8 +605,8 @@ config UCLAMP_BUCKETS_COUNT
 
 config SCHED_PROXY_EXEC
 	bool "Proxy Execution"
-	# Avoid some build failures w/ PREEMPT_RT until it can be fixed
-	depends on !PREEMPT_RT
+	# Avoid some build failures w/ n until it can be fixed
+	depends on y
 	# Need to investigate how to inform sched_ext of split contexts
 	depends on !SCHED_CLASS_EXT
 	# Not particularly useful until we get to multi-rq proxying
@@ -705,7 +667,7 @@ config ARCH_SUPPORTS_INT128
 config NUMA_BALANCING
 	bool "Memory placement aware NUMA scheduler"
 	depends on ARCH_SUPPORTS_NUMA_BALANCING
-	depends on SMP && NUMA_MIGRATION && !PREEMPT_RT
+	depends on SMP && NUMA_MIGRATION && y
 	help
 	  This option adds support for automatic NUMA aware memory/task placement.
 	  The mechanism is quite primitive and is based on migrating memory when
@@ -875,11 +837,6 @@ config CPUSETS
 
 	  Say N if unsure.
 
-config PROC_PID_CPUSET
-	bool "Include legacy /proc/<pid>/cpuset file"
-	depends on CPUSETS_V1
-	default y
-
 config CGROUP_CPUACCT
 	bool "Simple CPU accounting controller"
 	help
@@ -979,14 +936,6 @@ config PID_NS
 	  Support process id namespaces.  This allows having multiple
 	  processes with the same pid as long as they are in different
 	  pid namespaces.  This is a building block of containers.
-
-config NET_NS
-	bool "Network namespace"
-	depends on NET
-	default y
-	help
-	  Allow user space to create what appear to be multiple instances
-	  of the network stack.
 
 endif # NAMESPACES
 
@@ -1164,18 +1113,6 @@ config PRINTK
 	  and makes the kernel more or less silent. As this makes it
 	  very difficult to diagnose system problems, saying N here is
 	  strongly discouraged.
-
-config PRINTK_RINGBUFFER_KUNIT_TEST
-	tristate "KUnit Test for the printk ringbuffer" if !KUNIT_ALL_TESTS
-	depends on PRINTK && KUNIT
-	default KUNIT_ALL_TESTS
-	help
-	  This builds the printk ringbuffer KUnit test suite.
-
-	  For more information on KUnit and unit tests in general, please refer
-	  to the KUnit documentation.
-
-	  If unsure, say N.
 
 config BUG
 	bool "BUG() support" if EXPERT
@@ -1421,15 +1358,6 @@ config HAVE_PERF_EVENTS
 	help
 	  See tools/perf/design.txt for details.
 
-config PERF_GUEST_MEDIATED_PMU
-	bool
-	depends on n
-
-config PERF_USE_VMALLOC
-	bool
-	help
-	  See tools/perf/design.txt for details
-
 menu "Kernel Performance Events And Counters"
 
 config PERF_EVENTS
@@ -1496,18 +1424,11 @@ source "arch/Kconfig"
 
 config RT_MUTEXES
 	bool
-	default y if PREEMPT_RT
+	default y if n
 
 source "kernel/module/Kconfig"
 
 source "block/Kconfig"
-
-config PREEMPT_NOTIFIERS
-	bool
-
-config PADATA
-	depends on SMP
-	bool
 
 source "kernel/Kconfig.locks"
 

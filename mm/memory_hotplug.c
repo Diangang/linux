@@ -228,11 +228,11 @@ enum mmop mhp_get_default_online_type(void)
 
 	if (IS_ENABLED(CONFIG_MHP_DEFAULT_ONLINE_TYPE_OFFLINE))
 		mhp_default_online_type = MMOP_OFFLINE;
-	else if (IS_ENABLED(CONFIG_MHP_DEFAULT_ONLINE_TYPE_ONLINE_AUTO))
+	else if (0)
 		mhp_default_online_type = MMOP_ONLINE;
-	else if (IS_ENABLED(CONFIG_MHP_DEFAULT_ONLINE_TYPE_ONLINE_KERNEL))
+	else if (0)
 		mhp_default_online_type = MMOP_ONLINE_KERNEL;
-	else if (IS_ENABLED(CONFIG_MHP_DEFAULT_ONLINE_TYPE_ONLINE_MOVABLE))
+	else if (0)
 		mhp_default_online_type = MMOP_ONLINE_MOVABLE;
 	else
 		mhp_default_online_type = MMOP_OFFLINE;

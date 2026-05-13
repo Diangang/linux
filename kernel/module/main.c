@@ -2685,11 +2685,6 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 						sizeof(unsigned long),
 						&mod->num_kprobe_blacklist);
 #endif
-#ifdef CONFIG_PRINTK_INDEX
-	mod->printk_index_start = section_objs(info, ".printk_index",
-					       sizeof(*mod->printk_index_start),
-					       &mod->printk_index_size);
-#endif
 #ifdef CONFIG_HAVE_STATIC_CALL_INLINE
 	mod->static_call_sites = section_objs(info, ".static_call_sites",
 					      sizeof(*mod->static_call_sites),
@@ -3897,14 +3892,3 @@ void print_modules(void)
 			last_unloaded_module.taints);
 	pr_cont("\n");
 }
-
-#ifdef CONFIG_MODULE_DEBUGFS
-struct dentry *mod_debugfs_root;
-
-static int module_debugfs_init(void)
-{
-	mod_debugfs_root = debugfs_create_dir("modules", NULL);
-	return 0;
-}
-module_init(module_debugfs_init);
-#endif

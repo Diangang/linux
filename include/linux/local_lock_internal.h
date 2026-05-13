@@ -9,7 +9,6 @@
 #include <linux/debug_locks.h>
 #include <asm/current.h>
 
-#ifndef CONFIG_PREEMPT_RT
 
 context_lock_struct(local_lock) {
 };
@@ -182,91 +181,6 @@ do {								\
 		local_lock_release((lock));			\
 	} while (0)
 
-#else /* !CONFIG_PREEMPT_RT */
-
-#include <linux/sched.h>
-#include <linux/spinlock.h>
-
-/*
- * On PREEMPT_RT local_lock maps to a per CPU spinlock, which protects the
- * critical section while staying preemptible.
- */
-typedef spinlock_t local_lock_t;
-typedef spinlock_t local_trylock_t;
-
-#define INIT_LOCAL_LOCK(lockname) __LOCAL_SPIN_LOCK_UNLOCKED((lockname))
-#define INIT_LOCAL_TRYLOCK(lockname) __LOCAL_SPIN_LOCK_UNLOCKED((lockname))
-
-#define __local_lock_init(__l)					\
-	do {							\
-		local_spin_lock_init((__l));			\
-	} while (0)
-
-#define __local_trylock_init(__l)			__local_lock_init(__l)
-
-#define __local_lock(__lock)					\
-	do {							\
-		migrate_disable();				\
-		spin_lock((__lock));				\
-	} while (0)
-
-#define __local_lock_irq(lock)			__local_lock(lock)
-
-#define __local_lock_irqsave(lock, flags)			\
-	do {							\
-		typecheck(unsigned long, flags);		\
-		flags = 0;					\
-		__local_lock(lock);				\
-	} while (0)
-
-#define __local_unlock(__lock)					\
-	do {							\
-		spin_unlock((__lock));				\
-		migrate_enable();				\
-	} while (0)
-
-#define __local_unlock_irq(lock)		__local_unlock(lock)
-
-#define __local_unlock_irqrestore(lock, flags)	__local_unlock(lock)
-
-#define __local_lock_nested_bh(lock)				\
-do {								\
-	lockdep_assert_in_softirq_func();			\
-	spin_lock((lock));					\
-} while (0)
-
-#define __local_unlock_nested_bh(lock)				\
-do {								\
-	spin_unlock((lock));					\
-} while (0)
-
-#define __local_trylock(lock)					\
-	__try_acquire_ctx_lock(lock, context_unsafe(({		\
-		int __locked;					\
-								\
-		if (in_nmi() | in_hardirq()) {			\
-			__locked = 0;				\
-		} else {					\
-			migrate_disable();			\
-			__locked = spin_trylock((lock));	\
-			if (!__locked)				\
-				migrate_enable();		\
-		}						\
-		__locked;					\
-	})))
-
-#define __local_trylock_irqsave(lock, flags)			\
-	__try_acquire_ctx_lock(lock, ({				\
-		typecheck(unsigned long, flags);		\
-		flags = 0;					\
-		__local_trylock(lock);				\
-	}))
-
-/* migration must be disabled before calling __local_lock_is_locked */
-#define __local_lock_is_locked(__lock)					\
-	(rt_mutex_owner(&this_cpu_ptr(__lock)->lock) == current)
-
-#endif /* CONFIG_PREEMPT_RT */
 
 #if defined(WARN_CONTEXT_ANALYSIS) && !defined(__CHECKER__)
 /*
@@ -280,13 +194,11 @@ static __always_inline local_lock_t *__this_cpu_local_lock(local_lock_t __percpu
 {
 	return this_cpu_ptr(base);
 }
-#ifndef CONFIG_PREEMPT_RT
 static __always_inline local_trylock_t *__this_cpu_local_lock(local_trylock_t __percpu *base)
 	__returns_ctx_lock(base) __attribute__((overloadable))
 {
 	return this_cpu_ptr(base);
 }
-#endif /* CONFIG_PREEMPT_RT */
 #else  /* WARN_CONTEXT_ANALYSIS */
 #define __this_cpu_local_lock(base) this_cpu_ptr(base)
 #endif /* WARN_CONTEXT_ANALYSIS */

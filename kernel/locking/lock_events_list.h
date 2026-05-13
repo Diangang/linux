@@ -18,22 +18,6 @@
 #endif
 
 #ifdef CONFIG_QUEUED_SPINLOCKS
-#ifdef CONFIG_PARAVIRT_SPINLOCKS
-/*
- * Locking events for PV qspinlock.
- */
-LOCK_EVENT(pv_hash_hops)	/* Average # of hops per hashing operation */
-LOCK_EVENT(pv_kick_unlock)	/* # of vCPU kicks issued at unlock time   */
-LOCK_EVENT(pv_kick_wake)	/* # of vCPU kicks for pv_latency_wake	   */
-LOCK_EVENT(pv_latency_kick)	/* Average latency (ns) of vCPU kick	   */
-LOCK_EVENT(pv_latency_wake)	/* Average latency (ns) of kick-to-wakeup  */
-LOCK_EVENT(pv_lock_stealing)	/* # of lock stealing operations	   */
-LOCK_EVENT(pv_spurious_wakeup)	/* # of spurious wakeups in non-head vCPUs */
-LOCK_EVENT(pv_wait_again)	/* # of wait's after queue head vCPU kick  */
-LOCK_EVENT(pv_wait_early)	/* # of early vCPU wait's		   */
-LOCK_EVENT(pv_wait_head)	/* # of vCPU wait's at the queue head	   */
-LOCK_EVENT(pv_wait_node)	/* # of vCPU wait's at non-head queue node */
-#endif /* CONFIG_PARAVIRT_SPINLOCKS */
 
 /*
  * Locking events for qspinlock

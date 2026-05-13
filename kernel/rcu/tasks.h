@@ -855,7 +855,7 @@ static void rcu_tasks_wait_gp(struct rcu_tasks *rtp)
 
 		// Slowly back off waiting for holdouts
 		set_tasks_gp_state(rtp, RTGS_WAIT_SCAN_HOLDOUTS);
-		if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
+		if (!0) {
 			schedule_timeout_idle(fract);
 		} else {
 			exp = jiffies_to_nsecs(fract);
@@ -1062,7 +1062,7 @@ static void rcu_tasks_postscan(struct list_head *hop)
 
 			// RT kernels need frequent pauses, otherwise
 			// pause at least once per pair of jiffies.
-			if (!IS_ENABLED(CONFIG_PREEMPT_RT) && time_before(jiffies, j))
+			if (!0 && time_before(jiffies, j))
 				continue;
 
 			// Keep our place in the list while pausing.
@@ -1448,116 +1448,7 @@ void show_rcu_tasks_gp_kthreads(void)
 }
 #endif /* #ifndef CONFIG_TINY_RCU */
 
-#ifdef CONFIG_PROVE_RCU
-struct rcu_tasks_test_desc {
-	struct rcu_head rh;
-	const char *name;
-	bool notrun;
-	unsigned long runstart;
-};
-
-static struct rcu_tasks_test_desc tests[] = {
-	{
-		.name = "call_rcu_tasks()",
-		/* If not defined, the test is skipped. */
-		.notrun = IS_ENABLED(CONFIG_TASKS_RCU),
-	},
-	{
-		.name = "call_rcu_tasks_trace()",
-		/* If not defined, the test is skipped. */
-		.notrun = IS_ENABLED(CONFIG_TASKS_TRACE_RCU)
-	}
-};
-
-#if defined(CONFIG_TASKS_RCU) || defined(CONFIG_TASKS_TRACE_RCU)
-static void test_rcu_tasks_callback(struct rcu_head *rhp)
-{
-	struct rcu_tasks_test_desc *rttd =
-		container_of(rhp, struct rcu_tasks_test_desc, rh);
-
-	pr_info("Callback from %s invoked.\n", rttd->name);
-
-	rttd->notrun = false;
-}
-#endif // #if defined(CONFIG_TASKS_RCU) || defined(CONFIG_TASKS_TRACE_RCU)
-
-static void rcu_tasks_initiate_self_tests(void)
-{
-#ifdef CONFIG_TASKS_RCU
-	pr_info("Running RCU Tasks wait API self tests\n");
-	tests[0].runstart = jiffies;
-	synchronize_rcu_tasks();
-	call_rcu_tasks(&tests[0].rh, test_rcu_tasks_callback);
-#endif
-
-#ifdef CONFIG_TASKS_RUDE_RCU
-	pr_info("Running RCU Tasks Rude wait API self tests\n");
-	synchronize_rcu_tasks_rude();
-#endif
-
-#ifdef CONFIG_TASKS_TRACE_RCU
-	pr_info("Running RCU Tasks Trace wait API self tests\n");
-	tests[1].runstart = jiffies;
-	synchronize_rcu_tasks_trace();
-	call_rcu_tasks_trace(&tests[1].rh, test_rcu_tasks_callback);
-#endif
-}
-
-/*
- * Return:  0 - test passed
- *	    1 - test failed, but have not timed out yet
- *	   -1 - test failed and timed out
- */
-static int rcu_tasks_verify_self_tests(void)
-{
-	int ret = 0;
-	int i;
-	unsigned long bst = rcu_task_stall_timeout;
-
-	if (bst <= 0 || bst > RCU_TASK_BOOT_STALL_TIMEOUT)
-		bst = RCU_TASK_BOOT_STALL_TIMEOUT;
-	for (i = 0; i < ARRAY_SIZE(tests); i++) {
-		while (tests[i].notrun) {		// still hanging.
-			if (time_after(jiffies, tests[i].runstart + bst)) {
-				pr_err("%s has failed boot-time tests.\n", tests[i].name);
-				ret = -1;
-				break;
-			}
-			ret = 1;
-			break;
-		}
-	}
-	WARN_ON(ret < 0);
-
-	return ret;
-}
-
-/*
- * Repeat the rcu_tasks_verify_self_tests() call once every second until the
- * test passes or has timed out.
- */
-static struct delayed_work rcu_tasks_verify_work;
-static void rcu_tasks_verify_work_fn(struct work_struct *work __maybe_unused)
-{
-	int ret = rcu_tasks_verify_self_tests();
-
-	if (ret <= 0)
-		return;
-
-	/* Test fails but not timed out yet, reschedule another check */
-	schedule_delayed_work(&rcu_tasks_verify_work, HZ);
-}
-
-static int rcu_tasks_verify_schedule_work(void)
-{
-	INIT_DELAYED_WORK(&rcu_tasks_verify_work, rcu_tasks_verify_work_fn);
-	rcu_tasks_verify_work_fn(NULL);
-	return 0;
-}
-late_initcall(rcu_tasks_verify_schedule_work);
-#else /* #ifdef CONFIG_PROVE_RCU */
 static void rcu_tasks_initiate_self_tests(void) { }
-#endif /* #else #ifdef CONFIG_PROVE_RCU */
 
 void __init tasks_cblist_init_generic(void)
 {

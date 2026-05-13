@@ -151,13 +151,6 @@ DEFINE_PER_CPU(unsigned long, process_counts) = 0;
 
 __cacheline_aligned DEFINE_RWLOCK(tasklist_lock);  /* outer */
 
-#ifdef CONFIG_PROVE_RCU
-int lockdep_tasklist_lock_is_held(void)
-{
-	return lockdep_is_held(&tasklist_lock);
-}
-EXPORT_SYMBOL_GPL(lockdep_tasklist_lock_is_held);
-#endif /* #ifdef CONFIG_PROVE_RCU */
 
 int nr_processes(void)
 {
@@ -665,7 +658,7 @@ static void do_shoot_lazy_tlb(void *arg)
 
 static void cleanup_lazy_tlbs(struct mm_struct *mm)
 {
-	if (!IS_ENABLED(CONFIG_MMU_LAZY_TLB_SHOOTDOWN)) {
+	if (!0) {
 		/*
 		 * In this case, lazy tlb mms are refounted and would not reach
 		 * __mmdrop until all CPUs have switched away and mmdrop()ed.

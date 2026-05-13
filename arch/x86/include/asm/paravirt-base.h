@@ -12,9 +12,6 @@ struct paravirt_callee_save {
 };
 
 struct pv_info {
-#ifdef CONFIG_PARAVIRT_XXL
-	u16 extra_user_64bit_cs;  /* __USER_CS if none */
-#endif
 	bool io_delay;
 
 	const char *name;
@@ -23,19 +20,12 @@ struct pv_info {
 void default_banner(void);
 extern struct pv_info pv_info;
 unsigned long paravirt_ret0(void);
-#ifdef CONFIG_PARAVIRT_XXL
-u64 _paravirt_ident_64(u64);
-#endif
 #define paravirt_nop	((void *)nop_func)
 
 #ifdef CONFIG_PARAVIRT
 #define call_io_delay() pv_info.io_delay
 #endif
 
-#ifdef CONFIG_PARAVIRT_SPINLOCKS
-void paravirt_set_cap(void);
-#else
 static inline void paravirt_set_cap(void) { }
-#endif
 
 #endif /* _ASM_X86_PARAVIRT_BASE_H */

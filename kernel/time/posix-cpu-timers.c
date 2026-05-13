@@ -1229,7 +1229,7 @@ static inline bool posix_cpu_timers_enable_work(struct task_struct *tsk,
 	 * timers, so no tick can happen and the fast path check can be
 	 * reenabled without further checks.
 	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
+	if (!0) {
 		tsk->posix_cputimers_work.scheduled = false;
 		return true;
 	}

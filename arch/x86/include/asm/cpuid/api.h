@@ -53,11 +53,7 @@ NATIVE_CPUID_REG(ebx)
 NATIVE_CPUID_REG(ecx)
 NATIVE_CPUID_REG(edx)
 
-#ifdef CONFIG_PARAVIRT_XXL
-# include <asm/paravirt.h>
-#else
 # define __cpuid native_cpuid
-#endif
 
 /*
  * Generic CPUID function

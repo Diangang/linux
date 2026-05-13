@@ -71,11 +71,7 @@ late_initcall(kernel_rcu_stall_sysfs_init);
 
 #endif // CONFIG_SYSFS
 
-#ifdef CONFIG_PROVE_RCU
-#define RCU_STALL_DELAY_DELTA		(5 * HZ)
-#else
 #define RCU_STALL_DELAY_DELTA		0
-#endif
 #define RCU_STALL_MIGHT_DIV		8
 #define RCU_STALL_MIGHT_MIN		(2 * HZ)
 
@@ -98,10 +94,6 @@ int rcu_exp_jiffies_till_stall_check(void)
 	if (cpu_stall_timeout && jiffies_to_msecs(till_stall_check) != cpu_stall_timeout)
 		WRITE_ONCE(rcu_exp_cpu_stall_timeout, jiffies_to_msecs(till_stall_check));
 
-#ifdef CONFIG_PROVE_RCU
-	/* Add extra ~25% out of till_stall_check. */
-	exp_stall_delay_delta = ((till_stall_check * 25) / 100) + 1;
-#endif
 
 	return till_stall_check + exp_stall_delay_delta;
 }
@@ -1005,7 +997,7 @@ static void rcu_check_gp_start_stall(struct rcu_node *rnp, struct rcu_data *rdp,
 	struct rcu_node *rnp_root = rcu_get_root();
 	static atomic_t warned = ATOMIC_INIT(0);
 
-	if (!IS_ENABLED(CONFIG_PROVE_RCU) || rcu_gp_in_progress() ||
+	if (!0 || rcu_gp_in_progress() ||
 	    ULONG_CMP_GE(READ_ONCE(rnp_root->gp_seq),
 			 READ_ONCE(rnp_root->gp_seq_needed)) ||
 	    !smp_load_acquire(&rcu_state.gp_kthread)) // Get stable kthread.
@@ -1117,67 +1109,3 @@ static int __init rcu_sysrq_init(void)
 	return 0;
 }
 early_initcall(rcu_sysrq_init);
-
-#ifdef CONFIG_RCU_CPU_STALL_NOTIFIER
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// RCU CPU stall-warning notifiers
-
-static ATOMIC_NOTIFIER_HEAD(rcu_cpu_stall_notifier_list);
-
-/**
- * rcu_stall_chain_notifier_register - Add an RCU CPU stall notifier
- * @n: Entry to add.
- *
- * Adds an RCU CPU stall notifier to an atomic notifier chain.
- * The @action passed to a notifier will be @RCU_STALL_NOTIFY_NORM or
- * friends.  The @data will be the duration of the stalled grace period,
- * in jiffies, coerced to a void* pointer.
- *
- * Returns 0 on success, %-EEXIST on error.
- */
-int rcu_stall_chain_notifier_register(struct notifier_block *n)
-{
-	int rcsn = rcu_cpu_stall_notifiers;
-
-	WARN(1, "Adding %pS() to RCU stall notifier list (%s).\n", n->notifier_call,
-	     rcsn ? "possibly suppressing RCU CPU stall warnings" : "failed, so all is well");
-	if (rcsn)
-		return atomic_notifier_chain_register(&rcu_cpu_stall_notifier_list, n);
-	return -EEXIST;
-}
-EXPORT_SYMBOL_GPL(rcu_stall_chain_notifier_register);
-
-/**
- * rcu_stall_chain_notifier_unregister - Remove an RCU CPU stall notifier
- * @n: Entry to add.
- *
- * Removes an RCU CPU stall notifier from an atomic notifier chain.
- *
- * Returns zero on success, %-ENOENT on failure.
- */
-int rcu_stall_chain_notifier_unregister(struct notifier_block *n)
-{
-	return atomic_notifier_chain_unregister(&rcu_cpu_stall_notifier_list, n);
-}
-EXPORT_SYMBOL_GPL(rcu_stall_chain_notifier_unregister);
-
-/*
- * rcu_stall_notifier_call_chain - Call functions in an RCU CPU stall notifier chain
- * @val: Value passed unmodified to notifier function
- * @v: Pointer passed unmodified to notifier function
- *
- * Calls each function in the RCU CPU stall notifier chain in turn, which
- * is an atomic call chain.  See atomic_notifier_call_chain() for more
- * information.
- *
- * This is for use within RCU, hence the omission of the extra asterisk
- * to indicate a non-kerneldoc format header comment.
- */
-int rcu_stall_notifier_call_chain(unsigned long val, void *v)
-{
-	return atomic_notifier_call_chain(&rcu_cpu_stall_notifier_list, val, v);
-}
-
-#endif // #ifdef CONFIG_RCU_CPU_STALL_NOTIFIER

@@ -31,28 +31,6 @@ config SUSPEND_SKIP_SYNC
 	  This setting changes the default for the run-tim switch. Say Y
 	  to change the default to disable the kernel sys_sync().
 
-config PM_STD_PARTITION
-	string "Default resume partition"
-	depends on n
-	default ""
-	help
-	  The default resume partition is the partition that the suspend-
-	  to-disk implementation will look for a suspended disk image.
-
-	  The partition specified here will be different for almost every user.
-	  It should be a valid swap partition (at least for now) that is turned
-	  on before suspending.
-
-	  The partition specified can be overridden by specifying:
-
-		resume=/dev/<other device>
-
-	  which will set the resume partition to the device specified.
-
-	  Note there is currently not a way to specify which device to save the
-	  suspended image to. It will simply pick the first available swap
-	  device.
-
 config PM_SLEEP
 	def_bool y
 	depends on SUSPEND || n
@@ -64,26 +42,6 @@ config PM_SLEEP_SMP
 	depends on ARCH_SUSPEND_POSSIBLE || ARCH_HIBERNATION_POSSIBLE
 	depends on PM_SLEEP
 	select HOTPLUG_CPU
-
-config PM_SLEEP_SMP_NONZERO_CPU
-	def_bool y
-	depends on PM_SLEEP_SMP
-	depends on ARCH_SUSPEND_NONZERO_CPU
-	help
-	If an arch can suspend (for suspend, hibernate, kexec, etc) on a
-	non-zero numbered CPU, it may define ARCH_SUSPEND_NONZERO_CPU. This
-	will allow nohz_full mask to include CPU0.
-
-config PM_QOS_CPU_SYSTEM_WAKEUP
-	bool "User space interface for CPU system wakeup QoS"
-	depends on CPU_IDLE
-	help
-	  Enable this to allow user space via the cpu_wakeup_latency file to
-	  specify a CPU system wakeup latency limit.
-
-	  This may be particularly useful for platforms supporting multiple low
-	  power states for CPUs during system-wide suspend and s2idle in
-	  particular.
 
 config PM
 	bool "Device power management core functionality"
@@ -106,51 +64,13 @@ config PM_DEBUG
 	code. This is helpful when debugging and reporting PM bugs, like
 	suspend support.
 
-config PM_ADVANCED_DEBUG
-	bool "Extra PM attributes in sysfs for low-level debugging/testing"
-	depends on PM_DEBUG
-	help
-	Add extra sysfs attributes allowing one to access some Power Management
-	fields of device objects from user space.  If you are not a kernel
-	developer interested in debugging/testing Power Management, say "no".
-
-config PM_TEST_SUSPEND
-	bool "Test suspend/resume and wakealarm during bootup"
-	depends on SUSPEND && PM_DEBUG && RTC_CLASS=y
-	help
-	This option will let you suspend your machine during bootup, and
-	make it wake up a few seconds later using an RTC wakeup alarm.
-	Enable this with a kernel parameter like "test_suspend=mem".
-
-	You probably want to have your system's RTC driver statically
-	linked, ensuring that it's available when this test runs.
-
 config PM_SLEEP_DEBUG
 	def_bool y
 	depends on PM_DEBUG && PM_SLEEP
 
-config PM_TRACE
-	bool
-	help
-	  This enables code to save the last PM event point across
-	  reboot. The architecture needs to support this, x86 for
-	  example does by saving things in the RTC, see below.
-
-	  The architecture specific code must provide the extern
-	  functions from <linux/resume-trace.h> as well as the
-	  <asm/resume-trace.h> header with a TRACE_RESUME() macro.
-
-	  The way the information is presented is architecture-
-	  dependent, x86 will print the information during a
-	  late_initcall.
-
 config PM_CLK
 	def_bool y
 	depends on PM && HAVE_CLK
-
-config PM_GENERIC_DOMAINS
-	bool
-	depends on PM
 
 config WQ_POWER_EFFICIENT_DEFAULT
 	bool "Enable workqueue power-efficient mode by default"
@@ -170,14 +90,6 @@ config WQ_POWER_EFFICIENT_DEFAULT
 	  is enabled by default.
 
 	  If in doubt, say N.
-
-config PM_GENERIC_DOMAINS_SLEEP
-	def_bool y
-	depends on PM_SLEEP && PM_GENERIC_DOMAINS
-
-config PM_GENERIC_DOMAINS_OF
-	def_bool y
-	depends on PM_GENERIC_DOMAINS && OF
 
 config CPU_PM
 	bool

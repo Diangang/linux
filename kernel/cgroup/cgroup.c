@@ -77,10 +77,6 @@
 DEFINE_MUTEX(cgroup_mutex);
 DEFINE_SPINLOCK(css_set_lock);
 
-#if (defined CONFIG_PROVE_RCU || 0)
-EXPORT_SYMBOL_GPL(cgroup_mutex);
-EXPORT_SYMBOL_GPL(css_set_lock);
-#endif
 
 struct blocking_notifier_head cgroup_lifetime_notifier =
 	BLOCKING_NOTIFIER_INIT(cgroup_lifetime_notifier);
@@ -6751,56 +6747,12 @@ static void do_cgroup_task_dead(struct task_struct *tsk)
 	spin_unlock_irqrestore(&css_set_lock, flags);
 }
 
-#ifdef CONFIG_PREEMPT_RT
-/*
- * cgroup_task_dead() is called from finish_task_switch() which doesn't allow
- * scheduling even in RT. As the task_dead path requires grabbing css_set_lock,
- * this lead to sleeping in the invalid context warning bug. css_set_lock is too
- * big to become a raw_spinlock. The task_dead path doesn't need to run
- * synchronously but can't be delayed indefinitely either as the dead task pins
- * the cgroup and task_struct can be pinned indefinitely. Bounce through lazy
- * irq_work to allow batching while ensuring timely completion.
- */
-static DEFINE_PER_CPU(struct llist_head, cgrp_dead_tasks);
-static DEFINE_PER_CPU(struct irq_work, cgrp_dead_tasks_iwork);
-
-static void cgrp_dead_tasks_iwork_fn(struct irq_work *iwork)
-{
-	struct llist_node *lnode;
-	struct task_struct *task, *next;
-
-	lnode = llist_del_all(this_cpu_ptr(&cgrp_dead_tasks));
-	llist_for_each_entry_safe(task, next, lnode, cg_dead_lnode) {
-		do_cgroup_task_dead(task);
-		put_task_struct(task);
-	}
-}
-
-static void __init cgroup_rt_init(void)
-{
-	int cpu;
-
-	for_each_possible_cpu(cpu) {
-		init_llist_head(per_cpu_ptr(&cgrp_dead_tasks, cpu));
-		per_cpu(cgrp_dead_tasks_iwork, cpu) =
-			IRQ_WORK_INIT_LAZY(cgrp_dead_tasks_iwork_fn);
-	}
-}
-
-void cgroup_task_dead(struct task_struct *task)
-{
-	get_task_struct(task);
-	llist_add(&task->cg_dead_lnode, this_cpu_ptr(&cgrp_dead_tasks));
-	irq_work_queue(this_cpu_ptr(&cgrp_dead_tasks_iwork));
-}
-#else	/* CONFIG_PREEMPT_RT */
 static void __init cgroup_rt_init(void) {}
 
 void cgroup_task_dead(struct task_struct *task)
 {
 	do_cgroup_task_dead(task);
 }
-#endif	/* CONFIG_PREEMPT_RT */
 
 void cgroup_task_release(struct task_struct *task)
 {

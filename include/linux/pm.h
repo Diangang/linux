@@ -636,9 +636,6 @@ struct pm_subsys_data {
 	struct mutex clock_mutex;
 	struct list_head clock_list;
 #endif
-#ifdef CONFIG_PM_GENERIC_DOMAINS
-	struct pm_domain_data *domain_data;
-#endif
 };
 
 /*

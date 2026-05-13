@@ -1317,9 +1317,6 @@ struct mm_struct {
 
 		/* store ref to file /proc/<pid>/exe symlink points to */
 		struct file __rcu *exe_file;
-#ifdef CONFIG_MMU_NOTIFIER
-		struct mmu_notifier_subscriptions *notifier_subscriptions;
-#endif
 #if defined(CONFIG_TRANSPARENT_HUGEPAGE) && !defined(CONFIG_SPLIT_PMD_PTLOCKS)
 		pgtable_t pmd_huge_pte; /* protected by page_table_lock */
 #endif
@@ -1348,9 +1345,6 @@ struct mm_struct {
 		atomic_t tlb_flush_batched;
 #endif
 		struct uprobes_state uprobes_state;
-#ifdef CONFIG_PREEMPT_RT
-		struct rcu_head delayed_drop;
-#endif
 #ifdef CONFIG_HUGETLB_PAGE
 		atomic_long_t hugetlb_usage;
 #endif

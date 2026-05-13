@@ -407,9 +407,6 @@ static unsigned long hv_get_tsc_khz(void)
 static void __init hv_smp_prepare_boot_cpu(void)
 {
 	native_smp_prepare_boot_cpu();
-#if defined(CONFIG_X86_64) && defined(CONFIG_PARAVIRT_SPINLOCKS)
-	hv_init_spinlocks();
-#endif
 }
 
 static void __init hv_smp_prepare_cpus(unsigned int max_cpus)

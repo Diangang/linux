@@ -179,7 +179,7 @@ struct ns_common {
 		struct cgroup_namespace *: (IS_ENABLED(CONFIG_CGROUPS) ? &cgroupns_operations : NULL), \
 		struct ipc_namespace *:    (0  ? &ipcns_operations    : NULL), \
 		struct mnt_namespace *:    &mntns_operations,                                          \
-		struct net *:              (IS_ENABLED(CONFIG_NET_NS)  ? &netns_operations    : NULL), \
+		struct net *:              (0  ? &netns_operations    : NULL), \
 		struct pid_namespace *:    (IS_ENABLED(CONFIG_PID_NS)  ? &pidns_operations    : NULL), \
 		struct time_namespace *:   (IS_ENABLED(CONFIG_TIME_NS) ? &timens_operations   : NULL), \
 		struct user_namespace *:   (IS_ENABLED(CONFIG_USER_NS) ? &userns_operations   : NULL), \

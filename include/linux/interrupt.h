@@ -451,32 +451,20 @@ irq_calc_affinity_vectors(unsigned int minvec, unsigned int maxvec,
 static inline void disable_irq_nosync_lockdep(unsigned int irq)
 {
 	disable_irq_nosync(irq);
-#if 0 && !defined(CONFIG_PREEMPT_RT)
-	local_irq_disable();
-#endif
 }
 
 static inline void disable_irq_nosync_lockdep_irqsave(unsigned int irq, unsigned long *flags)
 {
 	disable_irq_nosync(irq);
-#if 0 && !defined(CONFIG_PREEMPT_RT)
-	local_irq_save(*flags);
-#endif
 }
 
 static inline void enable_irq_lockdep(unsigned int irq)
 {
-#if 0 && !defined(CONFIG_PREEMPT_RT)
-	local_irq_enable();
-#endif
 	enable_irq(irq);
 }
 
 static inline void enable_irq_lockdep_irqrestore(unsigned int irq, unsigned long *flags)
 {
-#if 0 && !defined(CONFIG_PREEMPT_RT)
-	local_irq_restore(*flags);
-#endif
 	enable_irq(irq);
 }
 
@@ -509,12 +497,8 @@ extern int irq_set_irqchip_state(unsigned int irq, enum irqchip_irq_state which,
 				 bool state);
 
 #ifdef CONFIG_IRQ_FORCED_THREADING
-# ifdef CONFIG_PREEMPT_RT
-#  define force_irqthreads()	(true)
-# else
 DECLARE_STATIC_KEY_FALSE(force_irqthreads_key);
 #  define force_irqthreads()	(static_branch_unlikely(&force_irqthreads_key))
-# endif
 #else
 #define force_irqthreads()	(false)
 #endif
@@ -595,14 +579,10 @@ struct softirq_action
 asmlinkage void do_softirq(void);
 asmlinkage void __do_softirq(void);
 
-#ifdef CONFIG_PREEMPT_RT
-extern void do_softirq_post_smp_call_flush(unsigned int was_pending);
-#else
 static inline void do_softirq_post_smp_call_flush(unsigned int unused)
 {
 	do_softirq();
 }
-#endif
 
 extern void open_softirq(int nr, void (*action)(void));
 extern void softirq_init(void);
@@ -736,7 +716,7 @@ enum
 	TASKLET_STATE_RUN	/* Tasklet is running (SMP only) */
 };
 
-#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
+#if defined(CONFIG_SMP) || 0
 static inline int tasklet_trylock(struct tasklet_struct *t)
 {
 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);

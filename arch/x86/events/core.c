@@ -1766,24 +1766,6 @@ void perf_events_lapic_init(void)
 	apic_write(APIC_LVTPC, APIC_DM_NMI);
 }
 
-#ifdef CONFIG_PERF_GUEST_MEDIATED_PMU
-void perf_load_guest_lvtpc(u32 guest_lvtpc)
-{
-	u32 masked = guest_lvtpc & APIC_LVT_MASKED;
-
-	apic_write(APIC_LVTPC,
-		   APIC_DM_FIXED | PERF_GUEST_MEDIATED_PMI_VECTOR | masked);
-	this_cpu_write(guest_lvtpc_loaded, true);
-}
-EXPORT_SYMBOL_FOR_KVM(perf_load_guest_lvtpc);
-
-void perf_put_guest_lvtpc(void)
-{
-	this_cpu_write(guest_lvtpc_loaded, false);
-	apic_write(APIC_LVTPC, APIC_DM_NMI);
-}
-EXPORT_SYMBOL_FOR_KVM(perf_put_guest_lvtpc);
-#endif /* CONFIG_PERF_GUEST_MEDIATED_PMU */
 
 static int
 perf_event_nmi_handler(unsigned int cmd, struct pt_regs *regs)

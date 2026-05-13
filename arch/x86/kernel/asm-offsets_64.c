@@ -12,11 +12,6 @@
 int main(void)
 {
 #ifdef CONFIG_PARAVIRT
-#ifdef CONFIG_PARAVIRT_XXL
-#ifdef CONFIG_DEBUG_ENTRY
-	OFFSET(PV_IRQ_save_fl, paravirt_patch_template, irq.save_fl);
-#endif
-#endif
 	BLANK();
 #endif
 

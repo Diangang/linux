@@ -153,11 +153,6 @@ static inline void futex_requeue_pi_complete(struct futex_q *q, int locked)
 		}
 	} while (!atomic_try_cmpxchg(&q->requeue_state, &old, new));
 
-#ifdef CONFIG_PREEMPT_RT
-	/* If the waiter interleaved with the requeue let it know */
-	if (unlikely(old == Q_REQUEUE_PI_WAIT))
-		rcuwait_wake_up(&q->requeue_wait);
-#endif
 }
 
 static inline int futex_requeue_pi_wakeup_sync(struct futex_q *q)
@@ -181,13 +176,7 @@ static inline int futex_requeue_pi_wakeup_sync(struct futex_q *q)
 
 	/* If the requeue was in progress, wait for it to complete */
 	if (old == Q_REQUEUE_PI_IN_PROGRESS) {
-#ifdef CONFIG_PREEMPT_RT
-		rcuwait_wait_event(&q->requeue_wait,
-				   atomic_read(&q->requeue_state) != Q_REQUEUE_PI_WAIT,
-				   TASK_UNINTERRUPTIBLE);
-#else
 		(void)atomic_cond_read_relaxed(&q->requeue_state, VAL != Q_REQUEUE_PI_WAIT);
-#endif
 	}
 
 	/*
@@ -910,4 +899,3 @@ out:
 	}
 	return ret;
 }
-

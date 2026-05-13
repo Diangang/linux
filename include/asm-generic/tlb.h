@@ -266,7 +266,6 @@ static inline void tlb_remove_table_sync_rcu(void) { }
 #endif /* CONFIG_MMU_GATHER_RCU_TABLE_FREE */
 
 
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 /*
  * If we can't allocate a page to make a big batch of page pointers
  * to work on, then just handle a few from the on-stack structure.
@@ -304,7 +303,6 @@ bool __tlb_remove_folio_pages(struct mmu_gather *tlb, struct page *page,
 extern void tlb_flush_rmaps(struct mmu_gather *tlb, struct vm_area_struct *vma);
 #endif
 
-#endif
 
 /*
  * We have a no-op version of the rmap removal that doesn't
@@ -384,15 +382,10 @@ struct mmu_gather {
 
 	unsigned int		batch_count;
 
-#ifndef CONFIG_MMU_GATHER_NO_GATHER
 	struct mmu_gather_batch *active;
 	struct mmu_gather_batch	local;
 	struct page		*__pages[MMU_GATHER_BUNDLE];
 
-#ifdef CONFIG_MMU_GATHER_PAGE_SIZE
-	unsigned int page_size;
-#endif
-#endif
 };
 
 void tlb_flush_mmu(struct mmu_gather *tlb);
@@ -426,27 +419,6 @@ static inline void __tlb_reset_range(struct mmu_gather *tlb)
 	 */
 }
 
-#ifdef CONFIG_MMU_GATHER_NO_RANGE
-
-#if defined(tlb_flush)
-#error MMU_GATHER_NO_RANGE relies on default tlb_flush()
-#endif
-
-/*
- * When an architecture does not have efficient means of range flushing TLBs
- * there is no point in doing intermediate flushes on tlb_end_vma() to keep the
- * range small. We equally don't have to worry about page granularity or other
- * things.
- *
- * All we need to do is issue a full flush for any !0 range.
- */
-static inline void tlb_flush(struct mmu_gather *tlb)
-{
-	if (tlb->end)
-		flush_tlb_mm(tlb->mm);
-}
-
-#else /* CONFIG_MMU_GATHER_NO_RANGE */
 
 #ifndef tlb_flush
 /*
@@ -470,7 +442,6 @@ static inline void tlb_flush(struct mmu_gather *tlb)
 }
 #endif
 
-#endif /* CONFIG_MMU_GATHER_NO_RANGE */
 
 static inline void
 tlb_update_vma_flags(struct mmu_gather *tlb, struct vm_area_struct *vma)
@@ -530,14 +501,6 @@ static inline void tlb_remove_ptdesc(struct mmu_gather *tlb, struct ptdesc *pt)
 static inline void tlb_change_page_size(struct mmu_gather *tlb,
 						     unsigned int page_size)
 {
-#ifdef CONFIG_MMU_GATHER_PAGE_SIZE
-	if (tlb->page_size && tlb->page_size != page_size) {
-		if (!tlb->fullmm && !tlb->need_flush_all)
-			tlb_flush_mmu(tlb);
-	}
-
-	tlb->page_size = page_size;
-#endif
 }
 
 static inline unsigned long tlb_get_unmap_shift(struct mmu_gather *tlb)
@@ -570,9 +533,7 @@ static inline void tlb_start_vma(struct mmu_gather *tlb, struct vm_area_struct *
 		return;
 
 	tlb_update_vma_flags(tlb, vma);
-#ifndef CONFIG_MMU_GATHER_NO_FLUSH_CACHE
 	flush_cache_range(vma, vma->vm_start, vma->vm_end);
-#endif
 }
 
 static inline void tlb_end_vma(struct mmu_gather *tlb, struct vm_area_struct *vma)

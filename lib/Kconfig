@@ -23,9 +23,6 @@ config GENERIC_STRNLEN_USER
 
 source "lib/math/Kconfig"
 
-config NO_GENERIC_PCI_IOPORT_MAP
-	bool
-
 config GENERIC_IOMAP
 	bool
 	select GENERIC_PCI_IOMAP
@@ -134,7 +131,7 @@ config HAS_IOPORT
 
 config HAS_IOPORT_MAP
 	bool
-	depends on HAS_IOMEM && !NO_IOPORT_MAP
+	depends on HAS_IOMEM && y
 	default y
 
 source "kernel/dma/Kconfig"

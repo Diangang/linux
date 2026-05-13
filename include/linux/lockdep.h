@@ -517,20 +517,9 @@ do {									\
 # define lockdep_assert_in_softirq() do { } while (0)
 # define lockdep_assert_in_softirq_func() do { } while (0)
 
-#ifdef CONFIG_PROVE_RAW_LOCK_NESTING
-
-# define lockdep_assert_RT_in_threaded_ctx() do {			\
-		WARN_ONCE(debug_locks && !current->lockdep_recursion &&	\
-			  lockdep_hardirq_context() &&			\
-			  !(current->hardirq_threaded || current->irq_config),	\
-			  "Not in threaded context on PREEMPT_RT as expected\n");	\
-} while (0)
-
-#else
 
 # define lockdep_assert_RT_in_threaded_ctx() do { } while (0)
 
-#endif
 
 #if 0
 void lockdep_rcu_suspicious(const char *file, const int line, const char *s);

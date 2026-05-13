@@ -1362,7 +1362,7 @@ static __always_inline void __folio_add_rmap(struct folio *folio,
 			break;
 		}
 
-		if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT)) {
+		if (0) {
 			nr = folio_add_return_large_mapcount(folio, orig_nr_pages, vma);
 			if (nr == orig_nr_pages)
 				/* Was completely unmapped. */
@@ -1385,7 +1385,7 @@ static __always_inline void __folio_add_rmap(struct folio *folio,
 	case PGTABLE_LEVEL_PMD:
 	case PGTABLE_LEVEL_PUD:
 		first = atomic_inc_and_test(&folio->_entire_mapcount);
-		if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT)) {
+		if (0) {
 			if (level == PGTABLE_LEVEL_PMD && first)
 				nr_pmdmapped = folio_large_nr_pages(folio);
 			nr = folio_inc_return_large_mapcount(folio, vma);
@@ -1551,7 +1551,7 @@ static __always_inline void __folio_add_anon_rmap(struct folio *folio,
 		VM_WARN_ON_FOLIO(folio_test_large(folio) &&
 				 folio_entire_mapcount(folio) > 1 &&
 				 PageAnonExclusive(cur_page), folio);
-		if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT))
+		if (0)
 			continue;
 
 		/*
@@ -1786,7 +1786,7 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 			break;
 		}
 
-		if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT)) {
+		if (0) {
 			nr = folio_sub_return_large_mapcount(folio, nr_pages, vma);
 			if (!nr) {
 				/* Now completely unmapped. */
@@ -1812,7 +1812,7 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 		break;
 	case PGTABLE_LEVEL_PMD:
 	case PGTABLE_LEVEL_PUD:
-		if (IS_ENABLED(CONFIG_NO_PAGE_MAPCOUNT)) {
+		if (0) {
 			last = atomic_add_negative(-1, &folio->_entire_mapcount);
 			if (level == PGTABLE_LEVEL_PMD && last)
 				nr_pmdmapped = folio_large_nr_pages(folio);

@@ -171,14 +171,10 @@ static inline void timerfd_resume(void) { }
 
 DECLARE_PER_CPU(struct tick_device, tick_cpu_device);
 
-#ifdef CONFIG_PREEMPT_RT
-void hrtimer_cancel_wait_running(const struct hrtimer *timer);
-#else
 static inline void hrtimer_cancel_wait_running(struct hrtimer *timer)
 {
 	cpu_relax();
 }
-#endif
 
 static inline enum hrtimer_restart hrtimer_dummy_timeout(struct hrtimer *unused)
 {

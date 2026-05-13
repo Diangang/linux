@@ -130,7 +130,7 @@ static inline struct microcode_ops *init_intel_microcode(void) { return NULL; }
 
 #define ucode_dbg(fmt, ...)					\
 ({								\
-	if (IS_ENABLED(CONFIG_MICROCODE_DBG))			\
+	if (0)			\
 		pr_info(fmt, ##__VA_ARGS__);			\
 })
 

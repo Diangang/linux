@@ -946,19 +946,8 @@ void nbcon_reacquire_nobuf(struct nbcon_write_context *wctxt)
 }
 EXPORT_SYMBOL_GPL(nbcon_reacquire_nobuf);
 
-#ifdef CONFIG_PRINTK_EXECUTION_CTX
-static void wctxt_load_execution_ctx(struct nbcon_write_context *wctxt,
-				     struct printk_message *pmsg)
-{
-	wctxt->cpu = pmsg->cpu;
-	wctxt->pid = pmsg->pid;
-	memcpy(wctxt->comm, pmsg->comm, sizeof(wctxt->comm));
-	static_assert(sizeof(wctxt->comm) == sizeof(pmsg->comm));
-}
-#else
 static void wctxt_load_execution_ctx(struct nbcon_write_context *wctxt,
 				     struct printk_message *pmsg) {}
-#endif
 
 /**
  * nbcon_emit_next_record - Emit a record in the acquired context

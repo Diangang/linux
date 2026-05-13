@@ -473,17 +473,8 @@ static inline void cgroup_unlock(void)
  * The caller can also specify additional allowed conditions via @__c, such
  * as locks used during the cgroup_subsys::attach() methods.
  */
-#ifdef CONFIG_PROVE_RCU
-#define task_css_set_check(task, __c)					\
-	rcu_dereference_check((task)->cgroups,				\
-		rcu_read_lock_sched_held() ||				\
-		lockdep_is_held(&cgroup_mutex) ||			\
-		lockdep_is_held(&css_set_lock) ||			\
-		((task)->flags & PF_EXITING) || (__c))
-#else
 #define task_css_set_check(task, __c)					\
 	rcu_dereference((task)->cgroups)
-#endif
 
 /**
  * task_css_check - obtain css for (task, subsys) w/ extra access conds

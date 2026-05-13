@@ -256,7 +256,7 @@ static void put_huge_zero_folio(void)
 
 struct folio *mm_get_huge_zero_folio(struct mm_struct *mm)
 {
-	if (IS_ENABLED(CONFIG_PERSISTENT_HUGE_ZERO_FOLIO))
+	if (0)
 		return huge_zero_folio;
 
 	if (mm_flags_test(MMF_HUGE_ZERO_FOLIO, mm))
@@ -273,7 +273,7 @@ struct folio *mm_get_huge_zero_folio(struct mm_struct *mm)
 
 void mm_put_huge_zero_folio(struct mm_struct *mm)
 {
-	if (IS_ENABLED(CONFIG_PERSISTENT_HUGE_ZERO_FOLIO))
+	if (0)
 		return;
 
 	if (mm_flags_test(MMF_HUGE_ZERO_FOLIO, mm))
@@ -927,7 +927,7 @@ static int __init thp_shrinker_init(void)
 	deferred_split_shrinker->scan_objects = deferred_split_scan;
 	shrinker_register(deferred_split_shrinker);
 
-	if (IS_ENABLED(CONFIG_PERSISTENT_HUGE_ZERO_FOLIO)) {
+	if (0) {
 		/*
 		 * Bump the reference of the huge_zero_folio and do not
 		 * initialize the shrinker.

@@ -12,8 +12,6 @@ config X86_32
 	depends on !64BIT
 	# Options that are inherently 32-bit kernel only:
 		select CLONE_BACKWARDS
-		select MODULES_USE_ELF_REL
-		select OLD_SIGACTION
 
 config X86_64
 	def_bool y
@@ -610,24 +608,6 @@ config PARAVIRT
 	  over full virtualization.  However, when run without a hypervisor
 	  the kernel is theoretically slower and slightly larger.
 
-config PARAVIRT_XXL
-	bool
-	depends on X86_64
-	select ARCH_HAS_LAZY_MMU_MODE
-
-config PARAVIRT_SPINLOCKS
-	bool "Paravirtualization layer for spinlocks"
-	depends on PARAVIRT && SMP
-	help
-	  Paravirtualized spinlocks allow a pvops backend to replace the
-	  spinlock implementation with something virtualization-friendly
-	  (for example, block the virtual CPU rather than spinning).
-
-	  It has a minimal impact on native kernels and gives a nice performance
-	  benefit on paravirtualized KVM / Xen kernels.
-
-	  If you are unsure how to answer this question, answer Y.
-
 config X86_HV_CALLBACK_VECTOR
 	def_bool n
 
@@ -1001,34 +981,6 @@ config MICROCODE
 	depends on CPU_SUP_AMD || CPU_SUP_INTEL
 	select CRYPTO_LIB_SHA256 if CPU_SUP_AMD
 
-config MICROCODE_LATE_LOADING
-	bool "Late microcode loading (DANGEROUS)"
-	default n
-	depends on MICROCODE && SMP
-	help
-	  Loading microcode late, when the system is up and executing instructions
-	  is a tricky business and should be avoided if possible. Just the sequence
-	  of synchronizing all cores and SMT threads is one fragile dance which does
-	  not guarantee that cores might not softlock after the loading. Therefore,
-	  use this at your own risk. Late loading taints the kernel unless the
-	  microcode header indicates that it is safe for late loading via the
-	  minimal revision check. This minimal revision check can be enforced on
-	  the kernel command line with "microcode=force_minrev".
-
-config MICROCODE_DBG
-	bool "Enable microcode loader debugging"
-	default n
-	depends on MICROCODE
-	help
-	  Enable code which allows to debug the microcode loader. When running
-	  in a guest the patch loading is simulated but everything else
-	  related to patch parsing and handling is done as on baremetal with
-	  the purpose of debugging solely the software side of things. On
-	  baremetal, it simply dumps additional debugging information during
-	  normal operation.
-
-	  You almost certainly want to say n here.
-
 config X86_MSR
 	tristate "/dev/cpu/*/msr - Model-specific register support"
 	help
@@ -1079,15 +1031,6 @@ choice
 	config VMSPLIT_1G
 		bool "1G/3G user/kernel split"
 endchoice
-
-config PAGE_OFFSET
-	hex
-	default 0xB0000000 if VMSPLIT_3G_OPT
-	default 0x80000000 if VMSPLIT_2G
-	default 0x78000000 if VMSPLIT_2G_OPT
-	default 0x40000000 if VMSPLIT_1G
-	default 0xC0000000
-	depends on X86_32
 
 config X86_PAE
 	bool "PAE (Physical Address Extension) Support"
@@ -1268,20 +1211,6 @@ config MTRR
 
 	  See <file:Documentation/arch/x86/mtrr.rst> for more information.
 
-config MTRR_SANITIZER
-	def_bool y
-	prompt "MTRR cleanup support"
-	depends on MTRR
-	help
-	  Convert MTRR layout from continuous to discrete, so X drivers can
-	  add writeback entries.
-
-	  Can be disabled with disable_mtrr_cleanup on the kernel command line.
-	  The largest mtrr entry size for a continuous block can be set with
-	  mtrr_chunk_size.
-
-	  If unsure, say Y.
-
 config X86_PAT
 	def_bool y
 	prompt "x86 PAT support" if EXPERT
@@ -1413,7 +1342,6 @@ config X86_SGX
 	bool "Software Guard eXtensions (SGX)"
 	depends on X86_64 && CPU_SUP_INTEL && X86_X2APIC
 	select CRYPTO_LIB_SHA256
-	select MMU_NOTIFIER
 	select NUMA_KEEP_MEMINFO if NUMA
 	select XARRAY_MULTI
 	help
@@ -1940,16 +1868,6 @@ config MITIGATION_SRSO
 	default y
 	help
 	  Enable the SRSO mitigation needed on AMD Zen1-4 machines.
-
-config MITIGATION_SLS
-	bool "Mitigate Straight-Line-Speculation"
-	depends on n
-	select OBJTOOL if HAVE_OBJTOOL
-	default n
-	help
-	  Compile the kernel with straight-line-speculation options to guard
-	  against straight line speculation. The kernel image might be slightly
-	  larger.
 
 config MITIGATION_GDS
 	bool "Mitigate Gather Data Sampling"

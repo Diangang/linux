@@ -25,15 +25,6 @@ config PERF_EVENTS_INTEL_CSTATE
 	  Include support for Intel cstate performance events for power
 	  monitoring on modern processors.
 
-config PERF_EVENTS_AMD_POWER
-	depends on PERF_EVENTS && CPU_SUP_AMD
-	tristate "AMD Processor Power Reporting Mechanism"
-	help
-	  Provide power reporting mechanism support for AMD processors.
-	  Currently, it leverages X86_FEATURE_ACC_POWER
-	  (CPUID Fn8000_0007_EDX[12]) interface to calculate the
-	  average power consumption on Family 15h processors.
-
 config PERF_EVENTS_AMD_UNCORE
 	tristate "AMD Uncore performance events"
 	depends on PERF_EVENTS && CPU_SUP_AMD
@@ -44,12 +35,5 @@ config PERF_EVENTS_AMD_UNCORE
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called 'amd-uncore'.
-
-config PERF_EVENTS_AMD_BRS
-	depends on PERF_EVENTS && CPU_SUP_AMD
-	bool "AMD Zen3 Branch Sampling support"
-	help
-	  Enable AMD Zen3 branch sampling support (BRS) which samples up to
-	  16 consecutive taken branches in registers.
 
 endmenu

@@ -567,16 +567,12 @@ static __always_inline bool on_thread_stack(void)
 			       current_stack_pointer) < THREAD_SIZE;
 }
 
-#ifdef CONFIG_PARAVIRT_XXL
-#include <asm/paravirt.h>
-#else
 
 static inline void load_sp0(unsigned long sp0)
 {
 	native_load_sp0(sp0);
 }
 
-#endif /* CONFIG_PARAVIRT_XXL */
 
 unsigned long __get_wchan(struct task_struct *p);
 

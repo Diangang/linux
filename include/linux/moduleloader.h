@@ -44,13 +44,6 @@ bool module_init_layout_section(const char *sname);
  * Apply the given relocation to the (simplified) ELF.  Return -error
  * or 0.
  */
-#ifdef CONFIG_MODULES_USE_ELF_REL
-int apply_relocate(Elf_Shdr *sechdrs,
-		   const char *strtab,
-		   unsigned int symindex,
-		   unsigned int relsec,
-		   struct module *mod);
-#else
 static inline int apply_relocate(Elf_Shdr *sechdrs,
 				 const char *strtab,
 				 unsigned int symindex,
@@ -61,7 +54,6 @@ static inline int apply_relocate(Elf_Shdr *sechdrs,
 	       module_name(me));
 	return -ENOEXEC;
 }
-#endif
 
 /*
  * Apply the given add relocation to the (simplified) ELF.  Return
