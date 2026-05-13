@@ -67,25 +67,11 @@ void __putdec(unsigned long value);
 #define error_puthex(__x)  __puthex(__x)
 #define error_putdec(__x)  __putdec(__x)
 
-#ifdef CONFIG_X86_VERBOSE_BOOTUP
-
-#define debug_putstr(__x)  __putstr(__x)
-#define debug_puthex(__x)  __puthex(__x)
-#define debug_putaddr(__x) { \
-		debug_putstr(#__x ": 0x"); \
-		debug_puthex((unsigned long)(__x)); \
-		debug_putstr("\n"); \
-	}
-
-#else
-
 static inline void debug_putstr(const char *s)
 { }
 static inline void debug_puthex(unsigned long value)
 { }
 #define debug_putaddr(x) /* */
-
-#endif
 
 /* cmdline.c */
 int cmdline_find_option(const char *option, char *buffer, int bufsize);

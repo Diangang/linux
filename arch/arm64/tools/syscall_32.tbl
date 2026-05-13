@@ -79,8 +79,6 @@
 65	common	getpgrp			sys_getpgrp
 66	common	setsid			sys_setsid
 67	common	sigaction		sys_sigaction		compat_sys_sigaction
-# 68 was sys_sgetmask
-# 69 was sys_ssetmask
 70	common	setreuid		sys_setreuid16
 71	common	setregid		sys_setregid16
 72	common	sigsuspend		sys_sigsuspend

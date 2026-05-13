@@ -19,8 +19,6 @@
 #define _sys_fstat	_sys_old_syscall	/* _sys_newfstat */
 #define _sys_lstat	_sys_old_syscall	/* _sys_newlstat */
 #define _sys_signal	_sys_old_syscall	/* _sys_sigaction */
-#define _sys_sgetmask	_sys_old_syscall	/* _sys_sigprocmask */
-#define _sys_ssetmask	_sys_old_syscall	/* _sys_sigprocmask */
 #endif
 
 /*

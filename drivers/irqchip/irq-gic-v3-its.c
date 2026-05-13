@@ -119,7 +119,6 @@ struct its_node {
 	unsigned long		list_nr;
 	int			numa_node;
 	unsigned int		msi_domain_flags;
-	u32			pre_its_base; /* for Socionext Synquacer */
 };
 
 static DEFINE_PER_CPU(struct its_node *, local_4_1_its);
@@ -4733,47 +4732,6 @@ static int its_force_quiescent(void __iomem *base)
 	}
 }
 
-static u64 its_irq_get_msi_base_pre_its(struct its_device *its_dev)
-{
-	struct its_node *its = its_dev->its;
-
-	/*
-	 * The Socionext Synquacer SoC has a so-called 'pre-ITS',
-	 * which maps 32-bit writes targeted at a separate window of
-	 * size '4 << device_id_bits' onto writes to GITS_TRANSLATER
-	 * with device ID taken from bits [device_id_bits + 1:2] of
-	 * the window offset.
-	 */
-	return its->pre_its_base + (its_dev->device_id << 2);
-}
-
-static bool __maybe_unused its_enable_quirk_socionext_synquacer(void *data)
-{
-	struct its_node *its = data;
-	u32 pre_its_window[2];
-	u32 ids;
-
-	if (!fwnode_property_read_u32_array(its->fwnode_handle,
-					   "socionext,synquacer-pre-its",
-					   pre_its_window,
-					   ARRAY_SIZE(pre_its_window))) {
-
-		its->pre_its_base = pre_its_window[0];
-		its->get_msi_base = its_irq_get_msi_base_pre_its;
-
-		ids = ilog2(pre_its_window[1]) - 2;
-		if (device_ids(its) > ids) {
-			its->typer &= ~GITS_TYPER_DEVBITS;
-			its->typer |= FIELD_PREP(GITS_TYPER_DEVBITS, ids - 1);
-		}
-
-		/* the pre-ITS breaks isolation, so disable MSI remapping */
-		its->msi_domain_flags &= ~IRQ_DOMAIN_FLAG_ISOLATED_MSI;
-		return true;
-	}
-	return false;
-}
-
 static bool its_set_non_coherent(void *data)
 {
 	struct its_node *its = data;
@@ -4783,19 +4741,6 @@ static bool its_set_non_coherent(void *data)
 }
 
 static const struct gic_quirk its_quirks[] = {
-#ifdef CONFIG_SOCIONEXT_SYNQUACER_PREITS
-	{
-		/*
-		 * The Socionext Synquacer SoC incorporates ARM's own GIC-500
-		 * implementation, but with a 'pre-ITS' added that requires
-		 * special handling in software.
-		 */
-		.desc	= "ITS: Socionext Synquacer pre-ITS",
-		.iidr	= 0x0001143b,
-		.mask	= 0xffffffff,
-		.init	= its_enable_quirk_socionext_synquacer,
-	},
-#endif
 	{
 		.desc   = "ITS: non-coherent attribute",
 		.property = "dma-noncoherent",

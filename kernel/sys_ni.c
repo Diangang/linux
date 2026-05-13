@@ -356,10 +356,6 @@ COND_SYSCALL(clock_adjtime32);
  * The syscalls below are not found in include/uapi/asm-generic/unistd.h
  */
 
-/* obsolete: SGETMASK_SYSCALL */
-COND_SYSCALL(sgetmask);
-COND_SYSCALL(ssetmask);
-
 /* obsolete: SYSFS_SYSCALL */
 COND_SYSCALL(sysfs);
 

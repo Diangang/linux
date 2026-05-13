@@ -303,15 +303,6 @@ menu "Kernel Features"
 
 menu "ARM errata workarounds via the alternatives framework"
 
-config SOCIONEXT_SYNQUACER_PREITS
-	bool "Socionext Synquacer: Workaround for GICv3 pre-ITS"
-	default y
-	help
-	  Socionext Synquacer SoCs implement a separate h/w block to generate
-	  MSI doorbell writes with non-zero values for the device ID.
-
-	  If unsure, say Y.
-
 endmenu # "ARM errata workarounds via the alternatives framework"
 
 choice

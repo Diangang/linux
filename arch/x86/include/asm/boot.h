@@ -58,16 +58,12 @@
  *    + 4*2 level4 table;
  *    + 4*2 level3 table;
  *    + 4*2 level2 table;
- *  - X86_VERBOSE_BOOTUP needs to map the first 2M (video RAM):
- *    + 1 level4 table;
- *    + 1 level3 table;
- *    + 1 level2 table;
- * Total: 28 tables
+ * Total: 25 tables
  *
  * Add 4 spare table in case decompressor touches anything beyond what is
  * accounted above. Warn if it happens.
  */
-# define BOOT_PGT_SIZE_WARN	(28*4096)
+# define BOOT_PGT_SIZE_WARN	(25*4096)
 # define BOOT_PGT_SIZE		(32*4096)
 
 #else /* !CONFIG_X86_64 */

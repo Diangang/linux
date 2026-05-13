@@ -1121,8 +1121,6 @@ asmlinkage long sys_sigprocmask(int how, old_sigset_t __user *set,
 asmlinkage long sys_sigsuspend(int unused1, int unused2, old_sigset_t mask);
 #endif
 
-asmlinkage long sys_sgetmask(void);
-asmlinkage long sys_ssetmask(int newmask);
 asmlinkage long sys_signal(int sig, __sighandler_t handler);
 
 /* obsolete */

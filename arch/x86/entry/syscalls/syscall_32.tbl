@@ -80,8 +80,8 @@
 65	i386	getpgrp			sys_getpgrp
 66	i386	setsid			sys_setsid
 67	i386	sigaction		sys_sigaction			compat_sys_sigaction
-68	i386	sgetmask		sys_sgetmask
-69	i386	ssetmask		sys_ssetmask
+68	i386	unused68		sys_ni_syscall
+69	i386	unused69		sys_ni_syscall
 70	i386	setreuid		sys_setreuid16
 71	i386	setregid		sys_setregid16
 72	i386	sigsuspend		sys_sigsuspend

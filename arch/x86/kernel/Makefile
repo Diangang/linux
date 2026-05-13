@@ -115,8 +115,6 @@ obj-$(CONFIG_PARAVIRT_CLOCK)	+= pvclock.o
 
 
 
-obj-$(CONFIG_X86_CHECK_BIOS_CORRUPTION) += check.o
-
 obj-$(CONFIG_OF)			+= devicetree.o
 
 

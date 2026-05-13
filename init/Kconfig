@@ -728,16 +728,6 @@ config MULTIUSER
 
 	  If unsure, say Y here.
 
-config SGETMASK_SYSCALL
-	bool "sgetmask/ssetmask syscalls support" if EXPERT
-	default PARISC || M68K || PPC || MIPS || X86 || SPARC || MICROBLAZE || SUPERH
-	help
-	  sys_sgetmask and sys_ssetmask are obsolete system calls
-	  no longer supported in libc but still enabled by default in some
-	  architectures.
-
-	  If unsure, leave the default option here.
-
 config POSIX_TIMERS
 	bool "Posix Clocks & timers" if EXPERT
 	default y
