@@ -1085,11 +1085,7 @@
 	.endm
 
 	.macro	msr_hcr_el2, reg
-#if IS_ENABLED(CONFIG_AMPERE_ERRATUM_AC04_CPU_23)
-	dsb	nsh
-#endif
 	msr	hcr_el2, \reg
-	isb			// Required by AMPERE_ERRATUM_AC04_CPU_23
 	.endm
 #else
 
@@ -1202,14 +1198,7 @@
 } while (0)
 
 #define write_sysreg_hcr(__val) do {					\
-	if (IS_ENABLED(CONFIG_AMPERE_ERRATUM_AC04_CPU_23) &&		\
-	   (!system_capabilities_finalized() ||				\
-	    alternative_has_cap_unlikely(ARM64_WORKAROUND_AMPERE_AC04_CPU_23))) \
-		asm volatile("dsb nsh; msr hcr_el2, %x0; isb"		\
-			     : : "rZ" (__val));				\
-	else								\
-		asm volatile("msr hcr_el2, %x0"				\
-			     : : "rZ" (__val));				\
+	asm volatile("msr hcr_el2, %x0" : : "rZ" (__val));		\
 } while (0)
 
 #define read_sysreg_par() ({						\

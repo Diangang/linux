@@ -66,7 +66,6 @@ config EFI_ARMSTUB_DTB_LOADER
 config EFI_CUSTOM_SSDT_OVERLAYS
 	bool "Load custom ACPI SSDT overlay from an EFI variable"
 	depends on ACPI
-	default ACPI_TABLE_UPGRADE
 	help
 	  Allow loading of an ACPI SSDT overlay from an EFI variable specified
 	  by a kernel command line option.

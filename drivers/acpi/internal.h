@@ -54,8 +54,6 @@ void acpi_cmos_rtc_init(void);
 #else
 static inline void acpi_cmos_rtc_init(void) {}
 #endif
-int acpi_rev_override_setup(char *str);
-
 void acpi_sysfs_add_hotplug_profile(struct acpi_hotplug_profile *hotplug,
 				    const char *name);
 int acpi_scan_add_handler_with_hotplug(struct acpi_scan_handler *handler,

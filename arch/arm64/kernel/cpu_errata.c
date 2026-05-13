@@ -593,21 +593,6 @@ static void cpu_enable_sme_dvmsync(const struct arm64_cpu_capabilities *__unused
 }
 #endif
 
-#ifdef CONFIG_AMPERE_ERRATUM_AC03_CPU_38
-static const struct midr_range erratum_ac03_cpu_38_list[] = {
-	MIDR_ALL_VERSIONS(MIDR_AMPERE1),
-	MIDR_ALL_VERSIONS(MIDR_AMPERE1A),
-	{},
-};
-#endif
-
-#ifdef CONFIG_AMPERE_ERRATUM_AC04_CPU_23
-static const struct midr_range erratum_ac04_cpu_23_list[] = {
-	MIDR_ALL_VERSIONS(MIDR_AMPERE1A),
-	{},
-};
-#endif
-
 const struct arm64_cpu_capabilities arm64_errata[] = {
 #ifdef CONFIG_ARM64_WORKAROUND_CLEAN_CACHE
 	{
@@ -937,20 +922,6 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 		.capability = ARM64_WORKAROUND_SPECULATIVE_UNPRIV_LOAD,
 		/* Cortex-A520 r0p0 - r0p1 */
 		ERRATA_MIDR_RANGE_LIST(erratum_spec_unpriv_load_list),
-	},
-#endif
-#ifdef CONFIG_AMPERE_ERRATUM_AC03_CPU_38
-	{
-		.desc = "AmpereOne erratum AC03_CPU_38",
-		.capability = ARM64_WORKAROUND_AMPERE_AC03_CPU_38,
-		ERRATA_MIDR_RANGE_LIST(erratum_ac03_cpu_38_list),
-	},
-#endif
-#ifdef CONFIG_AMPERE_ERRATUM_AC04_CPU_23
-	{
-		.desc = "AmpereOne erratum AC04_CPU_23",
-		.capability = ARM64_WORKAROUND_AMPERE_AC04_CPU_23,
-		ERRATA_MIDR_RANGE_LIST(erratum_ac04_cpu_23_list),
 	},
 #endif
 	{

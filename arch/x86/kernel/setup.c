@@ -1094,7 +1094,6 @@ void __init setup_arch(char **cmdline_p)
 
 	reserve_initrd();
 
-	acpi_table_upgrade();
 	/* Look for ACPI tables and reserve memory occupied by them. */
 	acpi_boot_table_init();
 

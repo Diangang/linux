@@ -77,19 +77,6 @@ config PREVENT_FIRMWARE_BUILD
 
 source "drivers/base/firmware_loader/Kconfig"
 
-config ALLOW_DEV_COREDUMP
-	bool "Allow device coredump" if EXPERT
-	default y
-	help
-	  This option controls if the device coredump mechanism is available or
-	  not; if disabled, the mechanism will be omitted even if drivers that
-	  can use it are enabled.
-	  Say 'N' for more sensitive systems or systems that don't want
-	  to ever access the information to not have the code, nor keep any
-	  data.
-
-	  If unsure, say Y.
-
 config HMEM_REPORTING
 	bool
 	default n

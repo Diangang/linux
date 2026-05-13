@@ -78,26 +78,6 @@ config ACPI_SLEEP
 	depends on ACPI_SYSTEM_POWER_STATES_SUPPORT
 	default y
 
-config ACPI_REV_OVERRIDE_POSSIBLE
-	bool "Allow supported ACPI revision to be overridden"
-	depends on X86
-	default y
-	help
-	  The platform firmware on some systems expects Linux to return "5" as
-	  the supported ACPI revision which makes it expose system configuration
-	  information in a special way.
-
-	  For example, based on what ACPI exports as the supported revision,
-	  Dell XPS 13 (2015) configures its audio device to either work in HDA
-	  mode or in I2S mode, where the former is supposed to be used on Linux
-	  until the latter is fully supported (in the kernel as well as in user
-	  space).
-
-	  This option enables a DMI-based quirk for the above Dell machine (so
-	  that HDA audio is exposed by the platform firmware to the kernel) and
-	  makes it possible to force the kernel to return "5" as the supported
-	  ACPI revision via the "acpi_rev_override" command line switch.
-
 config ACPI_EC
 	bool "Embedded Controller"
 	depends on HAS_IOPORT
@@ -145,19 +125,6 @@ config ACPI_HOTPLUG_CPU
 	bool
 	depends on ACPI_PROCESSOR && HOTPLUG_CPU
 	select ACPI_CONTAINER
-
-config ARCH_HAS_ACPI_TABLE_UPGRADE
-	def_bool n
-
-config ACPI_TABLE_UPGRADE
-	bool "Allow upgrading ACPI tables via initrd"
-	depends on BLK_DEV_INITRD && ARCH_HAS_ACPI_TABLE_UPGRADE
-	default y
-	help
-	  This option provides functionality to upgrade arbitrary ACPI tables
-	  via initrd. No functional change if no ACPI tables are passed via
-	  initrd, therefore it's safe to say Y.
-	  See Documentation/admin-guide/acpi/initrd_table_override.rst for details
 
 config ACPI_DEBUG
 	bool "Debug Statements"

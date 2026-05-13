@@ -4,7 +4,6 @@
  *
  *  Check to see if the given machine has a known bad ACPI BIOS
  *  or if the BIOS is too old.
- *  Check given machine against acpi_rev_dmi_table[].
  *
  *  Copyright (C) 2004 Len Brown <len.brown@intel.com>
  *  Copyright (C) 2002 Andy Grover <andrew.grover@intel.com>
@@ -15,13 +14,8 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/acpi.h>
-#include <linux/dmi.h>
 
 #include "../internal.h"
-
-#ifdef CONFIG_DMI
-static const struct dmi_system_id acpi_rev_dmi_table[] __initconst;
-#endif
 
 /*
  * POLICY: If *anything* doesn't work, put it on the blacklist.
@@ -65,76 +59,6 @@ int __init acpi_blacklisted(void)
 	}
 
 	(void)early_acpi_osi_init();
-#ifdef CONFIG_DMI
-	dmi_check_system(acpi_rev_dmi_table);
-#endif
 
 	return blacklisted;
 }
-#ifdef CONFIG_DMI
-#ifdef CONFIG_ACPI_REV_OVERRIDE_POSSIBLE
-static int __init dmi_enable_rev_override(const struct dmi_system_id *d)
-{
-	pr_notice("DMI detected: %s (force ACPI _REV to 5)\n", d->ident);
-	acpi_rev_override_setup(NULL);
-	return 0;
-}
-#endif
-
-static const struct dmi_system_id acpi_rev_dmi_table[] __initconst = {
-#ifdef CONFIG_ACPI_REV_OVERRIDE_POSSIBLE
-	/*
-	 * DELL XPS 13 (2015) switches sound between HDA and I2S
-	 * depending on the ACPI _REV callback. If userspace supports
-	 * I2S sufficiently (or if you do not care about sound), you
-	 * can safely disable this quirk.
-	 */
-	{
-	 .callback = dmi_enable_rev_override,
-	 .ident = "DELL XPS 13 (2015)",
-	 .matches = {
-		      DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		      DMI_MATCH(DMI_PRODUCT_NAME, "XPS 13 9343"),
-		},
-	},
-	{
-	 .callback = dmi_enable_rev_override,
-	 .ident = "DELL Precision 5520",
-	 .matches = {
-		      DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		      DMI_MATCH(DMI_PRODUCT_NAME, "Precision 5520"),
-		},
-	},
-	{
-	 .callback = dmi_enable_rev_override,
-	 .ident = "DELL Precision 3520",
-	 .matches = {
-		      DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		      DMI_MATCH(DMI_PRODUCT_NAME, "Precision 3520"),
-		},
-	},
-	/*
-	 * Resolves a quirk with the Dell Latitude 3350 that
-	 * causes the ethernet adapter to not function.
-	 */
-	{
-	 .callback = dmi_enable_rev_override,
-	 .ident = "DELL Latitude 3350",
-	 .matches = {
-		      DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		      DMI_MATCH(DMI_PRODUCT_NAME, "Latitude 3350"),
-		},
-	},
-	{
-	 .callback = dmi_enable_rev_override,
-	 .ident = "DELL Inspiron 7537",
-	 .matches = {
-		      DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		      DMI_MATCH(DMI_PRODUCT_NAME, "Inspiron 7537"),
-		},
-	},
-#endif
-	{}
-};
-
-#endif /* CONFIG_DMI */

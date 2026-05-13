@@ -1478,12 +1478,6 @@ acpi_graph_get_remote_endpoint(const struct fwnode_handle *fwnode,
 #define acpi_probe_device_table(t)	({ int __r = 0; __r;})
 #endif
 
-#ifdef CONFIG_ACPI_TABLE_UPGRADE
-void acpi_table_upgrade(void);
-#else
-static inline void acpi_table_upgrade(void) { }
-#endif
-
 #ifdef CONFIG_ACPI_SPCR_TABLE
 extern bool qdf2400_e44_present;
 int acpi_parse_spcr(bool enable_earlycon, bool enable_console);
