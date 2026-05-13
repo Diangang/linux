@@ -165,35 +165,6 @@ struct ate_acpi_oem_info {
 	u32 oem_revision;
 };
 
-#ifdef CONFIG_FSL_ERRATUM_A008585
-/*
- * The number of retries is an arbitrary value well beyond the highest number
- * of iterations the loop has been observed to take.
- */
-#define __fsl_a008585_read_reg(reg) ({			\
-	u64 _old, _new;					\
-	int _retries = 200;				\
-							\
-	do {						\
-		_old = read_sysreg(reg);		\
-		_new = read_sysreg(reg);		\
-		_retries--;				\
-	} while (unlikely(_old != _new) && _retries);	\
-							\
-	WARN_ON_ONCE(!_retries);			\
-	_new;						\
-})
-
-static u64 notrace fsl_a008585_read_cntpct_el0(void)
-{
-	return __fsl_a008585_read_reg(cntpct_el0);
-}
-
-static u64 notrace fsl_a008585_read_cntvct_el0(void)
-{
-	return __fsl_a008585_read_reg(cntvct_el0);
-}
-#endif
 
 #ifdef CONFIG_HISILICON_ERRATUM_161010101
 /*
@@ -303,17 +274,6 @@ static __maybe_unused int erratum_set_next_event_phys(unsigned long evt,
 }
 
 static const struct arch_timer_erratum_workaround ool_workarounds[] = {
-#ifdef CONFIG_FSL_ERRATUM_A008585
-	{
-		.match_type = ate_match_dt,
-		.id = "fsl,erratum-a008585",
-		.desc = "Freescale erratum a005858",
-		.read_cntpct_el0 = fsl_a008585_read_cntpct_el0,
-		.read_cntvct_el0 = fsl_a008585_read_cntvct_el0,
-		.set_next_event_phys = erratum_set_next_event_phys,
-		.set_next_event_virt = erratum_set_next_event_virt,
-	},
-#endif
 #ifdef CONFIG_HISILICON_ERRATUM_161010101
 	{
 		.match_type = ate_match_dt,

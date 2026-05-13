@@ -2384,25 +2384,6 @@ static bool __pr_flush(struct console *con, int timeout_ms, bool reset_on_progre
 
 #endif /* CONFIG_PRINTK */
 
-#ifdef CONFIG_EARLY_PRINTK
-struct console *early_console;
-
-asmlinkage __visible void early_printk(const char *fmt, ...)
-{
-	va_list ap;
-	char buf[512];
-	int n;
-
-	if (!early_console)
-		return;
-
-	va_start(ap, fmt);
-	n = vscnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
-
-	early_console->write(early_console, buf, n);
-}
-#endif
 
 static void set_user_specified(struct console_cmdline *c, bool user_specified)
 {

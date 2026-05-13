@@ -64,21 +64,6 @@
 .endm
 
 .macro BUG_IF_WRONG_CR3 no_user_check=0
-#ifdef CONFIG_DEBUG_ENTRY
-	ALTERNATIVE "jmp .Lend_\@", "", X86_FEATURE_PTI
-	.if \no_user_check == 0
-	/* coming from usermode? */
-	testl	$USER_SEGMENT_RPL_MASK, PT_CS(%esp)
-	jz	.Lend_\@
-	.endif
-	/* On user-cr3? */
-	movl	%cr3, %eax
-	testl	$PTI_SWITCH_MASK, %eax
-	jnz	.Lend_\@
-	/* From userspace with kernel cr3 - BUG */
-	ud2
-.Lend_\@:
-#endif
 .endm
 
 /*
@@ -888,17 +873,6 @@ restore_all_switch_stack:
 	pushl	$0				# no error code
 	pushl	$iret_error
 
-#ifdef CONFIG_DEBUG_ENTRY
-	/*
-	 * The stack-frame here is the one that iret faulted on, so its a
-	 * return-to-user frame. We are on kernel-cr3 because we come here from
-	 * the fixup code. This confuses the CR3 checker, so switch to user-cr3
-	 * as the checker expects it.
-	 */
-	pushl	%eax
-	SWITCH_TO_USER_CR3 scratch_reg=%eax
-	popl	%eax
-#endif
 
 	jmp	handle_exception
 

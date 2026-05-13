@@ -130,9 +130,6 @@ static __always_inline unsigned long arch_local_irq_save(void)
 #else
 
 #ifdef CONFIG_X86_64
-#ifdef CONFIG_DEBUG_ENTRY
-#define SAVE_FLAGS		pushfq; popq %rax
-#endif
 
 #endif
 

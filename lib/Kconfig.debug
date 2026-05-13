@@ -162,7 +162,7 @@ config OBJTOOL
 
 config NOINSTR_VALIDATION
 	bool
-	depends on HAVE_NOINSTR_VALIDATION && DEBUG_ENTRY
+	depends on HAVE_NOINSTR_VALIDATION
 	select OBJTOOL
 	default y
 

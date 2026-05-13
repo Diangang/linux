@@ -13,35 +13,6 @@
 /* Check that the stack and regs on entry from user mode are sane. */
 static __always_inline void arch_enter_from_user_mode(struct pt_regs *regs)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_ENTRY)) {
-		/*
-		 * Make sure that the entry code gave us a sensible EFLAGS
-		 * register.  Native because we want to check the actual CPU
-		 * state, not the interrupt state as imagined by Xen.
-		 */
-		unsigned long flags = native_save_fl();
-		unsigned long mask = X86_EFLAGS_DF | X86_EFLAGS_NT;
-
-		/*
-		 * For !SMAP hardware we patch out CLAC on entry.
-		 */
-		if (cpu_feature_enabled(X86_FEATURE_SMAP) ||
-		    cpu_feature_enabled(X86_FEATURE_XENPV))
-			mask |= X86_EFLAGS_AC;
-
-		WARN_ON_ONCE(flags & mask);
-
-		/* We think we came from user mode. Make sure pt_regs agrees. */
-		WARN_ON_ONCE(!user_mode(regs));
-
-		/*
-		 * All entries from user mode (except #DF) should be on the
-		 * normal thread stack and should have user pt_regs in the
-		 * correct location.
-		 */
-		WARN_ON_ONCE(!on_thread_stack());
-		WARN_ON_ONCE(regs != task_pt_regs(current));
-	}
 }
 #define arch_enter_from_user_mode arch_enter_from_user_mode
 

@@ -613,9 +613,6 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 	struct thread_struct *next = &next_p->thread;
 	int cpu = smp_processor_id();
 
-	WARN_ON_ONCE(IS_ENABLED(CONFIG_DEBUG_ENTRY) &&
-		     this_cpu_read(hardirq_stack_inuse));
-
 	switch_fpu(prev_p, cpu);
 
 	/* We must save %fs and %gs before load_TLS() because

@@ -135,13 +135,8 @@ struct va_format {
 	0;						\
 })
 
-#ifdef CONFIG_EARLY_PRINTK
-extern asmlinkage __printf(1, 2)
-void early_printk(const char *fmt, ...);
-#else
 static inline __printf(1, 2) __cold
 void early_printk(const char *s, ...) { }
-#endif
 
 struct dev_printk_info;
 

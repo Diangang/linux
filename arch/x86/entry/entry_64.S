@@ -256,15 +256,6 @@ SYM_CODE_END(ret_from_fork_asm)
 .popsection
 
 .macro DEBUG_ENTRY_ASSERT_IRQS_OFF
-#ifdef CONFIG_DEBUG_ENTRY
-	pushq %rax
-	SAVE_FLAGS
-	testl $X86_EFLAGS_IF, %eax
-	jz .Lokay_\@
-	ud2
-.Lokay_\@:
-	popq %rax
-#endif
 .endm
 
 SYM_CODE_START(xen_error_entry)
@@ -612,13 +603,6 @@ SYM_INNER_LABEL(swapgs_restore_regs_and_return_to_usermode, SYM_L_GLOBAL)
 #endif
 
 SYM_INNER_LABEL(restore_regs_and_return_to_kernel, SYM_L_GLOBAL)
-#ifdef CONFIG_DEBUG_ENTRY
-	/* Assert that pt_regs indicates kernel mode. */
-	testb	$3, CS(%rsp)
-	jz	1f
-	ud2
-1:
-#endif
 	POP_REGS
 	addq	$8, %rsp	/* skip regs->orig_ax */
 	/*
@@ -1332,21 +1316,6 @@ first_nmi:
 
 	/* Everything up to here is safe from nested NMIs */
 
-#ifdef CONFIG_DEBUG_ENTRY
-	/*
-	 * For ease of testing, unmask NMIs right away.  Disabled by
-	 * default because IRET is very expensive.
-	 */
-	pushq	$0		/* SS */
-	pushq	%rsp		/* RSP (minus 8 because of the previous push) */
-	addq	$8, (%rsp)	/* Fix up RSP */
-	pushfq			/* RFLAGS */
-	pushq	$__KERNEL_CS	/* CS */
-	pushq	$1f		/* RIP */
-	iretq			/* continues at repeat_nmi below */
-	UNWIND_HINT_IRET_REGS
-1:
-#endif
 
 repeat_nmi:
 	ANNOTATE_NOENDBR // this code

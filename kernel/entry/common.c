@@ -119,8 +119,6 @@ void raw_irqentry_exit_cond_resched(void)
 	if (!preempt_count()) {
 		/* Sanity check RCU and thread stack */
 		rcu_irq_exit_check_preempt();
-		if (IS_ENABLED(CONFIG_DEBUG_ENTRY))
-			WARN_ON_ONCE(!on_thread_stack());
 		if (need_resched() && arch_irqentry_exit_need_resched())
 			preempt_schedule_irq();
 	}

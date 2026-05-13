@@ -35,9 +35,6 @@ obj-$(CONFIG_CPU_SUP_AMD)		+= amd.o
 ifeq ($(CONFIG_AMD_NB)$(CONFIG_SYSFS),yy)
 obj-y					+= amd_cache_disable.o
 endif
-obj-$(CONFIG_CPU_SUP_HYGON)		+= hygon.o
-obj-$(CONFIG_CPU_SUP_CENTAUR)		+= centaur.o
-obj-$(CONFIG_CPU_SUP_ZHAOXIN)		+= zhaoxin.o
 
 
 obj-$(CONFIG_X86_MCE)			+= mce/
