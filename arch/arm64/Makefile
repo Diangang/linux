@@ -19,10 +19,6 @@ ifeq ($(CONFIG_RELOCATABLE), y)
 LDFLAGS_vmlinux	+= -shared -Bsymbolic -z notext --no-apply-dynamic-relocs
 endif
 
-ifeq ($(CONFIG_ARM64_ERRATUM_843419),y)
-LDFLAGS_vmlinux	+= --fix-cortex-a53-843419
-endif
-
 cc_has_k_constraint := $(call try-run,echo				\
 	'int main(void) {						\
 		asm volatile("and w0, w0, %w0" :: "K" (4294967295));	\

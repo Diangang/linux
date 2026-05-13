@@ -77,9 +77,6 @@ u64 module_emit_plt_entry(struct module *mod, Elf64_Shdr *sechdrs,
 	int j = i - 1;
 	u64 val = sym->st_value + rela->r_addend;
 
-	if (is_forbidden_offset_for_adrp(&plt[i].adrp))
-		i++;
-
 	plt[i] = get_plt_entry(val, &plt[i]);
 
 	/*
@@ -97,36 +94,6 @@ u64 module_emit_plt_entry(struct module *mod, Elf64_Shdr *sechdrs,
 	return (u64)&plt[i];
 }
 
-#ifdef CONFIG_ARM64_ERRATUM_843419
-u64 module_emit_veneer_for_adrp(struct module *mod, Elf64_Shdr *sechdrs,
-				void *loc, u64 val)
-{
-	struct mod_plt_sec *pltsec = !within_module_init((unsigned long)loc, mod) ?
-						&mod->arch.core : &mod->arch.init;
-	struct plt_entry *plt = (struct plt_entry *)sechdrs[pltsec->plt_shndx].sh_addr;
-	int i = pltsec->plt_num_entries++;
-	u32 br;
-	int rd;
-
-	if (WARN_ON(pltsec->plt_num_entries > pltsec->plt_max_entries))
-		return 0;
-
-	if (is_forbidden_offset_for_adrp(&plt[i].adrp))
-		i = pltsec->plt_num_entries++;
-
-	/* get the destination register of the ADRP instruction */
-	rd = aarch64_insn_decode_register(AARCH64_INSN_REGTYPE_RD,
-					  le32_to_cpup((__le32 *)loc));
-
-	br = aarch64_insn_gen_branch_imm((u64)&plt[i].br, (u64)loc + 4,
-					 AARCH64_INSN_BRANCH_NOLINK);
-
-	plt[i] = __get_adrp_add_pair(val, (u64)&plt[i], rd);
-	plt[i].br = cpu_to_le32(br);
-
-	return (u64)&plt[i];
-}
-#endif
 
 #define cmp_3way(a, b)	((a) < (b) ? -1 : (a) > (b))
 
@@ -162,8 +129,6 @@ static unsigned int count_plts(Elf64_Sym *syms, Elf64_Rela *rela, int num,
 	int i;
 
 	for (i = 0; i < num; i++) {
-		u64 min_align;
-
 		switch (ELF64_R_TYPE(rela[i].r_info)) {
 		case R_AARCH64_JUMP26:
 		case R_AARCH64_CALL26:
@@ -198,49 +163,7 @@ static unsigned int count_plts(Elf64_Sym *syms, Elf64_Rela *rela, int num,
 			if (rela[i].r_addend != 0 || !duplicate_rel(rela, i))
 				ret++;
 			break;
-		case R_AARCH64_ADR_PREL_PG_HI21_NC:
-		case R_AARCH64_ADR_PREL_PG_HI21:
-			if (!cpus_have_final_cap(ARM64_WORKAROUND_843419))
-				break;
-
-			/*
-			 * Determine the minimal safe alignment for this ADRP
-			 * instruction: the section alignment at which it is
-			 * guaranteed not to appear at a vulnerable offset.
-			 *
-			 * This comes down to finding the least significant zero
-			 * bit in bits [11:3] of the section offset, and
-			 * increasing the section's alignment so that the
-			 * resulting address of this instruction is guaranteed
-			 * to equal the offset in that particular bit (as well
-			 * as all less significant bits). This ensures that the
-			 * address modulo 4 KB != 0xfff8 or 0xfffc (which would
-			 * have all ones in bits [11:3])
-			 */
-			min_align = 2ULL << ffz(rela[i].r_offset | 0x7);
-
-			/*
-			 * Allocate veneer space for each ADRP that may appear
-			 * at a vulnerable offset nonetheless. At relocation
-			 * time, some of these will remain unused since some
-			 * ADRP instructions can be patched to ADR instructions
-			 * instead.
-			 */
-			if (min_align > SZ_4K)
-				ret++;
-			else
-				dstsec->sh_addralign = max(dstsec->sh_addralign,
-							   min_align);
-			break;
 		}
-	}
-
-	if (cpus_have_final_cap(ARM64_WORKAROUND_843419)) {
-		/*
-		 * Add some slack so we can skip PLT slots that may trigger
-		 * the erratum due to the placement of the ADRP instruction.
-		 */
-		ret += DIV_ROUND_UP(ret, (SZ_4K / sizeof(struct plt_entry)));
 	}
 
 	return ret;

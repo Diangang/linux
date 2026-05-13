@@ -26,9 +26,6 @@ u64 module_emit_plt_entry(struct module *mod, Elf64_Shdr *sechdrs,
 			  void *loc, const Elf64_Rela *rela,
 			  Elf64_Sym *sym);
 
-u64 module_emit_veneer_for_adrp(struct module *mod, Elf64_Shdr *sechdrs,
-				void *loc, u64 val);
-
 struct plt_entry {
 	/*
 	 * A program that conforms to the AArch64 Procedure Call Standard
@@ -42,12 +39,6 @@ struct plt_entry {
 	__le32	add;	/* add	x16, x16, #0x....		*/
 	__le32	br;	/* br	x16				*/
 };
-
-static inline bool is_forbidden_offset_for_adrp(void *place)
-{
-	return cpus_have_final_cap(ARM64_WORKAROUND_843419) &&
-	       ((u64)place & 0xfff) >= 0xff8;
-}
 
 struct plt_entry get_plt_entry(u64 dst, void *pc);
 

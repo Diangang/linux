@@ -32,7 +32,7 @@
 #include "blk.h"
 
 /* Should we allow writing to mounted block devices? */
-static bool bdev_allow_write_mounted = IS_ENABLED(CONFIG_BLK_DEV_WRITE_MOUNTED);
+static bool bdev_allow_write_mounted = true;
 
 struct bdev_inode {
 	struct block_device bdev;

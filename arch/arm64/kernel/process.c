@@ -340,27 +340,6 @@ void flush_thread(void)
 	flush_gcs();
 }
 
-#ifdef CONFIG_ARM64_ERRATUM_4193714
-
-static void arch_dup_tlbbatch_mask(struct task_struct *dst)
-{
-	/*
-	 * Clear the inherited cpumask with memset() to cover both cases where
-	 * cpumask_var_t is a pointer or an array. It will be allocated lazily
-	 * in sme_dvmsync_add_pending() if CPUMASK_OFFSTACK=y.
-	 */
-	if (alternative_has_cap_unlikely(ARM64_WORKAROUND_4193714))
-		memset(&dst->tlb_ubc.arch.cpumask, 0,
-		       sizeof(dst->tlb_ubc.arch.cpumask));
-}
-
-static void arch_release_tlbbatch_mask(struct task_struct *tsk)
-{
-	if (alternative_has_cap_unlikely(ARM64_WORKAROUND_4193714))
-		free_cpumask_var(tsk->tlb_ubc.arch.cpumask);
-}
-
-#else
 
 static void arch_dup_tlbbatch_mask(struct task_struct *dst)
 {
@@ -370,7 +349,6 @@ static void arch_release_tlbbatch_mask(struct task_struct *tsk)
 {
 }
 
-#endif /* CONFIG_ARM64_ERRATUM_4193714 */
 
 void arch_release_task_struct(struct task_struct *tsk)
 {
@@ -663,10 +641,7 @@ static void update_cntkctl_el1(struct task_struct *next)
 	struct thread_info *ti = task_thread_info(next);
 
 	if (test_ti_thread_flag(ti, TIF_TSC_SIGSEGV) ||
-	    has_erratum_handler(read_cntvct_el0) ||
-	    (IS_ENABLED(CONFIG_ARM64_ERRATUM_1418040) &&
-	     this_cpu_has_cap(ARM64_WORKAROUND_1418040) &&
-	     is_compat_thread(ti)))
+	    has_erratum_handler(read_cntvct_el0))
 		sysreg_clear_set(cntkctl_el1, ARCH_TIMER_USR_VCT_ACCESS_EN, 0);
 	else
 		sysreg_clear_set(cntkctl_el1, 0, ARCH_TIMER_USR_VCT_ACCESS_EN);

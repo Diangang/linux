@@ -45,8 +45,6 @@
 #include <linux/irqchip/irq-msi-lib.h>
 
 #define ITS_FLAGS_CMDQ_NEEDS_FLUSHING		(1ULL << 0)
-#define ITS_FLAGS_WORKAROUND_CAVIUM_22375	(1ULL << 1)
-#define ITS_FLAGS_WORKAROUND_CAVIUM_23144	(1ULL << 2)
 #define ITS_FLAGS_FORCE_NON_SHAREABLE		(1ULL << 3)
 #define ITS_FLAGS_WORKAROUND_HISILICON_162100801	(1ULL << 4)
 
@@ -1732,10 +1730,6 @@ static int its_select_cpu(struct irq_data *d,
 			if (cpu < nr_cpu_ids)
 				goto out;
 
-			/* If we can't cross sockets, give up */
-			if ((its_dev->its->flags & ITS_FLAGS_WORKAROUND_CAVIUM_23144))
-				goto out;
-
 			/* If the above failed, expand the search */
 		}
 
@@ -1749,11 +1743,6 @@ static int its_select_cpu(struct irq_data *d,
 		cpu = cpumask_pick_least_loaded(d, tmpmask);
 	} else {
 		cpumask_copy(tmpmask, aff_mask);
-
-		/* If we cannot cross sockets, limit the search to that node */
-		if ((its_dev->its->flags & ITS_FLAGS_WORKAROUND_CAVIUM_23144) &&
-		    node != NUMA_NO_NODE)
-			cpumask_and(tmpmask, tmpmask, cpumask_of_node(node));
 
 		cpu = cpumask_pick_least_loaded(d, tmpmask);
 	}
@@ -2653,10 +2642,6 @@ static int its_alloc_tables(struct its_node *its)
 	u64 cache = GITS_BASER_RaWaWb;
 	int err, i;
 
-	if (its->flags & ITS_FLAGS_WORKAROUND_CAVIUM_22375)
-		/* erratum 24313: ignore memory access type */
-		cache = GITS_BASER_nCnB;
-
 	if (its->flags & ITS_FLAGS_FORCE_NON_SHAREABLE) {
 		cache = GITS_BASER_nC;
 		shr = 0;
@@ -3273,16 +3258,6 @@ static void its_cpu_init_collection(struct its_node *its)
 {
 	int cpu = smp_processor_id();
 	u64 target;
-
-	/* avoid cross node collections and its mapping */
-	if (its->flags & ITS_FLAGS_WORKAROUND_CAVIUM_23144) {
-		struct device_node *cpu_node;
-
-		cpu_node = of_get_cpu_node(cpu, NULL);
-		if (its->numa_node != NUMA_NO_NODE &&
-			its->numa_node != of_node_to_nid(cpu_node))
-			return;
-	}
 
 	/*
 	 * We now have to bind each collection to its target
@@ -4765,27 +4740,6 @@ static int its_force_quiescent(void __iomem *base)
 	}
 }
 
-static bool __maybe_unused its_enable_quirk_cavium_22375(void *data)
-{
-	struct its_node *its = data;
-
-	/* erratum 22375: only alloc 8MB table size (20 bits) */
-	its->typer &= ~GITS_TYPER_DEVBITS;
-	its->typer |= FIELD_PREP(GITS_TYPER_DEVBITS, 20 - 1);
-	its->flags |= ITS_FLAGS_WORKAROUND_CAVIUM_22375;
-
-	return true;
-}
-
-static bool __maybe_unused its_enable_quirk_cavium_23144(void *data)
-{
-	struct its_node *its = data;
-
-	its->flags |= ITS_FLAGS_WORKAROUND_CAVIUM_23144;
-
-	return true;
-}
-
 static bool __maybe_unused its_enable_quirk_qdf2400_e0065(void *data)
 {
 	struct its_node *its = data;
@@ -4892,22 +4846,6 @@ static bool __maybe_unused its_enable_rk3568002(void *data)
 }
 
 static const struct gic_quirk its_quirks[] = {
-#ifdef CONFIG_CAVIUM_ERRATUM_22375
-	{
-		.desc	= "ITS: Cavium errata 22375, 24313",
-		.iidr	= 0xa100034c,	/* ThunderX pass 1.x */
-		.mask	= 0xffff0fff,
-		.init	= its_enable_quirk_cavium_22375,
-	},
-#endif
-#ifdef CONFIG_CAVIUM_ERRATUM_23144
-	{
-		.desc	= "ITS: Cavium erratum 23144",
-		.iidr	= 0xa100034c,	/* ThunderX pass 1.x */
-		.mask	= 0xffff0fff,
-		.init	= its_enable_quirk_cavium_23144,
-	},
-#endif
 #ifdef CONFIG_QCOM_QDF2400_ERRATUM_0065
 	{
 		.desc	= "ITS: QDF2400 erratum 0065",

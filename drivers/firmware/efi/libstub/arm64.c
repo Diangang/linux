@@ -69,11 +69,7 @@ efi_status_t check_platform_features(void)
 	return EFI_SUCCESS;
 }
 
-#ifdef CONFIG_ARM64_WORKAROUND_CLEAN_CACHE
-#define DCTYPE	"civac"
-#else
 #define DCTYPE	"cvau"
-#endif
 
 u32 __weak code_size;
 

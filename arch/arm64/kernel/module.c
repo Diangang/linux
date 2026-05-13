@@ -204,28 +204,8 @@ static int reloc_insn_imm(enum aarch64_reloc_op op, __le32 *place, u64 val,
 static int reloc_insn_adrp(struct module *mod, Elf64_Shdr *sechdrs,
 			   __le32 *place, u64 val, struct module *me)
 {
-	u32 insn;
-
-	if (!is_forbidden_offset_for_adrp(place))
-		return reloc_insn_imm(RELOC_OP_PAGE, place, val, 12, 21,
-				      AARCH64_INSN_IMM_ADR, me);
-
-	/* patch ADRP to ADR if it is in range */
-	if (!reloc_insn_imm(RELOC_OP_PREL, place, val & ~0xfff, 0, 21,
-			    AARCH64_INSN_IMM_ADR, me)) {
-		insn = le32_to_cpu(*place);
-		insn &= ~BIT(31);
-	} else {
-		/* out of range for ADR -> emit a veneer */
-		val = module_emit_veneer_for_adrp(mod, sechdrs, place, val & ~0xfff);
-		if (!val)
-			return -ENOEXEC;
-		insn = aarch64_insn_gen_branch_imm((u64)place, val,
-						   AARCH64_INSN_BRANCH_NOLINK);
-	}
-
-	WRITE_PLACE(place, cpu_to_le32(insn), me);
-	return 0;
+	return reloc_insn_imm(RELOC_OP_PAGE, place, val, 12, 21,
+			      AARCH64_INSN_IMM_ADR, me);
 }
 
 int apply_relocate_add(Elf64_Shdr *sechdrs,

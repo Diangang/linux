@@ -1822,20 +1822,6 @@ static bool unmap_kernel_at_el0(const struct arm64_cpu_capabilities *entry,
 	if (!meltdown_safe)
 		__meltdown_safe = false;
 
-	/*
-	 * For reasons that aren't entirely clear, enabling KPTI on Cavium
-	 * ThunderX leads to apparent I-cache corruption of kernel text, which
-	 * ends as well as you might imagine. Don't even try. We cannot rely
-	 * on the cpus_have_*cap() helpers here to detect the CPU erratum
-	 * because cpucap detection order may change. However, since we know
-	 * affected CPUs are always in a homogeneous configuration, it is
-	 * safe to rely on this_cpu_has_cap() here.
-	 */
-	if (this_cpu_has_cap(ARM64_WORKAROUND_CAVIUM_27456)) {
-		str = "ARM64_WORKAROUND_CAVIUM_27456";
-		__kpti_forced = -1;
-	}
-
 	/* Useful for KASLR robustness */
 	if (kaslr_enabled() && kaslr_requires_kpti()) {
 		if (!__kpti_forced) {
@@ -1971,14 +1957,6 @@ static bool cpu_has_broken_dbm(void)
 {
 	/* List of CPUs which have broken DBM support. */
 	static const struct midr_range cpus[] = {
-#ifdef CONFIG_ARM64_ERRATUM_1024718
-		MIDR_ALL_VERSIONS(MIDR_CORTEX_A55),
-		/* Kryo4xx Silver (rdpe => r1p0) */
-		MIDR_REV(MIDR_QCOM_KRYO_4XX_SILVER, 0xd, 0xe),
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_2051678
-		MIDR_REV_RANGE(MIDR_CORTEX_A510, 0, 0, 2),
-#endif
 		{},
 	};
 
@@ -2043,9 +2021,7 @@ static void cpu_amu_enable(struct arm64_cpu_capabilities const *cap)
 	if (has_cpuid_feature(cap, SCOPE_LOCAL_CPU)) {
 		cpumask_set_cpu(smp_processor_id(), &amu_cpus);
 
-		/* 0 reference values signal broken/disabled counters */
-		if (!this_cpu_has_cap(ARM64_WORKAROUND_2457168))
-			update_freq_counters_refs();
+		update_freq_counters_refs();
 	}
 }
 
@@ -2371,29 +2347,10 @@ static void bti_enable(const struct arm64_cpu_capabilities *__unused)
 
 static void user_feature_fixup(void)
 {
-	if (cpus_have_cap(ARM64_WORKAROUND_2658417)) {
-		struct arm64_ftr_reg *regp;
-
-		regp = get_arm64_ftr_reg(SYS_ID_AA64ISAR1_EL1);
-		if (regp)
-			regp->user_mask &= ~ID_AA64ISAR1_EL1_BF16_MASK;
-	}
-
-	if (cpus_have_cap(ARM64_WORKAROUND_SPECULATIVE_SSBS)) {
-		struct arm64_ftr_reg *regp;
-
-		regp = get_arm64_ftr_reg(SYS_ID_AA64PFR1_EL1);
-		if (regp)
-			regp->user_mask &= ~ID_AA64PFR1_EL1_SSBS_MASK;
-	}
 }
 
 static void elf_hwcap_fixup(void)
 {
-#ifdef CONFIG_COMPAT
-	if (cpus_have_cap(ARM64_WORKAROUND_1742098))
-		compat_elf_hwcap2 &= ~COMPAT_HWCAP2_AES;
-#endif /* CONFIG_COMPAT */
 }
 
 #ifdef CONFIG_KVM

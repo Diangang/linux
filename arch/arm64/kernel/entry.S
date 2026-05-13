@@ -334,11 +334,6 @@ alternative_else_nop_endif
 	tst	x22, #PSR_MODE32_BIT		// native task?
 	b.eq	3f
 
-#ifdef CONFIG_ARM64_ERRATUM_845719
-alternative_if ARM64_WORKAROUND_845719
-	msr contextidr_el1, xzr
-alternative_else_nop_endif
-#endif
 3:
 	/* Ignore asynchronous tag check faults in the uaccess routines */
 	ldr	x0, [tsk, THREAD_SCTLR_USER]
@@ -408,14 +403,7 @@ alternative_else_nop_endif
 	add	sp, sp, #PT_REGS_SIZE		// restore sp
 
 	.if \el == 0
-	/* This must be after the last explicit memory access */
-alternative_if ARM64_WORKAROUND_SPECULATIVE_UNPRIV_LOAD
-	tlbi	vale1, xzr
-	dsb	nsh
-alternative_else_nop_endif
 	.else
-	/* Ensure any device/NC reads complete */
-	alternative_insn nop, "dmb sy", ARM64_WORKAROUND_1508412
 	.endif
 
 	eret
@@ -673,9 +661,7 @@ alternative_else_nop_endif
 	tramp_map_kernel	x30
 alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
 	tramp_data_read_var	x30, vectors
-alternative_if_not ARM64_WORKAROUND_CAVIUM_TX2_219_PRFM
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
-alternative_else_nop_endif
 
 	msr	vbar_el1, x30
 	isb

@@ -1203,9 +1203,7 @@
 
 #define read_sysreg_par() ({						\
 	u64 par;							\
-	asm(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412));	\
 	par = read_sysreg(par_el1);					\
-	asm(ALTERNATIVE("nop", "dmb sy", ARM64_WORKAROUND_1508412));	\
 	par;								\
 })
 

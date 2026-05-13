@@ -132,8 +132,7 @@ static noinstr void clean_dcache_range_nopatch(u64 start, u64 end)
 	do {
 		/*
 		 * We must clean+invalidate to the PoC in order to avoid
-		 * Cortex-A53 errata 826319, 827319, 824069 and 819472
-		 * (this corresponds to ARM64_WORKAROUND_CLEAN_CACHE)
+		 * Cortex-A53 errata 826319, 827319, 824069 and 819472.
 		 */
 		asm volatile("dc civac, %0" : : "r" (cur) : "memory");
 	} while (cur += d_size, cur < end);

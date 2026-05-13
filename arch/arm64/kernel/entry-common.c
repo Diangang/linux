@@ -171,55 +171,11 @@ asmlinkage void noinstr el##_##regsize##_##vector##_handler(struct pt_regs *regs
 	__panic_unhandled(regs, desc, read_sysreg(esr_el1));				\
 }
 
-#ifdef CONFIG_ARM64_ERRATUM_1463225
-static DEFINE_PER_CPU(int, __in_cortex_a76_erratum_1463225_wa);
-
-static void cortex_a76_erratum_1463225_svc_handler(void)
-{
-	u64 reg, val;
-
-	if (!unlikely(test_thread_flag(TIF_SINGLESTEP)))
-		return;
-
-	if (!unlikely(this_cpu_has_cap(ARM64_WORKAROUND_1463225)))
-		return;
-
-	__this_cpu_write(__in_cortex_a76_erratum_1463225_wa, 1);
-	reg = read_sysreg(mdscr_el1);
-	val = reg | MDSCR_EL1_SS | MDSCR_EL1_KDE;
-	write_sysreg(val, mdscr_el1);
-	asm volatile("msr daifclr, #8");
-	isb();
-
-	/* We will have taken a single-step exception by this point */
-
-	write_sysreg(reg, mdscr_el1);
-	__this_cpu_write(__in_cortex_a76_erratum_1463225_wa, 0);
-}
-
-static __always_inline bool
-cortex_a76_erratum_1463225_debug_handler(struct pt_regs *regs)
-{
-	if (!__this_cpu_read(__in_cortex_a76_erratum_1463225_wa))
-		return false;
-
-	/*
-	 * We've taken a dummy step exception from the kernel to ensure
-	 * that interrupts are re-enabled on the syscall path. Return back
-	 * to cortex_a76_erratum_1463225_svc_handler() with debug exceptions
-	 * masked so that we can safely restore the mdscr and get on with
-	 * handling the syscall.
-	 */
-	regs->pstate |= PSR_D_BIT;
-	return true;
-}
-#else /* CONFIG_ARM64_ERRATUM_1463225 */
 static void cortex_a76_erratum_1463225_svc_handler(void) { }
 static bool cortex_a76_erratum_1463225_debug_handler(struct pt_regs *regs)
 {
 	return false;
 }
-#endif /* CONFIG_ARM64_ERRATUM_1463225 */
 
 /*
  * As per the ABI exit SME streaming mode and clear the SVE state not

@@ -81,10 +81,7 @@ static inline u64 gic_read_iar_cavium_thunderx(void)
 
 static u64 __maybe_unused gic_read_iar(void)
 {
-	if (alternative_has_cap_unlikely(ARM64_WORKAROUND_CAVIUM_23154))
-		return gic_read_iar_cavium_thunderx();
-	else
-		return gic_read_iar_common();
+	return gic_read_iar_common();
 }
 
 static inline void gic_write_ctlr(u32 val)
