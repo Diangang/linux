@@ -190,11 +190,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 #if 0 || 0
 	.kasan_depth	= 1,
 #endif
-#ifdef CONFIG_KCSAN
-	.kcsan_ctx = {
-		.scoped_accesses	= {LIST_POISON1, NULL},
-	},
-#endif
 #if 0
 	.lockdep_depth = 0, /* no locks held yet */
 	.curr_chain_key = INITIAL_CHAIN_KEY,

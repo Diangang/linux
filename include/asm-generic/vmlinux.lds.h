@@ -1002,7 +1002,7 @@
  * https://llvm.org/pr46478
  */
 #define DISCARD_EH_FRAME	*(.eh_frame)
-#if defined(CONFIG_GCOV_KERNEL) || 0 || defined(CONFIG_KCSAN)
+#if defined(CONFIG_GCOV_KERNEL) || 0
 # if 0
 #  define SANITIZER_DISCARDS						\
 	DISCARD_EH_FRAME

@@ -1785,24 +1785,7 @@ void __init init_cpu_devs(void)
 
 void __init early_cpu_init(void)
 {
-#ifdef CONFIG_PROCESSOR_SELECT
-	unsigned int i, j;
-
-	pr_info("KERNEL supported cpus:\n");
-#endif
-
 	init_cpu_devs();
-
-#ifdef CONFIG_PROCESSOR_SELECT
-	for (i = 0; i < X86_VENDOR_NUM && cpu_devs[i]; i++) {
-		for (j = 0; j < 2; j++) {
-			if (!cpu_devs[i]->c_ident[j])
-				continue;
-			pr_info("  %s %s\n", cpu_devs[i]->c_vendor,
-				cpu_devs[i]->c_ident[j]);
-		}
-	}
-#endif
 
 	early_identify_cpu(&boot_cpu_data);
 }
@@ -2210,19 +2193,7 @@ static void initialize_debug_regs(void)
 	set_debugreg(0, 0);
 }
 
-#ifdef CONFIG_KGDB
-/*
- * Restore debug regs if using kgdbwait and you have a kernel debugger
- * connection established.
- */
-static void dbg_restore_debug_regs(void)
-{
-	if (unlikely(kgdb_connected && arch_kgdb_ops.correct_hw_break))
-		arch_kgdb_ops.correct_hw_break();
-}
-#else /* ! CONFIG_KGDB */
 #define dbg_restore_debug_regs()
-#endif /* ! CONFIG_KGDB */
 
 static inline void setup_getcpu(int cpu)
 {

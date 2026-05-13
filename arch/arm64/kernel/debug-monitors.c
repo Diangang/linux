@@ -225,13 +225,6 @@ static int call_el1_break_hook(struct pt_regs *regs, unsigned long esr)
 	if (0 && esr_is_ubsan_brk(esr))
 		return ubsan_brk_handler(regs, esr);
 
-	if (IS_ENABLED(CONFIG_KGDB)) {
-		if (esr_brk_comment(esr) == KGDB_DYN_DBG_BRK_IMM)
-			return kgdb_brk_handler(regs, esr);
-		if (esr_brk_comment(esr) == KGDB_COMPILED_DBG_BRK_IMM)
-			return kgdb_compiled_brk_handler(regs, esr);
-	}
-
 	if (IS_ENABLED(CONFIG_KPROBES)) {
 		if (esr_brk_comment(esr) == KPROBES_BRK_IMM)
 			return kprobe_brk_handler(regs, esr);

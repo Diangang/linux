@@ -776,7 +776,7 @@ int split_kernel_leaf_mapping(unsigned long start, unsigned long end)
 
 	/*
 	 * If the region is within a pte-mapped area, there is no need to try to
-	 * split. Additionally, CONFIG_DEBUG_PAGEALLOC and CONFIG_KFENCE may
+	 * split. Additionally, CONFIG_DEBUG_PAGEALLOC may
 	 * change permissions from atomic context so for those cases (which are
 	 * always pte-mapped), we must not go any further because taking the
 	 * mutex below may sleep. Do not call force_pte_mapping() here because
@@ -1052,86 +1052,8 @@ void __init mark_linear_text_alias_ro(void)
 			    PAGE_KERNEL_RO);
 }
 
-#ifdef CONFIG_KFENCE
-
-bool __ro_after_init kfence_early_init = !!CONFIG_KFENCE_SAMPLE_INTERVAL;
-
-/* early_param() will be parsed before map_mem() below. */
-static int __init parse_kfence_early_init(char *arg)
-{
-	int val;
-
-	if (get_option(&arg, &val))
-		kfence_early_init = !!val;
-	return 0;
-}
-early_param("kfence.sample_interval", parse_kfence_early_init);
-
-static phys_addr_t __init arm64_kfence_alloc_pool(void)
-{
-	phys_addr_t kfence_pool;
-
-	if (!kfence_early_init)
-		return 0;
-
-	kfence_pool = memblock_phys_alloc(KFENCE_POOL_SIZE, PAGE_SIZE);
-	if (!kfence_pool) {
-		pr_err("failed to allocate kfence pool\n");
-		kfence_early_init = false;
-		return 0;
-	}
-
-	/* Temporarily mark as NOMAP. */
-	memblock_mark_nomap(kfence_pool, KFENCE_POOL_SIZE);
-
-	return kfence_pool;
-}
-
-static void __init arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp)
-{
-	if (!kfence_pool)
-		return;
-
-	/* KFENCE pool needs page-level mapping. */
-	__map_memblock(pgdp, kfence_pool, kfence_pool + KFENCE_POOL_SIZE,
-			pgprot_tagged(PAGE_KERNEL),
-			NO_BLOCK_MAPPINGS | NO_CONT_MAPPINGS);
-	memblock_clear_nomap(kfence_pool, KFENCE_POOL_SIZE);
-	__kfence_pool = phys_to_virt(kfence_pool);
-}
-
-bool arch_kfence_init_pool(void)
-{
-	unsigned long start = (unsigned long)__kfence_pool;
-	unsigned long end = start + KFENCE_POOL_SIZE;
-	int ret;
-
-	/* Exit early if we know the linear map is already pte-mapped. */
-	if (force_pte_mapping())
-		return true;
-
-	/* Kfence pool is already pte-mapped for the early init case. */
-	if (kfence_early_init)
-		return true;
-
-	mutex_lock(&pgtable_split_lock);
-	ret = range_split_to_ptes(start, end, GFP_PGTABLE_KERNEL);
-	mutex_unlock(&pgtable_split_lock);
-
-	/*
-	 * Since the system supports bbml2_noabort, tlb invalidation is not
-	 * required here; the pgtable mappings have been split to pte but larger
-	 * entries may safely linger in the TLB.
-	 */
-
-	return !ret;
-}
-#else /* CONFIG_KFENCE */
-
 static inline phys_addr_t arm64_kfence_alloc_pool(void) { return 0; }
 static inline void arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp) { }
-
-#endif /* CONFIG_KFENCE */
 
 static void __init map_mem(pgd_t *pgdp)
 {

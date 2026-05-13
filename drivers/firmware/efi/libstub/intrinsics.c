@@ -6,15 +6,6 @@
 
 #include "efistub.h"
 
-#ifdef CONFIG_KASAN
-#undef memcpy
-#undef memmove
-#undef memset
-void *__memcpy(void *__dest, const void *__src, size_t __n) __alias(memcpy);
-void *__memmove(void *__dest, const void *__src, size_t count) __alias(memmove);
-void *__memset(void *s, int c, size_t count) __alias(memset);
-#endif
-
 static void *efistub_memmove(u8 *dst, const u8 *src, size_t len)
 {
 	if (src > dst || dst >= (src + len))

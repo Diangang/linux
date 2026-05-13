@@ -139,11 +139,6 @@ SYM_FUNC_START(_cpu_resume)
 	 */
 	bl	cpu_do_resume
 
-#if defined(CONFIG_KASAN) && defined(CONFIG_KASAN_STACK)
-	mov	x0, sp
-	bl	kasan_unpoison_task_stack_below
-#endif
-
 	ldp	x19, x20, [x29, #16]
 	ldp	x21, x22, [x29, #32]
 	ldp	x23, x24, [x29, #48]

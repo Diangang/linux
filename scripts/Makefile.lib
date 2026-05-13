@@ -48,19 +48,6 @@ _c_flags += $(if $(patsubst n%,, \
 		$(CFLAGS_GCOV))
 endif
 
-#
-# Enable address sanitizer flags for kernel except some files or directories
-# we don't want to check (depends on variables KASAN_SANITIZE_obj.o, KASAN_SANITIZE)
-#
-ifeq ($(CONFIG_KASAN),y)
-_c_flags += $(if $(patsubst n%,, \
-		$(KASAN_SANITIZE_$(target-stem).o)$(KASAN_SANITIZE)$(is-kernel-object)), \
-		$(CFLAGS_KASAN), $(CFLAGS_KASAN_NOSANITIZE))
-_rust_flags += $(if $(patsubst n%,, \
-		$(KASAN_SANITIZE_$(target-stem).o)$(KASAN_SANITIZE)$(is-kernel-object)), \
-		$(RUSTFLAGS_KASAN))
-endif
-
 ifeq ($(CONFIG_UBSAN),y)
 _c_flags += $(if $(patsubst n%,, \
 		$(UBSAN_SANITIZE_$(target-stem).o)$(UBSAN_SANITIZE)$(is-kernel-object)), \
@@ -68,21 +55,6 @@ _c_flags += $(if $(patsubst n%,, \
 _c_flags += $(if $(patsubst n%,, \
 		$(UBSAN_INTEGER_WRAP_$(target-stem).o)$(UBSAN_SANITIZE_$(target-stem).o)$(UBSAN_INTEGER_WRAP)$(UBSAN_SANITIZE)$(is-kernel-object)), \
 		$(CFLAGS_UBSAN_INTEGER_WRAP))
-endif
-
-#
-# Enable KCSAN flags except some files or directories we don't want to check
-# (depends on variables KCSAN_SANITIZE_obj.o, KCSAN_SANITIZE)
-#
-ifeq ($(CONFIG_KCSAN),y)
-_c_flags += $(if $(patsubst n%,, \
-	$(KCSAN_SANITIZE_$(target-stem).o)$(KCSAN_SANITIZE)$(is-kernel-object)), \
-	$(CFLAGS_KCSAN))
-# Some uninstrumented files provide implied barriers required to avoid false
-# positives: set KCSAN_INSTRUMENT_BARRIERS for barrier instrumentation only.
-_c_flags += $(if $(patsubst n%,, \
-	$(KCSAN_INSTRUMENT_BARRIERS_$(target-stem).o)$(KCSAN_INSTRUMENT_BARRIERS)n), \
-	-D__KCSAN_INSTRUMENT_BARRIERS__)
 endif
 
 #

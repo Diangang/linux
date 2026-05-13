@@ -1,25 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
 menu "Platform selection"
 
-menuconfig ARCH_BCM
-	bool "Broadcom SoC Support"
-
-if ARCH_BCM
-
-endif
-
-menuconfig ARCH_MICROCHIP
-	bool "Microchip SoC support"
-
-if ARCH_MICROCHIP
-
-endif
-
-menuconfig ARCH_NXP
-	bool "NXP SoC support"
-
-if ARCH_NXP
-
-endif
-
 endmenu # "Platform selection"

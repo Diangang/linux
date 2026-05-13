@@ -8755,29 +8755,6 @@ SLAB_ATTR(remote_node_defrag_ratio);
 #endif
 
 
-#ifdef CONFIG_KFENCE
-static ssize_t skip_kfence_show(struct kmem_cache *s, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", !!(s->flags & SLAB_SKIP_KFENCE));
-}
-
-static ssize_t skip_kfence_store(struct kmem_cache *s,
-			const char *buf, size_t length)
-{
-	int ret = length;
-
-	if (buf[0] == '0')
-		s->flags &= ~SLAB_SKIP_KFENCE;
-	else if (buf[0] == '1')
-		s->flags |= SLAB_SKIP_KFENCE;
-	else
-		ret = -EINVAL;
-
-	return ret;
-}
-SLAB_ATTR(skip_kfence);
-#endif
-
 static const struct attribute *const slab_attrs[] = {
 	&slab_size_attr.attr,
 	&object_size_attr.attr,
@@ -8820,10 +8797,6 @@ static const struct attribute *const slab_attrs[] = {
 #ifdef CONFIG_HARDENED_USERCOPY
 	&usersize_attr.attr,
 #endif
-#ifdef CONFIG_KFENCE
-	&skip_kfence_attr.attr,
-#endif
-
 	NULL
 };
 

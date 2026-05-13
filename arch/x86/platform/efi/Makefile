@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0
-KASAN_SANITIZE := n
 GCOV_PROFILE := n
 
 obj-$(CONFIG_EFI) 		+= memmap.o quirks.o efi.o efi_$(BITS).o \

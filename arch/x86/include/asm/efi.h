@@ -108,19 +108,6 @@ extern bool efi_disable_ibt_for_runtime;
 	ret;								\
 })
 
-#ifdef CONFIG_KASAN
-/*
- * CONFIG_KASAN may redefine memset to __memset.  __memset function is present
- * only in kernel binary.  Since the EFI stub linked into a separate binary it
- * doesn't have __memset().  So we should use standard memset from
- * arch/x86/boot/compressed/string.c.  The same applies to memcpy and memmove.
- */
-#undef memcpy
-#undef memset
-#undef memmove
-#endif
-
-
 extern int __init efi_memblock_x86_reserve_range(void);
 extern void __init efi_print_memmap(void);
 extern void __init efi_map_region(efi_memory_desc_t *md);

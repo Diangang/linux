@@ -119,11 +119,6 @@ KVM_NVHE_ALIAS_HYP(copy_page, __pi_copy_page);
 KVM_NVHE_ALIAS_HYP(memcpy, __pi_memcpy);
 KVM_NVHE_ALIAS_HYP(memset, __pi_memset);
 
-#ifdef CONFIG_KASAN
-KVM_NVHE_ALIAS_HYP(__memcpy, __pi_memcpy);
-KVM_NVHE_ALIAS_HYP(__memset, __pi_memset);
-#endif
-
 /* Hyp memory sections */
 KVM_NVHE_ALIAS(__hyp_idmap_text_start);
 KVM_NVHE_ALIAS(__hyp_idmap_text_end);

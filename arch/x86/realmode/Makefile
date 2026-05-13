@@ -8,8 +8,6 @@
 #
 
 # Sanitizer runtimes are unavailable and cannot be linked here.
-KASAN_SANITIZE			:= n
-KCSAN_SANITIZE			:= n
 
 subdir- := rm
 

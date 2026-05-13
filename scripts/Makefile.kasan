@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: GPL-2.0
-
-# Don't let compiler generate memintrinsic calls in uninstrumented files
-# because they are instrumented.
-CFLAGS_KASAN_NOSANITIZE := -fno-builtin
-
-export CFLAGS_KASAN_NOSANITIZE

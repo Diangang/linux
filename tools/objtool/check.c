@@ -4375,7 +4375,7 @@ static bool ignore_unreachable_insn(struct objtool_file *file, struct instructio
 
 	/*
 	 * Check if this (or a subsequent) instruction is related to
-	 * CONFIG_UBSAN or CONFIG_KASAN.
+	 * CONFIG_UBSAN or sanitizer instrumentation.
 	 *
 	 * End the search at 5 instructions to avoid going into the weeds.
 	 */

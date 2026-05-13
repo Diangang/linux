@@ -977,8 +977,6 @@ endif
 # include additional Makefiles when needed
 include-y			:= scripts/Makefile.warn
 include-$(CONFIG_DEBUG_INFO)	+= scripts/Makefile.debug
-include-$(CONFIG_KASAN)		+= scripts/Makefile.kasan
-include-$(CONFIG_KCSAN)		+= scripts/Makefile.kcsan
 include-$(CONFIG_RANDSTRUCT)	+= scripts/Makefile.randstruct
 include-$(CONFIG_KSTACK_ERASE)	+= scripts/Makefile.kstack_erase
 include-$(CONFIG_AUTOFDO_CLANG)	+= scripts/Makefile.autofdo

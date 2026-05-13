@@ -59,19 +59,12 @@ config X86_VMX_FEATURE_NAMES
 	def_bool y
 	depends on IA32_FEAT_CTL
 
-menuconfig PROCESSOR_SELECT
-	bool "Supported processor vendors" if EXPERT
-	help
-	  This lets you choose what x86 vendor support code your kernel
-	  will include.
-
 config BROADCAST_TLB_FLUSH
 	def_bool y
 	depends on CPU_SUP_AMD && 64BIT
 
 config CPU_SUP_INTEL
-	default y
-	bool "Support Intel processors" if PROCESSOR_SELECT
+	def_bool y
 	help
 	  This enables detection, tunings and quirks for Intel processors
 
@@ -83,8 +76,7 @@ config CPU_SUP_INTEL
 	  If unsure, say N.
 
 config CPU_SUP_AMD
-	default y
-	bool "Support AMD processors" if PROCESSOR_SELECT
+	def_bool y
 	help
 	  This enables detection, tunings and quirks for AMD processors
 
@@ -96,8 +88,7 @@ config CPU_SUP_AMD
 	  If unsure, say N.
 
 config CPU_SUP_HYGON
-	default y
-	bool "Support Hygon processors" if PROCESSOR_SELECT
+	def_bool y
 	select CPU_SUP_AMD
 	help
 	  This enables detection, tunings and quirks for Hygon processors
@@ -110,8 +101,7 @@ config CPU_SUP_HYGON
 	  If unsure, say N.
 
 config CPU_SUP_CENTAUR
-	default y
-	bool "Support Centaur processors" if PROCESSOR_SELECT
+	def_bool y
 	help
 	  This enables detection, tunings and quirks for Centaur processors
 
@@ -123,8 +113,7 @@ config CPU_SUP_CENTAUR
 	  If unsure, say N.
 
 config CPU_SUP_ZHAOXIN
-	default y
-	bool "Support Zhaoxin processors" if PROCESSOR_SELECT
+	def_bool y
 	help
 	  This enables detection, tunings and quirks for Zhaoxin processors
 

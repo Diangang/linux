@@ -455,7 +455,7 @@ SECTIONS
 }
 
 /*
- * COMPILE_TEST kernels can be large - CONFIG_KASAN, for example, can cause
+ * COMPILE_TEST kernels can be large - debug instrumentation can cause
  * this.  Let's assume that nobody will be running a COMPILE_TEST kernel and
  * let's assert that fuller build coverage is more valuable than being able to
  * run a COMPILE_TEST kernel.

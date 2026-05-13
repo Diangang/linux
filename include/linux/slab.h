@@ -47,9 +47,6 @@ enum _slab_flag_bits {
 	_SLAB_KASAN,
 #endif
 	_SLAB_NO_USER_FLAGS,
-#ifdef CONFIG_KFENCE
-	_SLAB_SKIP_KFENCE,
-#endif
 	_SLAB_RECLAIM_ACCOUNT,
 	_SLAB_OBJECT_POISON,
 	_SLAB_CMPXCHG_DOUBLE,
@@ -209,11 +206,7 @@ enum _slab_flag_bits {
  */
 #define SLAB_NO_USER_FLAGS	__SLAB_FLAG_BIT(_SLAB_NO_USER_FLAGS)
 
-#ifdef CONFIG_KFENCE
-#define SLAB_SKIP_KFENCE	__SLAB_FLAG_BIT(_SLAB_SKIP_KFENCE)
-#else
 #define SLAB_SKIP_KFENCE	__SLAB_FLAG_UNUSED
-#endif
 
 /* The following flags affect the page allocator grouping pages by mobility */
 /**

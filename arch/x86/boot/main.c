@@ -163,11 +163,6 @@ void main(void)
 	/* Query Intel SpeedStep (IST) information */
 	query_ist();
 
-	/* Query APM information */
-#if defined(CONFIG_APM) || defined(CONFIG_APM_MODULE)
-	query_apm_bios();
-#endif
-
 	/* Query EDD information */
 #if defined(CONFIG_EDD) || defined(CONFIG_EDD_MODULE)
 	query_edd();

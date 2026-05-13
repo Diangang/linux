@@ -104,7 +104,7 @@
 #else
 #define KASAN_THREAD_SHIFT	0
 #define PAGE_END		(_PAGE_END(VA_BITS_MIN))
-#endif /* CONFIG_KASAN */
+#endif
 
 #define DIRECT_MAP_PHYSMEM_END	__pa(PAGE_END - 1)
 

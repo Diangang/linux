@@ -12,15 +12,11 @@
 #include <asm/ptrace.h>
 #include <asm/sections.h>
 
-#ifdef CONFIG_ARMV8_DEPRECATED
-bool try_emulate_armv8_deprecated(struct pt_regs *regs, u32 insn);
-#else
 static inline bool
 try_emulate_armv8_deprecated(struct pt_regs *regs, u32 insn)
 {
 	return false;
 }
-#endif /* CONFIG_ARMV8_DEPRECATED */
 
 void force_signal_inject(int signal, int code, unsigned long address, unsigned long err);
 void arm64_notify_segfault(unsigned long addr);

@@ -1246,13 +1246,6 @@ struct task_struct {
 	unsigned int			kasan_depth;
 #endif
 
-#ifdef CONFIG_KCSAN
-	struct kcsan_ctx		kcsan_ctx;
-#ifdef CONFIG_KCSAN_WEAK_MEMORY
-	int				kcsan_stack_depth;
-#endif
-#endif
-
 #if 0
 	struct kmsan_ctx		kmsan_ctx;
 #endif

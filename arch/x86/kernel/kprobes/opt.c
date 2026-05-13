@@ -295,15 +295,6 @@ static int can_optimize(unsigned long paddr)
 		ret = insn_decode_kernel(&insn, (void *)recovered_insn);
 		if (ret < 0)
 			return 0;
-#ifdef CONFIG_KGDB
-		/*
-		 * If there is a dynamically installed kgdb sw breakpoint,
-		 * this function should not be probed.
-		 */
-		if (insn.opcode.bytes[0] == INT3_INSN_OPCODE &&
-		    kgdb_has_hit_break(addr))
-			return 0;
-#endif
 		/* Recover address */
 		insn.kaddr = (void *)addr;
 		insn.next_byte = (void *)(addr + insn.length);

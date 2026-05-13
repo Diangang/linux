@@ -7,9 +7,6 @@ KCOV_INSTRUMENT_physaddr.o		:= n
 
 KASAN_SANITIZE_pgprot.o		:= n
 
-# Disable KCSAN entirely, because otherwise we get warnings that some functions
-# reference __initdata sections.
-KCSAN_SANITIZE := n
 # Avoid recursion by not calling KMSAN hooks for CEA code.
 KMSAN_SANITIZE_cpu_entry_area.o := n
 
@@ -24,9 +21,6 @@ CFLAGS_physaddr.o		:= -fno-stack-protector
 
 obj-$(CONFIG_PTDUMP)		+= dump_pagetables.o
 
-
-KASAN_SANITIZE_kasan_init_$(BITS).o := n
-obj-$(CONFIG_KASAN)		+= kasan_init_$(BITS).o
 
 KMSAN_SANITIZE_kmsan_shadow.o	:= n
 

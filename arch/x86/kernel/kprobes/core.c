@@ -311,15 +311,6 @@ static bool can_probe(unsigned long paddr)
 		if (insn_decode_kernel(&insn, (void *)__addr) < 0)
 			return false;
 
-#ifdef CONFIG_KGDB
-		/*
-		 * If there is a dynamically installed kgdb sw breakpoint,
-		 * this function should not be probed.
-		 */
-		if (insn.opcode.bytes[0] == INT3_INSN_OPCODE &&
-		    kgdb_has_hit_break(addr))
-			return false;
-#endif
 		addr += insn.length;
 	}
 

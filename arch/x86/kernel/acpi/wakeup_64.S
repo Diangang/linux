@@ -117,15 +117,6 @@ SYM_FUNC_START(do_suspend_lowlevel)
 	movq	pt_regs_r14(%rax), %r14
 	movq	pt_regs_r15(%rax), %r15
 
-#if defined(CONFIG_KASAN) && defined(CONFIG_KASAN_STACK)
-	/*
-	 * The suspend path may have poisoned some areas deeper in the stack,
-	 * which we now need to unpoison.
-	 */
-	movq	%rsp, %rdi
-	call	kasan_unpoison_task_stack_below
-#endif
-
 	xorl	%eax, %eax
 	addq	$8, %rsp
 	FRAME_END

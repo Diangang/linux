@@ -307,7 +307,7 @@ config GENERIC_ISA_DMA
 
 config GENERIC_CSUM
 	bool
-	default y if n || KASAN
+	default y if n
 
 config GENERIC_BUG
 	def_bool y
@@ -1336,16 +1336,8 @@ config CC_HAS_NAMED_AS
 	def_bool $(success,echo 'int __seg_fs fs; int __seg_gs gs;' | $(CC) -x c - -S -o /dev/null)
 	depends on CC_IS_GCC
 
-#
-# -fsanitize=kernel-address (KASAN) and -fsanitize=thread (KCSAN)
-# are incompatible with named address spaces with GCC < 13.3
-# (see GCC PR sanitizer/111736 and also PR sanitizer/115172).
-#
-
 config CC_HAS_NAMED_AS_FIXED_SANITIZERS
 	def_bool y
-	depends on !(KASAN || KCSAN) || GCC_VERSION >= 130300
-	depends on !(n && KASAN) || GCC_VERSION >= 140200
 
 config USE_X86_SEG_SUPPORT
 	def_bool CC_HAS_NAMED_AS
@@ -1645,64 +1637,6 @@ menu "Power management and ACPI options"
 source "kernel/power/Kconfig"
 
 source "drivers/acpi/Kconfig"
-
-menuconfig APM
-	tristate "APM (Advanced Power Management) BIOS support"
-	depends on n && PM_SLEEP
-	help
-	  APM is a BIOS specification for saving power using several different
-	  techniques. This is mostly useful for battery powered laptops with
-	  APM compliant BIOSes. If you say Y here, the system time will be
-	  reset after a RESUME operation, the /proc/apm device will provide
-	  battery status information, and user-space programs will receive
-	  notification of APM "events" (e.g. battery status change).
-
-	  If you select "Y" here, you can disable actual use of the APM
-	  BIOS by passing the "apm=off" option to the kernel at boot time.
-
-	  Note that the APM support is almost completely disabled for
-	  machines with more than one CPU.
-
-	  In order to use APM, you will need supporting software. For location
-	  and more information, read <file:Documentation/power/apm-acpi.rst>
-	  and the Battery Powered Linux mini-HOWTO, available from
-	  <http://www.tldp.org/docs.html#howto>.
-
-	  This driver does not spin down disk drives (see the hdparm(8)
-	  manpage ("man 8 hdparm") for that), and it doesn't turn off
-	  VESA-compliant "green" monitors.
-
-	  Generally, if you don't have a battery in your machine, there isn't
-	  much point in using this driver and you should say N. If you get
-	  random kernel OOPSes or reboots that don't seem to be related to
-	  anything, try disabling/enabling this option (or disabling/enabling
-	  APM in your BIOS).
-
-	  Some other things you should try when experiencing seemingly random,
-	  "weird" problems:
-
-	  1) make sure that you have enough swap space and that it is
-	  enabled.
-	  2) pass the "idle=poll" option to the kernel
-	  3) switch on floating point emulation in the kernel and pass
-	  the "no387" option to the kernel
-	  4) pass the "floppy=nodma" option to the kernel
-	  5) pass the "mem=4M" option to the kernel (thereby disabling
-	  all but the first 4 MB of RAM)
-	  6) make sure that the CPU is not over clocked.
-	  7) read the sig11 FAQ at <http://www.bitwizard.nl/sig11/>
-	  8) disable the cache from your BIOS settings
-	  9) install a fan for the video card or exchange video RAM
-	  10) install a better fan for the CPU
-	  11) exchange RAM chips
-	  12) exchange the motherboard.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called apm.
-
-if APM
-
-endif # APM
 
 endmenu
 

@@ -283,21 +283,7 @@ struct ftrace_likely_data {
 # define __no_kasan_or_inline __always_inline
 #endif
 
-#ifdef CONFIG_KCSAN
-/*
- * Type qualifier to mark variables where all data-racy accesses should be
- * ignored by KCSAN. Note, the implementation simply marks these variables as
- * volatile, since KCSAN will treat such accesses as "marked".
- *
- * Defined here because defining __data_racy as volatile for KCSAN objects only
- * causes problems in BPF Type Format (BTF) generation since struct members
- * of core kernel data structs will be volatile in some objects and not in
- * others.  Instead define it globally for KCSAN kernels.
- */
-# define __data_racy volatile
-#else
 # define __data_racy
-#endif
 
 #ifdef __SANITIZE_THREAD__
 /*

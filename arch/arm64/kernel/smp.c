@@ -934,22 +934,6 @@ void arch_trigger_cpumask_backtrace(const cpumask_t *mask, int exclude_cpu)
 	nmi_trigger_cpumask_backtrace(mask, exclude_cpu, arm64_backtrace_ipi);
 }
 
-#ifdef CONFIG_KGDB
-void kgdb_roundup_cpus(void)
-{
-	int this_cpu = raw_smp_processor_id();
-	int cpu;
-
-	for_each_online_cpu(cpu) {
-		/* No need to roundup ourselves */
-		if (cpu == this_cpu)
-			continue;
-
-		__ipi_send_single(get_ipi_desc(cpu, IPI_KGDB_ROUNDUP), cpu);
-	}
-}
-#endif
-
 /*
  * Main handler for inter-processor interrupts
  */

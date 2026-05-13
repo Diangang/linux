@@ -1231,7 +1231,7 @@ static __always_inline void __scoped_seqlock_cleanup(struct ss_tmp *sst)
 
 extern void __scoped_seqlock_invalid_target(void);
 
-#if (defined(CONFIG_CC_IS_GCC) && CONFIG_GCC_VERSION < 90000) || defined(CONFIG_KASAN)
+#if defined(CONFIG_CC_IS_GCC) && CONFIG_GCC_VERSION < 90000
 /*
  * For some reason some GCC-8 architectures (nios2, alpha) have trouble
  * determining that the ss_done state is impossible in __scoped_seqlock_next()

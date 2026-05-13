@@ -412,11 +412,10 @@ static void __die_header(const char *str, struct pt_regs *regs, long err)
 		exec_summary_regs = *regs;
 
 	printk(KERN_DEFAULT
-	       "Oops: %s: %04lx [#%d]%s%s%s%s\n", str, err & 0xffff,
+	       "Oops: %s: %04lx [#%d]%s%s%s\n", str, err & 0xffff,
 	       ++die_counter,
 	       IS_ENABLED(CONFIG_SMP)     ? " SMP"             : "",
 	       debug_pagealloc_enabled()  ? " DEBUG_PAGEALLOC" : "",
-	       IS_ENABLED(CONFIG_KASAN)   ? " KASAN"           : "",
 	       IS_ENABLED(CONFIG_MITIGATION_PAGE_TABLE_ISOLATION) ?
 	       (boot_cpu_has(X86_FEATURE_PTI) ? " PTI" : " NOPTI") : "");
 }

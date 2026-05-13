@@ -12,8 +12,6 @@
 #undef CONFIG_PARAVIRT_XXL
 #undef CONFIG_PARAVIRT_SPINLOCKS
 #undef CONFIG_ARCH_HAS_LAZY_MMU_MODE
-#undef CONFIG_KASAN
-
 #define __NO_FORTIFY
 
 /* cpu_feature_enabled() cannot be used this early */
