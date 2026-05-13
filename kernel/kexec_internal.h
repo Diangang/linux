@@ -31,7 +31,7 @@ static inline void kexec_unlock(void)
 	atomic_set_release(&__kexec_lock, 0);
 }
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 #include <linux/purgatory.h>
 void kimage_file_post_load_cleanup(struct kimage *image);
 extern char kexec_purgatory[];

@@ -742,7 +742,7 @@ static inline void unlock_task_sighand(struct task_struct *task,
 	spin_unlock_irqrestore(&task->sighand->siglock, *flags);
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 extern void lockdep_assert_task_sighand_held(struct task_struct *task);
 #else
 static inline void lockdep_assert_task_sighand_held(struct task_struct *task) { }

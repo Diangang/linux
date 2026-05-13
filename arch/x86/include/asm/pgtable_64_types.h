@@ -129,7 +129,7 @@ extern unsigned int ptrs_per_p4d;
  */
 #define VMEMORY_END		(VMALLOC_START + (VMALLOC_SIZE_TB << 40) - 1)
 
-#ifndef CONFIG_KMSAN
+#if 1
 #define VMALLOC_END		VMEMORY_END
 #else
 /*

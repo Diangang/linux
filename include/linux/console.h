@@ -472,7 +472,7 @@ struct console {
 	struct irq_work		irq_work;
 };
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 extern void lockdep_assert_console_list_lock_held(void);
 #else
 static inline void lockdep_assert_console_list_lock_held(void)

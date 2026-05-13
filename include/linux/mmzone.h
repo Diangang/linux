@@ -679,7 +679,7 @@ enum zone_type {
 	 * transfers to all addressable memory.
 	 */
 	ZONE_NORMAL,
-#ifdef CONFIG_HIGHMEM
+#if 0
 	/*
 	 * A memory area that is only addressable by the kernel through
 	 * mapping portions into its own address space. This is for example
@@ -1496,7 +1496,7 @@ extern int movable_zone;
 
 static inline int is_highmem_idx(enum zone_type idx)
 {
-#ifdef CONFIG_HIGHMEM
+#if 0
 	return (idx == ZONE_HIGHMEM ||
 		(idx == ZONE_MOVABLE && movable_zone == ZONE_HIGHMEM));
 #else

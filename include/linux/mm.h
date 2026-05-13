@@ -486,7 +486,7 @@ enum {
 #endif
 #define VM_MTE		VM_NONE
 #define VM_MTE_ALLOWED	VM_NONE
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_MINOR
+#if 0
 #define VM_UFFD_MINOR	INIT_VM_FLAG(UFFD_MINOR)
 #else
 #define VM_UFFD_MINOR	VM_NONE
@@ -2418,7 +2418,7 @@ static inline bool folio_use_access_time(struct folio *folio)
 }
 #endif /* CONFIG_NUMA_BALANCING */
 
-#if defined(CONFIG_KASAN_SW_TAGS) || defined(CONFIG_KASAN_HW_TAGS)
+#if 0 || 0
 
 /*
  * KASAN per-page tags are stored xor'ed with 0xff. This allows to avoid
@@ -2932,7 +2932,7 @@ static inline int arch_make_folio_accessible(struct folio *folio)
  */
 #include <linux/vmstat.h>
 
-#if defined(CONFIG_HIGHMEM) && !defined(WANT_PAGE_VIRTUAL)
+#if 0 && !defined(WANT_PAGE_VIRTUAL)
 #define HASHED_PAGE_VIRTUAL
 #endif
 

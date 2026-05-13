@@ -273,7 +273,7 @@ static inline void
 irq_set_lockdep_class(unsigned int irq, struct lock_class_key *lock_class,
 		      struct lock_class_key *request_class)
 {
-	if (IS_ENABLED(CONFIG_LOCKDEP))
+	if (0)
 		__irq_set_lockdep_class(irq, lock_class, request_class);
 }
 

@@ -4,7 +4,7 @@
 
 #include <linux/static_key.h>
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 /*
  * Global runtime flag for KASAN modes that need runtime control.
  * Used by HW_TAGS mode.
@@ -33,7 +33,7 @@ static __always_inline bool kasan_enabled(void)
 static inline void kasan_enable(void) {}
 #endif /* CONFIG_KASAN_HW_TAGS */
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 static inline bool kasan_hw_tags_enabled(void)
 {
 	return kasan_enabled();

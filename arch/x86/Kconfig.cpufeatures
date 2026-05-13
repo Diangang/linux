@@ -54,7 +54,7 @@ config X86_REQUIRED_FEATURE_CMOV
 # generates movbe.
 config X86_REQUIRED_FEATURE_MOVBE
 	def_bool y
-	depends on MATOM
+	depends on n
 
 config X86_REQUIRED_FEATURE_SYSFAST32
 	def_bool y
@@ -184,7 +184,7 @@ config X86_DISABLED_FEATURE_XENPV
 
 config X86_DISABLED_FEATURE_TDX_GUEST
 	def_bool y
-	depends on !INTEL_TDX_GUEST
+	depends on !n
 
 config X86_DISABLED_FEATURE_USER_SHSTK
 	def_bool y

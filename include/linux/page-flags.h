@@ -595,7 +595,7 @@ FOLIO_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 	FOLIO_TEST_CLEAR_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 	__FOLIO_SET_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /*
  * Must use a macro here due to header dependency issues. page_zone() is not
  * available at this point.

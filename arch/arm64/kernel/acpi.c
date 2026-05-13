@@ -231,7 +231,7 @@ done:
 		if (earlycon_acpi_spcr_enable)
 			early_init_dt_scan_chosen_stdout();
 	} else {
-#ifdef CONFIG_HIBERNATION
+#if 0
 		struct acpi_table_header *facs = NULL;
 		acpi_get_table(ACPI_SIG_FACS, 1, &facs);
 		if (facs) {

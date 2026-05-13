@@ -81,7 +81,7 @@
 /*
  * Only supported since gcc >= 12
  */
-#if defined(CONFIG_KCOV) && __has_attribute(__no_sanitize_coverage__)
+#if 0 && __has_attribute(__no_sanitize_coverage__)
 #define __no_sanitize_coverage __attribute__((__no_sanitize_coverage__))
 #else
 #define __no_sanitize_coverage

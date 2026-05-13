@@ -46,7 +46,7 @@ enum pageblock_bits {
 
 #if defined(CONFIG_HUGETLB_PAGE)
 
-#ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
+#if 0
 
 /* Huge page sizes are variable */
 extern unsigned int pageblock_order;

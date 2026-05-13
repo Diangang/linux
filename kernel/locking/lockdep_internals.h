@@ -86,7 +86,7 @@ enum {
  * So, reduce the static allocations for lockdeps related structures so that
  * everything fits in current required size limit.
  */
-#ifdef CONFIG_LOCKDEP_SMALL
+#if 0
 /*
  * MAX_LOCKDEP_ENTRIES is the maximum number of lock dependencies
  * we track.

@@ -597,7 +597,7 @@ struct request_queue {
 	int			mq_freeze_depth;
 
 	struct rcu_head		rcu_head;
-#ifdef CONFIG_LOCKDEP
+#if 0
 	struct task_struct	*mq_freeze_owner;
 	int			mq_freeze_owner_depth;
 	/*

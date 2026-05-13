@@ -47,7 +47,7 @@ static inline void mmap_assert_write_locked(const struct mm_struct *mm)
 
 #ifdef CONFIG_PER_VMA_LOCK
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define __vma_lockdep_map(vma) (&vma->vmlock_dep_map)
 #else
 #define __vma_lockdep_map(vma) NULL
@@ -307,7 +307,7 @@ static inline void vma_assert_locked(struct vm_area_struct *vma)
 {
 	unsigned int refcnt;
 
-	if (IS_ENABLED(CONFIG_LOCKDEP)) {
+	if (0) {
 		if (!lock_is_held(__vma_lockdep_map(vma)))
 			vma_assert_write_locked(vma);
 		return;
@@ -369,7 +369,7 @@ static inline void vma_assert_stabilised(struct vm_area_struct *vma)
 	 * Therefore if lockdep is not enabled we risk a false negative (i.e. no
 	 * assert fired). If accurate checking is required, enable lockdep.
 	 */
-	if (IS_ENABLED(CONFIG_LOCKDEP)) {
+	if (0) {
 		if (lockdep_is_held(&vma->vm_mm->mmap_lock))
 			return;
 	} else {

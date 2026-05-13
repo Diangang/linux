@@ -24,7 +24,7 @@ enum lock_events {
 	LOCKEVENT_reset_cnts = lockevent_num,
 };
 
-#ifdef CONFIG_LOCK_EVENT_COUNTS
+#if 0
 /*
  * Per-cpu counters
  */

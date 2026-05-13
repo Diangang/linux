@@ -125,7 +125,7 @@ extern int mq_init_ns(struct ipc_namespace *ns);
 static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
 #endif
 
-#if defined(CONFIG_IPC_NS)
+#if 0
 static inline struct ipc_namespace *to_ipc_ns(struct ns_common *ns)
 {
 	return container_of(ns, struct ipc_namespace, ns);

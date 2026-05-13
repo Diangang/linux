@@ -53,23 +53,12 @@ endif
 # we don't want to check (depends on variables KASAN_SANITIZE_obj.o, KASAN_SANITIZE)
 #
 ifeq ($(CONFIG_KASAN),y)
-ifneq ($(CONFIG_KASAN_HW_TAGS),y)
 _c_flags += $(if $(patsubst n%,, \
 		$(KASAN_SANITIZE_$(target-stem).o)$(KASAN_SANITIZE)$(is-kernel-object)), \
 		$(CFLAGS_KASAN), $(CFLAGS_KASAN_NOSANITIZE))
 _rust_flags += $(if $(patsubst n%,, \
 		$(KASAN_SANITIZE_$(target-stem).o)$(KASAN_SANITIZE)$(is-kernel-object)), \
 		$(RUSTFLAGS_KASAN))
-endif
-endif
-
-ifeq ($(CONFIG_KMSAN),y)
-_c_flags += $(if $(patsubst n%,, \
-		$(KMSAN_SANITIZE_$(target-stem).o)$(KMSAN_SANITIZE)$(is-kernel-object)), \
-		$(CFLAGS_KMSAN))
-_c_flags += $(if $(patsubst n%,, \
-		$(KMSAN_ENABLE_CHECKS_$(target-stem).o)$(KMSAN_ENABLE_CHECKS)$(is-kernel-object)), \
-		, -mllvm -msan-disable-checks=1)
 endif
 
 ifeq ($(CONFIG_UBSAN),y)
@@ -79,15 +68,6 @@ _c_flags += $(if $(patsubst n%,, \
 _c_flags += $(if $(patsubst n%,, \
 		$(UBSAN_INTEGER_WRAP_$(target-stem).o)$(UBSAN_SANITIZE_$(target-stem).o)$(UBSAN_INTEGER_WRAP)$(UBSAN_SANITIZE)$(is-kernel-object)), \
 		$(CFLAGS_UBSAN_INTEGER_WRAP))
-endif
-
-ifeq ($(CONFIG_KCOV),y)
-_c_flags += $(if $(patsubst n%,, \
-	$(KCOV_INSTRUMENT_$(target-stem).o)$(KCOV_INSTRUMENT)), \
-	$(CFLAGS_KCOV))
-_rust_flags += $(if $(patsubst n%,, \
-	$(KCOV_INSTRUMENT_$(target-stem).o)$(KCOV_INSTRUMENT)), \
-	$(RUSTFLAGS_KCOV))
 endif
 
 #
@@ -194,7 +174,7 @@ objtool-args-$(CONFIG_MITIGATION_SLS)			+= --sls
 objtool-args-$(CONFIG_STACK_VALIDATION)			+= --stackval
 objtool-args-$(CONFIG_HAVE_STATIC_CALL_INLINE)		+= --static-call
 objtool-args-$(CONFIG_HAVE_UACCESS_VALIDATION)		+= --uaccess
-objtool-args-$(or $(CONFIG_GCOV_KERNEL),$(CONFIG_KCOV))	+= --no-unreachable
+objtool-args-$(CONFIG_GCOV_KERNEL)			+= --no-unreachable
 objtool-args-$(CONFIG_PREFIX_SYMBOLS)			+= --prefix=$(CONFIG_FUNCTION_PADDING_BYTES)
 objtool-args-$(CONFIG_OBJTOOL_WERROR)			+= --werror
 
@@ -202,7 +182,7 @@ objtool-args = $(objtool-args-y)					\
 	$(if $(delay-objtool), --link)					\
 	$(if $(part-of-module), --module)
 
-delay-objtool := $(or $(CONFIG_LTO_CLANG),$(CONFIG_X86_KERNEL_IBT))
+delay-objtool := $(CONFIG_X86_KERNEL_IBT)
 
 cmd_objtool = $(if $(objtool-enabled), ; $(objtool) $(objtool-args) $@)
 cmd_gen_objtooldep = $(if $(objtool-enabled), { echo ; echo '$@: $$(wildcard $(objtool))' ; } >> $(dot-target).cmd)
@@ -237,12 +217,6 @@ endef
 # ===========================================================================
 # These are shared by some Makefile.* files.
 
-ifdef CONFIG_LTO_CLANG
-# Run $(LD) here to convert LLVM IR to ELF in the following cases:
-#  - when this object needs objtool processing, as objtool cannot process LLVM IR
-#  - when this is a single-object module, as modpost cannot process LLVM IR
-cmd_ld_single = $(if $(objtool-enabled)$(is-single-obj-m), ; $(LD) $(ld_flags) -r -o $(tmp-target) $@; mv $(tmp-target) $@)
-endif
 
 quiet_cmd_cc_o_c = CC $(quiet_modtag)  $@
       cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $< \

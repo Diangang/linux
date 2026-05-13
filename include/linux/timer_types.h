@@ -15,7 +15,7 @@ struct timer_list {
 	void			(*function)(struct timer_list *);
 	u32			flags;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	struct lockdep_map	lockdep_map;
 #endif
 };

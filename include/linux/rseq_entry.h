@@ -707,7 +707,7 @@ static __always_inline void rseq_syscall_exit_to_user_mode(void)
 	rseq_stat_inc(rseq_stats.exit);
 
 	/* Needed to remove the store for the !lockdep case */
-	if (IS_ENABLED(CONFIG_LOCKDEP)) {
+	if (0) {
 		WARN_ON_ONCE(ev->sched_switch);
 		ev->events = 0;
 	}

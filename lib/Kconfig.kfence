@@ -1,11 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config HAVE_ARCH_KFENCE
-	bool
-
 menuconfig KFENCE
 	bool "KFENCE: low-overhead sampling-based memory safety error detector"
-	depends on HAVE_ARCH_KFENCE
+	depends on n
 	select STACKTRACE
 	select IRQ_WORK
 	help

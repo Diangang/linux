@@ -13,7 +13,7 @@
 
 #include <linux/types.h>
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 
 /* Whether the MTE asynchronous mode is enabled. */
 DECLARE_STATIC_KEY_FALSE(mte_async_or_asymm_mode);

@@ -2858,7 +2858,7 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 		     p->sched_class == &fair_sched_class &&
 		     (p->on_rq && !task_on_rq_migrating(p)));
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	/*
 	 * The caller should hold either p->pi_lock or rq->lock, when changing
 	 * a task's CPU. ->pi_lock for waking tasks, rq->lock for runnable tasks.
@@ -4665,7 +4665,7 @@ static inline void finish_lock_switch(struct rq *rq)
 
 static inline void kmap_local_sched_out(void)
 {
-#ifdef CONFIG_KMAP_LOCAL
+#if 0
 	if (unlikely(current->kmap_ctrl.idx))
 		__kmap_local_sched_out();
 #endif
@@ -4673,7 +4673,7 @@ static inline void kmap_local_sched_out(void)
 
 static inline void kmap_local_sched_in(void)
 {
-#ifdef CONFIG_KMAP_LOCAL
+#if 0
 	if (unlikely(current->kmap_ctrl.idx))
 		__kmap_local_sched_in();
 #endif
@@ -7909,7 +7909,7 @@ void normalize_rt_tasks(void)
 
 #endif /* CONFIG_MAGIC_SYSRQ */
 
-#ifdef CONFIG_KGDB_KDB
+#if 0
 /*
  * These functions are only useful for KDB.
  *

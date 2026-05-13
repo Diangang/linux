@@ -1057,7 +1057,7 @@ static int pci_pm_resume(struct device *dev)
 
 #endif /* !CONFIG_SUSPEND */
 
-#ifdef CONFIG_HIBERNATE_CALLBACKS
+#if 0
 
 static int pci_pm_freeze(struct device *dev)
 {

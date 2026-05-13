@@ -375,7 +375,7 @@ struct workqueue_struct {
 #ifdef CONFIG_SYSFS
 	struct wq_device	*wq_dev;	/* I: for sysfs interface */
 #endif
-#ifdef CONFIG_LOCKDEP
+#if 0
 	char			*lock_name;
 	struct lock_class_key	key;
 	struct lockdep_map	__lockdep_map;
@@ -3097,7 +3097,7 @@ __acquires(&pool->lock)
 	unsigned long work_data;
 	int lockdep_start_depth, rcu_start_depth;
 	bool bh_draining = pool->flags & POOL_BH_DRAINING;
-#ifdef CONFIG_LOCKDEP
+#if 0
 	/*
 	 * It is permissible to free the struct work_struct from
 	 * inside the function that is called from it, this we need to
@@ -3896,7 +3896,7 @@ static bool flush_workqueue_prep_pwqs(struct workqueue_struct *wq,
 
 static void touch_wq_lockdep_map(struct workqueue_struct *wq)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	if (unlikely(!wq->lockdep_map))
 		return;
 
@@ -3914,7 +3914,7 @@ static void touch_wq_lockdep_map(struct workqueue_struct *wq)
 static void touch_work_lockdep_map(struct work_struct *work,
 				   struct workqueue_struct *wq)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	if (wq->flags & WQ_BH)
 		local_bh_disable();
 
@@ -4795,7 +4795,7 @@ static int init_worker_pool(struct worker_pool *pool)
 	return 0;
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static void wq_init_lockdep(struct workqueue_struct *wq)
 {
 	char *lock_name;
@@ -5842,7 +5842,7 @@ devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 }
 EXPORT_SYMBOL_GPL(devm_alloc_workqueue);
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 __printf(1, 5)
 struct workqueue_struct *
 alloc_workqueue_lockdep_map(const char *fmt, unsigned int flags,

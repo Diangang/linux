@@ -72,9 +72,9 @@
 #define NODE_NOT_IN_PAGE_FLAGS	1
 #endif
 
-#if defined(CONFIG_KASAN_SW_TAGS)
+#if 0
 #define KASAN_TAG_WIDTH 8
-#elif defined(CONFIG_KASAN_HW_TAGS)
+#elif 0
 #define KASAN_TAG_WIDTH 4
 #else
 #define KASAN_TAG_WIDTH 0

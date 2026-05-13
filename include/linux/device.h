@@ -1169,7 +1169,7 @@ do {                                                                   \
  * from driver ->probe(). Take care to only override the default
  * lockdep_no_validate class.
  */
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define device_lock_set_class(dev, key)                                    \
 do {                                                                       \
 	struct device *__d = dev;                                          \

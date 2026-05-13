@@ -13,7 +13,7 @@
 #define arch_kasan_reset_tag(addr)	__tag_reset(addr)
 #define arch_kasan_get_tag(addr)	__tag_get(addr)
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 
 asmlinkage void kasan_early_init(void);
 void kasan_init(void);

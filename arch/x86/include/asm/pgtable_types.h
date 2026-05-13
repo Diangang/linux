@@ -110,7 +110,7 @@
 #define _PAGE_SWP_SOFT_DIRTY	(_AT(pteval_t, 0))
 #endif
 
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_WP
+#if 0
 #define _PAGE_UFFD_WP		(_AT(pteval_t, 1) << _PAGE_BIT_UFFD_WP)
 #define _PAGE_SWP_UFFD_WP	_PAGE_USER
 #else

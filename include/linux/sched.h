@@ -122,7 +122,7 @@ struct user_event_mm;
 #define TASK_NEW			0x00000800
 #define TASK_RTLOCK_WAIT		0x00001000
 #define TASK_FREEZABLE			0x00002000
-#define __TASK_FREEZABLE_UNSAFE	       (0x00004000 * IS_ENABLED(CONFIG_LOCKDEP))
+#define __TASK_FREEZABLE_UNSAFE	       (0x00004000 * 0)
 #define TASK_FROZEN			0x00008000
 #define TASK_STATE_MAX			0x00010000
 
@@ -775,7 +775,7 @@ struct wake_q_node {
 };
 
 struct kmap_ctrl {
-#ifdef CONFIG_KMAP_LOCAL
+#if 0
 	int				idx;
 	pte_t				pteval[KM_MAX_IDX];
 #endif
@@ -959,7 +959,7 @@ struct task_struct {
 #ifndef TIF_RESTORE_SIGMASK
 	unsigned			restore_sigmask:1;
 #endif
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	unsigned			in_user_fault:1;
 #endif
 #ifdef CONFIG_CGROUPS
@@ -1177,7 +1177,7 @@ struct task_struct {
 	int				softirq_disable_cnt;
 #endif
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 # define MAX_LOCK_DEPTH			48UL
 	u64				curr_chain_key;
 	int				lockdep_depth;
@@ -1347,7 +1347,7 @@ struct task_struct {
 	u64				timer_slack_ns;
 	u64				default_timer_slack_ns;
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 	unsigned int			kasan_depth;
 #endif
 
@@ -1361,7 +1361,7 @@ struct task_struct {
 #endif
 #endif
 
-#ifdef CONFIG_KMSAN
+#if 0
 	struct kmsan_ctx		kmsan_ctx;
 #endif
 
@@ -1391,7 +1391,7 @@ struct task_struct {
 	atomic_t			tracing_graph_pause;
 #endif
 
-#ifdef CONFIG_KCOV
+#if 0
 	/* See kernel/kcov.c for more details. */
 
 	/* Coverage collection mode enabled for this task (0 if disabled): */
@@ -1416,7 +1416,7 @@ struct task_struct {
 	unsigned int			kcov_softirq;
 #endif
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	struct mem_cgroup		*memcg_in_oom;
 #endif
 

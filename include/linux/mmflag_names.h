@@ -42,7 +42,7 @@
 	TRACE_GFP_EM(ACCOUNT)			\
 	TRACE_GFP_EM(ZEROTAGS)
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 # define TRACE_GFP_FLAGS_KASAN			\
 	TRACE_GFP_EM(SKIP_ZERO)			\
 	TRACE_GFP_EM(SKIP_KASAN)
@@ -50,7 +50,7 @@
 # define TRACE_GFP_FLAGS_KASAN
 #endif
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 # define TRACE_GFP_FLAGS_LOCKDEP		\
 	TRACE_GFP_EM(NOLOCKDEP)
 #else
@@ -187,7 +187,7 @@ IF_HAVE_PG_ARCH_3(arch_3)
 #define IF_HAVE_VM_SOFTDIRTY(flag,name)
 #endif
 
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_MINOR
+#if 0
 # define IF_HAVE_UFFD_MINOR(flag, name) {flag, name},
 #else
 # define IF_HAVE_UFFD_MINOR(flag, name)
@@ -291,7 +291,7 @@ IF_HAVE_VM_DROPPABLE(VM_DROPPABLE,	"droppable"	)		\
 #define IFDEF_ZONE_DMA32(X)
 #endif
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 #define IFDEF_ZONE_HIGHMEM(X) X
 #else
 #define IFDEF_ZONE_HIGHMEM(X)

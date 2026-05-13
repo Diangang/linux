@@ -1585,7 +1585,7 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
 {
 	int ret;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	unsigned long flags;
 
 	/*
@@ -1718,7 +1718,7 @@ static void call_timer_fn(struct timer_list *timer,
 {
 	int count = preempt_count();
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	/*
 	 * It is permissible to free the timer from inside the
 	 * function that is called from it, this we need to take into

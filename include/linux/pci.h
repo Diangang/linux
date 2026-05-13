@@ -2311,7 +2311,7 @@ enum pci_fixup_pass {
  * handle such renamings when referenced from inline asm. To work
  * around this, create global C stubs for these cases.
  */
-#ifdef CONFIG_LTO_CLANG
+#if 0
 #define __DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
 				  class_shift, hook, stub)		\
 	void stub(struct pci_dev *dev);					\

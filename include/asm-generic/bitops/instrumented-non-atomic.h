@@ -63,7 +63,7 @@ ___change_bit(unsigned long nr, volatile unsigned long *addr)
 
 static __always_inline void __instrument_read_write_bitop(long nr, volatile unsigned long *addr)
 {
-	if (IS_ENABLED(CONFIG_KCSAN_ASSUME_PLAIN_WRITES_ATOMIC)) {
+	if (0) {
 		/*
 		 * We treat non-atomic read-write bitops a little more special.
 		 * Given the operations here only modify a single bit, assuming

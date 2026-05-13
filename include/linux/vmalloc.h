@@ -31,8 +31,8 @@ struct iov_iter;		/* in uio.h */
 #define VM_MAP_PUT_PAGES	0x00000200	/* put pages and free array in vfree */
 #define VM_ALLOW_HUGE_VMAP	0x00000400      /* Allow for huge pages on archs with HAVE_ARCH_HUGE_VMALLOC */
 
-#if (defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)) && \
-	!defined(CONFIG_KASAN_VMALLOC)
+#if (0 || 0) && \
+	!0
 #define VM_DEFER_KMEMLEAK	0x00000800	/* defer kmemleak object creation */
 #else
 #define VM_DEFER_KMEMLEAK	0

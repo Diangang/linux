@@ -16,7 +16,7 @@
 #define DMA32_ZONE(xx)
 #endif
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 #define HIGHMEM_ZONE(xx) xx##_HIGH,
 #else
 #define HIGHMEM_ZONE(xx)

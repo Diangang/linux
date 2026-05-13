@@ -33,13 +33,13 @@ typedef unsigned int __bitwise kasan_vmalloc_flags_t;
 #define KASAN_VMALLOC_PAGE_RANGE 0x1 /* Apply exsiting page range */
 #define KASAN_VMALLOC_TLB_FLUSH  0x2 /* TLB flush */
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 
 #include <linux/pgtable.h>
 
 /* Software KASAN implementations use shadow memory. */
 
-#ifdef CONFIG_KASAN_SW_TAGS
+#if 0
 /* This matches KASAN_TAG_INVALID. */
 #define KASAN_SHADOW_INIT 0xFE
 #else
@@ -91,7 +91,7 @@ static inline void kasan_disable_current(void) {}
 
 #endif /* CONFIG_KASAN_GENERIC || CONFIG_KASAN_SW_TAGS */
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 
 #else /* CONFIG_KASAN_HW_TAGS */
 
@@ -481,7 +481,7 @@ static inline void kasan_unpoison_task_stack(struct task_struct *task) {}
 static inline void kasan_unpoison_task_stack_below(const void *watermark) {}
 #endif
 
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 
 struct kasan_cache {
 	int alloc_meta_offset;
@@ -515,7 +515,7 @@ static inline void kasan_record_aux_stack(void *ptr) {}
 
 #endif /* CONFIG_KASAN_GENERIC */
 
-#if defined(CONFIG_KASAN_SW_TAGS) || defined(CONFIG_KASAN_HW_TAGS)
+#if 0 || 0
 
 static inline void *kasan_reset_tag(const void *addr)
 {
@@ -541,25 +541,25 @@ static inline void *kasan_reset_tag(const void *addr)
 
 #endif /* CONFIG_KASAN_SW_TAGS || CONFIG_KASAN_HW_TAGS*/
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 
 void kasan_report_async(void);
 
 #endif /* CONFIG_KASAN_HW_TAGS */
 
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 void __init kasan_init_generic(void);
 #else
 static inline void kasan_init_generic(void) { }
 #endif
 
-#ifdef CONFIG_KASAN_SW_TAGS
+#if 0
 void __init kasan_init_sw_tags(void);
 #else
 static inline void kasan_init_sw_tags(void) { }
 #endif
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 void kasan_init_hw_tags_cpu(void);
 void __init kasan_init_hw_tags(void);
 #else
@@ -567,9 +567,9 @@ static inline void kasan_init_hw_tags_cpu(void) { }
 static inline void kasan_init_hw_tags(void) { }
 #endif
 
-#ifdef CONFIG_KASAN_VMALLOC
+#if 0
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 
 void kasan_populate_early_vm_area_shadow(void *start, unsigned long size);
 int __kasan_populate_vmalloc(unsigned long addr, unsigned long size, gfp_t gfp_mask);
@@ -686,8 +686,8 @@ static inline void kasan_vrealloc(const void *start, unsigned long old_size,
 
 #endif /* CONFIG_KASAN_VMALLOC */
 
-#if (defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)) && \
-		!defined(CONFIG_KASAN_VMALLOC)
+#if (0 || 0) && \
+		!0
 
 /*
  * These functions allocate and free shadow memory for kernel modules.
@@ -704,7 +704,7 @@ static inline void kasan_free_module_shadow(const struct vm_struct *vm) {}
 
 #endif /* (CONFIG_KASAN_GENERIC || CONFIG_KASAN_SW_TAGS) && !CONFIG_KASAN_VMALLOC */
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 void kasan_non_canonical_hook(unsigned long addr);
 #else /* CONFIG_KASAN_GENERIC || CONFIG_KASAN_SW_TAGS */
 static inline void kasan_non_canonical_hook(unsigned long addr) { }

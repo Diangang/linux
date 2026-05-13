@@ -56,7 +56,7 @@ struct list_lru {
 	bool			memcg_aware;
 	struct xarray		xa;
 #endif
-#ifdef CONFIG_LOCKDEP
+#if 0
 	struct lock_class_key	*key;
 #endif
 };
@@ -73,7 +73,7 @@ int __list_lru_init(struct list_lru *lru, bool memcg_aware,
 static inline int list_lru_init_memcg_key(struct list_lru *lru, struct shrinker *shrinker,
 					  struct lock_class_key *key)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	lru->key = key;
 #endif
 	return list_lru_init_memcg(lru, shrinker);

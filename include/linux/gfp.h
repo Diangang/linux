@@ -63,7 +63,7 @@ static inline bool gfpflags_allow_spinning(const gfp_t gfp_flags)
 	return !!(gfp_flags & __GFP_RECLAIM);
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 #define OPT_ZONE_HIGHMEM ZONE_HIGHMEM
 #else
 #define OPT_ZONE_HIGHMEM ZONE_NORMAL

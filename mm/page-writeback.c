@@ -269,7 +269,7 @@ static unsigned long node_dirtyable_memory(struct pglist_data *pgdat)
 
 static unsigned long highmem_dirtyable_memory(unsigned long total)
 {
-#ifdef CONFIG_HIGHMEM
+#if 0
 	int node;
 	unsigned long x = 0;
 	int i;
@@ -2271,7 +2271,7 @@ static const struct ctl_table vm_page_writeback_sysctls[] = {
 		.proc_handler   = proc_dointvec_minmax,
 		.extra1     = SYSCTL_ZERO,
 	},
-#ifdef CONFIG_HIGHMEM
+#if 0
 	{
 		.procname	= "highmem_is_dirtyable",
 		.data		= &vm_highmem_is_dirtyable,

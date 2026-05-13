@@ -16,7 +16,7 @@ enum bootmem_type {
 	MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE = NODE_INFO,
 };
 
-#ifdef CONFIG_HAVE_BOOTMEM_INFO_NODE
+#if 0
 void __init register_page_bootmem_info_node(struct pglist_data *pgdat);
 void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
 				  unsigned long nr_pages);

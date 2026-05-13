@@ -112,7 +112,7 @@ struct compat_kexec_segment {
 };
 #endif
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 struct purgatory_info {
 	/*
 	 * Pointer to elf header at the beginning of kexec_purgatory.
@@ -140,7 +140,7 @@ typedef void *(kexec_load_t)(struct kimage *image, char *kernel_buf,
 			     unsigned long cmdline_len);
 typedef int (kexec_cleanup_t)(void *loader_data);
 
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 typedef int (kexec_verify_sig_t)(const char *kernel_buf,
 				 unsigned long kernel_len);
 #endif
@@ -149,7 +149,7 @@ struct kexec_file_ops {
 	kexec_probe_t *probe;
 	kexec_load_t *load;
 	kexec_cleanup_t *cleanup;
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 	kexec_verify_sig_t *verify_sig;
 #endif
 };
@@ -250,7 +250,7 @@ static inline int arch_check_excluded_range(struct kimage *image,
 }
 #endif
 
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 #ifdef CONFIG_SIGNED_PE_FILE_VERIFICATION
 int kexec_kernel_verify_pe_sig(const char *kernel, unsigned long kernel_len);
 #endif
@@ -376,7 +376,7 @@ struct kimage {
 	struct kimage_arch arch;
 #endif
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 	/* Additional fields for file based kexec syscall */
 	void *kernel_buf;
 	unsigned long kernel_buf_len;
@@ -546,7 +546,7 @@ static inline void kimage_unmap_segment(void *buffer) { }
 #define kexec_in_progress false
 #endif /* CONFIG_KEXEC_CORE */
 
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 void set_kexec_sig_enforced(void);
 #else
 static inline void set_kexec_sig_enforced(void) {}

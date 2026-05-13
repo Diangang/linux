@@ -64,27 +64,27 @@ static int cols __section(".data");
 #include "../../../../lib/decompress_inflate.c"
 #endif
 
-#ifdef CONFIG_KERNEL_BZIP2
+#if 0
 #include "../../../../lib/decompress_bunzip2.c"
 #endif
 
-#ifdef CONFIG_KERNEL_LZMA
+#if 0
 #include "../../../../lib/decompress_unlzma.c"
 #endif
 
-#ifdef CONFIG_KERNEL_XZ
+#if 0
 #include "../../../../lib/decompress_unxz.c"
 #endif
 
-#ifdef CONFIG_KERNEL_LZO
+#if 0
 #include "../../../../lib/decompress_unlzo.c"
 #endif
 
-#ifdef CONFIG_KERNEL_LZ4
+#if 0
 #include "../../../../lib/decompress_unlz4.c"
 #endif
 
-#ifdef CONFIG_KERNEL_ZSTD
+#if 0
 #include "../../../../lib/decompress_unzstd.c"
 #endif
 /*

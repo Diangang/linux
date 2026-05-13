@@ -110,7 +110,7 @@ void blk_mq_in_driver_rw(struct block_device *part, unsigned int inflight[2])
 	inflight[WRITE] = mi.inflight[WRITE];
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static bool blk_freeze_set_owner(struct request_queue *q,
 				 struct task_struct *owner)
 {

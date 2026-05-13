@@ -1068,7 +1068,7 @@ unsigned int kstat_irqs_usr(unsigned int irq)
 	return sum;
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 void __irq_set_lockdep_class(unsigned int irq, struct lock_class_key *lock_class,
 			     struct lock_class_key *request_class)
 {

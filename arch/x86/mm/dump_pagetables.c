@@ -117,7 +117,7 @@ enum address_markers_idx {
 	KERNEL_SPACE_NR,
 	VMALLOC_START_NR,
 	VMALLOC_END_NR,
-#ifdef CONFIG_HIGHMEM
+#if 0
 	PKMAP_BASE_NR,
 #endif
 #ifdef CONFIG_MODIFY_LDT_SYSCALL
@@ -133,7 +133,7 @@ static struct addr_marker address_markers[] = {
 	[KERNEL_SPACE_NR]	= { PAGE_OFFSET,	"Kernel Mapping" },
 	[VMALLOC_START_NR]	= { 0UL,		"vmalloc() Area" },
 	[VMALLOC_END_NR]	= { 0UL,		"vmalloc() End" },
-#ifdef CONFIG_HIGHMEM
+#if 0
 	[PKMAP_BASE_NR]		= { 0UL,		"Persistent kmap() Area" },
 #endif
 #ifdef CONFIG_MODIFY_LDT_SYSCALL
@@ -520,7 +520,7 @@ static int __init pt_dump_init(void)
 #ifdef CONFIG_X86_32
 	address_markers[VMALLOC_START_NR].start_address = VMALLOC_START;
 	address_markers[VMALLOC_END_NR].start_address = VMALLOC_END;
-# ifdef CONFIG_HIGHMEM
+# if 0
 	address_markers[PKMAP_BASE_NR].start_address = PKMAP_BASE;
 # endif
 	address_markers[FIXADDR_START_NR].start_address = FIXADDR_START;

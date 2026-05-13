@@ -949,7 +949,7 @@ static bool bvec_try_merge_page(struct bio_vec *bv, struct page *page,
 		return false;
 
 	if ((vec_end_addr & PAGE_MASK) != ((page_addr + off) & PAGE_MASK)) {
-		if (IS_ENABLED(CONFIG_KMSAN))
+		if (0)
 			return false;
 		if (bv->bv_page + bv_end / PAGE_SIZE != page + off / PAGE_SIZE)
 			return false;

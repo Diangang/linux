@@ -228,7 +228,7 @@ unsigned long logic_pio_trans_cpuaddr(resource_size_t addr)
 	return ~0UL;
 }
 
-#if defined(CONFIG_INDIRECT_PIO) && defined(PCI_IOBASE)
+#if 0 && defined(PCI_IOBASE)
 #define BUILD_LOGIC_IO(bwl, type)					\
 type logic_in##bwl(unsigned long addr)					\
 {									\

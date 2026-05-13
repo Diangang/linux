@@ -215,7 +215,7 @@ extern struct module __this_module;
 	__PASTE(__,						\
 	__PASTE(__iid, id))))
 
-#ifdef CONFIG_LTO_CLANG
+#if 0
 /*
  * With LTO, the compiler doesn't necessarily obey link order for
  * initcalls. In order to preserve the correct order, we add each

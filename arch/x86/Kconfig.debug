@@ -44,24 +44,6 @@ config IO_DELAY_0X80
 	  This is the traditional Linux IO delay used for in/out_p.
 	  It is the most tested hence safest selection here.
 
-config IO_DELAY_0XED
-	bool "port 0xed based port-IO delay"
-	help
-	  Use port 0xed as the IO delay. This frees up port 0x80 which is
-	  often used as a hardware-debug port.
-
-config IO_DELAY_UDELAY
-	bool "udelay based port-IO delay"
-	help
-	  Use udelay(2) as the IO delay method. This provides the delay
-	  while not having any side-effect on the IO port space.
-
-config IO_DELAY_NONE
-	bool "no port-IO delay"
-	help
-	  No port-IO delay. Will break on old boxes that require port-IO
-	  delay for certain operations. Should work on most new machines.
-
 endchoice
 
 config DEBUG_ENTRY

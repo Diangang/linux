@@ -490,7 +490,7 @@ set_register:
 			  bits_changed);
 	}
 }
-#if IS_MODULE(CONFIG_LKDTM)
+#if 0
 EXPORT_SYMBOL_GPL(native_write_cr4);
 #endif
 

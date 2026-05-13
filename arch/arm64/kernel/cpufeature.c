@@ -1919,7 +1919,7 @@ static bool has_lpa2(const struct arm64_cpu_capabilities *entry, int scope)
 }
 #endif
 
-#ifdef CONFIG_HW_PERF_EVENTS
+#if 0
 static bool has_pmuv3(const struct arm64_cpu_capabilities *entry, int scope)
 {
 	u64 dfr0 = read_sanitised_ftr_reg(SYS_ID_AA64DFR0_EL1);
@@ -3059,7 +3059,7 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, GCS, IMP)
 	},
 #endif
-#ifdef CONFIG_HW_PERF_EVENTS
+#if 0
 	{
 		.desc = "PMUv3",
 		.capability = ARM64_HAS_PMUV3,

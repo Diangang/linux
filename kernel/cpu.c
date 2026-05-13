@@ -87,7 +87,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
 cpumask_t cpus_booted_once_mask;
 #endif
 
-#if defined(CONFIG_LOCKDEP) && defined(CONFIG_SMP)
+#if 0 && defined(CONFIG_SMP)
 static struct lockdep_map cpuhp_state_up_map =
 	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-up", &cpuhp_state_up_map);
 static struct lockdep_map cpuhp_state_down_map =
@@ -516,7 +516,7 @@ void lockdep_assert_cpus_held(void)
 }
 EXPORT_SYMBOL_GPL(lockdep_assert_cpus_held);
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 int lockdep_is_cpus_held(void)
 {
 	return percpu_rwsem_is_held(&cpu_hotplug_lock);

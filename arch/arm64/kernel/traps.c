@@ -1054,7 +1054,7 @@ int reserved_fault_brk_handler(struct pt_regs *regs, unsigned long esr)
 	return DBG_HOOK_ERROR;
 }
 
-#ifdef CONFIG_KASAN_SW_TAGS
+#if 0
 
 #define KASAN_ESR_RECOVER	0x20
 #define KASAN_ESR_WRITE	0x10

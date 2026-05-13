@@ -10,7 +10,7 @@
  * CONFIG_HAVE_ARCH_USERFAULTFD_WP is part of this macro.
  */
 #ifndef pgtable_supports_uffd_wp
-#define pgtable_supports_uffd_wp()	IS_ENABLED(CONFIG_HAVE_ARCH_USERFAULTFD_WP)
+#define pgtable_supports_uffd_wp()	0
 #endif
 
 static inline bool uffd_supports_wp_marker(void)
@@ -18,7 +18,7 @@ static inline bool uffd_supports_wp_marker(void)
 	return pgtable_supports_uffd_wp() && IS_ENABLED(CONFIG_PTE_MARKER_UFFD_WP);
 }
 
-#ifndef CONFIG_HAVE_ARCH_USERFAULTFD_WP
+#if 1
 static __always_inline int pte_uffd_wp(pte_t pte)
 {
 	return 0;

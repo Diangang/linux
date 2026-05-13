@@ -7,7 +7,7 @@
 
 struct task_struct;
 
-#ifdef CONFIG_KCOV
+#if 0
 
 enum kcov_mode {
 	/* Coverage collection is not enabled yet. */

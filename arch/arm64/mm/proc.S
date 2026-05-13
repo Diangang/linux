@@ -34,7 +34,7 @@
 /* PTWs cacheable, inner/outer WBWA */
 #define TCR_CACHE_FLAGS	TCR_IRGN_WBWA | TCR_ORGN_WBWA
 
-#ifdef CONFIG_KASAN_SW_TAGS
+#if 0
 #define TCR_KASAN_SW_FLAGS TCR_EL1_TBI1 | TCR_EL1_TBID1
 #else
 #define TCR_KASAN_SW_FLAGS 0

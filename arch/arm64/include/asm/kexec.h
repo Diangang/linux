@@ -80,7 +80,7 @@ static inline void crash_setup_regs(struct pt_regs *newregs,
 	}
 }
 
-#if defined(CONFIG_CRASH_DUMP) && defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_CRASH_DUMP) && 0
 extern bool crash_is_nosave(unsigned long pfn);
 extern void crash_prepare_suspend(void);
 extern void crash_post_resume(void);
@@ -118,7 +118,7 @@ struct kimage_arch {
 	unsigned long t0sz;
 };
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 extern const struct kexec_file_ops kexec_image_ops;
 
 int arch_kimage_file_post_load_cleanup(struct kimage *image);

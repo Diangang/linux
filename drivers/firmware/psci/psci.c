@@ -334,7 +334,7 @@ static void psci_sys_poweroff(void)
 	invoke_psci_fn(PSCI_0_2_FN_SYSTEM_OFF, 0, 0, 0);
 }
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 static int psci_sys_hibernate(struct sys_off_data *data)
 {
 	/*

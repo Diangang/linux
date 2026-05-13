@@ -227,7 +227,7 @@ struct maple_copy {
 
 #define MAPLE_RESERVED_RANGE	4096
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define mt_lock_is_held(mt)                                             \
 	(!(mt)->ma_external_lock || lock_is_held((mt)->ma_external_lock))
 
@@ -263,7 +263,7 @@ struct maple_copy {
 struct maple_tree {
 	union {
 		spinlock_t		ma_lock;
-#ifdef CONFIG_LOCKDEP
+#if 0
 		struct lockdep_map	*ma_external_lock;
 #endif
 	};
@@ -289,7 +289,7 @@ struct maple_tree {
  * @__flags: The maple tree flags
  * @__lock: The external lock
  */
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define MTREE_INIT_EXT(name, __flags, __lock) {				\
 	.ma_external_lock = &(__lock).dep_map,				\
 	.ma_flags = (__flags),						\

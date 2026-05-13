@@ -96,7 +96,7 @@ DEFINE_STATIC_SRCU(console_srcu);
  */
 int __read_mostly suppress_printk;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static struct lockdep_map console_lock_dep_map = {
 	.name = "console_lock"
 };
@@ -1776,7 +1776,7 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
  * They allow to pass console_lock to another printk() call using a busy wait.
  */
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static struct lockdep_map console_owner_dep_map = {
 	.name = "console_owner"
 };

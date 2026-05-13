@@ -378,7 +378,7 @@ struct platform_hibernation_ops {
 	void (*recover)(void);
 };
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 /* kernel/power/snapshot.c */
 extern void register_nosave_region(unsigned long b, unsigned long e);
 extern int swsusp_page_is_forbidden(struct page *);
@@ -418,7 +418,7 @@ static inline int hibernate_quiet_exec(int (*func)(void *data), void *data) {
 }
 #endif /* CONFIG_HIBERNATION */
 
-#if defined(CONFIG_HIBERNATION) && defined(CONFIG_SUSPEND)
+#if 0 && defined(CONFIG_SUSPEND)
 bool pm_hibernation_mode_is_suspend(void);
 #else
 static inline bool pm_hibernation_mode_is_suspend(void) { return false; }

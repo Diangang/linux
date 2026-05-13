@@ -208,7 +208,7 @@ struct page {
 	int _last_cpupid;
 #endif
 
-#ifdef CONFIG_KMSAN
+#if 0
 	/*
 	 * KMSAN metadata for this page:
 	 *  - shadow page: every bit indicates whether the corresponding
@@ -1356,7 +1356,7 @@ struct mm_struct {
 #endif
 		struct work_struct async_put_work;
 
-#ifdef CONFIG_IOMMU_MM_DATA
+#if 0
 		struct iommu_mm_data *iommu_mm;
 #endif
 #ifdef CONFIG_KSM

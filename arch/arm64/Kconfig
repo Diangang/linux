@@ -147,13 +147,7 @@ config ARM64
 	select HAVE_ARCH_HUGE_VMAP
 	select HAVE_ARCH_JUMP_LABEL
 	select HAVE_ARCH_JUMP_LABEL_RELATIVE
-	select HAVE_ARCH_KASAN
-	select HAVE_ARCH_KASAN_VMALLOC
-	select HAVE_ARCH_KASAN_SW_TAGS
 	# Some instrumentation may be unsound, hence EXPERT
-	select HAVE_ARCH_KCSAN if EXPERT
-	select HAVE_ARCH_KFENCE
-	select HAVE_ARCH_KGDB
 	select HAVE_ARCH_KSTACK_ERASE
 	select HAVE_ARCH_MMAP_RND_BITS
 	select HAVE_ARCH_MMAP_RND_COMPAT_BITS if COMPAT
@@ -175,8 +169,6 @@ config ARM64
 	select HAVE_GUP_FAST
 	select HAVE_FUNCTION_ERROR_INJECTION
 	select HAVE_GCC_PLUGINS
-	select HAVE_HARDLOCKUP_DETECTOR_PERF if PERF_EVENTS && \
-		HW_PERF_EVENTS && HAVE_PERF_EVENTS_NMI
 	select HAVE_HW_BREAKPOINT if PERF_EVENTS
 	select HAVE_IOREMAP_PROT
 	select HAVE_IRQ_TIME_ACCOUNTING
@@ -202,7 +194,6 @@ config ARM64
 	select IRQ_DOMAIN
 	select IRQ_FORCED_THREADING
 	select JUMP_LABEL
-	select KASAN_VMALLOC if KASAN
 	select LOCK_MM_AND_FIND_VMA
 	select MODULES_USE_ELF_RELA
 	select NEED_DMA_MAP_STATE
@@ -218,8 +209,6 @@ config ARM64
 	select SWIOTLB
 	select SYSCTL_EXCEPTION_TRACE
 	select THREAD_INFO_IN_TASK
-	select HAVE_ARCH_USERFAULTFD_MINOR if USERFAULTFD
-	select HAVE_ARCH_USERFAULTFD_WP if USERFAULTFD
 	select TRACE_IRQFLAGS_SUPPORT
 	select TRACE_IRQFLAGS_NMI_SUPPORT
 	select HAVE_SOFTIRQ_ON_OWN_STACK
@@ -319,13 +308,6 @@ config ARCH_SUPPORTS_UPROBES
 
 config ARCH_PROC_KCORE_TEXT
 	def_bool y
-
-config KASAN_SHADOW_OFFSET
-	hex
-	depends on KASAN_GENERIC || KASAN_SW_TAGS
-	default 0xdfff800000000000 if ARM64_VA_BITS_52 && !KASAN_SW_TAGS
-	default 0xefff800000000000 if ARM64_VA_BITS_52 && KASAN_SW_TAGS
-	default 0xffffffffffffffff
 
 config UNWIND_TABLES
 	bool
@@ -1182,11 +1164,6 @@ config ARCH_SPARSEMEM_ENABLE
 	def_bool y
 	select SPARSEMEM_VMEMMAP_ENABLE
 
-config HW_PERF_EVENTS
-	def_bool y
-	depends on ARM_PMU
-
-# Supported by clang >= 7.0 or GCC >= 12.0.0
 config PARAVIRT
 	bool "Enable paravirtualization code"
 	select HAVE_PV_STEAL_CLOCK_GEN
@@ -1212,7 +1189,7 @@ config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
 
 config TRANS_TABLE
 	def_bool y
-	depends on HIBERNATION || KEXEC_CORE
+	depends on n || KEXEC_CORE
 
 # include/linux/mmzone.h requires the following to be true:
 #
@@ -1463,7 +1440,7 @@ config ARM64_PTR_AUTH_KERNEL
 	depends on ARM64_PTR_AUTH
 	# Modern compilers insert a .note.gnu.property section note for PAC
 	# which is only understood by binutils starting with version 2.33.1.
-	depends on LD_IS_LLD || LD_VERSION >= 23301 || (CC_IS_GCC && GCC_VERSION < 90100)
+	depends on n || LD_VERSION >= 23301 || (CC_IS_GCC && GCC_VERSION < 90100)
 	help
 	  If the compiler supports the -mbranch-protection or
 	  -msign-return-address flag (e.g. GCC 7 or later), then this option

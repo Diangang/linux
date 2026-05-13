@@ -116,7 +116,7 @@ static inline void mte_disable_tco_entry(struct task_struct *task)
 		asm volatile(SET_PSTATE_TCO(0));
 }
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 void mte_check_tfsr_el1(void);
 
 static inline void mte_check_tfsr_entry(void)

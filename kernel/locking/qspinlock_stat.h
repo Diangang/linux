@@ -6,7 +6,7 @@
 
 #include "lock_events.h"
 
-#ifdef CONFIG_LOCK_EVENT_COUNTS
+#if 0
 #ifdef CONFIG_PARAVIRT_SPINLOCKS
 /*
  * Collect pvqspinlock locking event counts

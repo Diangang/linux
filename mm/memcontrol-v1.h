@@ -31,7 +31,7 @@ struct mem_cgroup *mem_cgroup_private_id_get_online(struct mem_cgroup *memcg,
 						    unsigned int n);
 
 /* Cgroup v1-specific declarations */
-#ifdef CONFIG_MEMCG_V1
+#if 0
 
 /* Whether legacy memory+swap accounting is active */
 static inline bool do_memsw_account(void)

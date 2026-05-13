@@ -1542,7 +1542,7 @@ static inline int iommu_dma_prepare_msi(struct msi_desc *desc,
 #endif /* CONFIG_IOMMU_API */
 #endif /* CONFIG_IRQ_MSI_IOMMU */
 
-#if IS_ENABLED(CONFIG_LOCKDEP) && IS_ENABLED(CONFIG_IOMMU_API)
+#if 0 && IS_ENABLED(CONFIG_IOMMU_API)
 void iommu_group_mutex_assert(struct device *dev);
 #else
 static inline void iommu_group_mutex_assert(struct device *dev)
@@ -1604,7 +1604,7 @@ static inline bool tegra_dev_iommu_get_stream_id(struct device *dev, u32 *stream
 	return false;
 }
 
-#ifdef CONFIG_IOMMU_MM_DATA
+#if 0
 static inline void mm_pasid_init(struct mm_struct *mm)
 {
 	/*

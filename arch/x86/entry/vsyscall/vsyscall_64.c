@@ -38,7 +38,7 @@
 #include <asm/fixmap.h>
 #include <asm/traps.h>
 static enum { EMULATE, XONLY, NONE } vsyscall_mode __ro_after_init =
-#ifdef CONFIG_LEGACY_VSYSCALL_NONE
+#if 0
 	NONE;
 #elif defined(CONFIG_LEGACY_VSYSCALL_XONLY)
 	XONLY;

@@ -879,7 +879,7 @@ static int kallsyms_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-#ifdef	CONFIG_KGDB_KDB
+#if 0
 const char *kdb_walk_kallsyms(loff_t *pos)
 {
 	static struct kallsym_iter kdb_walk_kallsyms_iter;

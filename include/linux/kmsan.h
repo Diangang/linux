@@ -20,7 +20,7 @@ struct task_struct;
 struct scatterlist;
 struct urb;
 
-#ifdef CONFIG_KMSAN
+#if 0
 
 /**
  * kmsan_task_create() - Initialize KMSAN state for the task.

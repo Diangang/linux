@@ -37,7 +37,7 @@ enum lockdep_lock_type {
 	LD_LOCK_MAX,
 };
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 
 /*
  * We'd rather not expose kernel/lockdep_states.h this wide, but we do need

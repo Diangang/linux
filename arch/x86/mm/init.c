@@ -1002,7 +1002,7 @@ void __init arch_zone_limits_init(unsigned long *max_zone_pfns)
 	max_zone_pfns[ZONE_DMA32]	= min(MAX_DMA32_PFN, max_low_pfn);
 #endif
 	max_zone_pfns[ZONE_NORMAL]	= max_low_pfn;
-#ifdef CONFIG_HIGHMEM
+#if 0
 	max_zone_pfns[ZONE_HIGHMEM]	= max_pfn;
 #endif
 }

@@ -74,7 +74,7 @@ config ACPI_LPIT
 
 config ACPI_SLEEP
 	bool
-	depends on SUSPEND || HIBERNATION
+	depends on SUSPEND || n
 	depends on ACPI_SYSTEM_POWER_STATES_SUPPORT
 	default y
 
@@ -249,7 +249,7 @@ endif	# ACPI
 
 config X86_PM_TIMER
 	bool "Power Management Timer Support" if EXPERT
-	depends on X86 && (ACPI || JAILHOUSE_GUEST)
+	depends on X86 && (ACPI || n)
 	default y
 	help
 	  The Power Management Timer is available on all ACPI-capable,

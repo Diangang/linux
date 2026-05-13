@@ -143,7 +143,7 @@ ssize_t sized_strscpy(char *dest, const char *src, size_t count)
 	 * comparisons. Disable this optimization under KMSAN to prevent
 	 * false positive reports.
 	 */
-	if (IS_ENABLED(CONFIG_KMSAN))
+	if (0)
 		max = 0;
 
 	while (max >= sizeof(unsigned long)) {

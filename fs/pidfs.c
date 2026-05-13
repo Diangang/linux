@@ -587,7 +587,7 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 		break;
 	case PIDFD_GET_IPC_NAMESPACE:
-#ifdef CONFIG_IPC_NS
+#if 0
 		if (!ns_ref_get(nsp->ipc_ns))
 			break;
 		ns_common = to_ns_common(nsp->ipc_ns);

@@ -390,7 +390,7 @@ extern int platform_pm_resume(struct device *dev);
 #define platform_pm_resume		NULL
 #endif
 
-#ifdef CONFIG_HIBERNATE_CALLBACKS
+#if 0
 extern int platform_pm_freeze(struct device *dev);
 extern int platform_pm_thaw(struct device *dev);
 extern int platform_pm_poweroff(struct device *dev);

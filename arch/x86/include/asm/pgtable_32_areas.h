@@ -38,7 +38,7 @@ extern bool __vmalloc_start_set; /* set once high_memory is set */
 #define PKMAP_BASE		\
 	((LDT_BASE_ADDR - PAGE_SIZE) & PMD_MASK)
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 # define VMALLOC_END	(PKMAP_BASE - 2 * PAGE_SIZE)
 #else
 # define VMALLOC_END	(LDT_BASE_ADDR - 2 * PAGE_SIZE)

@@ -125,7 +125,7 @@ static unsigned long __init
 page_table_range_init_count(unsigned long start, unsigned long end)
 {
 	unsigned long count = 0;
-#ifdef CONFIG_HIGHMEM
+#if 0
 	int pmd_idx_kmap_begin = fix_to_virt(FIX_KMAP_END) >> PMD_SHIFT;
 	int pmd_idx_kmap_end = fix_to_virt(FIX_KMAP_BEGIN) >> PMD_SHIFT;
 	int pgd_idx, pmd_idx;
@@ -156,7 +156,7 @@ static pte_t *__init page_table_kmap_check(pte_t *pte, pmd_t *pmd,
 					   unsigned long vaddr, pte_t *lastpte,
 					   void **adr)
 {
-#ifdef CONFIG_HIGHMEM
+#if 0
 	/*
 	 * Something (early fixmap) may already have put a pte
 	 * page here, which causes the page table allocation
@@ -385,7 +385,7 @@ repeat:
 	return last_map_addr;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 static void __init permanent_kmaps_init(pgd_t *pgd_base)
 {
 	unsigned long vaddr = PKMAP_BASE;
@@ -541,7 +541,7 @@ static void __init lowmem_pfn_init(void)
 
 	if (highmem_pages == -1)
 		highmem_pages = 0;
-#ifdef CONFIG_HIGHMEM
+#if 0
 	if (highmem_pages >= max_pfn) {
 		printk(KERN_ERR MSG_HIGHMEM_TOO_BIG,
 			pages_to_mb(highmem_pages), pages_to_mb(max_pfn));
@@ -586,7 +586,7 @@ static void __init highmem_pfn_init(void)
 			pages_to_mb(highmem_pages));
 		highmem_pages = 0;
 	}
-#ifndef CONFIG_HIGHMEM
+#if 1
 	/* Maximum memory usable is what is directly addressable */
 	printk(KERN_WARNING "Warning only %ldMB will be used.\n", MAXMEM>>20);
 	printk(KERN_WARNING "Use a HIGHMEM enabled kernel.\n");
@@ -614,7 +614,7 @@ void __init find_low_pfn_range(void)
 
 void __init initmem_init(void)
 {
-#ifdef CONFIG_HIGHMEM
+#if 0
 	highstart_pfn = highend_pfn = max_pfn;
 	if (max_pfn > max_low_pfn)
 		highstart_pfn = max_low_pfn;
@@ -699,7 +699,7 @@ void __init mem_init(void)
 	 * be detected at build time already.
 	 */
 #define __FIXADDR_TOP (-PAGE_SIZE)
-#ifdef CONFIG_HIGHMEM
+#if 0
 	BUILD_BUG_ON(PKMAP_BASE + LAST_PKMAP*PAGE_SIZE	> FIXADDR_START);
 	BUILD_BUG_ON(VMALLOC_END			> PKMAP_BASE);
 #endif
@@ -708,7 +708,7 @@ void __init mem_init(void)
 #undef high_memory
 #undef __FIXADDR_TOP
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 	BUG_ON(PKMAP_BASE + LAST_PKMAP*PAGE_SIZE	> FIXADDR_START);
 	BUG_ON(VMALLOC_END				> PKMAP_BASE);
 #endif

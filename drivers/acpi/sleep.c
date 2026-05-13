@@ -923,7 +923,7 @@ static void acpi_sleep_syscore_init(void)
 static inline void acpi_sleep_syscore_init(void) {}
 #endif /* CONFIG_PM_SLEEP */
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 static unsigned long s4_hardware_signature;
 static struct acpi_table_facs *facs;
 int acpi_check_s4_hw_signature = -1; /* Default behaviour is just to warn */

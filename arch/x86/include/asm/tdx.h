@@ -54,7 +54,7 @@ struct ve_info {
 	u32 instr_info;
 };
 
-#ifdef CONFIG_INTEL_TDX_GUEST
+#if 0
 
 void __init tdx_early_init(void);
 
@@ -84,7 +84,7 @@ static inline bool tdx_early_handle_ve(struct pt_regs *regs) { return false; }
 
 #endif /* CONFIG_INTEL_TDX_GUEST */
 
-#if defined(CONFIG_KVM_GUEST) && defined(CONFIG_INTEL_TDX_GUEST)
+#if defined(CONFIG_KVM_GUEST) && 0
 long tdx_kvm_hypercall(unsigned int nr, unsigned long p1, unsigned long p2,
 		       unsigned long p3, unsigned long p4);
 #else

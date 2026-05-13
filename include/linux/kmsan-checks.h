@@ -12,7 +12,7 @@
 
 #include <linux/types.h>
 
-#ifdef CONFIG_KMSAN
+#if 0
 
 /**
  * kmsan_poison_memory() - Mark the memory range as uninitialized.

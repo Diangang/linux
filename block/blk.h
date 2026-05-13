@@ -122,7 +122,7 @@ static inline bool biovec_phys_mergeable(struct request_queue *q,
 	 * Merging adjacent physical pages may not work correctly under KMSAN
 	 * if their metadata pages aren't adjacent. Just disable merging.
 	 */
-	if (IS_ENABLED(CONFIG_KMSAN))
+	if (0)
 		return false;
 
 	if (addr1 + vec1->bv_len != addr2)
@@ -619,7 +619,7 @@ blk_status_t bio_integrity_verify(struct bio *bio,
 void blk_integrity_prepare(struct request *rq);
 void blk_integrity_complete(struct request *rq, unsigned int nr_bytes);
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static inline void blk_freeze_acquire_lock(struct request_queue *q)
 {
 	if (!q->mq_freeze_disk_dead)

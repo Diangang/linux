@@ -237,7 +237,7 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	mov	x0, x20
 	bl	set_cpu_boot_mode_flag
 
-#if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
+#if 0 || 0
 	bl	kasan_early_init
 #endif
 	mov	x0, x20

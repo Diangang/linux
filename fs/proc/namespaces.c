@@ -19,7 +19,7 @@ static const struct proc_ns_operations *const ns_entries[] = {
 #ifdef CONFIG_UTS_NS
 	&utsns_operations,
 #endif
-#ifdef CONFIG_IPC_NS
+#if 0
 	&ipcns_operations,
 #endif
 #ifdef CONFIG_PID_NS

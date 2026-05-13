@@ -2305,7 +2305,7 @@ struct net_device {
 #ifdef CONFIG_SYSFS
 	struct kset		*queues_kset;
 #endif
-#ifdef CONFIG_LOCKDEP
+#if 0
 	struct list_head	unlink_list;
 #endif
 	unsigned int		promiscuity;
@@ -2314,7 +2314,7 @@ struct net_device {
 	struct list_head	rx_mode_node;
 	netdevice_tracker	rx_mode_tracker;
 	struct netdev_hw_addr_list	rx_mode_addr_cache;
-#ifdef CONFIG_LOCKDEP
+#if 0
 	unsigned char		nested_level;
 #endif
 
@@ -4935,7 +4935,7 @@ static inline void netif_addr_lock(struct net_device *dev)
 {
 	unsigned char nest_level = 0;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	nest_level = dev->nested_level;
 #endif
 	spin_lock_nested(&dev->addr_list_lock, nest_level);
@@ -4945,7 +4945,7 @@ static inline void netif_addr_lock_bh(struct net_device *dev)
 {
 	unsigned char nest_level = 0;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	nest_level = dev->nested_level;
 #endif
 	local_bh_disable();

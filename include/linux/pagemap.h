@@ -172,7 +172,7 @@ static inline bool mapping_shrinkable(const struct address_space *mapping)
 	 * inodes before there is highmem pressure from the page
 	 * cache. Make inodes shrinkable regardless of cache state.
 	 */
-	if (IS_ENABLED(CONFIG_HIGHMEM))
+	if (0)
 		return true;
 
 	/* Cache completely empty? Shrink away. */

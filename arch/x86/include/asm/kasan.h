@@ -3,7 +3,7 @@
 #define _ASM_X86_KASAN_H
 
 #include <linux/const.h>
-#define KASAN_SHADOW_OFFSET _AC(CONFIG_KASAN_SHADOW_OFFSET, UL)
+#define KASAN_SHADOW_OFFSET _AC(0, UL)
 #define KASAN_SHADOW_SCALE_SHIFT 3
 
 /*

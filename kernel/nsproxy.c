@@ -315,7 +315,7 @@ static int check_setns_flags(unsigned long flags)
 	if (flags & CLONE_NEWUTS)
 		return -EINVAL;
 #endif
-#ifndef CONFIG_IPC_NS
+#if 1
 	if (flags & CLONE_NEWIPC)
 		return -EINVAL;
 #endif
@@ -473,7 +473,7 @@ static int validate_nsset(struct nsset *nsset, struct pid *pid)
 	}
 #endif
 
-#ifdef CONFIG_IPC_NS
+#if 0
 	if (flags & CLONE_NEWIPC) {
 		ret = validate_ns(nsset, &nsp->ipc_ns->ns);
 		if (ret)
@@ -551,7 +551,7 @@ static void commit_nsset(struct nsset *nsset)
 		set_fs_pwd(me->fs, &nsset->fs->pwd);
 	}
 
-#ifdef CONFIG_IPC_NS
+#if 0
 	if (flags & CLONE_NEWIPC)
 		exit_sem(me);
 #endif

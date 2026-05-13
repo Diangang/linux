@@ -22,7 +22,7 @@ config GENERIC_TIME_VSYSCALL
 
 # The generic clock events infrastructure
 config GENERIC_CLOCKEVENTS
-	def_bool !LEGACY_TIMER_TICK
+	def_bool !n
 
 # Architecture can handle broadcast in a driver-agnostic way
 config ARCH_HAS_TICK_BROADCAST
@@ -64,13 +64,6 @@ config HAVE_POSIX_CPU_TIMERS_TASK_WORK
 config POSIX_CPU_TIMERS_TASK_WORK
 	bool
 	default y if POSIX_TIMERS && HAVE_POSIX_CPU_TIMERS_TASK_WORK
-
-config LEGACY_TIMER_TICK
-	bool
-	help
-	  The legacy timer tick helper is used by platforms that
-	  lack support for the generic clockevent framework.
-	  New platforms should use generic clockevents instead.
 
 config TIME_KUNIT_TEST
 	tristate "KUnit test for kernel/time functions" if !KUNIT_ALL_TESTS

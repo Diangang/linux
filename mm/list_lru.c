@@ -396,7 +396,7 @@ static void init_one_lru(struct list_lru *lru, struct list_lru_one *l)
 	INIT_LIST_HEAD(&l->list);
 	spin_lock_init(&l->lock);
 	l->nr_items = 0;
-#ifdef CONFIG_LOCKDEP
+#if 0
 	if (lru->key)
 		lockdep_set_class(&l->lock, lru->key);
 #endif

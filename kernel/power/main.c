@@ -94,7 +94,7 @@ void ksys_sync_helper(void)
 }
 EXPORT_SYMBOL_GPL(ksys_sync_helper);
 
-#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_SUSPEND) || 0
 /* Wakeup events handling resolution while syncing file systems in jiffies */
 #define PM_FS_SYNC_WAKEUP_RESOLUTION	5
 
@@ -910,7 +910,7 @@ power_attr(pm_freeze_timeout);
 
 #endif	/* CONFIG_FREEZER*/
 
-#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_SUSPEND) || 0
 bool filesystem_freeze_enabled = false;
 
 static ssize_t freeze_filesystems_show(struct kobject *kobj,
@@ -961,7 +961,7 @@ static struct attribute * g[] = {
 #ifdef CONFIG_FREEZER
 	&pm_freeze_timeout_attr.attr,
 #endif
-#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_SUSPEND) || 0
 	&freeze_filesystems_attr.attr,
 #endif
 	NULL,
@@ -988,7 +988,7 @@ static int __init pm_start_workqueues(void)
 	if (!pm_wq)
 		return -ENOMEM;
 
-#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_SUSPEND) || 0
 	pm_fs_sync_wq = alloc_ordered_workqueue("pm_fs_sync", 0);
 	if (!pm_fs_sync_wq) {
 		destroy_workqueue(pm_wq);

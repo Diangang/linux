@@ -229,7 +229,7 @@ struct kmem_cache {
 #endif
 
 
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 	struct kasan_cache kasan_info;
 #endif
 

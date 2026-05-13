@@ -1792,14 +1792,14 @@ bool sockopt_capable(int cap);
 
 static inline void sock_owned_by_me(const struct sock *sk)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	WARN_ON_ONCE(!lockdep_sock_is_held(sk) && debug_locks);
 #endif
 }
 
 static inline void sock_not_owned_by_me(const struct sock *sk)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	WARN_ON_ONCE(lockdep_sock_is_held(sk) && debug_locks);
 #endif
 }
@@ -2676,7 +2676,7 @@ static inline bool mem_cgroup_sk_under_memory_pressure(const struct sock *sk)
 {
 	struct mem_cgroup *memcg = mem_cgroup_from_sk(sk);
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
 		return !!memcg->tcpmem_pressure;
 #endif /* CONFIG_MEMCG_V1 */

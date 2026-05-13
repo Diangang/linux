@@ -16,7 +16,7 @@ config SLUB_RCU_DEBUG
 	# SLUB_RCU_DEBUG should build fine without KASAN, but is currently useless
 	# without KASAN, so mark it as a dependency of KASAN for now.
 	depends on KASAN
-	default KASAN_GENERIC || KASAN_SW_TAGS
+	default n || n
 	help
 	  Make SLAB_TYPESAFE_BY_RCU caches behave approximately as if the cache
 	  was not marked as SLAB_TYPESAFE_BY_RCU and every caller used

@@ -1007,7 +1007,7 @@ static resource_size_t calculate_iosize(resource_size_t size,
 	 * To be fixed in 2.5: we should have sort of HAVE_ISA flag in the
 	 * struct pci_bus.
 	 */
-#if defined(CONFIG_ISA) || defined(CONFIG_EISA)
+#if 0 || defined(CONFIG_EISA)
 	size = (size & 0xff) + ((size & ~0xffUL) << 2);
 #endif
 	size = size + size1;

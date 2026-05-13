@@ -15,7 +15,7 @@
 #include <linux/init.h>
 #include <linux/atomic.h>
 #include <linux/kprobes.h>
-#ifdef CONFIG_HAVE_ARCH_KGDB
+#if 0
 #include <asm/kgdb.h>
 #endif
 

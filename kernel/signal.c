@@ -1375,7 +1375,7 @@ struct sighand_struct *lock_task_sighand(struct task_struct *tsk,
 	return sighand;
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 void lockdep_assert_task_sighand_held(struct task_struct *task)
 {
 	struct sighand_struct *sighand;
@@ -4993,7 +4993,7 @@ void __init signals_init(void)
 	sigqueue_cachep = KMEM_CACHE(sigqueue, SLAB_PANIC | SLAB_ACCOUNT);
 }
 
-#ifdef CONFIG_KGDB_KDB
+#if 0
 #include <linux/kdb.h>
 /*
  * kdb_send_sig - Allows kdb to send signals without exposing

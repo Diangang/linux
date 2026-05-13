@@ -399,7 +399,7 @@ static inline pte_t pte_wrprotect(pte_t pte)
 	return pte_mksaveddirty(pte);
 }
 
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_WP
+#if 0
 static inline int pte_uffd_wp(pte_t pte)
 {
 	return pte_flags(pte) & _PAGE_UFFD_WP;
@@ -514,7 +514,7 @@ static inline pmd_t pmd_wrprotect(pmd_t pmd)
 	return pmd_mksaveddirty(pmd);
 }
 
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_WP
+#if 0
 static inline int pmd_uffd_wp(pmd_t pmd)
 {
 	return pmd_flags(pmd) & _PAGE_UFFD_WP;
@@ -1532,7 +1532,7 @@ static inline pmd_t pmd_swp_clear_soft_dirty(pmd_t pmd)
 #endif
 #endif
 
-#ifdef CONFIG_HAVE_ARCH_USERFAULTFD_WP
+#if 0
 static inline pte_t pte_swp_mkuffd_wp(pte_t pte)
 {
 	return pte_set_flags(pte, _PAGE_SWP_UFFD_WP);

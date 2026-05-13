@@ -9,7 +9,7 @@
 #include <linux/stringify.h>
 #include <linux/timer_types.h>
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 /*
  * NB: because we have to copy the lockdep_map, setting the lockdep_map key
  * (second argument) here is required, otherwise it could be initialised to
@@ -87,7 +87,7 @@ static inline void timer_init_key_on_stack(struct timer_list *timer,
 }
 #endif
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define __timer_init(_timer, _fn, _flags)				\
 	do {								\
 		static struct lock_class_key __key;			\

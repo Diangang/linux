@@ -2,10 +2,6 @@
 menu "IRQ subsystem"
 # Options selectable by the architecture code
 # Make sparse irq Kconfig switch below available
-config MAY_HAVE_SPARSE_IRQ
-       bool
-
-# Enable the generic irq autoprobe mechanism
 config GENERIC_IRQ_PROBE
 	bool
 
@@ -69,7 +65,7 @@ config IRQ_FORCED_THREADING
        bool
 
 config SPARSE_IRQ
-	bool "Support sparse irq numbering" if MAY_HAVE_SPARSE_IRQ
+	bool "Support sparse irq numbering" if n
 	help
 
 	  Sparse irq numbering is useful for distro kernels that want

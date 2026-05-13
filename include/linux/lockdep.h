@@ -16,7 +16,7 @@
 
 struct task_struct;
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 
 #include <linux/linkage.h>
 #include <linux/list.h>
@@ -445,7 +445,7 @@ static inline void print_irqtrace_events(struct task_struct *curr)
 /* Variable used to make lockdep treat read_lock() as recursive in selftests */
 #define force_read_lock_recursive 0
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 extern bool read_lock_is_recursive(void);
 #else /* CONFIG_LOCKDEP */
 /* If !LOCKDEP, the value is meaningless */
@@ -532,7 +532,7 @@ do {									\
 
 #endif
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 void lockdep_rcu_suspicious(const char *file, const int line, const char *s);
 #else
 static inline void

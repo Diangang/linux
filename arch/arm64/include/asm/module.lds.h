@@ -4,7 +4,7 @@ SECTIONS {
 	.text.ftrace_trampoline 0 : { BYTE(0) }
 	.init.text.ftrace_trampoline 0 : { BYTE(0) }
 
-#ifdef CONFIG_KASAN_SW_TAGS
+#if 0
 	/*
 	 * Outlined checks go into comdat-deduplicated sections named .text.hot.
 	 * Because they are in comdats they are not combined by the linker and

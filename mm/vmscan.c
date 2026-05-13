@@ -4258,7 +4258,7 @@ bool kswapd_test_hopeless(pg_data_t *pgdat)
 	return atomic_read(&pgdat->kswapd_failures) >= MAX_RECLAIM_RETRIES;
 }
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 /*
  * Try to free `nr_to_reclaim' of memory, system-wide, and return the number of
  * freed pages.

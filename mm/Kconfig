@@ -99,12 +99,6 @@ config HAVE_GUP_FAST
 	bool
 
 # Enable memblock support for scratch memory which is needed for kexec handover
-config MEMBLOCK_KHO_SCRATCH
-	bool
-
-# Don't discard allocated memory used to track "memory" and "reserved" memblocks
-# after early boot, so it can still be used to test for validity of memory.
-# Also, memblocks are updated with memory hot(un)plug.
 config ARCH_KEEP_MEMBLOCK
 	bool
 
@@ -126,9 +120,6 @@ config EXCLUSIVE_SYSTEM_RAM
 # Only be set on architectures that have completely implemented memory hotplug
 # feature. If you are not sure, don't touch it.
 #
-config HAVE_BOOTMEM_INFO_NODE
-	def_bool n
-
 config ARCH_ENABLE_MEMORY_HOTPLUG
 	bool
 
@@ -203,7 +194,6 @@ endchoice
 
 config MEMORY_HOTREMOVE
 	bool "Allow for memory hot remove"
-	select HAVE_BOOTMEM_INFO_NODE if (X86_64 || PPC64)
 	depends on MEMORY_HOTPLUG
 	select MIGRATION
 
@@ -312,16 +302,6 @@ config MIGRATION
 
 config ARCH_ENABLE_THP_MIGRATION
 	bool
-
-config HUGETLB_PAGE_SIZE_VARIABLE
-	def_bool n
-	help
-	  Allows the pageblock_order value to be dynamic instead of just standard
-	  HUGETLB_PAGE_ORDER when there are multiple HugeTLB page sizes available
-	  on a platform.
-
-	  Note that the pageblock_order cannot exceed MAX_PAGE_ORDER and will be
-	  clamped down to MAX_PAGE_ORDER.
 
 config CONTIG_ALLOC
 	def_bool (MEMORY_ISOLATION && COMPACTION) || CMA
@@ -724,10 +704,6 @@ config ZONE_DEVICE
 # Helpers to mirror range of the CPU page tables of a process into device page
 # tables.
 #
-config HMM_MIRROR
-	bool
-	depends on MMU
-
 config VMAP_PFN
 	bool
 
@@ -751,9 +727,6 @@ config VM_EVENT_COUNTERS
 config ARCH_HAS_PTE_SPECIAL
 	bool
 
-config KMAP_LOCAL
-	bool
-
 config SECRETMEM
 	default y
 	bool "Enable memfd_secret() system call" if EXPERT
@@ -763,21 +736,11 @@ config SECRETMEM
 	  memory areas visible only in the context of the owning process and
 	  not mapped to other processes and other kernel page tables.
 
-config HAVE_ARCH_USERFAULTFD_WP
-	bool
-	help
-	  Arch has userfaultfd write protection support
-
-config HAVE_ARCH_USERFAULTFD_MINOR
-	bool
-	help
-	  Arch has userfaultfd minor fault support
-
 if USERFAULTFD
 config PTE_MARKER_UFFD_WP
 	bool "Userfaultfd write protection support for shmem/hugetlbfs"
 	default y
-	depends on HAVE_ARCH_USERFAULTFD_WP
+	depends on n
 
 	help
 	  Allows to create marker PTEs for userfaultfd write protection
@@ -803,9 +766,6 @@ config LOCK_MM_AND_FIND_VMA
 	bool
 	depends on !STACK_GROWSUP
 
-config IOMMU_MM_DATA
-	bool
-
 config EXECMEM
 	bool
 
@@ -818,12 +778,9 @@ config ARCH_HAS_USER_SHADOW_STACK
 	  The architecture has hardware support for userspace shadow call
           stacks (eg, x86 CET, arm64 GCS or RISC-V Zicfiss).
 
-config HAVE_ARCH_TLB_REMOVE_TABLE
-	def_bool n
-
 config PT_RECLAIM
 	def_bool y
-	depends on MMU_GATHER_RCU_TABLE_FREE && !HAVE_ARCH_TLB_REMOVE_TABLE
+	depends on MMU_GATHER_RCU_TABLE_FREE && !n
 	help
 	  Try to reclaim empty user page table pages in paths other than munmap
 	  and exit_mmap path.

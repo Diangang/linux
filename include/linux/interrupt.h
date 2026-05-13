@@ -451,7 +451,7 @@ irq_calc_affinity_vectors(unsigned int minvec, unsigned int maxvec,
 static inline void disable_irq_nosync_lockdep(unsigned int irq)
 {
 	disable_irq_nosync(irq);
-#if defined(CONFIG_LOCKDEP) && !defined(CONFIG_PREEMPT_RT)
+#if 0 && !defined(CONFIG_PREEMPT_RT)
 	local_irq_disable();
 #endif
 }
@@ -459,14 +459,14 @@ static inline void disable_irq_nosync_lockdep(unsigned int irq)
 static inline void disable_irq_nosync_lockdep_irqsave(unsigned int irq, unsigned long *flags)
 {
 	disable_irq_nosync(irq);
-#if defined(CONFIG_LOCKDEP) && !defined(CONFIG_PREEMPT_RT)
+#if 0 && !defined(CONFIG_PREEMPT_RT)
 	local_irq_save(*flags);
 #endif
 }
 
 static inline void enable_irq_lockdep(unsigned int irq)
 {
-#if defined(CONFIG_LOCKDEP) && !defined(CONFIG_PREEMPT_RT)
+#if 0 && !defined(CONFIG_PREEMPT_RT)
 	local_irq_enable();
 #endif
 	enable_irq(irq);
@@ -474,7 +474,7 @@ static inline void enable_irq_lockdep(unsigned int irq)
 
 static inline void enable_irq_lockdep_irqrestore(unsigned int irq, unsigned long *flags)
 {
-#if defined(CONFIG_LOCKDEP) && !defined(CONFIG_PREEMPT_RT)
+#if 0 && !defined(CONFIG_PREEMPT_RT)
 	local_irq_restore(*flags);
 #endif
 	enable_irq(irq);

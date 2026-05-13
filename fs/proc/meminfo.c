@@ -71,7 +71,7 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 	show_val_kb(m, "Unevictable:    ", pages[LRU_UNEVICTABLE]);
 	show_val_kb(m, "Mlocked:        ", global_zone_page_state(NR_MLOCK));
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 	show_val_kb(m, "HighTotal:      ", i.totalhigh);
 	show_val_kb(m, "HighFree:       ", i.freehigh);
 	show_val_kb(m, "LowTotal:       ", i.totalram - i.totalhigh);

@@ -1287,7 +1287,7 @@ static void mark_free_pages(struct zone *zone)
 	spin_unlock_irqrestore(&zone->lock, flags);
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /**
  * count_free_highmem_pages - Compute the total number of free highmem pages.
  *
@@ -1463,7 +1463,7 @@ static bool safe_copy_page(void *dst, struct page *s_page)
 	return zeros_only;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 static inline struct page *page_is_saveable(struct zone *zone, unsigned long pfn)
 {
 	return is_highmem(zone) ?
@@ -1681,7 +1681,7 @@ static unsigned long preallocate_image_memory(unsigned long nr_pages,
 	return preallocate_image_pages(alloc, GFP_IMAGE);
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 static unsigned long preallocate_image_highmem(unsigned long nr_pages)
 {
 	return preallocate_image_pages(nr_pages, GFP_IMAGE | __GFP_HIGHMEM);
@@ -1981,7 +1981,7 @@ int hibernate_preallocate_memory(void)
 	return -ENOMEM;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /**
  * count_pages_for_highmem - Count non-highmem pages needed for copying highmem.
  *
@@ -2022,7 +2022,7 @@ static int enough_free_mem(unsigned int nr_pages, unsigned int nr_highmem)
 	return free > nr_pages + PAGES_FOR_IO;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /**
  * get_highmem_buffer - Allocate a buffer for highmem pages.
  *
@@ -2384,7 +2384,7 @@ static int unpack_orig_pfns(unsigned long *buf, struct memory_bitmap *bm,
 	return 0;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /*
  * struct highmem_pbe is used for creating the list of highmem pages that
  * should be restored atomically during the resume from disk, because the page
@@ -2880,7 +2880,7 @@ int snapshot_image_loaded(struct snapshot_handle *handle)
 			handle->cur <= nr_meta_pages + nr_copy_pages + nr_zero_pages);
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /* Assumes that @buf is ready and points to a "safe" page */
 static inline void swap_two_pages_data(struct page *p1, struct page *p2,
 				       void *buf)

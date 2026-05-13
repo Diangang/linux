@@ -219,7 +219,7 @@ static inline struct obj_cgroup *__memcg_reparent_objcgs(struct mem_cgroup *memc
 	return objcg;
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 static void __mem_cgroup_flush_stats(struct mem_cgroup *memcg, bool force);
 
 static inline void reparent_state_local(struct mem_cgroup *memcg, struct mem_cgroup *parent)
@@ -518,7 +518,7 @@ unsigned long lruvec_page_state_local(struct lruvec *lruvec,
 	return x;
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 static void __mod_memcg_lruvec_state(struct mem_cgroup_per_node *pn,
 				     enum node_stat_item idx, long val);
 
@@ -544,7 +544,7 @@ void reparent_memcg_lruvec_state_local(struct mem_cgroup *memcg,
 
 /* Subset of vm_event_item to report for memcg event stats */
 static const unsigned int memcg_vm_event_stat[] = {
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	PGPGIN,
 	PGPGOUT,
 #endif
@@ -786,7 +786,7 @@ static long memcg_state_val_in_pages(int idx, long val)
 	return val < 0 ? -res : res;
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 /*
  * Used in mod_memcg_state() and mod_memcg_lruvec_state() to avoid race with
  * reparenting of non-hierarchical state_locals.
@@ -858,7 +858,7 @@ void mod_memcg_state(struct mem_cgroup *memcg, enum memcg_stat_item idx,
 	get_non_dying_memcg_end();
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 /* idx can be of type enum memcg_stat_item or node_stat_item. */
 unsigned long memcg_page_state_local(struct mem_cgroup *memcg, int idx)
 {
@@ -1038,7 +1038,7 @@ bool memcg_vm_event_item_valid(enum vm_event_item idx)
 	return !BAD_STAT_IDX(memcg_events_index(idx));
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 unsigned long memcg_events_local(struct mem_cgroup *memcg, int event)
 {
 	int i = memcg_events_index(event);
@@ -1639,7 +1639,7 @@ unsigned long memcg_page_state_output(struct mem_cgroup *memcg, int item)
 		memcg_page_state_output_unit(item);
 }
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 unsigned long memcg_page_state_local_output(struct mem_cgroup *memcg, int item)
 {
 	return memcg_page_state_local(memcg, item) *
@@ -1706,7 +1706,7 @@ static void memcg_stat_format(struct mem_cgroup *memcg, struct seq_buf *s)
 		       memcg_page_state(memcg, PGSTEAL_KHUGEPAGED));
 
 	for (i = 0; i < ARRAY_SIZE(memcg_vm_event_stat); i++) {
-#ifdef CONFIG_MEMCG_V1
+#if 0
 		if (memcg_vm_event_stat[i] == PGPGIN ||
 		    memcg_vm_event_stat[i] == PGPGOUT)
 			continue;
@@ -1779,7 +1779,7 @@ void mem_cgroup_print_oom_meminfo(struct mem_cgroup *memcg)
 			K((u64)page_counter_read(&memcg->swap)),
 			K((u64)READ_ONCE(memcg->swap.max)),
 			atomic_long_read(&memcg->memory_events[MEMCG_SWAP_MAX]));
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	else {
 		pr_info("memory+swap: usage %llukB, limit %llukB, failcnt %lu\n",
 			K((u64)page_counter_read(&memcg->memsw)),
@@ -4033,7 +4033,7 @@ mem_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
 
 		page_counter_init(&memcg->memory, &parent->memory, memcg_on_dfl);
 		page_counter_init(&memcg->swap, &parent->swap, false);
-#ifdef CONFIG_MEMCG_V1
+#if 0
 		memcg->memory.track_failcnt = !memcg_on_dfl;
 		WRITE_ONCE(memcg->oom_kill_disable, READ_ONCE(parent->oom_kill_disable));
 		page_counter_init(&memcg->kmem, &parent->kmem, false);
@@ -4044,7 +4044,7 @@ mem_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
 		init_memcg_events();
 		page_counter_init(&memcg->memory, NULL, true);
 		page_counter_init(&memcg->swap, NULL, false);
-#ifdef CONFIG_MEMCG_V1
+#if 0
 		page_counter_init(&memcg->kmem, NULL, false);
 		page_counter_init(&memcg->tcpmem, NULL, false);
 #endif
@@ -4218,7 +4218,7 @@ static void mem_cgroup_css_reset(struct cgroup_subsys_state *css)
 
 	page_counter_set_max(&memcg->memory, PAGE_COUNTER_MAX);
 	page_counter_set_max(&memcg->swap, PAGE_COUNTER_MAX);
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	page_counter_set_max(&memcg->kmem, PAGE_COUNTER_MAX);
 	page_counter_set_max(&memcg->tcpmem, PAGE_COUNTER_MAX);
 #endif
@@ -4915,7 +4915,7 @@ struct cgroup_subsys memory_cgrp_subsys = {
 	.fork = mem_cgroup_fork,
 	.exit = mem_cgroup_exit,
 	.dfl_cftypes = memory_files,
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	.legacy_cftypes = mem_cgroup_legacy_files,
 #endif
 	.early_init = 0,
@@ -5659,7 +5659,7 @@ static int __init mem_cgroup_swap_init(void)
 		return 0;
 
 	WARN_ON(cgroup_add_dfl_cftypes(&memory_cgrp_subsys, swap_files));
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	WARN_ON(cgroup_add_legacy_cftypes(&memory_cgrp_subsys, memsw_files));
 #endif
 	return 0;

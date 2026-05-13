@@ -606,7 +606,7 @@ int gpiochip_add_data_with_key(struct gpio_chip *gc, void *data,
  * gc->base is invalid or already associated with a different chip.
  * Otherwise it returns zero as a success code.
  */
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define gpiochip_add_data(gc, data) ({		\
 		static struct lock_class_key lock_key;	\
 		static struct lock_class_key request_key;	  \

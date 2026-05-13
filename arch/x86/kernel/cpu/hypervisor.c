@@ -39,7 +39,7 @@ static const __initconst struct hypervisor_x86 * const hypervisors[] =
 #ifdef CONFIG_KVM_GUEST
 	&x86_hyper_kvm,
 #endif
-#ifdef CONFIG_JAILHOUSE_GUEST
+#if 0
 	&x86_hyper_jailhouse,
 #endif
 #ifdef CONFIG_ACRN_GUEST

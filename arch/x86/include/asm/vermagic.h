@@ -5,15 +5,15 @@
 
 #ifdef CONFIG_X86_64
 /* X86_64 does not define MODULE_PROC_FAMILY */
-#elif defined CONFIG_M586
+#elif 0
 #define MODULE_PROC_FAMILY "586 "
-#elif defined CONFIG_M586TSC
+#elif 0
 #define MODULE_PROC_FAMILY "586TSC "
-#elif defined CONFIG_M586MMX
+#elif 0
 #define MODULE_PROC_FAMILY "586MMX "
-#elif defined CONFIG_MATOM
+#elif 0
 #define MODULE_PROC_FAMILY "ATOM "
-#elif defined CONFIG_M686
+#elif 0
 #define MODULE_PROC_FAMILY "686 "
 #elif defined CONFIG_MPENTIUMII
 #define MODULE_PROC_FAMILY "PENTIUMII "
@@ -27,15 +27,15 @@
 #define MODULE_PROC_FAMILY "K6 "
 #elif defined CONFIG_MK7
 #define MODULE_PROC_FAMILY "K7 "
-#elif defined CONFIG_MCRUSOE
+#elif 0
 #define MODULE_PROC_FAMILY "CRUSOE "
-#elif defined CONFIG_MEFFICEON
+#elif 0
 #define MODULE_PROC_FAMILY "EFFICEON "
 #elif defined CONFIG_MWINCHIPC6
 #define MODULE_PROC_FAMILY "WINCHIPC6 "
 #elif defined CONFIG_MWINCHIP3D
 #define MODULE_PROC_FAMILY "WINCHIP3D "
-#elif defined CONFIG_MCYRIXIII
+#elif 0
 #define MODULE_PROC_FAMILY "CYRIXIII "
 #elif defined CONFIG_MVIAC3_2
 #define MODULE_PROC_FAMILY "VIAC3-2 "

@@ -37,7 +37,7 @@ struct logic_pio_host_ops {
 		     size_t dwidth, unsigned int count);
 };
 
-#ifdef CONFIG_INDIRECT_PIO
+#if 0
 u8 logic_inb(unsigned long addr);
 u16 logic_inw(unsigned long addr);
 u32 logic_inl(unsigned long addr);

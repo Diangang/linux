@@ -1011,7 +1011,7 @@ static void __meminit free_pagetable(struct page *page, int order)
 	/* bootmem page has reserved flag */
 	if (PageReserved(page)) {
 		unsigned long nr_pages = 1 << order;
-#ifdef CONFIG_HAVE_BOOTMEM_INFO_NODE
+#if 0
 		enum bootmem_type type = bootmem_type(page);
 
 		if (type == SECTION_INFO || type == MIX_SECTION_INFO) {
@@ -1578,7 +1578,7 @@ int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
 	return err;
 }
 
-#ifdef CONFIG_HAVE_BOOTMEM_INFO_NODE
+#if 0
 void register_page_bootmem_memmap(unsigned long section_nr,
 				  struct page *start_page, unsigned long nr_pages)
 {

@@ -9,18 +9,9 @@ config HAVE_CLK
 config HAVE_CLK_PREPARE
 	bool
 
-config HAVE_LEGACY_CLK # TODO: Remove once all legacy users are migrated
-	bool
-	select HAVE_CLK
-	help
-	  Select this option when the clock API in <linux/clk.h> is implemented
-	  by platform/architecture code. This method is deprecated. Modern
-	  code should select COMMON_CLK instead and not define a custom
-	  'struct clk'.
-
 menuconfig COMMON_CLK
 	bool "Common Clock Framework"
-	depends on !HAVE_LEGACY_CLK
+	depends on !n
 	select HAVE_CLK_PREPARE
 	select HAVE_CLK
 	select RATIONAL

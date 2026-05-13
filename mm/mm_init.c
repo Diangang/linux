@@ -1235,7 +1235,7 @@ static void __init calc_nr_kernel_pages(void)
 	unsigned long start_pfn, end_pfn;
 	phys_addr_t start_addr, end_addr;
 	u64 u;
-#ifdef CONFIG_HIGHMEM
+#if 0
 	unsigned long high_zone_low = arch_zone_lowest_possible_pfn[ZONE_HIGHMEM];
 #endif
 
@@ -1245,7 +1245,7 @@ static void __init calc_nr_kernel_pages(void)
 
 		if (start_pfn < end_pfn) {
 			nr_all_pages += end_pfn - start_pfn;
-#ifdef CONFIG_HIGHMEM
+#if 0
 			start_pfn = clamp(start_pfn, 0, high_zone_low);
 			end_pfn = clamp(end_pfn, 0, high_zone_low);
 #endif
@@ -1425,7 +1425,7 @@ static void __ref setup_usemap(struct zone *zone)
 static inline void setup_usemap(struct zone *zone) {}
 #endif /* CONFIG_SPARSEMEM */
 
-#ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
+#if 0
 
 /* Initialise the number of pages represented by NR_PAGEBLOCK_BITS */
 void __init set_pageblock_order(void)
@@ -1674,7 +1674,7 @@ static void __init check_for_memory(pg_data_t *pgdat)
 	for (zone_type = 0; zone_type <= ZONE_MOVABLE - 1; zone_type++) {
 		struct zone *zone = &pgdat->node_zones[zone_type];
 		if (populated_zone(zone)) {
-			if (IS_ENABLED(CONFIG_HIGHMEM))
+			if (0)
 				node_set_state(pgdat->node_id, N_HIGH_MEMORY);
 			if (zone_type <= ZONE_NORMAL)
 				node_set_state(pgdat->node_id, N_NORMAL_MEMORY);
@@ -1717,7 +1717,7 @@ static void __init set_high_memory(void)
 	if (high_memory)
 		return;
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 	if (arch_has_descending_max_zone_pfns() ||
 	    highmem > PFN_PHYS(arch_zone_lowest_possible_pfn[ZONE_HIGHMEM]))
 		highmem = PFN_PHYS(arch_zone_lowest_possible_pfn[ZONE_HIGHMEM]);
@@ -2190,7 +2190,7 @@ static void __init mem_debugging_and_hardening_init(void)
 		static_branch_disable(&init_on_free);
 	}
 
-	if (IS_ENABLED(CONFIG_KMSAN) &&
+	if (0 &&
 	    (_init_on_alloc_enabled_early || _init_on_free_enabled_early))
 		pr_info("mem auto-init: please make sure init_on_alloc and init_on_free are disabled when running KMSAN\n");
 
@@ -2259,7 +2259,7 @@ static void __init mem_init_print_info(void)
 #undef	adj_init_size
 
 	pr_info("Memory: %luK/%luK available (%luK kernel code, %luK rwdata, %luK rodata, %luK init, %luK bss, %luK reserved, %luK cma-reserved"
-#ifdef	CONFIG_HIGHMEM
+#if 0
 		", %luK highmem"
 #endif
 		")\n",
@@ -2268,7 +2268,7 @@ static void __init mem_init_print_info(void)
 		(init_data_size + init_code_size) / SZ_1K, bss_size / SZ_1K,
 		K(physpages - totalram_pages() - totalcma_pages),
 		K(totalcma_pages)
-#ifdef	CONFIG_HIGHMEM
+#if 0
 		, K(totalhigh_pages())
 #endif
 		);

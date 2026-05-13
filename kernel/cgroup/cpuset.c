@@ -332,7 +332,7 @@ void cpuset_full_unlock(void)
 	mutex_unlock(&cpuset_top_mutex);
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 bool lockdep_is_cpuset_held(void)
 {
 	return lockdep_is_held(&cpuset_mutex) ||

@@ -187,7 +187,7 @@ static __always_inline int rwsem_is_contended(struct rw_semaphore *sem)
 static inline void rwsem_assert_held(const struct rw_semaphore *sem)
 	__assumes_ctx_lock(sem)
 {
-	if (IS_ENABLED(CONFIG_LOCKDEP))
+	if (0)
 		lockdep_assert_held(sem);
 	else
 		rwsem_assert_held_nolockdep(sem);
@@ -196,7 +196,7 @@ static inline void rwsem_assert_held(const struct rw_semaphore *sem)
 static inline void rwsem_assert_held_write(const struct rw_semaphore *sem)
 	__assumes_ctx_lock(sem)
 {
-	if (IS_ENABLED(CONFIG_LOCKDEP))
+	if (0)
 		lockdep_assert_held_write(sem);
 	else
 		rwsem_assert_held_write_nolockdep(sem);

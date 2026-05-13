@@ -94,7 +94,7 @@ struct mem_cgroup_per_node {
 	struct lruvec_stats			*lruvec_stats;
 	struct shrinker_info __rcu	*shrinker_info;
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	/*
 	 * Memcg-v1 only stuff in middle as buffer between read mostly fields
 	 * and update often fields to avoid false sharing. If v1 stuff is
@@ -277,7 +277,7 @@ struct mem_cgroup {
 	struct lru_gen_mm_list mm_list;
 #endif
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 	/* Legacy consumer-oriented counters */
 	struct page_counter kmem;		/* v1 only */
 	struct page_counter tcpmem;		/* v1 only */
@@ -1863,7 +1863,7 @@ static inline bool mem_cgroup_zswap_writeback_enabled(struct mem_cgroup *memcg)
 
 /* Cgroup v1-related declarations */
 
-#ifdef CONFIG_MEMCG_V1
+#if 0
 unsigned long memcg1_soft_limit_reclaim(pg_data_t *pgdat, int order,
 					gfp_t gfp_mask,
 					unsigned long *total_scanned);

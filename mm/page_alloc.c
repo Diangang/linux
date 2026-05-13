@@ -188,7 +188,7 @@ nodemask_t node_states[NR_NODE_STATES] __read_mostly = {
 	[N_ONLINE] = { { [0] = 1UL } },
 #ifndef CONFIG_NUMA
 	[N_NORMAL_MEMORY] = { { [0] = 1UL } },
-#ifdef CONFIG_HIGHMEM
+#if 0
 	[N_HIGH_MEMORY] = { { [0] = 1UL } },
 #endif
 	[N_MEMORY] = { { [0] = 1UL } },
@@ -199,7 +199,7 @@ EXPORT_SYMBOL(node_states);
 
 gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
 
-#ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
+#if 0
 unsigned int pageblock_order __read_mostly;
 #endif
 
@@ -227,7 +227,7 @@ static int sysctl_lowmem_reserve_ratio[MAX_NR_ZONES] = {
 	[ZONE_DMA32] = 256,
 #endif
 	[ZONE_NORMAL] = 32,
-#ifdef CONFIG_HIGHMEM
+#if 0
 	[ZONE_HIGHMEM] = 0,
 #endif
 	[ZONE_MOVABLE] = 0,
@@ -241,7 +241,7 @@ char * const zone_names[MAX_NR_ZONES] = {
 	 "DMA32",
 #endif
 	 "Normal",
-#ifdef CONFIG_HIGHMEM
+#if 0
 	 "HighMem",
 #endif
 	 "Movable",
@@ -1137,7 +1137,7 @@ out:
  */
 static inline bool should_skip_kasan_poison(struct page *page)
 {
-	if (IS_ENABLED(CONFIG_KASAN_GENERIC))
+	if (0)
 		return deferred_pages_enabled();
 
 	return page_kasan_tag(page) == KASAN_TAG_KERNEL;
@@ -1639,8 +1639,8 @@ static inline bool check_new_pages(struct page *page, unsigned int order)
 static inline bool should_skip_kasan_unpoison(gfp_t flags)
 {
 	/* Don't skip if a software KASAN mode is enabled. */
-	if (IS_ENABLED(CONFIG_KASAN_GENERIC) ||
-	    IS_ENABLED(CONFIG_KASAN_SW_TAGS))
+	if (0 ||
+	    0)
 		return false;
 
 	/* Skip, if hardware tag-based KASAN is not enabled. */
@@ -4125,7 +4125,7 @@ should_compact_retry(struct alloc_context *ac, int order, int alloc_flags,
 }
 #endif /* CONFIG_COMPACTION */
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static struct lockdep_map __fs_reclaim_map =
 	STATIC_LOCKDEP_MAP_INIT("fs_reclaim", &__fs_reclaim_map);
 

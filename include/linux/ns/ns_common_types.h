@@ -177,7 +177,7 @@ struct ns_common {
 #define to_ns_operations(__ns)                                                                         \
 	_Generic((__ns),                                                                               \
 		struct cgroup_namespace *: (IS_ENABLED(CONFIG_CGROUPS) ? &cgroupns_operations : NULL), \
-		struct ipc_namespace *:    (IS_ENABLED(CONFIG_IPC_NS)  ? &ipcns_operations    : NULL), \
+		struct ipc_namespace *:    (0  ? &ipcns_operations    : NULL), \
 		struct mnt_namespace *:    &mntns_operations,                                          \
 		struct net *:              (IS_ENABLED(CONFIG_NET_NS)  ? &netns_operations    : NULL), \
 		struct pid_namespace *:    (IS_ENABLED(CONFIG_PID_NS)  ? &pidns_operations    : NULL), \

@@ -68,7 +68,7 @@ static inline void alloc_offline_node_data(int nid) {}
 
 #define numa_map_to_online_node(node) numa_nearest_node(node, N_ONLINE)
 
-#ifdef CONFIG_HAVE_ARCH_NODE_DEV_GROUP
+#if 0
 extern const struct attribute_group arch_node_dev_group;
 #endif
 

@@ -1248,7 +1248,7 @@ static void restore_bytes(struct kmem_cache *s, const char *message, u8 data,
 	memset(from, data, to - from);
 }
 
-#ifdef CONFIG_KMSAN
+#if 0
 #define pad_check_attributes noinline __no_kmsan_checks
 #else
 #define pad_check_attributes
@@ -6052,7 +6052,7 @@ static void slab_free_after_rcu_debug(struct rcu_head *rcu_head)
 }
 #endif /* CONFIG_SLUB_RCU_DEBUG */
 
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr)
 {
 	__slab_free(cache, virt_to_slab(x), x, x, 1, addr);

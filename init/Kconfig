@@ -43,12 +43,9 @@ config LD_VERSION
 	default $(ld-version) if LD_IS_BFD
 	default 0
 
-config LD_IS_LLD
-	def_bool $(success,test "$(ld-name)" = LLD)
-
 config LLD_VERSION
 	int
-	default $(ld-version) if LD_IS_LLD
+	default $(ld-version) if n
 	default 0
 
 config RUSTC_VERSION
@@ -224,13 +221,10 @@ config HAVE_KERNEL_LZ4
 config HAVE_KERNEL_ZSTD
 	bool
 
-config HAVE_KERNEL_UNCOMPRESSED
-	bool
-
 choice
 	prompt "Kernel compression mode"
 	default KERNEL_GZIP
-	depends on HAVE_KERNEL_GZIP || HAVE_KERNEL_BZIP2 || HAVE_KERNEL_LZMA || HAVE_KERNEL_XZ || HAVE_KERNEL_LZO || HAVE_KERNEL_LZ4 || HAVE_KERNEL_ZSTD || HAVE_KERNEL_UNCOMPRESSED
+	depends on HAVE_KERNEL_GZIP || HAVE_KERNEL_BZIP2 || HAVE_KERNEL_LZMA || HAVE_KERNEL_XZ || HAVE_KERNEL_LZO || HAVE_KERNEL_LZ4 || HAVE_KERNEL_ZSTD || n
 	help
 	  The linux kernel is a kind of self-extracting executable.
 	  Several compression algorithms are available, which differ
@@ -255,70 +249,6 @@ config KERNEL_GZIP
 	help
 	  The old and tried gzip compression. It provides a good balance
 	  between compression ratio and decompression speed.
-
-config KERNEL_BZIP2
-	bool "Bzip2"
-	depends on HAVE_KERNEL_BZIP2
-	help
-	  Its compression ratio and speed is intermediate.
-	  Decompression speed is slowest among the choices.  The kernel
-	  size is about 10% smaller with bzip2, in comparison to gzip.
-	  Bzip2 uses a large amount of memory. For modern kernels you
-	  will need at least 8MB RAM or more for booting.
-
-config KERNEL_LZMA
-	bool "LZMA"
-	depends on HAVE_KERNEL_LZMA
-	help
-	  This compression algorithm's ratio is best.  Decompression speed
-	  is between gzip and bzip2.  Compression is slowest.
-	  The kernel size is about 33% smaller with LZMA in comparison to gzip.
-
-config KERNEL_XZ
-	bool "XZ"
-	depends on HAVE_KERNEL_XZ
-	help
-	  XZ uses the LZMA2 algorithm and instruction set specific
-	  BCJ filters which can improve compression ratio of executable
-	  code. The size of the kernel is about 30% smaller with XZ in
-	  comparison to gzip. On architectures for which there is a BCJ
-	  filter (i386, x86_64, ARM, ARM64, RISC-V, big endian PowerPC,
-	  and SPARC), XZ will create a few percent smaller kernel than
-	  plain LZMA.
-
-	  The speed is about the same as with LZMA: The decompression
-	  speed of XZ is better than that of bzip2 but worse than gzip
-	  and LZO. Compression is slow.
-
-config KERNEL_LZO
-	bool "LZO"
-	depends on HAVE_KERNEL_LZO
-	help
-	  Its compression ratio is the poorest among the choices. The kernel
-	  size is about 10% bigger than gzip; however its speed
-	  (both compression and decompression) is the fastest.
-
-config KERNEL_LZ4
-	bool "LZ4"
-	depends on HAVE_KERNEL_LZ4
-	help
-	  LZ4 is an LZ77-type compressor with a fixed, byte-oriented encoding.
-	  A preliminary version of LZ4 de/compression tool is available at
-	  <https://code.google.com/p/lz4/>.
-
-	  Its compression ratio is worse than LZO. The size of the kernel
-	  is about 8% bigger than LZO. But the decompression speed is
-	  faster than LZO.
-
-config KERNEL_ZSTD
-	bool "ZSTD"
-	depends on HAVE_KERNEL_ZSTD
-	help
-	  ZSTD is a compression algorithm targeting intermediate compression
-	  with fast decompression speed. It will compress better than GZIP and
-	  decompress around the same speed as LZO, but slower than LZ4. You
-	  will need at least 192 KB RAM or more for booting. The zstd command
-	  line tool is required for compression.
 
 endchoice
 
@@ -428,7 +358,7 @@ config TICK_CPU_ACCOUNTING
 
 config VIRT_CPU_ACCOUNTING_NATIVE
 	bool "Deterministic task and CPU time accounting"
-	depends on HAVE_VIRT_CPU_ACCOUNTING && !NO_HZ_FULL
+	depends on n && !NO_HZ_FULL
 	select VIRT_CPU_ACCOUNTING
 	help
 	  Select this option to enable more accurate task and CPU time
@@ -822,23 +752,6 @@ config MEMCG
 	help
 	  Provides control over the memory footprint of tasks in a cgroup.
 
-config MEMCG_V1
-	bool "Legacy cgroup v1 memory controller"
-	depends on MEMCG
-	default n
-	help
-	  Legacy cgroup v1 memory controller which has been deprecated by
-	  cgroup v2 implementation. The v1 is there for legacy applications
-	  which haven't migrated to the new cgroup v2 interface yet. If you
-	  do not have any such application then you are completely fine leaving
-	  this option disabled.
-
-	  Please note that feature set of the legacy memory controller is likely
-	  going to shrink due to deprecation process. New deployments with v1
-	  controller are highly discouraged.
-
-	  Say N if unsure.
-
 config BLK_CGROUP
 	bool "IO controller"
 	depends on BLOCK
@@ -1045,14 +958,6 @@ config TIME_NS
 config TIME_NS_VDSO
 	def_bool TIME_NS && GENERIC_GETTIMEOFDAY
 
-config IPC_NS
-	bool "IPC namespace"
-	depends on (SYSVIPC || POSIX_MQUEUE)
-	default y
-	help
-	  In this namespace tasks work with IPC ids which correspond to
-	  different IPC objects in different namespaces.
-
 config USER_NS
 	bool "User namespace"
 	default n
@@ -1159,16 +1064,6 @@ config CC_OPTIMIZE_FOR_PERFORMANCE
 	  helpful compile-time warnings.
 
 endchoice
-
-config HAVE_LD_DEAD_CODE_DATA_ELIMINATION
-	bool
-	help
-	  This requires that the arch annotates or otherwise protects
-	  its external entry points from being discarded. Linker scripts
-	  must also merge .text.*, .data.*, and .bss.* correctly into
-	  output sections. Care must be taken not to pull in unrelated
-	  sections (e.g., '.text.init'). Typically '.' in section names
-	  is used to distinguish them from label names / C identifiers.
 
 config LD_ORPHAN_WARN
 	def_bool y
@@ -1579,7 +1474,7 @@ config RUST
 	depends on RUST_IS_AVAILABLE
 	depends on !GCC_PLUGIN_RANDSTRUCT
 	depends on !RANDSTRUCT
-	depends on !KASAN_SW_TAGS
+	depends on !n
 	help
 	  Enables Rust support in the kernel.
 

@@ -133,7 +133,7 @@ static void update_kcore_size(void)
 	proc_root_kcore->size = kcore_data_offset + size;
 }
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 /*
  * If no highmem, we can assume [0...max_low_pfn) continuous range of memory
  * because memory hole is not as big as !HIGHMEM case.

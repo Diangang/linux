@@ -75,7 +75,7 @@ typedef struct _kdbtab {
 	struct list_head list_node;	/* Command list */
 } kdbtab_t;
 
-#ifdef	CONFIG_KGDB_KDB
+#if 0
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/atomic.h>

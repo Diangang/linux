@@ -112,7 +112,7 @@ jiffies = jiffies_64;
 	*(.idmap.text)					\
 	__idmap_text_end = .;
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 #define HIBERNATE_TEXT					\
 	ALIGN_FUNCTION();				\
 	__hibernate_exit_text_start = .;		\
@@ -394,7 +394,7 @@ ASSERT(__hyp_idmap_text_end - __hyp_idmap_text_start <= PAGE_SIZE,
 	"HYP init code too big")
 ASSERT(__idmap_text_end - (__idmap_text_start & ~(SZ_4K - 1)) <= SZ_4K,
 	"ID map text too big or misaligned")
-#ifdef CONFIG_HIBERNATION
+#if 0
 ASSERT(__hibernate_exit_text_end - __hibernate_exit_text_start <= SZ_4K,
        "Hibernate exit text is bigger than 4 KiB")
 ASSERT(__hibernate_exit_text_start == swsusp_arch_suspend_exit,

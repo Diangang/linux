@@ -5,7 +5,7 @@
 #ifndef __ASM_RWONCE_H
 #define __ASM_RWONCE_H
 
-#if defined(CONFIG_LTO) && !defined(__ASSEMBLER__)
+#if 0 && !defined(__ASSEMBLER__)
 
 #include <linux/compiler_types.h>
 #include <asm/alternative-macros.h>

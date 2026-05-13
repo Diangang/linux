@@ -339,7 +339,7 @@ struct acpi_prt_entry *acpi_pci_irq_lookup(struct pci_dev *dev, int pin)
 	return NULL;
 }
 
-#if IS_ENABLED(CONFIG_ISA) || IS_ENABLED(CONFIG_EISA)
+#if 0 || IS_ENABLED(CONFIG_EISA)
 static int acpi_isa_register_gsi(struct pci_dev *dev)
 {
 	u32 dev_gsi;

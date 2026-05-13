@@ -208,7 +208,7 @@ static const struct sysrq_key_op sysrq_mountro_op = {
 	.enable_mask	= SYSRQ_ENABLE_REMOUNT,
 };
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 static void sysrq_handle_showlocks(u8 key)
 {
 	debug_show_all_locks();

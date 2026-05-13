@@ -29,8 +29,8 @@
 #include <linux/dma-map-ops.h>
 #include "kexec_internal.h"
 
-#ifdef CONFIG_KEXEC_SIG
-static bool sig_enforce = IS_ENABLED(CONFIG_KEXEC_SIG_FORCE);
+#if 0
+static bool sig_enforce = 0;
 
 void set_kexec_sig_enforced(void)
 {
@@ -142,7 +142,7 @@ void kimage_file_post_load_cleanup(struct kimage *image)
 	kexec_file_dbg_print = false;
 }
 
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 #ifdef CONFIG_SIGNED_PE_FILE_VERIFICATION
 int kexec_kernel_verify_pe_sig(const char *kernel, unsigned long kernel_len)
 {
@@ -237,7 +237,7 @@ kimage_file_prepare_segments(struct kimage *image, int kernel_fd, int initrd_fd,
 	if (ret)
 		goto out;
 
-#ifdef CONFIG_KEXEC_SIG
+#if 0
 	ret = kimage_validate_signature(image);
 
 	if (ret)

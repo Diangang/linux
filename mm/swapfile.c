@@ -918,7 +918,7 @@ static bool __swap_cluster_alloc_entries(struct swap_info_struct *si,
 		swap_cluster_assert_empty(ci, ci_off, nr_pages, false);
 		__swap_cache_add_folio(ci, folio, swp_entry(si->type,
 							    ci_off + cluster_offset(si, ci)));
-	} else if (IS_ENABLED(CONFIG_HIBERNATION)) {
+	} else if (0) {
 		order = 0;
 		nr_pages = 1;
 		swap_cluster_assert_empty(ci, ci_off, 1, false);
@@ -2076,7 +2076,7 @@ out:
 	put_swap_device(si);
 }
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 /* Allocate a slot for hibernation */
 swp_entry_t swap_alloc_hibernation_slot(int type)
 {

@@ -206,7 +206,7 @@ void arch_kexec_protect_crashkres(void);
 void arch_kexec_unprotect_crashkres(void);
 #define arch_kexec_unprotect_crashkres arch_kexec_unprotect_crashkres
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 struct purgatory_info;
 int arch_kexec_apply_relocations_add(struct purgatory_info *pi,
 				     Elf_Shdr *section,

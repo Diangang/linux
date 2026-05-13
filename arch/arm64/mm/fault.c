@@ -354,7 +354,7 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 	make_task_dead(SIGKILL);
 }
 
-#ifdef CONFIG_KASAN_HW_TAGS
+#if 0
 static void report_tag_fault(unsigned long addr, unsigned long esr,
 			     struct pt_regs *regs)
 {

@@ -206,7 +206,7 @@ static inline int hv_snp_boot_ap(u32 apic_id, unsigned long start_ip,
 		unsigned int cpu) { return 0; }
 #endif
 
-#if defined(CONFIG_AMD_MEM_ENCRYPT) || defined(CONFIG_INTEL_TDX_GUEST)
+#if defined(CONFIG_AMD_MEM_ENCRYPT) || 0
 void hv_vtom_init(void);
 void hv_ivm_msr_write(u64 msr, u64 value);
 void hv_ivm_msr_read(u64 msr, u64 *value);

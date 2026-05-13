@@ -388,15 +388,6 @@ config HAVE_HARDLOCKUP_DETECTOR_PERF
 	  The arch chooses to use the generic perf-NMI-based hardlockup
 	  detector. Must define HAVE_PERF_EVENTS_NMI.
 
-config HAVE_HARDLOCKUP_DETECTOR_ARCH
-	bool
-	help
-	  The arch provides its own hardlockup detector implementation instead
-	  of the generic ones.
-
-	  It uses the same command line parameters, and sysctl interface,
-	  as the generic hardlockup detectors.
-
 config UNWIND_USER
 	bool
 
@@ -581,7 +572,7 @@ config SECCOMP_FILTER
 
 config SECCOMP_CACHE_DEBUG
 	bool "Show seccomp filter cache status in /proc/pid/seccomp_cache"
-	depends on SECCOMP_FILTER && !HAVE_SPARSE_SYSCALL_NR
+	depends on SECCOMP_FILTER && !n
 	depends on PROC_FS
 	help
 	  This enables the /proc/pid/seccomp_cache interface to monitor
@@ -652,17 +643,6 @@ config STACKPROTECTOR_STRONG
 	  about 20% of all kernel functions, which increases the kernel code
 	  size by about 2%.
 
-config LTO
-	bool
-	help
-	  Selected if the kernel will be built using the compiler's LTO feature.
-
-config LTO_CLANG
-	bool
-	select LTO
-	help
-	  Selected if the kernel will be built using Clang's LTO feature.
-
 config ARCH_SUPPORTS_LTO_CLANG
 	bool
 	help
@@ -677,22 +657,8 @@ config ARCH_SUPPORTS_LTO_CLANG_THIN
 	  An architecture should select this option if it can support Clang's
 	  ThinLTO mode.
 
-config HAS_LTO_CLANG
-	def_bool y
-	depends on n
-	depends on $(success,$(NM) --help | head -n 1 | grep -qi llvm)
-	depends on $(success,$(AR) --help | head -n 1 | grep -qi llvm)
-	depends on ARCH_SUPPORTS_LTO_CLANG
-	# https://github.com/ClangBuiltLinux/linux/issues/1721
-	depends on (!KASAN || KASAN_HW_TAGS || CLANG_VERSION >= 170000) || !DEBUG_INFO
-	depends on (!KCOV || CLANG_VERSION >= 170000) || !DEBUG_INFO
-	depends on !GCOV_KERNEL
-	help
-	  The compiler and Kconfig options support building with Clang's
-	  LTO.
-
 choice
-	prompt "Link Time Optimization (LTO)"
+	prompt "Link Time Optimization (n)"
 	default LTO_NONE
 	help
 	  This option enables Link Time Optimization (LTO), which allows the
@@ -736,20 +702,6 @@ config ARCH_SUPPORTS_CFI
 	  An architecture should select this option if it can support Kernel
 	  Control-Flow Integrity (CFI) checking (-fsanitize=kcfi).
 
-config HAVE_CFI_ICALL_NORMALIZE_INTEGERS
-	def_bool y
-	depends on $(cc-option,-fsanitize=kcfi -fsanitize-cfi-icall-experimental-normalize-integers)
-	# With GCOV/KASAN we need this fix: https://github.com/llvm/llvm-project/pull/104826
-	depends on CLANG_VERSION >= 190103 || (!GCOV_KERNEL && !KASAN_GENERIC && !KASAN_SW_TAGS)
-
-config HAVE_CFI_ICALL_NORMALIZE_INTEGERS_RUSTC
-	def_bool y
-	depends on HAVE_CFI_ICALL_NORMALIZE_INTEGERS
-	depends on ARM64 || X86_64
-	# With GCOV/KASAN we need this fix: https://github.com/rust-lang/rust/pull/129373
-	depends on RUSTC_LLVM_VERSION >= 190103 || \
-		(!GCOV_KERNEL && !KASAN_GENERIC && !KASAN_SW_TAGS)
-
 config HAVE_ARCH_WITHIN_STACK_FRAMES
 	bool
 	help
@@ -786,9 +738,6 @@ config HAVE_CONTEXT_TRACKING_USER_OFFSTACK
 	    got called.
 	  - No use of instrumentation, unless instrumentation_begin() got
 	    called.
-
-config HAVE_VIRT_CPU_ACCOUNTING
-	bool
 
 config HAVE_VIRT_CPU_ACCOUNTING_GEN
 	bool
@@ -878,7 +827,7 @@ config ARCH_WANTS_EXECMEM_LATE
 
 config ARCH_HAS_EXECMEM_ROX
 	bool
-	depends on MMU && !HIGHMEM
+	depends on MMU && !n
 	help
 	  For architectures that support allocations of executable memory
 	  with read-only execute permissions. Architecture must implement
@@ -990,21 +939,6 @@ config HAVE_ARCH_COMPAT_MMAP_BASES
 config HAVE_PAGE_SIZE_4KB
 	bool
 
-config HAVE_PAGE_SIZE_8KB
-	bool
-
-config HAVE_PAGE_SIZE_16KB
-	bool
-
-config HAVE_PAGE_SIZE_32KB
-	bool
-
-config HAVE_PAGE_SIZE_64KB
-	bool
-
-config HAVE_PAGE_SIZE_256KB
-	bool
-
 choice
 	prompt "MMU page size"
 
@@ -1021,14 +955,14 @@ config PAGE_SIZE_4KB
 
 config PAGE_SIZE_8KB
 	bool "8KiB pages"
-	depends on HAVE_PAGE_SIZE_8KB
+	depends on n
 	help
 	  This option is the only supported page size on a few older
 	  processors, and can be slightly faster than 4KiB pages.
 
 config PAGE_SIZE_16KB
 	bool "16KiB pages"
-	depends on HAVE_PAGE_SIZE_16KB
+	depends on n
 	help
 	  This option is usually a good compromise between memory
 	  consumption and performance for typical desktop and server
@@ -1039,7 +973,7 @@ config PAGE_SIZE_16KB
 
 config PAGE_SIZE_32KB
 	bool "32KiB pages"
-	depends on HAVE_PAGE_SIZE_32KB
+	depends on n
 	help
 	  Using 32KiB page size will result in slightly higher performance
 	  kernel at the price of higher memory consumption compared to
@@ -1049,7 +983,7 @@ config PAGE_SIZE_32KB
 
 config PAGE_SIZE_64KB
 	bool "64KiB pages"
-	depends on HAVE_PAGE_SIZE_64KB
+	depends on n
 	help
 	  Using 64KiB page size will result in slightly higher performance
 	  kernel at the price of much higher memory consumption compared to
@@ -1061,7 +995,7 @@ config PAGE_SIZE_64KB
 
 config PAGE_SIZE_256KB
 	bool "256KiB pages"
-	depends on HAVE_PAGE_SIZE_256KB
+	depends on n
 	help
 	  256KiB pages have little practical value due to their extreme
 	  memory usage.  The kernel will only be able to run applications
@@ -1195,7 +1129,7 @@ config VMAP_STACK
 	default y
 	bool "Use a virtually-mapped stack"
 	depends on HAVE_ARCH_VMAP_STACK
-	depends on !KASAN || KASAN_HW_TAGS || KASAN_VMALLOC
+	depends on !KASAN || n || n
 	help
 	  Enable this if you want the use virtually-mapped kernel stacks
 	  with guard pages.  This causes kernel stack overflows to be
@@ -1282,15 +1216,6 @@ config HAVE_ARCH_PREL32_RELOCATIONS
 config ARCH_USE_MEMREMAP_PROT
 	bool
 
-config LOCK_EVENT_COUNTS
-	bool "Locking event counts collection"
-	help
-	  Enable light-weight counting of various locking related events
-	  in the system with minimal performance impact. This reduces
-	  the chance of application behavior change because of timing
-	  differences. The counts are reported via debugfs.
-
-# Select if the architecture has support for applying RELR relocations.
 config ARCH_HAS_RELR
 	bool
 
@@ -1309,14 +1234,6 @@ config ARCH_HAS_MEM_ENCRYPT
 
 config ARCH_HAS_CC_PLATFORM
 	bool
-
-config HAVE_SPARSE_SYSCALL_NR
-	bool
-	help
-	  An architecture should select this if its syscall numbering is sparse
-	  to save space. For example, MIPS architecture has a syscall array with
-	  entries at 4000, 5000 and 6000 locations. This option turns on syscall
-	  related optimizations for a given architecture.
 
 config HAVE_STATIC_CALL
 	bool
@@ -1392,9 +1309,6 @@ config DYNAMIC_SIGFRAME
 	bool
 
 # Select, if arch has a named attribute group bound to NUMA device nodes.
-config HAVE_ARCH_NODE_DEV_GROUP
-	bool
-
 config ARCH_HAS_HW_PTE_YOUNG
 	bool
 	help

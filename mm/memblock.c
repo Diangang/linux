@@ -114,7 +114,7 @@ unsigned long min_low_pfn;
 unsigned long max_pfn;
 unsigned long long max_possible_pfn;
 
-#ifdef CONFIG_MEMBLOCK_KHO_SCRATCH
+#if 0
 /* When set to true, only allocate from MEMBLOCK_KHO_SCRATCH ranges */
 static bool kho_scratch_only;
 #else
@@ -1026,7 +1026,7 @@ int __init_memblock memblock_physmem_add(phys_addr_t base, phys_addr_t size)
 }
 #endif
 
-#ifdef CONFIG_MEMBLOCK_KHO_SCRATCH
+#if 0
 __init void memblock_set_kho_scratch_only(void)
 {
 	kho_scratch_only = true;
@@ -2295,7 +2295,7 @@ static unsigned long __init __free_memory_core(phys_addr_t start,
 	unsigned long start_pfn = PFN_UP(start);
 	unsigned long end_pfn = PFN_DOWN(end);
 
-	if (!IS_ENABLED(CONFIG_HIGHMEM) && end_pfn > max_low_pfn)
+	if (!0 && end_pfn > max_low_pfn)
 		end_pfn = max_low_pfn;
 
 	if (start_pfn >= end_pfn)

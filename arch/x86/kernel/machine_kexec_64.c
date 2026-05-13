@@ -89,7 +89,7 @@ static int map_mmio_serial(struct x86_mapping_info *info, pgd_t *level4p)
 	return kernel_ident_mapping_init(info, level4p, mstart, mend);
 }
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 const struct kexec_file_ops * const kexec_file_loaders[] = {
 		&kexec_bzImage64_ops,
 		NULL
@@ -485,7 +485,7 @@ ANNOTATE_NOCFI_SYM(machine_kexec);
 
 /* arch-dependent functionality related to kexec file-based syscall */
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 /*
  * Apply purgatory relocations.
  *

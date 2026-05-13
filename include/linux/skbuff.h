@@ -409,7 +409,7 @@ static inline void skb_frag_size_sub(skb_frag_t *frag, int delta)
  */
 static inline bool skb_frag_must_loop(struct page *p)
 {
-#if defined(CONFIG_HIGHMEM)
+#if 0
 	if (0 || PageHighMem(p))
 		return true;
 #endif
@@ -1082,7 +1082,7 @@ struct sk_buff {
 	__u16			network_header;
 	__u16			mac_header;
 
-#ifdef CONFIG_KCOV
+#if 0
 	u64			kcov_handle;
 #endif
 
@@ -5439,14 +5439,14 @@ static inline void skb_reset_csum_not_inet(struct sk_buff *skb)
 static inline void skb_set_kcov_handle(struct sk_buff *skb,
 				       const u64 kcov_handle)
 {
-#ifdef CONFIG_KCOV
+#if 0
 	skb->kcov_handle = kcov_handle;
 #endif
 }
 
 static inline u64 skb_get_kcov_handle(struct sk_buff *skb)
 {
-#ifdef CONFIG_KCOV
+#if 0
 	return skb->kcov_handle;
 #else
 	return 0;

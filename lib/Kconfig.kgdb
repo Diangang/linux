@@ -1,14 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config HAVE_ARCH_KGDB
-	bool
-
-# set if architecture has the its kgdb_arch_handle_qxfer_pkt
-# function to enable gdb stub to address XML packet sent from GDB.
-
 menuconfig KGDB
 	bool "KGDB: kernel debugger"
-	depends on HAVE_ARCH_KGDB
+	depends on n
 	depends on DEBUG_KERNEL
 	help
 	  If you say Y here, it will be possible to remotely debug the
@@ -19,13 +13,3 @@ menuconfig KGDB
 	  kernel debugger is available at http://kgdb.sourceforge.net
 	  as well as in Documentation/process/debugging/kgdb.rst.  If
 	  unsure, say N.
-
-if KGDB
-
-config KGDB_KDB
-	bool "KGDB_KDB: include kdb frontend for kgdb"
-	default n
-	help
-	  KDB frontend for kernel
-
-endif # KGDB

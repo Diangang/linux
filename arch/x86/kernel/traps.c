@@ -1537,7 +1537,7 @@ DEFINE_IDTENTRY(exc_device_not_available)
 	}
 }
 
-#ifdef CONFIG_INTEL_TDX_GUEST
+#if 0
 
 #define VE_FAULT_STR "VE fault"
 

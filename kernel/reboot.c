@@ -801,7 +801,7 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 		break;
 #endif
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 	case LINUX_REBOOT_CMD_SW_SUSPEND:
 		ret = hibernate();
 		break;

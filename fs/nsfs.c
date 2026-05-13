@@ -483,7 +483,7 @@ bool is_current_namespace(struct ns_common *ns)
 	case CLONE_NEWCGROUP:
 		return current_in_namespace(to_cg_ns(ns));
 #endif
-#ifdef CONFIG_IPC_NS
+#if 0
 	case CLONE_NEWIPC:
 		return current_in_namespace(to_ipc_ns(ns));
 #endif
@@ -579,7 +579,7 @@ static struct dentry *nsfs_fh_to_dentry(struct super_block *sb, struct fid *fh,
 			owning_ns = to_cg_ns(ns)->user_ns;
 		break;
 #endif
-#ifdef CONFIG_IPC_NS
+#if 0
 	case CLONE_NEWIPC:
 		if (!current_in_namespace(to_ipc_ns(ns)))
 			owning_ns = to_ipc_ns(ns)->user_ns;

@@ -10,7 +10,7 @@
 #error This file should only be included in vmlinux.lds.S
 #endif
 
-#if defined(CONFIG_LD_IS_LLD) && CONFIG_LLD_VERSION < 210000
+#if 0 && CONFIG_LLD_VERSION < 210000
 #define ASSERT(...)
 #endif
 

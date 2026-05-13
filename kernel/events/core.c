@@ -9449,7 +9449,7 @@ void perf_event_namespaces(struct task_struct *task)
 	perf_fill_ns_link_info(&ns_link_info[UTS_NS_INDEX],
 			       task, &utsns_operations);
 #endif
-#ifdef CONFIG_IPC_NS
+#if 0
 	perf_fill_ns_link_info(&ns_link_info[IPC_NS_INDEX],
 			       task, &ipcns_operations);
 #endif

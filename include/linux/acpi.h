@@ -523,7 +523,7 @@ int acpi_check_region(resource_size_t start, resource_size_t n,
 
 int acpi_resources_are_enforced(void);
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 extern int acpi_check_s4_hw_signature;
 #endif
 

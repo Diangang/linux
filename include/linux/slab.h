@@ -43,7 +43,7 @@ enum _slab_flag_bits {
 #ifdef CONFIG_MEMCG
 	_SLAB_ACCOUNT,
 #endif
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 	_SLAB_KASAN,
 #endif
 	_SLAB_NO_USER_FLAGS,
@@ -198,7 +198,7 @@ enum _slab_flag_bits {
 # define SLAB_ACCOUNT		__SLAB_FLAG_UNUSED
 #endif
 
-#ifdef CONFIG_KASAN_GENERIC
+#if 0
 #define SLAB_KASAN		__SLAB_FLAG_BIT(_SLAB_KASAN)
 #else
 #define SLAB_KASAN		__SLAB_FLAG_UNUSED

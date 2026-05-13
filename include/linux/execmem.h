@@ -6,8 +6,8 @@
 #include <linux/moduleloader.h>
 #include <linux/cleanup.h>
 
-#if (defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)) && \
-		!defined(CONFIG_KASAN_VMALLOC)
+#if (0 || 0) && \
+		!0
 #include <linux/kasan.h>
 #define MODULE_ALIGN (PAGE_SIZE << KASAN_SHADOW_SCALE_SHIFT)
 #else

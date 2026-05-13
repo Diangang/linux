@@ -730,7 +730,7 @@ struct regmap *__devm_regmap_init_fsi(struct fsi_device *fsi_dev,
  * @fn: Real function to call (in the form __[*_]regmap_init[_*])
  * @name: Config variable name (#config in the calling macro)
  **/
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define __regmap_lockdep_wrapper(fn, name, ...)				\
 (									\
 	({								\

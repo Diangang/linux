@@ -266,7 +266,7 @@ static inline gfp_t current_gfp_context(gfp_t flags)
 	return flags;
 }
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 extern void __fs_reclaim_acquire(unsigned long ip);
 extern void __fs_reclaim_release(unsigned long ip);
 extern void fs_reclaim_acquire(gfp_t gfp_mask);

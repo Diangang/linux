@@ -14,7 +14,7 @@
 
 #include <linux/types.h>
 
-#ifdef CONFIG_JAILHOUSE_GUEST
+#if 0
 bool jailhouse_paravirt(void);
 #else
 static inline bool jailhouse_paravirt(void)

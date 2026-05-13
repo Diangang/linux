@@ -224,7 +224,7 @@ struct execute_work {
 	struct work_struct work;
 };
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 /*
  * NB: because we have to copy the lockdep_map, setting _key
  * here is required, otherwise it could get initialised to the
@@ -280,7 +280,7 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
  * assignment of the work data initializer allows the compiler
  * to generate better code.
  */
-#ifdef CONFIG_LOCKDEP
+#if 0
 #define __INIT_WORK_KEY(_work, _func, _onstack, _key)			\
 	do {								\
 		__init_work((_work), _onstack);				\
@@ -537,7 +537,7 @@ __printf(2, 5) struct workqueue_struct *
 devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 		     int max_active, ...);
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 /**
  * alloc_workqueue_lockdep_map - allocate a workqueue with user-defined lockdep_map
  * @fmt: printf format for the name of the workqueue

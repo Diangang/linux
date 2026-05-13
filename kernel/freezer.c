@@ -131,7 +131,7 @@ static int __set_task_frozen(struct task_struct *p, void *arg)
 	if (state & TASK_FREEZABLE)
 		WARN_ON_ONCE(!(state & TASK_NORMAL));
 
-#ifdef CONFIG_LOCKDEP
+#if 0
 	/*
 	 * It's dangerous to freeze with locks held; there be dragons there.
 	 */

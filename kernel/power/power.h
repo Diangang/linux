@@ -18,12 +18,12 @@ struct swsusp_info {
 	unsigned long		size;
 } __aligned(PAGE_SIZE);
 
-#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
+#if defined(CONFIG_SUSPEND) || 0
 extern int pm_sleep_fs_sync(void);
 extern bool filesystem_freeze_enabled;
 #endif
 
-#ifdef CONFIG_HIBERNATION
+#if 0
 /* kernel/power/snapshot.c */
 extern void __init hibernate_reserved_size_init(void);
 extern void __init hibernate_image_size_init(void);
@@ -226,7 +226,7 @@ extern int pm_notifier_call_chain_robust(unsigned long val_up, unsigned long val
 extern int pm_notifier_call_chain(unsigned long val);
 #endif
 
-#ifdef CONFIG_HIGHMEM
+#if 0
 int restore_highmem(void);
 #else
 static inline unsigned int count_highmem_pages(void) { return 0; }

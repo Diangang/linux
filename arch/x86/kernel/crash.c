@@ -144,7 +144,7 @@ void native_machine_crash_shutdown(struct pt_regs *regs)
 	crash_save_cpu(regs, smp_processor_id());
 }
 
-#if defined(CONFIG_KEXEC_FILE) || defined(CONFIG_CRASH_HOTPLUG)
+#if 0 || defined(CONFIG_CRASH_HOTPLUG)
 static int get_nr_ram_ranges_callback(struct resource *res, void *arg)
 {
 	unsigned int *nr_ranges = arg;
@@ -265,7 +265,7 @@ out:
 }
 #endif
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 static int add_e820_entry(struct boot_params *params, struct e820_entry *entry)
 {
 	unsigned int nr_e820_entries;
@@ -471,7 +471,7 @@ int crash_load_segments(struct kimage *image)
 int arch_crash_hotplug_support(struct kimage *image, unsigned long kexec_flags)
 {
 
-#ifdef CONFIG_KEXEC_FILE
+#if 0
 	if (image->file_mode)
 		return 1;
 #endif

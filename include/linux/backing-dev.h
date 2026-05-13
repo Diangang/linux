@@ -248,7 +248,7 @@ wb_get_create_current(struct backing_dev_info *bdi, gfp_t gfp)
  */
 static inline struct bdi_writeback *inode_to_wb(const struct inode *inode)
 {
-#ifdef CONFIG_LOCKDEP
+#if 0
 	WARN_ON_ONCE(debug_locks &&
 		     (inode->i_sb->s_iflags & SB_I_CGROUPWB) &&
 		     (!lockdep_is_held(&inode->i_lock) &&

@@ -2297,7 +2297,7 @@ static void purge_vmap_node(struct work_struct *work)
 	struct vmap_area *va, *n_va;
 	LIST_HEAD(local_list);
 
-	if (IS_ENABLED(CONFIG_KASAN_VMALLOC))
+	if (0)
 		kasan_release_vmalloc_node(vn);
 
 	vn->nr_purged = 0;

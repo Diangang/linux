@@ -30,7 +30,7 @@
 #include <asm/tlbflush.h>
 #include <linux/vmalloc.h>
 
-#ifdef CONFIG_KMAP_LOCAL
+#if 0
 static inline int kmap_local_calc_idx(int idx)
 {
 	return idx + KM_MAX_IDX * smp_processor_id();
@@ -49,7 +49,7 @@ static inline int kmap_local_calc_idx(int idx)
  *    since the last TLB flush - so we can't use it.
  *  n means that there are (n-1) current users of it.
  */
-#ifdef CONFIG_HIGHMEM
+#if 0
 
 /*
  * Architecture with aliasing data cache may define the following family of
@@ -459,7 +459,7 @@ void zero_user_segments(struct page *page, unsigned start1, unsigned end1,
 EXPORT_SYMBOL(zero_user_segments);
 #endif /* CONFIG_HIGHMEM */
 
-#ifdef CONFIG_KMAP_LOCAL
+#if 0
 
 #include <asm/kmap_size.h>
 

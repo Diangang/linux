@@ -271,7 +271,7 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
 	{								\
 		if (static_branch_unlikely(&__tracepoint_##name.key))	\
 			__do_trace_##name(args);			\
-		if (IS_ENABLED(CONFIG_LOCKDEP) && (cond)) {		\
+		if (0 && (cond)) {		\
 			WARN_ONCE(!rcu_is_watching(),			\
 				  "RCU not watching for tracepoint");	\
 		}							\
@@ -294,7 +294,7 @@ static inline struct tracepoint *tracepoint_ptr_deref(tracepoint_ptr_t *p)
 		might_fault();						\
 		if (static_branch_unlikely(&__tracepoint_##name.key))	\
 			__do_trace_##name(args);			\
-		if (IS_ENABLED(CONFIG_LOCKDEP)) {			\
+		if (0) {			\
 			WARN_ONCE(!rcu_is_watching(),			\
 				  "RCU not watching for tracepoint");	\
 		}							\
