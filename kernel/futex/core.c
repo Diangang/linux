@@ -75,7 +75,7 @@ struct futex_private_hash {
 /*
  * Fault injections for futexes.
  */
-#ifdef CONFIG_FAIL_FUTEX
+#if 0
 
 static struct {
 	struct fault_attr attr;
@@ -100,7 +100,7 @@ bool should_fail_futex(bool fshared)
 	return should_fail(&fail_futex.attr, 1);
 }
 
-#ifdef CONFIG_FAULT_INJECTION_DEBUG_FS
+#if 0
 
 static int __init fail_futex_debugfs(void)
 {
@@ -1978,7 +1978,7 @@ static int __init futex_init(void)
 	unsigned int order, n;
 	unsigned long size;
 
-#ifdef CONFIG_BASE_SMALL
+#if 0
 	hashsize = 16;
 #else
 	hashsize = 256 * num_possible_cpus();

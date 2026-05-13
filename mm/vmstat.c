@@ -1425,7 +1425,7 @@ const char * const vmstat_text[] = {
 	[I(BALLOON_MIGRATE)]			= "balloon_migrate",
 #endif /* CONFIG_BALLOON_MIGRATION */
 #endif /* CONFIG_BALLOON */
-#ifdef CONFIG_DEBUG_TLBFLUSH
+#if 0
 	[I(NR_TLB_REMOTE_FLUSH)]		= "nr_tlb_remote_flush",
 	[I(NR_TLB_REMOTE_FLUSH_RECEIVED)]	= "nr_tlb_remote_flush_received",
 	[I(NR_TLB_LOCAL_FLUSH_ALL)]		= "nr_tlb_local_flush_all",

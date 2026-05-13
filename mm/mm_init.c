@@ -1561,7 +1561,7 @@ void __init *memmap_alloc(phys_addr_t size, phys_addr_t align,
 	return ptr;
 }
 
-#ifdef CONFIG_FLATMEM
+#if 0
 static void __init alloc_node_mem_map(struct pglist_data *pgdat)
 {
 	unsigned long start, offset, size, end;

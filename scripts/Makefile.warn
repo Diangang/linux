@@ -25,28 +25,8 @@ ifneq ($(CONFIG_FRAME_WARN),0)
 KBUILD_CFLAGS += -Wframe-larger-than=$(CONFIG_FRAME_WARN)
 endif
 
-ifdef CONFIG_CC_IS_CLANG
-# Clang checks for overflow/truncation with '%p', while GCC does not:
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111219
-KBUILD_CFLAGS += $(call cc-option, -Wno-format-overflow-non-kprintf)
-KBUILD_CFLAGS += $(call cc-option, -Wno-format-truncation-non-kprintf)
-
-# Clang may emit a warning when a const variable, such as the dummy variables
-# in typecheck(), or const member of an aggregate type are not initialized,
-# which can result in unexpected behavior. However, in many audited cases of
-# the "field" variant of the warning, this is intentional because the field is
-# never used within a particular call path, the field is within a union with
-# other non-const members, or the containing object is not const so the field
-# can be modified via memcpy() / memset(). While the variable warning also gets
-# disabled with this same switch, there should not be too much coverage lost
-# because -Wuninitialized will still flag when an uninitialized const variable
-# is used.
-KBUILD_CFLAGS += $(call cc-option, -Wno-default-const-init-unsafe)
-else
-
 # gcc inanely warns about local variables called 'main'
 KBUILD_CFLAGS += -Wno-main
-endif
 
 # Too noisy on range checks and in macros handling both signed and unsigned.
 KBUILD_CFLAGS += -Wno-type-limits
@@ -131,23 +111,6 @@ KBUILD_CFLAGS += $(call cc-option, -Wno-stringop-truncation)
 
 KBUILD_CFLAGS += -Wno-override-init # alias for -Wno-initializer-overrides in clang
 
-ifdef CONFIG_CC_IS_CLANG
-# Clang before clang-16 would warn on default argument promotions.
-ifneq ($(call clang-min-version, 160000),y)
-# Disable -Wformat
-KBUILD_CFLAGS += -Wno-format
-# Then re-enable flags that were part of the -Wformat group that aren't
-# problematic.
-KBUILD_CFLAGS += -Wformat-extra-args -Wformat-invalid-specifier
-KBUILD_CFLAGS += -Wformat-zero-length -Wnonnull
-KBUILD_CFLAGS += -Wformat-insufficient-args
-endif
-KBUILD_CFLAGS += -Wno-pointer-to-enum-cast
-KBUILD_CFLAGS += -Wno-tautological-constant-out-of-range-compare
-KBUILD_CFLAGS += -Wno-unaligned-access
-KBUILD_CFLAGS += -Wno-enum-compare-conditional
-endif
-
 endif
 
 #
@@ -167,10 +130,6 @@ else
 # The following turn off the warnings enabled by -Wextra
 KBUILD_CFLAGS += -Wno-missing-field-initializers
 KBUILD_CFLAGS += -Wno-shift-negative-value
-
-ifdef CONFIG_CC_IS_CLANG
-KBUILD_CFLAGS += -Wno-enum-enum-conversion
-endif
 
 ifdef CONFIG_CC_IS_GCC
 KBUILD_CFLAGS += -Wno-maybe-uninitialized

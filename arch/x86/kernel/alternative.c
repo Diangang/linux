@@ -106,7 +106,7 @@ const unsigned char * const x86_nops[ASM_NOP_MAX+1] =
 #endif
 };
 
-#ifdef CONFIG_FINEIBT
+#if 0
 static bool cfi_paranoid __ro_after_init;
 #endif
 
@@ -143,7 +143,7 @@ static void *its_init_thunk(void *thunk, int reg)
 	int offset = 0;
 	int i = 0;
 
-#ifdef CONFIG_FINEIBT
+#if 0
 	if (cfi_paranoid) {
 		/*
 		 * When ITS uses indirect branch thunk the fineibt_paranoid
@@ -249,7 +249,7 @@ static void *its_allocate_thunk(int reg)
 	int size = 3 + (reg / 8);
 	void *thunk;
 
-#ifdef CONFIG_FINEIBT
+#if 0
 	/*
 	 * The ITS thunk contains an indirect jump and an int3 instruction so
 	 * its size is 3 or 4 bytes depending on the register used. If CFI
@@ -287,7 +287,7 @@ u8 *its_static_thunk(int reg)
 {
 	u8 *thunk = __x86_indirect_its_thunk_array[reg];
 
-#ifdef CONFIG_FINEIBT
+#if 0
 	/* Paranoid thunk starts 2 bytes before */
 	if (cfi_paranoid)
 		return thunk - 2;
@@ -859,7 +859,7 @@ static bool cpu_wants_indirect_its_thunk_at(unsigned long addr, int reg)
 }
 #else /* CONFIG_MITIGATION_ITS */
 
-#ifdef CONFIG_FINEIBT
+#if 0
 static bool cpu_wants_indirect_its_thunk_at(unsigned long addr, int reg)
 {
 	return false;
@@ -1133,7 +1133,7 @@ Efault:
 	return false;
 }
 
-#ifdef CONFIG_FINEIBT
+#if 0
 
 static __noendbr bool exact_endbr(u32 *val)
 {
@@ -1181,7 +1181,7 @@ void __init_or_module noinline apply_seal_endbr(s32 *start, s32 *end)
 		void *addr = (void *)s + *s;
 
 		poison_endbr(addr);
-		if (IS_ENABLED(CONFIG_FINEIBT))
+		if (0)
 			poison_cfi(addr - CFI_OFFSET);
 	}
 }
@@ -1194,7 +1194,7 @@ void __init_or_module apply_seal_endbr(s32 *start, s32 *end) { }
 
 #ifdef CONFIG_CFI_AUTO_DEFAULT
 # define __CFI_DEFAULT CFI_AUTO
-#elif defined(CONFIG_CFI)
+#elif 0
 # define __CFI_DEFAULT CFI_KCFI
 #else
 # define __CFI_DEFAULT CFI_OFF
@@ -1203,11 +1203,11 @@ void __init_or_module apply_seal_endbr(s32 *start, s32 *end) { }
 enum cfi_mode cfi_mode __ro_after_init = __CFI_DEFAULT;
 static bool cfi_debug __ro_after_init;
 
-#ifdef CONFIG_FINEIBT_BHI
+#if 0
 bool cfi_bhi __ro_after_init = false;
 #endif
 
-#ifdef CONFIG_CFI
+#if 0
 u32 cfi_get_func_hash(void *func)
 {
 	u32 hash;
@@ -1246,7 +1246,7 @@ int cfi_get_func_arity(void *func)
 }
 #endif
 
-#ifdef CONFIG_FINEIBT
+#if 0
 
 static bool cfi_rand __ro_after_init = true;
 static u32  cfi_seed __ro_after_init;
@@ -1302,7 +1302,7 @@ static __init int cfi_parse_cmdline(char *str)
 				pr_err("CFI: ignoring paranoid; depends on fineibt.\n");
 			}
 		} else if (!strcmp(str, "bhi")) {
-#ifdef CONFIG_FINEIBT_BHI
+#if 0
 			if (cfi_mode == CFI_FINEIBT) {
 				cfi_bhi = true;
 			} else {
@@ -1657,7 +1657,7 @@ static int cfi_rewrite_preamble(s32 *start, s32 *end)
 		WARN_ON(*(u32 *)(addr + fineibt_preamble_hash) != 0x12345678);
 		text_poke_early(addr + fineibt_preamble_hash, &hash, 4);
 
-		WARN_ONCE(!IS_ENABLED(CONFIG_FINEIBT_BHI) && arity,
+		WARN_ONCE(!0 && arity,
 			  "kCFI preamble has wrong register at: %pS %*ph\n",
 			  addr, 5, addr);
 
@@ -2091,7 +2091,7 @@ bool decode_fineibt_insn(struct pt_regs *regs, unsigned long *target, u32 *type)
 static void __apply_fineibt(s32 *start_retpoline, s32 *end_retpoline,
 			    s32 *start_cfi, s32 *end_cfi, bool builtin)
 {
-	if (IS_ENABLED(CONFIG_CFI) && builtin)
+	if (0 && builtin)
 		pr_info("CFI: Using standard kCFI\n");
 }
 

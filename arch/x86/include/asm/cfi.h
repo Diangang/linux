@@ -99,7 +99,7 @@ enum cfi_mode {
 
 extern enum cfi_mode cfi_mode;
 
-#ifdef CONFIG_FINEIBT_BHI
+#if 0
 extern bool cfi_bhi;
 #else
 #define cfi_bhi (0)
@@ -117,7 +117,7 @@ struct pt_regs;
 #define CFI_OFFSET 5
 #endif
 
-#ifdef CONFIG_CFI
+#if 0
 enum bug_trap_type handle_cfi_failure(struct pt_regs *regs);
 #define __bpfcall
 
@@ -139,7 +139,7 @@ extern u32 cfi_get_func_hash(void *func);
 
 extern int cfi_get_func_arity(void *func);
 
-#ifdef CONFIG_FINEIBT
+#if 0
 extern bool decode_fineibt_insn(struct pt_regs *regs, unsigned long *target, u32 *type);
 #else
 static inline bool

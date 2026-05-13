@@ -190,7 +190,7 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 			   irq_stats(j)->kvm_posted_intr_wakeup_ipis);
 	seq_puts(p, "  Posted-interrupt wakeup event\n");
 #endif
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 	seq_printf(p, "%*s: ", prec, "VPMI");
 	for_each_online_cpu(j)
 		seq_printf(p, "%10u ",
@@ -352,7 +352,7 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_x86_platform_ipi)
 }
 #endif
 
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 /*
  * Handler for PERF_GUEST_MEDIATED_PMI_VECTOR.
  */

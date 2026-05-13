@@ -262,7 +262,7 @@ alternative_else_nop_endif
 	str	x0, [sp, #S_STACKFRAME_TYPE]
 	add	x29, sp, #S_STACKFRAME
 
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 alternative_if_not ARM64_HAS_PAN
 	bl	__swpan_entry_el\el
 alternative_else_nop_endif
@@ -276,7 +276,7 @@ alternative_else_nop_endif
 	str	w21, [sp, #S_SYSCALLNO]
 	.endif
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 alternative_if_not ARM64_HAS_GIC_PRIO_MASKING
 	b	.Lskip_pmr_save\@
 alternative_else_nop_endif
@@ -304,7 +304,7 @@ alternative_else_nop_endif
 	disable_daif
 	.endif
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 alternative_if_not ARM64_HAS_GIC_PRIO_MASKING
 	b	.Lskip_pmr_restore\@
 alternative_else_nop_endif
@@ -322,7 +322,7 @@ alternative_else_nop_endif
 
 	ldp	x21, x22, [sp, #S_PC]		// load ELR, SPSR
 
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 alternative_if_not ARM64_HAS_PAN
 	bl	__swpan_exit_el\el
 alternative_else_nop_endif
@@ -427,7 +427,7 @@ alternative_else_nop_endif
 	sb
 	.endm
 
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 	/*
 	 * Set the TTBR0 PAN bit in SPSR. When the exception is taken from
 	 * EL0, there is no need to check the state of TTBR0_EL1 since

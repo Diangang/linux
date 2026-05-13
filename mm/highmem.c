@@ -467,7 +467,7 @@ EXPORT_SYMBOL(zero_user_segments);
  * With DEBUG_KMAP_LOCAL the stack depth is doubled and every second
  * slot is unused which acts as a guard page
  */
-#ifdef CONFIG_DEBUG_KMAP_LOCAL
+#if 0
 # define KM_INCR	2
 #else
 # define KM_INCR	1
@@ -582,7 +582,7 @@ void *__kmap_local_page_prot(const struct page *page, pgprot_t prot)
 	 * pages when debugging is enabled and the architecture has no problems
 	 * with alias mappings.
 	 */
-	if (!IS_ENABLED(CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP) && !PageHighMem(page))
+	if (!0 && !PageHighMem(page))
 		return page_address(page);
 
 	/* Try kmap_high_get() if architecture has it enabled */
@@ -602,7 +602,7 @@ void kunmap_local_indexed(const void *vaddr)
 
 	if (addr < __fix_to_virt(FIX_KMAP_END) ||
 	    addr > __fix_to_virt(FIX_KMAP_BEGIN)) {
-		if (IS_ENABLED(CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP)) {
+		if (0) {
 			/* This _should_ never happen! See above. */
 			WARN_ON_ONCE(1);
 			return;
@@ -656,7 +656,7 @@ void __kmap_local_sched_out(void)
 		int idx;
 
 		/* With debug all even slots are unmapped and act as guard */
-		if (IS_ENABLED(CONFIG_DEBUG_KMAP_LOCAL) && !(i & 0x01)) {
+		if (0 && !(i & 0x01)) {
 			WARN_ON_ONCE(pte_val(pteval) != 0);
 			continue;
 		}
@@ -693,7 +693,7 @@ void __kmap_local_sched_in(void)
 		int idx;
 
 		/* With debug all even slots are unmapped and act as guard */
-		if (IS_ENABLED(CONFIG_DEBUG_KMAP_LOCAL) && !(i & 0x01)) {
+		if (0 && !(i & 0x01)) {
 			WARN_ON_ONCE(pte_val(pteval) != 0);
 			continue;
 		}

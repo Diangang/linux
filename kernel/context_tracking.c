@@ -397,7 +397,7 @@ static __always_inline void ct_kernel_exit(bool user, int offset) { }
 static __always_inline void ct_kernel_enter(bool user, int offset) { }
 #endif /* #ifdef CONFIG_CONTEXT_TRACKING_IDLE */
 
-#ifdef CONFIG_CONTEXT_TRACKING_USER
+#if 0
 DEFINE_STATIC_KEY_FALSE_RO(context_tracking_key);
 EXPORT_SYMBOL_GPL(context_tracking_key);
 

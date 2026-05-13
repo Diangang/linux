@@ -374,7 +374,7 @@ ktime_t ktime_add_safe(const ktime_t lhs, const ktime_t rhs)
 
 EXPORT_SYMBOL_GPL(ktime_add_safe);
 
-#ifdef CONFIG_DEBUG_OBJECTS_TIMERS
+#if 0
 
 static const struct debug_obj_descr hrtimer_debug_descr;
 

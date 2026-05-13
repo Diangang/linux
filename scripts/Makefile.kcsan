@@ -1,11 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # GCC and Clang accept backend options differently. Do not wrap in cc-option,
 # because Clang accepts "--param" even if it is unused.
-ifdef CONFIG_CC_IS_CLANG
-cc-param = -mllvm -$(1)
-else
 cc-param = --param $(1)
-endif
 
 # Keep most options here optional, to allow enabling more compilers if absence
 # of some options does not break KCSAN nor causes false positive reports.

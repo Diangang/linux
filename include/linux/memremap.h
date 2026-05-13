@@ -165,14 +165,14 @@ static inline unsigned long pgmap_vmemmap_nr(struct dev_pagemap *pgmap)
 
 static inline bool folio_is_device_private(const struct folio *folio)
 {
-	return IS_ENABLED(CONFIG_DEVICE_PRIVATE) &&
+	return 0 &&
 		folio_is_zone_device(folio) &&
 		folio->pgmap->type == MEMORY_DEVICE_PRIVATE;
 }
 
 static inline bool is_device_private_page(const struct page *page)
 {
-	return IS_ENABLED(CONFIG_DEVICE_PRIVATE) &&
+	return 0 &&
 		folio_is_device_private(page_folio(page));
 }
 

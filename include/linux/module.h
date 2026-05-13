@@ -551,13 +551,13 @@ struct module {
 	atomic_t refcnt;
 #endif
 
-#ifdef CONFIG_CONSTRUCTORS
+#if 0
 	/* Constructor functions. */
 	ctor_fn_t *ctors;
 	unsigned int num_ctors;
 #endif
 
-#ifdef CONFIG_FUNCTION_ERROR_INJECTION
+#if 0
 	struct error_injection_entry *ei_funcs;
 	unsigned int num_ei_funcs;
 #endif

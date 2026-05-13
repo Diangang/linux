@@ -28,7 +28,7 @@ enum work_bits {
 	WORK_STRUCT_INACTIVE_BIT,	/* work item is inactive */
 	WORK_STRUCT_PWQ_BIT,		/* data points to pwq */
 	WORK_STRUCT_LINKED_BIT,		/* next work is linked to this one */
-#ifdef CONFIG_DEBUG_OBJECTS_WORK
+#if 0
 	WORK_STRUCT_STATIC_BIT,		/* static initializer (debugobjects) */
 #endif
 	WORK_STRUCT_FLAG_BITS,
@@ -78,7 +78,7 @@ enum work_flags {
 	WORK_STRUCT_INACTIVE	= 1 << WORK_STRUCT_INACTIVE_BIT,
 	WORK_STRUCT_PWQ		= 1 << WORK_STRUCT_PWQ_BIT,
 	WORK_STRUCT_LINKED	= 1 << WORK_STRUCT_LINKED_BIT,
-#ifdef CONFIG_DEBUG_OBJECTS_WORK
+#if 0
 	WORK_STRUCT_STATIC	= 1 << WORK_STRUCT_STATIC_BIT,
 #else
 	WORK_STRUCT_STATIC	= 0,
@@ -258,7 +258,7 @@ struct execute_work {
 #define DECLARE_DEFERRABLE_WORK(n, f)					\
 	struct delayed_work n = __DELAYED_WORK_INITIALIZER(n, f, TIMER_DEFERRABLE)
 
-#ifdef CONFIG_DEBUG_OBJECTS_WORK
+#if 0
 extern void __init_work(struct work_struct *work, int onstack);
 extern void destroy_work_on_stack(struct work_struct *work);
 extern void destroy_delayed_work_on_stack(struct delayed_work *work);

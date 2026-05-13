@@ -11,7 +11,7 @@
 #define DEVCG_DEV_ALL   4  /* this represents all devices */
 
 
-#if defined(CONFIG_CGROUP_DEVICE) || defined(CONFIG_CGROUP_BPF)
+#if 0 || defined(CONFIG_CGROUP_BPF)
 int devcgroup_check_permission(short type, u32 major, u32 minor,
 			       short access);
 static inline int devcgroup_inode_permission(struct inode *inode, int mask)

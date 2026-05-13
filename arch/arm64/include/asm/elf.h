@@ -225,7 +225,7 @@ int compat_elf_check_arch(const struct elf32_hdr *);
 ({									\
 	set_thread_flag(TIF_32BIT);					\
  })
-#ifdef CONFIG_COMPAT_VDSO
+#if 0
 #define COMPAT_ARCH_DLINFO						\
 do {									\
 	/*								\

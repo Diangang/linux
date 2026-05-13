@@ -119,15 +119,6 @@ config NO_HZ_IDLE
 
 endchoice
 
-config CONTEXT_TRACKING_USER
-	bool
-	depends on HAVE_CONTEXT_TRACKING_USER
-	select CONTEXT_TRACKING
-	help
-	  Track transitions between kernel and user on behalf of RCU and
-	  tickless cputime accounting. The former case relies on context
-	  tracking to enter/exit RCU extended quiescent states.
-
 config NO_HZ
 	bool "Old Idle dynticks config"
 	help

@@ -469,7 +469,7 @@ unsigned int irq_matrix_allocated(struct irq_matrix *m)
 	return cm->allocated - cm->managed_allocated;
 }
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 /**
  * irq_matrix_debug_show - Show detailed allocation information
  * @sf:		Pointer to the seq_file to print to

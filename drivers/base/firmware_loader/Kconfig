@@ -3,7 +3,6 @@ menu "Firmware loader"
 
 config FW_LOADER
 	tristate "Firmware loading facility" if EXPERT
-	select CRYPTO_LIB_SHA256 if FW_LOADER_DEBUG
 	default y
 	help
 	  This enables the firmware loading facility in the kernel. The kernel
@@ -24,16 +23,6 @@ config FW_LOADER
 	  as a module, in which case the firmware_class module will be built.
 	  You also want to be sure to enable this built-in if you are going to
 	  enable built-in firmware (CONFIG_EXTRA_FIRMWARE).
-
-config FW_LOADER_DEBUG
-	bool "Log filenames and checksums for loaded firmware"
-	depends on DYNAMIC_DEBUG
-	depends on FW_LOADER
-	default FW_LOADER
-	help
-	  Select this option to use dynamic debug to log firmware filenames and
-	  SHA256 checksums to the kernel log for each firmware file that is
-	  loaded.
 
 if FW_LOADER
 
@@ -75,14 +64,6 @@ config EXTRA_FIRMWARE
 	  consult a lawyer of your own before distributing such an image.
 
 	  NOTE: Compressed files are not supported in EXTRA_FIRMWARE.
-
-config EXTRA_FIRMWARE_DIR
-	string "Firmware blobs root directory"
-	depends on EXTRA_FIRMWARE != ""
-	default "/lib/firmware"
-	help
-	  This option controls the directory in which the kernel build system
-	  looks for the firmware files listed in the EXTRA_FIRMWARE option.
 
 config FW_LOADER_USER_HELPER
 	bool "Enable the firmware sysfs fallback mechanism"
@@ -156,21 +137,6 @@ config FW_LOADER_USER_HELPER
 	  distribution and need to support the above two drivers, or you are
 	  certain you need to support some really custom firmware loading
 	  facility in userspace.
-
-config FW_LOADER_USER_HELPER_FALLBACK
-	bool "Force the firmware sysfs fallback mechanism when possible"
-	depends on FW_LOADER_USER_HELPER
-	help
-	  Enabling this option forces a sysfs userspace fallback mechanism
-	  to be used for all firmware requests which explicitly do not disable a
-	  a fallback mechanism. Firmware calls which do prohibit a fallback
-	  mechanism is request_firmware_direct(). This option is kept for
-	  backward compatibility purposes given this precise mechanism can also
-	  be enabled by setting the proc sysctl value to true:
-
-	       /proc/sys/kernel/firmware_config/force_sysfs_fallback
-
-	  If you are unsure about this, say N here.
 
 if FW_LOADER_COMPRESS
 endif # FW_LOADER_COMPRESS

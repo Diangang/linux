@@ -117,7 +117,7 @@ static inline bool futex_validate_input(unsigned int flags, u64 val)
 	return true;
 }
 
-#ifdef CONFIG_FAIL_FUTEX
+#if 0
 extern bool should_fail_futex(bool fshared);
 #else
 static inline bool should_fail_futex(bool fshared)

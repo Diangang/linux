@@ -426,7 +426,7 @@ static inline bool dl_server_active(struct sched_dl_entity *dl_se)
 
 extern struct list_head task_groups;
 
-#ifdef CONFIG_GROUP_SCHED_BANDWIDTH
+#if 0
 extern const u64 max_bw_quota_period_us;
 
 /*

@@ -125,7 +125,7 @@
 #ifdef CONFIG_X86
 #	define XZ_DEC_X86
 #endif
-#if defined(CONFIG_PPC) && defined(CONFIG_CPU_BIG_ENDIAN)
+#if defined(CONFIG_PPC) && 0
 #	define XZ_DEC_POWERPC
 #endif
 #ifdef CONFIG_ARM

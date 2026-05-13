@@ -1706,7 +1706,7 @@ struct bpf_prog_aux {
 	struct bpf_kfunc_desc_tab *kfunc_tab;
 	struct bpf_kfunc_btf_tab *kfunc_btf_tab;
 	u32 size_poke_tab;
-#ifdef CONFIG_FINEIBT
+#if 0
 	struct bpf_ksym ksym_prefix;
 #endif
 	struct bpf_ksym ksym;

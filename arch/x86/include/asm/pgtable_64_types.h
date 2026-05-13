@@ -170,7 +170,7 @@ extern unsigned int ptrs_per_p4d;
 
 #define MODULES_VADDR		(__START_KERNEL_map + KERNEL_IMAGE_SIZE)
 /* The module sections ends with the start of the fixmap */
-#ifndef CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
+#if 1
 # define MODULES_END		_AC(0xffffffffff000000, UL)
 #else
 # define MODULES_END		_AC(0xfffffffffe000000, UL)

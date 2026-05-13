@@ -80,7 +80,7 @@ int set_posix_acl(struct mnt_idmap *, struct dentry *, int,
 struct posix_acl *get_cached_acl_rcu(struct inode *inode, int type);
 struct posix_acl *posix_acl_clone(const struct posix_acl *acl, gfp_t flags);
 
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 int posix_acl_chmod(struct mnt_idmap *, struct dentry *, umode_t);
 extern int posix_acl_create(struct inode *, umode_t *, struct posix_acl **,
 		struct posix_acl **);

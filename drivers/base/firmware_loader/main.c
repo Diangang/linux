@@ -805,7 +805,7 @@ static void fw_abort_batch_reqs(struct firmware *fw)
 	mutex_unlock(&fw_lock);
 }
 
-#if defined(CONFIG_FW_LOADER_DEBUG)
+#if 0
 #include <crypto/sha2.h>
 
 static void fw_log_firmware_info(const struct firmware *fw, const char *name, struct device *device)

@@ -768,7 +768,7 @@ struct inode {
 	umode_t			i_mode;
 	unsigned short		i_opflags;
 	unsigned int		i_flags;
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 	struct posix_acl	*i_acl;
 	struct posix_acl	*i_default_acl;
 #endif
@@ -2113,7 +2113,7 @@ extern loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 #define S_IMA		(1 << 10) /* Inode has an associated IMA struct */
 #define S_AUTOMOUNT	(1 << 11) /* Automount/referral quasi-directory */
 #define S_NOSEC		(1 << 12) /* no suid or xattr security attributes */
-#ifdef CONFIG_FS_DAX
+#if 0
 #define S_DAX		(1 << 13) /* Direct Access, avoiding the page cache */
 #else
 #define S_DAX		0	  /* Make all the DAX code disappear */
@@ -2152,7 +2152,7 @@ extern loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 #define IS_APPEND(inode)	((inode)->i_flags & S_APPEND)
 #define IS_IMMUTABLE(inode)	((inode)->i_flags & S_IMMUTABLE)
 
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 #define IS_POSIXACL(inode)	__IS_FLG(inode, SB_POSIXACL)
 #else
 #define IS_POSIXACL(inode)	0
@@ -3387,7 +3387,7 @@ static inline bool vma_is_fsdax(struct vm_area_struct *vma)
 {
 	struct inode *inode;
 
-	if (!IS_ENABLED(CONFIG_FS_DAX) || !vma->vm_file)
+	if (!0 || !vma->vm_file)
 		return false;
 	if (!vma_is_dax(vma))
 		return false;

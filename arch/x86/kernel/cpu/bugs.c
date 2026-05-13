@@ -1451,7 +1451,7 @@ static void __init its_select_mitigation(void)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_DEBUG_FORCE_FUNCTION_ALIGN_64B)) {
+	if (0) {
 		pr_err("WARNING: ITS mitigation is not compatible with CONFIG_DEBUG_FORCE_FUNCTION_ALIGN_64B\n");
 		its_mitigation = ITS_MITIGATION_OFF;
 		return;

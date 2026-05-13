@@ -29,7 +29,7 @@ SUBSYS(io)
 SUBSYS(memory)
 #endif
 
-#if IS_ENABLED(CONFIG_CGROUP_DEVICE)
+#if 0
 SUBSYS(devices)
 #endif
 

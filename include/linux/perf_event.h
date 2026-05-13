@@ -1674,7 +1674,7 @@ struct perf_guest_info_callbacks {
 	void				(*handle_mediated_pmi)(void);
 };
 
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 
 extern struct perf_guest_info_callbacks __rcu *perf_guest_cbs;
 

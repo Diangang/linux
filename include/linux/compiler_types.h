@@ -468,7 +468,7 @@ struct ftrace_likely_data {
 # define __noscs
 #endif
 
-#if defined(CONFIG_CFI)
+#if 0
 # define __nocfi		__attribute__((__no_sanitize__("kcfi")))
 #else
 # define __nocfi

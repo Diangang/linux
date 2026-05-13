@@ -2730,6 +2730,6 @@ int __init kernel_unmap_pages_in_pgd(pgd_t *pgd, unsigned long address,
  * The testcases use internal knowledge of the implementation that shouldn't
  * be exposed to the rest of the kernel. Include these directly here.
  */
-#ifdef CONFIG_CPA_DEBUG
+#if 0
 #include "cpa-test.c"
 #endif

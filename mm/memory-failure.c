@@ -613,7 +613,7 @@ static void collect_procs_file(const struct folio *folio,
 	i_mmap_unlock_read(mapping);
 }
 
-#ifdef CONFIG_FS_DAX
+#if 0
 static void add_to_kill_fsdax(struct task_struct *tsk, const struct page *p,
 			      struct vm_area_struct *vma,
 			      struct list_head *to_kill, pgoff_t pgoff)
@@ -1768,7 +1768,7 @@ unlock:
 	return rc;
 }
 
-#ifdef CONFIG_FS_DAX
+#if 0
 /**
  * mf_dax_kill_procs - Collect and kill processes who are using this file range
  * @mapping:	address_space of the file in use

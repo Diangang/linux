@@ -247,7 +247,7 @@ int __devm_irq_alloc_descs(struct device *dev, int irq, unsigned int from,
 }
 EXPORT_SYMBOL_GPL(__devm_irq_alloc_descs);
 
-#ifdef CONFIG_GENERIC_IRQ_CHIP
+#if 0
 /**
  * devm_irq_alloc_generic_chip - Allocate and initialize a generic chip
  *                               for a managed device

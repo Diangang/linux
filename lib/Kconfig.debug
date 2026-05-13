@@ -142,7 +142,6 @@ config DEBUG_INFO_NONE
 config DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
 	bool "Rely on the toolchain's implicit default DWARF version"
 	select DEBUG_INFO
-	depends on !CC_IS_CLANG || AS_IS_LLVM || (AS_IS_GNU && AS_VERSION >= 23502 && AS_HAS_NON_CONST_ULEB128)
 	help
 	  The implicit default version of DWARF debug info produced by a
 	  toolchain changes over time.
@@ -180,51 +179,7 @@ config DEBUG_INFO_COMPRESSED_NONE
 	help
 	  Don't compress debug info sections.
 
-config DEBUG_INFO_COMPRESSED_ZLIB
-	bool "Compress debugging information with zlib"
-	depends on $(cc-option,-gz=zlib)
-	depends on $(ld-option,--compress-debug-sections=zlib)
-	help
-	  Compress the debug information using zlib.
-
-	  Users of dpkg-deb via debian/rules may find an increase in
-	  size of their debug .deb packages with this config set, due to the
-	  debug info being compressed with zlib, then the object files being
-	  recompressed with a different compression scheme. But this is still
-	  preferable to setting KDEB_COMPRESS or DPKG_DEB_COMPRESSOR_TYPE to
-	  "none" which would be even larger.
-
 endchoice # "Compressed Debug information"
-
-config DEBUG_INFO_SPLIT
-	bool "Produce split debuginfo in .dwo files"
-	depends on $(cc-option,-gsplit-dwarf)
-	# RISC-V linker relaxation + -gsplit-dwarf has issues with LLVM and GCC
-	# prior to 12.x:
-	# https://github.com/llvm/llvm-project/issues/56642
-	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99090
-	depends on !RISCV || GCC_VERSION >= 120000
-	help
-	  Generate debug info into separate .dwo files. This significantly
-	  reduces the build directory size for builds with DEBUG_INFO,
-	  because it stores the information only once on disk in .dwo
-	  files instead of multiple times in object files and executables.
-	  In addition the debug information is also compressed.
-
-	  Requires recent gcc (4.7+) and recent gdb/binutils.
-	  Any tool that packages or reads debug information would need
-	  to know about the .dwo files and include them.
-	  Incompatible with older versions of ccache.
-
-config GDB_SCRIPTS
-	bool "Provide GDB scripts for kernel debugging"
-	help
-	  This creates the required links to GDB helper scripts in the
-	  build directory. If you load vmlinux into gdb, the helper
-	  scripts will be automatically imported by gdb as well, and
-	  additional functions are available to analyze a Linux kernel
-	  instance. See Documentation/process/debugging/gdb-kernel-debugging.rst
-	  for further details.
 
 endif # DEBUG_INFO
 
@@ -251,24 +206,6 @@ config SECTION_MISMATCH_WARN_ONLY
 
 	  If unsure, say Y.
 
-config DEBUG_FORCE_FUNCTION_ALIGN_64B
-	bool "Force all function address 64B aligned"
-	depends on EXPERT && (X86_64 || ARM64 || PPC32 || PPC64 || ARC || RISCV || S390)
-	select FUNCTION_ALIGNMENT_64B
-	help
-	  There are cases that a commit from one domain changes the function
-	  address alignment of other domains, and cause magic performance
-	  bump (regression or improvement). Enable this option will help to
-	  verify if the bump is caused by function alignment changes, while
-	  it will slightly increase the kernel size and affect icache usage.
-
-	  It is mainly for debug and performance tuning use.
-
-#
-# Select this config option from the architecture Kconfig, if it
-# is preferred to always offer frame pointers as a config
-# option on the architecture (regardless of KERNEL_DEBUG):
-#
 config ARCH_WANT_FRAME_POINTERS
 	bool
 
@@ -325,7 +262,7 @@ config VMLINUX_MAP
 
 config WARN_CONTEXT_ANALYSIS
 	bool "Compiler context-analysis warnings"
-	depends on CC_IS_CLANG && CLANG_VERSION >= 220100
+	depends on n
 	# Branch profiling re-defines "if", which messes with the compiler's
 	# ability to analyze __cond_acquires(..), resulting in false positives.
 	depends on !TRACE_BRANCH_PROFILING
@@ -412,22 +349,6 @@ menu "Memory Debugging"
 
 source "mm/Kconfig.debug"
 
-config DEBUG_OBJECTS_TIMERS
-	bool "Debug timer objects"
-	depends on DEBUG_OBJECTS
-	help
-	  If you say Y here, additional code will be inserted into the
-	  timer routines to track the life time of timer objects and
-	  validate the timer operations.
-
-config DEBUG_OBJECTS_WORK
-	bool "Debug work objects"
-	depends on DEBUG_OBJECTS
-	help
-	  If you say Y here, additional code will be inserted into the
-	  work queue routines to track the life time of work objects and
-	  validate the work operations.
-
 config DEBUG_STACK_USAGE
 	bool "Stack utilization instrumentation"
 	depends on DEBUG_KERNEL
@@ -460,25 +381,8 @@ config DEBUG_MEMORY_INIT
 
 	  If unsure, say Y
 
-config DEBUG_KMAP_LOCAL
-	bool "Debug kmap_local temporary mappings"
-	depends on DEBUG_KERNEL && KMAP_LOCAL
-	help
-	  This option enables additional error checking for the kmap_local
-	  infrastructure.  Disable for production use.
-
 config ARCH_SUPPORTS_KMAP_LOCAL_FORCE_MAP
 	bool
-
-config DEBUG_KMAP_LOCAL_FORCE_MAP
-	bool "Enforce kmap_local temporary mappings"
-	depends on DEBUG_KERNEL && ARCH_SUPPORTS_KMAP_LOCAL_FORCE_MAP
-	select KMAP_LOCAL
-	select DEBUG_KMAP_LOCAL
-	help
-	  This option enforces temporary mappings through the kmap_local
-	  mechanism for non-highmem pages and on non-highmem systems.
-	  Disable this for production systems!
 
 config HAVE_DEBUG_STACKOVERFLOW
 	bool
@@ -506,7 +410,6 @@ config PANIC_TIMEOUT
 config SOFTLOCKUP_DETECTOR_INTR_STORM
 	bool "Detect Interrupt Storm in Soft Lockups"
 	depends on SOFTLOCKUP_DETECTOR && IRQ_TIME_ACCOUNTING
-	select GENERIC_IRQ_STAT_SNAPSHOT
 	default y if NR_CPUS <= 128
 	help
 	  Say Y here to enable the kernel to detect interrupt storm
@@ -548,14 +451,6 @@ config HARDLOCKUP_DETECTOR_PREFER_BUDDY
 	  an arch-specific hardlockup detector or if resources needed
 	  for the hardlockup detector are better used for other things.
 
-config HARDLOCKUP_DETECTOR_COUNTS_HRTIMER
-	bool
-	select SOFTLOCKUP_DETECTOR
-
-#
-# Enables a timestamp based low pass filter to compensate for perf based
-# hard lockup detection which runs too fast due to turbo modes.
-#
 config HARDLOCKUP_CHECK_TIMESTAMP
 	bool
 
@@ -647,16 +542,6 @@ config HAVE_DEBUG_BUGVERBOSE
 
 source "kernel/rcu/Kconfig.debug"
 
-config DEBUG_CGROUP_REF
-	bool "Disable inlining of cgroup css reference count functions"
-	depends on DEBUG_KERNEL
-	depends on CGROUPS
-	depends on KPROBES
-	default n
-	help
-	  Force cgroup css reference count functions to not be inlined so
-	  that they can be kprobed for debugging.
-
 source "kernel/trace/Kconfig"
 
 config PROVIDE_OHCI1394_DMA_INIT
@@ -720,27 +605,6 @@ endmenu
 
 menu "Kernel Testing and Coverage"
 
-config FUNCTION_ERROR_INJECTION
-	bool "Fault-injections of functions"
-	depends on HAVE_FUNCTION_ERROR_INJECTION && KPROBES
-	help
-	  Add fault injections into various functions that are annotated with
-	  ALLOW_ERROR_INJECTION() in the kernel. BPF may also modify the return
-	  value of these functions. This is useful to test error paths of code.
-
-	  If unsure, say N
-
-config FAIL_FUTEX
-	bool "Fault-injection capability for futexes"
-	depends on FAULT_INJECTION && FUTEX
-	help
-	  Provide fault-injection capability for futexes.
-
-config FAULT_INJECTION_DEBUG_FS
-	bool "Debugfs entries for fault-injection capabilities"
-	help
-	  Enable configuration of fault-injection capabilities via debugfs.
-
 config ARCH_HAS_KCOV
 	bool
 	help
@@ -752,7 +616,7 @@ config KCOV
 	bool "Code coverage for fuzzing"
 	depends on ARCH_HAS_KCOV
 	depends on !ARCH_WANTS_NO_INSTR || HAVE_NOINSTR_HACK || \
-		   GCC_VERSION >= 120000 || CC_IS_CLANG
+		   GCC_VERSION >= 120000
 	select OBJTOOL if HAVE_NOINSTR_HACK
 	help
 	  KCOV exposes kernel code coverage information in a form suitable
@@ -787,7 +651,6 @@ config RESOURCE_KUNIT_TEST
 	tristate "KUnit test for resource API" if !KUNIT_ALL_TESTS
 	depends on KUNIT
 	default KUNIT_ALL_TESTS
-	select GET_FREE_REGION
 	help
 	  This builds the resource API unit test.
 	  Tests the logic of API provided by resource.c and ioport.h.

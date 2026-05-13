@@ -198,7 +198,7 @@ static inline void arch_unmap(struct mm_struct *mm,
 {
 }
 
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 static inline void update_saved_ttbr0(struct task_struct *tsk,
 				      struct mm_struct *mm)
 {

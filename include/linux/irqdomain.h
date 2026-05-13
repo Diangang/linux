@@ -118,7 +118,7 @@ struct irq_domain_ops {
 			     unsigned long *out_hwirq, unsigned int *out_type);
 	int	(*get_fwspec_info)(struct irq_fwspec *fwspec, struct irq_fwspec_info *info);
 #endif
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 	void	(*debug_show)(struct seq_file *m, struct irq_domain *d,
 			      struct irq_data *irqd, int ind);
 #endif

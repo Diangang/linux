@@ -46,11 +46,7 @@
 #include <linux/cma.h>
 #include <linux/nospec.h>
 
-#ifdef CONFIG_CMA_SIZE_MBYTES
-#define CMA_SIZE_MBYTES CONFIG_CMA_SIZE_MBYTES
-#else
 #define CMA_SIZE_MBYTES 0
-#endif
 
 static struct cma *dma_contiguous_areas[MAX_CMA_AREAS];
 static unsigned int dma_contiguous_areas_num;
@@ -269,12 +265,8 @@ void __init dma_contiguous_reserve(phys_addr_t limit)
 		if (base_cmdline + size_cmdline == limit_cmdline)
 			fixed = true;
 	} else {
-#ifdef CONFIG_CMA_SIZE_SEL_MBYTES
-		selected_size = size_bytes;
-#elif defined(CONFIG_CMA_SIZE_SEL_PERCENTAGE)
-		selected_size = cma_early_percent_memory();
-#elif defined(CONFIG_CMA_SIZE_SEL_MIN)
-		selected_size = min(size_bytes, cma_early_percent_memory());
+#if defined(CONFIG_CMA_SIZE_SEL_MIN)
+			selected_size = min(size_bytes, cma_early_percent_memory());
 #elif defined(CONFIG_CMA_SIZE_SEL_MAX)
 		selected_size = max(size_bytes, cma_early_percent_memory());
 #endif

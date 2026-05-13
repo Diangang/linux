@@ -7654,7 +7654,7 @@ static void perf_pending_task(struct callback_head *head)
 		perf_swevent_put_recursion_context(rctx);
 }
 
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 struct perf_guest_info_callbacks __rcu *perf_guest_cbs;
 
 DEFINE_STATIC_CALL_RET0(__perf_guest_state, *perf_guest_cbs->state);

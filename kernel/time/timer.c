@@ -640,7 +640,7 @@ static void internal_add_timer(struct timer_base *base, struct timer_list *timer
 	enqueue_timer(base, timer, idx, bucket_expiry);
 }
 
-#ifdef CONFIG_DEBUG_OBJECTS_TIMERS
+#if 0
 
 static const struct debug_obj_descr timer_debug_descr;
 

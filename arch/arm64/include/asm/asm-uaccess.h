@@ -12,7 +12,7 @@
 /*
  * User access enabling/disabling macros.
  */
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 	.macro	__uaccess_ttbr0_disable, tmp1
 	mrs	\tmp1, ttbr1_el1			// swapper_pg_dir
 	bic	\tmp1, \tmp1, #TTBRx_EL1_ASID_MASK

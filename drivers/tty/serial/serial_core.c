@@ -2121,7 +2121,7 @@ int uart_parse_earlycon(char *p, enum uart_iotype *iotype,
 		*iotype = UPIO_MEM32BE;
 		p += 9;
 	} else if (strncmp(p, "mmio32native,", 13) == 0) {
-		*iotype = IS_ENABLED(CONFIG_CPU_BIG_ENDIAN) ?
+		*iotype = 0 ?
 			UPIO_MEM32BE : UPIO_MEM32;
 		p += 13;
 	} else if (strncmp(p, "io,", 3) == 0) {

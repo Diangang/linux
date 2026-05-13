@@ -2317,7 +2317,7 @@ static int valid_compat_regs(struct user_pt_regs *regs)
 	regs->pstate &= ~SPSR_EL1_AARCH32_RES0_BITS;
 
 	if (!system_supports_mixed_endian_el0()) {
-		if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
+		if (0)
 			regs->pstate |= PSR_AA32_E_BIT;
 		else
 			regs->pstate &= ~PSR_AA32_E_BIT;

@@ -19,7 +19,7 @@ enum ctx_state {
 };
 
 struct context_tracking {
-#ifdef CONFIG_CONTEXT_TRACKING_USER
+#if 0
 	/*
 	 * When active is false, probes are unset in order
 	 * to minimize overhead: TIF flags are cleared
@@ -78,7 +78,7 @@ static_assert(CT_STATE_WIDTH        +
 DECLARE_PER_CPU(struct context_tracking, context_tracking);
 #endif	/* CONFIG_CONTEXT_TRACKING */
 
-#ifdef CONFIG_CONTEXT_TRACKING_USER
+#if 0
 static __always_inline int __ct_state(void)
 {
 	return raw_atomic_read(this_cpu_ptr(&context_tracking.state)) & CT_STATE_MASK;
@@ -130,7 +130,7 @@ static __always_inline long ct_nmi_nesting_cpu(int cpu)
 }
 #endif /* #ifdef CONFIG_CONTEXT_TRACKING_IDLE */
 
-#ifdef CONFIG_CONTEXT_TRACKING_USER
+#if 0
 extern struct static_key_false context_tracking_key;
 
 static __always_inline bool context_tracking_enabled(void)

@@ -9,7 +9,7 @@
 /*
  * supports 3 memory models.
  */
-#if defined(CONFIG_FLATMEM)
+#if 0
 
 #ifndef ARCH_PFN_OFFSET
 #define ARCH_PFN_OFFSET		(0UL)

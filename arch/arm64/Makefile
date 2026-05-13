@@ -76,11 +76,7 @@ ifeq ($(CONFIG_ARM64_BTI_KERNEL),y)
   KBUILD_RUSTFLAGS += -Zbranch-protection=bti,pac-ret
 else ifeq ($(CONFIG_ARM64_PTR_AUTH_KERNEL),y)
   KBUILD_RUSTFLAGS += -Zbranch-protection=pac-ret
-  ifeq ($(CONFIG_CC_HAS_BRANCH_PROT_PAC_RET),y)
-    KBUILD_CFLAGS += -mbranch-protection=pac-ret
-  else
-    KBUILD_CFLAGS += -msign-return-address=non-leaf
-  endif
+  KBUILD_CFLAGS += -msign-return-address=non-leaf
 else
   KBUILD_CFLAGS += $(call cc-option,-mbranch-protection=none)
 endif
@@ -96,11 +92,7 @@ endif
 # freely generate instructions which are not supported by earlier architecture
 # versions, which would prevent a single kernel image from working on earlier
 # hardware.
-ifeq ($(CONFIG_AS_HAS_ARMV8_5), y)
-  asm-arch := armv8.5-a
-else
-  asm-arch := armv8.4-a
-endif
+asm-arch := armv8.4-a
 
 ifdef asm-arch
 KBUILD_CFLAGS	+= -Wa,-march=$(asm-arch) \
@@ -112,20 +104,11 @@ KBUILD_CFLAGS	+= -ffixed-x18
 KBUILD_RUSTFLAGS += -Zfixed-x18
 endif
 
-ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
-KBUILD_CPPFLAGS	+= -mbig-endian
-CHECKFLAGS	+= -D__AARCH64EB__
-# Prefer the baremetal ELF build target, but not all toolchains include
-# it so fall back to the standard linux version if needed.
-KBUILD_LDFLAGS	+= -EB $(call ld-option, -maarch64elfb, -maarch64linuxb -z norelro)
-UTS_MACHINE	:= aarch64_be
-else
 KBUILD_CPPFLAGS	+= -mlittle-endian
 CHECKFLAGS	+= -D__AARCH64EL__
 # Same as above, prefer ELF but fall back to linux target if needed.
 KBUILD_LDFLAGS	+= -EL $(call ld-option, -maarch64elf, -maarch64linux -z norelro)
 UTS_MACHINE	:= aarch64
-endif
 
 ifeq ($(CONFIG_LD_IS_LLD), y)
 KBUILD_LDFLAGS	+= -z norelro

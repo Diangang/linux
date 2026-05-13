@@ -229,7 +229,7 @@ int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp
 	inode->i_private = NULL;
 	inode->i_mapping = mapping;
 	INIT_HLIST_HEAD(&inode->i_dentry);	/* buggered by rcu freeing */
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 	inode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;
 #endif
 
@@ -310,7 +310,7 @@ void __destroy_inode(struct inode *inode)
 		atomic_long_dec(&inode->i_sb->s_remove_count);
 	}
 
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 	if (inode->i_acl && !is_uncached_acl(inode->i_acl))
 		posix_acl_release(inode->i_acl);
 	if (inode->i_default_acl && !is_uncached_acl(inode->i_default_acl))

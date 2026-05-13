@@ -17,7 +17,7 @@ struct error_injection_entry {
 
 struct pt_regs;
 
-#ifdef CONFIG_FUNCTION_ERROR_INJECTION
+#if 0
 /*
  * Whitelist generating macro. Specify functions which can be error-injectable
  * using this macro. If you unsure what is required for the error-injectable

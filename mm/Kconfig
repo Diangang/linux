@@ -56,20 +56,6 @@ config SPARSEMEM
 	def_bool y
 	depends on ARCH_SPARSEMEM_ENABLE
 
-config FLATMEM
-	def_bool y
-	depends on !SPARSEMEM
-
-#
-# SPARSEMEM_EXTREME (which is the default) does some bootmem
-# allocations when sparse_init() is called.  If this cannot
-# be done on your architecture, select this option.  However,
-# statically allocating the mem_section[] array can potentially
-# consume vast quantities of .bss, so be careful.
-#
-# This option will also potentially produce smaller runtime code
-# with gcc 3.4 and later.
-#
 config SPARSEMEM_STATIC
 	bool
 
@@ -619,10 +605,6 @@ config PGTABLE_HAS_HUGE_LEAVES
 #
 # We can end up creating gigantic folio.
 #
-config ASYNC_KERNEL_PGTABLE_FREE
-	def_bool n
-
-# TODO: Allow to be enabled without THP
 config ARCH_SUPPORTS_HUGE_PFNMAP
 	def_bool n
 	depends on TRANSPARENT_HUGEPAGE
@@ -746,19 +728,6 @@ config HMM_MIRROR
 	bool
 	depends on MMU
 
-config GET_FREE_REGION
-	bool
-
-config DEVICE_PRIVATE
-	bool "Unaddressable device memory (GPU memory, ...)"
-	depends on ZONE_DEVICE
-	select GET_FREE_REGION
-
-	help
-	  Allows creation of struct pages to represent unaddressable device
-	  memory; i.e., memory that is only accessible from the device (or
-	  group of devices). You likely also want to select HMM_MIRROR.
-
 config VMAP_PFN
 	bool
 
@@ -778,9 +747,6 @@ config VM_EVENT_COUNTERS
 	  This option allows the disabling of the VM event counters
 	  on EXPERT systems.  /proc/vmstat will only show page counts
 	  if VM event counters are disabled.
-
-config GUP_GET_PXX_LOW_HIGH
-	bool
 
 config ARCH_HAS_PTE_SPECIAL
 	bool

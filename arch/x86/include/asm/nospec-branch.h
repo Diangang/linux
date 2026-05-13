@@ -56,7 +56,7 @@
 #define RET_DEPTH_INIT_FROM_CALL	0xfc00000000000000ULL
 #define RET_DEPTH_CREDIT		0xffffffffffffffffULL
 
-#ifdef CONFIG_CALL_THUNKS_DEBUG
+#if 0
 # define CALL_THUNKS_DEBUG_INC_CALLS				\
 	incq	PER_CPU_VAR(__x86_call_count);
 # define CALL_THUNKS_DEBUG_INC_RETS				\
@@ -406,7 +406,7 @@ extern void call_depth_return_thunk(void);
 
 DECLARE_PER_CPU_CACHE_HOT(u64, __x86_call_depth);
 
-#ifdef CONFIG_CALL_THUNKS_DEBUG
+#if 0
 DECLARE_PER_CPU(u64, __x86_call_count);
 DECLARE_PER_CPU(u64, __x86_ret_count);
 DECLARE_PER_CPU(u64, __x86_stuffs_count);

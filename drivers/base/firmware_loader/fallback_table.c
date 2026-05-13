@@ -18,7 +18,7 @@
  */
 
 struct firmware_fallback_config fw_fallback_config = {
-	.force_sysfs_fallback = IS_ENABLED(CONFIG_FW_LOADER_USER_HELPER_FALLBACK),
+	.force_sysfs_fallback = 0,
 	.loading_timeout = 60,
 	.old_timeout = 60,
 };

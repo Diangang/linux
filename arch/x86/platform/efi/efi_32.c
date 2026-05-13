@@ -74,7 +74,7 @@ void efi_sync_low_kernel_mappings(void) {}
 
 void __init efi_dump_pagetable(void)
 {
-#ifdef CONFIG_EFI_PGT_DUMP
+#if 0
 	ptdump_walk_pgd_level(NULL, &init_mm);
 #endif
 }

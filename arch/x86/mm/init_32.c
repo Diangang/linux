@@ -684,7 +684,7 @@ void __init arch_mm_preinit(void)
 {
 	pci_iommu_alloc();
 
-#ifdef CONFIG_FLATMEM
+#if 0
 	BUG_ON(!mem_map);
 #endif
 }
@@ -748,7 +748,7 @@ void mark_rodata_ro(void)
 
 	kernel_set_to_readonly = 1;
 
-#ifdef CONFIG_CPA_DEBUG
+#if 0
 	pr_info("Testing CPA: Reverting %lx-%lx\n", start, start + size);
 	set_pages_rw(virt_to_page(start), size >> PAGE_SHIFT);
 

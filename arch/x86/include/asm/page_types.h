@@ -43,7 +43,7 @@
 
 #ifndef __ASSEMBLER__
 
-#ifdef CONFIG_DYNAMIC_PHYSICAL_MASK
+#if 0
 extern phys_addr_t physical_mask;
 #define __PHYSICAL_MASK		physical_mask
 #else

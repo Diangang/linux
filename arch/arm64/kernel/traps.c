@@ -1018,7 +1018,7 @@ int bug_brk_handler(struct pt_regs *regs, unsigned long esr)
 	return DBG_HOOK_HANDLED;
 }
 
-#ifdef CONFIG_CFI
+#if 0
 int cfi_brk_handler(struct pt_regs *regs, unsigned long esr)
 {
 	unsigned long target;

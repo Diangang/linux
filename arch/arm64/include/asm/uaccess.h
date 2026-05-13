@@ -55,7 +55,7 @@ static inline int access_ok(const void __user *addr, unsigned long size)
 /*
  * User access enabling/disabling.
  */
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 static inline void __uaccess_ttbr0_disable(void)
 {
 	unsigned long flags, ttbr;
@@ -182,7 +182,7 @@ static inline void __user *__uaccess_mask_ptr(const void __user *ptr)
  * The "__xxx_error" versions set the third argument to -EFAULT if an error
  * occurs, and leave it unchanged on success.
  */
-#ifdef CONFIG_CC_HAS_ASM_GOTO_OUTPUT
+#if 0
 #define __get_mem_asm(load, reg, x, addr, label, type)			\
 	asm_goto_output(						\
 	"1:	" load "	" reg "0, [%1]\n"			\

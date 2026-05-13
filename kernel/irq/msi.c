@@ -724,7 +724,7 @@ static int msi_domain_translate(struct irq_domain *domain, struct irq_fwspec *fw
 	return info->ops->msi_translate(domain, fwspec, hwirq, type);
 }
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 static void msi_domain_debug_show(struct seq_file *m, struct irq_domain *d,
 				  struct irq_data *irqd, int ind)
 {
@@ -745,7 +745,7 @@ static const struct irq_domain_ops msi_domain_ops = {
 	.activate	= msi_domain_activate,
 	.deactivate	= msi_domain_deactivate,
 	.translate	= msi_domain_translate,
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 	.debug_show     = msi_domain_debug_show,
 #endif
 };

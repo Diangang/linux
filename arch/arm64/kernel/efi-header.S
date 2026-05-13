@@ -81,7 +81,7 @@
 	.quad	0					// CertificationTable
 	.quad	0					// BaseRelocationTable
 
-#if defined(CONFIG_DEBUG_EFI) || defined(CONFIG_ARM64_BTI_KERNEL)
+#if 0 || defined(CONFIG_ARM64_BTI_KERNEL)
 	.long	.Lefi_debug_table - .L_head		// DebugTable
 	.long	.Lefi_debug_table_size
 
@@ -99,7 +99,7 @@
 
 	.align	2
 .Lefi_debug_table:
-#ifdef CONFIG_DEBUG_EFI
+#if 0
 	// EFI_IMAGE_DEBUG_DIRECTORY_ENTRY
 	.long	0					// Characteristics
 	.long	0					// TimeDateStamp
@@ -156,7 +156,7 @@
 
 	.set	.Lsection_count, (. - .Lsection_table) / 40
 
-#ifdef CONFIG_DEBUG_EFI
+#if 0
 .Lefi_debug_entry:
 	// EFI_IMAGE_DEBUG_CODEVIEW_NB10_ENTRY
 	.ascii	"NB10"					// Signature

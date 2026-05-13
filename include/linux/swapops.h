@@ -132,7 +132,7 @@ static inline void *swp_to_radix_entry(swp_entry_t entry)
 	return xa_mk_value(entry.val);
 }
 
-#if IS_ENABLED(CONFIG_DEVICE_PRIVATE)
+#if 0
 static inline swp_entry_t make_readable_device_private_entry(pgoff_t offset)
 {
 	return swp_entry(SWP_DEVICE_READ, offset);

@@ -4,7 +4,7 @@
 
 #include <generated/autoconf.h>
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define __BIG_ENDIAN 4321
 #else
 #define __LITTLE_ENDIAN 1234

@@ -619,7 +619,7 @@ static int __init sme_sysctl_init(void) { return 0; }
 #define ZREG(sve_state, vq, n) ((char *)(sve_state) +		\
 	(SVE_SIG_ZREG_OFFSET(vq, n) - SVE_SIG_REGS_OFFSET))
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 static __uint128_t arm64_cpu_to_le128(__uint128_t x)
 {
 	u64 a = swab64(x);

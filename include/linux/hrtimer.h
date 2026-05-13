@@ -196,7 +196,7 @@ extern void hrtimer_setup_on_stack(struct hrtimer *timer,
 extern void hrtimer_setup_sleeper_on_stack(struct hrtimer_sleeper *sl, clockid_t clock_id,
 					   enum hrtimer_mode mode);
 
-#ifdef CONFIG_DEBUG_OBJECTS_TIMERS
+#if 0
 extern void destroy_hrtimer_on_stack(struct hrtimer *timer);
 #else
 static inline void destroy_hrtimer_on_stack(struct hrtimer *timer) { }

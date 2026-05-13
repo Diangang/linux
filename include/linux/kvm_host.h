@@ -1767,7 +1767,7 @@ static inline bool kvm_arch_intc_initialized(struct kvm *kvm)
 }
 #endif
 
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 unsigned long kvm_arch_vcpu_get_ip(struct kvm_vcpu *vcpu);
 
 void __kvm_register_perf_callbacks(unsigned int (*pt_intr_handler)(void),

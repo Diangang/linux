@@ -338,7 +338,7 @@ static bool can_probe(unsigned long paddr)
 	if (is_exception_insn(&insn))
 		return false;
 
-	if (IS_ENABLED(CONFIG_CFI)) {
+	if (0) {
 		/*
 		 * The compiler generates the following instruction sequence
 		 * for indirect call checks and cfi.c decodes this;

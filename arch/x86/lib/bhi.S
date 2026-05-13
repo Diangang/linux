@@ -20,7 +20,7 @@
 	.align 32
 SYM_CODE_START(__bhi_args)
 
-#ifdef CONFIG_FINEIBT_BHI
+#if 0
 
 	.align 32
 SYM_INNER_LABEL(__bhi_args_0, SYM_L_LOCAL)

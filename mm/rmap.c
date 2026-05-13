@@ -2766,7 +2766,7 @@ void try_to_migrate(struct folio *folio, enum ttu_flags flags)
 		rmap_walk(folio, &rwc);
 }
 
-#ifdef CONFIG_DEVICE_PRIVATE
+#if 0
 /**
  * make_device_exclusive() - Mark a page for exclusive use by a device
  * @mm: mm_struct of associated target process

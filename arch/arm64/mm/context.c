@@ -357,7 +357,7 @@ void cpu_do_switch_mm(phys_addr_t pgd_phys, struct mm_struct *mm)
 		ttbr0 |= TTBRx_EL1_CnP;
 
 	/* SW PAN needs a copy of the ASID in TTBR0 for entry */
-	if (IS_ENABLED(CONFIG_ARM64_SW_TTBR0_PAN))
+	if (0)
 		ttbr0 |= FIELD_PREP(TTBRx_EL1_ASID_MASK, asid);
 
 	/* Set ASID in TTBR1 since TCR.A1 is set */

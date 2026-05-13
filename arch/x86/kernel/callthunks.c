@@ -38,7 +38,7 @@ static int __init debug_thunks(char *str)
 }
 __setup("debug-callthunks", debug_thunks);
 
-#ifdef CONFIG_CALL_THUNKS_DEBUG
+#if 0
 DEFINE_PER_CPU(u64, __x86_call_count);
 DEFINE_PER_CPU(u64, __x86_ret_count);
 DEFINE_PER_CPU(u64, __x86_stuffs_count);

@@ -7,11 +7,3 @@ config PID_IN_CONTEXTIDR
 	  the CONTEXTIDR register, at the expense of some additional
 	  instructions during context switch. Say Y here only if you are
 	  planning to use hardware trace tools with this kernel.
-
-config DEBUG_EFI
-	depends on EFI && DEBUG_INFO
-	bool "UEFI debugging"
-	help
-	  Enable this option to include EFI specific debugging features into
-	  the kernel that are only useful when using a debug build of the
-	  UEFI firmware

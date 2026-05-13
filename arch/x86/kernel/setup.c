@@ -225,7 +225,7 @@ unsigned long saved_video_mode;
 #define RAMDISK_LOAD_FLAG		0x4000
 
 static char __initdata command_line[COMMAND_LINE_SIZE];
-#ifdef CONFIG_CMDLINE_BOOL
+#if 0
 char builtin_cmdline[COMMAND_LINE_SIZE] = CONFIG_CMDLINE;
 bool builtin_cmdline_added __ro_after_init;
 #endif
@@ -907,7 +907,7 @@ void __init setup_arch(char **cmdline_p)
 	boot_cpu_data.x86_phys_bits = MAX_PHYSMEM_BITS;
 #endif
 
-#ifdef CONFIG_CMDLINE_BOOL
+#if 0
 #ifdef CONFIG_CMDLINE_OVERRIDE
 	strscpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
 #else

@@ -71,7 +71,7 @@ void timer_init_key(struct timer_list *timer,
 		    void (*func)(struct timer_list *), unsigned int flags,
 		    const char *name, struct lock_class_key *key);
 
-#ifdef CONFIG_DEBUG_OBJECTS_TIMERS
+#if 0
 extern void timer_init_key_on_stack(struct timer_list *timer,
 				    void (*func)(struct timer_list *),
 				    unsigned int flags, const char *name,
@@ -123,7 +123,7 @@ static inline void timer_init_key_on_stack(struct timer_list *timer,
 #define timer_setup_on_stack(timer, callback, flags)		\
 	__timer_init_on_stack((timer), (callback), (flags))
 
-#ifdef CONFIG_DEBUG_OBJECTS_TIMERS
+#if 0
 extern void timer_destroy_on_stack(struct timer_list *timer);
 #else
 static inline void timer_destroy_on_stack(struct timer_list *timer) { }

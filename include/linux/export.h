@@ -58,7 +58,7 @@
 
 #else
 
-#ifdef CONFIG_GENDWARFKSYMS
+#if 0
 /*
  * With CONFIG_GENDWARFKSYMS, ensure the compiler emits debugging
  * information for all exported symbols, including those defined in

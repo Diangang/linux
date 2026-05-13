@@ -436,7 +436,7 @@ static int __init setup_early_printk(char *buf)
 		if (!strncmp(buf, "xen", 3))
 			early_console_register(&xenboot_console, keep);
 #endif
-#ifdef CONFIG_EARLY_PRINTK_USB_XDBC
+#if 0
 		if (!strncmp(buf, "xdbc", 4))
 			early_xdbc_parse_parameter(buf + 4, keep);
 #endif

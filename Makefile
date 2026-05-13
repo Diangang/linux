@@ -943,11 +943,7 @@ export CC_FLAGS_NO_FPU
 ifneq ($(CONFIG_FUNCTION_ALIGNMENT),0)
 # Set the minimal function alignment. Use the newer GCC option
 # -fmin-function-alignment if it is available, or fall back to -falign-funtions.
-ifdef CONFIG_CC_HAS_MIN_FUNCTION_ALIGNMENT
-KBUILD_CFLAGS += -fmin-function-alignment=$(CONFIG_FUNCTION_ALIGNMENT)
-else
 KBUILD_CFLAGS += -falign-functions=$(CONFIG_FUNCTION_ALIGNMENT)
-endif
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
@@ -1033,7 +1029,7 @@ KBUILD_USERLDFLAGS += $(filter $(USERFLAGS_FROM_KERNEL), $(KBUILD_CPPFLAGS) $(KB
 CHECKFLAGS += --arch=$(ARCH)
 
 # insure the checker run with the right endianness
-CHECKFLAGS += $(if $(CONFIG_CPU_BIG_ENDIAN),-mbig-endian,-mlittle-endian)
+CHECKFLAGS += -mlittle-endian
 
 # the checker needs the correct machine size
 CHECKFLAGS += $(if $(CONFIG_64BIT),-m64,-m32)

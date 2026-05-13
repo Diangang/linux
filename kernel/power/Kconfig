@@ -9,7 +9,7 @@ config SUSPEND
 	  suspend-to-RAM state (e.g. the ACPI S3 state).
 config SUSPEND_FREEZER
 	bool "Enable freezer for suspend to RAM/standby" \
-		if ARCH_WANTS_FREEZER_CONTROL || BROKEN
+		if ARCH_WANTS_FREEZER_CONTROL
 	depends on SUSPEND
 	default y
 	help
@@ -37,7 +37,7 @@ config HIBERNATE_CALLBACKS
 config HIBERNATION
 	bool "Hibernation (aka 'suspend to disk')"
 	depends on SWAP && ARCH_HIBERNATION_POSSIBLE
-	depends on BROKEN
+	depends on n
 	select HIBERNATE_CALLBACKS
 	select CRC32
 	help
@@ -190,22 +190,6 @@ config PM_TEST_SUSPEND
 config PM_SLEEP_DEBUG
 	def_bool y
 	depends on PM_DEBUG && PM_SLEEP
-
-config DPM_WATCHDOG
-	bool "Device suspend/resume watchdog"
-	depends on PM_DEBUG && PSTORE && EXPERT
-	help
-	  Sets up a watchdog timer to capture drivers that are
-	  locked up attempting to suspend/resume a device.
-	  A detected lockup causes system panic with message
-	  captured in pstore device for inspection in subsequent
-	  boot session.
-
-config DPM_WATCHDOG_TIMEOUT
-	int "Watchdog timeout to panic in seconds"
-	range 1 120
-	default 120
-	depends on DPM_WATCHDOG
 
 config PM_TRACE
 	bool

@@ -1352,7 +1352,7 @@ int io_mem_abort(struct kvm_vcpu *vcpu, phys_addr_t fault_ipa);
  */
 static inline bool kvm_arch_pmi_in_guest(struct kvm_vcpu *vcpu)
 {
-	return IS_ENABLED(CONFIG_GUEST_PERF_EVENTS) && !!vcpu;
+	return 0 && !!vcpu;
 }
 
 long kvm_hypercall_pv_features(struct kvm_vcpu *vcpu);

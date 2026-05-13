@@ -68,7 +68,7 @@
 #define PSR_AA32_IT_MASK	0x0600fc00	/* If-Then execution state mask */
 #define PSR_AA32_GE_MASK	0x000f0000
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define PSR_AA32_ENDSTATE	PSR_AA32_E_BIT
 #else
 #define PSR_AA32_ENDSTATE	0

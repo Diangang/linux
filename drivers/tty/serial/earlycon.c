@@ -304,7 +304,7 @@ int __init of_setup_earlycon(const struct earlycon_id *match,
 	if (val)
 		port->regshift = be32_to_cpu(*val);
 	big_endian = of_get_flat_dt_prop(node, "big-endian", NULL) != NULL ||
-		(IS_ENABLED(CONFIG_CPU_BIG_ENDIAN) &&
+		(0 &&
 		 of_get_flat_dt_prop(node, "native-endian", NULL) != NULL);
 	val = of_get_flat_dt_prop(node, "reg-io-width", NULL);
 	if (val) {

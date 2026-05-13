@@ -128,7 +128,7 @@ static int __write_relocate_add(Elf64_Shdr *sechdrs,
 			size = 4;
 			break;
 #if defined(CONFIG_STACKPROTECTOR) && \
-    defined(CONFIG_CC_IS_CLANG) && CONFIG_CLANG_VERSION < 170000
+    0 && CONFIG_CLANG_VERSION < 170000
 		case R_X86_64_REX_GOTPCRELX: {
 			static unsigned long __percpu *const addr = &__stack_chk_guard;
 

@@ -150,7 +150,7 @@ int check_irq_resend(struct irq_desc *desc, bool inject)
 	return err;
 }
 
-#ifdef CONFIG_GENERIC_IRQ_INJECTION
+#if 0
 /**
  * irq_inject_interrupt - Inject an interrupt for testing/error injection
  * @irq:	The interrupt number

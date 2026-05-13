@@ -59,7 +59,7 @@ COMPAT_SYSCALL_DEFINE6(aarch32_mmap2, unsigned long, addr, unsigned long, len,
 	return ksys_mmap_pgoff(addr, len, prot, flags, fd, off_4k);
 }
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define arg_u32p(name)	u32, name##_hi, u32, name##_lo
 #else
 #define arg_u32p(name)	u32, name##_lo, u32, name##_hi

@@ -30,7 +30,7 @@
  * Check for 16.0.1 to ensure the support is present, as 16.0.0 may be a
  * prerelease version.
  */
-#if defined(CONFIG_AS_IS_GNU) || (defined(CONFIG_AS_IS_LLVM) && CONFIG_AS_VERSION >= 160001)
+#if defined(CONFIG_AS_IS_GNU) || (0 && CONFIG_AS_VERSION >= 160001)
 	CFI_OFFSET	eflags, IA32_SIGCONTEXT_flags
 #endif
 .endm

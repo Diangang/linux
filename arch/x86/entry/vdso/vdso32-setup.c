@@ -16,7 +16,7 @@
 #include <asm/processor.h>
 #include <asm/vdso.h>
 
-#ifdef CONFIG_COMPAT_VDSO
+#if 0
 #define VDSO_DEFAULT	0
 #else
 #define VDSO_DEFAULT	1

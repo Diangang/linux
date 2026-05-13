@@ -35,7 +35,7 @@ if VIRTIO_MENU
 
 config VIRTIO_HARDEN_NOTIFICATION
         bool "Harden virtio notification"
-        depends on BROKEN
+        depends on n
         help
           Enable this to harden the device notifications and suppress
           those that happen at a time where notifications are illegal.

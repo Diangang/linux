@@ -19,7 +19,7 @@ typedef struct {
 	unsigned int kvm_posted_intr_wakeup_ipis;
 	unsigned int kvm_posted_intr_nested_ipis;
 #endif
-#ifdef CONFIG_GUEST_PERF_EVENTS
+#if 0
 	unsigned int perf_guest_mediated_pmis;
 #endif
 	unsigned int x86_platform_ipis;	/* arch dependent */

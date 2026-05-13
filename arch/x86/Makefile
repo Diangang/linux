@@ -16,10 +16,6 @@ ifdef CONFIG_CC_IS_GCC
 RETPOLINE_CFLAGS	:= -mindirect-branch=thunk-extern -mindirect-branch-register
 RETPOLINE_VDSO_CFLAGS	:= -mindirect-branch=thunk-inline -mindirect-branch-register
 endif
-ifdef CONFIG_CC_IS_CLANG
-RETPOLINE_CFLAGS	:= -mretpoline-external-thunk
-RETPOLINE_VDSO_CFLAGS	:= -mretpoline
-endif
 RETPOLINE_CFLAGS	+= $(call cc-option,-mindirect-branch-cs-prefix)
 
 ifdef CONFIG_MITIGATION_RETHUNK
@@ -40,10 +36,6 @@ export RETPOLINE_VDSO_CFLAGS
 ifdef CONFIG_CC_IS_GCC
       cc_stack_align4 := -mpreferred-stack-boundary=2
       cc_stack_align8 := -mpreferred-stack-boundary=3
-endif
-ifdef CONFIG_CC_IS_CLANG
-      cc_stack_align4 := -mstack-alignment=4
-      cc_stack_align8 := -mstack-alignment=8
 endif
 
 # How to compile the 16-bit code.  Note we always compile for -march=i386;

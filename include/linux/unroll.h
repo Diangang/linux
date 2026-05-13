@@ -9,7 +9,7 @@
 
 #include <linux/args.h>
 
-#ifdef CONFIG_CC_IS_CLANG
+#if 0
 #define __pick_unrolled(x, y)		_Pragma(#x)
 #else
 #define __pick_unrolled(x, y)		_Pragma(#y)

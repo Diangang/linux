@@ -1064,7 +1064,7 @@ static void __init do_ctors(void)
  * cannot do it again - but we do need CONFIG_CONSTRUCTORS
  * even on UML for modules.
  */
-#if defined(CONFIG_CONSTRUCTORS) && !defined(CONFIG_UML)
+#if 0 && !defined(CONFIG_UML)
 	ctor_fn_t *fn = (ctor_fn_t *) __ctors_start;
 
 	for (; fn < (ctor_fn_t *) __ctors_end; fn++)

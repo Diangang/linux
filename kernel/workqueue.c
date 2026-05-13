@@ -605,7 +605,7 @@ static void show_one_worker_pool(struct worker_pool *pool);
 	list_for_each_entry_rcu((pwq), &(wq)->pwqs, pwqs_node,		\
 				 lockdep_is_held(&(wq->mutex)))
 
-#ifdef CONFIG_DEBUG_OBJECTS_WORK
+#if 0
 
 static const struct debug_obj_descr work_debug_descr;
 

@@ -1924,7 +1924,7 @@ void resource_list_free(struct list_head *head)
 }
 EXPORT_SYMBOL(resource_list_free);
 
-#ifdef CONFIG_GET_FREE_REGION
+#if 0
 #define GFR_DESCENDING		(1UL << 0)
 #define GFR_REQUEST_REGION	(1UL << 1)
 #ifdef PA_SECTION_SHIFT

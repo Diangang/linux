@@ -44,7 +44,7 @@ struct attribute {
  */
 #define sysfs_attr_init(attr) do {} while (0)
 
-#ifdef CONFIG_CFI
+#if 0
 #define __SYSFS_FUNCTION_ALTERNATIVE(MEMBERS...) struct { MEMBERS }
 #else
 #define __SYSFS_FUNCTION_ALTERNATIVE(MEMBERS...) union { MEMBERS }

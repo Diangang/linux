@@ -184,7 +184,6 @@ config ARM64
 	select HAVE_MOD_ARCH_SPECIFIC
 	select HAVE_NMI
 	select HAVE_PERF_EVENTS
-	select HAVE_PERF_EVENTS_NMI if ARM64_PSEUDO_NMI
 	select HAVE_PERF_REGS
 	select HAVE_PERF_USER_STACK_DUMP
 	select HAVE_PREEMPT_DYNAMIC_KEY
@@ -196,7 +195,6 @@ config ARM64
 	select HAVE_RSEQ
 	select HAVE_RUST if RUSTC_SUPPORTS_ARM64
 	select HAVE_STACKPROTECTOR
-	select HAVE_STATIC_CALL if CFI
 	select HAVE_KRETPROBES
 	select HAVE_GENERIC_VDSO
 	select HOTPLUG_CORE_SYNC_DEAD if HOTPLUG_CPU
@@ -314,8 +312,6 @@ config FIX_EARLYCON_MEM
 
 config PGTABLE_LEVELS
 	int
-	default 3 if ARM64_4K_PAGES && ARM64_VA_BITS_39
-	default 4 if ARM64_VA_BITS_48
 	default 5 if ARM64_4K_PAGES && ARM64_VA_BITS_52
 
 config ARCH_SUPPORTS_UPROBES
@@ -327,14 +323,8 @@ config ARCH_PROC_KCORE_TEXT
 config KASAN_SHADOW_OFFSET
 	hex
 	depends on KASAN_GENERIC || KASAN_SW_TAGS
-	default 0xdfff800000000000 if (ARM64_VA_BITS_48 || ARM64_VA_BITS_52) && !KASAN_SW_TAGS
-	default 0xdffffe0000000000 if ARM64_VA_BITS_42 && !KASAN_SW_TAGS
-	default 0xdfffffc000000000 if ARM64_VA_BITS_39 && !KASAN_SW_TAGS
-	default 0xdffffff800000000 if ARM64_VA_BITS_36 && !KASAN_SW_TAGS
-	default 0xefff800000000000 if (ARM64_VA_BITS_48 || ARM64_VA_BITS_52) && KASAN_SW_TAGS
-	default 0xeffffe0000000000 if ARM64_VA_BITS_42 && KASAN_SW_TAGS
-	default 0xefffffc000000000 if ARM64_VA_BITS_39 && KASAN_SW_TAGS
-	default 0xeffffff800000000 if ARM64_VA_BITS_36 && KASAN_SW_TAGS
+	default 0xdfff800000000000 if ARM64_VA_BITS_52 && !KASAN_SW_TAGS
+	default 0xefff800000000000 if ARM64_VA_BITS_52 && KASAN_SW_TAGS
 	default 0xffffffffffffffff
 
 config UNWIND_TABLES
@@ -651,9 +641,6 @@ config ARM64_ERRATUM_1508412
 
 	  If unsure, say Y.
 
-config ARM64_WORKAROUND_TRBE_OVERWRITE_FILL_MODE
-	bool
-
 config ARM64_ERRATUM_2051678
 	bool "Cortex-A510: 2051678: disable Hardware Update of the page table dirty bit"
 	default y
@@ -727,9 +714,6 @@ config ARM64_ERRATUM_2067961
 	  Workaround is to issue two TSB consecutively on affected cores.
 
 	  If unsure, say Y.
-
-config ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE
-	bool
 
 config ARM64_ERRATUM_2457168
 	bool "Cortex-A510: 2457168: workaround for AMEVCNTR01 incrementing incorrectly"
@@ -1090,25 +1074,6 @@ choice
 	  space sizes. The level of translation table is determined by
 	  a combination of page size and virtual address space size.
 
-config ARM64_VA_BITS_36
-	bool "36-bit" if EXPERT
-	depends on PAGE_SIZE_16KB
-
-config ARM64_VA_BITS_39
-	bool "39-bit"
-	depends on PAGE_SIZE_4KB
-
-config ARM64_VA_BITS_42
-	bool "42-bit"
-	depends on PAGE_SIZE_64KB
-
-config ARM64_VA_BITS_47
-	bool "47-bit"
-	depends on PAGE_SIZE_16KB
-
-config ARM64_VA_BITS_48
-	bool "48-bit"
-
 config ARM64_VA_BITS_52
 	bool "52-bit"
 	help
@@ -1128,11 +1093,6 @@ endchoice
 
 config ARM64_VA_BITS
 	int
-	default 36 if ARM64_VA_BITS_36
-	default 39 if ARM64_VA_BITS_39
-	default 42 if ARM64_VA_BITS_42
-	default 47 if ARM64_VA_BITS_47
-	default 48 if ARM64_VA_BITS_48
 	default 52 if ARM64_VA_BITS_52
 
 choice
@@ -1170,12 +1130,6 @@ choice
 	  Select the endianness of data accesses performed by the CPU. Userspace
 	  applications will need to be compiled and linked for the endianness
 	  that is selected here.
-
-config CPU_BIG_ENDIAN
-	bool "Build big-endian kernel"
-	depends on BROKEN
-	help
-	  Say Y if you plan on running a kernel with a big-endian userspace.
 
 config CPU_LITTLE_ENDIAN
 	bool "Build little-endian kernel"
@@ -1233,9 +1187,6 @@ config HW_PERF_EVENTS
 	depends on ARM_PMU
 
 # Supported by clang >= 7.0 or GCC >= 12.0.0
-config CC_HAVE_SHADOW_CALL_STACK
-	def_bool $(cc-option, -fsanitize=shadow-call-stack -ffixed-x18)
-
 config PARAVIRT
 	bool "Enable paravirtualization code"
 	select HAVE_PV_STEAL_CLOCK_GEN
@@ -1313,15 +1264,6 @@ config MITIGATE_SPECTRE_BRANCH_HISTORY
 	  When taking an exception from user-space, a sequence of branches
 	  or a firmware call overwrites the branch history.
 
-config ARM64_SW_TTBR0_PAN
-	bool "Emulate Privileged Access Never using TTBR0_EL1 switching"
-	depends on !KCSAN
-	help
-	  Enabling this option prevents the kernel from accessing
-	  user-space memory directly by pointing TTBR0_EL1 to a reserved
-	  zeroed area and reserved ASID. The user access routines
-	  restore the valid TTBR0_EL1 temporarily.
-
 config ARM64_TAGGED_ADDR_ABI
 	bool "Enable the tagged user addresses syscall ABI"
 	default y
@@ -1377,9 +1319,6 @@ config KUSER_HELPERS
 
 	  Say N here only if you are absolutely certain that you do not
 	  need these helpers; otherwise, the safe option is to say Y.
-
-config COMPAT_ALIGNMENT_FIXUPS
-	bool "Fix up misaligned multi-word loads and stores in user space"
 
 menuconfig ARMV8_DEPRECATED
 	bool "Emulate deprecated/obsolete ARMv8 instructions"
@@ -1525,7 +1464,6 @@ config ARM64_PTR_AUTH_KERNEL
 	# Modern compilers insert a .note.gnu.property section note for PAC
 	# which is only understood by binutils starting with version 2.33.1.
 	depends on LD_IS_LLD || LD_VERSION >= 23301 || (CC_IS_GCC && GCC_VERSION < 90100)
-	depends on !CC_IS_CLANG || AS_HAS_CFI_NEGATE_RA_STATE
 	help
 	  If the compiler supports the -mbranch-protection or
 	  -msign-return-address flag (e.g. GCC 7 or later), then this option
@@ -1533,14 +1471,6 @@ config ARM64_PTR_AUTH_KERNEL
 	  protection. In this case, and if the target hardware is known to
 	  support pointer authentication, then CONFIG_STACKPROTECTOR can be
 	  disabled with minimal loss of protection.
-
-config CC_HAS_BRANCH_PROT_PAC_RET
-	# GCC 9 or later, clang 8 or later
-	def_bool $(cc-option,-mbranch-protection=pac-ret+leaf)
-
-config AS_HAS_CFI_NEGATE_RA_STATE
-	# binutils 2.34+
-	def_bool $(as-instr,.cfi_startproc\n.cfi_negate_ra_state\n.cfi_endproc\n)
 
 endmenu # "ARMv8.3 architectural features"
 
@@ -1579,9 +1509,6 @@ config ARM64_TLB_RANGE
 endmenu # "ARMv8.4 architectural features"
 
 menu "ARMv8.5 architectural features"
-
-config AS_HAS_ARMV8_5
-	def_bool $(cc-option,-Wa$(comma)-march=armv8.5-a)
 
 config ARM64_BTI
 	bool "Branch Target Identification support"
@@ -1736,23 +1663,6 @@ config ARM64_SME
 	  register state capable of holding two dimensional matrix tiles to
 	  enable various matrix operations.
 
-config ARM64_PSEUDO_NMI
-	bool "Support for NMI-like interrupts"
-	select ARM_GIC_V3
-	help
-	  Adds support for mimicking Non-Maskable Interrupts through the use of
-	  GIC interrupt priority. This support requires version 3 or later of
-	  ARM GIC.
-
-	  This high priority configuration for interrupts needs to be
-	  explicitly enabled by setting the kernel parameter
-	  "irqchip.gicv3_pseudo_nmi" to 1.
-
-	  If unsure, say N
-
-if ARM64_PSEUDO_NMI
-endif # ARM64_PSEUDO_NMI
-
 config RELOCATABLE
 	bool "Build a relocatable kernel image" if EXPERT
 	select ARCH_HAS_RELR
@@ -1801,20 +1711,15 @@ config RANDOMIZE_MODULE_REGION_FULL
 	  the region is exhausted. In this particular case of region
 	  exhaustion, modules might be able to fall back to a larger 2GB area.
 
-config CC_HAVE_STACKPROTECTOR_SYSREG
-	def_bool $(cc-option,-mstack-protector-guard=sysreg -mstack-protector-guard-reg=sp_el0 -mstack-protector-guard-offset=0)
-
 config STACKPROTECTOR_PER_TASK
 	def_bool y
-	depends on STACKPROTECTOR && CC_HAVE_STACKPROTECTOR_SYSREG
+	depends on n
 
 config UNWIND_PATCH_PAC_INTO_SCS
 	bool "Enable shadow call stack dynamically using code patching"
-	depends on CC_IS_CLANG
-	depends on ARM64_PTR_AUTH_KERNEL && CC_HAS_BRANCH_PROT_PAC_RET
+	depends on n
 	depends on SHADOW_CALL_STACK
 	select UNWIND_TABLES
-	select DYNAMIC_SCS
 
 config ARM64_CONTPTE
 	bool "Contiguous PTE mappings for user memory" if EXPERT
@@ -1837,37 +1742,12 @@ config CMDLINE
 	  entering them here. As a minimum, you should specify the
 	  root device (e.g. root=/dev/nfs).
 
-choice
-	prompt "Kernel command line type"
-	depends on CMDLINE != ""
-	default CMDLINE_FROM_BOOTLOADER
-	help
-	  Choose how the kernel will handle the provided default kernel
-	  command line string.
-
-config CMDLINE_FROM_BOOTLOADER
-	bool "Use bootloader kernel arguments if available"
-	help
-	  Uses the command-line options passed by the boot loader. If
-	  the boot loader doesn't provide any, the default kernel command
-	  string provided in CMDLINE will be used.
-
-config CMDLINE_FORCE
-	bool "Always use the default kernel command string"
-	help
-	  Always use the default kernel command string, even if the boot
-	  loader passes other arguments to the kernel.
-	  This is useful if you cannot or don't want to change the
-	  command-line options your boot loader passes to the kernel.
-
-endchoice
-
 config EFI_STUB
 	bool
 
 config EFI
 	bool "UEFI runtime support"
-	depends on OF && !CPU_BIG_ENDIAN
+	depends on OF
 	depends on KERNEL_MODE_NEON
 	select ARCH_SUPPORTS_ACPI
 	select LIBFDT
@@ -1884,17 +1764,6 @@ config EFI
 	  clock, and platform reset). A UEFI stub is also provided to
 	  allow the kernel to be booted as an EFI application. This
 	  is only useful on systems that have UEFI firmware.
-
-config COMPRESSED_INSTALL
-	bool "Install compressed image by default"
-	help
-	  This makes the regular "make install" install the compressed
-	  image we built, not the legacy uncompressed one.
-
-	  You can check that a compressed image works for you by doing
-	  "make zinstall" first, and verifying that everything is fine
-	  in your environment before making "make install" do this for
-	  you.
 
 config DMI
 	bool "Enable support for SMBIOS (DMI) tables"

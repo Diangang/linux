@@ -73,7 +73,7 @@ static inline void set_dma_ops(struct device *dev,
 {
 }
 
-#ifdef CONFIG_DMA_CMA
+#if 0
 struct cma *dev_get_cma_area(struct device *dev);
 struct cma *dma_contiguous_get_area_by_idx(unsigned int idx);
 

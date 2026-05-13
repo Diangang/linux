@@ -1023,7 +1023,7 @@ static unsigned int kstat_irqs(unsigned int irq)
 	return kstat_irqs_desc(desc, cpu_possible_mask);
 }
 
-#ifdef CONFIG_GENERIC_IRQ_STAT_SNAPSHOT
+#if 0
 
 void kstat_snapshot_irqs(void)
 {

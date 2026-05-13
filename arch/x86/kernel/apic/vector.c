@@ -599,7 +599,7 @@ error:
 	return err;
 }
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 static void x86_vector_debug_show(struct seq_file *m, struct irq_domain *d,
 				  struct irq_data *irqd, int ind)
 {
@@ -690,7 +690,7 @@ static const struct irq_domain_ops x86_vector_domain_ops = {
 	.free		= x86_vector_free_irqs,
 	.activate	= x86_vector_activate,
 	.deactivate	= x86_vector_deactivate,
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 	.debug_show	= x86_vector_debug_show,
 #endif
 };

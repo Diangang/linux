@@ -617,7 +617,7 @@ bool of_device_is_big_endian(const struct device_node *device)
 {
 	if (of_property_read_bool(device, "big-endian"))
 		return true;
-	if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN) &&
+	if (0 &&
 	    of_property_read_bool(device, "native-endian"))
 		return true;
 	return false;

@@ -32,7 +32,7 @@ static inline bool should_fail(struct fault_attr *attr, ssize_t size)
 }
 
 
-#ifdef CONFIG_FAULT_INJECTION_DEBUG_FS
+#if 0
 
 struct dentry *fault_create_debugfs_attr(const char *name,
 			struct dentry *parent, struct fault_attr *attr);

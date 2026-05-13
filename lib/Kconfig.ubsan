@@ -26,29 +26,10 @@ config UBSAN_TRAP
 	  out the details of a UBSAN violation. It makes the kernel log
 	  output less useful for bug reports.
 
-config CC_HAS_UBSAN_BOUNDS_STRICT
-	def_bool $(cc-option,-fsanitize=bounds-strict)
-	help
-	  The -fsanitize=bounds-strict option is only available on GCC,
-	  but uses the more strict handling of arrays that includes knowledge
-	  of flexible arrays, which is comparable to Clang's regular
-	  -fsanitize=bounds.
-
-config CC_HAS_UBSAN_ARRAY_BOUNDS
-	def_bool $(cc-option,-fsanitize=array-bounds)
-	help
-	  Under Clang, the -fsanitize=bounds option is actually composed
-	  of two more specific options, -fsanitize=array-bounds and
-	  -fsanitize=local-bounds. However, -fsanitize=local-bounds can
-	  only be used when trap mode is enabled. (See also the help for
-	  CONFIG_LOCAL_BOUNDS.) Explicitly check for -fsanitize=array-bounds
-	  so that we can build up the options needed for UBSAN_BOUNDS
-	  with or without UBSAN_TRAP.
-
 config UBSAN_BOUNDS
 	bool "Perform array index bounds checking"
 	default UBSAN
-	depends on CC_HAS_UBSAN_ARRAY_BOUNDS || CC_HAS_UBSAN_BOUNDS_STRICT
+	depends on n
 	help
 	  This option enables detection of directly indexed out of bounds
 	  array accesses, where the array size is known at compile time.
@@ -57,13 +38,13 @@ config UBSAN_BOUNDS
 	  by CONFIG_FORTIFY_SOURCE).
 
 config UBSAN_BOUNDS_STRICT
-	def_bool UBSAN_BOUNDS && CC_HAS_UBSAN_BOUNDS_STRICT
+	def_bool n
 	help
 	  GCC's bounds sanitizer. This option is used to select the
 	  correct options in Makefile.ubsan.
 
 config UBSAN_ARRAY_BOUNDS
-	def_bool UBSAN_BOUNDS && CC_HAS_UBSAN_ARRAY_BOUNDS
+	def_bool n
 	help
 	  Clang's array bounds sanitizer. This option is used to select
 	  the correct options in Makefile.ubsan.
@@ -90,7 +71,6 @@ config UBSAN_DIV_ZERO
 	depends on $(cc-option,-fsanitize=integer-divide-by-zero)
 	# https://github.com/ClangBuiltLinux/linux/issues/1657
 	# https://github.com/llvm/llvm-project/issues/56289
-	depends on !CC_IS_CLANG
 	help
 	  This option enables -fsanitize=integer-divide-by-zero which checks
 	  for integer division by zero. This is effectively redundant with the
@@ -110,7 +90,7 @@ config UBSAN_UNREACHABLE
 config UBSAN_INTEGER_WRAP
 	bool "Perform checking for integer arithmetic wrap-around"
 	# This is very experimental so drop the next line if you really want it
-	depends on BROKEN
+	depends on n
 	depends on !COMPILE_TEST
 	depends on $(cc-option,-fsanitize-undefined-ignore-overflow-pattern=all)
 	depends on $(cc-option,-fsanitize=signed-integer-overflow)

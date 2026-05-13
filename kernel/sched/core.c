@@ -6145,7 +6145,7 @@ void __sched schedule_idle(void)
 	} while (need_resched());
 }
 
-#if defined(CONFIG_CONTEXT_TRACKING_USER) && !defined(CONFIG_HAVE_CONTEXT_TRACKING_USER_OFFSTACK)
+#if 0 && !defined(CONFIG_HAVE_CONTEXT_TRACKING_USER_OFFSTACK)
 asmlinkage __visible void __sched schedule_user(void)
 {
 	/*
@@ -8403,7 +8403,7 @@ static u64 cpu_shares_read_u64(struct cgroup_subsys_state *css,
 #endif /* CONFIG_GROUP_SCHED_WEIGHT */
 
 
-#ifdef CONFIG_GROUP_SCHED_BANDWIDTH
+#if 0
 const u64 max_bw_quota_period_us = 1 * USEC_PER_SEC; /* 1s */
 static const u64 min_bw_quota_period_us = 1 * USEC_PER_MSEC; /* 1ms */
 /* More than 203 days if BW_SHIFT equals 20. */
@@ -8561,7 +8561,7 @@ static struct cftype cpu_legacy_files[] = {
 		.write_s64 = cpu_idle_write_s64,
 	},
 #endif
-#ifdef CONFIG_GROUP_SCHED_BANDWIDTH
+#if 0
 	{
 		.name = "cfs_period_us",
 		.read_u64 = cpu_period_read_u64,
@@ -8702,7 +8702,7 @@ static int __maybe_unused cpu_period_quota_parse(char *buf, u64 *period_us_p,
 	return 0;
 }
 
-#ifdef CONFIG_GROUP_SCHED_BANDWIDTH
+#if 0
 static int cpu_max_show(struct seq_file *sf, void *v)
 {
 	struct task_group *tg = css_tg(seq_css(sf));
@@ -8749,7 +8749,7 @@ static struct cftype cpu_files[] = {
 		.write_s64 = cpu_idle_write_s64,
 	},
 #endif
-#ifdef CONFIG_GROUP_SCHED_BANDWIDTH
+#if 0
 	{
 		.name = "max",
 		.flags = CFTYPE_NOT_ON_ROOT,

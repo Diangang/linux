@@ -750,7 +750,7 @@ static inline bool system_uses_hw_pan(void)
 
 static inline bool system_uses_ttbr0_pan(void)
 {
-	return IS_ENABLED(CONFIG_ARM64_SW_TTBR0_PAN) &&
+	return 0 &&
 		!system_uses_hw_pan();
 }
 

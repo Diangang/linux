@@ -678,7 +678,7 @@ struct device {
 	struct dma_coherent_mem	*dma_mem; /* internal for coherent mem
 					     override */
 #endif
-#ifdef CONFIG_DMA_CMA
+#if 0
 	struct cma *cma_area;		/* contiguous memory area for dma
 					   allocations */
 #endif

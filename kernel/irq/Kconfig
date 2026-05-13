@@ -31,19 +31,10 @@ config GENERIC_IRQ_MIGRATION
 	bool
 
 # Alpha specific irq affinity mechanism
-config GENERIC_IRQ_INJECTION
-	bool
-
-# Tasklet based software resend for pending interrupts on enable_irq()
 config HARDIRQS_SW_RESEND
        bool
 
 # Generic configurable interrupt chip implementation
-config GENERIC_IRQ_CHIP
-       bool
-       select IRQ_DOMAIN
-
-# Generic irq_domain hw <--> linux irq number translation
 config IRQ_DOMAIN
 	bool
 
@@ -74,10 +65,6 @@ config GENERIC_IRQ_RESERVATION_MODE
 	bool
 
 # Snapshot for interrupt statistics
-config GENERIC_IRQ_STAT_SNAPSHOT
-	bool
-
-# Support forced irq threading
 config IRQ_FORCED_THREADING
        bool
 
@@ -94,20 +81,6 @@ config SPARSE_IRQ
 
 	  If you don't know what to do here, say N.
 
-config GENERIC_IRQ_DEBUGFS
-	bool "Expose irq internals in debugfs"
-	select GENERIC_IRQ_INJECTION
-	default n
-	help
-
-	  Exposes internal state information through debugfs. Mostly for
-	  developers and debugging of hard to diagnose interrupt problems.
-
-	  If you don't know what to do here, say N.
-
-# Clear forwarded VM interrupts during kexec.
-# This option ensures the kernel clears active states for interrupts
-# forwarded to virtual machines (VMs) during a machine kexec.
 config GENERIC_IRQ_KEXEC_CLEAR_VM_FORWARD
 	bool
 

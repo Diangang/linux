@@ -1421,7 +1421,7 @@ void mark_rodata_ro(void)
 
 	set_ftrace_ops_ro();
 
-#ifdef CONFIG_CPA_DEBUG
+#if 0
 	printk(KERN_INFO "Testing CPA: undo %lx-%lx\n", start, end);
 	set_memory_rw(start, (end-start) >> PAGE_SHIFT);
 

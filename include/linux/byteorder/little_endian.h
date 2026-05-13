@@ -4,7 +4,7 @@
 
 #include <uapi/linux/byteorder/little_endian.h>
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #warning inconsistent configuration, CONFIG_CPU_BIG_ENDIAN is set
 #endif
 

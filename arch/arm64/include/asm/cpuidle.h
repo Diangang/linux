@@ -4,7 +4,7 @@
 
 #include <asm/proc-fns.h>
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 #include <asm/arch_gicv3.h>
 
 struct arm_cpuidle_irq_context {

@@ -257,7 +257,7 @@ void pte_free_defer(struct mm_struct *mm, pgtable_t pgtable)
 #endif /* pte_free_defer */
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
-#if defined(CONFIG_GUP_GET_PXX_LOW_HIGH) && \
+#if 0 && \
 	(defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RCU))
 /*
  * See the comment above ptep_get_lockless() in include/linux/pgtable.h:
@@ -410,7 +410,7 @@ again:
 	goto again;
 }
 
-#ifdef CONFIG_ASYNC_KERNEL_PGTABLE_FREE
+#if 0
 static void kernel_pgtable_work_func(struct work_struct *work);
 
 static struct {

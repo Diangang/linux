@@ -63,36 +63,7 @@ choice
 
 	  If unsure, select GENKSYMS.
 
-config GENKSYMS
-	bool "genksyms (from source code)"
-	help
-	  Calculate symbol versions from pre-processed source code using
-	  genksyms.
-
-	  If unsure, say Y.
-
-config GENDWARFKSYMS
-	bool "gendwarfksyms (from debugging information)"
-	depends on DEBUG_INFO
-	# Requires full debugging information, split DWARF not supported.
-	depends on !DEBUG_INFO_REDUCED && !DEBUG_INFO_SPLIT
-	# Requires ELF object files.
-	depends on !LTO
-	help
-	  Calculate symbol versions from DWARF debugging information using
-	  gendwarfksyms. Requires DEBUG_INFO to be enabled.
-
-	  If unsure, say N.
 endchoice
-
-config EXTENDED_MODVERSIONS
-	bool "Extended Module Versioning Support"
-	help
-	  This enables extended MODVERSIONs support, allowing long symbol
-	  names to be versioned.
-
-	  The most likely reason you would enable this is to enable Rust
-	  support. If unsure, say N.
 
 endif # MODVERSIONS
 
@@ -152,6 +123,6 @@ config UNUSED_KSYMS_WHITELIST
 
 config MODULES_TREE_LOOKUP
 	def_bool y
-	depends on PERF_EVENTS || TRACING || CFI
+	depends on PERF_EVENTS || TRACING
 
 endif # MODULES

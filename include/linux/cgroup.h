@@ -355,7 +355,7 @@ void css_task_iter_end(struct css_task_iter *it);
  * Inline functions.
  */
 
-#ifdef CONFIG_DEBUG_CGROUP_REF
+#if 0
 void css_get(struct cgroup_subsys_state *css);
 void css_get_many(struct cgroup_subsys_state *css, unsigned int n);
 bool css_tryget(struct cgroup_subsys_state *css);

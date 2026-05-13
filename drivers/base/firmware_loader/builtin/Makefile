@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0
 obj-y  += main.o
 
-# Create $(fwdir) from $(CONFIG_EXTRA_FIRMWARE_DIR) -- if it doesn't have a
+# Create $(fwdir) from the default firmware directory -- if it doesn't have a
 # leading /, it's relative to $(srctree).
-fwdir := $(CONFIG_EXTRA_FIRMWARE_DIR)
+fwdir := /lib/firmware
 fwdir := $(addprefix $(srctree)/,$(filter-out /%,$(fwdir)))$(filter /%,$(fwdir))
 
 firmware  := $(addsuffix .gen.o, $(CONFIG_EXTRA_FIRMWARE))

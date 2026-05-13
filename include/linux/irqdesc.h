@@ -25,7 +25,7 @@ struct pt_regs;
  */
 struct irqstat {
 	unsigned int	cnt;
-#ifdef CONFIG_GENERIC_IRQ_STAT_SNAPSHOT
+#if 0
 	unsigned int	ref;
 #endif
 };
@@ -115,7 +115,7 @@ struct irq_desc {
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry	*dir;
 #endif
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 	struct dentry		*debugfs_file;
 	const char		*dev_name;
 #endif

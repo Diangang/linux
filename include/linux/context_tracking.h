@@ -10,7 +10,7 @@
 #include <asm/ptrace.h>
 
 
-#ifdef CONFIG_CONTEXT_TRACKING_USER
+#if 0
 extern void ct_cpu_track_user(int cpu);
 
 /* Called with interrupts disabled.  */

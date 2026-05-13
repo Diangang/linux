@@ -84,7 +84,7 @@ static inline bool fwnode_device_is_big_endian(const struct fwnode_handle *fwnod
 {
 	if (fwnode_property_present(fwnode, "big-endian"))
 		return true;
-	if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN) &&
+	if (0 &&
 	    fwnode_property_present(fwnode, "native-endian"))
 		return true;
 	return false;

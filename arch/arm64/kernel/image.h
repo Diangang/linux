@@ -24,7 +24,7 @@
  * when PIE is in effect. So we need to split them up in 32-bit high and low
  * words.
  */
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define DATA_LE32(data)				\
 	((((data) & 0x000000ff) << 24) |	\
 	 (((data) & 0x0000ff00) << 8)  |	\
@@ -41,7 +41,7 @@
 #define __HEAD_FLAG(field)	(__HEAD_FLAG_##field << \
 					ARM64_IMAGE_FLAG_##field##_SHIFT)
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define __HEAD_FLAG_BE		ARM64_IMAGE_FLAG_BE
 #else
 #define __HEAD_FLAG_BE		ARM64_IMAGE_FLAG_LE

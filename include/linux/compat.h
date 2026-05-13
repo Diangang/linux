@@ -465,7 +465,7 @@ put_compat_sigset(compat_sigset_t __user *compat, const sigset_t *set,
 #endif
 }
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define unsafe_put_compat_sigset(compat, set, label) do {		\
 	compat_sigset_t __user *__c = compat;				\
 	const sigset_t *__s = set;					\

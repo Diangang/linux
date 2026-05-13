@@ -8,7 +8,7 @@
 #ifdef __ASSEMBLY__
 #include <linux/linkage.h>
 
-#ifdef CONFIG_CFI
+#if 0
 /*
  * Use the __kcfi_typeid_<function> type identifier symbol to
  * annotate indirectly called assembly functions. The compiler emits
@@ -43,7 +43,7 @@
 
 #else /* __ASSEMBLY__ */
 
-#ifdef CONFIG_CFI
+#if 0
 #define DEFINE_CFI_TYPE(name, func)						\
 	/*									\
 	 * Force a reference to the function so the compiler generates		\

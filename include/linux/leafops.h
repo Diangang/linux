@@ -158,7 +158,7 @@ static inline enum softleaf_type softleaf_type(softleaf_t entry)
 	case SWP_MIGRATION_WRITE:
 		return SOFTLEAF_MIGRATION_WRITE;
 #endif
-#ifdef CONFIG_DEVICE_PRIVATE
+#if 0
 	case SWP_DEVICE_WRITE:
 		return SOFTLEAF_DEVICE_PRIVATE_WRITE;
 	case SWP_DEVICE_READ:

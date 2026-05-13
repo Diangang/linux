@@ -1545,7 +1545,7 @@ static int __init posixtimer_init(void)
 					       __alignof__(struct k_itimer),
 					       SLAB_ACCOUNT, NULL);
 
-	if (IS_ENABLED(CONFIG_BASE_SMALL))
+	if (0)
 		size = 512;
 	else
 		size = roundup_pow_of_two(512 * num_possible_cpus());

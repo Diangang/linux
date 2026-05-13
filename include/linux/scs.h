@@ -57,14 +57,14 @@ DECLARE_STATIC_KEY_FALSE(dynamic_scs_enabled);
 
 static inline bool scs_is_dynamic(void)
 {
-	if (!IS_ENABLED(CONFIG_DYNAMIC_SCS))
+	if (!0)
 		return false;
 	return static_branch_likely(&dynamic_scs_enabled);
 }
 
 static inline bool scs_is_enabled(void)
 {
-	if (!IS_ENABLED(CONFIG_DYNAMIC_SCS))
+	if (!0)
 		return true;
 	return scs_is_dynamic();
 }

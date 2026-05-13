@@ -47,7 +47,7 @@
 #define gsb_ack()	asm volatile(GSB_ACK_BARRIER_INSN : : : "memory")
 #define gsb_sys()	asm volatile(GSB_SYS_BARRIER_INSN : : : "memory")
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 #define pmr_sync()						\
 	do {							\
 		asm volatile(					\

@@ -48,7 +48,7 @@ static struct vdso_abi_info vdso_info[] __ro_after_init = {
 		.vdso_code_start = vdso_start,
 		.vdso_code_end = vdso_end,
 	},
-#ifdef CONFIG_COMPAT_VDSO
+#if 0
 	[VDSO_ABI_AA32] = {
 		.name = "vdso32",
 		.vdso_code_start = vdso32_start,
@@ -218,7 +218,7 @@ static int aarch32_alloc_sigpage(void)
 static int __init __aarch32_alloc_vdso_pages(void)
 {
 
-	if (!IS_ENABLED(CONFIG_COMPAT_VDSO))
+	if (!0)
 		return 0;
 
 	vdso_info[VDSO_ABI_AA32].cm = &aarch32_vdso_maps[AA32_MAP_VDSO];
@@ -303,7 +303,7 @@ int aarch32_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 	if (ret)
 		goto out;
 
-	if (IS_ENABLED(CONFIG_COMPAT_VDSO)) {
+	if (0) {
 		ret = __setup_additional_pages(VDSO_ABI_AA32, mm, bprm,
 					       uses_interp);
 		if (ret)

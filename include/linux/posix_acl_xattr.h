@@ -32,7 +32,7 @@ posix_acl_xattr_count(size_t size)
 	return size / sizeof(struct posix_acl_xattr_entry);
 }
 
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 struct posix_acl *posix_acl_from_xattr(struct user_namespace *user_ns,
 				       const void *value, size_t size);
 #else

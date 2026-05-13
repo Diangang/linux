@@ -23,13 +23,13 @@ struct task_struct;
  */
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
-#ifdef CONFIG_ARM64_SW_TTBR0_PAN
+#if 0
 	u64			ttbr0;		/* saved TTBR0_EL1 */
 #endif
 	union {
 		u64		preempt_count;	/* 0 => preemptible, <0 => bug */
 		struct {
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 			u32	need_resched;
 			u32	count;
 #else

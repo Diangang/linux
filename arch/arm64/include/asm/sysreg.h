@@ -814,7 +814,7 @@
 #define SCTLR_ELx_A	 (BIT(1))
 #define SCTLR_ELx_M	 (BIT(0))
 
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define ENDIAN_SET_EL2		SCTLR_ELx_EE
 #else
 #define ENDIAN_SET_EL2		0
@@ -829,7 +829,7 @@
 	(SCTLR_EL2_RES1 | ENDIAN_SET_EL2)
 
 /* SCTLR_EL1 specific flags. */
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define ENDIAN_SET_EL1		(SCTLR_EL1_E0E | SCTLR_ELx_EE)
 #else
 #define ENDIAN_SET_EL1		0

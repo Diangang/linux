@@ -67,7 +67,7 @@ void trace_event_printf(struct trace_iterator *iter, const char *fmt, ...);
 
 /* Used to find the offset and length of dynamic fields in trace events */
 struct trace_dynamic_info {
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 	u16	len;
 	u16	offset;
 #else

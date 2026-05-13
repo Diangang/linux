@@ -288,7 +288,7 @@ static inline void
 irq_pm_remove_action(struct irq_desc *desc, struct irqaction *action) { }
 #endif
 
-#ifdef CONFIG_GENERIC_IRQ_CHIP
+#if 0
 void irq_init_generic_chip(struct irq_chip_generic *gc, const char *name,
 			   int num_ct, unsigned int irq_base,
 			   void __iomem *reg_base, irq_flow_handler_t handler);
@@ -373,7 +373,7 @@ static inline struct irq_data *irqd_get_parent_data(struct irq_data *irqd)
 #endif
 }
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 #include <linux/debugfs.h>
 
 struct irq_bit_descr {

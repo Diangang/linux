@@ -6,7 +6,7 @@
 #include <linux/errno.h>
 #include <asm-generic/error-injection.h>
 
-#ifdef CONFIG_FUNCTION_ERROR_INJECTION
+#if 0
 
 extern bool within_error_injection_list(unsigned long addr);
 extern int get_injectable_error_type(unsigned long addr);

@@ -13,24 +13,9 @@ config HAVE_ARCH_KASAN_HW_TAGS
 config HAVE_ARCH_KASAN_VMALLOC
 	bool
 
-config CC_HAS_KASAN_GENERIC
-	def_bool $(cc-option, -fsanitize=kernel-address)
-
-config CC_HAS_KASAN_SW_TAGS
-	def_bool $(cc-option, -fsanitize=kernel-hwaddress)
-
-# This option is only required for software KASAN modes.
-# Old GCC versions do not have proper support for no_sanitize_address.
-# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=89124 for details.
-config CC_HAS_WORKING_NOSANITIZE_ADDRESS
-	def_bool !CC_IS_GCC || GCC_VERSION >= 80300
-
 menuconfig KASAN
 	bool "KASAN: dynamic memory safety error detector"
-	depends on (((HAVE_ARCH_KASAN && CC_HAS_KASAN_GENERIC) || \
-		     (HAVE_ARCH_KASAN_SW_TAGS && CC_HAS_KASAN_SW_TAGS)) && \
-		    CC_HAS_WORKING_NOSANITIZE_ADDRESS) || \
-		   HAVE_ARCH_KASAN_HW_TAGS
+	depends on HAVE_ARCH_KASAN_HW_TAGS
 	depends on SYSFS && !SLUB_TINY
 	select STACKDEPOT_ALWAYS_INIT
 	help
@@ -61,10 +46,8 @@ choice
 
 config KASAN_GENERIC
 	bool "Generic KASAN"
-	depends on HAVE_ARCH_KASAN && CC_HAS_KASAN_GENERIC
-	depends on CC_HAS_WORKING_NOSANITIZE_ADDRESS
+	depends on n
 	select SLUB_DEBUG
-	select CONSTRUCTORS
 	help
 	  Enables Generic KASAN.
 
@@ -76,10 +59,8 @@ config KASAN_GENERIC
 
 config KASAN_SW_TAGS
 	bool "Software Tag-Based KASAN"
-	depends on HAVE_ARCH_KASAN_SW_TAGS && CC_HAS_KASAN_SW_TAGS
-	depends on CC_HAS_WORKING_NOSANITIZE_ADDRESS
+	depends on n
 	select SLUB_DEBUG
-	select CONSTRUCTORS
 	help
 	  Enables Software Tag-Based KASAN.
 

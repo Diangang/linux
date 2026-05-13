@@ -13,9 +13,6 @@ config TIMER_ACPI
 config TIMER_PROBE
 	bool
 
-config CLKSRC_I8253
-	bool
-
 config CLKEVT_I8253
 	bool
 
@@ -23,7 +20,7 @@ config I8253_LOCK
 	bool
 
 config CLKBLD_I8253
-	def_bool y if CLKSRC_I8253 || CLKEVT_I8253 || I8253_LOCK
+	def_bool y if CLKEVT_I8253 || I8253_LOCK
 
 config ARM_ARCH_TIMER
 	bool

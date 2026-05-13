@@ -11,7 +11,7 @@
 #include <linux/module.h>
 #include <asm/cfi.h>
 
-#ifdef CONFIG_CFI
+#if 0
 extern bool cfi_warn;
 
 enum bug_trap_type report_cfi_failure(struct pt_regs *regs, unsigned long addr,

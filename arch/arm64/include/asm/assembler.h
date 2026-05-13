@@ -136,7 +136,7 @@ lr	.req	x30		// link register
 /*
  * Select code when configured for BE.
  */
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define CPU_BE(code...) code
 #else
 #define CPU_BE(code...)
@@ -145,7 +145,7 @@ lr	.req	x30		// link register
 /*
  * Select code when configured for LE.
  */
-#ifdef CONFIG_CPU_BIG_ENDIAN
+#if 0
 #define CPU_LE(code...)
 #else
 #define CPU_LE(code...) code
@@ -156,7 +156,7 @@ lr	.req	x30		// link register
  * 32-bit registers. Note that on big endian systems the order of the
  * registers is swapped.
  */
-#ifndef CONFIG_CPU_BIG_ENDIAN
+#if 1
 	.macro	regs_to_64, rd, lbits, hbits
 #else
 	.macro	regs_to_64, rd, hbits, lbits

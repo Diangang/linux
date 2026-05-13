@@ -2633,7 +2633,7 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 		pr_warn("%s: ignoring obsolete section __kcrctab_gpl\n",
 			mod->name);
 
-#ifdef CONFIG_CONSTRUCTORS
+#if 0
 	mod->ctors = section_objs(info, ".ctors",
 				  sizeof(*mod->ctors), &mod->num_ctors);
 	if (!mod->ctors)
@@ -2673,7 +2673,7 @@ static int find_module_sections(struct module *mod, struct load_info *info)
 					sizeof(*mod->jump_entries),
 					&mod->num_jump_entries);
 #endif
-#ifdef CONFIG_FUNCTION_ERROR_INJECTION
+#if 0
 	mod->ei_funcs = section_objs(info, "_error_injection_whitelist",
 					    sizeof(*mod->ei_funcs),
 					    &mod->num_ei_funcs);
@@ -2946,7 +2946,7 @@ static int post_relocation(struct module *mod, const struct load_info *info)
 /* Call module constructors. */
 static void do_mod_ctors(struct module *mod)
 {
-#ifdef CONFIG_CONSTRUCTORS
+#if 0
 	unsigned long i;
 
 	for (i = 0; i < mod->num_ctors; i++)

@@ -1136,7 +1136,7 @@ handle_cmdline:
 #if defined(CONFIG_CMDLINE_EXTEND)
 	strlcat(cmdline, " ", COMMAND_LINE_SIZE);
 	strlcat(cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
-#elif defined(CONFIG_CMDLINE_FORCE)
+#elif 0
 	strscpy(cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
 #else
 	/* No arguments from boot loader, use kernel's  cmdl*/

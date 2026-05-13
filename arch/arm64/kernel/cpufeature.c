@@ -1133,7 +1133,7 @@ static void init_32bit_cpu_features(struct cpuinfo_32bit *info)
 	init_cpu_ftr_reg(SYS_MVFR2_EL1, info->reg_mvfr2);
 }
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 static bool enable_pseudo_nmi;
 
 static int __init early_enable_pseudo_nmi(char *p)
@@ -2258,7 +2258,7 @@ static void cpu_enable_ls64_v(struct arm64_cpu_capabilities const *cap)
 	sysreg_clear_set(sctlr_el1, SCTLR_EL1_EnASR, 0);
 }
 
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 static bool can_use_gic_priorities(const struct arm64_cpu_capabilities *entry,
 				   int scope)
 {
@@ -2821,7 +2821,7 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_generic_auth,
 	},
 #endif /* CONFIG_ARM64_PTR_AUTH */
-#ifdef CONFIG_ARM64_PSEUDO_NMI
+#if 0
 	{
 		/*
 		 * Depends on having GICv3

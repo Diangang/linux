@@ -126,7 +126,7 @@ static inline size_t dax_recovery_write(struct dax_device *dax_dev,
 #endif
 
 struct writeback_control;
-#if defined(CONFIG_BLOCK) && defined(CONFIG_FS_DAX)
+#if defined(CONFIG_BLOCK) && 0
 int dax_add_host(struct dax_device *dax_dev, struct gendisk *disk);
 void dax_remove_host(struct gendisk *disk);
 struct dax_device *fs_dax_get_by_bdev(struct block_device *bdev, u64 *start_off,
@@ -147,7 +147,7 @@ static inline struct dax_device *fs_dax_get_by_bdev(struct block_device *bdev,
 }
 #endif /* CONFIG_BLOCK && CONFIG_FS_DAX */
 
-#if IS_ENABLED(CONFIG_FS_DAX)
+#if 0
 void fs_put_dax(struct dax_device *dax_dev, void *holder);
 int fs_dax_get(struct dax_device *dax_dev, void *holder,
 	       const struct dax_holder_operations *hops);
@@ -238,7 +238,7 @@ static inline void dax_read_unlock(int id)
 }
 #endif /* CONFIG_DAX */
 
-#if !IS_ENABLED(CONFIG_FS_DAX)
+#if !0
 static inline int __must_check dax_break_layout(struct inode *inode,
 			    loff_t start, loff_t end, void (cb)(struct inode *))
 {

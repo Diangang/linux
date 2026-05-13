@@ -369,7 +369,7 @@ struct filename *complete_getname(struct delayed_filename *v)
 static int check_acl(struct mnt_idmap *idmap,
 		     struct inode *inode, int mask)
 {
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 	struct posix_acl *acl;
 
 	if (mask & MAY_NOT_BLOCK) {
@@ -407,7 +407,7 @@ static int check_acl(struct mnt_idmap *idmap,
  */
 static inline bool no_acl_inode(struct inode *inode)
 {
-#ifdef CONFIG_FS_POSIX_ACL
+#if 0
 	return likely(!READ_ONCE(inode->i_acl));
 #else
 	return true;

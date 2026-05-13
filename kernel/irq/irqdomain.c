@@ -39,7 +39,7 @@ struct irqchip_fwid {
 	phys_addr_t		*pa;
 };
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 static void debugfs_add_domain_dir(struct irq_domain *d);
 static void debugfs_remove_domain_dir(struct irq_domain *d);
 #else
@@ -2080,7 +2080,7 @@ static void irq_domain_free_one_irq(struct irq_domain *domain, unsigned int virq
 
 #endif	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
 
-#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+#if 0
 #include "internals.h"
 
 static struct dentry *domain_dir;

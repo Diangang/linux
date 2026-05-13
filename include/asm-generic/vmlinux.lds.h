@@ -263,7 +263,7 @@
 #define KPROBE_BLACKLIST()
 #endif
 
-#ifdef CONFIG_FUNCTION_ERROR_INJECTION
+#if 0
 #define ERROR_INJECT_WHITELIST()			\
 	STRUCT_ALIGN();					\
 	BOUNDED_SECTION(_error_injection_whitelist)
@@ -678,7 +678,7 @@
 		INIT_TASK_DATA(align)					\
 	}
 
-#ifdef CONFIG_CONSTRUCTORS
+#if 0
 #define KERNEL_CTORS()	. = ALIGN(8);			   \
 			__ctors_start = .;		   \
 			KEEP(*(SORT(.ctors.*)))		   \
@@ -1022,7 +1022,7 @@
 #define DISCARD_EH_FRAME	*(.eh_frame)
 #endif
 #if defined(CONFIG_GCOV_KERNEL) || defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KCSAN)
-# ifdef CONFIG_CONSTRUCTORS
+# if 0
 #  define SANITIZER_DISCARDS						\
 	DISCARD_EH_FRAME
 # else

@@ -676,7 +676,7 @@ static inline void ptep_clear(struct mm_struct *mm, unsigned long addr,
 	page_table_check_pte_clear(mm, addr, pte);
 }
 
-#ifdef CONFIG_GUP_GET_PXX_LOW_HIGH
+#if 0
 /*
  * For walking the pagetables without holding any locks.  Some architectures
  * (eg x86-32 PAE) cannot load the entries atomically without using expensive

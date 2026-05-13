@@ -8,14 +8,6 @@ config HAS_DMA
 	depends on !NO_DMA
 	default y
 
-config DMA_OPS_HELPERS
-	bool
-
-#
-# IOMMU drivers that can bypass the IOMMU code and optionally use the direct
-# mapping fast path should select this option and set the dma_ops_bypass
-# flag in struct device where applicable
-#
 config NEED_SG_DMA_FLAGS
 	bool
 
@@ -96,57 +88,3 @@ config DMA_DIRECT_REMAP
 	bool
 	select DMA_COHERENT_POOL
 	select DMA_NONCOHERENT_MMAP
-
-#
-# Fallback to arch code for DMA allocations.  This should eventually go away.
-#
-config DMA_CMA
-	bool "DMA Contiguous Memory Allocator"
-	depends on HAVE_DMA_CONTIGUOUS && CMA
-	help
-	  This enables the Contiguous Memory Allocator which allows drivers
-	  to allocate big physically-contiguous blocks of memory for use with
-	  hardware components that do not support I/O map nor scatter-gather.
-
-	  You can disable CMA by specifying "cma=0" on the kernel's command
-	  line.
-
-	  For more information see <kernel/dma/contiguous.c>.
-	  If unsure, say "n".
-
-if  DMA_CMA
-
-comment "Default contiguous memory area size:"
-
-config CMA_SIZE_MBYTES
-	int "Size in Mega Bytes"
-	depends on !CMA_SIZE_SEL_PERCENTAGE
-	default 0 if X86
-	default 16
-	help
-	  Defines the size (in MiB) of the default memory area for Contiguous
-	  Memory Allocator.  If the size of 0 is selected, CMA is disabled by
-	  default, but it can be enabled by passing cma=size[MG] to the kernel.
-
-
-choice
-	prompt "Selected region size"
-	default CMA_SIZE_SEL_MBYTES
-
-config CMA_SIZE_SEL_MBYTES
-	bool "Use mega bytes value only"
-
-config CMA_SIZE_SEL_PERCENTAGE
-	bool "Use percentage value only"
-
-endchoice
-
-endif
-
-config DMA_MAP_BENCHMARK
-	bool "Enable benchmarking of streaming DMA mapping"
-	help
-	  Provides /sys/kernel/debug/dma_map_benchmark that helps with testing
-	  performance of dma_(un)map_page.
-
-	  See tools/testing/selftests/dma/dma_map_benchmark.c

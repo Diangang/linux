@@ -253,7 +253,7 @@ do {									\
 	instrument_put_user(__x, __ptr, size);				\
 } while (0)
 
-#ifdef CONFIG_CC_HAS_ASM_GOTO_OUTPUT
+#if 0
 
 #ifdef CONFIG_X86_32
 #define __get_user_asm_u64(x, ptr, label) do {				\
@@ -490,7 +490,7 @@ static __must_check __always_inline bool user_access_begin(const void __user *pt
 #define arch_unsafe_put_user(x, ptr, label)	\
 	__put_user_size((__typeof__(*(ptr)))(x), (ptr), sizeof(*(ptr)), label)
 
-#ifdef CONFIG_CC_HAS_ASM_GOTO_OUTPUT
+#if 0
 #define arch_unsafe_get_user(x, ptr, err_label)					\
 do {										\
 	__inttype(*(ptr)) __gu_val;						\
@@ -576,7 +576,7 @@ do {									\
 	unsafe_copy_loop(__ucu_dst, __ucu_src, __ucu_len, u8, label);	\
 } while (0)
 
-#ifdef CONFIG_CC_HAS_ASM_GOTO_OUTPUT
+#if 0
 #define arch_get_kernel_nofault(dst, src, type, err_label)		\
 	__get_user_size(*((type *)(dst)), (__force type __user *)(src),	\
 			sizeof(type), err_label)

@@ -261,7 +261,7 @@ static int cgroup_addrm_files(struct cgroup_subsys_state *css,
 			      bool is_add);
 static void cgroup_rt_init(void);
 
-#ifdef CONFIG_DEBUG_CGROUP_REF
+#if 0
 #define CGROUP_REF_FN_ATTRS	noinline
 #define CGROUP_REF_EXPORT(fn)	EXPORT_SYMBOL_GPL(fn);
 #include <linux/cgroup_refcnt.h>

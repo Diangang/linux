@@ -608,7 +608,7 @@ PAGEFLAG_FALSE(HighMem, highmem)
 #define PhysHighMem(__p) (PageHighMem(phys_to_page(__p)))
 
 /* Does kmap_local_folio() only allow access to one page of the folio? */
-#ifdef CONFIG_DEBUG_KMAP_LOCAL_FORCE_MAP
+#if 0
 #define folio_test_partial_kmap(f)	true
 #else
 #define folio_test_partial_kmap(f)	folio_test_highmem(f)
