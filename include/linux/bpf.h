@@ -218,12 +218,8 @@ enum bpf_cgroup_storage_type {
 #define MAX_BPF_CGROUP_STORAGE_TYPE __BPF_CGROUP_STORAGE_MAX
 };
 
-#ifdef CONFIG_CGROUP_BPF
-# define for_each_cgroup_storage_type(stype) \
-	for (stype = 0; stype < MAX_BPF_CGROUP_STORAGE_TYPE; stype++)
-#else
 # define for_each_cgroup_storage_type(stype) for (; false; )
-#endif /* CONFIG_CGROUP_BPF */
+
 
 typedef void (*btf_dtor_kfunc_t)(void *);
 
@@ -2055,12 +2051,6 @@ static inline int bpf_fsession_cookie_cnt(struct bpf_tramp_links *links)
 int bpf_prog_ctx_arg_info_init(struct bpf_prog *prog,
 			       const struct bpf_ctx_arg_aux *info, u32 cnt);
 
-#if defined(CONFIG_CGROUP_BPF) && defined(CONFIG_BPF_LSM)
-int bpf_trampoline_link_cgroup_shim(struct bpf_prog *prog,
-				    int cgroup_atype,
-				    enum bpf_attach_type attach_type);
-void bpf_trampoline_unlink_cgroup_shim(struct bpf_prog *prog);
-#else
 static inline int bpf_trampoline_link_cgroup_shim(struct bpf_prog *prog,
 						  int cgroup_atype,
 						  enum bpf_attach_type attach_type)
@@ -2070,7 +2060,6 @@ static inline int bpf_trampoline_link_cgroup_shim(struct bpf_prog *prog,
 static inline void bpf_trampoline_unlink_cgroup_shim(struct bpf_prog *prog)
 {
 }
-#endif
 
 struct bpf_array {
 	struct bpf_map map;
@@ -3084,13 +3073,9 @@ int bpf_stream_stage_dump_stack(struct bpf_stream_stage *ss);
 		bpf_stream_stage_free(&ss);                    \
 	})
 
-#ifdef CONFIG_BPF_LSM
-void bpf_cgroup_atype_get(u32 attach_btf_id, int cgroup_atype);
-void bpf_cgroup_atype_put(int cgroup_atype);
-#else
 static inline void bpf_cgroup_atype_get(u32 attach_btf_id, int cgroup_atype) {}
 static inline void bpf_cgroup_atype_put(int cgroup_atype) {}
-#endif /* CONFIG_BPF_LSM */
+
 
 struct key;
 

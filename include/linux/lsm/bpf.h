@@ -7,10 +7,7 @@
 #define __LINUX_LSM_BPF_H
 #include <linux/types.h>
 
-struct lsm_prop_bpf {
-#ifdef CONFIG_BPF_LSM
-	u32 secid;
-#endif
-};
+struct lsm_prop_bpf {};
+
 
 #endif /* ! __LINUX_LSM_BPF_H */

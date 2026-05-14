@@ -3107,13 +3107,9 @@ void sock_set_timestamp(struct sock *sk, int optname, bool valbool);
 int sock_set_timestamping(struct sock *sk, int optname,
 			  struct so_timestamping timestamping);
 
-#if defined(CONFIG_CGROUP_BPF)
-void bpf_skops_tx_timestamping(struct sock *sk, struct sk_buff *skb, int op);
-#else
 static inline void bpf_skops_tx_timestamping(struct sock *sk, struct sk_buff *skb, int op)
 {
 }
-#endif
 void sock_no_linger(struct sock *sk);
 void sock_set_keepalive(struct sock *sk);
 void sock_set_priority(struct sock *sk, u32 priority);

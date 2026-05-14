@@ -11,58 +11,18 @@
 #define DEVCG_DEV_ALL   4  /* this represents all devices */
 
 
-#if 0 || defined(CONFIG_CGROUP_BPF)
-int devcgroup_check_permission(short type, u32 major, u32 minor,
-			       short access);
-static inline int devcgroup_inode_permission(struct inode *inode, int mask)
-{
-	short type, access = 0;
-
-	if (likely(!S_ISBLK(inode->i_mode) && !S_ISCHR(inode->i_mode)))
-		return 0;
-
-	if (!inode->i_rdev)
-		return 0;
-
-	if (S_ISBLK(inode->i_mode))
-		type = DEVCG_DEV_BLOCK;
-	else /* S_ISCHR by the test above */
-		type = DEVCG_DEV_CHAR;
-
-	if (mask & MAY_WRITE)
-		access |= DEVCG_ACC_WRITE;
-	if (mask & MAY_READ)
-		access |= DEVCG_ACC_READ;
-
-	return devcgroup_check_permission(type, imajor(inode), iminor(inode),
-					  access);
-}
-
-static inline int devcgroup_inode_mknod(int mode, dev_t dev)
-{
-	short type;
-
-	if (!S_ISBLK(mode) && !S_ISCHR(mode))
-		return 0;
-
-	if (S_ISCHR(mode) && dev == WHITEOUT_DEV)
-		return 0;
-
-	if (S_ISBLK(mode))
-		type = DEVCG_DEV_BLOCK;
-	else
-		type = DEVCG_DEV_CHAR;
-
-	return devcgroup_check_permission(type, MAJOR(dev), MINOR(dev),
-					  DEVCG_ACC_MKNOD);
-}
-
-#else
 static inline int devcgroup_check_permission(short type, u32 major, u32 minor,
-			       short access)
-{ return 0; }
+					     short access)
+{
+	return 0;
+}
+
 static inline int devcgroup_inode_permission(struct inode *inode, int mask)
-{ return 0; }
+{
+	return 0;
+}
+
 static inline int devcgroup_inode_mknod(int mode, dev_t dev)
-{ return 0; }
-#endif
+{
+	return 0;
+}
