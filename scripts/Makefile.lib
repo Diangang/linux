@@ -58,11 +58,6 @@ _c_flags += $(if $(patsubst n%,, \
 endif
 
 #
-# Enable context analysis flags only where explicitly opted in.
-# (depends on variables CONTEXT_ANALYSIS_obj.o, CONTEXT_ANALYSIS)
-#
-
-#
 # Enable AutoFDO build flags except some files or directories we don't want to
 # enable (depends on variables AUTOFDO_PROFILE_obj.o and AUTOFDO_PROFILE).
 #
