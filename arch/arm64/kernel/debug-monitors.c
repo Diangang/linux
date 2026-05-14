@@ -225,17 +225,6 @@ static int call_el1_break_hook(struct pt_regs *regs, unsigned long esr)
 	if (0 && esr_is_ubsan_brk(esr))
 		return ubsan_brk_handler(regs, esr);
 
-	if (IS_ENABLED(CONFIG_KPROBES)) {
-		if (esr_brk_comment(esr) == KPROBES_BRK_IMM)
-			return kprobe_brk_handler(regs, esr);
-		if (esr_brk_comment(esr) == KPROBES_BRK_SS_IMM)
-			return kprobe_ss_brk_handler(regs, esr);
-	}
-
-	if (IS_ENABLED(CONFIG_KRETPROBES) &&
-		esr_brk_comment(esr) == KRETPROBES_BRK_IMM)
-		return kretprobe_brk_handler(regs, esr);
-
 	return DBG_HOOK_ERROR;
 }
 NOKPROBE_SYMBOL(call_el1_break_hook);

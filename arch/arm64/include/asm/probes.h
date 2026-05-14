@@ -14,14 +14,4 @@ typedef void (probes_handler_t) (u32 opcode, long addr, struct pt_regs *);
 struct arch_probe_insn {
 	probes_handler_t *handler;
 };
-#ifdef CONFIG_KPROBES
-typedef __le32 kprobe_opcode_t;
-struct arch_specific_insn {
-	struct arch_probe_insn api;
-	kprobe_opcode_t *xol_insn;
-	/* restore address after step xol */
-	unsigned long xol_restore;
-};
-#endif
-
 #endif

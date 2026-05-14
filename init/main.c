@@ -1399,7 +1399,6 @@ static int __ref kernel_init(void *unused)
 	async_synchronize_full();
 
 	system_state = SYSTEM_FREEING_INITMEM;
-	kprobe_free_init_mem();
 	ftrace_free_init_mem();
 	kgdb_free_init_mem();
 	exit_boot_config();

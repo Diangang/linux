@@ -627,18 +627,6 @@ bool unwind_next_frame(struct unwind_state *state)
 					 (void *)orig_ip);
 			goto err;
 		}
-		/*
-		 * There is a small chance to interrupt at the entry of
-		 * arch_rethook_trampoline() where the ORC info doesn't exist.
-		 * That point is right after the RET to arch_rethook_trampoline()
-		 * which was modified return address.
-		 * At that point, the @addr_p of the unwind_recover_rethook()
-		 * (this has to point the address of the stack entry storing
-		 * the modified return address) must be "SP - (a stack entry)"
-		 * because SP is incremented by the RET.
-		 */
-		state->ip = unwind_recover_rethook(state, state->ip,
-				(unsigned long *)(state->sp - sizeof(long)));
 		state->regs = (struct pt_regs *)sp;
 		state->prev_regs = NULL;
 		state->full_regs = true;
@@ -650,10 +638,6 @@ bool unwind_next_frame(struct unwind_state *state)
 					 (void *)orig_ip);
 			goto err;
 		}
-		/* See ORC_TYPE_REGS case comment. */
-		state->ip = unwind_recover_rethook(state, state->ip,
-				(unsigned long *)(state->sp - sizeof(long)));
-
 		if (state->full_regs)
 			state->prev_regs = state->regs;
 		state->regs = (void *)sp - IRET_FRAME_OFFSET;

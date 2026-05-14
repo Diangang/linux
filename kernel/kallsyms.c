@@ -632,20 +632,6 @@ static int get_ksymbol_bpf(struct kallsym_iter *iter)
 	return 1;
 }
 
-/*
- * This uses "__builtin__kprobes" as a module name for symbols for pages
- * allocated for kprobes' purposes, even though "__builtin__kprobes" is not a
- * module.
- */
-static int get_ksymbol_kprobe(struct kallsym_iter *iter)
-{
-	strscpy(iter->module_name, "__builtin__kprobes", MODULE_NAME_LEN);
-	iter->exported = 0;
-	return kprobe_get_kallsym(iter->pos - iter->pos_bpf_end,
-				  &iter->value, &iter->type,
-				  iter->name) < 0 ? 0 : 1;
-}
-
 /* Returns space to next name. */
 static unsigned long get_ksymbol_core(struct kallsym_iter *iter)
 {
@@ -694,7 +680,7 @@ static int update_iter_mod(struct kallsym_iter *iter, loff_t pos)
 	    get_ksymbol_bpf(iter))
 		return 1;
 
-	return get_ksymbol_kprobe(iter);
+	return 0;
 }
 
 /* Returns false if pos at or past end of file. */

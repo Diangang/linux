@@ -20,7 +20,6 @@
 #include <linux/irqflags.h>
 #include <linux/notifier.h>
 #include <linux/kallsyms.h>
-#include <linux/kprobes.h>
 #include <linux/percpu.h>
 #include <linux/kdebug.h>
 #include <linux/kernel.h>
@@ -352,15 +351,8 @@ static int arch_build_bp_info(struct perf_event *bp,
 		hw->type = X86_BREAKPOINT_RW;
 		break;
 	case HW_BREAKPOINT_X:
-		/*
-		 * We don't allow kernel breakpoints in places that are not
-		 * acceptable for kprobes.  On non-kprobes kernels, we don't
-		 * allow kernel breakpoints at all.
-		 */
-		if (attr->bp_addr >= TASK_SIZE_MAX) {
-			if (within_kprobe_blacklist(attr->bp_addr))
-				return -EINVAL;
-		}
+		if (attr->bp_addr >= TASK_SIZE_MAX)
+			return -EINVAL;
 
 		hw->type = X86_BREAKPOINT_EXECUTE;
 		/*

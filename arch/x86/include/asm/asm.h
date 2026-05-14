@@ -143,15 +143,7 @@ static __always_inline __pure void *rip_rel_ptr(void *p)
 	.long type ;							\
 	.popsection
 
-# ifdef CONFIG_KPROBES
-#  define _ASM_NOKPROBE(entry)					\
-	.pushsection "_kprobe_blacklist","aw" ;			\
-	_ASM_ALIGN ;						\
-	_ASM_PTR (entry);					\
-	.popsection
-# else
-#  define _ASM_NOKPROBE(entry)
-# endif
+# define _ASM_NOKPROBE(entry)
 
 #else /* ! __ASSEMBLER__ */
 

@@ -30,10 +30,9 @@ enum kunwind_source {
 
 union unwind_flags {
 	unsigned long	all;
-	struct {
-		unsigned long	fgraph : 1,
-				kretprobe : 1;
-	};
+		struct {
+			unsigned long	fgraph : 1;
+		};
 };
 
 /*
@@ -42,17 +41,11 @@ union unwind_flags {
  * @common:      Common unwind state.
  * @task:        The task being unwound.
  * @graph_idx:   Used by ftrace_graph_ret_addr() for optimized stack unwinding.
- * @kr_cur:      When KRETPROBES is selected, holds the kretprobe instance
- *               associated with the most recently encountered replacement lr
- *               value.
  */
 struct kunwind_state {
 	struct unwind_state common;
 	struct task_struct *task;
 	int graph_idx;
-#ifdef CONFIG_KRETPROBES
-	struct llist_node *kr_cur;
-#endif
 	enum kunwind_source source;
 	union unwind_flags flags;
 	struct pt_regs *regs;
@@ -145,19 +138,6 @@ kunwind_recover_return_address(struct kunwind_state *state)
 		state->flags.fgraph = 1;
 	}
 #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
-
-#ifdef CONFIG_KRETPROBES
-	if (is_kretprobe_trampoline(state->common.pc)) {
-		unsigned long orig_pc;
-		orig_pc = kretprobe_find_ret_addr(state->task,
-						  (void *)state->common.fp,
-						  &state->kr_cur);
-		if (!orig_pc)
-			return -EINVAL;
-		state->common.pc = orig_pc;
-		state->flags.kretprobe = 1;
-	}
-#endif /* CONFIG_KRETPROBES */
 
 	return 0;
 }
@@ -463,12 +443,11 @@ static bool dump_backtrace_entry(const struct kunwind_state *state, void *arg)
 	bool has_info = source || flags.all;
 	char *loglvl = arg;
 
-	printk("%s %pSb%s%s%s%s%s\n", loglvl,
+	printk("%s %pSb%s%s%s%s\n", loglvl,
 		(void *)state->common.pc,
 		has_info ? " (" : "",
 		source ? source : "",
 		flags.fgraph ? "F" : "",
-		flags.kretprobe ? "K" : "",
 		has_info ? ")" : "");
 
 	return true;

@@ -1,13 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config HAVE_RETHOOK
-	bool
-
-config RETHOOK
-	bool
-	depends on HAVE_RETHOOK
-	help
-	  Enable generic return hooking support used by kretprobes.
-
 config TRACE_CLOCK
 	bool

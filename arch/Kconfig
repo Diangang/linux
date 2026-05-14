@@ -95,19 +95,6 @@ config GENERIC_ENTRY
 	select GENERIC_IRQ_ENTRY
 	select GENERIC_SYSCALL
 
-config KPROBES
-	bool "Kprobes"
-	depends on HAVE_KPROBES
-	select KALLSYMS
-	select EXECMEM
-	select NEED_TASKS_RCU
-	help
-	  Kprobes allows you to trap at almost any kernel address and
-	  execute a callback function.  register_kprobe() establishes
-	  a probepoint and specifies the callback.  Kprobes is useful
-	  for kernel debugging, non-intrusive instrumentation and testing.
-	  If in doubt, say "N".
-
 config JUMP_LABEL
 	bool "Optimize very unlikely/likely branches"
 	depends on HAVE_ARCH_JUMP_LABEL
@@ -133,11 +120,6 @@ config JUMP_LABEL
 
 	  ( On 32-bit x86, the necessary options added to the compiler
 	    flags may increase the size of the kernel slightly. )
-
-config OPTPROBES
-	def_bool y
-	depends on KPROBES && HAVE_OPTPROBES
-	select NEED_TASKS_RCU
 
 config HAVE_EFFICIENT_UNALIGNED_ACCESS
 	bool
@@ -174,35 +156,8 @@ config ARCH_USE_BUILTIN_BSWAP
 	  instructions should set this. And it shouldn't hurt to set it
 	  on architectures that don't have such instructions.
 
-config KRETPROBES
-	def_bool y
-	depends on KPROBES && (HAVE_KRETPROBES || HAVE_RETHOOK)
-
-config KRETPROBE_ON_RETHOOK
-	def_bool y
-	depends on HAVE_RETHOOK
-	depends on KRETPROBES
-	select RETHOOK
-
 config HAVE_IOREMAP_PROT
 	bool
-
-config HAVE_KPROBES
-	bool
-
-config HAVE_KRETPROBES
-	bool
-
-config HAVE_OPTPROBES
-	bool
-
-config ARCH_CORRECT_STACKTRACE_ON_KRETPROBE
-	bool
-	help
-	  Since kretprobes modifies return address on the stack, the
-	  stacktrace may see the kretprobe trampoline address instead
-	  of correct one. If the architecture stacktrace code and
-	  unwinder can adjust such entries, select this configuration.
 
 config HAVE_FUNCTION_ERROR_INJECTION
 	bool

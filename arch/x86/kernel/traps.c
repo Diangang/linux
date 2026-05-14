@@ -846,14 +846,6 @@ static bool gp_try_fixup_and_notify(struct pt_regs *regs, int trapnr,
 	current->thread.error_code = error_code;
 	current->thread.trap_nr = trapnr;
 
-	/*
-	 * To be potentially processing a kprobe fault and to trust the result
-	 * from kprobe_running(), we have to be non-preemptible.
-	 */
-	if (!preemptible() && kprobe_running() &&
-	    kprobe_fault_handler(regs, trapnr))
-		return true;
-
 	return notify_die(DIE_GPF, str, regs, error_code, trapnr, SIGSEGV) == NOTIFY_STOP;
 }
 
@@ -936,10 +928,6 @@ static bool do_int3(struct pt_regs *regs)
 		return true;
 #endif /* CONFIG_KGDB_LOW_LEVEL_TRAP */
 
-#ifdef CONFIG_KPROBES
-	if (kprobe_int3_handler(regs))
-		return true;
-#endif
 	res = notify_die(DIE_INT3, "int3", regs, 0, X86_TRAP_BP, SIGTRAP);
 
 	return res == NOTIFY_STOP;
@@ -1224,10 +1212,8 @@ static noinstr void exc_debug_kernel(struct pt_regs *regs, unsigned long dr6)
 		goto out;
 
 	/*
-	 * The kernel doesn't use TF single-step outside of:
-	 *
-	 *  - Kprobes, consumed through kprobe_debug_handler()
-	 *  - KGDB, consumed through notify_debug()
+	 * The kernel doesn't use TF single-step outside of KGDB, consumed
+	 * through notify_debug().
 	 *
 	 * So if we get here with DR_STEP set, something is wonky.
 	 *

@@ -270,7 +270,7 @@ void objpool_free(struct objpool_head *pool);
  * there are no concurrent objpool_push() on the fly. Normally RCU
  * is being required to make sure all ongoing objpool_push() must
  * be finished before calling objpool_fini(), so does test_objpool,
- * kretprobe or rethook
+ * deferred hook users
  */
 void objpool_fini(struct objpool_head *pool);
 

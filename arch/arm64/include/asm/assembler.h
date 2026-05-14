@@ -524,17 +524,7 @@ alternative_else_nop_endif
 	b.ne	9998b
 	.endm
 
-/*
- * Annotate a function as being unsuitable for kprobes.
- */
-#ifdef CONFIG_KPROBES
-#define NOKPROBE(x)				\
-	.pushsection "_kprobe_blacklist", "aw";	\
-	.quad	x;				\
-	.popsection;
-#else
 #define NOKPROBE(x)
-#endif
 
 #if 0 || 0
 #define EXPORT_SYMBOL_NOKASAN(name)

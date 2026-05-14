@@ -28,7 +28,6 @@
  * @EXECMEM_DEFAULT: default parameters that would be used for types that
  * are not explicitly defined.
  * @EXECMEM_MODULE_TEXT: parameters for module text sections
- * @EXECMEM_KPROBES: parameters for kprobes
  * @EXECMEM_FTRACE: parameters for ftrace
  * @EXECMEM_BPF: parameters for BPF
  * @EXECMEM_MODULE_DATA: parameters for module data sections
@@ -37,7 +36,6 @@
 enum execmem_type {
 	EXECMEM_DEFAULT,
 	EXECMEM_MODULE_TEXT = EXECMEM_DEFAULT,
-	EXECMEM_KPROBES,
 	EXECMEM_FTRACE,
 	EXECMEM_BPF,
 	EXECMEM_MODULE_DATA,

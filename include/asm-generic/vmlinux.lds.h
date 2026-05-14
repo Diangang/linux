@@ -255,13 +255,7 @@
 #define BRANCH_PROFILE()
 #endif
 
-#ifdef CONFIG_KPROBES
-#define KPROBE_BLACKLIST()				\
-	. = ALIGN(8);					\
-	BOUNDED_SECTION(_kprobe_blacklist)
-#else
 #define KPROBE_BLACKLIST()
-#endif
 
 #if 0
 #define ERROR_INJECT_WHITELIST()			\
@@ -604,12 +598,6 @@
 		__lock_text_start = .;					\
 		*(.spinlock.text)					\
 		__lock_text_end = .;
-
-#define KPROBES_TEXT							\
-		ALIGN_FUNCTION();					\
-		__kprobes_text_start = .;				\
-		*(.kprobes.text)					\
-		__kprobes_text_end = .;
 
 #define ENTRY_TEXT							\
 		ALIGN_FUNCTION();					\
