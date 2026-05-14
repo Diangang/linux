@@ -324,8 +324,6 @@ enum {
 	TRACE_EVENT_FL_IGNORE_ENABLE_BIT,
 	TRACE_EVENT_FL_TRACEPOINT_BIT,
 	TRACE_EVENT_FL_DYNAMIC_BIT,
-	TRACE_EVENT_FL_KPROBE_BIT,
-	TRACE_EVENT_FL_UPROBE_BIT,
 	TRACE_EVENT_FL_EPROBE_BIT,
 	TRACE_EVENT_FL_FPROBE_BIT,
 	TRACE_EVENT_FL_CUSTOM_BIT,
@@ -339,8 +337,6 @@ enum {
  *  IGNORE_ENABLE - For trace internal events, do not enable with debugfs file
  *  TRACEPOINT    - Event is a tracepoint
  *  DYNAMIC       - Event is a dynamic event (created at run time)
- *  KPROBE        - Event is a kprobe
- *  UPROBE        - Event is a uprobe
  *  EPROBE        - Event is an event probe
  *  FPROBE        - Event is an function probe
  *  CUSTOM        - Event is a custom event (to be attached to an exsiting tracepoint)
@@ -354,15 +350,11 @@ enum {
 	TRACE_EVENT_FL_IGNORE_ENABLE	= (1 << TRACE_EVENT_FL_IGNORE_ENABLE_BIT),
 	TRACE_EVENT_FL_TRACEPOINT	= (1 << TRACE_EVENT_FL_TRACEPOINT_BIT),
 	TRACE_EVENT_FL_DYNAMIC		= (1 << TRACE_EVENT_FL_DYNAMIC_BIT),
-	TRACE_EVENT_FL_KPROBE		= (1 << TRACE_EVENT_FL_KPROBE_BIT),
-	TRACE_EVENT_FL_UPROBE		= (1 << TRACE_EVENT_FL_UPROBE_BIT),
 	TRACE_EVENT_FL_EPROBE		= (1 << TRACE_EVENT_FL_EPROBE_BIT),
 	TRACE_EVENT_FL_FPROBE		= (1 << TRACE_EVENT_FL_FPROBE_BIT),
 	TRACE_EVENT_FL_CUSTOM		= (1 << TRACE_EVENT_FL_CUSTOM_BIT),
 	TRACE_EVENT_FL_TEST_STR		= (1 << TRACE_EVENT_FL_TEST_STR_BIT),
 };
-
-#define TRACE_EVENT_FL_UKPROBE (TRACE_EVENT_FL_KPROBE | TRACE_EVENT_FL_UPROBE)
 
 struct trace_event_call {
 	struct list_head	list;
@@ -501,7 +493,6 @@ extern void trace_put_event_file(struct trace_event_file *file);
 
 enum dynevent_type {
 	DYNEVENT_TYPE_SYNTH = 1,
-	DYNEVENT_TYPE_KPROBE,
 	DYNEVENT_TYPE_NONE,
 };
 
@@ -583,36 +574,6 @@ extern int synth_event_add_next_val(u64 val,
 extern int synth_event_add_val(const char *field_name, u64 val,
 			       struct synth_event_trace_state *trace_state);
 extern int synth_event_trace_end(struct synth_event_trace_state *trace_state);
-
-extern int kprobe_event_delete(const char *name);
-
-extern void kprobe_event_cmd_init(struct dynevent_cmd *cmd,
-				  char *buf, int maxlen);
-
-#define kprobe_event_gen_cmd_start(cmd, name, loc, ...)			\
-	__kprobe_event_gen_cmd_start(cmd, false, name, loc, ## __VA_ARGS__, NULL)
-
-#define kretprobe_event_gen_cmd_start(cmd, name, loc, ...)		\
-	__kprobe_event_gen_cmd_start(cmd, true, name, loc, ## __VA_ARGS__, NULL)
-
-extern int __kprobe_event_gen_cmd_start(struct dynevent_cmd *cmd,
-					bool kretprobe,
-					const char *name,
-					const char *loc, ...);
-
-#define kprobe_event_add_fields(cmd, ...)	\
-	__kprobe_event_add_fields(cmd, ## __VA_ARGS__, NULL)
-
-#define kprobe_event_add_field(cmd, field)	\
-	__kprobe_event_add_fields(cmd, field, NULL)
-
-extern int __kprobe_event_add_fields(struct dynevent_cmd *cmd, ...);
-
-#define kprobe_event_gen_cmd_end(cmd)		\
-	dynevent_create(cmd)
-
-#define kretprobe_event_gen_cmd_end(cmd)	\
-	dynevent_create(cmd)
 
 /*
  * Event file flags:
@@ -784,8 +745,6 @@ int bpf_get_perf_event_info(const struct perf_event *event, u32 *prog_id,
 			    u32 *fd_type, const char **buf,
 			    u64 *probe_offset, u64 *probe_addr,
 			    unsigned long *missed);
-int bpf_kprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *prog);
-int bpf_uprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *prog);
 #else
 static inline unsigned int trace_call_bpf(struct trace_event_call *call, void *ctx)
 {
@@ -828,16 +787,6 @@ static inline int bpf_get_perf_event_info(const struct perf_event *event,
 {
 	return -EOPNOTSUPP;
 }
-static inline int
-bpf_kprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *prog)
-{
-	return -EOPNOTSUPP;
-}
-static inline int
-bpf_uprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *prog)
-{
-	return -EOPNOTSUPP;
-}
 #endif
 
 enum {
@@ -875,24 +824,6 @@ extern int  perf_trace_init(struct perf_event *event);
 extern void perf_trace_destroy(struct perf_event *event);
 extern int  perf_trace_add(struct perf_event *event, int flags);
 extern void perf_trace_del(struct perf_event *event, int flags);
-#ifdef CONFIG_KPROBE_EVENTS
-extern int  perf_kprobe_init(struct perf_event *event, bool is_retprobe);
-extern void perf_kprobe_destroy(struct perf_event *event);
-extern int bpf_get_kprobe_info(const struct perf_event *event,
-			       u32 *fd_type, const char **symbol,
-			       u64 *probe_offset, u64 *probe_addr,
-			       unsigned long *missed,
-			       bool perf_type_tracepoint);
-#endif
-#ifdef CONFIG_UPROBE_EVENTS
-extern int  perf_uprobe_init(struct perf_event *event,
-			     unsigned long ref_ctr_offset, bool is_retprobe);
-extern void perf_uprobe_destroy(struct perf_event *event);
-extern int bpf_get_uprobe_info(const struct perf_event *event,
-			       u32 *fd_type, const char **filename,
-			       u64 *probe_offset, u64 *probe_addr,
-			       bool perf_type_tracepoint);
-#endif
 extern int  ftrace_profile_set_filter(struct perf_event *event, int event_id,
 				     char *filter_str);
 extern void ftrace_profile_free_filter(struct perf_event *event);

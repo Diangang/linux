@@ -11287,156 +11287,9 @@ unlock:
 }
 EXPORT_SYMBOL_GPL(perf_tp_event);
 
-#if defined(CONFIG_KPROBE_EVENTS) || defined(CONFIG_UPROBE_EVENTS)
-/*
- * Flags in config, used by dynamic PMU kprobe and uprobe
- * The flags should match following PMU_FORMAT_ATTR().
- *
- * PERF_PROBE_CONFIG_IS_RETPROBE if set, create kretprobe/uretprobe
- *                               if not set, create kprobe/uprobe
- *
- * The following values specify a reference counter (or semaphore in the
- * terminology of tools like dtrace, systemtap, etc.) Userspace Statically
- * Defined Tracepoints (USDT). Currently, we use 40 bit for the offset.
- *
- * PERF_UPROBE_REF_CTR_OFFSET_BITS	# of bits in config as th offset
- * PERF_UPROBE_REF_CTR_OFFSET_SHIFT	# of bits to shift left
- */
-enum perf_probe_config {
-	PERF_PROBE_CONFIG_IS_RETPROBE = 1U << 0,  /* [k,u]retprobe */
-	PERF_UPROBE_REF_CTR_OFFSET_BITS = 32,
-	PERF_UPROBE_REF_CTR_OFFSET_SHIFT = 64 - PERF_UPROBE_REF_CTR_OFFSET_BITS,
-};
-
-PMU_FORMAT_ATTR(retprobe, "config:0");
-#endif
-
-#ifdef CONFIG_KPROBE_EVENTS
-static struct attribute *kprobe_attrs[] = {
-	&format_attr_retprobe.attr,
-	NULL,
-};
-
-static struct attribute_group kprobe_format_group = {
-	.name = "format",
-	.attrs = kprobe_attrs,
-};
-
-static const struct attribute_group *kprobe_attr_groups[] = {
-	&kprobe_format_group,
-	NULL,
-};
-
-static int perf_kprobe_event_init(struct perf_event *event);
-static struct pmu perf_kprobe = {
-	.task_ctx_nr	= perf_sw_context,
-	.event_init	= perf_kprobe_event_init,
-	.add		= perf_trace_add,
-	.del		= perf_trace_del,
-	.start		= perf_swevent_start,
-	.stop		= perf_swevent_stop,
-	.read		= perf_swevent_read,
-	.attr_groups	= kprobe_attr_groups,
-};
-
-static int perf_kprobe_event_init(struct perf_event *event)
-{
-	int err;
-	bool is_retprobe;
-
-	if (event->attr.type != perf_kprobe.type)
-		return -ENOENT;
-
-	if (!perfmon_capable())
-		return -EACCES;
-
-	/*
-	 * no branch sampling for probe events
-	 */
-	if (has_branch_stack(event))
-		return -EOPNOTSUPP;
-
-	is_retprobe = event->attr.config & PERF_PROBE_CONFIG_IS_RETPROBE;
-	err = perf_kprobe_init(event, is_retprobe);
-	if (err)
-		return err;
-
-	event->destroy = perf_kprobe_destroy;
-
-	return 0;
-}
-#endif /* CONFIG_KPROBE_EVENTS */
-
-#ifdef CONFIG_UPROBE_EVENTS
-PMU_FORMAT_ATTR(ref_ctr_offset, "config:32-63");
-
-static struct attribute *uprobe_attrs[] = {
-	&format_attr_retprobe.attr,
-	&format_attr_ref_ctr_offset.attr,
-	NULL,
-};
-
-static struct attribute_group uprobe_format_group = {
-	.name = "format",
-	.attrs = uprobe_attrs,
-};
-
-static const struct attribute_group *uprobe_attr_groups[] = {
-	&uprobe_format_group,
-	NULL,
-};
-
-static int perf_uprobe_event_init(struct perf_event *event);
-static struct pmu perf_uprobe = {
-	.task_ctx_nr	= perf_sw_context,
-	.event_init	= perf_uprobe_event_init,
-	.add		= perf_trace_add,
-	.del		= perf_trace_del,
-	.start		= perf_swevent_start,
-	.stop		= perf_swevent_stop,
-	.read		= perf_swevent_read,
-	.attr_groups	= uprobe_attr_groups,
-};
-
-static int perf_uprobe_event_init(struct perf_event *event)
-{
-	int err;
-	unsigned long ref_ctr_offset;
-	bool is_retprobe;
-
-	if (event->attr.type != perf_uprobe.type)
-		return -ENOENT;
-
-	if (!capable(CAP_SYS_ADMIN))
-		return -EACCES;
-
-	/*
-	 * no branch sampling for probe events
-	 */
-	if (has_branch_stack(event))
-		return -EOPNOTSUPP;
-
-	is_retprobe = event->attr.config & PERF_PROBE_CONFIG_IS_RETPROBE;
-	ref_ctr_offset = event->attr.config >> PERF_UPROBE_REF_CTR_OFFSET_SHIFT;
-	err = perf_uprobe_init(event, ref_ctr_offset, is_retprobe);
-	if (err)
-		return err;
-
-	event->destroy = perf_uprobe_destroy;
-
-	return 0;
-}
-#endif /* CONFIG_UPROBE_EVENTS */
-
 static inline void perf_tp_register(void)
 {
 	perf_pmu_register(&perf_tracepoint, "tracepoint", PERF_TYPE_TRACEPOINT);
-#ifdef CONFIG_KPROBE_EVENTS
-	perf_pmu_register(&perf_kprobe, "kprobe", -1);
-#endif
-#ifdef CONFIG_UPROBE_EVENTS
-	perf_pmu_register(&perf_uprobe, "uprobe", -1);
-#endif
 }
 
 static void perf_event_free_filter(struct perf_event *event)
@@ -11444,30 +11297,16 @@ static void perf_event_free_filter(struct perf_event *event)
 	ftrace_profile_free_filter(event);
 }
 
-/*
- * returns true if the event is a tracepoint, or a kprobe/upprobe created
- * with perf_event_open()
- */
 static inline bool perf_event_is_tracing(struct perf_event *event)
 {
-	if (event->pmu == &perf_tracepoint)
-		return true;
-#ifdef CONFIG_KPROBE_EVENTS
-	if (event->pmu == &perf_kprobe)
-		return true;
-#endif
-#ifdef CONFIG_UPROBE_EVENTS
-	if (event->pmu == &perf_uprobe)
-		return true;
-#endif
-	return false;
+	return event->pmu == &perf_tracepoint;
 }
 
 static int __perf_event_set_bpf_prog(struct perf_event *event,
 				     struct bpf_prog *prog,
 				     u64 bpf_cookie)
 {
-	bool is_kprobe, is_uprobe, is_tracepoint, is_syscall_tp;
+	bool is_tracepoint, is_syscall_tp;
 
 	if (event->state <= PERF_EVENT_STATE_REVOKED)
 		return -ENODEV;
@@ -11475,29 +11314,19 @@ static int __perf_event_set_bpf_prog(struct perf_event *event,
 	if (!perf_event_is_tracing(event))
 		return perf_event_set_bpf_handler(event, prog, bpf_cookie);
 
-	is_kprobe = event->tp_event->flags & TRACE_EVENT_FL_KPROBE;
-	is_uprobe = event->tp_event->flags & TRACE_EVENT_FL_UPROBE;
 	is_tracepoint = event->tp_event->flags & TRACE_EVENT_FL_TRACEPOINT;
 	is_syscall_tp = is_syscall_trace_event(event->tp_event);
-	if (!is_kprobe && !is_uprobe && !is_tracepoint && !is_syscall_tp)
-		/* bpf programs can only be attached to u/kprobe or tracepoint */
+	if (!is_tracepoint && !is_syscall_tp)
 		return -EINVAL;
 
-	if (((is_kprobe || is_uprobe) && prog->type != BPF_PROG_TYPE_KPROBE) ||
-	    (is_tracepoint && prog->type != BPF_PROG_TYPE_TRACEPOINT) ||
+	if ((is_tracepoint && prog->type != BPF_PROG_TYPE_TRACEPOINT) ||
 	    (is_syscall_tp && prog->type != BPF_PROG_TYPE_TRACEPOINT))
 		return -EINVAL;
 
-	if (prog->type == BPF_PROG_TYPE_KPROBE && prog->sleepable && !is_uprobe)
-		/* only uprobe programs are allowed to be sleepable */
+	if (prog->type == BPF_PROG_TYPE_KPROBE)
 		return -EINVAL;
 
-	/* Kprobe override only works for kprobes, not uprobes. */
-	if (prog->kprobe_override && !is_kprobe)
-		return -EINVAL;
-
-	/* Writing to context allowed only for uprobes. */
-	if (prog->aux->kprobe_write_ctx && !is_uprobe)
+	if (prog->kprobe_override || prog->aux->kprobe_write_ctx)
 		return -EINVAL;
 
 	if (is_tracepoint || is_syscall_tp) {
