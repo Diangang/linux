@@ -109,11 +109,7 @@ static const char *get_bhb_affected_string(enum mitigation_state bhb_state)
 
 static bool _unprivileged_ebpf_enabled(void)
 {
-#ifdef CONFIG_BPF_SYSCALL
-	return !sysctl_unprivileged_bpf_disabled;
-#else
 	return false;
-#endif
 }
 
 ssize_t cpu_show_spectre_v2(struct device *dev, struct device_attribute *attr,
@@ -1165,18 +1161,6 @@ void __init spectre_bhb_patch_clearbhb(struct alt_instr *alt,
 	*updptr++ = cpu_to_le32(aarch64_insn_gen_nop());
 }
 
-#ifdef CONFIG_BPF_SYSCALL
-#define EBPF_WARN "Unprivileged eBPF is enabled, data leaks possible via Spectre v2 BHB attacks!\n"
-void unpriv_ebpf_notify(int new_state)
-{
-	if (spectre_v2_state == SPECTRE_VULNERABLE ||
-	    spectre_bhb_state != SPECTRE_MITIGATED)
-		return;
-
-	if (!new_state)
-		pr_err("WARNING: %s", EBPF_WARN);
-}
-#endif
 
 void spectre_print_disabled_mitigations(void)
 {

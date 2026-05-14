@@ -581,9 +581,6 @@ struct sock {
 						  struct sk_buff *skb);
 	void                    (*sk_destruct)(struct sock *sk);
 	struct sock_reuseport __rcu	*sk_reuseport_cb;
-#ifdef CONFIG_BPF_SYSCALL
-	struct bpf_local_storage __rcu	*sk_bpf_storage;
-#endif
 	struct numa_drop_counters *sk_drop_counters;
 	/* sockets using SLAB_TYPESAFE_BY_RCU can use sk_freeptr.
 	 * By the time kfree() is called, sk_rcu can not be in
@@ -1338,11 +1335,6 @@ struct proto {
 	void			(*rehash)(struct sock *sk);
 	int			(*get_port)(struct sock *sk, unsigned short snum);
 	void			(*put_port)(struct sock *sk);
-#ifdef CONFIG_BPF_SYSCALL
-	int			(*psock_update_sk_prot)(struct sock *sk,
-							struct sk_psock *psock,
-							bool restore);
-#endif
 
 	/* Keeping track of sockets in use */
 #ifdef CONFIG_PROC_FS

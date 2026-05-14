@@ -173,6 +173,11 @@ static struct orc_entry *orc_ftrace_find(unsigned long ip)
 }
 #endif
 
+static struct orc_entry *orc_bpf_find(unsigned long ip)
+{
+	return NULL;
+}
+
 /* Fake frame pointer entry -- used as a fallback for generated code */
 static struct orc_entry orc_fp_entry = {
 	.type		= ORC_TYPE_CALL,
@@ -181,16 +186,6 @@ static struct orc_entry orc_fp_entry = {
 	.bp_reg		= ORC_REG_PREV_SP,
 	.bp_offset	= -16,
 };
-
-static struct orc_entry *orc_bpf_find(unsigned long ip)
-{
-#ifdef CONFIG_BPF_JIT
-	if (bpf_has_frame_pointer(ip))
-		return &orc_fp_entry;
-#endif
-
-	return NULL;
-}
 
 /*
  * If we crash with IP==0, the last successfully executed instruction

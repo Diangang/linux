@@ -1127,24 +1127,7 @@ void kfree_sensitive(const void *p)
 }
 EXPORT_SYMBOL(kfree_sensitive);
 
-#ifdef CONFIG_BPF_SYSCALL
-#include <linux/btf.h>
 
-__bpf_kfunc_start_defs();
-
-__bpf_kfunc struct kmem_cache *bpf_get_kmem_cache(u64 addr)
-{
-	struct slab *slab;
-
-	if (!virt_addr_valid((void *)(long)addr))
-		return NULL;
-
-	slab = virt_to_slab((void *)(long)addr);
-	return slab ? slab->slab_cache : NULL;
-}
-
-__bpf_kfunc_end_defs();
-#endif /* CONFIG_BPF_SYSCALL */
 
 /* Tracepoints definitions. */
 #ifndef CONFIG_KVFREE_RCU_BATCHED

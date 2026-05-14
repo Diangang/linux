@@ -623,9 +623,6 @@ struct cgroup {
 	/* Used to store internal freezer state */
 	struct cgroup_freezer_state freezer;
 
-#ifdef CONFIG_BPF_SYSCALL
-	struct bpf_local_storage __rcu  *bpf_cgrp_storage;
-#endif
 #ifdef CONFIG_EXT_SUB_SCHED
 	struct scx_sched __rcu *scx_sched;
 #endif

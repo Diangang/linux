@@ -1660,27 +1660,6 @@ static inline const char *spectre_v2_module_string(void) { return ""; }
 #define SPECTRE_V2_EIBRS_LFENCE_EBPF_SMT_MSG "WARNING: Unprivileged eBPF is enabled with eIBRS+LFENCE mitigation and SMT, data leaks possible via Spectre v2 BHB attacks!\n"
 #define SPECTRE_V2_IBRS_PERF_MSG "WARNING: IBRS mitigation selected on Enhanced IBRS CPU, this may cause unnecessary performance loss\n"
 
-#ifdef CONFIG_BPF_SYSCALL
-void unpriv_ebpf_notify(int new_state)
-{
-	if (new_state)
-		return;
-
-	/* Unprivileged eBPF is enabled */
-
-	switch (spectre_v2_enabled) {
-	case SPECTRE_V2_EIBRS:
-		pr_err(SPECTRE_V2_EIBRS_EBPF_MSG);
-		break;
-	case SPECTRE_V2_EIBRS_LFENCE:
-		if (sched_smt_active())
-			pr_err(SPECTRE_V2_EIBRS_LFENCE_EBPF_SMT_MSG);
-		break;
-	default:
-		break;
-	}
-}
-#endif
 
 /* The kernel command line selection for spectre v2 */
 enum spectre_v2_mitigation_cmd {

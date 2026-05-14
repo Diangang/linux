@@ -864,27 +864,7 @@ static inline void bpf_net_ctx_get_all_used_flush_lists(struct list_head **lh_ma
 							struct list_head **lh_dev,
 							struct list_head **lh_xsk)
 {
-	struct bpf_net_context *bpf_net_ctx = bpf_net_ctx_get();
-	u32 kern_flags = bpf_net_ctx->ri.kern_flags;
-	struct list_head *lh;
-
 	*lh_map = *lh_dev = *lh_xsk = NULL;
-
-	if (!IS_ENABLED(CONFIG_BPF_SYSCALL))
-		return;
-
-	lh = &bpf_net_ctx->dev_map_flush_list;
-	if (kern_flags & BPF_RI_F_DEV_MAP_INIT && !list_empty(lh))
-		*lh_dev = lh;
-
-	lh = &bpf_net_ctx->cpu_map_flush_list;
-	if (kern_flags & BPF_RI_F_CPU_MAP_INIT && !list_empty(lh))
-		*lh_map = lh;
-
-	lh = &bpf_net_ctx->xskmap_map_flush_list;
-	if (IS_ENABLED(CONFIG_XDP_SOCKETS) &&
-	    kern_flags & BPF_RI_F_XSK_MAP_INIT && !list_empty(lh))
-		*lh_xsk = lh;
 }
 
 /* Compute the linear packet data range [data, data_end) which
@@ -1075,12 +1055,10 @@ bpf_ctx_narrow_access_offset(u32 off, u32 size, u32 size_default)
 
 static inline int __must_check bpf_prog_lock_ro(struct bpf_prog *fp)
 {
-#ifndef CONFIG_BPF_JIT_ALWAYS_ON
 	if (!fp->jited) {
 		set_vm_flush_reset_perms(fp);
 		return set_memory_ro((unsigned long)fp, fp->pages);
 	}
-#endif
 	return 0;
 }
 
@@ -1187,13 +1165,6 @@ static inline bool bpf_dump_raw_ok(const struct cred *cred)
 struct bpf_prog *bpf_patch_insn_single(struct bpf_prog *prog, u32 off,
 				       const struct bpf_insn *patch, u32 len);
 
-#ifdef CONFIG_BPF_SYSCALL
-struct bpf_prog *bpf_patch_insn_data(struct bpf_verifier_env *env, u32 off,
-				     const struct bpf_insn *patch, u32 len);
-struct bpf_insn_aux_data *bpf_dup_insn_aux_data(struct bpf_verifier_env *env);
-void bpf_restore_insn_aux_data(struct bpf_verifier_env *env,
-			       struct bpf_insn_aux_data *orig_insn_aux);
-#else
 static inline struct bpf_prog *bpf_patch_insn_data(struct bpf_verifier_env *env, u32 off,
 						   const struct bpf_insn *patch, u32 len)
 {
@@ -1209,7 +1180,7 @@ static inline void bpf_restore_insn_aux_data(struct bpf_verifier_env *env,
 					     struct bpf_insn_aux_data *orig_insn_aux)
 {
 }
-#endif /* CONFIG_BPF_SYSCALL */
+
 
 int bpf_remove_insns(struct bpf_prog *prog, u32 off, u32 cnt);
 
@@ -1284,141 +1255,6 @@ bpf_run_sk_reuseport(struct sock_reuseport *reuse, struct sock *sk,
 	return NULL;
 }
 #endif
-
-#ifdef CONFIG_BPF_JIT
-extern int bpf_jit_enable;
-extern int bpf_jit_harden;
-extern int bpf_jit_kallsyms;
-extern long bpf_jit_limit;
-extern long bpf_jit_limit_max;
-
-typedef void (*bpf_jit_fill_hole_t)(void *area, unsigned int size);
-
-void bpf_jit_fill_hole_with_zero(void *area, unsigned int size);
-
-struct bpf_binary_header *
-bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
-		     unsigned int alignment,
-		     bpf_jit_fill_hole_t bpf_fill_ill_insns);
-void bpf_jit_binary_free(struct bpf_binary_header *hdr);
-u64 bpf_jit_alloc_exec_limit(void);
-void *bpf_jit_alloc_exec(unsigned long size);
-void bpf_jit_free_exec(void *addr);
-void bpf_jit_free(struct bpf_prog *fp);
-struct bpf_binary_header *
-bpf_jit_binary_pack_hdr(const struct bpf_prog *fp);
-
-void *bpf_prog_pack_alloc(u32 size, bpf_jit_fill_hole_t bpf_fill_ill_insns);
-void bpf_prog_pack_free(void *ptr, u32 size);
-
-static inline bool bpf_prog_kallsyms_verify_off(const struct bpf_prog *fp)
-{
-	return list_empty(&fp->aux->ksym.lnode) ||
-	       fp->aux->ksym.lnode.prev == LIST_POISON2;
-}
-
-struct bpf_binary_header *
-bpf_jit_binary_pack_alloc(unsigned int proglen, u8 **ro_image,
-			  unsigned int alignment,
-			  struct bpf_binary_header **rw_hdr,
-			  u8 **rw_image,
-			  bpf_jit_fill_hole_t bpf_fill_ill_insns);
-int bpf_jit_binary_pack_finalize(struct bpf_binary_header *ro_header,
-				 struct bpf_binary_header *rw_header);
-void bpf_jit_binary_pack_free(struct bpf_binary_header *ro_header,
-			      struct bpf_binary_header *rw_header);
-
-int bpf_jit_add_poke_descriptor(struct bpf_prog *prog,
-				struct bpf_jit_poke_descriptor *poke);
-
-int bpf_jit_get_func_addr(const struct bpf_prog *prog,
-			  const struct bpf_insn *insn, bool extra_pass,
-			  u64 *func_addr, bool *func_addr_fixed);
-
-const char *bpf_jit_get_prog_name(struct bpf_prog *prog);
-
-struct bpf_prog *bpf_jit_blind_constants(struct bpf_verifier_env *env, struct bpf_prog *prog);
-void bpf_jit_prog_release_other(struct bpf_prog *fp, struct bpf_prog *fp_other);
-
-static inline bool bpf_prog_need_blind(const struct bpf_prog *prog)
-{
-	return prog->blinding_requested && !prog->blinded;
-}
-
-static inline void bpf_jit_dump(unsigned int flen, unsigned int proglen,
-				u32 pass, void *image)
-{
-	pr_err("flen=%u proglen=%u pass=%u image=%p from=%s pid=%d\n", flen,
-	       proglen, pass, image, current->comm, task_pid_nr(current));
-
-	if (image)
-		print_hex_dump(KERN_ERR, "JIT code: ", DUMP_PREFIX_OFFSET,
-			       16, 1, image, proglen, false);
-}
-
-static inline bool bpf_jit_is_ebpf(void)
-{
-# ifdef CONFIG_HAVE_EBPF_JIT
-	return true;
-# else
-	return false;
-# endif
-}
-
-static inline bool ebpf_jit_enabled(void)
-{
-	return bpf_jit_enable && bpf_jit_is_ebpf();
-}
-
-static inline bool bpf_prog_ebpf_jited(const struct bpf_prog *fp)
-{
-	return fp->jited && bpf_jit_is_ebpf();
-}
-
-static inline bool bpf_jit_blinding_enabled(struct bpf_prog *prog)
-{
-	/* These are the prerequisites, should someone ever have the
-	 * idea to call blinding outside of them, we make sure to
-	 * bail out.
-	 */
-	if (!bpf_jit_is_ebpf())
-		return false;
-	if (!prog->jit_requested)
-		return false;
-	if (!bpf_jit_harden)
-		return false;
-	if (bpf_jit_harden == 1 && bpf_token_capable(prog->aux->token, CAP_BPF))
-		return false;
-
-	return true;
-}
-
-static inline bool bpf_jit_kallsyms_enabled(void)
-{
-	/* There are a couple of corner cases where kallsyms should
-	 * not be enabled f.e. on hardening.
-	 */
-	if (bpf_jit_harden)
-		return false;
-	if (!bpf_jit_kallsyms)
-		return false;
-	if (bpf_jit_kallsyms == 1)
-		return true;
-
-	return false;
-}
-
-int bpf_address_lookup(unsigned long addr, unsigned long *size,
-		       unsigned long *off, char *sym);
-bool is_bpf_text_address(unsigned long addr);
-int bpf_get_kallsym(unsigned int symnum, unsigned long *value, char *type,
-		    char *sym);
-struct bpf_prog *bpf_prog_ksym_find(unsigned long addr);
-
-void bpf_prog_kallsyms_add(struct bpf_prog *fp);
-void bpf_prog_kallsyms_del(struct bpf_prog *fp);
-
-#else /* CONFIG_BPF_JIT */
 
 static inline bool ebpf_jit_enabled(void)
 {
@@ -1497,7 +1333,7 @@ struct bpf_prog *bpf_jit_blind_constants(struct bpf_verifier_env *env, struct bp
 static inline void bpf_jit_prog_release_other(struct bpf_prog *fp, struct bpf_prog *fp_other)
 {
 }
-#endif /* CONFIG_BPF_JIT */
+
 
 void bpf_prog_kallsyms_del_all(struct bpf_prog *fp);
 

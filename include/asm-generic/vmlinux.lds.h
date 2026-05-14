@@ -282,12 +282,7 @@
 #define TRACE_SYSCALLS()
 #endif
 
-#ifdef CONFIG_BPF_EVENTS
-#define BPF_RAW_TP() STRUCT_ALIGN();				\
-	BOUNDED_SECTION_BY(__bpf_raw_tp_map, __bpf_raw_tp)
-#else
 #define BPF_RAW_TP()
-#endif
 
 #ifdef CONFIG_SERIAL_EARLYCON
 #define EARLYCON_TABLE()						\

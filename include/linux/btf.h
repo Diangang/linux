@@ -530,17 +530,10 @@ u32 btf_ctx_arg_idx(struct btf *btf, const struct btf_type *func_proto, int off)
 
 struct bpf_verifier_log;
 
-#if defined(CONFIG_BPF_JIT) && defined(CONFIG_BPF_SYSCALL)
-struct bpf_struct_ops;
-int __register_bpf_struct_ops(struct bpf_struct_ops *st_ops);
-const struct bpf_struct_ops_desc *bpf_struct_ops_find_value(struct btf *btf, u32 value_id);
-const struct bpf_struct_ops_desc *bpf_struct_ops_find(struct btf *btf, u32 type_id);
-#else
 static inline const struct bpf_struct_ops_desc *bpf_struct_ops_find(struct btf *btf, u32 type_id)
 {
 	return NULL;
 }
-#endif
 
 enum btf_field_iter_kind {
 	BTF_FIELD_ITER_IDS,
@@ -564,48 +557,6 @@ struct btf_field_iter {
 	int vlen;
 };
 
-#ifdef CONFIG_BPF_SYSCALL
-const struct btf_type *btf_type_by_id(const struct btf *btf, u32 type_id);
-void btf_set_base_btf(struct btf *btf, const struct btf *base_btf);
-int btf_relocate(struct btf *btf, const struct btf *base_btf, __u32 **map_ids);
-int btf_field_iter_init(struct btf_field_iter *it, struct btf_type *t,
-			enum btf_field_iter_kind iter_kind);
-__u32 *btf_field_iter_next(struct btf_field_iter *it);
-
-const char *btf_name_by_offset(const struct btf *btf, u32 offset);
-const char *btf_str_by_offset(const struct btf *btf, u32 offset);
-struct btf *btf_parse_vmlinux(void);
-struct btf *bpf_prog_get_target_btf(const struct bpf_prog *prog);
-u32 *btf_kfunc_flags(const struct btf *btf, u32 kfunc_btf_id, const struct bpf_prog *prog);
-bool btf_kfunc_is_allowed(const struct btf *btf, u32 kfunc_btf_id, const struct bpf_prog *prog);
-u32 *btf_kfunc_is_modify_return(const struct btf *btf, u32 kfunc_btf_id,
-				const struct bpf_prog *prog);
-int register_btf_kfunc_id_set(enum bpf_prog_type prog_type,
-			      const struct btf_kfunc_id_set *s);
-int register_btf_fmodret_id_set(const struct btf_kfunc_id_set *kset);
-s32 btf_find_dtor_kfunc(struct btf *btf, u32 btf_id);
-int register_btf_id_dtor_kfuncs(const struct btf_id_dtor_kfunc *dtors, u32 add_cnt,
-				struct module *owner);
-struct btf_struct_meta *btf_find_struct_meta(const struct btf *btf, u32 btf_id);
-bool btf_is_projection_of(const char *pname, const char *tname);
-bool btf_is_prog_ctx_type(struct bpf_verifier_log *log, const struct btf *btf,
-			   const struct btf_type *t, enum bpf_prog_type prog_type,
-			   int arg);
-int get_kern_ctx_btf_id(struct bpf_verifier_log *log, enum bpf_prog_type prog_type);
-bool btf_types_are_same(const struct btf *btf1, u32 id1,
-			const struct btf *btf2, u32 id2);
-int btf_check_iter_arg(struct btf *btf, const struct btf_type *func, int arg_idx);
-
-static inline bool btf_type_is_struct_ptr(struct btf *btf, const struct btf_type *t)
-{
-	if (!btf_type_is_ptr(t))
-		return false;
-
-	t = btf_type_skip_modifiers(btf, t->type, NULL);
-
-	return btf_type_is_struct(t);
-}
-#else
 static inline const struct btf_type *btf_type_by_id(const struct btf *btf,
 						    u32 type_id)
 {
@@ -638,31 +589,47 @@ static inline const char *btf_name_by_offset(const struct btf *btf,
 {
 	return NULL;
 }
-static inline u32 *btf_kfunc_id_set_contains(const struct btf *btf,
-					     u32 kfunc_btf_id,
-					     struct bpf_prog *prog)
 
+static inline const char *btf_str_by_offset(const struct btf *btf,
+					    u32 offset)
 {
 	return NULL;
 }
+
+static inline u32 *btf_kfunc_id_set_contains(const struct btf *btf,
+					     u32 kfunc_btf_id,
+					     struct bpf_prog *prog)
+{
+	return NULL;
+}
+
 static inline int register_btf_kfunc_id_set(enum bpf_prog_type prog_type,
 					    const struct btf_kfunc_id_set *s)
 {
 	return 0;
 }
+
+static inline int register_btf_fmodret_id_set(const struct btf_kfunc_id_set *kset)
+{
+	return 0;
+}
+
 static inline s32 btf_find_dtor_kfunc(struct btf *btf, u32 btf_id)
 {
 	return -ENOENT;
 }
+
 static inline int register_btf_id_dtor_kfuncs(const struct btf_id_dtor_kfunc *dtors,
 					      u32 add_cnt, struct module *owner)
 {
 	return 0;
 }
+
 static inline struct btf_struct_meta *btf_find_struct_meta(const struct btf *btf, u32 btf_id)
 {
 	return NULL;
 }
+
 static inline bool
 btf_is_prog_ctx_type(struct bpf_verifier_log *log, const struct btf *btf,
 		     const struct btf_type *t, enum bpf_prog_type prog_type,
@@ -670,18 +637,22 @@ btf_is_prog_ctx_type(struct bpf_verifier_log *log, const struct btf *btf,
 {
 	return false;
 }
+
 static inline int get_kern_ctx_btf_id(struct bpf_verifier_log *log,
-				      enum bpf_prog_type prog_type) {
+				      enum bpf_prog_type prog_type)
+{
 	return -EINVAL;
 }
+
 static inline bool btf_types_are_same(const struct btf *btf1, u32 id1,
 				      const struct btf *btf2, u32 id2)
 {
 	return false;
 }
+
 static inline int btf_check_iter_arg(struct btf *btf, const struct btf_type *func, int arg_idx)
 {
 	return -EOPNOTSUPP;
 }
-#endif
+
 #endif
