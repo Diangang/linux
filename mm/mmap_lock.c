@@ -9,6 +9,7 @@
 #include <linux/smp.h>
 #include <linux/trace_events.h>
 #include <linux/local_lock.h>
+#include <linux/ptrace.h>
 
 #ifdef CONFIG_MMU
 #ifdef CONFIG_PER_VMA_LOCK

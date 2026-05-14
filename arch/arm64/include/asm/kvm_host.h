@@ -35,7 +35,6 @@
 
 #include <kvm/arm_vgic.h>
 #include <kvm/arm_arch_timer.h>
-#include <kvm/arm_pmu.h>
 
 #define KVM_MAX_VCPUS VGIC_V3_MAX_CPUS
 
@@ -48,9 +47,7 @@
 #define KVM_REQ_VCPU_RESET		KVM_ARCH_REQ(2)
 #define KVM_REQ_RECORD_STEAL		KVM_ARCH_REQ(3)
 #define KVM_REQ_RELOAD_GICv4		KVM_ARCH_REQ(4)
-#define KVM_REQ_RELOAD_PMU		KVM_ARCH_REQ(5)
 #define KVM_REQ_SUSPEND			KVM_ARCH_REQ(6)
-#define KVM_REQ_RESYNC_PMU_EL0		KVM_ARCH_REQ(7)
 #define KVM_REQ_NESTED_S2_UNMAP		KVM_ARCH_REQ(8)
 #define KVM_REQ_GUEST_HYP_IRQ_PENDING	KVM_ARCH_REQ(9)
 #define KVM_REQ_MAP_L1_VNCR_EL2		KVM_ARCH_REQ(10)
@@ -375,17 +372,7 @@ struct kvm_arch {
 	/* MPIDR to vcpu index mapping, optional */
 	struct kvm_mpidr_data *mpidr_data;
 
-	/*
-	 * VM-wide PMU filter, implemented as a bitmap and big enough for
-	 * up to 2^10 events (ARMv8.0) or 2^16 events (ARMv8.1+).
-	 */
-	unsigned long *pmu_filter;
-	struct arm_pmu *arm_pmu;
-
 	cpumask_var_t supported_cpus;
-
-	/* Maximum number of counters for the guest */
-	u8 nr_pmu_counters;
 
 	/* Hypercall features firmware registers' descriptor */
 	struct kvm_smccc_features smccc_feat;
@@ -463,20 +450,6 @@ enum vcpu_sysreg {
 	MDCCINT_EL1,	/* Monitor Debug Comms Channel Interrupt Enable Reg */
 	OSLSR_EL1,	/* OS Lock Status Register */
 	DISR_EL1,	/* Deferred Interrupt Status Register */
-
-	/* Performance Monitors Registers */
-	PMCR_EL0,	/* Control Register */
-	PMSELR_EL0,	/* Event Counter Selection Register */
-	PMEVCNTR0_EL0,	/* Event Counter Register (0-30) */
-	PMEVCNTR30_EL0 = PMEVCNTR0_EL0 + 30,
-	PMCCNTR_EL0,	/* Cycle Counter Register */
-	PMEVTYPER0_EL0,	/* Event Type Register (0-30) */
-	PMEVTYPER30_EL0 = PMEVTYPER0_EL0 + 30,
-	PMCCFILTR_EL0,	/* Cycle Count Filter Register */
-	PMCNTENSET_EL0,	/* Count Enable Set Register */
-	PMINTENSET_EL1,	/* Interrupt Enable Set Register */
-	PMOVSSET_EL0,	/* Overflow Flag Status Set Register */
-	PMUSERENR_EL0,	/* User Enable Register */
 
 	/* Pointer Authentication Registers in a strict increasing order. */
 	APIAKEYLO_EL1,
@@ -806,9 +779,6 @@ struct kvm_host_data {
 	/* Guest trace filter value */
 	u64 trfcr_while_in_guest;
 
-	/* Number of programmable event counters (PMCR_EL0.N) for this CPU */
-	unsigned int nr_event_counters;
-
 	/* Number of debug breakpoints/watchpoints for this CPU (minus 1) */
 	unsigned int debug_brps;
 	unsigned int debug_wrps;
@@ -930,7 +900,6 @@ struct kvm_vcpu_arch {
 	/* VGIC state */
 	struct vgic_cpu vgic_cpu;
 	struct arch_timer_cpu timer_cpu;
-	struct kvm_pmu pmu;
 
 	/* vcpu power state */
 	struct kvm_mp_state mp_state;
@@ -1104,8 +1073,6 @@ struct kvm_vcpu_arch {
 #define HOST_SS_ACTIVE_PENDING	__vcpu_single_flag(sflags, BIT(3))
 /* Software step state is Active pending for guest debug */
 #define GUEST_SS_ACTIVE_PENDING __vcpu_single_flag(sflags, BIT(4))
-/* PMUSERENR for the guest EL0 is on physical CPU */
-#define PMUSERENR_ON_CPU	__vcpu_single_flag(sflags, BIT(5))
 /* WFI instruction trapped */
 #define IN_WFI			__vcpu_single_flag(sflags, BIT(6))
 /* KVM is currently emulating a nested ERET */
@@ -1480,20 +1447,13 @@ void kvm_arch_vcpu_ctxflush_fp(struct kvm_vcpu *vcpu);
 void kvm_arch_vcpu_ctxsync_fp(struct kvm_vcpu *vcpu);
 void kvm_arch_vcpu_put_fp(struct kvm_vcpu *vcpu);
 
-static inline bool kvm_pmu_counter_deferred(struct perf_event_attr *attr)
-{
-	return (!has_vhe() && attr->exclude_host);
-}
-
 #ifdef CONFIG_KVM
-void kvm_set_pmu_events(u64 set, struct perf_event_attr *attr);
 void kvm_clr_pmu_events(u64 clr);
 bool kvm_set_pmuserenr(u64 val);
 void kvm_enable_trbe(void);
 void kvm_disable_trbe(void);
 void kvm_tracing_set_el1_configuration(u64 trfcr_while_in_guest);
 #else
-static inline void kvm_set_pmu_events(u64 set, struct perf_event_attr *attr) {}
 static inline void kvm_clr_pmu_events(u64 clr) {}
 static inline bool kvm_set_pmuserenr(u64 val)
 {

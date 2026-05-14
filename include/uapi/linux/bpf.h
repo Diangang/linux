@@ -566,7 +566,6 @@ union bpf_iter_link_info {
  *		target process identified by *pid* and *fd*.
  *
  *		If the *pid* and *fd* are associated with a tracepoint, kprobe
- *		or uprobe perf event, then the *prog_id* and *fd_type* will
  *		be populated with the eBPF program id and file descriptor type
  *		of type **bpf_task_fd_type**. If associated with a kprobe or
  *		uprobe, the  *probe_offset* and *probe_addr* will also be
@@ -1001,7 +1000,6 @@ enum bpf_map_type {
 	BPF_MAP_TYPE_HASH,
 	BPF_MAP_TYPE_ARRAY,
 	BPF_MAP_TYPE_PROG_ARRAY,
-	BPF_MAP_TYPE_PERF_EVENT_ARRAY,
 	BPF_MAP_TYPE_PERCPU_HASH,
 	BPF_MAP_TYPE_PERCPU_ARRAY,
 	BPF_MAP_TYPE_STACK_TRACE,
@@ -1050,7 +1048,7 @@ enum bpf_map_type {
 };
 
 /* Note that tracing related programs such as
- * BPF_PROG_TYPE_{KPROBE,TRACEPOINT,PERF_EVENT,RAW_TRACEPOINT}
+ * BPF_PROG_TYPE_{KPROBE,TRACEPOINT,RAW_TRACEPOINT}
  * are not subject to a stable API since kernel internal data
  * structures can change from release to release and may
  * therefore break existing tracing BPF programs. Tracing BPF
@@ -1065,7 +1063,6 @@ enum bpf_prog_type {
 	BPF_PROG_TYPE_SCHED_ACT,
 	BPF_PROG_TYPE_TRACEPOINT,
 	BPF_PROG_TYPE_XDP,
-	BPF_PROG_TYPE_PERF_EVENT,
 	BPF_PROG_TYPE_CGROUP_SKB,
 	BPF_PROG_TYPE_CGROUP_SOCK,
 	BPF_PROG_TYPE_LWT_IN,
@@ -1136,7 +1133,6 @@ enum bpf_attach_type {
 	BPF_SK_SKB_VERDICT,
 	BPF_SK_REUSEPORT_SELECT,
 	BPF_SK_REUSEPORT_SELECT_OR_MIGRATE,
-	BPF_PERF_EVENT,
 	BPF_TRACE_KPROBE_MULTI,
 	BPF_LSM_CGROUP,
 	BPF_STRUCT_OPS,
@@ -1170,7 +1166,6 @@ enum bpf_link_type {
 	BPF_LINK_TYPE_ITER = 4,
 	BPF_LINK_TYPE_NETNS = 5,
 	BPF_LINK_TYPE_XDP = 6,
-	BPF_LINK_TYPE_PERF_EVENT = 7,
 	BPF_LINK_TYPE_KPROBE_MULTI = 8,
 	BPF_LINK_TYPE_STRUCT_OPS = 9,
 	BPF_LINK_TYPE_NETFILTER = 10,
@@ -1182,16 +1177,6 @@ enum bpf_link_type {
 };
 
 #define MAX_BPF_LINK_TYPE __MAX_BPF_LINK_TYPE
-
-enum bpf_perf_event_type {
-	BPF_PERF_EVENT_UNSPEC = 0,
-	BPF_PERF_EVENT_UPROBE = 1,
-	BPF_PERF_EVENT_URETPROBE = 2,
-	BPF_PERF_EVENT_KPROBE = 3,
-	BPF_PERF_EVENT_KRETPROBE = 4,
-	BPF_PERF_EVENT_TRACEPOINT = 5,
-	BPF_PERF_EVENT_EVENT = 6,
-};
 
 /* cgroup-bpf attach flags used in BPF_PROG_ATTACH command
  *
@@ -1430,7 +1415,6 @@ enum {
 /* Enable memory-mapping BPF map */
 	BPF_F_MMAPABLE		= (1U << 10),
 
-/* Share perf_event among processes */
 	BPF_F_PRESERVE_ELEMS	= (1U << 11),
 
 /* Create a map that is suitable to be an inner map with dynamic max entries */
@@ -1803,13 +1787,6 @@ union bpf_attr {
 				__u32		iter_info_len;	/* iter_info length */
 			};
 			struct {
-				/* black box user-provided value passed through
-				 * to BPF program at the execution time and
-				 * accessible through bpf_get_attach_cookie() BPF helper
-				 */
-				__u64		bpf_cookie;
-			} perf_event;
-			struct {
 				__u32		flags;
 				__u32		cnt;
 				__aligned_u64	syms;
@@ -2037,7 +2014,6 @@ union bpf_attr {
  * 		states that the helper should not be used "for production use"
  * 		the first time this helper is used (or more precisely, when
  * 		**trace_printk**\ () buffers are allocated). For passing values
- * 		to user space, perf events should be preferred.
  * 	Return
  * 		The number of bytes written to the buffer, or a negative error
  * 		in case of failure.
@@ -2373,12 +2349,7 @@ union bpf_attr {
  * 	Return
  * 		0 on success, or a negative error in case of failure.
  *
- * u64 bpf_perf_event_read(struct bpf_map *map, u64 flags)
  * 	Description
- * 		Read the value of a perf event counter. This helper relies on a
- * 		*map* of type **BPF_MAP_TYPE_PERF_EVENT_ARRAY**. The nature of
- * 		the perf event counter is selected when *map* is updated with
- * 		perf event file descriptors. The *map* is an array whose size
  * 		is the number of available CPUs, and each cell contains a value
  * 		relative to one CPU. The value to retrieve is indicated by
  * 		*flags*, that contains the index of the CPU to look up, masked
@@ -2386,20 +2357,13 @@ union bpf_attr {
  * 		**BPF_F_CURRENT_CPU** to indicate that the value for the
  * 		current CPU should be retrieved.
  *
- * 		Note that before Linux 4.13, only hardware perf event can be
  * 		retrieved.
  *
  * 		Also, be aware that the newer helper
- * 		**bpf_perf_event_read_value**\ () is recommended over
- * 		**bpf_perf_event_read**\ () in general. The latter has some ABI
  * 		quirks where error and counter value are used as a return code
  * 		(which is wrong to do since ranges may overlap). This issue is
- * 		fixed with **bpf_perf_event_read_value**\ (), which at the same
- * 		time provides more features over the **bpf_perf_event_read**\
  * 		() interface. Please refer to the description of
- * 		**bpf_perf_event_read_value**\ () for details.
  * 	Return
- * 		The value of the perf event counter read from the map, or a
  * 		negative error code in case of failure.
  *
  * long bpf_redirect(u32 ifindex, u64 flags)
@@ -2449,10 +2413,7 @@ union bpf_attr {
  * 		The realm of the route for the packet associated to *skb*, or 0
  * 		if none was found.
  *
- * long bpf_perf_event_output(void *ctx, struct bpf_map *map, u64 flags, void *data, u64 size)
  * 	Description
- * 		Write raw *data* blob into a special BPF perf event held by
- * 		*map* of type **BPF_MAP_TYPE_PERF_EVENT_ARRAY**. This perf
  * 		event must have the following attributes: **PERF_SAMPLE_RAW**
  * 		as **sample_type**, **PERF_TYPE_SOFTWARE** as **type**, and
  * 		**PERF_COUNT_SW_BPF_OUTPUT** as **config**.
@@ -2470,7 +2431,6 @@ union bpf_attr {
  * 		helper.
  *
  * 		On user space, a program willing to read the values needs to
- * 		call **perf_event_open**\ () on the perf event (either for
  * 		one or for all CPUs) and to store the file descriptor into the
  * 		*map*. This must be done before the eBPF program can send data
  * 		into it. An example is available in file
@@ -2478,7 +2438,6 @@ union bpf_attr {
  * 		tree (the eBPF program counterpart is in
  *		*samples/bpf/trace_output.bpf.c*).
  *
- * 		**bpf_perf_event_output**\ () achieves better performance
  * 		than **bpf_trace_printk**\ () for sharing data with user
  * 		space, and is much better suitable for streaming data from eBPF
  * 		programs.
@@ -2548,7 +2507,6 @@ union bpf_attr {
  *
  * 		::
  *
- * 			# sysctl kernel.perf_event_max_stack=<new value>
  * 	Return
  * 		The positive or null stack id on success, or a negative error
  * 		in case of failure.
@@ -3098,12 +3056,8 @@ union bpf_attr {
  * 	Return
  * 		0 on success, or a negative error in case of failure.
  *
- * long bpf_perf_event_read_value(struct bpf_map *map, u64 flags, struct bpf_perf_event_value *buf, u32 buf_size)
  * 	Description
- * 		Read the value of a perf event counter, and store it into *buf*
  * 		of size *buf_size*. This helper relies on a *map* of type
- * 		**BPF_MAP_TYPE_PERF_EVENT_ARRAY**. The nature of the perf event
- * 		counter is selected when *map* is updated with perf event file
  * 		descriptors. The *map* is an array whose size is the number of
  * 		available CPUs, and each cell contains a value relative to one
  * 		CPU. The value to retrieve is indicated by *flags*, that
@@ -3113,18 +3067,14 @@ union bpf_attr {
  * 		current CPU should be retrieved.
  *
  * 		This helper behaves in a way close to
- * 		**bpf_perf_event_read**\ () helper, save that instead of
  * 		just returning the value observed, it fills the *buf*
  * 		structure. This allows for additional data to be retrieved: in
  * 		particular, the enabled and running times (in *buf*\
  * 		**->enabled** and *buf*\ **->running**, respectively) are
- * 		copied. In general, **bpf_perf_event_read_value**\ () is
- * 		recommended over **bpf_perf_event_read**\ (), which has some
  * 		ABI issues and provides fewer functionalities.
  *
  * 		These values are interesting, because hardware PMU (Performance
  * 		Monitoring Unit) counters are limited resources. When there are
- * 		more PMU based perf events opened than available counters,
  * 		kernel will multiplex these events so each event gets certain
  * 		percentage (but not all) of the PMU time. In case that
  * 		multiplexing happens, the number of samples or counter value
@@ -3140,7 +3090,6 @@ union bpf_attr {
  *
  * 		Where t_enabled is the time enabled for event and t_running is
  * 		the time running for event since last normalization. The
- * 		enabled and running times are accumulated since the perf event
  * 		open. To achieve scaling factor between two invocations of an
  * 		eBPF program, users can use CPU id as the key (which is
  * 		typical for perf array usage model) to remember the previous
@@ -3148,13 +3097,10 @@ union bpf_attr {
  * 	Return
  * 		0 on success, or a negative error in case of failure.
  *
- * long bpf_perf_prog_read_value(struct bpf_perf_event_data *ctx, struct bpf_perf_event_value *buf, u32 buf_size)
  * 	Description
- * 		For an eBPF program attached to a perf event, retrieve the
  * 		value of the event counter associated to *ctx* and store it in
  * 		the structure pointed by *buf* and of size *buf_size*. Enabled
  * 		and running times are also stored in the structure (see
- * 		description of helper **bpf_perf_event_read_value**\ () for
  * 		more details).
  * 	Return
  * 		0 on success, or a negative error in case of failure.
@@ -3430,7 +3376,6 @@ union bpf_attr {
  *
  * 		::
  *
- * 			# sysctl kernel.perf_event_max_stack=<new value>
  * 	Return
  * 		The non-negative copied *buf* length equal to or less than
  * 		*size* on success, or a negative error in case of failure.
@@ -4237,8 +4182,6 @@ union bpf_attr {
  *
  * long bpf_skb_output(void *ctx, struct bpf_map *map, u64 flags, void *data, u64 size)
  * 	Description
- * 		Write raw *data* blob into a special BPF perf event held by
- * 		*map* of type **BPF_MAP_TYPE_PERF_EVENT_ARRAY**. This perf
  * 		event must have the following attributes: **PERF_SAMPLE_RAW**
  * 		as **sample_type**, **PERF_TYPE_SOFTWARE** as **type**, and
  * 		**PERF_COUNT_SW_BPF_OUTPUT** as **config**.
@@ -4254,7 +4197,6 @@ union bpf_attr {
  *
  * 		*ctx* is a pointer to in-kernel struct sk_buff.
  *
- * 		This helper is similar to **bpf_perf_event_output**\ () but
  * 		restricted to raw_tracepoint bpf programs.
  * 	Return
  * 		0 on success, or a negative error in case of failure.
@@ -4297,7 +4239,6 @@ union bpf_attr {
  * 				                                  ctx->di);
  *
  * 				// Consume buf, for example push it to
- * 				// userspace via bpf_perf_event_output(); we
  * 				// can use res (the string length) as event
  * 				// size, after checking its boundaries.
  * 			}
@@ -4352,9 +4293,7 @@ union bpf_attr {
  *	Return
  *		The 64 bit jiffies
  *
- * long bpf_read_branch_records(struct bpf_perf_event_data *ctx, void *buf, u32 size, u64 flags)
  *	Description
- *		For an eBPF program attached to a perf event, retrieve the
  *		branch records (**struct perf_branch_entry**) associated to *ctx*
  *		and store it in the buffer pointed by *buf* up to size
  *		*size* bytes.
@@ -4385,8 +4324,6 @@ union bpf_attr {
  *
  * long bpf_xdp_output(void *ctx, struct bpf_map *map, u64 flags, void *data, u64 size)
  *	Description
- *		Write raw *data* blob into a special BPF perf event held by
- *		*map* of type **BPF_MAP_TYPE_PERF_EVENT_ARRAY**. This perf
  *		event must have the following attributes: **PERF_SAMPLE_RAW**
  *		as **sample_type**, **PERF_TYPE_SOFTWARE** as **type**, and
  *		**PERF_COUNT_SW_BPF_OUTPUT** as **config**.
@@ -4402,7 +4339,6 @@ union bpf_attr {
  *
  *		*ctx* is a pointer to in-kernel struct xdp_buff.
  *
- *		This helper is similar to **bpf_perf_eventoutput**\ () but
  *		restricted to raw_tracepoint bpf programs.
  *	Return
  *		0 on success, or a negative error in case of failure.
@@ -4759,7 +4695,6 @@ union bpf_attr {
  *
  *		::
  *
- *			# sysctl kernel.perf_event_max_stack=<new value>
  *	Return
  * 		The non-negative copied *buf* length equal to or less than
  * 		*size* on success, or a negative error in case of failure.
@@ -4951,7 +4886,6 @@ union bpf_attr {
  *		representation.
  *
  *		The string can be subsequently shared with userspace via
- *		bpf_perf_event_output() or ring buffer interfaces.
  *		bpf_trace_printk() is to be avoided as it places too small
  *		a limit on string size to be useful.
  *
@@ -5377,7 +5311,6 @@ union bpf_attr {
  * 		Supported for the following program types:
  *			- kprobe/uprobe;
  *			- tracepoint;
- *			- perf_event.
  * 	Return
  *		Value specified by user at BPF link creation/attachment time
  *		or 0, if it was not specified.
@@ -5917,10 +5850,8 @@ union bpf_attr {
 	FN(skb_vlan_pop, 19, ##ctx)			\
 	FN(skb_get_tunnel_key, 20, ##ctx)		\
 	FN(skb_set_tunnel_key, 21, ##ctx)		\
-	FN(perf_event_read, 22, ##ctx)			\
 	FN(redirect, 23, ##ctx)				\
 	FN(get_route_realm, 24, ##ctx)			\
-	FN(perf_event_output, 25, ##ctx)		\
 	FN(skb_load_bytes, 26, ##ctx)			\
 	FN(get_stackid, 27, ##ctx)			\
 	FN(csum_diff, 28, ##ctx)			\
@@ -5950,8 +5881,6 @@ union bpf_attr {
 	FN(sk_redirect_map, 52, ##ctx)			\
 	FN(sock_map_update, 53, ##ctx)			\
 	FN(xdp_adjust_meta, 54, ##ctx)			\
-	FN(perf_event_read_value, 55, ##ctx)		\
-	FN(perf_prog_read_value, 56, ##ctx)		\
 	FN(getsockopt, 57, ##ctx)			\
 	FN(override_return, 58, ##ctx)			\
 	FN(sock_ops_cb_flags_set, 59, ##ctx)		\
@@ -6180,13 +6109,9 @@ enum {
 	BPF_F_TUNINFO_FLAGS		= (1ULL << 4),
 };
 
-/* BPF_FUNC_perf_event_output, BPF_FUNC_perf_event_read and
- * BPF_FUNC_perf_event_read_value flags.
- */
 enum {
 	BPF_F_INDEX_MASK		= 0xffffffffULL,
 	BPF_F_CURRENT_CPU		= BPF_F_INDEX_MASK,
-/* BPF_FUNC_perf_event_output for sk_buff input context. */
 	BPF_F_CTXLEN_MASK		= (0xfffffULL << 32),
 };
 
@@ -6803,39 +6728,6 @@ struct bpf_link_info {
 			__u32 pid;
 		} uprobe_multi;
 		struct {
-			__u32 type; /* enum bpf_perf_event_type */
-			__u32 :32;
-			union {
-				struct {
-					__aligned_u64 file_name; /* in/out */
-					__u32 name_len;
-					__u32 offset; /* offset from file_name */
-					__u64 cookie;
-					__u64 ref_ctr_offset;
-				} uprobe; /* BPF_PERF_EVENT_UPROBE, BPF_PERF_EVENT_URETPROBE */
-				struct {
-					__aligned_u64 func_name; /* in/out */
-					__u32 name_len;
-					__u32 offset; /* offset from func_name */
-					__u64 addr;
-					__u64 missed;
-					__u64 cookie;
-				} kprobe; /* BPF_PERF_EVENT_KPROBE, BPF_PERF_EVENT_KRETPROBE */
-				struct {
-					__aligned_u64 tp_name;   /* in/out */
-					__u32 name_len;
-					__u32 :32;
-					__u64 cookie;
-				} tracepoint; /* BPF_PERF_EVENT_TRACEPOINT */
-				struct {
-					__u64 config;
-					__u32 type;
-					__u32 :32;
-					__u64 cookie;
-				} event; /* BPF_PERF_EVENT_EVENT */
-			};
-		} perf_event;
-		struct {
 			__u32 ifindex;
 			__u32 attach_type;
 		} tcx;
@@ -7250,12 +7142,6 @@ enum {
 	BPF_WRITE_HDR_TCP_SYNACK_COOKIE = 2,	/* Kernel is in syncookie mode
 						 * when sending a SYN.
 						 */
-};
-
-struct bpf_perf_event_value {
-	__u64 counter;
-	__u64 enabled;
-	__u64 running;
 };
 
 enum {

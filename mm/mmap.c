@@ -34,7 +34,6 @@
 #include <linux/rmap.h>
 #include <linux/mmu_notifier.h>
 #include <linux/mmdebug.h>
-#include <linux/perf_event.h>
 #include <linux/audit.h>
 #include <linux/khugepaged.h>
 #include <linux/uprobes.h>
@@ -1460,8 +1459,6 @@ static struct vm_area_struct *__install_special_mapping(
 		goto out;
 
 	vm_stat_account(mm, vma->vm_flags, len >> PAGE_SHIFT);
-
-	perf_event_mmap(vma);
 
 	return vma;
 

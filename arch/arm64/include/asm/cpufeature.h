@@ -866,11 +866,6 @@ static __always_inline bool system_supports_mpam_hcr(void)
 	return alternative_has_cap_unlikely(ARM64_MPAM_HCR);
 }
 
-static inline bool system_supports_pmuv3(void)
-{
-	return cpus_have_final_cap(ARM64_HAS_PMUV3);
-}
-
 bool cpu_supports_bbml2_noabort(void);
 
 static inline bool system_supports_bbml2_noabort(void)

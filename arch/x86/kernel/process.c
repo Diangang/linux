@@ -26,7 +26,6 @@
 #include <linux/acpi.h>
 #include <linux/elf-randomize.h>
 #include <linux/static_call.h>
-#include <linux/hw_breakpoint.h>
 #include <linux/entry-common.h>
 #include <asm/cpu.h>
 #include <asm/cpuid/api.h>
@@ -178,7 +177,6 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 	p->thread.io_bitmap = NULL;
 	clear_tsk_thread_flag(p, TIF_IO_BITMAP);
 	p->thread.iopl_warn = 0;
-	memset(p->thread.ptrace_bps, 0, sizeof(p->thread.ptrace_bps));
 
 #ifdef CONFIG_X86_64
 	current_save_fsgs();
@@ -275,7 +273,6 @@ void flush_thread(void)
 {
 	struct task_struct *tsk = current;
 
-	flush_ptrace_hw_breakpoint(tsk);
 	memset(tsk->thread.tls_array, 0, sizeof(tsk->thread.tls_array));
 
 	fpu_flush_thread();

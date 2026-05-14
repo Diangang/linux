@@ -10,6 +10,7 @@
 #include <linux/efi.h>
 #include <linux/elf.h>
 #include <linux/export.h>
+#include <linux/ftrace.h>
 #include <linux/sched.h>
 #include <linux/sched/debug.h>
 #include <linux/sched/task.h>
@@ -34,7 +35,6 @@
 #include <linux/utsname.h>
 #include <linux/uaccess.h>
 #include <linux/random.h>
-#include <linux/hw_breakpoint.h>
 #include <linux/personality.h>
 #include <linux/notifier.h>
 #include <linux/percpu.h>
@@ -334,7 +334,6 @@ void flush_thread(void)
 {
 	fpsimd_flush_thread();
 	tls_thread_flush();
-	flush_ptrace_hw_breakpoint(current);
 	flush_tagged_addr_state();
 	flush_poe();
 	flush_gcs();
@@ -522,8 +521,6 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 	 * as the final frame for the new task.
 	 */
 	p->thread.cpu_context.fp = (unsigned long)&childregs->stackframe;
-
-	ptrace_hw_copy_thread(p);
 
 	return 0;
 }
@@ -737,7 +734,6 @@ struct task_struct *__switch_to(struct task_struct *prev,
 
 	fpsimd_thread_switch(next);
 	tls_thread_switch(next);
-	hw_breakpoint_thread_switch(next);
 	contextidr_thread_switch(next);
 	entry_task_switch(next);
 	ssbs_thread_switch(next);

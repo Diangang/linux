@@ -219,12 +219,6 @@ typedef struct compat_siginfo {
 					char _dummy_pkey[__COMPAT_ADDR_BND_PKEY_PAD];
 					u32 _pkey;
 				} _addr_pkey;
-				/* used when si_code=TRAP_PERF */
-				struct {
-					compat_ulong_t _data;
-					u32 _type;
-					u32 _flags;
-				} _perf;
 			};
 		} _sigfault;
 

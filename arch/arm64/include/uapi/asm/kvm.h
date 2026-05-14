@@ -100,7 +100,6 @@ struct kvm_regs {
 #define KVM_ARM_VCPU_POWER_OFF		0 /* CPU is started in OFF state */
 #define KVM_ARM_VCPU_EL1_32BIT		1 /* CPU running a 32bit VM */
 #define KVM_ARM_VCPU_PSCI_0_2		2 /* CPU uses PSCI v0.2 */
-#define KVM_ARM_VCPU_PMU_V3		3 /* Support guest PMUv3 */
 #define KVM_ARM_VCPU_SVE		4 /* enable SVE for this CPU */
 #define KVM_ARM_VCPU_PTRAUTH_ADDRESS	5 /* VCPU uses address authentication */
 #define KVM_ARM_VCPU_PTRAUTH_GENERIC	6 /* VCPU uses generic authentication */
@@ -161,22 +160,6 @@ struct kvm_sync_regs {
 /* Bits for run->s.regs.device_irq_level */
 #define KVM_ARM_DEV_EL1_VTIMER		(1 << 0)
 #define KVM_ARM_DEV_EL1_PTIMER		(1 << 1)
-#define KVM_ARM_DEV_PMU			(1 << 2)
-
-/*
- * PMU filter structure. Describe a range of events with a particular
- * action. To be used with KVM_ARM_VCPU_PMU_V3_FILTER.
- */
-struct kvm_pmu_event_filter {
-	__u16	base_event;
-	__u16	nevents;
-
-#define KVM_PMU_EVENT_ALLOW	0
-#define KVM_PMU_EVENT_DENY	1
-
-	__u8	action;
-	__u8	pad[3];
-};
 
 /* for KVM_GET/SET_VCPU_EVENTS */
 struct kvm_vcpu_events {
@@ -431,12 +414,6 @@ enum {
 #define   KVM_DEV_ARM_VGIC_USERSPACE_PPIS	5
 
 /* Device Control API on vcpu fd */
-#define KVM_ARM_VCPU_PMU_V3_CTRL	0
-#define   KVM_ARM_VCPU_PMU_V3_IRQ		0
-#define   KVM_ARM_VCPU_PMU_V3_INIT		1
-#define   KVM_ARM_VCPU_PMU_V3_FILTER		2
-#define   KVM_ARM_VCPU_PMU_V3_SET_PMU		3
-#define   KVM_ARM_VCPU_PMU_V3_SET_NR_COUNTERS	4
 #define KVM_ARM_VCPU_TIMER_CTRL		1
 #define   KVM_ARM_VCPU_TIMER_IRQ_VTIMER		0
 #define   KVM_ARM_VCPU_TIMER_IRQ_PTIMER		1

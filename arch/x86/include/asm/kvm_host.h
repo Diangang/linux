@@ -20,7 +20,6 @@
 #include <linux/kvm.h>
 #include <linux/kvm_para.h>
 #include <linux/kvm_types.h>
-#include <linux/perf_event.h>
 #include <linux/pvclock_gtod.h>
 #include <linux/clocksource.h>
 #include <linux/irqbypass.h>
@@ -95,8 +94,6 @@
 #define KVM_REQ_APF_HALT		KVM_ARCH_REQ(7)
 #define KVM_REQ_STEAL_UPDATE		KVM_ARCH_REQ(8)
 #define KVM_REQ_NMI			KVM_ARCH_REQ(9)
-#define KVM_REQ_PMU			KVM_ARCH_REQ(10)
-#define KVM_REQ_PMI			KVM_ARCH_REQ(11)
 #ifdef CONFIG_KVM_SMM
 #define KVM_REQ_SMI			KVM_ARCH_REQ(12)
 #endif
@@ -510,120 +507,6 @@ struct kvm_mmu {
 	u64 pdptrs[4]; /* pae */
 };
 
-enum pmc_type {
-	KVM_PMC_GP = 0,
-	KVM_PMC_FIXED,
-};
-
-struct kvm_pmc {
-	enum pmc_type type;
-	u8 idx;
-	bool is_paused;
-	bool intr;
-	/*
-	 * Base value of the PMC counter, relative to the *consumed* count in
-	 * the associated perf_event.  This value includes counter updates from
-	 * the perf_event and emulated_count since the last time the counter
-	 * was reprogrammed, but it is *not* the current value as seen by the
-	 * guest or userspace.
-	 *
-	 * The count is relative to the associated perf_event so that KVM
-	 * doesn't need to reprogram the perf_event every time the guest writes
-	 * to the counter.
-	 */
-	u64 counter;
-	/*
-	 * PMC events triggered by KVM emulation that haven't been fully
-	 * processed, i.e. haven't undergone overflow detection.
-	 */
-	u64 emulated_counter;
-	u64 eventsel;
-	u64 eventsel_hw;
-	struct perf_event *perf_event;
-	struct kvm_vcpu *vcpu;
-	/*
-	 * only for creating or reusing perf_event,
-	 * eventsel value for general purpose counters,
-	 * ctrl value for fixed counters.
-	 */
-	u64 current_config;
-};
-
-/* More counters may conflict with other existing Architectural MSRs */
-#define KVM_MAX(a, b)	((a) >= (b) ? (a) : (b))
-#define KVM_MAX_NR_INTEL_GP_COUNTERS	8
-#define KVM_MAX_NR_AMD_GP_COUNTERS	6
-#define KVM_MAX_NR_GP_COUNTERS		KVM_MAX(KVM_MAX_NR_INTEL_GP_COUNTERS, \
-						KVM_MAX_NR_AMD_GP_COUNTERS)
-
-#define KVM_MAX_NR_INTEL_FIXED_COUNTERS	3
-#define KVM_MAX_NR_AMD_FIXED_COUNTERS	0
-#define KVM_MAX_NR_FIXED_COUNTERS	KVM_MAX(KVM_MAX_NR_INTEL_FIXED_COUNTERS, \
-						KVM_MAX_NR_AMD_FIXED_COUNTERS)
-
-struct kvm_pmu {
-	u8 version;
-	unsigned nr_arch_gp_counters;
-	unsigned nr_arch_fixed_counters;
-	unsigned available_event_types;
-	u64 fixed_ctr_ctrl;
-	u64 fixed_ctr_ctrl_hw;
-	u64 fixed_ctr_ctrl_rsvd;
-	u64 global_ctrl;
-	u64 global_status;
-	u64 counter_bitmask[2];
-	u64 global_ctrl_rsvd;
-	u64 global_status_rsvd;
-	u64 reserved_bits;
-	u64 raw_event_mask;
-	struct kvm_pmc gp_counters[KVM_MAX_NR_GP_COUNTERS];
-	struct kvm_pmc fixed_counters[KVM_MAX_NR_FIXED_COUNTERS];
-
-	/*
-	 * Overlay the bitmap with a 64-bit atomic so that all bits can be
-	 * set in a single access, e.g. to reprogram all counters when the PMU
-	 * filter changes.
-	 */
-	union {
-		DECLARE_BITMAP(reprogram_pmi, X86_PMC_IDX_MAX);
-		atomic64_t __reprogram_pmi;
-	};
-	DECLARE_BITMAP(all_valid_pmc_idx, X86_PMC_IDX_MAX);
-	DECLARE_BITMAP(pmc_in_use, X86_PMC_IDX_MAX);
-
-	DECLARE_BITMAP(pmc_counting_instructions, X86_PMC_IDX_MAX);
-	DECLARE_BITMAP(pmc_counting_branches, X86_PMC_IDX_MAX);
-
-	u64 ds_area;
-	u64 pebs_enable;
-	u64 pebs_enable_rsvd;
-	u64 pebs_data_cfg;
-	u64 pebs_data_cfg_rsvd;
-
-	/*
-	 * If a guest counter is cross-mapped to host counter with different
-	 * index, its PEBS capability will be temporarily disabled.
-	 *
-	 * The user should make sure that this mask is updated
-	 * after disabling interrupts and before perf_guest_get_msrs();
-	 */
-	u64 host_cross_mapped_mask;
-
-	/*
-	 * The gate to release perf_events not marked in
-	 * pmc_in_use only once in a vcpu time slice.
-	 */
-	bool need_cleanup;
-
-	/*
-	 * The total number of programmed perf_events and it helps to avoid
-	 * redundant check before cleanup if guest don't use vPMU at all.
-	 */
-	u8 event_count;
-};
-
-struct kvm_pmu_ops;
-
 enum {
 	KVM_DEBUGREG_BP_ENABLED		= BIT(0),
 	KVM_DEBUGREG_WONT_EXIT		= BIT(1),
@@ -1011,8 +894,6 @@ struct kvm_vcpu_arch {
 	unsigned mmio_access;
 	gfn_t mmio_gfn;
 	u64 mmio_gen;
-
-	struct kvm_pmu pmu;
 
 	/* used for guest single stepping over the given code position */
 	unsigned long singlestep_rip;
@@ -2022,7 +1903,6 @@ struct kvm_x86_init_ops {
 	unsigned int (*handle_intel_pt_intr)(void);
 
 	struct kvm_x86_ops *runtime_ops;
-	struct kvm_pmu_ops *pmu_ops;
 };
 
 struct kvm_arch_async_pf {
@@ -2041,7 +1921,6 @@ extern bool __read_mostly enable_device_posted_irqs;
 extern struct kvm_x86_ops kvm_x86_ops;
 
 #define kvm_x86_call(func) static_call(kvm_x86_##func)
-#define kvm_pmu_call(func) static_call(kvm_x86_pmu_##func)
 
 #define KVM_X86_OP(func) \
 	DECLARE_STATIC_CALL(kvm_x86_##func, *(((struct kvm_x86_ops *)0)->func));

@@ -41,10 +41,6 @@ SUBSYS(freezer)
 SUBSYS(net_cls)
 #endif
 
-#if IS_ENABLED(CONFIG_CGROUP_PERF)
-SUBSYS(perf_event)
-#endif
-
 #if IS_ENABLED(CONFIG_CGROUP_NET_PRIO)
 SUBSYS(net_prio)
 #endif

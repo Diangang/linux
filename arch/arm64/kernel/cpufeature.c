@@ -77,7 +77,6 @@
 #include <linux/percpu.h>
 #include <linux/sched/isolation.h>
 
-#include <asm/arm_pmuv3.h>
 #include <asm/cpu.h>
 #include <asm/cpufeature.h>
 #include <asm/cpu_ops.h>
@@ -1902,19 +1901,6 @@ static bool has_lpa2(const struct arm64_cpu_capabilities *entry, int scope)
 }
 #endif
 
-#if 0
-static bool has_pmuv3(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	u64 dfr0 = read_sanitised_ftr_reg(SYS_ID_AA64DFR0_EL1);
-	unsigned int pmuver;
-
-	pmuver = cpuid_feature_extract_unsigned_field(dfr0,
-						      ID_AA64DFR0_EL1_PMUVer_SHIFT);
-
-	return pmuv3_implemented(pmuver);
-}
-#endif
-
 static void cpu_enable_kpti(struct arm64_cpu_capabilities const *cap)
 {
 	if (__this_cpu_read(this_cpu_vector) == vectors) {
@@ -2420,7 +2406,6 @@ test_has_mpam(const struct arm64_cpu_capabilities *entry, int scope)
 static void
 cpu_enable_mpam(const struct arm64_cpu_capabilities *entry)
 {
-	int cpu = smp_processor_id();
 	u64 regval = 0;
 
 	write_sysreg_s(regval | MPAM1_EL1_MPAMEN, SYS_MPAM1_EL1);
@@ -3011,14 +2996,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.cpu_enable = cpu_enable_gcs,
 		.matches = has_cpuid_feature,
 		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, GCS, IMP)
-	},
-#endif
-#if 0
-	{
-		.desc = "PMUv3",
-		.capability = ARM64_HAS_PMUV3,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_pmuv3,
 	},
 #endif
 	{

@@ -14,6 +14,7 @@
 #include <linux/sched/mm.h>
 #include <linux/sched/coredump.h>
 #include <linux/sched/task.h>
+#include <linux/sched/task_stack.h>
 #include <linux/errno.h>
 #include <linux/mm.h>
 #include <linux/highmem.h>
@@ -27,7 +28,6 @@
 #include <linux/syscalls.h>
 #include <linux/uaccess.h>
 #include <linux/regset.h>
-#include <linux/hw_breakpoint.h>
 #include <linux/cn_proc.h>
 #include <linux/compat.h>
 #include <linux/sched/signal.h>

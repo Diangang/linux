@@ -3,6 +3,8 @@
 #define __LINUX_IRQENTRYCOMMON_H
 
 #include <linux/context_tracking.h>
+#include <linux/ftrace.h>
+#include <linux/highmem.h>
 #include <linux/hrtimer_rearm.h>
 #include <linux/kmsan.h>
 #include <linux/rseq_entry.h>

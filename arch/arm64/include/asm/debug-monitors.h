@@ -74,14 +74,10 @@ int kernel_active_single_step(void);
 void kernel_rewind_single_step(struct pt_regs *regs);
 void kernel_fastforward_single_step(struct pt_regs *regs);
 
-#ifdef CONFIG_HAVE_HW_BREAKPOINT
-bool try_step_suspended_breakpoints(struct pt_regs *regs);
-#else
 static inline bool try_step_suspended_breakpoints(struct pt_regs *regs)
 {
 	return false;
 }
-#endif
 
 bool try_handle_aarch32_break(struct pt_regs *regs);
 

@@ -10,7 +10,6 @@
 #include <linux/suspend.h>
 #include <linux/export.h>
 #include <linux/smp.h>
-#include <linux/perf_event.h>
 #include <linux/tboot.h>
 #include <linux/dmi.h>
 #include <linux/pgtable.h>
@@ -261,8 +260,6 @@ static void notrace __restore_processor_state(struct saved_context *ctxt)
 	tsc_verify_tsc_adjust(true);
 	x86_platform.restore_sched_clock_state();
 	cache_bp_restore();
-	perf_restore_debug_store();
-
 	c = &cpu_data(smp_processor_id());
 	if (cpu_has(c, X86_FEATURE_MSR_IA32_FEAT_CTL))
 		init_ia32_feat_ctl(c);

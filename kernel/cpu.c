@@ -37,7 +37,6 @@
 #include <linux/random.h>
 #include <linux/cc_platform.h>
 #include <linux/parser.h>
-#include <linux/perf_event.h>
 #include "smpboot.h"
 
 /**
@@ -2157,11 +2156,6 @@ static struct cpuhp_step cpuhp_hp_states[] = {
 		.name			= "irq/affinity:online",
 		.startup.single		= irq_affinity_online_cpu,
 		.teardown.single	= NULL,
-	},
-	[CPUHP_AP_PERF_ONLINE] = {
-		.name			= "perf:online",
-		.startup.single		= perf_event_init_cpu,
-		.teardown.single	= perf_event_exit_cpu,
 	},
 	[CPUHP_AP_WORKQUEUE_ONLINE] = {
 		.name			= "workqueue:online",

@@ -2611,8 +2611,6 @@ static void __mmap_complete(struct mmap_state *map, struct vm_area_struct *vma)
 {
 	struct mm_struct *mm = map->mm;
 
-	perf_event_mmap(vma);
-
 	/* Unmap any existing mapping in the area. */
 	vms_complete_munmap_vmas(&map->vms, &map->mas_detach);
 
@@ -2935,7 +2933,6 @@ int do_brk_flags(struct vma_iterator *vmi, struct vm_area_struct *vma,
 	mm->map_count++;
 	validate_mm(mm);
 out:
-	perf_event_mmap(vma);
 	mm->total_vm += len >> PAGE_SHIFT;
 	mm->data_vm += len >> PAGE_SHIFT;
 	if (vma_flags_test(&vma_flags, VMA_LOCKED_BIT))
@@ -3180,8 +3177,6 @@ int expand_upwards(struct vm_area_struct *vma, unsigned long address)
 				/* Overwrite old entry in mtree. */
 				vma_iter_store_overwrite(&vmi, vma);
 				anon_vma_interval_tree_post_update_vma(vma);
-
-				perf_event_mmap(vma);
 			}
 		}
 	}
@@ -3260,8 +3255,6 @@ int expand_downwards(struct vm_area_struct *vma, unsigned long address)
 				/* Overwrite old entry in mtree. */
 				vma_iter_store_overwrite(&vmi, vma);
 				anon_vma_interval_tree_post_update_vma(vma);
-
-				perf_event_mmap(vma);
 			}
 		}
 	}

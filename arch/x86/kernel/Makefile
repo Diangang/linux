@@ -66,7 +66,7 @@ obj-$(CONFIG_X86_ESPFIX64)	+= espfix_64.o
 obj-$(CONFIG_SYSFS)	+= ksysfs.o
 obj-y			+= bootflag.o e820.o
 obj-y			+= pci-dma.o quirks.o kdebugfs.o
-obj-y			+= alternative.o i8253.o hw_breakpoint.o
+obj-y			+= alternative.o i8253.o
 obj-y			+= tsc.o tsc_msr.o io_delay.o rtc.o
 obj-y			+= resource.o
 obj-y			+= irqflags.o
@@ -115,7 +115,6 @@ obj-$(CONFIG_PARAVIRT_CLOCK)	+= pvclock.o
 obj-$(CONFIG_OF)			+= devicetree.o
 
 
-obj-$(CONFIG_PERF_EVENTS)		+= perf_regs.o
 obj-$(CONFIG_SCHED_MC_PRIO)		+= itmt.o
 obj-$(CONFIG_X86_UMIP)			+= umip.o
 

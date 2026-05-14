@@ -1141,7 +1141,7 @@ static bool notify_debug(struct pt_regs *regs, unsigned long *dr6)
 {
 	/*
 	 * Notifiers will clear bits in @dr6 to indicate the event has been
-	 * consumed - hw_breakpoint_handler(), single_stop_cont().
+	 * consumed by the debug exception handler.
 	 *
 	 * Notifiers will set bits in @virtual_dr6 to indicate the desire
 	 * for signals - ptrace_triggered(), kgdb_hw_overflow_handler().
@@ -1159,8 +1159,8 @@ static noinstr void exc_debug_kernel(struct pt_regs *regs, unsigned long dr6)
 	 * are exceedingly 'fun'.
 	 *
 	 * Since this function is NOKPROBE, and that also applies to
-	 * HW_BREAKPOINT_X, we can't hit a breakpoint before this (XXX except a
-	 * HW_BREAKPOINT_W on our stack)
+	 * execute breakpoints, we can't hit a breakpoint before this (XXX
+	 * except a watchpoint on our stack)
 	 *
 	 * Entry text is excluded for HW_BP_X and cpu_entry_area, which
 	 * includes the entry stack is excluded for everything.

@@ -72,7 +72,6 @@
 #include <linux/dax.h>
 #include <linux/oom.h>
 #include <linux/numa.h>
-#include <linux/perf_event.h>
 #include <linux/ptrace.h>
 #include <linux/vmalloc.h>
 #include <linux/sched/sysctl.h>
@@ -6531,19 +6530,13 @@ static inline void mm_account_fault(struct mm_struct *mm, struct pt_regs *regs,
 	if (ret & VM_FAULT_RETRY)
 		return;
 
-	/*
-	 * To preserve the behavior of older kernels, PGFAULT counters record
-	 * both successful and failed faults, as opposed to perf counters,
-	 * which ignore failed cases.
-	 */
 	count_vm_event(PGFAULT);
 	count_memcg_event_mm(mm, PGFAULT);
 
 	/*
 	 * Do not account for unsuccessful faults (e.g. when the address wasn't
 	 * valid).  That includes arch_vma_access_permitted() failing before
-	 * reaching here. So this is not a "this many hardware page faults"
-	 * counter.  We should use the hw profiling for that.
+	 * reaching here.
 	 */
 	if (ret & VM_FAULT_ERROR)
 		return;
@@ -6560,18 +6553,7 @@ static inline void mm_account_fault(struct mm_struct *mm, struct pt_regs *regs,
 	else
 		current->min_flt++;
 
-	/*
-	 * If the fault is done for GUP, regs will be NULL.  We only do the
-	 * accounting for the per thread fault counters who triggered the
-	 * fault, and we skip the perf event updates.
-	 */
-	if (!regs)
-		return;
-
-	if (major)
-		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1, regs, address);
-	else
-		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
+	(void)regs;
 }
 
 static void lru_gen_enter_fault(struct vm_area_struct *vma)

@@ -104,30 +104,27 @@ static __always_inline void native_set_debugreg(int regno, unsigned long value)
 	}
 }
 
-static inline void hw_breakpoint_disable(void)
+static inline void debugreg_breakpoints_disable(void)
 {
-	/* Reset the control register for HW Breakpoint */
 	set_debugreg(DR7_FIXED_1, 7);
 
-	/* Zero-out the individual HW breakpoint address registers */
+	/* Zero-out the individual debug address registers. */
 	set_debugreg(0UL, 0);
 	set_debugreg(0UL, 1);
 	set_debugreg(0UL, 2);
 	set_debugreg(0UL, 3);
 }
 
-static __always_inline bool hw_breakpoint_active(void)
+static __always_inline bool debugreg_breakpoints_active(void)
 {
 	return __this_cpu_read(cpu_dr7) & DR_GLOBAL_ENABLE_MASK;
 }
-
-extern void hw_breakpoint_restore(void);
 
 static __always_inline unsigned long local_db_save(void)
 {
 	unsigned long dr7;
 
-	if (static_cpu_has(X86_FEATURE_HYPERVISOR) && !hw_breakpoint_active())
+	if (static_cpu_has(X86_FEATURE_HYPERVISOR) && !debugreg_breakpoints_active())
 		return 0;
 
 	get_debugreg(dr7, 7);

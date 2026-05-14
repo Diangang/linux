@@ -5,7 +5,6 @@
 
 # If these files are instrumented, boot hangs during the first second.
 KCOV_INSTRUMENT_common.o := n
-KCOV_INSTRUMENT_perf_event.o := n
 KMSAN_SANITIZE_common.o := n
 
 # As above, instrumenting secondary CPU boot code causes boot hangs.
@@ -41,7 +40,6 @@ obj-$(CONFIG_X86_MCE)			+= mce/
 obj-$(CONFIG_MTRR)			+= mtrr/
 
 
-obj-$(CONFIG_X86_LOCAL_APIC)		+= perfctr-watchdog.o
 
 obj-$(CONFIG_HYPERVISOR_GUEST)		+= vmware.o hypervisor.o mshyperv.o
 

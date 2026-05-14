@@ -23,7 +23,6 @@
 #include <linux/swapops.h>
 #include <linux/mmu_notifier.h>
 #include <linux/migrate.h>
-#include <linux/perf_event.h>
 #include <linux/pkeys.h>
 #include <linux/ksm.h>
 #include <linux/uaccess.h>
@@ -822,7 +821,6 @@ mprotect_fixup(struct vma_iterator *vmi, struct mmu_gather *tlb,
 	vm_stat_account(mm, vma_flags_to_legacy(old_vma_flags), -nrpages);
 	newflags = vma_flags_to_legacy(new_vma_flags);
 	vm_stat_account(mm, newflags, nrpages);
-	perf_event_mmap(vma);
 	return 0;
 
 fail:

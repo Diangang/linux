@@ -157,10 +157,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 	.timer_slack_ns = 50000, /* 50 usec default slack */
 	.thread_pid	= &init_struct_pid,
 	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
-#ifdef CONFIG_PERF_EVENTS
-	.perf_event_mutex = __MUTEX_INITIALIZER(init_task.perf_event_mutex),
-	.perf_event_list = LIST_HEAD_INIT(init_task.perf_event_list),
-#endif
 #ifdef CONFIG_PREEMPT_RCU
 	.rcu_read_lock_nesting = 0,
 	.rcu_read_unlock_special.s = 0,

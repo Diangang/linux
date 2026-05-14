@@ -52,8 +52,6 @@
 #include <linux/task_work.h>
 #include <linux/fs_struct.h>
 #include <linux/init_task.h>
-#include <linux/perf_event.h>
-#include <linux/hw_breakpoint.h>
 #include <linux/oom.h>
 #include <linux/writeback.h>
 #include <linux/shm.h>
@@ -220,8 +218,6 @@ static void __exit_signal(struct release_task_post *post, struct task_struct *ts
 static void delayed_put_task_struct(struct rcu_head *rhp)
 {
 	struct task_struct *tsk = container_of(rhp, struct task_struct, rcu);
-
-	perf_event_delayed_put(tsk);
 	put_task_struct(tsk);
 }
 
@@ -861,7 +857,6 @@ void __noreturn do_exit(long code)
 	 * Also flushes inherited counters to the parent - before the parent
 	 * gets woken up by child-exit notifications.
 	 */
-	perf_event_exit_task(tsk);
 	/*
 	 * PF_EXITING (above) ensures unwind_deferred_request() will no
 	 * longer add new unwinds. While exit_mm() (below) will destroy the
@@ -890,7 +885,6 @@ void __noreturn do_exit(long code)
 	/*
 	 * FIXME: do that only when needed, using sched_exit tracepoint
 	 */
-	flush_ptrace_hw_breakpoint(tsk);
 
 	exit_tasks_rcu_start();
 	exit_notify(tsk, group_dead);

@@ -6,7 +6,6 @@
 #include <linux/list.h>
 #include <linux/percpu.h>
 
-#include <asm/perf_event.h>
 #include <asm/processor.h>
 #include <asm/virt.h>
 #include <asm/vmx.h>

@@ -22,7 +22,6 @@
 #include <linux/sched/signal.h>
 #include <linux/sched/debug.h>
 #include <linux/highmem.h>
-#include <linux/perf_event.h>
 #include <linux/pkeys.h>
 #include <linux/preempt.h>
 #include <linux/hugetlb.h>
@@ -667,8 +666,6 @@ static int __kprobes do_page_fault(unsigned long far, unsigned long esr,
 		arm64_force_sig_fault(SIGSEGV, SEGV_ACCERR, far, "stage-2 fault");
 		return 0;
 	}
-
-	perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS, 1, regs, addr);
 
 	if (!(mm_flags & FAULT_FLAG_USER))
 		goto lock_mmap;

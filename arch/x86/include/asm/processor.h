@@ -393,8 +393,6 @@ extern asmlinkage void entry_SYSCALL32_ignore(void);
 void current_save_fsgs(void);
 #endif	/* X86_64 */
 
-struct perf_event;
-
 struct thread_struct {
 	/* Cached TLS descriptors: */
 	struct desc_struct	tls_array[GDT_ENTRY_TLS_ENTRIES];
@@ -416,8 +414,6 @@ struct thread_struct {
 	unsigned long gs;
 #endif
 
-	/* Save middle states of ptrace breakpoints */
-	struct perf_event	*ptrace_bps[HBP_NUM];
 	/* Debug status used for traps, single steps, etc... */
 	unsigned long           virtual_dr6;
 	/* Keep track of the exact dr7 value set by the user */

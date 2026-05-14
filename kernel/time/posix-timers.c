@@ -26,6 +26,7 @@
 #include <linux/time.h>
 #include <linux/time_namespace.h>
 #include <linux/uaccess.h>
+#include <linux/user_namespace.h>
 
 #include "timekeeping.h"
 #include "posix-timers.h"

@@ -413,7 +413,7 @@ void __nocfi machine_kexec(struct kimage *image)
 
 	/* Interrupts aren't acceptable while we reboot */
 	local_irq_disable();
-	hw_breakpoint_disable();
+	debugreg_breakpoints_disable();
 	cet_disable();
 
 	if (image->preserve_context) {

@@ -39,7 +39,6 @@
 #include <linux/sched/numa_balancing.h>
 #include <linux/sched/task.h>
 #include <linux/pagemap.h>
-#include <linux/perf_event.h>
 #include <linux/highmem.h>
 #include <linux/spinlock.h>
 #include <linux/key.h>
@@ -1063,7 +1062,6 @@ void __set_task_comm(struct task_struct *tsk, const char *buf, bool exec)
 
 	memcpy(tsk->comm, buf, len);
 	memset(&tsk->comm[len], 0, sizeof(tsk->comm) - len);
-	perf_event_comm(tsk, exec);
 }
 
 /*
@@ -1197,8 +1195,6 @@ int begin_new_exec(struct linux_binprm * bprm)
 	else
 		set_dumpable(current->mm, SUID_DUMP_USER);
 
-	perf_event_exec();
-
 	/*
 	 * If the original filename was empty, alloc_bprm() made up a path
 	 * that will probably not be useful to admins running ps or similar.
@@ -1238,14 +1234,6 @@ int begin_new_exec(struct linux_binprm * bprm)
 	commit_creds(bprm->cred);
 	bprm->cred = NULL;
 
-	/*
-	 * Disable monitoring for regular users
-	 * when executing setuid binaries. Must
-	 * wait until new credentials are committed
-	 * by commit_creds() above
-	 */
-	if (get_dumpable(me->mm) != SUID_DUMP_USER)
-		perf_event_exit_task(me);
 	/*
 	 * cred_guard_mutex must be held at least to this point to prevent
 	 * ptrace_attach() from altering our determination of the task's

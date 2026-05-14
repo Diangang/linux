@@ -166,7 +166,7 @@ static void __set_cyc2ns_scale(unsigned long khz, int cpu, unsigned long long ts
 	 * cyc2ns_shift is exported via arch_perf_update_userpage() where it is
 	 * not expected to be greater than 31 due to the original published
 	 * conversion algorithm shifting a 32-bit value (now specifies a 64-bit
-	 * value) - refer perf_event_mmap_page documentation in perf_event.h.
+	 * value).
 	 */
 	if (data.cyc2ns_shift == 32) {
 		data.cyc2ns_shift = 31;

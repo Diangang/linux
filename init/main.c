@@ -81,7 +81,6 @@
 #include <linux/async.h>
 #include <linux/shmem_fs.h>
 #include <linux/slab.h>
-#include <linux/perf_event.h>
 #include <linux/ptrace.h>
 #include <linux/pti.h>
 #include <linux/blkdev.h>
@@ -965,8 +964,6 @@ void start_kernel(void)
 	/* These make use of the fully initialized rng */
 	kfence_init();
 	boot_init_stack_canary();
-
-	perf_event_init();
 	profile_init();
 	call_function_init();
 	WARN(!irqs_disabled(), "Interrupts were enabled early\n");

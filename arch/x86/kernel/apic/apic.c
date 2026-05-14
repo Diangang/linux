@@ -15,7 +15,6 @@
  *	Mikael Pettersson	:	PM converted to driver model.
  */
 
-#include <linux/perf_event.h>
 #include <linux/kernel_stat.h>
 #include <linux/mc146818rtc.h>
 #include <linux/acpi_pmtmr.h>
@@ -41,7 +40,6 @@
 #include <xen/xen.h>
 #include <asm/irq_remapping.h>
 #include <asm/pc-conf-reg.h>
-#include <asm/perf_event.h>
 #include <asm/x86_init.h>
 #include <linux/atomic.h>
 #include <asm/barrier.h>
@@ -1512,8 +1510,6 @@ static void setup_local_APIC(void)
 	 */
 	value |= SPURIOUS_APIC_VECTOR;
 	apic_write(APIC_SPIV, value);
-
-	perf_events_lapic_init();
 
 	/*
 	 * Set up LVT0, LVT1:

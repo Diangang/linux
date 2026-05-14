@@ -377,7 +377,7 @@ struct vfs_ns_cap_data {
 
 /*
  * Allow system performance and observability privileged operations
- * using perf_events, i915_perf and other kernel subsystems
+ * using i915_perf and other kernel subsystems
  */
 
 #define CAP_PERFMON		38

@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #define pr_fmt(fmt) "SMP alternatives: " fmt
 
+#include <linux/bsearch.h>
+#include <linux/kdebug.h>
 #include <linux/mmu_context.h>
-#include <linux/perf_event.h>
 #include <linux/vmalloc.h>
 #include <linux/memory.h>
 #include <linux/execmem.h>
+#include <linux/static_call.h>
 
+#include <asm/cfi.h>
+#include <asm/sections.h>
 #include <asm/text-patching.h>
 #include <asm/insn.h>
 #include <asm/insn-eval.h>
@@ -3033,7 +3037,6 @@ void smp_text_poke_batch_finish(void)
 		 * The old instruction is recorded so that the event can be
 		 * processed forwards or backwards.
 		 */
-		perf_event_text_poke(text_poke_addr(&text_poke_array.vec[i]), old, len, new, len);
 	}
 
 	if (do_sync) {

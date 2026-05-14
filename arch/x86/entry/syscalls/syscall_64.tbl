@@ -307,7 +307,6 @@
 295	64	preadv			sys_preadv
 296	64	pwritev			sys_pwritev
 297	64	rt_tgsigqueueinfo	sys_rt_tgsigqueueinfo
-298	common	perf_event_open		sys_perf_event_open
 299	64	recvmmsg		sys_recvmmsg
 300	common	fanotify_init		sys_fanotify_init
 301	common	fanotify_mark		sys_fanotify_mark

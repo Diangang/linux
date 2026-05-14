@@ -32,7 +32,6 @@
 #include <asm/alternative.h>
 #include <asm/cmdline.h>
 #include <asm/cpuid/api.h>
-#include <asm/perf_event.h>
 #include <asm/mmu_context.h>
 #include <asm/doublefault.h>
 #include <asm/archrandom.h>
@@ -63,6 +62,7 @@
 #include <asm/memtype.h>
 #include <asm/microcode.h>
 #include <asm/intel-family.h>
+#include <asm/intel_ds.h>
 #include <asm/cpu_device_id.h>
 #include <asm/fred.h>
 #include <asm/uv/uv.h>
@@ -79,6 +79,11 @@
 
 DEFINE_PER_CPU_READ_MOSTLY(struct cpuinfo_x86, cpu_info);
 EXPORT_PER_CPU_SYMBOL(cpu_info);
+
+DEFINE_PER_CPU(unsigned long, cpu_dr7);
+EXPORT_PER_CPU_SYMBOL(cpu_dr7);
+
+DEFINE_PER_CPU_PAGE_ALIGNED(struct debug_store, cpu_debug_store);
 
 /* Used for modules: built-in code uses runtime constants */
 unsigned long USER_PTR_MAX;

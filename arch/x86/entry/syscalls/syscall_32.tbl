@@ -348,7 +348,6 @@
 333	i386	preadv			sys_preadv			compat_sys_preadv
 334	i386	pwritev			sys_pwritev			compat_sys_pwritev
 335	i386	rt_tgsigqueueinfo	sys_rt_tgsigqueueinfo		compat_sys_rt_tgsigqueueinfo
-336	i386	perf_event_open		sys_perf_event_open
 337	i386	recvmmsg		sys_recvmmsg_time32		compat_sys_recvmmsg_time32
 338	i386	fanotify_init		sys_fanotify_init
 339	i386	fanotify_mark		sys_fanotify_mark		compat_sys_fanotify_mark

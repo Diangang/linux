@@ -38,7 +38,6 @@
 
 #include <asm/alternative.h>
 #include <asm/cpufeature.h>
-#include <asm/hw_breakpoint.h>
 #include <asm/kasan.h>
 #include <asm/lse.h>
 #include <asm/pgtable-hwdef.h>
@@ -82,16 +81,6 @@ extern phys_addr_t arm64_dma_phys_limit;
 #define ARCH_LOW_ADDRESS_LIMIT	(arm64_dma_phys_limit - 1)
 
 struct debug_info {
-#ifdef CONFIG_HAVE_HW_BREAKPOINT
-	/* Have we suspended stepping by a debugger? */
-	int			suspended_step;
-	/* Allow breakpoints and watchpoints to be disabled for this thread. */
-	int			bps_disabled;
-	int			wps_disabled;
-	/* Hardware breakpoints pinned to this task. */
-	struct perf_event	*hbp_break[ARM_MAX_BRP];
-	struct perf_event	*hbp_watch[ARM_MAX_WRP];
-#endif
 };
 
 enum vec_type {

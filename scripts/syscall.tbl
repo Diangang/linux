@@ -284,7 +284,6 @@
 238	common	migrate_pages			sys_migrate_pages
 239	common	move_pages			sys_move_pages
 240	common	rt_tgsigqueueinfo		sys_rt_tgsigqueueinfo		compat_sys_rt_tgsigqueueinfo
-241	common	perf_event_open			sys_perf_event_open
 242	common	accept4				sys_accept4
 243	time32	recvmmsg			sys_recvmmsg_time32		compat_sys_recvmmsg_time32
 243	64	recvmmsg			sys_recvmmsg

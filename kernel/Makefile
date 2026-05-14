@@ -84,8 +84,6 @@ obj-$(CONFIG_CPU_PM) += cpu_pm.o
 obj-$(CONFIG_HAVE_STATIC_CALL) += static_call.o
 obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 
-obj-$(CONFIG_PERF_EVENTS) += events/
-
 obj-$(CONFIG_JUMP_LABEL) += jump_label.o
 obj-$(CONFIG_CONTEXT_TRACKING) += context_tracking.o
 

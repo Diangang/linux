@@ -16,7 +16,6 @@
 #include <linux/fs.h>
 #include <linux/kmod.h>
 #include <linux/ksm.h>
-#include <linux/perf_event.h>
 #include <linux/resource.h>
 #include <linux/kernel.h>
 #include <linux/workqueue.h>
@@ -2509,12 +2508,6 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		break;
 	case PR_SET_TSC:
 		error = SET_TSC_CTL(arg2);
-		break;
-	case PR_TASK_PERF_EVENTS_DISABLE:
-		error = perf_event_task_disable();
-		break;
-	case PR_TASK_PERF_EVENTS_ENABLE:
-		error = perf_event_task_enable();
 		break;
 	case PR_GET_TIMERSLACK:
 		if (current->timer_slack_ns > ULONG_MAX)

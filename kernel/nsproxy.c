@@ -26,7 +26,6 @@
 #include <linux/file.h>
 #include <linux/syscalls.h>
 #include <linux/cgroup.h>
-#include <linux/perf_event.h>
 #include <linux/nstree.h>
 
 static struct kmem_cache *nsproxy_cachep;
@@ -590,7 +589,6 @@ SYSCALL_DEFINE2(setns, int, fd, int, flags)
 		err = validate_nsset(&nsset, pidfd_pid(fd_file(f)));
 	if (!err) {
 		commit_nsset(&nsset);
-		perf_event_namespaces(current);
 	}
 	put_nsset(&nsset);
 out:

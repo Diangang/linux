@@ -35,7 +35,6 @@
 
 struct bpf_verifier_env;
 struct bpf_verifier_log;
-struct perf_event;
 struct bpf_prog;
 struct bpf_prog_aux;
 struct bpf_map;
@@ -112,7 +111,7 @@ struct bpf_map_ops {
 	void *(*map_lookup_percpu_elem)(struct bpf_map *map, void *key, u32 cpu);
 	int (*map_get_hash)(struct bpf_map *map, u32 hash_buf_size, void *hash_buf);
 
-	/* funcs called by prog_array and perf_event_array map */
+	/* funcs called by prog_array map */
 	void *(*map_fd_get_ptr)(struct bpf_map *map, struct file *map_file,
 				int fd);
 	/* If need_defer is true, the implementation should guarantee that
@@ -643,7 +642,7 @@ static inline struct bpf_offloaded_map *map_to_offmap(struct bpf_map *map)
 
 static inline bool bpf_map_offload_neutral(const struct bpf_map *map)
 {
-	return map->map_type == BPF_MAP_TYPE_PERF_EVENT_ARRAY;
+	return false;
 }
 
 static inline bool bpf_map_support_seq_show(const struct bpf_map *map)
@@ -2134,13 +2133,6 @@ static inline void bpf_map_owner_free(struct bpf_map *map)
 	kfree(map->owner);
 }
 
-struct bpf_event_entry {
-	struct perf_event *event;
-	struct file *perf_file;
-	struct file *map_file;
-	struct rcu_head rcu;
-};
-
 static inline bool map_type_contains_progs(struct bpf_map *map)
 {
 	return map->map_type == BPF_MAP_TYPE_PROG_ARRAY ||
@@ -2153,8 +2145,6 @@ int bpf_prog_calc_tag(struct bpf_prog *fp);
 
 const struct bpf_func_proto *bpf_get_trace_printk_proto(void);
 const struct bpf_func_proto *bpf_get_trace_vprintk_proto(void);
-
-const struct bpf_func_proto *bpf_get_perf_event_read_value_proto(void);
 
 typedef unsigned long (*bpf_ctx_copy_t)(void *dst, const void *src,
 					unsigned long off, unsigned long len);

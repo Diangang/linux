@@ -81,7 +81,6 @@
 #include <linux/tty.h>
 #include <linux/fs_struct.h>
 #include <linux/magic.h>
-#include <linux/perf_event.h>
 #include <linux/posix-timers.h>
 #include <linux/user-return-notifier.h>
 #include <linux/oom.h>
@@ -2180,12 +2179,9 @@ __latent_entropy struct task_struct *copy_process(
 	if (retval)
 		goto bad_fork_cleanup_policy;
 
-	retval = perf_event_init_task(p, clone_flags);
-	if (retval)
-		goto bad_fork_sched_cancel_fork;
 	retval = audit_alloc(p);
 	if (retval)
-		goto bad_fork_cleanup_perf;
+		goto bad_fork_sched_cancel_fork;
 	/* copy all the process information */
 	shm_init_task(p);
 	retval = security_task_alloc(p, clone_flags);
@@ -2465,7 +2461,6 @@ __latent_entropy struct task_struct *copy_process(
 	 */
 	cgroup_post_fork(p, args);
 	sched_post_fork(p);
-	perf_event_fork(p);
 
 	uprobe_copy_process(p, clone_flags);
 	user_events_fork(p, clone_flags);
@@ -2515,8 +2510,6 @@ bad_fork_cleanup_security:
 	security_task_free(p);
 bad_fork_cleanup_audit:
 	audit_free(p);
-bad_fork_cleanup_perf:
-	perf_event_free_task(p);
 bad_fork_sched_cancel_fork:
 	sched_cancel_fork(p);
 bad_fork_cleanup_policy:
@@ -3232,8 +3225,6 @@ int ksys_unshare(unsigned long unshare_flags)
 			new_cred = NULL;
 		}
 	}
-
-	perf_event_namespaces(current);
 
 bad_unshare_cleanup_nsproxy:
 	if (new_nsproxy)

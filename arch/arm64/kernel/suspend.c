@@ -25,26 +25,8 @@
  */
 unsigned long *sleep_save_stash;
 
-/*
- * This hook is provided so that cpu_suspend code can restore HW
- * breakpoints as early as possible in the resume path, before reenabling
- * debug exceptions. Code cannot be run from a CPU PM notifier since by the
- * time the notifier runs debug exceptions might have been enabled already,
- * with HW breakpoints registers content still in an unknown state.
- */
-static int (*hw_breakpoint_restore)(unsigned int);
-void __init cpu_suspend_set_dbg_restorer(int (*hw_bp_restore)(unsigned int))
-{
-	/* Prevent multiple restore hook initializations */
-	if (WARN_ON(hw_breakpoint_restore))
-		return;
-	hw_breakpoint_restore = hw_bp_restore;
-}
-
 void notrace __cpu_suspend_exit(void)
 {
-	unsigned int cpu = smp_processor_id();
-
 	mte_suspend_exit();
 
 	/*
@@ -65,14 +47,6 @@ void notrace __cpu_suspend_exit(void)
 	if (alternative_has_cap_unlikely(ARM64_HAS_DIT))
 		set_pstate_dit(1);
 	__uaccess_enable_hw_pan();
-
-	/*
-	 * Restore HW breakpoint registers to sane values
-	 * before debug exceptions are possibly reenabled
-	 * by cpu_suspend()s local_daif_restore() call.
-	 */
-	if (hw_breakpoint_restore)
-		hw_breakpoint_restore(cpu);
 
 	/*
 	 * On resume, firmware implementing dynamic mitigation will

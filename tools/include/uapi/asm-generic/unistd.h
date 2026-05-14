@@ -611,8 +611,6 @@ __SYSCALL(__NR_move_pages, sys_move_pages)
 #define __NR_rt_tgsigqueueinfo 240
 __SC_COMP(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo, \
 	  compat_sys_rt_tgsigqueueinfo)
-#define __NR_perf_event_open 241
-__SYSCALL(__NR_perf_event_open, sys_perf_event_open)
 #define __NR_accept4 242
 __SYSCALL(__NR_accept4, sys_accept4)
 

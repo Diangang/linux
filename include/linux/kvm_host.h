@@ -1768,7 +1768,7 @@ void kvm_unregister_perf_callbacks(void);
 #else
 static inline void kvm_register_perf_callbacks(void) {}
 static inline void kvm_unregister_perf_callbacks(void) {}
-#endif /* CONFIG_GUEST_PERF_EVENTS */
+#endif
 
 int kvm_arch_init_vm(struct kvm *kvm, unsigned long type);
 void kvm_arch_destroy_vm(struct kvm *kvm);

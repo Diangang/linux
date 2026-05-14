@@ -50,7 +50,6 @@ bool cgroup1_ssid_disabled(int ssid)
 
 static bool cgroup1_subsys_absent(struct cgroup_subsys *ss)
 {
-	/* Check also dfl_cftypes for file-less controllers, i.e. perf_event */
 	return ss->legacy_cftypes == NULL && ss->dfl_cftypes;
 }
 

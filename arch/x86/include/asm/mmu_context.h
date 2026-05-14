@@ -14,11 +14,6 @@
 
 extern atomic64_t last_mm_ctx_id;
 
-#ifdef CONFIG_PERF_EVENTS
-DECLARE_STATIC_KEY_FALSE(rdpmc_never_available_key);
-DECLARE_STATIC_KEY_FALSE(rdpmc_always_available_key);
-void cr4_update_pce(void *ignored);
-#endif
 
 #ifdef CONFIG_MODIFY_LDT_SYSCALL
 /*

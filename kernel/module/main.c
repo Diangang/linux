@@ -18,11 +18,13 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/kernel_read_file.h>
+#include <linux/kthread.h>
 #include <linux/kstrtox.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/elf.h>
 #include <linux/seq_file.h>
+#include <linux/security.h>
 #include <linux/syscalls.h>
 #include <linux/fcntl.h>
 #include <linux/rcupdate.h>

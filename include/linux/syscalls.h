@@ -60,7 +60,6 @@ struct old_timeval32;
 struct robust_list_head;
 struct futex_waitv;
 struct old_linux_dirent;
-struct perf_event_attr;
 struct file_handle;
 struct sigaltstack;
 struct rseq;
@@ -864,9 +863,6 @@ asmlinkage long sys_move_pages(pid_t pid, unsigned long nr_pages,
 				int flags);
 asmlinkage long sys_rt_tgsigqueueinfo(pid_t tgid, pid_t  pid, int sig,
 		siginfo_t __user *uinfo);
-asmlinkage long sys_perf_event_open(
-		struct perf_event_attr __user *attr_uptr,
-		pid_t pid, int cpu, int group_fd, unsigned long flags);
 asmlinkage long sys_accept4(int, struct sockaddr __user *, int __user *, int);
 asmlinkage long sys_recvmmsg(int fd, struct mmsghdr __user *msg,
 			     unsigned int vlen, unsigned flags,

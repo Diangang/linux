@@ -135,14 +135,7 @@
 
 .macro __init_el2_debug
 	mrs	x1, id_aa64dfr0_el1
-	ubfx	x0, x1, #ID_AA64DFR0_EL1_PMUVer_SHIFT, #4
-	cmp	x0, #ID_AA64DFR0_EL1_PMUVer_NI
-	ccmp	x0, #ID_AA64DFR0_EL1_PMUVer_IMP_DEF, #4, ne
-	b.eq	.Lskip_pmu_\@			// Skip if no PMU present or IMP_DEF
-	mrs	x0, pmcr_el0			// Disable debug access traps
-	ubfx	x0, x0, #11, #5			// to EL2 and allow access to
-.Lskip_pmu_\@:
-	csel	x2, xzr, x0, eq			// all PMU counters from EL1
+	mov	x2, xzr
 
 	/* Statistical profiling */
 	__spe_vers_imp .Lskip_spe_\@, ID_AA64DFR0_EL1_PMSVer_IMP, x0 // Skip if SPE not present
@@ -418,15 +411,6 @@
 	b.lt	.Lskip_fgt2_\@
 
 	mov	x0, xzr
-	mrs	x1, id_aa64dfr0_el1
-	ubfx	x1, x1, #ID_AA64DFR0_EL1_PMUVer_SHIFT, #4
-	cmp	x1, #ID_AA64DFR0_EL1_PMUVer_V3P9
-	b.lt	.Lskip_pmuv3p9_\@
-
-	orr	x0, x0, #HDFGRTR2_EL2_nPMICNTR_EL0
-	orr	x0, x0, #HDFGRTR2_EL2_nPMICFILTR_EL0
-	orr	x0, x0, #HDFGRTR2_EL2_nPMUACR_EL1
-.Lskip_pmuv3p9_\@:
 	/* If SPE is implemented, */
 	__spe_vers_imp .Lskip_spefds_\@, ID_AA64DFR0_EL1_PMSVer_IMP, x1
 	/* we can read PMSIDR and */

@@ -21,7 +21,6 @@
 #include <asm/cacheflush.h>
 #include <asm/apic.h>
 #include <asm/msr.h>
-#include <asm/perf_event.h>
 #include <asm/tlb.h>
 
 #include "mm_internal.h"
@@ -749,30 +748,7 @@ static void cond_mitigation(struct task_struct *next)
 	this_cpu_write(cpu_tlbstate.last_user_mm_spec, next_mm);
 }
 
-#ifdef CONFIG_PERF_EVENTS
-static inline void cr4_update_pce_mm(struct mm_struct *mm)
-{
-	if (static_branch_unlikely(&rdpmc_always_available_key) ||
-	    (!static_branch_unlikely(&rdpmc_never_available_key) &&
-	     atomic_read(&mm->context.perf_rdpmc_allowed))) {
-		/*
-		 * Clear the existing dirty counters to
-		 * prevent the leak for an RDPMC task.
-		 */
-		perf_clear_dirty_counters();
-		cr4_set_bits_irqsoff(X86_CR4_PCE);
-	} else
-		cr4_clear_bits_irqsoff(X86_CR4_PCE);
-}
-
-void cr4_update_pce(void *ignored)
-{
-	cr4_update_pce_mm(this_cpu_read(cpu_tlbstate.loaded_mm));
-}
-
-#else
 static inline void cr4_update_pce_mm(struct mm_struct *mm) { }
-#endif
 
 /*
  * This optimizes when not actually switching mm's.  Some architectures use the
@@ -988,18 +964,16 @@ struct mm_struct *use_temporary_mm(struct mm_struct *temp_mm)
 	switch_mm_irqs_off(NULL, temp_mm, current);
 
 	/*
-	 * If breakpoints are enabled, disable them while the temporary mm is
+	 * If debug registers are enabled, disable them while the temporary mm is
 	 * used. Userspace might set up watchpoints on addresses that are used
 	 * in the temporary mm, which would lead to wrong signals being sent or
 	 * crashes.
 	 *
-	 * Note that breakpoints are not disabled selectively, which also causes
-	 * kernel breakpoints (e.g., perf's) to be disabled. This might be
-	 * undesirable, but still seems reasonable as the code that runs in the
-	 * temporary mm should be short.
+	 * Note that debug registers are not disabled selectively. This is
+	 * reasonable as the code that runs in the temporary mm should be short.
 	 */
-	if (hw_breakpoint_active())
-		hw_breakpoint_disable();
+	if (debugreg_breakpoints_active())
+		debugreg_breakpoints_disable();
 
 	return prev_mm;
 }
@@ -1015,11 +989,11 @@ void unuse_temporary_mm(struct mm_struct *prev_mm)
 	switch_mm_irqs_off(NULL, prev_mm, current);
 
 	/*
-	 * Restore the breakpoints if they were disabled before the temporary mm
+	 * Restore DR7 if it was disabled before the temporary mm
 	 * was loaded.
 	 */
-	if (hw_breakpoint_active())
-		hw_breakpoint_restore();
+	if (debugreg_breakpoints_active())
+		set_debugreg(this_cpu_read(cpu_dr7), 7);
 }
 
 /*

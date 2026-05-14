@@ -117,9 +117,9 @@ DEFINE_PERCPU_RWSEM(cgroup_threadgroup_rwsem);
  * Example deadlock scenario with single workqueue (cgroup_destroy_wq):
  * 1. umount net_prio
  * 2. net_prio root destruction enqueues work to cgroup_destroy_wq (CPUx)
- * 3. perf_event CSS A offline enqueues work to same cgroup_destroy_wq (CPUx)
+ * 3. another CSS offline enqueues work to same cgroup_destroy_wq (CPUx)
  * 4. net_prio cgroup_destroy_root->cgroup_lock_and_drain_offline.
- * 5. net_prio root destruction blocks waiting for perf_event CSS A offline,
+ * 5. net_prio root destruction blocks waiting for that CSS offline,
  *    which can never complete as it's behind in the same queue and
  *    workqueue's max_active is 1.
  */

@@ -6,6 +6,7 @@
 #include <linux/types.h>
 
 #include <asm/cmpxchg.h>
+#include <asm/compat.h>
 #include <asm/cpufeature.h>
 #include <asm/gcs.h>
 #include <asm/page.h>

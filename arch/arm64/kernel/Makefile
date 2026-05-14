@@ -33,8 +33,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 			   rsi.o jump_label.o
 
 obj-$(CONFIG_MODULES)			+= module.o module-plts.o
-obj-$(CONFIG_PERF_EVENTS)		+= perf_regs.o perf_callchain.o
-obj-$(CONFIG_HAVE_HW_BREAKPOINT)	+= hw_breakpoint.o
 obj-$(CONFIG_HAVE_STATIC_CALL)		+= static_call.o
 obj-$(CONFIG_CPU_PM)			+= sleep.o suspend.o
 obj-$(CONFIG_PCI)			+= pci.o

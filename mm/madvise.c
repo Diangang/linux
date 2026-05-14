@@ -18,6 +18,7 @@
 #include <linux/fadvise.h>
 #include <linux/sched.h>
 #include <linux/sched/mm.h>
+#include <linux/ptrace.h>
 #include <linux/mm_inline.h>
 #include <linux/mmu_context.h>
 #include <linux/string.h>
@@ -2107,4 +2108,3 @@ free_iov:
 out:
 	return ret;
 }
-

@@ -53,6 +53,7 @@
 #include <linux/syscalls.h>
 #include <linux/namei.h>
 #include <linux/sched/cputime.h>
+#include <linux/file.h>
 
 #include <asm/div64.h>
 #include <linux/pid_namespace.h>

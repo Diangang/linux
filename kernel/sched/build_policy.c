@@ -27,6 +27,7 @@
 #include <linux/pm.h>
 #include <linux/psi.h>
 #include <linux/rhashtable.h>
+#include <linux/security.h>
 #include <linux/seq_buf.h>
 #include <linux/seqlock_api.h>
 #include <linux/slab.h>

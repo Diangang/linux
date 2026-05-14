@@ -538,17 +538,6 @@ config CGROUP_CPUACCT
 	  Provides a simple controller for monitoring the
 	  total CPU consumed by the tasks in a cgroup.
 
-config CGROUP_PERF
-	bool "Perf controller"
-	depends on PERF_EVENTS
-	help
-	  This option extends the perf per-cpu mode to restrict monitoring
-	  to threads which belong to the cgroup specified and run on the
-	  designated cpu.  Or this can be used to have cgroup ID in samples
-	  so that it can monitor performance events among cgroups.
-
-	  Say N if unsure.
-
 endif # CGROUPS
 
 menuconfig NAMESPACES
@@ -931,43 +920,6 @@ config ARCH_SUPPORTS_MSEAL_SYSTEM_MAPPINGS
 
 	  For complete descriptions of memory sealing, please see
 	  Documentation/userspace-api/mseal.rst
-
-config HAVE_PERF_EVENTS
-	bool
-	help
-	  See tools/perf/design.txt for details.
-
-menu "Kernel Performance Events And Counters"
-
-config PERF_EVENTS
-	bool "Kernel performance events and counters"
-	default y if PROFILING
-	depends on HAVE_PERF_EVENTS
-	select IRQ_WORK
-	help
-	  Enable kernel support for various performance events provided
-	  by software and hardware.
-
-	  Software events are supported either built-in or via the
-	  use of generic tracepoints.
-
-	  Most modern CPUs support performance events via performance
-	  counter registers. These registers count the number of certain
-	  types of hw events: such as instructions executed, cachemisses
-	  suffered, or branches mis-predicted - without slowing down the
-	  kernel or applications. These registers can also trigger interrupts
-	  when a threshold number of events have passed - and can thus be
-	  used to profile the code that runs on that CPU.
-
-	  The Linux Performance Event subsystem provides an abstraction of
-	  these software and hardware event capabilities, available via a
-	  system call and used by the "perf" utility in tools/perf/. It
-	  provides per task and per CPU counters, and it provides event
-	  capabilities on top of those.
-
-	  Say Y if unsure.
-
-endmenu
 
 config PROFILING
 	bool "Profiling support"

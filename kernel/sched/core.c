@@ -33,6 +33,7 @@
 #include <linux/sched/debug.h>
 #include <linux/sched/hotplug.h>
 #include <linux/sched/init.h>
+#include <linux/sched/task_stack.h>
 #include <linux/sched/isolation.h>
 #include <linux/sched/loadavg.h>
 #include <linux/sched/mm.h>
@@ -56,7 +57,6 @@
 #include <linux/mutex_api.h>
 #include <linux/nmi.h>
 #include <linux/nospec.h>
-#include <linux/perf_event_api.h>
 #include <linux/profile.h>
 #include <linux/psi.h>
 #include <linux/rcuwait_api.h>
@@ -2235,7 +2235,6 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
 		if (p->sched_class->migrate_task_rq)
 			p->sched_class->migrate_task_rq(p, new_cpu);
 		p->se.nr_migrations++;
-		perf_event_task_migrate(p);
 	}
 
 	__set_task_cpu(p, new_cpu);
@@ -3859,7 +3858,6 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
 {
 	kcov_prepare_switch(prev);
 	sched_info_switch(rq, prev, next);
-	perf_event_task_sched_out(prev, next);
 	fire_sched_out_preempt_notifiers(prev, next);
 	kmap_local_sched_out();
 	prepare_task(next);
@@ -3923,7 +3921,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	 */
 	prev_state = READ_ONCE(prev->__state);
 	vtime_task_switch(prev);
-	perf_event_task_sched_in(prev, current);
 	finish_task(prev);
 	tick_nohz_task_switch();
 	finish_lock_switch(rq);
@@ -4356,8 +4353,6 @@ void sched_tick(void)
 
 	if (sched_feat(LATENCY_WARN) && resched_latency)
 		resched_latency_warn(cpu, resched_latency);
-
-	perf_event_task_tick();
 
 	if (donor->flags & PF_WQ_WORKER)
 		wq_worker_tick(donor);
