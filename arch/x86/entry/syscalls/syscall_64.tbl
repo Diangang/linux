@@ -184,8 +184,6 @@
 172	common	iopl			sys_iopl
 173	common	ioperm			sys_ioperm
 174	64	create_module
-175	common	init_module		sys_init_module
-176	common	delete_module		sys_delete_module
 177	64	get_kernel_syms
 178	64	query_module
 179	common	quotactl		sys_quotactl
@@ -321,7 +319,6 @@
 310	64	process_vm_readv	sys_process_vm_readv
 311	64	process_vm_writev	sys_process_vm_writev
 312	common	kcmp			sys_kcmp
-313	common	finit_module		sys_finit_module
 314	common	sched_setattr		sys_sched_setattr
 315	common	sched_getattr		sys_sched_getattr
 316	common	renameat2		sys_renameat2

@@ -937,8 +937,6 @@ config RT_MUTEXES
 	bool
 	default y if n
 
-source "kernel/module/Kconfig"
-
 source "block/Kconfig"
 
 source "kernel/Kconfig.locks"

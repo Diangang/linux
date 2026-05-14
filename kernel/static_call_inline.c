@@ -161,28 +161,12 @@ void __static_call_update(struct static_call_key *key, void *tramp, void *func)
 
 	for (site_mod = &first; site_mod; site_mod = site_mod->next) {
 		bool init = system_state < SYSTEM_RUNNING;
-		struct module *mod = site_mod->mod;
 
 		if (!site_mod->sites) {
-			/*
-			 * This can happen if the static call key is defined in
-			 * a module which doesn't use it.
-			 *
-			 * It also happens in the has_mods case, where the
-			 * 'first' entry has no sites associated with it.
-			 */
 			continue;
 		}
 
 		stop = __stop_static_call_sites;
-
-		if (mod) {
-#ifdef CONFIG_MODULES
-			stop = mod->static_call_sites +
-			       mod->num_static_call_sites;
-			init = mod->state == MODULE_STATE_COMING;
-#endif
-		}
 
 		for (site = site_mod->sites;
 		     site < stop && static_call_key(site) == key; site++) {
@@ -318,167 +302,10 @@ static int __static_call_text_reserved(struct static_call_site *iter_start,
 	return 0;
 }
 
-#ifdef CONFIG_MODULES
-
-static int __static_call_mod_text_reserved(void *start, void *end)
-{
-	struct module *mod;
-	int ret;
-
-	scoped_guard(rcu) {
-		mod = __module_text_address((unsigned long)start);
-		WARN_ON_ONCE(__module_text_address((unsigned long)end) != mod);
-		if (!try_module_get(mod))
-			mod = NULL;
-	}
-	if (!mod)
-		return 0;
-
-	ret = __static_call_text_reserved(mod->static_call_sites,
-			mod->static_call_sites + mod->num_static_call_sites,
-			start, end, mod->state == MODULE_STATE_COMING);
-
-	module_put(mod);
-
-	return ret;
-}
-
-static unsigned long tramp_key_lookup(unsigned long addr)
-{
-	struct static_call_tramp_key *start = __start_static_call_tramp_key;
-	struct static_call_tramp_key *stop = __stop_static_call_tramp_key;
-	struct static_call_tramp_key *tramp_key;
-
-	for (tramp_key = start; tramp_key != stop; tramp_key++) {
-		unsigned long tramp;
-
-		tramp = (long)tramp_key->tramp + (long)&tramp_key->tramp;
-		if (tramp == addr)
-			return (long)tramp_key->key + (long)&tramp_key->key;
-	}
-
-	return 0;
-}
-
-static int static_call_add_module(struct module *mod)
-{
-	struct static_call_site *start = mod->static_call_sites;
-	struct static_call_site *stop = start + mod->num_static_call_sites;
-	struct static_call_site *site;
-
-	for (site = start; site != stop; site++) {
-		unsigned long s_key = __static_call_key(site);
-		unsigned long addr = s_key & ~STATIC_CALL_SITE_FLAGS;
-		unsigned long key;
-
-		/*
-		 * Is the key is exported, 'addr' points to the key, which
-		 * means modules are allowed to call static_call_update() on
-		 * it.
-		 *
-		 * Otherwise, the key isn't exported, and 'addr' points to the
-		 * trampoline so we need to lookup the key.
-		 *
-		 * We go through this dance to prevent crazy modules from
-		 * abusing sensitive static calls.
-		 */
-		if (!kernel_text_address(addr))
-			continue;
-
-		key = tramp_key_lookup(addr);
-		if (!key) {
-			pr_warn("Failed to fixup __raw_static_call() usage at: %ps\n",
-				static_call_addr(site));
-			return -EINVAL;
-		}
-
-		key |= s_key & STATIC_CALL_SITE_FLAGS;
-		site->key = key - (long)&site->key;
-	}
-
-	return __static_call_init(mod, start, stop);
-}
-
-static void static_call_del_module(struct module *mod)
-{
-	struct static_call_site *start = mod->static_call_sites;
-	struct static_call_site *stop = mod->static_call_sites +
-					mod->num_static_call_sites;
-	struct static_call_key *key, *prev_key = NULL;
-	struct static_call_mod *site_mod, **prev;
-	struct static_call_site *site;
-
-	for (site = start; site < stop; site++) {
-		key = static_call_key(site);
-
-		/*
-		 * If the key was not updated due to a memory allocation
-		 * failure in __static_call_init() then treating key::sites
-		 * as key::mods in the code below would cause random memory
-		 * access and #GP. In that case all subsequent sites have
-		 * not been touched either, so stop iterating.
-		 */
-		if (!static_call_key_has_mods(key))
-			break;
-
-		if (key == prev_key)
-			continue;
-
-		prev_key = key;
-
-		for (prev = &key->mods, site_mod = key->mods;
-		     site_mod && site_mod->mod != mod;
-		     prev = &site_mod->next, site_mod = site_mod->next)
-			;
-
-		if (!site_mod)
-			continue;
-
-		*prev = site_mod->next;
-		kfree(site_mod);
-	}
-}
-
-static int static_call_module_notify(struct notifier_block *nb,
-				     unsigned long val, void *data)
-{
-	struct module *mod = data;
-	int ret = 0;
-
-	cpus_read_lock();
-	static_call_lock();
-
-	switch (val) {
-	case MODULE_STATE_COMING:
-		ret = static_call_add_module(mod);
-		if (ret) {
-			pr_warn("Failed to allocate memory for static calls\n");
-			static_call_del_module(mod);
-		}
-		break;
-	case MODULE_STATE_GOING:
-		static_call_del_module(mod);
-		break;
-	}
-
-	static_call_unlock();
-	cpus_read_unlock();
-
-	return notifier_from_errno(ret);
-}
-
-static struct notifier_block static_call_module_nb = {
-	.notifier_call = static_call_module_notify,
-};
-
-#else
-
 static inline int __static_call_mod_text_reserved(void *start, void *end)
 {
 	return 0;
 }
-
-#endif /* CONFIG_MODULES */
 
 int static_call_text_reserved(void *start, void *end)
 {
@@ -511,11 +338,6 @@ int __init static_call_init(void)
 		pr_err("Failed to allocate memory for static_call!\n");
 		BUG();
 	}
-
-#ifdef CONFIG_MODULES
-	if (!static_call_initialized)
-		register_module_notifier(&static_call_module_nb);
-#endif
 
 	static_call_initialized = 1;
 	return 0;

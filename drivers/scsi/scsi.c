@@ -22,11 +22,6 @@
  *  Native multichannel, wide scsi, /proc/scsi and hot plugging
  *  support added by Michael Neuffer <mike@i-connect.net>
  *
- *  Added request_module("scsi_hostadapter") for kerneld:
- *  (Put an "alias scsi_hostadapter your_hostadapter" in /etc/modprobe.conf)
- *  Bjorn Ekwall  <bj0rn@blox.se>
- *  (changed to kmod)
- *
  *  Major improvements to the timeout, abort, and reset processing,
  *  as well as performance modifications for large queue depths by
  *  Leonard N. Zubkoff <lnz@dandelion.com>
@@ -50,7 +45,6 @@
 #include <linux/completion.h>
 #include <linux/unistd.h>
 #include <linux/spinlock.h>
-#include <linux/kmod.h>
 #include <linux/interrupt.h>
 #include <linux/notifier.h>
 #include <linux/cpu.h>

@@ -473,14 +473,10 @@ static int __init module_init_limits(void)
 		u64 min = kernel_start;
 		u64 max = kernel_end;
 
-		if (IS_ENABLED(CONFIG_RANDOMIZE_MODULE_REGION_FULL)) {
-			pr_info("2G module region forced by RANDOMIZE_MODULE_REGION_FULL\n");
-		} else {
-			module_direct_base = random_bounding_box(SZ_128M, min, max);
-			if (module_direct_base) {
-				min = module_direct_base;
-				max = module_direct_base + SZ_128M;
-			}
+		module_direct_base = random_bounding_box(SZ_128M, min, max);
+		if (module_direct_base) {
+			min = module_direct_base;
+			max = module_direct_base + SZ_128M;
 		}
 
 		module_plt_base = random_bounding_box(SZ_2G, min, max);

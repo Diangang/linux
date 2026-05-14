@@ -771,14 +771,6 @@ void elevator_set_none(struct request_queue *q)
 
 static void elv_iosched_load_module(const char *elevator_name)
 {
-	struct elevator_type *found;
-
-	spin_lock(&elv_list_lock);
-	found = __elevator_find(elevator_name);
-	spin_unlock(&elv_list_lock);
-
-	if (!found)
-		request_module("%s-iosched", elevator_name);
 }
 
 ssize_t elv_iosched_store(struct gendisk *disk, const char *buf,

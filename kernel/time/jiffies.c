@@ -8,6 +8,7 @@
 #include <linux/jiffies.h>
 #include <linux/module.h>
 #include <linux/init.h>
+#include <linux/sysctl.h>
 
 #include "timekeeping.h"
 #include "tick-internal.h"
@@ -314,4 +315,3 @@ int proc_doulongvec_ms_jiffies_minmax(const struct ctl_table *table, int dir,
 					   HZ, 1000l);
 }
 EXPORT_SYMBOL(proc_doulongvec_ms_jiffies_minmax);
-

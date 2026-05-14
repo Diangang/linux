@@ -116,9 +116,11 @@ static bool cfi_paranoid __ro_after_init;
 
 #ifdef CONFIG_MITIGATION_ITS
 
-#ifdef CONFIG_MODULES
-static struct module *its_mod;
-#endif
+struct its_array {
+	void **pages;
+	int num;
+};
+
 static void *its_page;
 static unsigned int its_offset;
 struct its_array its_pages;
@@ -189,54 +191,10 @@ static void its_fini_core(void)
 	kfree(its_pages.pages);
 }
 
-#ifdef CONFIG_MODULES
-void its_init_mod(struct module *mod)
-{
-	if (!cpu_feature_enabled(X86_FEATURE_INDIRECT_THUNK_ITS))
-		return;
-
-	mutex_lock(&text_mutex);
-	its_mod = mod;
-	its_page = NULL;
-}
-
-void its_fini_mod(struct module *mod)
-{
-	if (!cpu_feature_enabled(X86_FEATURE_INDIRECT_THUNK_ITS))
-		return;
-
-	WARN_ON_ONCE(its_mod != mod);
-
-	its_mod = NULL;
-	its_page = NULL;
-	mutex_unlock(&text_mutex);
-
-	if (IS_ENABLED(CONFIG_STRICT_MODULE_RWX))
-		its_pages_protect(&mod->arch.its_pages);
-}
-
-void its_free_mod(struct module *mod)
-{
-	if (!cpu_feature_enabled(X86_FEATURE_INDIRECT_THUNK_ITS))
-		return;
-
-	for (int i = 0; i < mod->arch.its_pages.num; i++) {
-		void *page = mod->arch.its_pages.pages[i];
-		execmem_free(page);
-	}
-	kfree(mod->arch.its_pages.pages);
-}
-#endif /* CONFIG_MODULES */
-
 static void *its_alloc(void)
 {
 	struct its_array *pages = &its_pages;
 	void *page;
-
-#ifdef CONFIG_MODULES
-	if (its_mod)
-		pages = &its_mod->arch.its_pages;
-#endif
 
 	page = __its_alloc(pages);
 	if (!page)
@@ -2147,8 +2105,6 @@ static void alternatives_smp_unlock(const s32 *start, const s32 *end,
 }
 
 struct smp_alt_module {
-	/* what is this ??? */
-	struct module	*mod;
 	char		*name;
 
 	/* ptrs to lock prefixes */
@@ -2164,10 +2120,8 @@ struct smp_alt_module {
 static LIST_HEAD(smp_alt_modules);
 static bool uniproc_patched = false;	/* protected by text_mutex */
 
-void __init_or_module alternatives_smp_module_add(struct module *mod,
-						  char *name,
-						  void *locks, void *locks_end,
-						  void *text,  void *text_end)
+void __init alternatives_smp_module_add(char *name, void *locks, void *locks_end,
+					void *text, void *text_end)
 {
 	struct smp_alt_module *smp;
 
@@ -2184,7 +2138,6 @@ void __init_or_module alternatives_smp_module_add(struct module *mod,
 		/* we'll run the (safe but slow) SMP code then ... */
 		goto unlock;
 
-	smp->mod	= mod;
 	smp->name	= name;
 	smp->locks	= locks;
 	smp->locks_end	= locks_end;
@@ -2198,21 +2151,6 @@ void __init_or_module alternatives_smp_module_add(struct module *mod,
 smp_unlock:
 	alternatives_smp_unlock(locks, locks_end, text, text_end);
 unlock:
-	mutex_unlock(&text_mutex);
-}
-
-void __init_or_module alternatives_smp_module_del(struct module *mod)
-{
-	struct smp_alt_module *item;
-
-	mutex_lock(&text_mutex);
-	list_for_each_entry(item, &smp_alt_modules, next) {
-		if (mod != item->mod)
-			continue;
-		list_del(&item->next);
-		kfree(item);
-		break;
-	}
 	mutex_unlock(&text_mutex);
 }
 
@@ -2448,9 +2386,8 @@ void __init alternative_instructions(void)
 	/* Patch to UP if other cpus not imminent. */
 	if (!noreplace_smp && (num_present_cpus() == 1 || setup_max_cpus <= 1)) {
 		uniproc_patched = true;
-		alternatives_smp_module_add(NULL, "core kernel",
-					    __smp_locks, __smp_locks_end,
-					    _text, _etext);
+		alternatives_smp_module_add("core kernel", __smp_locks,
+					    __smp_locks_end, _text, _etext);
 	}
 #endif
 

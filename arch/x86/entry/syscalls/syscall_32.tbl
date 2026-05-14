@@ -140,8 +140,6 @@
 125	i386	mprotect		sys_mprotect
 126	i386	sigprocmask		sys_sigprocmask			compat_sys_sigprocmask
 127	i386	create_module
-128	i386	init_module		sys_init_module
-129	i386	delete_module		sys_delete_module
 130	i386	get_kernel_syms
 131	i386	quotactl		sys_quotactl
 132	i386	getpgid			sys_getpgid
@@ -361,7 +359,6 @@
 347	i386	process_vm_readv	sys_process_vm_readv
 348	i386	process_vm_writev	sys_process_vm_writev
 349	i386	kcmp			sys_kcmp
-350	i386	finit_module		sys_finit_module
 351	i386	sched_setattr		sys_sched_setattr
 352	i386	sched_getattr		sys_sched_getattr
 353	i386	renameat2		sys_renameat2

@@ -11,11 +11,11 @@
 #include <linux/init.h>
 #include <linux/cpu.h>
 #include <linux/elf.h>
+#include <linux/string.h>
 #include <asm/cacheflush.h>
 #include <asm/alternative.h>
 #include <asm/cpufeature.h>
 #include <asm/insn.h>
-#include <asm/module.h>
 #include <asm/sections.h>
 #include <asm/vdso.h>
 #include <linux/stop_machine.h>
@@ -36,6 +36,21 @@ struct alt_region {
 	struct alt_instr *begin;
 	struct alt_instr *end;
 };
+
+static const struct elf64_shdr *find_section(const struct elf64_hdr *hdr,
+					     const struct elf64_shdr *sechdrs,
+					     const char *name)
+{
+	const struct elf64_shdr *s, *se;
+	const char *secstrs = (void *)hdr + sechdrs[hdr->e_shstrndx].sh_offset;
+
+	for (s = sechdrs, se = sechdrs + hdr->e_shnum; s < se; s++) {
+		if (!strcmp(name, secstrs + s->sh_name))
+			return s;
+	}
+
+	return NULL;
+}
 
 bool alternative_is_applied(u16 cpucap)
 {
@@ -139,7 +154,6 @@ static noinstr void clean_dcache_range_nopatch(u64 start, u64 end)
 }
 
 static int __apply_alternatives(const struct alt_region *region,
-				bool is_module,
 				unsigned long *cpucap_mask)
 {
 	struct alt_instr *alt;
@@ -162,39 +176,29 @@ static int __apply_alternatives(const struct alt_region *region,
 			BUG_ON(alt->alt_len != alt->orig_len);
 
 		origptr = ALT_ORIG_PTR(alt);
-		updptr = is_module ? origptr : lm_alias(origptr);
+		updptr = lm_alias(origptr);
 		nr_inst = alt->orig_len / AARCH64_INSN_SIZE;
 
 		if (ALT_HAS_CB(alt)) {
 			alt_cb  = ALT_REPL_PTR(alt);
-			if (is_module && !core_kernel_text((unsigned long)alt_cb))
-				return -ENOEXEC;
 		} else {
 			alt_cb = patch_alternative;
 		}
 
 		alt_cb(alt, origptr, updptr, nr_inst);
 
-		if (!is_module) {
-			clean_dcache_range_nopatch((u64)origptr,
-						   (u64)(origptr + nr_inst));
-		}
+		clean_dcache_range_nopatch((u64)origptr,
+					   (u64)(origptr + nr_inst));
 	}
 
-	/*
-	 * The core module code takes care of cache maintenance in
-	 * flush_module_icache().
-	 */
-	if (!is_module) {
-		dsb(ish);
-		icache_inval_all_pou();
-		isb();
+	dsb(ish);
+	icache_inval_all_pou();
+	isb();
 
-		bitmap_or(applied_alternatives, applied_alternatives,
-			  cpucap_mask, ARM64_NCAPS);
-		bitmap_and(applied_alternatives, applied_alternatives,
-			   system_cpucaps, ARM64_NCAPS);
-	}
+	bitmap_or(applied_alternatives, applied_alternatives,
+		  cpucap_mask, ARM64_NCAPS);
+	bitmap_and(applied_alternatives, applied_alternatives,
+		   system_cpucaps, ARM64_NCAPS);
 
 	return 0;
 }
@@ -220,7 +224,7 @@ static void __init apply_alternatives_vdso(void)
 		.end	= (void *)hdr + alt->sh_offset + alt->sh_size,
 	};
 
-	__apply_alternatives(&region, false, &all_capabilities[0]);
+	__apply_alternatives(&region, &all_capabilities[0]);
 }
 
 static const struct alt_region kernel_alternatives __initconst = {
@@ -246,8 +250,7 @@ static int __init __apply_alternatives_multi_stop(void *unused)
 				  ARM64_NCAPS);
 
 		BUG_ON(all_alternatives_applied);
-		__apply_alternatives(&kernel_alternatives, false,
-				     remaining_capabilities);
+		__apply_alternatives(&kernel_alternatives, remaining_capabilities);
 		/* Barriers provided by the cache flushing */
 		all_alternatives_applied = 1;
 	}
@@ -276,24 +279,8 @@ void __init apply_boot_alternatives(void)
 
 	pr_info("applying boot alternatives\n");
 
-	__apply_alternatives(&kernel_alternatives, false,
-			     &boot_cpucaps[0]);
+	__apply_alternatives(&kernel_alternatives, &boot_cpucaps[0]);
 }
-
-#ifdef CONFIG_MODULES
-int apply_alternatives_module(void *start, size_t length)
-{
-	struct alt_region region = {
-		.begin	= start,
-		.end	= start + length,
-	};
-	DECLARE_BITMAP(all_capabilities, ARM64_NCAPS);
-
-	bitmap_fill(all_capabilities, ARM64_NCAPS);
-
-	return __apply_alternatives(&region, true, &all_capabilities[0]);
-}
-#endif
 
 noinstr void alt_cb_patch_nops(struct alt_instr *alt, __le32 *origptr,
 			       __le32 *updptr, int nr_inst)

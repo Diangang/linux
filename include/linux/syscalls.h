@@ -601,10 +601,6 @@ asmlinkage long sys_setitimer(int which,
 asmlinkage long sys_kexec_load(unsigned long entry, unsigned long nr_segments,
 				struct kexec_segment __user *segments,
 				unsigned long flags);
-asmlinkage long sys_init_module(void __user *umod, unsigned long len,
-				const char __user *uargs);
-asmlinkage long sys_delete_module(const char __user *name_user,
-				unsigned int flags);
 asmlinkage long sys_timer_create(clockid_t which_clock,
 				 struct sigevent __user *timer_event_spec,
 				 timer_t __user * created_timer_id);
@@ -908,7 +904,6 @@ asmlinkage long sys_process_vm_writev(pid_t pid,
 				      unsigned long flags);
 asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
 			 unsigned long idx1, unsigned long idx2);
-asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
 asmlinkage long sys_sched_setattr(pid_t pid,
 					struct sched_attr __user *attr,
 					unsigned int flags);

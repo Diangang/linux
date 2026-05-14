@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/types.h>
 #include <linux/errno.h>
-#include <linux/kmod.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <linux/tty.h>
@@ -123,14 +122,11 @@ int tty_ldisc_autoload;
  * @tty: tty device
  * @disc: ldisc number
  *
- * Takes a reference to a line discipline. Deals with refcounts and module
- * locking counts. If the discipline is not available, its module loaded, if
- * possible.
+ * Takes a reference to a line discipline.
  *
  * Returns:
  * * -%EINVAL if the discipline index is not [%N_TTY .. %NR_LDISCS] or if the
  *   discipline is not registered
- * * -%EAGAIN if request_module() failed to load or register the discipline
  * * -%ENOMEM if allocation failure
  * * Otherwise, returns a pointer to the discipline and bumps the ref count
  *
@@ -144,18 +140,11 @@ static struct tty_ldisc *tty_ldisc_get(struct tty_struct *tty, int disc)
 	if (disc < N_TTY || disc >= NR_LDISCS)
 		return ERR_PTR(-EINVAL);
 
-	/*
-	 * Get the ldisc ops - we may need to request them to be loaded
-	 * dynamically and try again.
-	 */
 	ldops = get_ldops(disc);
 	if (IS_ERR(ldops)) {
 		if (!capable(CAP_SYS_MODULE) && !tty_ldisc_autoload)
 			return ERR_PTR(-EPERM);
-		request_module("tty-ldisc-%d", disc);
-		ldops = get_ldops(disc);
-		if (IS_ERR(ldops))
-			return ERR_CAST(ldops);
+		return ERR_CAST(ldops);
 	}
 
 	/*

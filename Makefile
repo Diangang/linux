@@ -297,9 +297,9 @@ no-dot-config-targets := $(clean-targets) \
 			 %asm-generic kernelversion %src-pkg dt_binding_check \
 			 outputmakefile rustfmt rustfmtcheck \
 			 run-command
-no-sync-config-targets := $(no-dot-config-targets) %install modules_sign kernelrelease \
+no-sync-config-targets := $(no-dot-config-targets) %install kernelrelease \
 			  image_name
-single-targets := %.a %.i %.ko %.lds %.ll %.lst %.mod %.o %.rsi %.s %/
+single-targets := %.a %.i %.lds %.ll %.lst %.o %.rsi %.s %/
 
 config-build	:=
 mixed-build	:=
@@ -345,13 +345,6 @@ endif
 # For "make -j clean all", "make -j mrproper defconfig all", etc.
 ifneq ($(filter $(clean-targets),$(MAKECMDGOALS)),)
     ifneq ($(filter-out $(clean-targets),$(MAKECMDGOALS)),)
-        mixed-build := 1
-    endif
-endif
-
-# install and modules_install need also be processed one by one
-ifneq ($(filter install,$(MAKECMDGOALS)),)
-    ifneq ($(filter modules_install,$(MAKECMDGOALS)),)
         mixed-build := 1
     endif
 endif
@@ -773,18 +766,6 @@ KBUILD_BUILTIN := y
 # If we have only "make modules", don't compile built-in objects.
 ifeq ($(MAKECMDGOALS),modules)
   KBUILD_BUILTIN :=
-endif
-
-# If we have "make <whatever> modules", compile modules
-# in addition to whatever we do anyway.
-# Just "make" or "make all" shall build modules as well
-
-ifneq ($(filter all modules nsdeps compile_commands.json clang-%,$(MAKECMDGOALS)),)
-  KBUILD_MODULES := y
-endif
-
-ifeq ($(MAKECMDGOALS),)
-  KBUILD_MODULES := y
 endif
 
 export KBUILD_MODULES KBUILD_BUILTIN
@@ -1362,29 +1343,6 @@ dt_compatible_check: dt_binding_schemas
 	$(Q)$(MAKE) $(build)=$(dtbindingtree) $@
 
 # ---------------------------------------------------------------------------
-# Modules
-
-ifdef CONFIG_MODULES
-
-# By default, build modules as well
-
-all: modules
-
-# When we're building modules with modversions, we need to consider
-# the built-in objects during the descend as well, in order to
-# make sure the checksums are up to date before we record them.
-
-# Build modules
-#
-
-modules: modules_prepare
-
-# Target to prepare building external modules
-modules_prepare: prepare
-	$(Q)$(MAKE) $(build)=scripts scripts/module.lds
-
-endif # CONFIG_MODULES
-
 ###
 # Cleaning is done on three levels.
 # make clean     Delete most generated files
@@ -1473,8 +1431,6 @@ help:
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
 	@echo  '* vmlinux	  - Build the bare kernel'
-	@echo  '* modules	  - Build all modules'
-	@echo  '  modules_install - Install all modules to INSTALL_MOD_PATH (default: /)'
 	@echo  '  vdso_install    - Install unstripped vdso to INSTALL_MOD_PATH (default: /)'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
@@ -1482,8 +1438,6 @@ help:
 	@echo  '                    (requires compiler support for LLVM assembly generation)'
 	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
 	@echo  '                    (requires a recent binutils and recent build (System.map))'
-	@echo  '  dir/file.ko     - Build module including final link'
-	@echo  '  modules_prepare - Set up for building external modules'
 	@echo  '  kernelrelease	  - Output the release version string (use with make -s)'
 	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
 	@echo  '  image_name	  - Output the image name (use with make -s)'
@@ -1628,9 +1582,7 @@ filechk_kernel.release = echo $(KERNELRELEASE)
 # system is not used on the basis kernel. If updates are required
 # in the basis kernel ordinary make commands (without M=...) must be used.
 
-# We are always building only modules.
 KBUILD_BUILTIN :=
-KBUILD_MODULES := y
 
 build-dir := .
 
@@ -1655,11 +1607,9 @@ prepare:
 
 PHONY += help
 help:
-	@echo  '  Building external modules.'
+	@echo  '  External module builds are not supported.'
 	@echo  '  Syntax: make -C path/to/kernel/src M=$$PWD target'
 	@echo  ''
-	@echo  '  modules         - default target, build the module(s)'
-	@echo  '  modules_install - install the module'
 	@echo  '  clean           - remove generated files in module directory only'
 	@echo  '  rust-analyzer	  - generate rust-project.json rust-analyzer support file'
 	@echo  ''
@@ -1667,40 +1617,13 @@ help:
 endif # KBUILD_EXTMOD
 
 # ---------------------------------------------------------------------------
-# Modules
-
-PHONY += modules modules_install modules_sign modules_prepare
-
-modules_install:
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst \
-	sign-only=$(if $(filter modules_install,$(MAKECMDGOALS)),,y)
-
-# modules_sign is a subset of modules_install.
-# 'make modules_install modules_sign' is equivalent to 'make modules_install'.
-modules_sign:
-	@echo >&2 '***'
-	@echo >&2 '*** CONFIG_MODULE_SIG is disabled. You cannot sign modules.'
-	@echo >&2 '***'
-	@false
-
-
 modules.order: $(build-dir)
 	@:
 
-# KBUILD_MODPOST_NOFINAL can be set to skip the final link of modules.
-# This is solely useful to speed up test compiles.
 modules: modpost
-ifneq ($(KBUILD_MODPOST_NOFINAL),1)
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modfinal
-endif
-
-PHONY += modules_check
-modules_check: modules.order
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/modules-check.sh $<
 
 PHONY += modpost
-modpost: $(if $(single-build),, $(if $(KBUILD_BUILTIN), vmlinux.o)) \
-	 $(if $(KBUILD_MODULES), modules_check)
+modpost: $(if $(single-build),, $(if $(KBUILD_BUILTIN), vmlinux.o))
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
 
 # Single targets
@@ -1717,29 +1640,12 @@ modpost: $(if $(single-build),, $(if $(KBUILD_BUILTIN), vmlinux.o)) \
 
 ifdef single-build
 
-# .ko is special because modpost is needed
-single-ko := $(sort $(filter %.ko, $(MAKECMDGOALS)))
-single-no-ko := $(filter-out $(single-ko), $(MAKECMDGOALS)) \
-		$(foreach x, o mod, $(patsubst %.ko, %.$x, $(single-ko)))
+single-no-ko := $(MAKECMDGOALS)
 
-$(single-ko): single_modules
-	@:
 $(single-no-ko): $(build-dir)
 	@:
 
-# Remove modules.order when done because it is not the real one.
-PHONY += single_modules
-single_modules: $(single-no-ko) modules_prepare
-	$(Q){ $(foreach m, $(single-ko), echo $(m:%.ko=%.o);) } > modules.order
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
-ifneq ($(KBUILD_MODPOST_NOFINAL),1)
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modfinal
-endif
-	$(Q)rm -f modules.order
-
 single-goals := $(addprefix $(build-dir)/, $(single-no-ko))
-
-KBUILD_MODULES := y
 
 endif
 

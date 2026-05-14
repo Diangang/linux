@@ -33,7 +33,6 @@
 #include <linux/console.h>
 #include <linux/nmi.h>
 #include <linux/percpu.h>
-#include <linux/kmod.h>
 #include <linux/kprobes.h>
 #include <linux/kmsan.h>
 #include <linux/ksysfs.h>
@@ -89,7 +88,6 @@
 #include <linux/sched/task_stack.h>
 #include <linux/context_tracking.h>
 #include <linux/random.h>
-#include <linux/moduleloader.h>
 #include <linux/list.h>
 #include <linux/integrity.h>
 #include <linux/proc_ns.h>
@@ -1331,7 +1329,7 @@ static int try_to_run_init_process(const char *init_filename)
 
 static noinline void __init kernel_init_freeable(void);
 
-#if defined(CONFIG_STRICT_KERNEL_RWX) || defined(CONFIG_STRICT_MODULE_RWX)
+#if defined(CONFIG_STRICT_KERNEL_RWX)
 bool rodata_enabled __ro_after_init = true;
 
 #ifndef arch_parse_debug_rodata
@@ -1357,13 +1355,6 @@ early_param("rodata", set_debug_rodata);
 static void mark_readonly(void)
 {
 	if (IS_ENABLED(CONFIG_STRICT_KERNEL_RWX) && rodata_enabled) {
-		/*
-		 * load_module() results in W+X mappings, which are cleaned
-		 * up with init_free_wq. Let's make sure that queued work is
-		 * flushed so that we don't hit false positives looking for
-		 * insecure pages which are W+X.
-		 */
-		flush_module_init_free_work();
 		jump_label_init_ro();
 		mark_rodata_ro();
 		debug_checkwx();

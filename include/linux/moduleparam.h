@@ -416,7 +416,7 @@ bool parameqn(const char *name1, const char *name2, size_t n);
 
 typedef int (*parse_unknown_fn)(char *param, char *val, const char *doing, void *arg);
 
-/* Called on module insert or kernel boot */
+/* Called on kernel boot */
 char *parse_args(const char *doing,
 		 char *args,
 		 const struct kernel_param *params,
@@ -424,11 +424,6 @@ char *parse_args(const char *doing,
 		 s16 min_level,
 		 s16 max_level,
 		 void *arg, parse_unknown_fn unknown);
-
-/* Called by module remove. */
-#ifdef CONFIG_MODULES
-void module_destroy_params(const struct kernel_param *params, unsigned int num);
-#endif
 
 /* All the helper functions */
 /* The macros to do compile-time type checking stolen from Jakub
@@ -621,13 +616,6 @@ int param_get_string(char *buffer, const struct kernel_param *kp);
 
 struct module;
 
-#if defined(CONFIG_SYSFS) && defined(CONFIG_MODULES)
-int module_param_sysfs_setup(struct module *mod,
-			     const struct kernel_param *kparam,
-			     unsigned int num_params);
-
-void module_param_sysfs_remove(struct module *mod);
-#else
 static inline int module_param_sysfs_setup(struct module *mod,
 			     const struct kernel_param *kparam,
 			     unsigned int num_params)
@@ -637,6 +625,5 @@ static inline int module_param_sysfs_setup(struct module *mod,
 
 static inline void module_param_sysfs_remove(struct module *mod)
 { }
-#endif
 
 #endif /* _LINUX_MODULE_PARAMS_H */

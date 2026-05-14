@@ -192,9 +192,6 @@ genksyms = $(objtree)/scripts/genksyms/genksyms		\
 	$(if $(KBUILD_PRESERVE), -p)			\
 	$(addprefix -r , $(wildcard $(@:.o=.symref)))
 
-# These mirror gensymtypes_S and co below, keep them in synch.
-cmd_gensymtypes_c = $(CPP) -D__GENKSYMS__ $(c_flags) $< | $(genksyms)
-
 # LLVM assembly
 # Generate .ll files from .c
 quiet_cmd_cc_ll_c = CC $(quiet_modtag)  $@
@@ -208,25 +205,6 @@ $(obj)/%.ll: $(obj)/%.c FORCE
 # (See cmd_cc_o_c + relevant part of rule_cc_o_c)
 
 is-single-obj-m = $(and $(part-of-module),$(filter $@, $(obj-m)),y)
-
-ifdef CONFIG_MODVERSIONS
-# When module versioning is enabled the following steps are executed:
-# o compile a <file>.o from <file>.c
-# o if <file>.o doesn't contain a __export_symbol_*, i.e. does
-#   not export symbols, it's done.
-# o otherwise, we calculate symbol versions using the good old
-#   genksyms on the preprocessed source and dump them into the .cmd file.
-# o modpost will extract versions from that file and create *.c files that will
-#   be compiled and linked to the kernel and/or modules.
-
-gen_symversions =								\
-	if $(NM) $@ 2>/dev/null | grep -q ' __export_symbol_'; then		\
-		$(cmd_gensymtypes_$1) >> $(dot-target).cmd;			\
-	fi
-
-cmd_gen_symversions_c =	$(call gen_symversions,c)
-
-endif
 
 ifdef CONFIG_FTRACE_MCOUNT_USE_RECORDMCOUNT
 # compiler will not generate __mcount_loc use recordmcount or recordmcount.pl
@@ -379,27 +357,11 @@ $(obj)/%.rs: $(obj)/%.rs.S FORCE
 # EXPORT_SYMBOL(symbol); to build our dummy C file, and that gets preprocessed
 # to make the genksyms input or compiled into an object for gendwarfksyms.
 #
-# These mirror gensymtypes_c and co above, keep them in synch.
-getasmexports =								\
-   { echo "\#include <linux/kernel.h>" ;				\
-     echo "\#include <linux/string.h>" ;				\
-     echo "\#include <asm/asm-prototypes.h>" ;				\
-     $(call getexportsymbols,EXPORT_SYMBOL(\1);) ; }
-
-cmd_gensymtypes_S =							\
-	$(getasmexports) |						\
-	$(CPP) -D__GENKSYMS__ $(c_flags) -xc - | $(genksyms)
-
 quiet_cmd_cpp_s_S = CPP $(quiet_modtag) $@
 cmd_cpp_s_S       = $(CPP) $(a_flags) -o $@ $<
 
 $(obj)/%.s: $(obj)/%.S FORCE
 	$(call if_changed_dep,cpp_s_S)
-
-# versioning matches the C process described above, with difference that
-# we parse asm-prototypes.h C header to get function definitions.
-
-cmd_gen_symversions_S = $(call gen_symversions,S)
 
 $(obj)/%.o: $(obj)/%.S FORCE
 	$(call if_changed_rule,as_o_S)

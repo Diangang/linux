@@ -5,7 +5,6 @@
 #include <linux/debugfs.h>
 #include <linux/kallsyms.h>
 #include <linux/memory.h>
-#include <linux/moduleloader.h>
 #include <linux/static_call.h>
 
 #include <asm/alternative.h>
@@ -92,17 +91,7 @@ static inline bool within_coretext(const struct core_text *ct, void *addr)
 
 static inline bool within_module_coretext(void *addr)
 {
-	bool ret = false;
-
-#ifdef CONFIG_MODULES
-	struct module *mod;
-
-	guard(rcu)();
-	mod = __module_address((unsigned long)addr);
-	if (mod && within_module_core((unsigned long)addr, mod))
-		ret = true;
-#endif
-	return ret;
+	return false;
 }
 
 static bool is_coretext(const struct core_text *ct, void *addr)
@@ -277,23 +266,3 @@ void *callthunks_translate_call_dest(void *dest)
 	target = patch_dest(dest, false);
 	return target ? : dest;
 }
-
-#ifdef CONFIG_MODULES
-void noinline callthunks_patch_module_calls(struct callthunk_sites *cs,
-					    struct module *mod)
-{
-	struct core_text ct = {
-		.base = (unsigned long)mod->mem[MOD_TEXT].base,
-		.end  = (unsigned long)mod->mem[MOD_TEXT].base + mod->mem[MOD_TEXT].size,
-		.name = mod->name,
-	};
-
-	if (!thunks_initialized)
-		return;
-
-	mutex_lock(&text_mutex);
-	callthunks_setup(cs, &ct);
-	mutex_unlock(&text_mutex);
-}
-#endif /* CONFIG_MODULES */
-

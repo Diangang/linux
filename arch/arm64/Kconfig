@@ -48,7 +48,6 @@ config ARM64
 	select ARCH_HAS_FORCE_DMA_UNENCRYPTED
 	select ARCH_STACKWALK
 	select ARCH_HAS_STRICT_KERNEL_RWX
-	select ARCH_HAS_STRICT_MODULE_RWX
 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
 	select ARCH_HAS_SYNC_DMA_FOR_CPU
 	select ARCH_HAS_BATCHED_DMA_SYNC
@@ -155,7 +154,6 @@ config ARM64
 	select HAVE_ARCH_TRANSPARENT_HUGEPAGE
 	select HAVE_ARCH_VMAP_STACK
 	select HAVE_ARM_SMCCC
-	select HAVE_ASM_MODVERSIONS
 	select HAVE_CMPXCHG_DOUBLE
 	select HAVE_CMPXCHG_LOCAL
 	select HAVE_CONTEXT_TRACKING_USER
@@ -167,7 +165,6 @@ config ARM64
 	select HAVE_GCC_PLUGINS
 	select HAVE_IOREMAP_PROT
 	select HAVE_IRQ_TIME_ACCOUNTING
-	select HAVE_LIVEPATCH
 	select HAVE_MOD_ARCH_SPECIFIC
 	select HAVE_NMI
 	select HAVE_PREEMPT_DYNAMIC_KEY
@@ -185,7 +182,6 @@ config ARM64
 	select IRQ_FORCED_THREADING
 	select JUMP_LABEL
 	select LOCK_MM_AND_FIND_VMA
-	select MODULES_USE_ELF_RELA
 	select NEED_DMA_MAP_STATE
 	select NEED_SG_DMA_LENGTH
 	select OF
@@ -823,23 +819,6 @@ config RANDOMIZE_BASE
 	  location of the kernel Image as well.
 
 	  If unsure, say N.
-
-config RANDOMIZE_MODULE_REGION_FULL
-	bool "Randomize the module region over a 2 GB range"
-	depends on RANDOMIZE_BASE
-	default y
-	help
-	  Randomizes the location of the module region inside a 2 GB window
-	  covering the core kernel. This way, it is less likely for modules
-	  to leak information about the location of core kernel data structures
-	  but it does imply that function calls between modules and the core
-	  kernel will need to be resolved via veneers in the module PLT.
-
-	  When this option is not set, the module region will be randomized over
-	  a limited range that contains the [_stext, _etext] interval of the
-	  core kernel, so branch relocations are almost always in range unless
-	  the region is exhausted. In this particular case of region
-	  exhaustion, modules might be able to fall back to a larger 2GB area.
 
 config ARM64_CONTPTE
 	bool "Contiguous PTE mappings for user memory" if EXPERT

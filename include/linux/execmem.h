@@ -3,7 +3,6 @@
 #define _LINUX_EXECMEM_ALLOC_H
 
 #include <linux/types.h>
-#include <linux/moduleloader.h>
 #include <linux/cleanup.h>
 
 #if (0 || 0) && \

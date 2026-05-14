@@ -244,14 +244,6 @@ config ARCH_WANTS_NO_INSTR
 	  functions to denote that the toolchain should avoid instrumenting such
 	  functions and is required for correctness.
 
-# Selected by 64 bit architectures which have a 32 bit f_tinode in struct ustat
-config HAVE_ASM_MODVERSIONS
-	bool
-	help
-	  This symbol should be selected by an architecture if it provides
-	  <asm/asm-prototypes.h> to support the module versioning for symbols
-	  exported from assembly code.
-
 config HAVE_REGS_AND_STACK_ACCESS_API
 	bool
 	help
@@ -630,12 +622,6 @@ config HAVE_MOD_ARCH_SPECIFIC
 	  just need a simple module loader without arch specific data - those
 	  should not enable this.
 
-config MODULES_USE_ELF_RELA
-	bool
-	help
-	  Modules only use ELF RELA relocations.  Modules with ELF REL
-	  relocations will give an error.
-
 config ARCH_WANTS_EXECMEM_LATE
 	bool
 	help
@@ -929,18 +915,6 @@ config STRICT_KERNEL_RWX
 
 	  These features are considered standard security practice these days.
 	  You should say Y here in almost all cases.
-
-config ARCH_HAS_STRICT_MODULE_RWX
-	def_bool n
-
-config STRICT_MODULE_RWX
-	bool "Set loadable kernel module data as NX and text as RO"
-	depends on ARCH_HAS_STRICT_MODULE_RWX && MODULES
-	default y
-	help
-	  If this is set, module text and rodata memory will be made read-only,
-	  and non-text memory will be made non-executable. This provides
-	  protection against certain security exploits (e.g. writing to text)
 
 config HAVE_ARCH_COMPILER_H
 	bool

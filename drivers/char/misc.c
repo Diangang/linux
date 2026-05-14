@@ -48,7 +48,6 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/tty.h>
-#include <linux/kmod.h>
 #include <linux/gfp.h>
 
 /*
@@ -130,21 +129,6 @@ static int misc_open(struct inode *inode, struct file *file)
 		c = iter;
 		new_fops = fops_get(iter->fops);
 		break;
-	}
-
-	/* Only request module for fixed minor code */
-	if (!new_fops && minor < MISC_DYNAMIC_MINOR) {
-		mutex_unlock(&misc_mtx);
-		request_module("char-major-%d-%d", MISC_MAJOR, minor);
-		mutex_lock(&misc_mtx);
-
-		list_for_each_entry(iter, &misc_list, list) {
-			if (iter->minor != minor)
-				continue;
-			c = iter;
-			new_fops = fops_get(iter->fops);
-			break;
-		}
 	}
 
 	if (!new_fops)

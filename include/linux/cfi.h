@@ -64,12 +64,6 @@ static inline u32 cfi_get_func_hash(void *func) { return 0; }
 
 static inline bool is_cfi_trap(unsigned long addr) { return false; }
 
-#ifdef CONFIG_MODULES
-static inline void module_cfi_finalize(const Elf_Ehdr *hdr,
-				       const Elf_Shdr *sechdrs,
-				       struct module *mod) {}
-#endif /* CONFIG_MODULES */
-
 #ifndef CFI_NOSEAL
 #define CFI_NOSEAL(x)
 #endif

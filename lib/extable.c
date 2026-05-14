@@ -45,8 +45,7 @@ static void swap_ex(void *a, void *b, int size)
 /*
  * The exception table needs to be sorted so that the binary
  * search that we use to find entries in it works properly.
- * This is used both for the kernel exception table and for
- * the exception tables of modules that get loaded.
+ * This is used for the kernel exception table.
  */
 static int cmp_ex_sort(const void *a, const void *b)
 {
@@ -66,27 +65,6 @@ void sort_extable(struct exception_table_entry *start,
 	sort(start, finish - start, sizeof(struct exception_table_entry),
 	     cmp_ex_sort, swap_ex);
 }
-
-#ifdef CONFIG_MODULES
-/*
- * If the exception table is sorted, any referring to the module init
- * will be at the beginning or the end.
- */
-void trim_init_extable(struct module *m)
-{
-	/*trim the beginning*/
-	while (m->num_exentries &&
-	       within_module_init(ex_to_insn(&m->extable[0]), m)) {
-		m->extable++;
-		m->num_exentries--;
-	}
-	/*trim the end*/
-	while (m->num_exentries &&
-	       within_module_init(ex_to_insn(&m->extable[m->num_exentries - 1]),
-				  m))
-		m->num_exentries--;
-}
-#endif /* CONFIG_MODULES */
 
 static int cmp_ex_search(const void *key, const void *elt)
 {

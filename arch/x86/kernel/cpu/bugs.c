@@ -1634,26 +1634,7 @@ static enum spectre_v2_user_mitigation spectre_v2_user_stibp __ro_after_init =
 static enum spectre_v2_user_mitigation spectre_v2_user_ibpb __ro_after_init =
 	SPECTRE_V2_USER_NONE;
 
-#ifdef CONFIG_MITIGATION_RETPOLINE
-static bool spectre_v2_bad_module;
-
-bool retpoline_module_ok(bool has_retpoline)
-{
-	if (spectre_v2_enabled == SPECTRE_V2_NONE || has_retpoline)
-		return true;
-
-	pr_err("System may be vulnerable to spectre v2\n");
-	spectre_v2_bad_module = true;
-	return false;
-}
-
-static inline const char *spectre_v2_module_string(void)
-{
-	return spectre_v2_bad_module ? " - vulnerable module loaded" : "";
-}
-#else
 static inline const char *spectre_v2_module_string(void) { return ""; }
-#endif
 
 #define SPECTRE_V2_LFENCE_MSG "WARNING: LFENCE mitigation is not recommended for this CPU, data leaks possible!\n"
 #define SPECTRE_V2_EIBRS_EBPF_MSG "WARNING: Unprivileged eBPF is enabled with eIBRS on, data leaks possible via Spectre v2 BHB attacks!\n"

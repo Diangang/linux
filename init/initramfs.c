@@ -10,6 +10,7 @@
 #include <linux/string.h>
 #include <linux/dirent.h>
 #include <linux/syscalls.h>
+#include <linux/umh.h>
 #include <linux/utime.h>
 #include <linux/file.h>
 #include <linux/kstrtox.h>

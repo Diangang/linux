@@ -103,23 +103,16 @@ extern void apply_seal_endbr(s32 *start, s32 *end);
 extern void apply_fineibt(s32 *start_retpoline, s32 *end_retpoine,
 			  s32 *start_cfi, s32 *end_cfi);
 
-struct module;
-
 struct callthunk_sites {
 	s32				*call_start, *call_end;
 };
 
 #ifdef CONFIG_CALL_THUNKS
 extern void callthunks_patch_builtin_calls(void);
-extern void callthunks_patch_module_calls(struct callthunk_sites *sites,
-					  struct module *mod);
 extern void *callthunks_translate_call_dest(void *dest);
 extern int x86_call_depth_emit_accounting(u8 **pprog, void *func, void *ip);
 #else
 static __always_inline void callthunks_patch_builtin_calls(void) {}
-static __always_inline void
-callthunks_patch_module_calls(struct callthunk_sites *sites,
-			      struct module *mod) {}
 static __always_inline void *callthunks_translate_call_dest(void *dest)
 {
 	return dest;
@@ -132,14 +125,8 @@ static __always_inline int x86_call_depth_emit_accounting(u8 **pprog,
 #endif
 
 #ifdef CONFIG_MITIGATION_ITS
-extern void its_init_mod(struct module *mod);
-extern void its_fini_mod(struct module *mod);
-extern void its_free_mod(struct module *mod);
 extern u8 *its_static_thunk(int reg);
 #else /* CONFIG_MITIGATION_ITS */
-static inline void its_init_mod(struct module *mod) { }
-static inline void its_fini_mod(struct module *mod) { }
-static inline void its_free_mod(struct module *mod) { }
 static inline u8 *its_static_thunk(int reg)
 {
 	WARN_ONCE(1, "ITS not compiled in");
@@ -163,18 +150,15 @@ static __always_inline bool cpu_wants_rethunk_at(void *addr)
 #endif
 
 #ifdef CONFIG_SMP
-extern void alternatives_smp_module_add(struct module *mod, char *name,
-					void *locks, void *locks_end,
+extern void alternatives_smp_module_add(char *name, void *locks, void *locks_end,
 					void *text, void *text_end);
-extern void alternatives_smp_module_del(struct module *mod);
 extern void alternatives_enable_smp(void);
 extern int alternatives_text_reserved(void *start, void *end);
 extern bool skip_smp_alternatives;
 #else
-static inline void alternatives_smp_module_add(struct module *mod, char *name,
+static inline void alternatives_smp_module_add(char *name,
 					       void *locks, void *locks_end,
 					       void *text, void *text_end) {}
-static inline void alternatives_smp_module_del(struct module *mod) {}
 static inline void alternatives_enable_smp(void) {}
 static inline int alternatives_text_reserved(void *start, void *end)
 {

@@ -11,7 +11,6 @@
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/kmod.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -197,12 +196,6 @@ struct file_system_type *get_fs_type(const char *name)
 	int len = dot ? dot - name : strlen(name);
 
 	fs = __get_fs_type(name, len);
-	if (!fs && (request_module("fs-%.*s", len, name) == 0)) {
-		fs = __get_fs_type(name, len);
-		if (!fs)
-			pr_warn_once("request_module fs-%.*s succeeded, but still no fs?\n",
-				     len, name);
-	}
 
 	if (dot && fs && !(fs->fs_flags & FS_HAS_SUBTYPE)) {
 		put_filesystem(fs);

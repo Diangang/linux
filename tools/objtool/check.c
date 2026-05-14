@@ -864,17 +864,7 @@ static int create_ibt_endbr_seal_sections(struct objtool_file *file)
 	list_for_each_entry(insn, &file->endbr_list, call_node) {
 
 		int *site = (int *)sec->data->d_buf + idx;
-		struct symbol *sym = insn->sym;
 		*site = 0;
-
-		if (opts.module && sym && is_func_sym(sym) &&
-		    insn->offset == sym->offset &&
-		    (!strcmp(sym->name, "init_module") ||
-		     !strcmp(sym->name, "cleanup_module"))) {
-			ERROR("%s(): Magic init_module() function name is deprecated, use module_init(fn) instead",
-			      sym->name);
-			return -1;
-		}
 
 		if (!elf_init_reloc_text_sym(file->elf, sec,
 					     idx * sizeof(int), idx,

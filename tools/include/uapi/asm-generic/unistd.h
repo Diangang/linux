@@ -289,10 +289,6 @@ __SC_COMP(__NR_getitimer, sys_getitimer, compat_sys_getitimer)
 __SC_COMP(__NR_setitimer, sys_setitimer, compat_sys_setitimer)
 #define __NR_kexec_load 104
 __SC_COMP(__NR_kexec_load, sys_kexec_load, compat_sys_kexec_load)
-#define __NR_init_module 105
-__SYSCALL(__NR_init_module, sys_init_module)
-#define __NR_delete_module 106
-__SYSCALL(__NR_delete_module, sys_delete_module)
 #define __NR_timer_create 107
 __SC_COMP(__NR_timer_create, sys_timer_create, compat_sys_timer_create)
 
@@ -658,8 +654,6 @@ __SYSCALL(__NR_process_vm_readv, sys_process_vm_readv)
 __SYSCALL(__NR_process_vm_writev, sys_process_vm_writev)
 #define __NR_kcmp 272
 __SYSCALL(__NR_kcmp, sys_kcmp)
-#define __NR_finit_module 273
-__SYSCALL(__NR_finit_module, sys_finit_module)
 #define __NR_sched_setattr 274
 __SYSCALL(__NR_sched_setattr, sys_sched_setattr)
 #define __NR_sched_getattr 275

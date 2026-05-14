@@ -873,10 +873,9 @@ struct gendisk *__blk_alloc_disk(struct queue_limits *lim, int node,
 	__blk_alloc_disk(lim, node_id, &__key);				\
 })
 
-int __register_blkdev(unsigned int major, const char *name,
-		void (*probe)(dev_t devt));
+int __register_blkdev(unsigned int major, const char *name);
 #define register_blkdev(major, name) \
-	__register_blkdev(major, name, NULL)
+	__register_blkdev(major, name)
 void unregister_blkdev(unsigned int major, const char *name);
 
 bool disk_check_media_change(struct gendisk *disk);
@@ -894,8 +893,6 @@ static inline void bd_unlink_disk_holder(struct block_device *bdev,
 
 dev_t part_devt(struct gendisk *disk, u8 partno);
 void inc_diskseq(struct gendisk *disk);
-void blk_request_module(dev_t devt);
-
 extern int blk_register_queue(struct gendisk *disk);
 extern void blk_unregister_queue(struct gendisk *disk);
 void submit_bio_noacct(struct bio *bio);

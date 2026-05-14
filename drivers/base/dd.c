@@ -274,9 +274,8 @@ __setup("deferred_probe_timeout=", deferred_probe_timeout_setup);
  * @dev: device to check
  *
  * Return:
- * * -ENODEV if initcalls have completed and modules are disabled.
- * * -ETIMEDOUT if the deferred probe timeout was set and has expired
- *   and modules are enabled.
+ * * -ENODEV if initcalls have completed.
+ * * -ETIMEDOUT if the deferred probe timeout was set and has expired.
  * * -EPROBE_DEFER in other cases.
  *
  * Drivers or subsystems can opt-in to calling this function instead of directly
@@ -284,7 +283,7 @@ __setup("deferred_probe_timeout=", deferred_probe_timeout_setup);
  */
 int driver_deferred_probe_check_state(struct device *dev)
 {
-	if (!IS_ENABLED(CONFIG_MODULES) && initcalls_done) {
+	if (initcalls_done) {
 		dev_warn(dev, "ignoring dependency for device, assuming no driver\n");
 		return -ENODEV;
 	}
@@ -349,8 +348,7 @@ static int deferred_probe_initcall(void)
 	flush_work(&deferred_probe_work);
 	initcalls_done = true;
 
-	if (!IS_ENABLED(CONFIG_MODULES))
-		fw_devlink_drivers_done();
+	fw_devlink_drivers_done();
 
 	/*
 	 * Trigger deferred probe again, this time we won't defer anything
@@ -364,8 +362,7 @@ static int deferred_probe_initcall(void)
 			driver_deferred_probe_timeout * HZ);
 	}
 
-	if (!IS_ENABLED(CONFIG_MODULES))
-		fw_devlink_probing_done();
+	fw_devlink_probing_done();
 
 	return 0;
 }

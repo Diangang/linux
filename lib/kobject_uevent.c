@@ -17,7 +17,6 @@
 #include <linux/string.h>
 #include <linux/kobject.h>
 #include <linux/export.h>
-#include <linux/kmod.h>
 #include <linux/slab.h>
 #include <linux/socket.h>
 #include <linux/skbuff.h>
@@ -758,4 +757,3 @@ static int __init kobject_uevent_init(void)
 
 postcore_initcall(kobject_uevent_init);
 #endif
-

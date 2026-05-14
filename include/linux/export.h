@@ -9,9 +9,8 @@
 /*
  * This comment block is used by fixdep. Please do not remove.
  *
- * When CONFIG_MODVERSIONS is changed from n to y, all source files having
- * EXPORT_SYMBOL variants must be re-compiled because genksyms is run as a
- * side effect of the *.o build rule.
+ * Source files with EXPORT_SYMBOL variants must be re-compiled when this
+ * header changes.
  */
 
 #ifdef CONFIG_64BIT

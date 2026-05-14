@@ -110,23 +110,10 @@ static struct orc_entry *__orc_find(int *ip_table, struct orc_entry *u_table,
 	return u_table + (found - ip_table);
 }
 
-#ifdef CONFIG_MODULES
-static struct orc_entry *orc_module_find(unsigned long ip)
-{
-	struct module *mod;
-
-	mod = __module_address(ip);
-	if (!mod || !mod->arch.orc_unwind || !mod->arch.orc_unwind_ip)
-		return NULL;
-	return __orc_find(mod->arch.orc_unwind_ip, mod->arch.orc_unwind,
-			  mod->arch.num_orcs, ip);
-}
-#else
 static struct orc_entry *orc_module_find(unsigned long ip)
 {
 	return NULL;
 }
-#endif
 
 #ifdef CONFIG_DYNAMIC_FTRACE
 static struct orc_entry *orc_find(unsigned long ip);
@@ -252,78 +239,6 @@ static struct orc_entry *orc_find(unsigned long ip)
 	return orc_ftrace_find(ip);
 }
 
-#ifdef CONFIG_MODULES
-
-static DEFINE_MUTEX(sort_mutex);
-static int *cur_orc_ip_table = __start_orc_unwind_ip;
-static struct orc_entry *cur_orc_table = __start_orc_unwind;
-
-static void orc_sort_swap(void *_a, void *_b, int size)
-{
-	struct orc_entry *orc_a, *orc_b;
-	int *a = _a, *b = _b, tmp;
-	int delta = _b - _a;
-
-	/* Swap the .orc_unwind_ip entries: */
-	tmp = *a;
-	*a = *b + delta;
-	*b = tmp - delta;
-
-	/* Swap the corresponding .orc_unwind entries: */
-	orc_a = cur_orc_table + (a - cur_orc_ip_table);
-	orc_b = cur_orc_table + (b - cur_orc_ip_table);
-	swap(*orc_a, *orc_b);
-}
-
-static int orc_sort_cmp(const void *_a, const void *_b)
-{
-	struct orc_entry *orc_a;
-	const int *a = _a, *b = _b;
-	unsigned long a_val = orc_ip(a);
-	unsigned long b_val = orc_ip(b);
-
-	if (a_val > b_val)
-		return 1;
-	if (a_val < b_val)
-		return -1;
-
-	/*
-	 * The "weak" section terminator entries need to always be first
-	 * to ensure the lookup code skips them in favor of real entries.
-	 * These terminator entries exist to handle any gaps created by
-	 * whitelisted .o files which didn't get objtool generation.
-	 */
-	orc_a = cur_orc_table + (a - cur_orc_ip_table);
-	return orc_a->type == ORC_TYPE_UNDEFINED ? -1 : 1;
-}
-
-void unwind_module_init(struct module *mod, void *_orc_ip, size_t orc_ip_size,
-			void *_orc, size_t orc_size)
-{
-	int *orc_ip = _orc_ip;
-	struct orc_entry *orc = _orc;
-	unsigned int num_entries = orc_ip_size / sizeof(int);
-
-	WARN_ON_ONCE(orc_ip_size % sizeof(int) != 0 ||
-		     orc_size % sizeof(*orc) != 0 ||
-		     num_entries != orc_size / sizeof(*orc));
-
-	/*
-	 * The 'cur_orc_*' globals allow the orc_sort_swap() callback to
-	 * associate an .orc_unwind_ip table entry with its corresponding
-	 * .orc_unwind entry so they can both be swapped.
-	 */
-	mutex_lock(&sort_mutex);
-	cur_orc_ip_table = orc_ip;
-	cur_orc_table = orc;
-	sort(orc_ip, num_entries, sizeof(int), orc_sort_cmp, orc_sort_swap);
-	mutex_unlock(&sort_mutex);
-
-	mod->arch.orc_unwind_ip = orc_ip;
-	mod->arch.orc_unwind = orc;
-	mod->arch.num_orcs = num_entries;
-}
-#endif
 
 void __init unwind_init(void)
 {

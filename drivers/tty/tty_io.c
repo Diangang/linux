@@ -107,7 +107,6 @@
 #include <linux/vt_kern.h>
 #include <linux/selection.h>
 
-#include <linux/kmod.h>
 #include <linux/nsproxy.h>
 #include "tty.h"
 

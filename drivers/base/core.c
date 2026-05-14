@@ -4308,19 +4308,6 @@ struct device *__root_device_register(const char *name, struct module *owner)
 		return ERR_PTR(err);
 	}
 
-#ifdef CONFIG_MODULES	/* gotta find a "cleaner" way to do this */
-	if (owner) {
-		struct module_kobject *mk = &owner->mkobj;
-
-		err = sysfs_create_link(&root->dev.kobj, &mk->kobj, "module");
-		if (err) {
-			device_unregister(&root->dev);
-			return ERR_PTR(err);
-		}
-		root->owner = owner;
-	}
-#endif
-
 	return &root->dev;
 }
 EXPORT_SYMBOL_GPL(__root_device_register);

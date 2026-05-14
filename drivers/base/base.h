@@ -232,17 +232,12 @@ const char *device_get_devnode(const struct device *dev, umode_t *mode,
 extern struct kset *devices_kset;
 void devices_kset_move_last(struct device *dev);
 
-#if defined(CONFIG_MODULES) && defined(CONFIG_SYSFS)
-int module_add_driver(struct module *mod, const struct device_driver *drv);
-void module_remove_driver(const struct device_driver *drv);
-#else
 static inline int module_add_driver(struct module *mod,
 				    struct device_driver *drv)
 {
 	return 0;
 }
 static inline void module_remove_driver(struct device_driver *drv) { }
-#endif
 
 #ifdef CONFIG_DEVTMPFS
 int devtmpfs_init(void);

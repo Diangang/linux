@@ -10,7 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/kmod.h>
 #include <linux/module.h>
 #include <linux/personality.h>
 #include <linux/proc_fs.h>

@@ -13,10 +13,10 @@
 #include <linux/sched/debug.h>
 #include <linux/sched/task.h>
 #include <linux/syscalls.h>
+#include <linux/umh.h>
 #include <linux/freezer.h>
 #include <linux/delay.h>
 #include <linux/workqueue.h>
-#include <linux/kmod.h>
 #include <linux/cpuset.h>
 
 /*

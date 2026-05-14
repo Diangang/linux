@@ -481,9 +481,6 @@ static struct amba_driver amba_proxy_drv = {
 
 static int __init amba_stub_drv_init(void)
 {
-	if (!IS_ENABLED(CONFIG_MODULES))
-		return 0;
-
 	/*
 	 * The amba_match() function will get called only if there is at least
 	 * one amba driver registered. If all amba drivers are modules and are

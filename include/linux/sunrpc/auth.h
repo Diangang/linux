@@ -148,8 +148,6 @@ extern const struct rpc_authops	authnull_ops;
 extern const struct rpc_authops	authtls_ops;
 
 int __init		rpc_init_authunix(void);
-int __init		rpcauth_init_module(void);
-void			rpcauth_remove_module(void);
 void 			rpc_destroy_authunix(void);
 
 int			rpcauth_register(const struct rpc_authops *);

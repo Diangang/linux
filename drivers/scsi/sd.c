@@ -797,14 +797,6 @@ static struct class sd_disk_class = {
 };
 
 /*
- * Don't request a new module, as that could deadlock in multipath
- * environment.
- */
-static void sd_default_probe(dev_t devt)
-{
-}
-
-/*
  * Device no to disk mapping:
  * 
  *       major         disc2     disc  p1
@@ -4442,7 +4434,7 @@ static int __init init_sd(void)
 	SCSI_LOG_HLQUEUE(3, printk("init_sd: sd driver entry point\n"));
 
 	for (i = 0; i < SD_MAJORS; i++) {
-		if (__register_blkdev(sd_major(i), "sd", sd_default_probe))
+		if (__register_blkdev(sd_major(i), "sd"))
 			continue;
 		majors++;
 	}

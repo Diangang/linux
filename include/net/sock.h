@@ -593,9 +593,6 @@ struct sock {
 	netns_tracker		ns_tracker;
 	struct xarray		sk_user_frags;
 
-#if IS_ENABLED(CONFIG_PROVE_LOCKING) && IS_ENABLED(CONFIG_MODULES)
-	struct module		*sk_owner;
-#endif
 };
 
 struct sock_bh_locked {
@@ -1635,23 +1632,6 @@ static inline void sk_mem_uncharge(struct sock *sk, int size)
 
 void __sk_charge(struct sock *sk, gfp_t gfp);
 
-#if IS_ENABLED(CONFIG_PROVE_LOCKING) && IS_ENABLED(CONFIG_MODULES)
-static inline void sk_owner_set(struct sock *sk, struct module *owner)
-{
-	__module_get(owner);
-	sk->sk_owner = owner;
-}
-
-static inline void sk_owner_clear(struct sock *sk)
-{
-	sk->sk_owner = NULL;
-}
-
-static inline void sk_owner_put(struct sock *sk)
-{
-	module_put(sk->sk_owner);
-}
-#else
 static inline void sk_owner_set(struct sock *sk, struct module *owner)
 {
 }
@@ -1663,7 +1643,7 @@ static inline void sk_owner_clear(struct sock *sk)
 static inline void sk_owner_put(struct sock *sk)
 {
 }
-#endif
+
 /*
  * Macro so as to not evaluate some arguments when
  * lockdep is not enabled.

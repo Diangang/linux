@@ -131,8 +131,6 @@
 102	common	getitimer			sys_getitimer			compat_sys_getitimer
 103	common	setitimer			sys_setitimer			compat_sys_setitimer
 104	common	kexec_load			sys_kexec_load			compat_sys_kexec_load
-105	common	init_module			sys_init_module
-106	common	delete_module			sys_delete_module
 107	common	timer_create			sys_timer_create		compat_sys_timer_create
 108	time32	timer_gettime			sys_timer_gettime32
 108	64	timer_gettime			sys_timer_gettime
@@ -319,7 +317,6 @@
 270	common	process_vm_readv		sys_process_vm_readv
 271	common	process_vm_writev		sys_process_vm_writev
 272	common	kcmp				sys_kcmp
-273	common	finit_module			sys_finit_module
 274	common	sched_setattr			sys_sched_setattr
 275	common	sched_getattr			sys_sched_getattr
 276	common	renameat2			sys_renameat2

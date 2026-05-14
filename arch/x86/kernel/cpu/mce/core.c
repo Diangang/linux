@@ -29,7 +29,6 @@
 #include <linux/types.h>
 #include <linux/slab.h>
 #include <linux/init.h>
-#include <linux/kmod.h>
 #include <linux/poll.h>
 #include <linux/nmi.h>
 #include <linux/cpu.h>

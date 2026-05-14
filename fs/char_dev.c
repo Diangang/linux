@@ -662,9 +662,6 @@ void cdev_init(struct cdev *cdev, const struct file_operations *fops)
 
 static struct kobject *base_probe(dev_t dev, int *part, void *data)
 {
-	if (request_module("char-major-%d-%d", MAJOR(dev), MINOR(dev)) > 0)
-		/* Make old-style 2.4 aliases work */
-		request_module("char-major-%d", MAJOR(dev));
 	return NULL;
 }
 
@@ -674,7 +671,6 @@ void __init chrdev_init(void)
 }
 
 
-/* Let modules do char dev stuff */
 EXPORT_SYMBOL(register_chrdev_region);
 EXPORT_SYMBOL(unregister_chrdev_region);
 EXPORT_SYMBOL(alloc_chrdev_region);

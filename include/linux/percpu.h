@@ -13,12 +13,7 @@
 
 #include <asm/percpu.h>
 
-/* enough to cover all DEFINE_PER_CPUs in modules */
-#ifdef CONFIG_MODULES
-#define PERCPU_MODULE_RESERVE		(8 << 10)
-#else
 #define PERCPU_MODULE_RESERVE		0
-#endif
 
 /* minimum unit size, also is the maximum supported allocation size */
 #define PCPU_MIN_UNIT_SIZE		PFN_ALIGN(32 << 10)

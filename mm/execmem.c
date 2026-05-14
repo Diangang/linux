@@ -14,7 +14,6 @@
 #include <linux/execmem.h>
 #include <linux/maple_tree.h>
 #include <linux/set_memory.h>
-#include <linux/moduleloader.h>
 #include <linux/text-patching.h>
 
 #include <asm/tlbflush.h>

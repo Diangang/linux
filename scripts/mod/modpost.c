@@ -31,14 +31,6 @@
 #define MODULE_NS_PREFIX "module:"
 
 static bool module_enabled;
-/* Are we using CONFIG_MODVERSIONS? */
-static bool modversions;
-/* Is CONFIG_MODULE_SRCVERSION_ALL set? */
-static bool all_versions;
-/* Is CONFIG_BASIC_MODVERSIONS set? */
-static bool basic_modversions;
-/* Is CONFIG_EXTENDED_MODVERSIONS set? */
-static bool extended_modversions;
 /* If we are modposting external module set to 1 */
 static bool external_module;
 /* Only warn about unresolved symbols */
@@ -658,8 +650,6 @@ static void handle_symbol(struct module *mod, struct elf_info *info,
 				   ELF_ST_BIND(sym->st_info) == STB_WEAK);
 		break;
 	default:
-		if (strcmp(symname, "init_module") == 0)
-			mod->has_init = true;
 		if (strcmp(symname, "cleanup_module") == 0)
 			mod->has_cleanup = true;
 		break;
@@ -1478,102 +1468,9 @@ static char *remove_dot(char *s)
 	return s;
 }
 
-/*
- * The CRCs are recorded in .*.cmd files in the form of:
- * #SYMVER <name> <crc>
- */
-static void extract_crcs_for_object(const char *object, struct module *mod)
-{
-	char cmd_file[PATH_MAX];
-	char *buf, *p;
-	const char *base;
-	int dirlen, ret;
-
-	base = get_basename(object);
-	dirlen = base - object;
-
-	ret = snprintf(cmd_file, sizeof(cmd_file), "%.*s.%s.cmd",
-		       dirlen, object, base);
-	if (ret >= sizeof(cmd_file)) {
-		error("%s: too long path was truncated\n", cmd_file);
-		return;
-	}
-
-	buf = read_text_file(cmd_file);
-	p = buf;
-
-	while ((p = strstr(p, "\n#SYMVER "))) {
-		char *name;
-		size_t namelen;
-		unsigned int crc;
-		struct symbol *sym;
-
-		name = p + strlen("\n#SYMVER ");
-
-		p = strchr(name, ' ');
-		if (!p)
-			break;
-
-		namelen = p - name;
-		p++;
-
-		if (!isdigit(*p))
-			continue;	/* skip this line */
-
-		crc = strtoul(p, &p, 0);
-		if (*p != '\n')
-			continue;	/* skip this line */
-
-		name[namelen] = '\0';
-
-		/*
-		 * sym_find_with_module() may return NULL here.
-		 * It typically occurs when CONFIG_TRIM_UNUSED_KSYMS=y.
-		 * Since commit e1327a127703, genksyms calculates CRCs of all
-		 * symbols, including trimmed ones. Ignore orphan CRCs.
-		 */
-		sym = sym_find_with_module(name, mod);
-		if (sym)
-			sym_set_crc(sym, crc);
-	}
-
-	free(buf);
-}
-
-/*
- * The symbol versions (CRC) are recorded in the .*.cmd files.
- * Parse them to retrieve CRCs for the current module.
- */
-static void mod_set_crcs(struct module *mod)
-{
-	char objlist[PATH_MAX];
-	char *buf, *p, *obj;
-	int ret;
-
-	if (mod->is_vmlinux) {
-		strcpy(objlist, ".vmlinux.objs");
-	} else {
-		/* objects for a module are listed in the *.mod file. */
-		ret = snprintf(objlist, sizeof(objlist), "%s.mod", mod->name);
-		if (ret >= sizeof(objlist)) {
-			error("%s: too long path was truncated\n", objlist);
-			return;
-		}
-	}
-
-	buf = read_text_file(objlist);
-	p = buf;
-
-	while ((obj = strsep(&p, "\n")) && obj[0])
-		extract_crcs_for_object(obj, mod);
-
-	free(buf);
-}
-
 static void read_symbols(const char *modname)
 {
 	const char *symname;
-	char *version;
 	char *license;
 	char *namespace;
 	struct module *mod;
@@ -1634,26 +1531,7 @@ static void read_symbols(const char *modname)
 
 	check_sec_ref(mod, &info);
 
-	if (!mod->is_vmlinux) {
-		version = get_modinfo(&info, "version");
-		if (version || all_versions)
-			get_src_version(mod->name, mod->srcversion,
-					sizeof(mod->srcversion) - 1);
-	}
-
 	parse_elf_finish(&info);
-
-	if (modversions) {
-		/*
-		 * Our trick to get versioning for module struct etc. - it's
-		 * never passed as an argument to an exported function, so
-		 * the automatic versioning doesn't pick it up, but it's really
-		 * important anyhow.
-		 */
-		sym_add_unresolved("module_layout", mod, false);
-
-		mod_set_crcs(mod);
-	}
 }
 
 static void read_symbols_from_files(const char *filename)
@@ -1847,12 +1725,8 @@ static void add_header(struct buffer *b, struct module *mod)
 	buf_printf(b, "__visible struct module __this_module\n");
 	buf_printf(b, "__section(\".gnu.linkonce.this_module\") = {\n");
 	buf_printf(b, "\t.name = KBUILD_MODNAME,\n");
-	if (mod->has_init)
-		buf_printf(b, "\t.init = init_module,\n");
 	if (mod->has_cleanup)
-		buf_printf(b, "#ifdef CONFIG_MODULE_UNLOAD\n"
-			      "\t.exit = cleanup_module,\n"
-			      "#endif\n");
+		buf_printf(b, "\t.exit = cleanup_module,\n");
 	buf_printf(b, "\t.arch = MODULE_ARCH_INIT,\n");
 	buf_printf(b, "};\n");
 
@@ -1884,106 +1758,6 @@ static void add_exported_symbols(struct buffer *buf, struct module *mod)
 			   sym->name, get_symbol_flags(sym));
 	}
 
-	if (!modversions)
-		return;
-
-	/* record CRCs for exported symbols */
-	buf_printf(buf, "\n");
-	list_for_each_entry(sym, &mod->exported_symbols, list) {
-		if (trim_unused_exports && !sym->used)
-			continue;
-
-		if (!sym->crc_valid)
-			warn("EXPORT symbol \"%s\" [%s%s] version generation failed, symbol will not be versioned.\n"
-			     "Is \"%s\" prototyped in <asm/asm-prototypes.h>?\n",
-			     sym->name, mod->name, mod->is_vmlinux ? "" : ".ko",
-			     sym->name);
-
-		buf_printf(buf, "SYMBOL_CRC(%s, 0x%08x);\n",
-			   sym->name, sym->crc);
-	}
-}
-
-/**
- * Record CRCs for unresolved symbols, supporting long names
- */
-static void add_extended_versions(struct buffer *b, struct module *mod)
-{
-	struct symbol *s;
-
-	if (!extended_modversions)
-		return;
-
-	buf_printf(b, "\n");
-	buf_printf(b, "static const u32 ____version_ext_crcs[]\n");
-	buf_printf(b, "__used __section(\"__version_ext_crcs\") = {\n");
-	list_for_each_entry(s, &mod->unresolved_symbols, list) {
-		if (!s->module)
-			continue;
-		if (!s->crc_valid) {
-			warn("\"%s\" [%s.ko] has no CRC!\n",
-				s->name, mod->name);
-			continue;
-		}
-		buf_printf(b, "\t0x%08x,\n", s->crc);
-	}
-	buf_printf(b, "};\n");
-
-	buf_printf(b, "static const char ____version_ext_names[]\n");
-	buf_printf(b, "__used __section(\"__version_ext_names\") =\n");
-	list_for_each_entry(s, &mod->unresolved_symbols, list) {
-		if (!s->module)
-			continue;
-		if (!s->crc_valid)
-			/*
-			 * We already warned on this when producing the crc
-			 * table.
-			 * We need to skip its name too, as the indexes in
-			 * both tables need to align.
-			 */
-			continue;
-		buf_printf(b, "\t\"%s\\0\"\n", s->name);
-	}
-	buf_printf(b, ";\n");
-}
-
-/**
- * Record CRCs for unresolved symbols
- **/
-static void add_versions(struct buffer *b, struct module *mod)
-{
-	struct symbol *s;
-
-	if (!basic_modversions)
-		return;
-
-	buf_printf(b, "\n");
-	buf_printf(b, "static const struct modversion_info ____versions[]\n");
-	buf_printf(b, "__used __section(\"__versions\") = {\n");
-
-	list_for_each_entry(s, &mod->unresolved_symbols, list) {
-		if (!s->module)
-			continue;
-		if (!s->crc_valid) {
-			warn("\"%s\" [%s.ko] has no CRC!\n",
-				s->name, mod->name);
-			continue;
-		}
-		if (strlen(s->name) >= MODULE_NAME_LEN) {
-			if (extended_modversions) {
-				/* this symbol will only be in the extended info */
-				continue;
-			} else {
-				error("too long symbol \"%s\" [%s.ko]\n",
-				      s->name, mod->name);
-				break;
-			}
-		}
-		buf_printf(b, "\t{ 0x%08x, \"%s\" },\n",
-			   s->crc, s->name);
-	}
-
-	buf_printf(b, "};\n");
 }
 
 static void add_depends(struct buffer *b, struct module *mod)
@@ -2118,8 +1892,6 @@ static void write_mod_c_file(struct module *mod)
 
 	add_header(&buf, mod);
 	add_exported_symbols(&buf, mod);
-	add_versions(&buf, mod);
-	add_extended_versions(&buf, mod);
 	add_depends(&buf, mod);
 
 	buf_printf(&buf, "\n");
@@ -2298,17 +2070,11 @@ int main(int argc, char **argv)
 		case 'M':
 			module_enabled = true;
 			break;
-		case 'm':
-			modversions = true;
-			break;
 		case 'n':
 			ignore_missing_files = true;
 			break;
 		case 'o':
 			dump_write = optarg;
-			break;
-		case 'a':
-			all_versions = true;
 			break;
 		case 'T':
 			files_source = optarg;
@@ -2333,12 +2099,6 @@ int main(int argc, char **argv)
 			break;
 		case 'd':
 			missing_namespace_deps = optarg;
-			break;
-		case 'b':
-			basic_modversions = true;
-			break;
-		case 'x':
-			extended_modversions = true;
 			break;
 		default:
 			exit(1);

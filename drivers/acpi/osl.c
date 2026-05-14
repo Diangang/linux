@@ -21,7 +21,6 @@
 #include <linux/lockdep.h>
 #include <linux/pci.h>
 #include <linux/interrupt.h>
-#include <linux/kmod.h>
 #include <linux/delay.h>
 #include <linux/workqueue.h>
 #include <linux/nmi.h>

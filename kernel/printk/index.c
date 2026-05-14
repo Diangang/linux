@@ -14,7 +14,7 @@
 extern struct pi_entry *__start_printk_index[];
 extern struct pi_entry *__stop_printk_index[];
 
-/* The base dir for module formats, typically debugfs/printk/index/ */
+/* The base dir for printk formats, typically debugfs/printk/index/ */
 static struct dentry *dfs_index;
 
 static struct pi_entry *pi_get_entry(const struct module *mod, loff_t pos)
@@ -22,17 +22,8 @@ static struct pi_entry *pi_get_entry(const struct module *mod, loff_t pos)
 	struct pi_entry **entries;
 	unsigned int nr_entries;
 
-#ifdef CONFIG_MODULES
-	if (mod) {
-		entries = mod->printk_index_start;
-		nr_entries = mod->printk_index_size;
-	} else
-#endif
-	{
-		/* vmlinux, comes from linker symbols */
-		entries = __start_printk_index;
-		nr_entries = __stop_printk_index - __start_printk_index;
-	}
+	entries = __start_printk_index;
+	nr_entries = __stop_printk_index - __start_printk_index;
 
 	if (pos >= nr_entries)
 		return NULL;
@@ -124,17 +115,10 @@ static const struct seq_operations dfs_index_sops = {
 
 DEFINE_SEQ_ATTRIBUTE(dfs_index);
 
-#ifdef CONFIG_MODULES
-static const char *pi_get_module_name(struct module *mod)
-{
-	return mod ? mod->name : "vmlinux";
-}
-#else
 static const char *pi_get_module_name(struct module *mod)
 {
 	return "vmlinux";
 }
-#endif
 
 static void pi_create_file(struct module *mod)
 {
@@ -142,42 +126,7 @@ static void pi_create_file(struct module *mod)
 				       mod, &dfs_index_fops);
 }
 
-#ifdef CONFIG_MODULES
-static void pi_remove_file(struct module *mod)
-{
-	debugfs_lookup_and_remove(pi_get_module_name(mod), dfs_index);
-}
-
-static int pi_module_notify(struct notifier_block *nb, unsigned long op,
-			    void *data)
-{
-	struct module *mod = data;
-
-	switch (op) {
-	case MODULE_STATE_COMING:
-		pi_create_file(mod);
-		break;
-	case MODULE_STATE_GOING:
-		pi_remove_file(mod);
-		break;
-	default: /* we don't care about other module states */
-		break;
-	}
-
-	return NOTIFY_OK;
-}
-
-static struct notifier_block module_printk_fmts_nb = {
-	.notifier_call = pi_module_notify,
-};
-
-static void __init pi_setup_module_notifier(void)
-{
-	register_module_notifier(&module_printk_fmts_nb);
-}
-#else
 static inline void __init pi_setup_module_notifier(void) { }
-#endif
 
 static int __init pi_init(void)
 {

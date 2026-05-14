@@ -88,8 +88,6 @@ COND_SYSCALL(futex_wait);
 COND_SYSCALL(futex_requeue);
 COND_SYSCALL(kexec_load);
 COND_SYSCALL_COMPAT(kexec_load);
-COND_SYSCALL(init_module);
-COND_SYSCALL(delete_module);
 COND_SYSCALL(syslog);
 COND_SYSCALL(setregid);
 COND_SYSCALL(setgid);
@@ -239,7 +237,6 @@ COND_SYSCALL_COMPAT(process_vm_writev);
 /* compare kernel pointers */
 COND_SYSCALL(kcmp);
 
-COND_SYSCALL(finit_module);
 
 /* operate on Secure Computing state */
 COND_SYSCALL(seccomp);

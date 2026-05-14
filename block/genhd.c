@@ -17,7 +17,6 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/slab.h>
-#include <linux/kmod.h>
 #include <linux/major.h>
 #include <linux/mutex.h>
 #include <linux/idr.h>
@@ -179,9 +178,6 @@ static struct blk_major_name {
 	struct blk_major_name *next;
 	int major;
 	char name[16];
-#ifdef CONFIG_BLOCK_LEGACY_AUTOLOAD
-	void (*probe)(dev_t devt);
-#endif
 } *major_names[BLKDEV_MAJOR_HASH_SIZE];
 static DEFINE_MUTEX(major_names_lock);
 static DEFINE_SPINLOCK(major_names_spinlock);
@@ -231,8 +227,7 @@ void blkdev_show(struct seq_file *seqf, off_t offset)
  *
  * Use register_blkdev instead for any new code.
  */
-int __register_blkdev(unsigned int major, const char *name,
-		void (*probe)(dev_t devt))
+int __register_blkdev(unsigned int major, const char *name)
 {
 	struct blk_major_name **n, *p;
 	int index, ret = 0;
@@ -271,9 +266,6 @@ int __register_blkdev(unsigned int major, const char *name,
 	}
 
 	p->major = major;
-#ifdef CONFIG_BLOCK_LEGACY_AUTOLOAD
-	p->probe = probe;
-#endif
 	strscpy(p->name, name, sizeof(p->name));
 	p->next = NULL;
 	index = major_to_index(major);
@@ -871,40 +863,6 @@ static ssize_t disk_badblocks_store(struct device *dev,
 
 	return badblocks_store(disk->bb, page, len, 0);
 }
-
-#ifdef CONFIG_BLOCK_LEGACY_AUTOLOAD
-static bool blk_probe_dev(dev_t devt)
-{
-	unsigned int major = MAJOR(devt);
-	struct blk_major_name **n;
-
-	mutex_lock(&major_names_lock);
-	for (n = &major_names[major_to_index(major)]; *n; n = &(*n)->next) {
-		if ((*n)->major == major && (*n)->probe) {
-			(*n)->probe(devt);
-			mutex_unlock(&major_names_lock);
-			return true;
-		}
-	}
-	mutex_unlock(&major_names_lock);
-	return false;
-}
-
-void blk_request_module(dev_t devt)
-{
-	int error;
-
-	if (blk_probe_dev(devt))
-		return;
-
-	error = request_module("block-major-%d-%d", MAJOR(devt), MINOR(devt));
-	/* Make old-style 2.4 aliases work */
-	if (error > 0)
-		error = request_module("block-major-%d", MAJOR(devt));
-	if (!error)
-		blk_probe_dev(devt);
-}
-#endif /* CONFIG_BLOCK_LEGACY_AUTOLOAD */
 
 #ifdef CONFIG_PROC_FS
 /* iterator */
