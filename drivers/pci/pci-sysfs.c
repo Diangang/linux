@@ -1779,12 +1779,6 @@ const struct attribute_group *pci_dev_groups[] = {
 	&pci_dev_reset_attr_group,
 	&pci_dev_reset_method_attr_group,
 	&pci_dev_vpd_attr_group,
-#ifdef CONFIG_DMI
-	&pci_dev_smbios_attr_group,
-#endif
-#ifdef CONFIG_ACPI
-	&pci_dev_acpi_attr_group,
-#endif
 	&pci_dev_resource_resize_group,
 	ARCH_PCI_DEV_GROUPS
 	NULL,
@@ -1815,8 +1809,5 @@ const struct attribute_group *pci_dev_attr_groups[] = {
 	&pci_dev_hp_attr_group,
 	&pci_bridge_attr_group,
 	&pcie_dev_attr_group,
-#ifdef CONFIG_PCIEASPM
-	&aspm_ctrl_attr_group,
-#endif
 	NULL,
 };

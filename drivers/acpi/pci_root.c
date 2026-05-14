@@ -437,8 +437,6 @@ static u32 calculate_support(void)
 	support |= OSC_PCI_HPX_TYPE_3_SUPPORT;
 	if (pci_ext_cfg_avail())
 		support |= OSC_PCI_EXT_CONFIG_SUPPORT;
-	if (pcie_aspm_support_enabled())
-		support |= OSC_PCI_ASPM_SUPPORT | OSC_PCI_CLOCK_PM_SUPPORT;
 	if (pci_msi_enabled())
 		support |= OSC_PCI_MSI_SUPPORT;
 
@@ -493,11 +491,7 @@ static u32 calculate_control(void)
 {
 	u32 control;
 
-	control = OSC_PCI_EXPRESS_CAPABILITY_CONTROL
-		| OSC_PCI_EXPRESS_PME_CONTROL;
-
-	if (IS_ENABLED(CONFIG_PCIEASPM))
-		control |= OSC_PCI_EXPRESS_LTR_CONTROL;
+	control = OSC_PCI_EXPRESS_CAPABILITY_CONTROL;
 
 	if (pci_aer_available())
 		control |= OSC_PCI_EXPRESS_AER_CONTROL;
@@ -524,13 +518,6 @@ static u32 calculate_cxl_control(void)
 
 static bool os_control_query_checks(struct acpi_pci_root *root, u32 support)
 {
-	struct acpi_device *device = root->device;
-
-	if (pcie_ports_disabled) {
-		dev_info(&device->dev, "PCIe port services disabled; not requesting _OSC control\n");
-		return false;
-	}
-
 	if ((support & ACPI_PCIE_REQ_SUPPORT) != ACPI_PCIE_REQ_SUPPORT) {
 		decode_osc_support(root, "not requesting OS control; OS requires",
 				   ACPI_PCIE_REQ_SUPPORT);

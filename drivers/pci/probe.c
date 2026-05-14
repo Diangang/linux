@@ -1645,13 +1645,6 @@ void set_pcie_port_type(struct pci_dev *pdev)
 	if (reg32 & PCI_EXP_LNKCAP_DLLLARC)
 		pdev->link_active_reporting = 1;
 
-#ifdef CONFIG_PCIEASPM
-	if (reg32 & PCI_EXP_LNKCAP_ASPM_L0S)
-		pdev->aspm_l0s_support = 1;
-	if (reg32 & PCI_EXP_LNKCAP_ASPM_L1)
-		pdev->aspm_l1_support = 1;
-#endif
-
 	parent = pci_upstream_bridge(pdev);
 	if (!parent)
 		return;
@@ -1801,23 +1794,7 @@ static void pci_set_removable(struct pci_dev *dev)
  */
 static bool pci_ext_cfg_is_aliased(struct pci_dev *dev)
 {
-#ifdef CONFIG_PCI_QUIRKS
-	int pos, ret;
-	u32 header, tmp;
-
-	pci_read_config_dword(dev, PCI_VENDOR_ID, &header);
-
-	for (pos = PCI_CFG_SPACE_SIZE;
-	     pos < PCI_CFG_SPACE_EXP_SIZE; pos += PCI_CFG_SPACE_SIZE) {
-		ret = pci_read_config_dword(dev, pos, &tmp);
-		if ((ret != PCIBIOS_SUCCESSFUL) || (header != tmp))
-			return false;
-	}
-
-	return true;
-#else
 	return false;
-#endif
 }
 
 /**
@@ -2425,8 +2402,6 @@ static void pci_configure_device(struct pci_dev *dev)
 	pci_configure_mps(dev);
 	pci_configure_extended_tags(dev, NULL);
 	pci_configure_relaxed_ordering(dev);
-	pci_configure_ltr(dev);
-	pci_configure_aspm_l1ss(dev);
 	pci_configure_eetlp_prefix(dev);
 	pci_configure_serr(dev);
 	pci_configure_rcb(dev);
@@ -2860,10 +2835,6 @@ int pci_scan_slot(struct pci_bus *bus, int devfn)
 		}
 		fn = next_fn(bus, dev, fn);
 	} while (fn >= 0);
-
-	/* Only one slot has PCIe device */
-	if (bus->self && nr)
-		pcie_aspm_init_link_state(bus->self);
 
 	return nr;
 }

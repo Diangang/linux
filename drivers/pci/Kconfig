@@ -33,8 +33,6 @@ config PCI_DOMAINS_GENERIC
 config PCI_SYSCALL
 	bool
 
-source "drivers/pci/pcie/Kconfig"
-
 config PCI_MSI
 	bool "Message Signaled Interrupts (MSI and MSI-X)"
 	select GENERIC_MSI_IRQ
@@ -50,38 +48,11 @@ config PCI_MSI
 
 	   If you don't know what to do here, say Y.
 
-config PCI_QUIRKS
-	default y
-	bool "Enable PCI quirk workarounds" if EXPERT
-	help
-	  This enables workarounds for various PCI chipset bugs/quirks.
-	  Disable this only if your target machine is unaffected by PCI
-	  quirks.
-
-config PCI_ATS
-	bool
-
 config PCI_ECAM
 	bool
 
 config PCI_LOCKLESS_CONFIG
 	bool
-
-config PCI_PASID
-	bool "PCI PASID support"
-	select PCI_ATS
-	help
-	  Process Address Space Identifiers (PASIDs) can be used by PCI devices
-	  to access more than one IO address space at the same time. To make
-	  use of this feature an IOMMU is required which also supports PASIDs.
-	  Select this option if you have such an IOMMU and want to compile the
-	  driver for it into your kernel.
-
-	  If unsure, say N.
-
-config PCI_LABEL
-	def_bool y if (DMI || ACPI)
-	select NLS
 
 source "drivers/pci/controller/Kconfig"
 

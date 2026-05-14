@@ -22,7 +22,6 @@
 #include <linux/dma-map-ops.h>
 #include <linux/iommu.h>
 #include "pci.h"
-#include "pcie/portdrv.h"
 
 struct pci_dynid {
 	struct list_head node;
@@ -1741,11 +1740,6 @@ static int __init pci_driver_init(void)
 	if (ret)
 		return ret;
 
-#ifdef CONFIG_PCIEPORTBUS
-	ret = bus_register(&pcie_port_bus_type);
-	if (ret)
-		return ret;
-#endif
 	dma_debug_add_bus(&pci_bus_type);
 	return 0;
 }

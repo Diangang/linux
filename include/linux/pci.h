@@ -324,10 +324,8 @@ struct pci_vpd {
 
 struct irq_affinity;
 struct pcie_bwctrl_data;
-struct pcie_link_state;
 struct pci_sriov;
 struct pci_p2pdma;
-struct rcec_ea;
 
 /* struct pci_dev - describes a PCI device
  *
@@ -359,10 +357,6 @@ struct pci_dev {
 	unsigned int	class;		/* 3 bytes: (base,sub,prog-if) */
 	u8		revision;	/* PCI revision, low byte of class word */
 	u8		hdr_type;	/* PCI header type (`multi' flag masked out) */
-#ifdef CONFIG_PCIEPORTBUS
-	struct rcec_ea	*rcec_ea;	/* RCEC cached endpoint association */
-	struct pci_dev  *rcec;          /* Associated RCEC device */
-#endif
 	u32		devcap;		/* PCIe Device Capabilities */
 	u16		rebar_cap;	/* Resizable BAR capability offset */
 	u8		pcie_cap;	/* PCIe capability offset */
@@ -421,13 +415,6 @@ struct pci_dev {
 	unsigned int	d3cold_delay;	/* D3cold->D0 transition time in ms */
 
 	u16		l1ss;		/* L1SS Capability pointer */
-#ifdef CONFIG_PCIEASPM
-	struct pcie_link_state	*link_state;	/* ASPM link state */
-	unsigned int	aspm_l0s_support:1;	/* ASPM L0s support */
-	unsigned int	aspm_l1_support:1;	/* ASPM L1 support */
-	unsigned int	ltr_path:1;	/* Latency Tolerance Reporting
-					   supported from root to here */
-#endif
 	unsigned int	pasid_no_tlp:1;		/* PASID works without TLP Prefix */
 	unsigned int	eetlp_prefix_max:3;	/* Max # of End-End TLP Prefixes, 0=not supported */
 
@@ -458,7 +445,6 @@ struct pci_dev {
 	unsigned int	msi_enabled:1;
 	unsigned int	msix_enabled:1;
 	unsigned int	ari_enabled:1;		/* ARI forwarding */
-	unsigned int	ats_enabled:1;		/* Address Translation Svc */
 	unsigned int	pasid_enabled:1;	/* Process Address Space ID */
 	unsigned int	pri_enabled:1;		/* Page Request Interface */
 	unsigned int	tph_enabled:1;		/* TLP Processing Hints */
@@ -514,18 +500,6 @@ struct pci_dev {
 #endif
 	struct pci_vpd	vpd;
 	struct pcie_bwctrl_data		*link_bwctrl;
-#ifdef CONFIG_PCI_ATS
-	union {
-		struct pci_sriov	*sriov;		/* PF: SR-IOV info */
-		struct pci_dev		*physfn;	/* VF: related PF */
-	};
-	u16		ats_cap;	/* ATS Capability offset */
-	u8		ats_stu;	/* ATS Smallest Translation Unit */
-#endif
-#ifdef CONFIG_PCI_PASID
-	u16		pasid_cap;	/* PASID Capability offset */
-	u16		pasid_features;
-#endif
 	u16		acs_cap;	/* ACS Capability offset */
 	u16		acs_capabilities; /* ACS Capabilities */
 	u8		supported_speeds; /* Supported Link Speeds Vector */
@@ -1809,49 +1783,6 @@ static inline int pci_irqd_intx_xlate(struct irq_domain *d,
 	return 0;
 }
 
-#ifdef CONFIG_PCIEPORTBUS
-extern bool pcie_ports_disabled;
-extern bool pcie_ports_native;
-
-int pcie_set_target_speed(struct pci_dev *port, enum pci_bus_speed speed_req,
-			  bool use_lt);
-#else
-#define pcie_ports_disabled	true
-#define pcie_ports_native	false
-
-static inline int pcie_set_target_speed(struct pci_dev *port,
-					enum pci_bus_speed speed_req,
-					bool use_lt)
-{
-	return -EOPNOTSUPP;
-}
-#endif
-
-#define PCIE_LINK_STATE_L0S		(BIT(0) | BIT(1)) /* Upstr/dwnstr L0s */
-#define PCIE_LINK_STATE_L1		BIT(2)	/* L1 state */
-#define PCIE_LINK_STATE_L1_1		BIT(3)	/* ASPM L1.1 state */
-#define PCIE_LINK_STATE_L1_2		BIT(4)	/* ASPM L1.2 state */
-#define PCIE_LINK_STATE_L1_1_PCIPM	BIT(5)	/* PCI-PM L1.1 state */
-#define PCIE_LINK_STATE_L1_2_PCIPM	BIT(6)	/* PCI-PM L1.2 state */
-#define PCIE_LINK_STATE_ASPM_ALL	(PCIE_LINK_STATE_L0S		|\
-					 PCIE_LINK_STATE_L1		|\
-					 PCIE_LINK_STATE_L1_1		|\
-					 PCIE_LINK_STATE_L1_2		|\
-					 PCIE_LINK_STATE_L1_1_PCIPM	|\
-					 PCIE_LINK_STATE_L1_2_PCIPM)
-#define PCIE_LINK_STATE_CLKPM		BIT(7)
-#define PCIE_LINK_STATE_ALL		(PCIE_LINK_STATE_ASPM_ALL	|\
-					 PCIE_LINK_STATE_CLKPM)
-
-#ifdef CONFIG_PCIEASPM
-int pci_disable_link_state(struct pci_dev *pdev, int state);
-int pci_disable_link_state_locked(struct pci_dev *pdev, int state);
-int pci_enable_link_state(struct pci_dev *pdev, int state);
-int pci_enable_link_state_locked(struct pci_dev *pdev, int state);
-void pcie_no_aspm(void);
-bool pcie_aspm_support_enabled(void);
-bool pcie_aspm_enabled(struct pci_dev *pdev);
-#else
 static inline int pci_disable_link_state(struct pci_dev *pdev, int state)
 { return 0; }
 static inline int pci_disable_link_state_locked(struct pci_dev *pdev, int state)
@@ -1861,9 +1792,6 @@ static inline int pci_enable_link_state(struct pci_dev *pdev, int state)
 static inline int pci_enable_link_state_locked(struct pci_dev *pdev, int state)
 { return 0; }
 static inline void pcie_no_aspm(void) { }
-static inline bool pcie_aspm_support_enabled(void) { return false; }
-static inline bool pcie_aspm_enabled(struct pci_dev *pdev) { return false; }
-#endif
 
 #ifdef CONFIG_HOTPLUG_PCI
 void pci_hp_ignore_link_change(struct pci_dev *pdev);
@@ -1874,8 +1802,6 @@ static inline void pci_hp_unignore_link_change(struct pci_dev *pdev) { }
 #endif
 
 static inline bool pci_aer_available(void) { return false; }
-
-bool pci_ats_disabled(void);
 
 #define PCIE_PTM_CONTEXT_UPDATE_AUTO 0
 #define PCIE_PTM_CONTEXT_UPDATE_MANUAL 1
@@ -2138,8 +2064,6 @@ static inline int pci_irqd_intx_xlate(struct irq_domain *d,
 static inline const struct pci_device_id *pci_match_id(const struct pci_device_id *ids,
 							 struct pci_dev *dev)
 { return NULL; }
-static inline bool pci_ats_disabled(void) { return true; }
-
 static inline int pci_irq_vector(struct pci_dev *dev, unsigned int nr)
 {
 	return -EINVAL;
@@ -2376,12 +2300,8 @@ enum pci_fixup_pass {
 	DECLARE_PCI_FIXUP_SECTION(.pci_fixup_suspend_late,		\
 		suspend_late##hook, vendor, device, PCI_ANY_ID, 0, hook)
 
-#ifdef CONFIG_PCI_QUIRKS
-void pci_fixup_device(enum pci_fixup_pass pass, struct pci_dev *dev);
-#else
 static inline void pci_fixup_device(enum pci_fixup_pass pass,
 				    struct pci_dev *dev) { }
-#endif
 
 int pcim_intx(struct pci_dev *pdev, int enabled);
 int pcim_request_all_regions(struct pci_dev *pdev, const char *name);
@@ -2737,7 +2657,7 @@ static inline bool pci_is_thunderbolt_attached(struct pci_dev *pdev)
 	return false;
 }
 
-#if defined(CONFIG_PCIEPORTBUS) || defined(CONFIG_EEH) || defined(CONFIG_S390)
+#if defined(CONFIG_EEH) || defined(CONFIG_S390)
 void pci_uevent_ers(struct pci_dev *pdev, enum  pci_ers_result err_type);
 #endif
 

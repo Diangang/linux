@@ -27,7 +27,6 @@
 #include <linux/logic_pio.h>
 #include <linux/device.h>
 #include <linux/pm_runtime.h>
-#include <linux/pci-ats.h>
 #include <linux/pci_hotplug.h>
 #include <linux/vmalloc.h>
 #include <asm/dma.h>
@@ -136,17 +135,8 @@ unsigned int pcibios_max_latency = 255;
 /* If set, the PCIe ARI capability will not be used. */
 static bool pcie_ari_disabled;
 
-/* If set, the PCIe ATS capability will not be used. */
-static bool pcie_ats_disabled;
-
 /* If set, the PCI config space of each device is printed during boot. */
 bool pci_early_dump;
-
-bool pci_ats_disabled(void)
-{
-	return pcie_ats_disabled;
-}
-EXPORT_SYMBOL_GPL(pci_ats_disabled);
 
 /* Disable bridge_d3 for all PCIe ports */
 static bool pci_bridge_d3_disable;
@@ -972,8 +962,8 @@ static void pci_std_enable_acs(struct pci_dev *dev, struct pci_acs *caps)
 	/* Upstream Forwarding */
 	caps->ctrl |= (dev->acs_capabilities & PCI_ACS_UF);
 
-	/* Enable Translation Blocking for external devices and noats */
-	if (pci_ats_disabled() || dev->external_facing || dev->untrusted)
+	/* Enable Translation Blocking for externally reachable devices. */
+	if (dev->external_facing || dev->untrusted)
 		caps->ctrl |= (dev->acs_capabilities & PCI_ACS_TB);
 }
 
@@ -1372,9 +1362,6 @@ static int pci_set_full_power_state(struct pci_dev *dev, bool locked)
 		pci_restore_bars(dev);
 	}
 
-	if (dev->bus->self)
-		pcie_aspm_pm_state_change(dev->bus->self, locked);
-
 	return 0;
 }
 
@@ -1483,9 +1470,6 @@ static int pci_set_low_power_state(struct pci_dev *dev, pci_power_t state, bool 
 		pci_info_ratelimited(dev, "Refused to change power state from %s to %s\n",
 				     pci_power_name(dev->current_state),
 				     pci_power_name(state));
-
-	if (dev->bus->self)
-		pcie_aspm_pm_state_change(dev->bus->self, locked);
 
 	return 0;
 }
@@ -1625,9 +1609,6 @@ static int pci_save_pcie_state(struct pci_dev *dev)
 	pcie_capability_read_word(dev, PCI_EXP_LNKCTL2, &cap[i++]);
 	pcie_capability_read_word(dev, PCI_EXP_SLTCTL2, &cap[i++]);
 
-	pci_save_aspm_l1ss_state(dev);
-	pci_save_ltr_state(dev);
-
 	return 0;
 }
 
@@ -1637,23 +1618,9 @@ static void pci_restore_pcie_state(struct pci_dev *dev)
 	struct pci_cap_saved_state *save_state;
 	u16 *cap;
 
-	/*
-	 * Restore max latencies (in the LTR capability) before enabling
-	 * LTR itself in PCI_EXP_DEVCTL2.
-	 */
-	pci_restore_ltr_state(dev);
-	pci_restore_aspm_l1ss_state(dev);
-
 	save_state = pci_find_saved_cap(dev, PCI_CAP_ID_EXP);
 	if (!save_state)
 		return;
-
-	/*
-	 * Downstream ports reset the LTR enable bit when link goes down.
-	 * Check and re-configure the bit here before restoring device.
-	 * PCIe r5.0, sec 7.5.3.16.
-	 */
-	pci_bridge_reconfigure_ltr(dev);
 
 	cap = (u16 *)&save_state->cap.data[0];
 	pcie_capability_write_word(dev, PCI_EXP_DEVCTL, cap[i++]);
@@ -1951,17 +1918,12 @@ static void pci_host_bridge_disable_device(struct pci_dev *dev)
 static int do_pci_enable_device(struct pci_dev *dev, int bars)
 {
 	int err;
-	struct pci_dev *bridge;
 	u16 cmd;
 	u8 pin;
 
 	err = pci_set_power_state(dev, PCI_D0);
 	if (err < 0 && err != -EIO)
 		return err;
-
-	bridge = pci_upstream_bridge(dev);
-	if (bridge)
-		pcie_aspm_powersave_config_link(bridge);
 
 	err = pci_host_bridge_enable_device(dev);
 	if (err)
@@ -6676,9 +6638,6 @@ static int __init pci_setup(char *str)
 				/* Function handled the parameters */
 			} else if (!strcmp(str, "nomsi")) {
 				pci_no_msi();
-			} else if (!strncmp(str, "noats", 5)) {
-				pr_info("PCIe: ATS is disabled\n");
-				pcie_ats_disabled = true;
 			} else if (!strcmp(str, "noaer")) {
 				pci_no_aer();
 			} else if (!strcmp(str, "earlydump")) {

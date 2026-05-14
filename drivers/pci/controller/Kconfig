@@ -7,22 +7,6 @@ config PCI_HOST_COMMON
 	tristate
 	select PCI_ECAM
 
-config PCI_HOST_THUNDER_PEM
-	bool "Cavium Thunder PCIe controller to off-chip devices"
-	depends on ARM64 || COMPILE_TEST
-	depends on OF || (ACPI && PCI_QUIRKS)
-	select PCI_HOST_COMMON
-	help
-	  Say Y here if you want PCIe support for CN88XX Cavium Thunder SoCs.
-
-config PCI_HOST_THUNDER_ECAM
-	bool "Cavium Thunder ECAM controller to on-chip devices on pass-1.x silicon"
-	depends on ARM64 || COMPILE_TEST
-	depends on OF || (ACPI && PCI_QUIRKS)
-	select PCI_HOST_COMMON
-	help
-	  Say Y here if you want ECAM support for CN88XX-Pass-1.x Cavium Thunder SoCs.
-
 config PCI_HOST_GENERIC
 	tristate "Generic PCI host controller"
 	depends on OF
@@ -31,36 +15,4 @@ config PCI_HOST_GENERIC
 	help
 	  Say Y here if you want to support a simple generic PCI host
 	  controller, such as the one emulated by kvmtool.
-
-config PCI_XGENE
-	bool "X-Gene PCIe controller"
-	depends on ARM64 || COMPILE_TEST
-	depends on OF || (ACPI && PCI_QUIRKS)
-	help
-	  Say Y here if you want internal PCI support on APM X-Gene SoC.
-	  There are 5 internal PCIe ports available. Each port is GEN3 capable
-	  and have varied lanes from x1 to x8.
-
-config PCI_XGENE_MSI
-	bool "X-Gene v1 PCIe MSI feature"
-	depends on PCI_XGENE
-	depends on PCI_MSI
-	select IRQ_MSI_LIB
-	default y
-	help
-	  Say Y here if you want PCIe MSI support for the APM X-Gene v1 SoC.
-	  This MSI driver supports 5 PCIe ports on the APM X-Gene v1 SoC.
-
-config PCIE_XILINX
-	bool "Xilinx AXI PCIe controller"
-	depends on OF
-	depends on PCI_MSI
-	select IRQ_MSI_LIB
-	help
-	  Say 'Y' here if you want kernel to support the Xilinx AXI PCIe
-	  Host Bridge driver.
-
-source "drivers/pci/controller/dwc/Kconfig"
-source "drivers/pci/controller/mobiveil/Kconfig"
-source "drivers/pci/controller/plda/Kconfig"
 endmenu
