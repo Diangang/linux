@@ -13,9 +13,7 @@
 #define __X32_SYSCALL_BIT	0x40000000
 
 #ifndef __KERNEL__
-# ifdef __i386__
-#  include <asm/unistd_32.h>
-# elif defined(__ILP32__)
+# if defined(__ILP32__)
 #  include <asm/unistd_x32.h>
 # else
 #  include <asm/unistd_64.h>

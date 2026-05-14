@@ -17,7 +17,6 @@
 })
 
 extern char vdso_start[], vdso_end[];
-extern char vdso32_start[], vdso32_end[];
 
 #endif /* !__ASSEMBLER__ */
 

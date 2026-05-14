@@ -217,53 +217,16 @@ int map_vdso_once(const struct vdso_image *image, unsigned long addr)
 	return map_vdso(image, addr);
 }
 
-static int load_vdso32(void)
-{
-	if (vdso32_enabled != 1)  /* Other values all mean "disabled" */
-		return 0;
-
-	return map_vdso(&vdso32_image, 0);
-}
-
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 {
-	if (IS_ENABLED(CONFIG_X86_64)) {
-		if (!vdso64_enabled)
-			return 0;
+	if (!vdso64_enabled)
+		return 0;
 
-		return map_vdso(&vdso64_image, 0);
-	}
-
-	return load_vdso32();
+	return map_vdso(&vdso64_image, 0);
 }
-
-#ifdef CONFIG_COMPAT
-int compat_arch_setup_additional_pages(struct linux_binprm *bprm,
-				       int uses_interp, bool x32)
-{
-	if (0 && x32) {
-		if (!vdso64_enabled)
-			return 0;
-		return map_vdso(&vdsox32_image, 0);
-	}
-
-	if (IS_ENABLED(CONFIG_IA32_EMULATION))
-		return load_vdso32();
-
-	return 0;
-}
-#endif
 
 bool arch_syscall_is_vdso_sigreturn(struct pt_regs *regs)
 {
-	const struct vdso_image *image = current->mm->context.vdso_image;
-	unsigned long vdso = (unsigned long) current->mm->context.vdso;
-
-	if (in_ia32_syscall() && image == &vdso32_image) {
-		if (regs->ip == vdso + image->sym_vdso32_sigreturn_landing_pad ||
-		    regs->ip == vdso + image->sym_vdso32_rt_sigreturn_landing_pad)
-			return true;
-	}
 	return false;
 }
 

@@ -266,13 +266,7 @@ switch_mm(struct mm_struct *prev, struct mm_struct *next,
 static inline const struct cpumask *
 __task_cpu_possible_mask(struct task_struct *p, const struct cpumask *mask)
 {
-	if (!static_branch_unlikely(&arm64_mismatched_32bit_el0))
-		return mask;
-
-	if (!is_compat_thread(task_thread_info(p)))
-		return mask;
-
-	return system_32bit_el0_cpumask();
+	return mask;
 }
 
 static inline const struct cpumask *

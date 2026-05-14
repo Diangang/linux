@@ -7,7 +7,6 @@
 
 #include <asm/cputype.h>
 
-#define MMCF_AARCH32	0x1	/* mm context flag for AArch32 executables */
 #define USER_ASID_BIT	48
 #define USER_ASID_FLAG	(UL(1) << USER_ASID_BIT)
 
@@ -18,9 +17,6 @@
 
 typedef struct {
 	atomic64_t	id;
-#ifdef CONFIG_COMPAT
-	void		*sigpage;
-#endif
 	refcount_t	pinned;
 	void		*vdso;
 	unsigned long	flags;

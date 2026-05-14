@@ -33,7 +33,6 @@
 #include <asm/fpsimd.h>
 #include <asm/ptrace.h>
 #include <asm/syscall.h>
-#include <asm/signal32.h>
 #include <asm/traps.h>
 #include <asm/vdso.h>
 
@@ -1544,10 +1543,7 @@ static int setup_rt_frame(int usig, struct ksignal *ksig, sigset_t *set,
 
 static void setup_restart_syscall(struct pt_regs *regs)
 {
-	if (is_compat_task())
-		compat_setup_restart_syscall(regs);
-	else
-		regs->regs[8] = __NR_restart_syscall;
+	regs->regs[8] = __NR_restart_syscall;
 }
 
 /*
@@ -1564,14 +1560,7 @@ static void handle_signal(struct ksignal *ksig, struct pt_regs *regs)
 	/*
 	 * Set up the stack frame
 	 */
-	if (is_compat_task()) {
-		if (ksig->ka.sa.sa_flags & SA_SIGINFO)
-			ret = compat_setup_rt_frame(usig, ksig, oldset, regs);
-		else
-			ret = compat_setup_frame(usig, ksig, oldset, regs);
-	} else {
-		ret = setup_rt_frame(usig, ksig, oldset, regs);
-	}
+	ret = setup_rt_frame(usig, ksig, oldset, regs);
 
 	/*
 	 * Check that the resulting registers are actually sane.

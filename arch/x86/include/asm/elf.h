@@ -77,7 +77,6 @@ typedef struct user_i387_struct elf_fpregset_t;
 #include <asm/vdso.h>
 
 extern unsigned int vdso64_enabled;
-extern unsigned int vdso32_enabled;
 
 /*
  * This is used to ensure we don't load something for the wrong architecture.
@@ -93,10 +92,6 @@ extern unsigned int vdso32_enabled;
  */
 #define elf_check_arch(x)			\
 	((x)->e_machine == EM_X86_64)
-
-#define compat_elf_check_arch(x)					\
-	((elf_check_arch_ia32(x) && ia32_enabled_verbose()) ||		\
-	 (0 && (x)->e_machine == EM_X86_64))
 
 static inline void elf_common_init(struct thread_struct *t,
 				   struct pt_regs *regs, const u16 ds)
@@ -283,31 +278,16 @@ do {									\
 
 #define AT_SYSINFO		32
 
-#define COMPAT_ARCH_DLINFO						\
-if (exec->e_machine == EM_X86_64)					\
-	ARCH_DLINFO_X32;						\
-else if (IS_ENABLED(CONFIG_IA32_EMULATION))				\
-	ARCH_DLINFO_IA32
-
 #define COMPAT_ELF_ET_DYN_BASE	(TASK_UNMAPPED_BASE + 0x1000000)
 
 
 #define VDSO_CURRENT_BASE	((unsigned long)current->mm->context.vdso)
-
-#define VDSO_ENTRY							\
-	((unsigned long)current->mm->context.vdso +			\
-	 vdso32_image.sym___kernel_vsyscall)
 
 struct linux_binprm;
 
 #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
 extern int arch_setup_additional_pages(struct linux_binprm *bprm,
 				       int uses_interp);
-extern int compat_arch_setup_additional_pages(struct linux_binprm *bprm,
-					      int uses_interp, bool x32);
-#define COMPAT_ARCH_SETUP_ADDITIONAL_PAGES(bprm, ex, interpreter)	\
-	compat_arch_setup_additional_pages(bprm, interpreter,		\
-					   (ex->e_machine == EM_X86_64))
 
 extern bool arch_syscall_is_vdso_sigreturn(struct pt_regs *regs);
 

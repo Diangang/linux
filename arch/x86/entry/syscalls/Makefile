@@ -5,7 +5,6 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
 # Create output directory if not already present
 $(shell mkdir -p $(out) $(uapi))
 
-syscall32 := $(src)/syscall_32.tbl
 syscall64 := $(src)/syscall_64.tbl
 
 syshdr := $(srctree)/scripts/syscallhdr.sh
@@ -24,15 +23,6 @@ quiet_cmd_systbl = SYSTBL  $@
 quiet_cmd_hypercalls = HYPERCALLS $@
       cmd_hypercalls = $(CONFIG_SHELL) '$<' $@ $(filter-out $<, $(real-prereqs))
 
-$(uapi)/unistd_32.h: abis := i386
-$(uapi)/unistd_32.h: $(syscall32) $(syshdr) FORCE
-	$(call if_changed,syshdr)
-
-$(out)/unistd_32_ia32.h: abis := i386
-$(out)/unistd_32_ia32.h: prefix := ia32_
-$(out)/unistd_32_ia32.h: $(syscall32) $(syshdr) FORCE
-	$(call if_changed,syshdr)
-
 $(uapi)/unistd_x32.h: abis := common,x32
 $(uapi)/unistd_x32.h: offset := __X32_SYSCALL_BIT
 $(uapi)/unistd_x32.h: $(syscall64) $(syshdr) FORCE
@@ -47,9 +37,6 @@ $(out)/unistd_64_x32.h: prefix := x32_
 $(out)/unistd_64_x32.h: $(syscall64) $(syshdr) FORCE
 	$(call if_changed,syshdr)
 
-$(out)/syscalls_32.h: abis := i386
-$(out)/syscalls_32.h: $(syscall32) $(systbl) FORCE
-	$(call if_changed,systbl)
 $(out)/syscalls_64.h: abis := common,64
 $(out)/syscalls_64.h: $(syscall64) $(systbl) FORCE
 	$(call if_changed,systbl)
@@ -62,9 +49,8 @@ $(out)/xen-hypercalls.h: $(srctree)/scripts/xen-hypercalls.sh FORCE
 
 $(out)/xen-hypercalls.h: $(srctree)/include/xen/interface/xen*.h
 
-uapisyshdr-y			+= unistd_32.h unistd_64.h unistd_x32.h
-syshdr-y			+= syscalls_32.h
-syshdr-$(CONFIG_X86_64)		+= unistd_32_ia32.h unistd_64_x32.h
+uapisyshdr-y			+= unistd_64.h unistd_x32.h
+syshdr-$(CONFIG_X86_64)		+= unistd_64_x32.h
 syshdr-$(CONFIG_X86_64)		+= syscalls_64.h
 syshdr-$(CONFIG_XEN)		+= xen-hypercalls.h
 

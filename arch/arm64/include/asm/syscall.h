@@ -13,10 +13,6 @@ typedef long (*syscall_fn_t)(const struct pt_regs *regs);
 
 extern const syscall_fn_t sys_call_table[];
 
-#ifdef CONFIG_COMPAT
-extern const syscall_fn_t compat_sys_call_table[];
-#endif
-
 static inline int syscall_get_nr(struct task_struct *task,
 				 struct pt_regs *regs)
 {
@@ -33,9 +29,6 @@ static inline long syscall_get_return_value(struct task_struct *task,
 					    struct pt_regs *regs)
 {
 	unsigned long val = regs->regs[0];
-
-	if (is_compat_thread(task_thread_info(task)))
-		val = sign_extend64(val, 31);
 
 	return val;
 }
@@ -54,9 +47,6 @@ static inline void syscall_set_return_value(struct task_struct *task,
 {
 	if (error)
 		val = error;
-
-	if (is_compat_thread(task_thread_info(task)))
-		val = lower_32_bits(val);
 
 	regs->regs[0] = val;
 }
@@ -114,9 +104,6 @@ static inline void syscall_set_arguments(struct task_struct *task,
  */
 static inline int syscall_get_arch(struct task_struct *task)
 {
-	if (is_compat_thread(task_thread_info(task)))
-		return AUDIT_ARCH_ARM;
-
 	return AUDIT_ARCH_AARCH64;
 }
 

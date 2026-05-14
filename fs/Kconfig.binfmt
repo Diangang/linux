@@ -28,11 +28,6 @@ config BINFMT_ELF
 	  ld.so (check the file <file:Documentation/Changes> for location and
 	  latest version).
 
-config COMPAT_BINFMT_ELF
-	def_bool y
-	depends on COMPAT && BINFMT_ELF
-	select ELFCORE
-
 config ARCH_BINFMT_ELF_STATE
 	bool
 

@@ -456,12 +456,8 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 		if (system_supports_poe())
 			p->thread.por_el0 = read_sysreg_s(SYS_POR_EL0);
 
-		if (stack_start) {
-			if (is_compat_thread(task_thread_info(p)))
-				childregs->compat_sp = stack_start;
-			else
-				childregs->sp = stack_start;
-		}
+		if (stack_start)
+			childregs->sp = stack_start;
 
 		/*
 		 * Due to the AAPCS64 "ZA lazy saving scheme", PSTATE.ZA and
@@ -535,7 +531,7 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 void tls_preserve_current_state(void)
 {
 	*task_user_tls(current) = read_sysreg(tpidr_el0);
-	if (system_supports_tpidr2() && !is_compat_task())
+	if (system_supports_tpidr2())
 		current->thread.tpidr2_el0 = read_sysreg_s(SYS_TPIDR2_EL0);
 }
 
@@ -543,10 +539,7 @@ static void tls_thread_switch(struct task_struct *next)
 {
 	tls_preserve_current_state();
 
-	if (is_compat_thread(task_thread_info(next)))
-		write_sysreg(next->thread.uw.tp_value, tpidrro_el0);
-	else
-		write_sysreg(0, tpidrro_el0);
+	write_sysreg(0, tpidrro_el0);
 
 	write_sysreg(*task_user_tls(next), tpidr_el0);
 	if (system_supports_tpidr2())
@@ -650,10 +643,8 @@ static void update_cntkctl_el1(struct task_struct *next)
 static void cntkctl_thread_switch(struct task_struct *prev,
 				  struct task_struct *next)
 {
-	if ((read_ti_thread_flags(task_thread_info(prev)) &
-	     (_TIF_32BIT | _TIF_TSC_SIGSEGV)) !=
-	    (read_ti_thread_flags(task_thread_info(next)) &
-	     (_TIF_32BIT | _TIF_TSC_SIGSEGV)))
+	if ((read_ti_thread_flags(task_thread_info(prev)) & _TIF_TSC_SIGSEGV) !=
+	    (read_ti_thread_flags(task_thread_info(next)) & _TIF_TSC_SIGSEGV))
 		update_cntkctl_el1(next);
 }
 
@@ -826,28 +817,6 @@ unsigned long arch_align_stack(unsigned long sp)
 	return sp & ~0xf;
 }
 
-#ifdef CONFIG_COMPAT
-int compat_elf_check_arch(const struct elf32_hdr *hdr)
-{
-	if (!system_supports_32bit_el0())
-		return false;
-
-	if ((hdr)->e_machine != EM_ARM)
-		return false;
-
-	if (!((hdr)->e_flags & EF_ARM_EABI_MASK))
-		return false;
-
-	/*
-	 * Prevent execve() of a 32-bit program from a deadline task
-	 * if the restricted affinity mask would be inadmissible on an
-	 * asymmetric system.
-	 */
-	return !static_branch_unlikely(&arm64_mismatched_32bit_el0) ||
-	       !dl_task_check_affinity(current, system_32bit_el0_cpumask());
-}
-#endif
-
 /*
  * Called from setup_new_exec() after (COMPAT_)SET_PERSONALITY.
  */
@@ -855,23 +824,8 @@ void arch_setup_new_exec(void)
 {
 	unsigned long mmflags = 0;
 
-	if (is_compat_task()) {
-		mmflags = MMCF_AARCH32;
-
-		/*
-		 * Restrict the CPU affinity mask for a 32-bit task so that
-		 * it contains only 32-bit-capable CPUs.
-		 *
-		 * From the perspective of the task, this looks similar to
-		 * what would happen if the 64-bit-only CPUs were hot-unplugged
-		 * at the point of execve(), although we try a bit harder to
-		 * honour the cpuset hierarchy.
-		 */
-		if (static_branch_unlikely(&arm64_mismatched_32bit_el0))
-			force_compatible_cpus_allowed_ptr(current);
-	} else if (static_branch_unlikely(&arm64_mismatched_32bit_el0)) {
+	if (static_branch_unlikely(&arm64_mismatched_32bit_el0))
 		relax_compatible_cpus_allowed_ptr(current);
-	}
 
 	current->mm->context.flags = mmflags;
 	ptrauth_thread_init_user();
@@ -894,9 +848,6 @@ long set_tagged_addr_ctrl(struct task_struct *task, unsigned long arg)
 {
 	unsigned long valid_mask = PR_TAGGED_ADDR_ENABLE;
 	struct thread_info *ti = task_thread_info(task);
-
-	if (is_compat_thread(ti))
-		return -EINVAL;
 
 	if (system_supports_mte()) {
 		valid_mask |= PR_MTE_TCF_SYNC | PR_MTE_TCF_ASYNC \
@@ -928,9 +879,6 @@ long get_tagged_addr_ctrl(struct task_struct *task)
 {
 	long ret = 0;
 	struct thread_info *ti = task_thread_info(task);
-
-	if (is_compat_thread(ti))
-		return -EINVAL;
 
 	if (test_ti_thread_flag(ti, TIF_TAGGED_ADDR))
 		ret = PR_TAGGED_ADDR_ENABLE;

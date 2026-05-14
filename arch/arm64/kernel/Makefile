@@ -32,10 +32,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 			   syscall.o proton-pack.o idle.o patching.o pi/	\
 			   rsi.o jump_label.o
 
-obj-$(CONFIG_COMPAT)			+= sys32.o signal32.o			\
-					   sys_compat.o
-obj-$(CONFIG_COMPAT)			+= sigreturn32.o
-obj-$(CONFIG_KUSER_HELPERS)		+= kuser32.o
 obj-$(CONFIG_MODULES)			+= module.o module-plts.o
 obj-$(CONFIG_PERF_EVENTS)		+= perf_regs.o perf_callchain.o
 obj-$(CONFIG_HAVE_HW_BREAKPOINT)	+= hw_breakpoint.o
