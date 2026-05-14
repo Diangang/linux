@@ -75,8 +75,6 @@ config PREVENT_FIRMWARE_BUILD
 	    o CONFIG_WANXL through CONFIG_WANXL_BUILD_FIRMWARE
 	    o CONFIG_SCSI_AIC79XX through CONFIG_AIC79XX_BUILD_FIRMWARE
 
-source "drivers/base/firmware_loader/Kconfig"
-
 config GENERIC_CPU_DEVICES
 	bool
 	default n

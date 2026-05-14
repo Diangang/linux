@@ -27,9 +27,7 @@
 #include <linux/dmi.h>
 #endif
 #include <linux/pci.h>
-#include <acpi/apei.h>
 #include <linux/suspend.h>
-#include <linux/prmt.h>
 
 #include "internal.h"
 
@@ -412,8 +410,6 @@ out:
 	return ret;
 }
 
-bool osc_sb_apei_support_acked;
-
 /*
  * ACPI 6.0 Section 8.4.4.2 Idle State Coordination
  * OSPM supports platform coordinated low power idle(LPI) states
@@ -466,14 +462,8 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 	if (IS_ENABLED(CONFIG_ACPI_PROCESSOR))
 		feature_mask |= OSC_SB_PPC_OST_SUPPORT;
 
-	if (IS_ENABLED(CONFIG_ACPI_PRMT))
-		feature_mask |= OSC_SB_PRM_SUPPORT;
-
 	if (IS_ENABLED(CONFIG_USB4))
 		feature_mask |= OSC_SB_NATIVE_USB4_SUPPORT;
-
-	if (!ghes_disable)
-		feature_mask |= OSC_SB_APEI_SUPPORT;
 
 	if (ACPI_FAILURE(acpi_get_handle(NULL, "\\_SB", &handle)))
 		return;
@@ -490,7 +480,6 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 	acpi_handle_info(handle, "platform _OSC: OS control mask [%08x]\n", feature_mask);
 
 	osc_sb_cppc2_support_acked = feature_mask & OSC_SB_CPCV2_SUPPORT;
-	osc_sb_apei_support_acked = feature_mask & OSC_SB_APEI_SUPPORT;
 	osc_pc_lpi_support_confirmed = feature_mask & OSC_SB_PCLPI_SUPPORT;
 	osc_sb_native_usb4_support_confirmed = feature_mask & OSC_SB_NATIVE_USB4_SUPPORT;
 	osc_cpc_flexible_adr_space_confirmed = feature_mask & OSC_SB_CPC_FLEXIBLE_ADR_SPACE;
@@ -1492,7 +1481,6 @@ static int __init acpi_init(void)
 		return -ENOMEM;
 	}
 
-	init_prmt();
 	result = acpi_bus_init();
 	if (result) {
 		kobject_put(acpi_kobj);
@@ -1502,8 +1490,6 @@ static int __init acpi_init(void)
 	acpi_init_ffh();
 
 	pci_mmcfg_late_init();
-	acpi_hest_init();
-	acpi_ghes_init();
 	acpi_arch_init();
 	acpi_scan_init();
 	acpi_ec_init();

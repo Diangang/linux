@@ -22,7 +22,6 @@
 #include "misc.h"
 #include "error.h"
 #include "../string.h"
-#include "efi.h"
 
 #include <generated/compile.h>
 #include <generated/utsversion.h>

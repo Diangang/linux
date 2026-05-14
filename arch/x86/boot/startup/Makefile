@@ -19,8 +19,6 @@ obj-$(CONFIG_X86_64)		+= gdt_idt.o map_kernel.o
 pi-objs				:= $(patsubst %.o,$(obj)/%.o,$(obj-y))
 
 lib-$(CONFIG_X86_64)		+= la57toggle.o
-lib-$(CONFIG_EFI_MIXED)		+= efi-mixed.o
-
 #
 # Disable objtool validation for all library code, which is intended
 # to be linked into the decompressor or the EFI stub but not vmlinux

@@ -6,18 +6,9 @@
 
 menu "Firmware Drivers"
 
-config ARM_SDE_INTERFACE
-	bool "ARM Software Delegated Exception Interface (SDEI)"
-	depends on ARM64
-	help
-	  The Software Delegated Exception Interface (SDEI) is an ARM
-	  standard for registering callbacks from the platform firmware
-	  into the OS. This is typically used to implement RAS notifications.
-
 config DMI_SCAN_MACHINE_NON_EFI_FALLBACK
 	bool
 
-source "drivers/firmware/efi/Kconfig"
 source "drivers/firmware/psci/Kconfig"
 source "drivers/firmware/smccc/Kconfig"
 

@@ -60,7 +60,6 @@ acpi-y				+= property.o
 acpi-y				+= acpi_lpat.o
 acpi-$(CONFIG_ACPI_LPIT)	+= acpi_lpit.o
 acpi-$(CONFIG_ACPI_GENERIC_GSI) += irq.o
-acpi-$(CONFIG_ACPI_PRMT)	+= prmt.o
 acpi-$(CONFIG_ACPI_MRRM)	+= acpi_mrrm.o
 
 # These are (potentially) separate modules
@@ -79,9 +78,5 @@ processor-y			:= processor_driver.o processor_thermal.o
 processor-$(CONFIG_ACPI_PROCESSOR_IDLE) += processor_idle.o
 processor-$(CONFIG_ACPI_CPU_FREQ_PSS)	+= processor_throttling.o
 processor-$(CONFIG_CPU_FREQ)	+= processor_perflib.o
-
-obj-$(CONFIG_ACPI_APEI)		+= apei/
-
-obj-$(CONFIG_ARM64)		+= arm64/
 
 obj-$(CONFIG_X86)		+= x86/
