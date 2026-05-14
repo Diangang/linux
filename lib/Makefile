@@ -73,19 +73,6 @@ obj-$(CONFIG_BITREVERSE) += bitrev.o
 obj-$(CONFIG_XXHASH)	+= xxhash.o
 obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
 
-obj-$(CONFIG_ZLIB_INFLATE) += zlib_inflate/
-obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
-obj-$(CONFIG_LZ4_DECOMPRESS) += lz4/
-obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
-obj-$(CONFIG_XZ_DEC) += xz/
-lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
-lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
-lib-$(CONFIG_DECOMPRESS_LZMA) += decompress_unlzma.o
-lib-$(CONFIG_DECOMPRESS_XZ) += decompress_unxz.o
-lib-$(CONFIG_DECOMPRESS_LZO) += decompress_unlzo.o
-lib-$(CONFIG_DECOMPRESS_LZ4) += decompress_unlz4.o
-lib-$(CONFIG_DECOMPRESS_ZSTD) += decompress_unzstd.o
-
 obj-$(CONFIG_SMP) += percpu_counter.o
 
 lib-$(CONFIG_GENERIC_BUG) += bug.o
