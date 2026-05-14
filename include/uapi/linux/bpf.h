@@ -1925,16 +1925,9 @@ union bpf_attr {
 } __attribute__((aligned(8)));
 
 /* The description below is an attempt at providing documentation to eBPF
- * developers about the multiple available eBPF helper functions. It can be
- * parsed and used to produce a manual page. The workflow is the following,
- * and requires the rst2man utility:
+ * developers about the multiple available eBPF helper functions.
  *
- *     $ ./scripts/bpf_doc.py \
- *             --filename include/uapi/linux/bpf.h > /tmp/bpf-helpers.rst
- *     $ rst2man /tmp/bpf-helpers.rst > /tmp/bpf-helpers.7
- *     $ man /tmp/bpf-helpers.7
- *
- * Note that in order to produce this external documentation, some RST
+ * Note that in order to produce external documentation, some RST
  * formatting is used in the descriptions to get "bold" and "italics" in
  * manual pages. Also note that the few trailing white spaces are
  * intentional, removing them would break paragraphs for rst2man.
