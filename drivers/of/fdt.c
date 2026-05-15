@@ -302,8 +302,7 @@ static int unflatten_dt_nodes(const void *blob,
 		if (WARN_ON_ONCE(depth >= FDT_MAX_DEPTH - 1))
 			continue;
 
-		if (!IS_ENABLED(CONFIG_OF_KOBJ) &&
-		    !of_fdt_device_is_available(blob, offset))
+		if (!of_fdt_device_is_available(blob, offset))
 			continue;
 
 		ret = populate_node(blob, offset, &mem, nps[depth],
@@ -1306,7 +1305,6 @@ void __init unflatten_device_tree(void)
 	/* Get pointer to "/chosen" and "/aliases" nodes for use everywhere */
 	of_alias_scan(early_init_dt_alloc_memory_arch);
 
-	unittest_unflatten_overlay_base();
 }
 
 /**

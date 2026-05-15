@@ -2250,7 +2250,7 @@ char *device_node_string(char *buf, char *end, struct device_node *dn,
 			buf = string(buf, end, p, str_spec);
 			break;
 		case 'F':	/* flags */
-			tbuf[0] = of_node_check_flag(dn, OF_DYNAMIC) ? 'D' : '-';
+			tbuf[0] = '-';
 			tbuf[1] = of_node_check_flag(dn, OF_DETACHED) ? 'd' : '-';
 			tbuf[2] = of_node_check_flag(dn, OF_POPULATED) ? 'P' : '-';
 			tbuf[3] = of_node_check_flag(dn, OF_POPULATED_BUS) ? 'B' : '-';

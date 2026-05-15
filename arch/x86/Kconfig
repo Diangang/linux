@@ -657,7 +657,6 @@ config NUMA
 	depends on SMP
 	depends on X86_64
 	select USE_PERCPU_NUMA_NODE_ID
-	select OF_NUMA if OF
 	help
 	  Enable NUMA (Non-Uniform Memory Access) support.
 

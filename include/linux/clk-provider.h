@@ -8,6 +8,7 @@
 
 #include <linux/of.h>
 #include <linux/of_clk.h>
+#include <linux/spinlock.h>
 
 /*
  * flags used across common struct clk.  these flags should only affect the

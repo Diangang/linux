@@ -1023,8 +1023,6 @@ static inline int of_pci_get_equalization_presets(struct device *dev,
 }
 #endif /* CONFIG_OF */
 
-struct of_changeset;
-
 static inline void of_pci_make_dev_node(struct pci_dev *pdev) { }
 static inline void of_pci_remove_node(struct pci_dev *pdev) { }
 static inline void of_pci_make_host_bridge_node(struct pci_host_bridge *bridge) { }

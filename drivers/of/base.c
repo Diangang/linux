@@ -27,7 +27,6 @@
 #include <linux/spinlock.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/proc_fs.h>
 
 #include "of_private.h"
 
@@ -40,8 +39,6 @@ EXPORT_SYMBOL(of_chosen);
 struct device_node *of_aliases;
 struct device_node *of_stdout;
 static const char *of_stdout_options;
-
-struct kset *of_kset;
 
 /*
  * Used to protect the of_aliases, to hold off addition of nodes to sysfs.
@@ -185,26 +182,12 @@ void __init of_core_init(void)
 {
 	struct device_node *np;
 
-	of_platform_register_reconfig_notifier();
-
-	/* Create the kset, and register existing nodes */
 	mutex_lock(&of_mutex);
-	of_kset = kset_create_and_add("devicetree", NULL, firmware_kobj);
-	if (!of_kset) {
-		mutex_unlock(&of_mutex);
-		pr_err("failed to register existing nodes\n");
-		return;
-	}
 	for_each_of_allnodes(np) {
-		__of_attach_node_sysfs(np);
 		if (np->phandle && !phandle_cache[of_phandle_cache_hash(np->phandle)])
 			phandle_cache[of_phandle_cache_hash(np->phandle)] = np;
 	}
 	mutex_unlock(&of_mutex);
-
-	/* Symlink in /proc as required by userspace ABI */
-	if (of_root)
-		proc_symlink("device-tree", NULL, "/sys/firmware/devicetree/base");
 }
 
 static struct property *__of_find_property(const struct device_node *np,
@@ -1712,188 +1695,6 @@ int of_count_phandle_with_args(const struct device_node *np, const char *list_na
 	return cur_index;
 }
 EXPORT_SYMBOL(of_count_phandle_with_args);
-
-static struct property *__of_remove_property_from_list(struct property **list, struct property *prop)
-{
-	struct property **next;
-
-	for (next = list; *next; next = &(*next)->next) {
-		if (*next == prop) {
-			*next = prop->next;
-			prop->next = NULL;
-			return prop;
-		}
-	}
-	return NULL;
-}
-
-/**
- * __of_add_property - Add a property to a node without lock operations
- * @np:		Caller's Device Node
- * @prop:	Property to add
- */
-int __of_add_property(struct device_node *np, struct property *prop)
-{
-	int rc = 0;
-	unsigned long flags;
-	struct property **next;
-
-	raw_spin_lock_irqsave(&devtree_lock, flags);
-
-	__of_remove_property_from_list(&np->deadprops, prop);
-
-	prop->next = NULL;
-	next = &np->properties;
-	while (*next) {
-		if (of_prop_cmp(prop->name, (*next)->name) == 0) {
-			/* duplicate ! don't insert it */
-			rc = -EEXIST;
-			goto out_unlock;
-		}
-		next = &(*next)->next;
-	}
-	*next = prop;
-
-out_unlock:
-	raw_spin_unlock_irqrestore(&devtree_lock, flags);
-	if (rc)
-		return rc;
-
-	__of_add_property_sysfs(np, prop);
-	return 0;
-}
-
-/**
- * of_add_property - Add a property to a node
- * @np:		Caller's Device Node
- * @prop:	Property to add
- */
-int of_add_property(struct device_node *np, struct property *prop)
-{
-	int rc;
-
-	mutex_lock(&of_mutex);
-	rc = __of_add_property(np, prop);
-	mutex_unlock(&of_mutex);
-
-	if (!rc)
-		of_property_notify(OF_RECONFIG_ADD_PROPERTY, np, prop, NULL);
-
-	return rc;
-}
-EXPORT_SYMBOL_GPL(of_add_property);
-
-int __of_remove_property(struct device_node *np, struct property *prop)
-{
-	unsigned long flags;
-	int rc = -ENODEV;
-
-	raw_spin_lock_irqsave(&devtree_lock, flags);
-
-	if (__of_remove_property_from_list(&np->properties, prop)) {
-		/* Found the property, add it to deadprops list */
-		prop->next = np->deadprops;
-		np->deadprops = prop;
-		rc = 0;
-	}
-
-	raw_spin_unlock_irqrestore(&devtree_lock, flags);
-	if (rc)
-		return rc;
-
-	__of_remove_property_sysfs(np, prop);
-	return 0;
-}
-
-/**
- * of_remove_property - Remove a property from a node.
- * @np:		Caller's Device Node
- * @prop:	Property to remove
- *
- * Note that we don't actually remove it, since we have given out
- * who-knows-how-many pointers to the data using get-property.
- * Instead we just move the property to the "dead properties"
- * list, so it won't be found any more.
- */
-int of_remove_property(struct device_node *np, struct property *prop)
-{
-	int rc;
-
-	if (!prop)
-		return -ENODEV;
-
-	mutex_lock(&of_mutex);
-	rc = __of_remove_property(np, prop);
-	mutex_unlock(&of_mutex);
-
-	if (!rc)
-		of_property_notify(OF_RECONFIG_REMOVE_PROPERTY, np, prop, NULL);
-
-	return rc;
-}
-EXPORT_SYMBOL_GPL(of_remove_property);
-
-int __of_update_property(struct device_node *np, struct property *newprop,
-		struct property **oldpropp)
-{
-	struct property **next, *oldprop;
-	unsigned long flags;
-
-	raw_spin_lock_irqsave(&devtree_lock, flags);
-
-	__of_remove_property_from_list(&np->deadprops, newprop);
-
-	for (next = &np->properties; *next; next = &(*next)->next) {
-		if (of_prop_cmp((*next)->name, newprop->name) == 0)
-			break;
-	}
-	*oldpropp = oldprop = *next;
-
-	if (oldprop) {
-		/* replace the node */
-		newprop->next = oldprop->next;
-		*next = newprop;
-		oldprop->next = np->deadprops;
-		np->deadprops = oldprop;
-	} else {
-		/* new node */
-		newprop->next = NULL;
-		*next = newprop;
-	}
-
-	raw_spin_unlock_irqrestore(&devtree_lock, flags);
-
-	__of_update_property_sysfs(np, newprop, oldprop);
-
-	return 0;
-}
-
-/*
- * of_update_property - Update a property in a node, if the property does
- * not exist, add it.
- *
- * Note that we don't actually remove it, since we have given out
- * who-knows-how-many pointers to the data using get-property.
- * Instead we just move the property to the "dead properties" list,
- * and add the new property to the property list
- */
-int of_update_property(struct device_node *np, struct property *newprop)
-{
-	struct property *oldprop;
-	int rc;
-
-	if (!newprop->name)
-		return -EINVAL;
-
-	mutex_lock(&of_mutex);
-	rc = __of_update_property(np, newprop, &oldprop);
-	mutex_unlock(&of_mutex);
-
-	if (!rc)
-		of_property_notify(OF_RECONFIG_UPDATE_PROPERTY, np, newprop, oldprop);
-
-	return rc;
-}
 
 static void of_alias_add(struct alias_prop *ap, struct device_node *np,
 			 int id, const char *stem, int stem_len)
