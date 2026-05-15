@@ -105,11 +105,6 @@ CONFIG_LOG_BUF_SHIFT=17
 CONFIG_LOG_CPU_MAX_BUF_SHIFT=12
 CONFIG_GENERIC_SCHED_CLOCK=y
 
-#
-# Scheduler features
-#
-# end of Scheduler features
-
 CONFIG_ARCH_SUPPORTS_NUMA_BALANCING=y
 CONFIG_ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH=y
 CONFIG_CC_HAS_INT128=y
@@ -177,11 +172,6 @@ CONFIG_KALLSYMS_ALL=y
 CONFIG_ARCH_HAS_MEMBARRIER_SYNC_CORE=y
 CONFIG_ARCH_SUPPORTS_MSEAL_SYSTEM_MAPPINGS=y
 
-#
-# Kernel Performance Events And Counters
-#
-# end of Kernel Performance Events And Counters
-
 CONFIG_PROFILING=y
 
 #
@@ -216,18 +206,8 @@ CONFIG_FIX_EARLYCON_MEM=y
 CONFIG_PGTABLE_LEVELS=5
 
 #
-# Platform selection
-#
-# end of Platform selection
-
-#
 # Kernel Features
 #
-
-#
-# ARM errata workarounds via the alternatives framework
-#
-# end of ARM errata workarounds via the alternatives framework
 
 CONFIG_ARM64_4K_PAGES=y
 CONFIG_ARM64_VA_BITS_52=y
@@ -310,11 +290,6 @@ CONFIG_ARM64_HAFT=y
 CONFIG_ARM64_GCS=y
 # end of ARMv9.4 architectural features
 
-#
-# ARMv9.6 architectural features
-#
-# end of ARMv9.6 architectural features
-
 CONFIG_ARM64_SVE=y
 CONFIG_ARM64_SME=y
 CONFIG_RELOCATABLE=y
@@ -334,11 +309,6 @@ CONFIG_CMDLINE=""
 CONFIG_ARCH_HIBERNATION_POSSIBLE=y
 CONFIG_ARCH_SUSPEND_POSSIBLE=y
 # end of Power management options
-
-#
-# CPU Power Management
-#
-# end of CPU Power Management
 
 CONFIG_CPU_MITIGATIONS=y
 
@@ -589,10 +559,6 @@ CONFIG_PCI_ECAM=y
 CONFIG_PCI_HOST_COMMON=y
 CONFIG_PCI_HOST_GENERIC=y
 
-#
-# PLDA-based PCIe controllers
-#
-# end of PLDA-based PCIe controllers
 # end of PCI controller drivers
 
 #
@@ -604,11 +570,6 @@ CONFIG_DRIVER_DEFERRED_PROBE_TIMEOUT=10
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
 
-#
-# Firmware loader
-#
-# end of Firmware loader
-
 CONFIG_GENERIC_CPU_DEVICES=y
 CONFIG_GENERIC_CPU_AUTOPROBE=y
 CONFIG_GENERIC_CPU_VULNERABILITIES=y
@@ -617,18 +578,8 @@ CONFIG_GENERIC_ARCH_NUMA=y
 # end of Generic Driver Options
 
 #
-# Bus devices
-#
-# end of Bus devices
-
-#
 # Firmware Drivers
 #
-#
-# EFI (Extensible Firmware Interface) Support
-#
-# end of EFI (Extensible Firmware Interface) Support
-
 CONFIG_ARM_PSCI_FW=y
 CONFIG_HAVE_ARM_SMCCC=y
 CONFIG_HAVE_ARM_SMCCC_DISCOVERY=y
@@ -641,10 +592,6 @@ CONFIG_OF_EARLY_FLATTREE=y
 CONFIG_OF_ADDRESS=y
 CONFIG_OF_IRQ=y
 CONFIG_OF_RESERVED_MEM=y
-
-#
-# Protocols
-#
 
 #
 # NVME Support
@@ -852,11 +799,6 @@ CONFIG_ARCH_HAS_UBSAN=y
 # end of Generic Kernel Debugging Instruments
 
 #
-# Networking Debugging
-#
-# end of Networking Debugging
-
-#
 # Memory Debugging
 #
 CONFIG_SLUB_DEBUG=y
@@ -874,11 +816,6 @@ CONFIG_DEBUG_MEMORY_INIT=y
 CONFIG_PANIC_TIMEOUT=0
 CONFIG_HAVE_HARDLOCKUP_DETECTOR_BUDDY=y
 # end of Debug Oops, Lockups and Hangs
-
-#
-# Scheduler Debugging
-#
-# end of Scheduler Debugging
 
 #
 # Lock Debugging (spinlocks, mutexes, etc...)
@@ -900,23 +837,10 @@ CONFIG_TRACE_CLOCK=y
 CONFIG_STRICT_DEVMEM=y
 
 #
-# arm64 Debugging
-#
-# end of arm64 Debugging
-
-#
 # Kernel Testing and Coverage
 #
 CONFIG_ARCH_HAS_KCOV=y
 CONFIG_ARCH_USE_MEMTEST=y
 # end of Kernel Testing and Coverage
 
-#
-# Rust hacking
-#
-# end of Rust hacking
 # end of Kernel hacking
-
-#
-# Explicitly disabled symbols
-#

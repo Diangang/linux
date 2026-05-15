@@ -116,11 +116,6 @@ CONFIG_LOG_BUF_SHIFT=18
 CONFIG_LOG_CPU_MAX_BUF_SHIFT=12
 CONFIG_HAVE_UNSTABLE_SCHED_CLOCK=y
 
-#
-# Scheduler features
-#
-# end of Scheduler features
-
 CONFIG_ARCH_SUPPORTS_NUMA_BALANCING=y
 CONFIG_ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH=y
 CONFIG_CC_HAS_INT128=y
@@ -183,11 +178,6 @@ CONFIG_KALLSYMS=y
 CONFIG_KALLSYMS_ALL=y
 CONFIG_ARCH_HAS_MEMBARRIER_SYNC_CORE=y
 CONFIG_ARCH_SUPPORTS_MSEAL_SYSTEM_MAPPINGS=y
-
-#
-# Kernel Performance Events And Counters
-#
-# end of Kernel Performance Events And Counters
 
 CONFIG_PROFILING=y
 
@@ -260,11 +250,6 @@ CONFIG_X86_MCE=y
 CONFIG_X86_MCE_INTEL=y
 CONFIG_X86_MCE_AMD=y
 CONFIG_X86_MCE_THRESHOLD=y
-
-#
-# Performance monitoring
-#
-# end of Performance monitoring
 
 CONFIG_X86_16BIT=y
 CONFIG_X86_ESPFIX64=y
@@ -645,26 +630,6 @@ CONFIG_PCI_MSI=y
 CONFIG_PCI_LOCKLESS_CONFIG=y
 
 #
-# PCI controller drivers
-#
-
-#
-# DesignWare-based PCIe controllers
-#
-# end of DesignWare-based PCIe controllers
-
-#
-# Mobiveil-based PCIe controllers
-#
-# end of Mobiveil-based PCIe controllers
-
-#
-# PLDA-based PCIe controllers
-#
-# end of PLDA-based PCIe controllers
-# end of PCI controller drivers
-
-#
 # Generic Driver Options
 #
 CONFIG_DEVTMPFS=y
@@ -673,30 +638,16 @@ CONFIG_DRIVER_DEFERRED_PROBE_TIMEOUT=10
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
 
-#
-# Firmware loader
-#
-# end of Firmware loader
-
 CONFIG_GENERIC_CPU_DEVICES=y
 CONFIG_GENERIC_CPU_AUTOPROBE=y
 CONFIG_GENERIC_CPU_VULNERABILITIES=y
 # end of Generic Driver Options
 
 #
-# Bus devices
-#
-# end of Bus devices
-
-#
 # Firmware Drivers
 #
 CONFIG_DMI_SCAN_MACHINE_NON_EFI_FALLBACK=y
 
-#
-# EFI (Extensible Firmware Interface) Support
-#
-# end of EFI (Extensible Firmware Interface) Support
 # end of Firmware Drivers
 
 # CONFIG_OF is not set
@@ -777,10 +728,6 @@ CONFIG_CLKEVT_I8253=y
 CONFIG_CLKBLD_I8253=y
 # end of Clock Source drivers
 
-#
-# IRQ chip support
-#
-# end of IRQ chip support
 # end of Device Drivers
 
 #
@@ -889,11 +836,6 @@ CONFIG_ARCH_HAS_UBSAN=y
 # end of Generic Kernel Debugging Instruments
 
 #
-# Networking Debugging
-#
-# end of Networking Debugging
-
-#
 # Memory Debugging
 #
 CONFIG_SLUB_DEBUG=y
@@ -913,11 +855,6 @@ CONFIG_PANIC_TIMEOUT=0
 CONFIG_HAVE_HARDLOCKUP_DETECTOR_BUDDY=y
 CONFIG_HARDLOCKUP_CHECK_TIMESTAMP=y
 # end of Debug Oops, Lockups and Hangs
-
-#
-# Scheduler Debugging
-#
-# end of Scheduler Debugging
 
 #
 # Lock Debugging (spinlocks, mutexes, etc...)
@@ -954,12 +891,4 @@ CONFIG_ARCH_HAS_KCOV=y
 CONFIG_ARCH_USE_MEMTEST=y
 # end of Kernel Testing and Coverage
 
-#
-# Rust hacking
-#
-# end of Rust hacking
 # end of Kernel hacking
-
-#
-# Explicitly disabled symbols
-#
