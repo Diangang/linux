@@ -57,7 +57,7 @@
 #ifdef EXPORT_ACPI_INTERFACES
 #include <linux/export.h>
 #endif
-#ifdef CONFIG_ACPI
+#ifdef CONFIG_X86
 #include <asm/acenv.h>
 #endif
 

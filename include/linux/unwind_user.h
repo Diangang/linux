@@ -3,7 +3,9 @@
 #define _LINUX_UNWIND_USER_H
 
 #include <linux/unwind_user_types.h>
+#ifdef CONFIG_X86
 #include <asm/unwind_user.h>
+#endif
 
 #ifndef CONFIG_HAVE_UNWIND_USER_FP
 

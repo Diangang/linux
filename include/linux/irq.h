@@ -586,7 +586,9 @@ enum {
 /*
  * Pick up the arch-dependent methods:
  */
+#ifdef CONFIG_X86
 #include <asm/hw_irq.h>
+#endif
 
 #ifndef NR_IRQS_LEGACY
 # define NR_IRQS_LEGACY 0

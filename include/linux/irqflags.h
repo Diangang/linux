@@ -12,7 +12,6 @@
 #ifndef _LINUX_TRACE_IRQFLAGS_H
 #define _LINUX_TRACE_IRQFLAGS_H
 
-#include <linux/irqflags_types.h>
 #include <linux/typecheck.h>
 #include <linux/cleanup.h>
 #include <asm/irqflags.h>

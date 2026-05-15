@@ -11,7 +11,6 @@
  * ELF register definitions..
  */
 #include <asm/ptrace.h>
-#include <asm/user.h>
 
 /*
  * AArch64 static relocation types.

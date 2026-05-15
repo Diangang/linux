@@ -1491,10 +1491,6 @@ static inline struct pglist_data *NODE_DATA(int nid)
 	return &contig_page_data;
 }
 
-#else /* CONFIG_NUMA */
-
-#include <asm/mmzone.h>
-
 #endif /* !CONFIG_NUMA */
 
 extern struct pglist_data *first_online_pgdat(void);

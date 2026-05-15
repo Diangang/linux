@@ -13,7 +13,13 @@
 #include <linux/compiler.h>
 #include <linux/types.h>
 
+#ifdef CONFIG_X86
 #include <asm/trace_clock.h>
+#endif
+
+#ifndef ARCH_TRACE_CLOCKS
+#define ARCH_TRACE_CLOCKS
+#endif
 
 extern u64 notrace trace_clock_local(void);
 extern u64 notrace trace_clock(void);

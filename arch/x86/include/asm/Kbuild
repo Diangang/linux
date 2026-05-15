@@ -10,4 +10,3 @@ generated-y += cpufeaturemasks.h
 
 generic-y += early_ioremap.h
 generic-y += mcs_spinlock.h
-generic-y += mmzone.h

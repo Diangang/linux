@@ -16,7 +16,6 @@
 #include <asm/probe_roms.h>
 #include <asm/pci-direct.h>
 #include <asm/e820/api.h>
-#include <asm/mmzone.h>
 #include <asm/setup.h>
 #include <asm/sections.h>
 #include <asm/io.h>

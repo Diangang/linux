@@ -16,7 +16,6 @@
 #include <linux/cpumask_types.h>
 
 #include <linux/cache.h>
-#include <linux/irqflags_types.h>
 #include <linux/smp_types.h>
 #include <linux/pid_types.h>
 #include <linux/sem_types.h>

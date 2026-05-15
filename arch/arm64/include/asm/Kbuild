@@ -3,10 +3,8 @@ syscall-y += syscall_table_64.h
 
 generic-y += early_ioremap.h
 generic-y += mcs_spinlock.h
-generic-y += mmzone.h
 generic-y += qrwlock.h
 generic-y += qspinlock.h
-generic-y += user.h
 
 generated-y += cpucap-defs.h
 generated-y += kernel-hwcap.h
