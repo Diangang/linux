@@ -286,11 +286,15 @@ config STRICT_DEVMEM
 
 	  If in doubt, say Y.
 
-menu "$(SRCARCH) Debugging"
+if X86
 
-source "arch/$(SRCARCH)/Kconfig.debug"
+menu "x86 Debugging"
+
+source "arch/x86/Kconfig.debug"
 
 endmenu
+
+endif
 
 menu "Kernel Testing and Coverage"
 

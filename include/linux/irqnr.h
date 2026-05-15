@@ -2,9 +2,6 @@
 #ifndef _LINUX_IRQNR_H
 #define _LINUX_IRQNR_H
 
-#include <uapi/linux/irqnr.h>
-
-
 unsigned int irq_get_nr_irqs(void) __pure;
 unsigned int irq_set_nr_irqs(unsigned int nr);
 extern struct irq_desc *irq_to_desc(unsigned int irq);

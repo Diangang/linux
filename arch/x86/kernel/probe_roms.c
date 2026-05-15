@@ -20,7 +20,6 @@
 #include <asm/setup.h>
 #include <asm/sections.h>
 #include <asm/io.h>
-#include <asm/setup_arch.h>
 #include <asm/sev.h>
 
 static struct resource system_rom_resource = {
@@ -267,4 +266,3 @@ void __init probe_roms(void)
 		start = adapter_rom_resources[i++].end & ~2047UL;
 	}
 }
-

@@ -20,7 +20,6 @@ mandatory-y += div64.h
 mandatory-y += dma-mapping.h
 mandatory-y += dma.h
 mandatory-y += emergency-restart.h
-mandatory-y += exec.h
 mandatory-y += ftrace.h
 mandatory-y += futex.h
 mandatory-y += hardirq.h

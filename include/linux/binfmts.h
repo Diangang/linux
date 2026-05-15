@@ -4,11 +4,12 @@
 
 #include <linux/sched.h>
 #include <linux/unistd.h>
-#include <asm/exec.h>
 #include <uapi/linux/binfmts.h>
 
 struct filename;
 struct coredump_params;
+
+unsigned long arch_align_stack(unsigned long sp);
 
 #define CORENAME_MAX_SIZE 128
 
