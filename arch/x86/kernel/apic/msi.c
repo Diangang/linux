@@ -19,7 +19,6 @@
 #include <asm/hw_irq.h>
 #include <asm/apic.h>
 #include <asm/irq_remapping.h>
-#include <asm/xen/hypervisor.h>
 
 struct irq_domain *x86_pci_msi_default_domain __ro_after_init;
 
@@ -387,5 +386,5 @@ void dmar_free_hwirq(int irq)
 
 bool arch_restore_msi_irqs(struct pci_dev *dev)
 {
-	return xen_initdom_restore_msi(dev);
+	return false;
 }

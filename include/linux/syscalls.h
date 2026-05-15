@@ -64,7 +64,6 @@ struct file_handle;
 struct sigaltstack;
 struct rseq;
 union bpf_attr;
-struct io_uring_params;
 struct clone_args;
 struct open_how;
 struct mount_attr;
@@ -330,13 +329,6 @@ asmlinkage long sys_io_pgetevents_time32(aio_context_t ctx_id,
 				struct io_event __user *events,
 				struct old_timespec32 __user *timeout,
 				const struct __aio_sigset __user *sig);
-asmlinkage long sys_io_uring_setup(u32 entries,
-				struct io_uring_params __user *p);
-asmlinkage long sys_io_uring_enter(unsigned int fd, u32 to_submit,
-				u32 min_complete, u32 flags,
-				const void __user *argp, size_t argsz);
-asmlinkage long sys_io_uring_register(unsigned int fd, unsigned int op,
-				void __user *arg, unsigned int nr_args);
 asmlinkage long sys_setxattr(const char __user *path, const char __user *name,
 			     const void __user *value, size_t size, int flags);
 asmlinkage long sys_setxattrat(int dfd, const char __user *path, unsigned int at_flags,

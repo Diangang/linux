@@ -15,10 +15,7 @@
 #include <asm/traps.h>
 #include <asm/irq_regs.h>
 
-#include <uapi/asm/kvm.h>
-
 #include <linux/hardirq.h>
-#include <linux/kvm_types.h>
 #include <linux/pkeys.h>
 #include <linux/vmalloc.h>
 
@@ -273,7 +270,6 @@ bool fpu_alloc_guest_fpstate(struct fpu_guest *gfpu)
 
 	return true;
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_alloc_guest_fpstate);
 
 void fpu_free_guest_fpstate(struct fpu_guest *gfpu)
 {
@@ -288,7 +284,6 @@ void fpu_free_guest_fpstate(struct fpu_guest *gfpu)
 	gfpu->fpstate = NULL;
 	vfree(fpstate);
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_free_guest_fpstate);
 
 /*
   * fpu_enable_guest_xfd_features - Check xfeatures against guest perm and enable
@@ -310,7 +305,6 @@ int fpu_enable_guest_xfd_features(struct fpu_guest *guest_fpu, u64 xfeatures)
 
 	return __xfd_enable_feature(xfeatures, guest_fpu);
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_enable_guest_xfd_features);
 
 #ifdef CONFIG_X86_64
 void fpu_update_guest_xfd(struct fpu_guest *guest_fpu, u64 xfd)
@@ -340,7 +334,6 @@ void fpu_update_guest_xfd(struct fpu_guest *guest_fpu, u64 xfd)
 
 	fpregs_unlock();
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_update_guest_xfd);
 
 /**
  * fpu_sync_guest_vmexit_xfd_state - Synchronize XFD MSR and software state
@@ -364,7 +357,6 @@ void fpu_sync_guest_vmexit_xfd_state(void)
 		__this_cpu_write(xfd_state, fpstate->xfd);
 	}
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_sync_guest_vmexit_xfd_state);
 #endif /* CONFIG_X86_64 */
 
 int fpu_swap_kvm_fpstate(struct fpu_guest *guest_fpu, bool enter_guest)
@@ -406,7 +398,6 @@ int fpu_swap_kvm_fpstate(struct fpu_guest *guest_fpu, bool enter_guest)
 	fpregs_unlock();
 	return 0;
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_swap_kvm_fpstate);
 
 void fpu_copy_guest_fpstate_to_uabi(struct fpu_guest *gfpu, void *buf,
 				    unsigned int size, u64 xfeatures, u32 pkru)
@@ -425,7 +416,6 @@ void fpu_copy_guest_fpstate_to_uabi(struct fpu_guest *gfpu, void *buf,
 		ustate->xsave.header.xfeatures = XFEATURE_MASK_FPSSE;
 	}
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_copy_guest_fpstate_to_uabi);
 
 int fpu_copy_uabi_to_guest_fpstate(struct fpu_guest *gfpu, const void *buf,
 				   u64 xcr0, u32 *vpkru)
@@ -462,7 +452,6 @@ int fpu_copy_uabi_to_guest_fpstate(struct fpu_guest *gfpu, const void *buf,
 
 	return copy_uabi_from_kernel_to_xstate(kstate, ustate, vpkru);
 }
-EXPORT_SYMBOL_FOR_KVM(fpu_copy_uabi_to_guest_fpstate);
 #endif /* CONFIG_KVM */
 
 void kernel_fpu_begin_mask(unsigned int kfpu_mask)
@@ -855,7 +844,6 @@ void switch_fpu_return(void)
 
 	fpregs_restore_userregs();
 }
-EXPORT_SYMBOL_FOR_KVM(switch_fpu_return);
 
 void fpregs_lock_and_load(void)
 {
@@ -890,7 +878,6 @@ void fpregs_assert_state_consistent(void)
 
 	WARN_ON_FPU(!fpregs_state_valid(fpu, smp_processor_id()));
 }
-EXPORT_SYMBOL_FOR_KVM(fpregs_assert_state_consistent);
 #endif
 
 void fpregs_mark_activate(void)

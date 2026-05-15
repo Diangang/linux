@@ -83,7 +83,6 @@
 #include <asm/fpsimd.h>
 #include <asm/hwcap.h>
 #include <asm/insn.h>
-#include <asm/kvm_host.h>
 #include <asm/mmu.h>
 #include <asm/mmu_context.h>
 #include <asm/mpam.h>
@@ -2055,15 +2054,7 @@ static void cpu_copy_el2regs(const struct arm64_cpu_capabilities *__unused)
 static bool has_nested_virt_support(const struct arm64_cpu_capabilities *cap,
 				    int scope)
 {
-	if (kvm_get_mode() != KVM_MODE_NV)
-		return false;
-
-	if (!cpucap_multi_entry_cap_matches(cap, scope)) {
-		pr_warn("unavailable: %s\n", cap->desc);
-		return false;
-	}
-
-	return true;
+	return false;
 }
 
 static bool hvhe_possible(const struct arm64_cpu_capabilities *entry,
@@ -2293,15 +2284,6 @@ static bool can_trap_icv_dir_el1(const struct arm64_cpu_capabilities *entry,
 	    !is_midr_in_range_list(has_vgic_v3))
 		return false;
 
-	/*
-	 * pKVM prevents late onlining of CPUs. This means that whatever
-	 * state the capability is in after deprivilege cannot be affected
-	 * by a new CPU booting -- this is garanteed to be a CPU we have
-	 * already seen, and the cap is therefore unchanged.
-	 */
-	if (system_capabilities_finalized() && is_protected_kvm_enabled())
-		return cpus_have_final_cap(ARM64_HAS_ICH_HCR_EL2_TDIR);
-
 	if (is_kernel_in_hyp_mode())
 		res.a1 = read_sysreg_s(SYS_ICH_VTR_EL2);
 	else
@@ -2335,13 +2317,6 @@ static void user_feature_fixup(void)
 static void elf_hwcap_fixup(void)
 {
 }
-
-#ifdef CONFIG_KVM
-static bool is_kvm_protected_mode(const struct arm64_cpu_capabilities *entry, int __unused)
-{
-	return kvm_get_mode() == KVM_MODE_PROTECTED;
-}
-#endif /* CONFIG_KVM */
 
 static void cpu_trap_el0_impdef(const struct arm64_cpu_capabilities *__unused)
 {
@@ -3593,37 +3568,6 @@ static void verify_sme_features(void)
 	cpacr_restore(cpacr);
 }
 
-static void verify_hyp_capabilities(void)
-{
-	u64 safe_mmfr1, mmfr0, mmfr1;
-	int parange, ipa_max;
-	unsigned int safe_vmid_bits, vmid_bits;
-
-	if (!IS_ENABLED(CONFIG_KVM))
-		return;
-
-	safe_mmfr1 = read_sanitised_ftr_reg(SYS_ID_AA64MMFR1_EL1);
-	mmfr0 = read_sanitised_ftr_reg(SYS_ID_AA64MMFR0_EL1);
-	mmfr1 = read_cpuid(ID_AA64MMFR1_EL1);
-
-	/* Verify VMID bits */
-	safe_vmid_bits = get_vmid_bits(safe_mmfr1);
-	vmid_bits = get_vmid_bits(mmfr1);
-	if (vmid_bits < safe_vmid_bits) {
-		pr_crit("CPU%d: VMID width mismatch\n", smp_processor_id());
-		cpu_die_early();
-	}
-
-	/* Verify IPA range */
-	parange = cpuid_feature_extract_unsigned_field(mmfr0,
-				ID_AA64MMFR0_EL1_PARANGE_SHIFT);
-	ipa_max = id_aa64mmfr0_parange_to_phys_shift(parange);
-	if (ipa_max < get_kvm_ipa_limit()) {
-		pr_crit("CPU%d: IPA range mismatch\n", smp_processor_id());
-		cpu_die_early();
-	}
-}
-
 static void verify_mpam_capabilities(void)
 {
 	u64 cpu_idr = read_cpuid(ID_AA64PFR0_EL1);
@@ -3677,9 +3621,6 @@ static void verify_local_cpu_capabilities(void)
 
 	if (system_supports_sme())
 		verify_sme_features();
-
-	if (is_hyp_mode_available())
-		verify_hyp_capabilities();
 
 	if (system_supports_mpam())
 		verify_mpam_capabilities();

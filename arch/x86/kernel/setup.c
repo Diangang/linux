@@ -29,8 +29,6 @@
 
 #include <uapi/linux/mount.h>
 
-#include <xen/xen.h>
-
 #include <asm/apic.h>
 #include <asm/bios_ebda.h>
 #include <asm/bugs.h>
@@ -505,9 +503,6 @@ static void __init parse_boot_params(void)
 {
 	ROOT_DEV = old_decode_dev(boot_params.hdr.root_dev);
 	sysfb_primary_display.screen = boot_params.screen_info;
-#if defined(CONFIG_FIRMWARE_EDID)
-	sysfb_primary_display.edid = boot_params.edid_info;
-#endif
 	saved_video_mode = boot_params.hdr.vid_mode;
 	bootloader_type = boot_params.hdr.type_of_loader;
 	if ((bootloader_type >> 4) == 0xe) {
@@ -586,11 +581,6 @@ static void __init arch_reserve_crashkernel(void)
 				&low_size, &cma_size, &high);
 	if (ret)
 		return;
-
-	if (xen_pv_domain()) {
-		pr_info("Ignoring crashkernel for a Xen PV domain\n");
-		return;
-	}
 
 	reserve_crashkernel_generic(crash_size, crash_base, low_size, high);
 	reserve_crashkernel_cma(cma_size);

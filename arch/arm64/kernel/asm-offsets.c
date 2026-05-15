@@ -13,7 +13,6 @@
 #include <linux/ftrace.h>
 #include <linux/kexec.h>
 #include <linux/mm.h>
-#include <linux/kvm_host.h>
 #include <linux/suspend.h>
 #include <asm/cpufeature.h>
 #include <asm/fixmap.h>

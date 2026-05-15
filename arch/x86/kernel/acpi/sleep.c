@@ -182,21 +182,3 @@ static int __init acpi_sleep_setup(char *str)
 }
 
 __setup("acpi_sleep=", acpi_sleep_setup);
-
-#if 0 && defined(CONFIG_HYPERVISOR_GUEST)
-static int __init init_s4_sigcheck(void)
-{
-	/*
-	 * If running on a hypervisor, honour the ACPI specification
-	 * by default and trigger a clean reboot when the hardware
-	 * signature in FACS is changed after hibernation.
-	 */
-	if (acpi_check_s4_hw_signature == -1 &&
-	    !hypervisor_is_type(X86_HYPER_NATIVE))
-		acpi_check_s4_hw_signature = 1;
-
-	return 0;
-}
-/* This must happen before acpi_init() which is a subsys initcall */
-arch_initcall(init_s4_sigcheck);
-#endif

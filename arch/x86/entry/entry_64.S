@@ -19,7 +19,6 @@
  * - idtentry:		Define exception entry points.
  */
 #include <linux/export.h>
-#include <linux/kvm_types.h>
 #include <linux/linkage.h>
 #include <asm/segment.h>
 #include <asm/cache.h>
@@ -258,15 +257,6 @@ SYM_CODE_END(ret_from_fork_asm)
 .macro DEBUG_ENTRY_ASSERT_IRQS_OFF
 .endm
 
-SYM_CODE_START(xen_error_entry)
-	ANNOTATE_NOENDBR
-	UNWIND_HINT_FUNC
-	PUSH_AND_CLEAR_REGS save_ret=1
-	ENCODE_FRAME_POINTER 8
-	UNTRAIN_RET_FROM_CALL
-	RET
-SYM_CODE_END(xen_error_entry)
-
 /**
  * idtentry_body - Macro to emit code calling the C function
  * @cfunc:		C function to be called
@@ -274,16 +264,8 @@ SYM_CODE_END(xen_error_entry)
  */
 .macro idtentry_body cfunc has_error_code:req
 
-	/*
-	 * Call error_entry() and switch to the task stack if from userspace.
-	 *
-	 * When in XENPV, it is already in the task stack, and it can't fault
-	 * for native_iret() nor native_load_gs_index() since XENPV uses its
-	 * own pvops for IRET and load_gs_index().  And it doesn't need to
-	 * switch the CR3.  So it can skip invoking error_entry().
-	 */
-	ALTERNATIVE "call error_entry; movq %rax, %rsp", \
-		    "call xen_error_entry", X86_FEATURE_XENPV
+	call	error_entry
+	movq	%rax, %rsp
 
 	ENCODE_FRAME_POINTER
 	UNWIND_HINT_REGS
@@ -1530,5 +1512,4 @@ SYM_FUNC_START(clear_bhb_loop)
 	pop	%rbp
 	RET
 SYM_FUNC_END(clear_bhb_loop)
-EXPORT_SYMBOL_FOR_KVM(clear_bhb_loop)
 STACK_FRAME_NON_STANDARD(clear_bhb_loop)

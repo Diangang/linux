@@ -8,7 +8,6 @@
 #include <linux/compat.h>
 #include <linux/cpu.h>
 #include <linux/mman.h>
-#include <linux/kvm_types.h>
 #include <linux/nospec.h>
 #include <linux/pkeys.h>
 #include <linux/seq_file.h>
@@ -1059,7 +1058,6 @@ void *get_xsave_addr(struct xregs_state *xsave, int xfeature_nr)
 
 	return __raw_xsave_addr(xsave, xfeature_nr);
 }
-EXPORT_SYMBOL_FOR_KVM(get_xsave_addr);
 
 /*
  * Given an xstate feature nr, calculate where in the xsave buffer the state is.
@@ -1482,7 +1480,6 @@ void fpstate_clear_xstate_component(struct fpstate *fpstate, unsigned int xfeatu
 	if (addr)
 		memset(addr, 0, xstate_sizes[xfeature]);
 }
-EXPORT_SYMBOL_FOR_KVM(fpstate_clear_xstate_component);
 #endif
 
 #ifdef CONFIG_X86_64
@@ -1818,7 +1815,6 @@ u64 xstate_get_guest_group_perm(void)
 {
 	return xstate_get_group_perm(true);
 }
-EXPORT_SYMBOL_FOR_KVM(xstate_get_guest_group_perm);
 
 /**
  * fpu_xstate_prctl - xstate permission operations

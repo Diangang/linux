@@ -69,12 +69,6 @@ bool locks_in_grace(struct net *);
 bool opens_in_grace(struct net *);
 
 /*
- * struct file_lock has a union that some filesystems use to track
- * their own private info. The NFS side of things is defined here:
- */
-#include <linux/nfs_fs_i.h>
-
-/*
  * struct file_lock represents a generic "file lock". It's used to represent
  * POSIX byte range locks, BSD (flock) locks, and leases. It's important to
  * note that the same struct is used to represent both a request for a lock and
@@ -119,8 +113,6 @@ struct file_lock {
 	const struct file_lock_operations *fl_ops;	/* Callbacks for filesystems */
 	const struct lock_manager_operations *fl_lmops;	/* Callbacks for lockmanagers */
 	union {
-		struct nfs_lock_info	nfs_fl;
-		struct nfs4_lock_info	nfs4_fl;
 		struct {
 			struct list_head link;	/* link in AFS vnode's pending_locks list */
 			int state;		/* state of grant or error if -ve */

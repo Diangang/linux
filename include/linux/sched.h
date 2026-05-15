@@ -66,7 +66,6 @@ struct cfs_rq;
 struct fs_struct;
 struct futex_pi_state;
 struct io_context;
-struct io_uring_task;
 struct mempolicy;
 struct nameidata;
 struct nsproxy;
@@ -954,11 +953,6 @@ struct task_struct {
 	/* Open file information: */
 	struct files_struct		*files;
 
-#ifdef CONFIG_IO_URING
-	struct io_uring_task		*io_uring;
-	struct io_restriction		*io_uring_restrict;
-#endif
-
 	/* Namespaces: */
 	struct nsproxy			*nsproxy;
 
@@ -1163,10 +1157,6 @@ struct task_struct {
 
 #if 0
 	struct kmsan_ctx		kmsan_ctx;
-#endif
-
-#if IS_ENABLED(CONFIG_KUNIT)
-	struct kunit			*kunit_test;
 #endif
 
 #ifdef CONFIG_FUNCTION_GRAPH_TRACER

@@ -16,10 +16,6 @@
 #include <asm/x86_init.h>
 #include <asm/cpufeature.h>
 #include <asm/irq_vectors.h>
-#include <asm/xen/hypervisor.h>
-
-#include <xen/xen.h>
-
 #ifdef CONFIG_ACPI_APEI
 # include <asm/pgtable_types.h>
 #endif
@@ -138,16 +134,6 @@ static inline void arch_acpi_set_proc_cap_bits(u32 *cap)
 	    boot_option_idle_override == IDLE_NOMWAIT)
 		*cap &= ~(ACPI_PROC_CAP_C_C1_FFH | ACPI_PROC_CAP_C_C2C3_FFH);
 
-	if (xen_initial_domain()) {
-		/*
-		 * When Linux is running as Xen dom0, the hypervisor is the
-		 * entity in charge of the processor power management, and so
-		 * Xen needs to check the OS capabilities reported in the
-		 * processor capabilities buffer matches what the hypervisor
-		 * driver supports.
-		 */
-		xen_sanitize_proc_cap_bits(cap);
-	}
 }
 
 static inline bool acpi_has_cpu_in_madt(void)

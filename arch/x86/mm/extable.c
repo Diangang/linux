@@ -3,7 +3,6 @@
 #include <linux/uaccess.h>
 #include <linux/sched/debug.h>
 #include <linux/bitfield.h>
-#include <xen/xen.h>
 
 #include <asm/fpu/api.h>
 #include <asm/fred.h>
@@ -11,7 +10,6 @@
 #include <asm/traps.h>
 #include <asm/kdebug.h>
 #include <asm/insn-eval.h>
-#include <asm/sgx.h>
 
 static inline unsigned long *pt_regs_nr(struct pt_regs *regs, int nr)
 {
@@ -99,13 +97,6 @@ static bool ex_handler_fault(const struct exception_table_entry *fixup,
 			     struct pt_regs *regs, int trapnr)
 {
 	regs->ax = trapnr;
-	return ex_handler_default(fixup, regs);
-}
-
-static bool ex_handler_sgx(const struct exception_table_entry *fixup,
-			   struct pt_regs *regs, int trapnr)
-{
-	regs->ax = trapnr | SGX_ENCLS_FAULT_FLAG;
 	return ex_handler_default(fixup, regs);
 }
 
@@ -286,8 +277,6 @@ int fixup_exception(struct pt_regs *regs, int trapnr, unsigned long error_code,
 		fallthrough;
 	case EX_TYPE_IMM_REG:
 		return ex_handler_imm_reg(e, regs, reg, imm);
-	case EX_TYPE_FAULT_SGX:
-		return ex_handler_sgx(e, regs, trapnr);
 	case EX_TYPE_UCOPY_LEN:
 		return ex_handler_ucopy_len(e, regs, trapnr, fault_addr, reg, imm);
 	case EX_TYPE_ZEROPAD:
@@ -309,12 +298,10 @@ void __init early_fixup_exception(struct pt_regs *regs, int trapnr)
 		goto halt_loop;
 
 	/*
-	 * Old CPUs leave the high bits of CS on the stack
-	 * undefined.  I'm not sure which CPUs do this, but at least
-	 * the 486 DX works this way.
-	 * Xen pv domains are not using the default __KERNEL_CS.
+	 * Old CPUs leave the high bits of CS on the stack undefined.  I'm not
+	 * sure which CPUs do this, but at least the 486 DX works this way.
 	 */
-	if (!xen_pv_domain() && regs->cs != __KERNEL_CS)
+	if (regs->cs != __KERNEL_CS)
 		goto fail;
 
 	/*

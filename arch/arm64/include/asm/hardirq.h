@@ -10,7 +10,6 @@
 #include <linux/threads.h>
 #include <asm/barrier.h>
 #include <asm/irq.h>
-#include <asm/kvm_arm.h>
 #include <asm/sysreg.h>
 
 #define ack_bad_irq ack_bad_irq

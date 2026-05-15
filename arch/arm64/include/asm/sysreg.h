@@ -154,6 +154,19 @@
  */
 #include "asm/sysreg-defs.h"
 
+#define HCR_ATA		HCR_EL2_ATA
+#define HCR_API		HCR_EL2_API
+#define HCR_APK		HCR_EL2_APK
+#define HCR_E2H		HCR_EL2_E2H
+#define HCR_RW		HCR_EL2_RW
+#define HCR_TGE		HCR_EL2_TGE
+#define HCR_TSC		HCR_EL2_TSC
+#define HCR_AMO		HCR_EL2_AMO
+#define HCR_IMO		HCR_EL2_IMO
+#define HCR_FMO		HCR_EL2_FMO
+#define HCR_HOST_NVHE_FLAGS	(HCR_RW | HCR_API | HCR_APK)
+#define HCR_HOST_VHE_FLAGS	(HCR_RW | HCR_TGE | HCR_E2H | HCR_AMO | HCR_IMO | HCR_FMO)
+
 /*
  * System registers, organised loosely by encoding but grouped together
  * where the architected name contains an index. e.g. ID_MMFR<n>_EL1.
@@ -488,6 +501,13 @@
 #define SYS_HCR_EL2			sys_reg(3, 4, 1, 1, 0)
 #define SYS_MDCR_EL2			sys_reg(3, 4, 1, 1, 1)
 #define SYS_CPTR_EL2			sys_reg(3, 4, 1, 1, 2)
+#define CPTR_EL2_TCPAC			(1 << 31)
+#define CPTR_EL2_TAM			(1 << 30)
+#define CPTR_EL2_TTA			(1 << 20)
+#define CPTR_EL2_TSM			(1 << 12)
+#define CPTR_EL2_TFP_SHIFT		10
+#define CPTR_EL2_TFP			(1 << CPTR_EL2_TFP_SHIFT)
+#define CPTR_EL2_TZ			(1 << 8)
 #define SYS_HSTR_EL2			sys_reg(3, 4, 1, 1, 3)
 #define SYS_HACR_EL2			sys_reg(3, 4, 1, 1, 7)
 

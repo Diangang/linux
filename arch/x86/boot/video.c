@@ -335,7 +335,6 @@ void set_video(void)
 		mode = ASK_VGA;
 	}
 	boot_params.hdr.vid_mode = mode;
-	vesa_store_edid();
 	store_mode_params();
 
 	if (do_restore)

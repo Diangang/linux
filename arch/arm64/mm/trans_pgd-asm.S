@@ -7,7 +7,8 @@
 
 #include <linux/linkage.h>
 #include <asm/assembler.h>
-#include <asm/kvm_asm.h>
+#include <asm/sysreg.h>
+#include <asm/virt.h>
 
 .macro invalid_vector	label
 SYM_CODE_START_LOCAL(\label)

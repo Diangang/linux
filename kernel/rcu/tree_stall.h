@@ -8,7 +8,6 @@
  */
 
 #include <linux/console.h>
-#include <linux/kvm_para.h>
 #include <linux/rcu_notifier.h>
 #include <linux/smp.h>
 
@@ -828,9 +827,6 @@ static void check_cpu_stall(struct rcu_data *rdp)
 		 * the watchdog like an RCU stall. Check to see if the host
 		 * stopped the vm.
 		 */
-		if (kvm_check_and_clear_guest_paused())
-			return;
-
 #ifdef CONFIG_SYSFS
 		++rcu_stall_count;
 #endif

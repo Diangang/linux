@@ -3,9 +3,6 @@
 #define __SVM_H
 
 #include <uapi/asm/svm.h>
-#include <uapi/asm/kvm.h>
-
-#include <hyperv/hvhdk.h>
 
 /*
  * 32-bit intercept words in the VMCB Control Area, starting
@@ -170,10 +167,7 @@ struct __attribute__ ((__packed__)) vmcb_control_area {
 	 * Offset 0x3e0, 32 bytes reserved
 	 * for use by hypervisor/software.
 	 */
-	union {
-		struct hv_vmcb_enlightenments hv_enlightenments;
-		u8 reserved_sw[32];
-	};
+	u8 reserved_sw[32];
 };
 
 

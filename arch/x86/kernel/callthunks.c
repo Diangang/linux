@@ -18,7 +18,6 @@
 #include <asm/switch_to.h>
 #include <asm/sync_core.h>
 #include <asm/text-patching.h>
-#include <asm/xen/hypercall.h>
 
 static int __initdata_or_module debug_callthunks;
 
@@ -79,7 +78,6 @@ extern u8 skl_call_thunk_tail[];
 	((unsigned int)(skl_call_thunk_tail - skl_call_thunk_template))
 
 extern void error_entry(void);
-extern void xen_error_entry(void);
 extern void paranoid_entry(void);
 
 static inline bool within_coretext(const struct core_text *ct, void *addr)
@@ -108,8 +106,6 @@ static bool skip_addr(void *dest)
 	if (dest == error_entry)
 		return true;
 	if (dest == paranoid_entry)
-		return true;
-	if (dest == xen_error_entry)
 		return true;
 	/* Does FILL_RSB... */
 	if (dest == __switch_to_asm)

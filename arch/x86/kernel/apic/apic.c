@@ -35,9 +35,7 @@
 #include <linux/dmi.h>
 #include <linux/smp.h>
 #include <linux/mm.h>
-#include <linux/kvm_types.h>
 
-#include <xen/xen.h>
 #include <asm/irq_remapping.h>
 #include <asm/pc-conf-reg.h>
 #include <asm/x86_init.h>
@@ -2194,7 +2192,6 @@ u32 x86_msi_msg_get_destid(struct msi_msg *msg, bool extid)
 		dest |= msg->arch_addr_hi.destid_8_31 << 8;
 	return dest;
 }
-EXPORT_SYMBOL_FOR_KVM(x86_msi_msg_get_destid);
 
 static void __init apic_bsp_up_setup(void)
 {

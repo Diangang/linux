@@ -33,7 +33,6 @@
 #include <linux/apm_bios.h>
 #include <linux/edd.h>
 #include <asm/ist.h>
-#include <video/edid.h>
 
 struct setup_header {
 	__u8	setup_sects;
@@ -130,7 +129,7 @@ struct boot_params {
 	__u32 ext_cmd_line_ptr;				/* 0x0c8 */
 	__u8  _pad4[112];				/* 0x0cc */
 	__u32 cc_blob_address;				/* 0x13c */
-	struct edid_info edid_info;			/* 0x140 */
+	__u8  _pad_edid[128];				/* 0x140 */
 	struct efi_info efi_info;			/* 0x1c0 */
 	__u32 alt_mem_k;				/* 0x1e0 */
 	__u32 scratch;		/* Scratch field! */	/* 0x1e4 */

@@ -939,9 +939,6 @@ static bool bvec_try_merge_page(struct bio_vec *bv, struct page *page,
 
 	if (vec_end_addr + 1 != page_addr + off)
 		return false;
-	if (xen_domain() && !xen_biovec_phys_mergeable(bv, page))
-		return false;
-
 	if ((vec_end_addr & PAGE_MASK) != ((page_addr + off) & PAGE_MASK)) {
 		if (0)
 			return false;

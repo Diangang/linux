@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/cpu.h>
 
-#include <xen/xen.h>
 
 #include <asm/intel-family.h>
 #include <asm/apic.h>

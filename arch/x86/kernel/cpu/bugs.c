@@ -16,7 +16,6 @@
 #include <linux/sched/smt.h>
 #include <linux/pgtable.h>
 #include <linux/bpf.h>
-#include <linux/kvm_types.h>
 
 #include <asm/spec-ctrl.h>
 #include <asm/cmdline.h>
@@ -131,7 +130,6 @@ DEFINE_STATIC_KEY_FALSE(switch_mm_always_ibpb);
 
 /* Control IBPB on vCPU load */
 DEFINE_STATIC_KEY_FALSE(switch_vcpu_ibpb);
-EXPORT_SYMBOL_FOR_KVM(switch_vcpu_ibpb);
 
 /* Control CPU buffer clear before idling (halt, mwait) */
 DEFINE_STATIC_KEY_FALSE(cpu_buf_idle_clear);
@@ -217,7 +215,6 @@ x86_virt_spec_ctrl(u64 guest_virt_spec_ctrl, bool setguest)
 		speculation_ctrl_update(tif);
 	}
 }
-EXPORT_SYMBOL_FOR_KVM(x86_virt_spec_ctrl);
 
 static void x86_amd_ssb_disable(void)
 {
@@ -887,7 +884,6 @@ bool gds_ucode_mitigated(void)
 	return (gds_mitigation == GDS_MITIGATION_FULL ||
 		gds_mitigation == GDS_MITIGATION_FULL_LOCKED);
 }
-EXPORT_SYMBOL_FOR_KVM(gds_ucode_mitigated);
 
 void update_gds_msr(void)
 {
@@ -2674,7 +2670,6 @@ void x86_spec_ctrl_setup_ap(void)
 }
 
 bool itlb_multihit_kvm_mitigation;
-EXPORT_SYMBOL_FOR_KVM(itlb_multihit_kvm_mitigation);
 
 #undef pr_fmt
 #define pr_fmt(fmt)	"L1TF: " fmt
@@ -2682,9 +2677,7 @@ EXPORT_SYMBOL_FOR_KVM(itlb_multihit_kvm_mitigation);
 /* Default mitigation for L1TF-affected CPUs */
 enum l1tf_mitigations l1tf_mitigation __ro_after_init =
 	IS_ENABLED(CONFIG_MITIGATION_L1TF) ? L1TF_MITIGATION_AUTO : L1TF_MITIGATION_OFF;
-EXPORT_SYMBOL_FOR_KVM(l1tf_mitigation);
 enum vmx_l1d_flush_state l1tf_vmx_mitigation = VMENTER_L1D_FLUSH_AUTO;
-EXPORT_SYMBOL_FOR_KVM(l1tf_vmx_mitigation);
 
 /*
  * These CPUs all support 44bits physical address space internally in the
@@ -3534,9 +3527,6 @@ static ssize_t cpu_show_common(struct device *dev, struct device_attribute *attr
 	case X86_BUG_CPU_MELTDOWN:
 		if (boot_cpu_has(X86_FEATURE_PTI))
 			return sysfs_emit(buf, "Mitigation: PTI\n");
-
-		if (hypervisor_is_type(X86_HYPER_XEN_PV))
-			return sysfs_emit(buf, "Unknown (XEN PV detected, hypervisor mitigation required)\n");
 
 		break;
 

@@ -12,7 +12,6 @@
 #include <asm/cputype.h>
 #include <asm/cpufeature.h>
 #include <asm/fpsimd.h>
-#include <asm/kvm_asm.h>
 #include <asm/smp_plat.h>
 
 static u64 target_impl_cpu_num;

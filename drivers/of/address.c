@@ -16,7 +16,6 @@
 #include <linux/string.h>
 #include <linux/dma-direct.h> /* for bus_dma_region */
 
-#include <kunit/visibility.h>
 
 /* Uncomment me to enable of_dump_addr() debugging output */
 // #define DEBUG
@@ -185,7 +184,7 @@ static u64 of_bus_pci_map(__be32 *addr, const __be32 *range, int na, int ns,
 
 #endif /* CONFIG_PCI */
 
-VISIBLE_IF_KUNIT int __of_address_resource_bounds(struct resource *r, u64 start, u64 size)
+static int __of_address_resource_bounds(struct resource *r, u64 start, u64 size)
 {
 	if (overflows_type(start, r->start))
 		return -EOVERFLOW;
@@ -199,7 +198,6 @@ VISIBLE_IF_KUNIT int __of_address_resource_bounds(struct resource *r, u64 start,
 
 	return 0;
 }
-EXPORT_SYMBOL_IF_KUNIT(__of_address_resource_bounds);
 
 /*
  * of_pci_range_to_resource - Create a resource from an of_pci_range

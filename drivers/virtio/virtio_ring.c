@@ -13,7 +13,6 @@
 #include <linux/dma-mapping.h>
 #include <linux/kmsan.h>
 #include <linux/spinlock.h>
-#include <xen/xen.h>
 
 #ifdef DEBUG
 /* For development, we want to crash whenever the ring is screwed. */
@@ -336,17 +335,6 @@ static bool vring_use_map_api(const struct virtio_device *vdev)
 		return true;
 
 	/* Otherwise, we are left to guess. */
-	/*
-	 * In theory, it's possible to have a buggy QEMU-supposed
-	 * emulated Q35 IOMMU and Xen enabled at the same time.  On
-	 * such a configuration, virtio has never worked and will
-	 * not work without an even larger kludge.  Instead, enable
-	 * the DMA API if we're a Xen guest, which at least allows
-	 * all of the sensible Xen configurations to work correctly.
-	 */
-	if (xen_domain())
-		return true;
-
 	return false;
 }
 

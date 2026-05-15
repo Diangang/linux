@@ -79,12 +79,6 @@ static enum pti_mode {
 
 void __init pti_check_boottime_disable(void)
 {
-	if (hypervisor_is_type(X86_HYPER_XEN_PV)) {
-		pti_mode = PTI_FORCE_OFF;
-		pti_print_if_insecure("disabled on XEN PV.");
-		return;
-	}
-
 	if (pti_mode == PTI_AUTO &&
 	    !cpu_attack_vector_mitigated(CPU_MITIGATE_USER_KERNEL))
 		pti_mode = PTI_FORCE_OFF;

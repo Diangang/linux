@@ -320,7 +320,6 @@ int mode_defined(u16 mode);
 void probe_cards(int unsafe);
 
 /* video-vesa.c */
-void vesa_store_edid(void);
 
 #endif /* __ASSEMBLER__ */
 

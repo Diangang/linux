@@ -41,10 +41,6 @@ obj-$(CONFIG_MTRR)			+= mtrr/
 
 
 
-obj-$(CONFIG_HYPERVISOR_GUEST)		+= vmware.o hypervisor.o mshyperv.o
-
-
-
 obj-$(CONFIG_X86_BUS_LOCK_DETECT)	+= bus_lock.o
 
 quiet_cmd_mkcapflags = MKCAP   $@

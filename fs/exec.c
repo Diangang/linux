@@ -59,7 +59,6 @@
 #include <linux/oom.h>
 #include <linux/compat.h>
 #include <linux/vmalloc.h>
-#include <linux/io_uring.h>
 #include <linux/syscall_user_dispatch.h>
 #include <linux/coredump.h>
 #include <linux/time_namespace.h>
@@ -1097,11 +1096,6 @@ int begin_new_exec(struct linux_binprm * bprm)
 		goto out;
 	/* see the comment in check_unsafe_exec() */
 	current->fs->in_exec = 0;
-	/*
-	 * Cancel any io_uring activity across execve
-	 */
-	io_uring_task_cancel();
-
 	/* Ensure the files table is not shared. */
 	retval = unshare_files();
 	if (retval)

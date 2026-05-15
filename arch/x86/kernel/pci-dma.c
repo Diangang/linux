@@ -15,7 +15,6 @@
 #include <asm/gart.h>
 #include <asm/x86_init.h>
 
-#include <xen/xen.h>
 static bool disable_dac_quirk __read_mostly;
 
 const struct dma_map_ops *dma_ops;
@@ -69,16 +68,8 @@ static inline void __init pci_swiotlb_detect(void)
 #define x86_swiotlb_flags 0
 #endif /* CONFIG_SWIOTLB */
 
-static inline void __init pci_xen_swiotlb_init(void)
-{
-}
-
 void __init pci_iommu_alloc(void)
 {
-	if (xen_pv_domain()) {
-		pci_xen_swiotlb_init();
-		return;
-	}
 	pci_swiotlb_detect();
 	gart_iommu_hole_init();
 	amd_iommu_detect();

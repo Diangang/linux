@@ -97,8 +97,6 @@
 #include <linux/kasan.h>
 #include <linux/randomize_kstack.h>
 #include <linux/scs.h>
-#include <linux/io_uring.h>
-#include <linux/io_uring_types.h>
 #include <linux/bpf.h>
 #include <linux/stackprotector.h>
 #include <linux/user_events.h>
@@ -117,7 +115,6 @@
 
 /* For dup_mmap(). */
 #include "../mm/internal.h"
-#include <kunit/visibility.h>
 
 /*
  * Minimum number of threads to boot the kernel
@@ -768,7 +765,6 @@ void __put_task_struct(struct task_struct *tsk)
 	WARN_ON(tsk == current);
 
 	unwind_task_free(tsk);
-	io_uring_free(tsk);
 	cgroup_task_free(tsk);
 	task_numa_free(tsk, true);
 	security_task_free(tsk);
@@ -1140,7 +1136,6 @@ struct mm_struct *mm_alloc(void)
 	memset(mm, 0, sizeof(*mm));
 	return mm_init(mm, current, current_user_ns());
 }
-EXPORT_SYMBOL_IF_KUNIT(mm_alloc);
 
 static inline void __mmput(struct mm_struct *mm)
 {
@@ -2124,14 +2119,6 @@ __latent_entropy struct task_struct *copy_process(
 	prev_cputime_init(&p->prev_cputime);
 
 
-#ifdef CONFIG_IO_URING
-	p->io_uring = NULL;
-	retval = io_uring_fork(p);
-	if (unlikely(retval))
-		goto bad_fork_cleanup_delayacct;
-	retval = -EAGAIN;
-#endif
-
 	p->default_timer_slack_ns = current->timer_slack_ns;
 
 
@@ -2518,7 +2505,6 @@ bad_fork_cleanup_policy:
 	mpol_put(p->mempolicy);
 #endif
 bad_fork_cleanup_delayacct:
-	io_uring_free(p);
 	delayacct_tsk_free(p);
 bad_fork_cleanup_count:
 	dec_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);

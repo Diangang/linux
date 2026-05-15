@@ -11,8 +11,7 @@
 
 #include <asm/assembler.h>
 #include <asm/el2_setup.h>
-#include <asm/kvm_arm.h>
-#include <asm/kvm_asm.h>
+#include <asm/sysreg.h>
 #include <asm/ptrace.h>
 #include <asm/virt.h>
 

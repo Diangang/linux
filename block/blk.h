@@ -8,7 +8,6 @@
 #include <linux/memblock.h>	/* for max_pfn/max_low_pfn */
 #include <linux/sched/sysctl.h>
 #include <linux/timekeeping.h>
-#include <xen/xen.h>
 #include "blk-crypto-internal.h"
 
 struct elv_change_ctx;
@@ -128,8 +127,6 @@ static inline bool biovec_phys_mergeable(struct request_queue *q,
 	if (addr1 + vec1->bv_len != addr2)
 		return false;
 	if (!zone_device_pages_have_same_pgmap(vec1->bv_page, vec2->bv_page))
-		return false;
-	if (xen_domain() && !xen_biovec_phys_mergeable(vec1, vec2->bv_page))
 		return false;
 	if ((addr1 | mask) != ((addr2 + vec2->bv_len - 1) | mask))
 		return false;
@@ -527,7 +524,6 @@ blk_mode_t file_to_blk_mode(struct file *file);
 int truncate_bdev_range(struct block_device *bdev, blk_mode_t mode,
 		loff_t lstart, loff_t lend);
 long blkdev_ioctl(struct file *file, unsigned cmd, unsigned long arg);
-int blkdev_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags);
 long compat_blkdev_ioctl(struct file *file, unsigned cmd, unsigned long arg);
 
 extern const struct address_space_operations def_blk_aops;

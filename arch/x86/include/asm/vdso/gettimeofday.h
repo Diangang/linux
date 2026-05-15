@@ -17,7 +17,6 @@
 #include <asm/unistd.h>
 #include <asm/msr.h>
 #include <asm/pvclock.h>
-#include <clocksource/hyperv_timer.h>
 #include <asm/vdso/sys_call.h>
 
 #define VDSO_HAS_TIME 1
@@ -49,10 +48,6 @@ extern struct pvclock_vsyscall_time_info pvclock_page
 	__attribute__((visibility("hidden")));
 #endif
 
-#ifdef CONFIG_HYPERV_TIMER
-extern struct ms_hyperv_tsc_page hvclock_page
-	__attribute__((visibility("hidden")));
-#endif
 
 static __always_inline
 long clock_gettime_fallback(clockid_t _clkid, struct __kernel_timespec *_ts)
@@ -131,18 +126,6 @@ static u64 vread_pvclock(void)
 }
 #endif
 
-#ifdef CONFIG_HYPERV_TIMER
-static u64 vread_hvclock(void)
-{
-	u64 tsc, time;
-
-	if (hv_read_tsc_page_tsc(&hvclock_page, &tsc, &time))
-		return time & S64_MAX;
-
-	return U64_MAX;
-}
-#endif
-
 static inline u64 __arch_get_hw_counter(s32 clock_mode,
 					const struct vdso_time_data *vd)
 {
@@ -158,12 +141,6 @@ static inline u64 __arch_get_hw_counter(s32 clock_mode,
 	if (clock_mode == VDSO_CLOCKMODE_PVCLOCK) {
 		barrier();
 		return vread_pvclock();
-	}
-#endif
-#ifdef CONFIG_HYPERV_TIMER
-	if (clock_mode == VDSO_CLOCKMODE_HVCLOCK) {
-		barrier();
-		return vread_hvclock();
 	}
 #endif
 	return U64_MAX;

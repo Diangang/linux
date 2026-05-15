@@ -14,8 +14,6 @@
 #include <asm/cacheinfo.h>
 #include <asm/cpufeature.h>
 #include <asm/cpu_device_id.h>
-#include <asm/hypervisor.h>
-#include <asm/mshyperv.h>
 #include <asm/tlbflush.h>
 #include <asm/mtrr.h>
 #include <asm/msr.h>
@@ -457,11 +455,9 @@ void guest_force_mtrr_state(struct mtrr_var_range *var, unsigned int num_var,
 	 * - when running as SEV-SNP or TDX guest to avoid unnecessary
 	 *   VMM communication/Virtualization exceptions (#VC, #VE)
 	 */
-	if (!cc_platform_has(CC_ATTR_GUEST_SEV_SNP) &&
-	    !hv_is_isolation_supported() &&
-	    !cpu_feature_enabled(X86_FEATURE_XENPV) &&
-	    !cpu_feature_enabled(X86_FEATURE_TDX_GUEST))
-		return;
+		if (!cc_platform_has(CC_ATTR_GUEST_SEV_SNP) &&
+		    !cpu_feature_enabled(X86_FEATURE_TDX_GUEST))
+			return;
 
 	/* Disable MTRR in order to disable MTRR modifications. */
 	setup_clear_cpu_cap(X86_FEATURE_MTRR);

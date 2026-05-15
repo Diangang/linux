@@ -21,10 +21,6 @@
 #include <asm/tlbflush.h>
 #include <asm/tdx.h>
 
-#ifdef CONFIG_XEN
-#include <xen/interface/xen.h>
-#endif
-
 # include "asm-offsets_64.c"
 
 static void __used common(void)

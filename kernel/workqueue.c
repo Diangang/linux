@@ -53,7 +53,6 @@
 #include <linux/sched/isolation.h>
 #include <linux/sched/debug.h>
 #include <linux/nmi.h>
-#include <linux/kvm_para.h>
 #include <linux/delay.h>
 #include <linux/irq_work.h>
 

@@ -30,7 +30,6 @@
 #include <linux/interrupt.h>
 #include <linux/delay.h>
 #include <linux/export.h>
-#include <linux/kvm_types.h>
 #include <linux/ptrace.h>
 #include <linux/notifier.h>
 #include <linux/kprobes.h>
@@ -52,7 +51,6 @@
 #include <asm/ia32.h>
 #include <asm/debugreg.h>
 #include <asm/switch_to.h>
-#include <asm/xen/hypervisor.h>
 #include <asm/vdso.h>
 #include <asm/resctrl.h>
 #include <asm/unistd.h>
@@ -304,7 +302,6 @@ void current_save_fsgs(void)
 	save_fsgs(current);
 	local_irq_restore(flags);
 }
-EXPORT_SYMBOL_FOR_KVM(current_save_fsgs);
 
 static __always_inline void loadseg(enum which_selector which,
 				    unsigned short sel)

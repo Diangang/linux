@@ -11,7 +11,6 @@
 #error Assembly-only header
 #endif
 
-#include <asm/kvm_arm.h>
 #include <asm/ptrace.h>
 #include <asm/sysreg.h>
 #include <linux/irqchip/arm-gic-v3.h>

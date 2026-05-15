@@ -10,7 +10,6 @@
 #include <linux/cpu.h>
 #include <linux/mutex.h>
 #include <linux/uaccess.h>
-#include <linux/kvm_para.h>
 #include <linux/range.h>
 
 #include <asm/processor.h>

@@ -33,7 +33,6 @@
 #include <linux/kernel_stat.h>
 #include <linux/kexec.h>
 #include <linux/kgdb.h>
-#include <linux/kvm_host.h>
 #include <linux/nmi.h>
 
 #include <asm/alternative.h>
@@ -43,7 +42,6 @@
 #include <asm/cputype.h>
 #include <asm/cpu_ops.h>
 #include <asm/daifflags.h>
-#include <asm/kvm_mmu.h>
 #include <asm/mmu_context.h>
 #include <asm/numa.h>
 #include <asm/processor.h>
@@ -427,10 +425,6 @@ static void __init hyp_mode_check(void)
 			   "CPU: CPUs started in inconsistent modes");
 	else
 		pr_info("CPU: All CPU(s) started at EL1\n");
-	if (IS_ENABLED(CONFIG_KVM) && !is_kernel_in_hyp_mode()) {
-		kvm_compute_layout();
-		kvm_apply_hyp_relocations();
-	}
 }
 
 void __init smp_cpus_done(unsigned int max_cpus)
@@ -1282,6 +1276,5 @@ bool cpus_are_stuck_in_kernel(void)
 {
 	bool smp_spin_tables = (num_possible_cpus() > 1 && !have_cpu_die());
 
-	return !!cpus_stuck_in_kernel || smp_spin_tables ||
-		is_protected_kvm_enabled();
+	return !!cpus_stuck_in_kernel || smp_spin_tables;
 }

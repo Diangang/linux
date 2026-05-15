@@ -30,7 +30,6 @@
 #include <asm/cpu_entry_area.h>		/* exception stack		*/
 #include <asm/pgtable_areas.h>		/* VMALLOC_START, ...		*/
 #include <asm/stacktrace.h>
-#include <asm/kvm_para.h>		/* kvm_handle_async_pf		*/
 #include <asm/vdso.h>			/* fixup_vdso_exception()	*/
 #include <asm/irq_stack.h>
 #include <asm/fred.h>
@@ -1272,30 +1271,6 @@ DEFINE_IDTENTRY_RAW_ERRORCODE(exc_page_fault)
 	unsigned long address;
 
 	address = cpu_feature_enabled(X86_FEATURE_FRED) ? fred_event_data(regs) : read_cr2();
-
-	/*
-	 * KVM uses #PF vector to deliver 'page not present' events to guests
-	 * (asynchronous page fault mechanism). The event happens when a
-	 * userspace task is trying to access some valid (from guest's point of
-	 * view) memory which is not currently mapped by the host (e.g. the
-	 * memory is swapped out). Note, the corresponding "page ready" event
-	 * which is injected when the memory becomes available, is delivered via
-	 * an interrupt mechanism and not a #PF exception
-	 * by the hypervisor.
-	 *
-	 * We are relying on the interrupted context being sane (valid RSP,
-	 * relevant locks not held, etc.), which is fine as long as the
-	 * interrupted context had IF=1.  We are also relying on the KVM
-	 * async pf type field and CR2 being read consistently instead of
-	 * getting values from real and async page faults mixed up.
-	 *
-	 * Fingers crossed.
-	 *
-	 * The async #PF handling code takes care of idtentry handling
-	 * itself.
-	 */
-	if (kvm_handle_async_pf(regs, (u32)address))
-		return;
 
 	/*
 	 * Entry handling for valid #PF from kernel mode is slightly

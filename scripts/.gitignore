@@ -4,7 +4,6 @@
 /kallsyms
 /recordmcount
 /rustdoc_test_builder
-/rustdoc_test_gen
 /sorttable
 /target.json
 /unifdef

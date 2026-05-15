@@ -20,9 +20,6 @@
 #include <linux/shmem_fs.h>
 #include <linux/ktime.h>
 
-#include <linux/nfs_fs.h>
-#include <linux/nfs_fs_sb.h>
-#include <linux/nfs_mount.h>
 #include <linux/raid/detect.h>
 #include <uapi/linux/mount.h>
 
@@ -245,47 +242,9 @@ out:
 	put_page(page);
 }
  
-#ifdef CONFIG_ROOT_NFS
-
-#define NFSROOT_TIMEOUT_MIN	5
-#define NFSROOT_TIMEOUT_MAX	30
-#define NFSROOT_RETRY_MAX	5
-
-static void __init mount_nfs_root(void)
-{
-	char *root_dev, *root_data;
-	unsigned int timeout;
-	int try;
-
-	if (nfs_root_data(&root_dev, &root_data))
-		goto fail;
-
-	/*
-	 * The server or network may not be ready, so try several
-	 * times.  Stop after a few tries in case the client wants
-	 * to fall back to other boot methods.
-	 */
-	timeout = NFSROOT_TIMEOUT_MIN;
-	for (try = 1; ; try++) {
-		if (!do_mount_root(root_dev, "nfs", root_mountflags, root_data))
-			return;
-		if (try > NFSROOT_RETRY_MAX)
-			break;
-
-		/* Wait, in case the server refused us immediately */
-		ssleep(timeout);
-		timeout <<= 1;
-		if (timeout > NFSROOT_TIMEOUT_MAX)
-			timeout = NFSROOT_TIMEOUT_MAX;
-	}
-fail:
-	pr_err("VFS: Unable to mount root fs via NFS.\n");
-}
-#else
 static inline void mount_nfs_root(void)
 {
 }
-#endif /* CONFIG_ROOT_NFS */
 
 #ifdef CONFIG_CIFS_ROOT
 

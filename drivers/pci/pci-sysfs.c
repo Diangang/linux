@@ -25,7 +25,6 @@
 #include <linux/capability.h>
 #include <linux/security.h>
 #include <linux/slab.h>
-#include <linux/vgaarb.h>
 #include <linux/pm_runtime.h>
 #include <linux/msi.h>
 #include <linux/of.h>
@@ -678,21 +677,6 @@ const struct attribute_group *pcibus_groups[] = {
 	&pcibus_group,
 	NULL,
 };
-
-static ssize_t boot_vga_show(struct device *dev, struct device_attribute *attr,
-			     char *buf)
-{
-	struct pci_dev *pdev = to_pci_dev(dev);
-	struct pci_dev *vga_dev = vga_default_device();
-
-	if (vga_dev)
-		return sysfs_emit(buf, "%u\n", (pdev == vga_dev));
-
-	return sysfs_emit(buf, "%u\n",
-			  !!(pdev->resource[PCI_ROM_RESOURCE].flags &
-			     IORESOURCE_ROM_SHADOW));
-}
-static DEVICE_ATTR_RO(boot_vga);
 
 static ssize_t serial_number_show(struct device *dev,
 				  struct device_attribute *attr, char *buf)
@@ -1706,7 +1690,6 @@ static int __init pci_sysfs_init(void)
 late_initcall(pci_sysfs_init);
 
 static struct attribute *pci_dev_dev_attrs[] = {
-	&dev_attr_boot_vga.attr,
 	&dev_attr_serial_number.attr,
 	NULL,
 };
@@ -1716,9 +1699,6 @@ static umode_t pci_dev_attrs_are_visible(struct kobject *kobj,
 {
 	struct device *dev = kobj_to_dev(kobj);
 	struct pci_dev *pdev = to_pci_dev(dev);
-
-	if (a == &dev_attr_boot_vga.attr && pci_is_vga(pdev))
-		return a->mode;
 
 	if (a == &dev_attr_serial_number.attr && pci_get_dsn(pdev))
 		return a->mode;

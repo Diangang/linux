@@ -329,7 +329,7 @@ config SMP
 
 config X86_X2APIC
 	bool "x2APIC interrupt controller architecture support"
-	depends on X86_LOCAL_APIC && X86_64 && (IRQ_REMAP || HYPERVISOR_GUEST)
+	depends on X86_LOCAL_APIC && X86_64 && IRQ_REMAP
 	default y
 	help
 	  x2APIC is an interrupt controller architecture, a component of which
@@ -372,42 +372,6 @@ config SCHED_OMIT_FRAME_POINTER
 	  at the expense of slightly more scheduling overhead.
 
 	  If in doubt, say "Y".
-
-menuconfig HYPERVISOR_GUEST
-	bool "Linux guest support"
-	help
-	  Say Y here to enable options for running Linux under various hyper-
-	  visors. This option enables basic hypervisor detection and platform
-	  setup.
-
-	  If you say N, all options in this submenu will be skipped and
-	  disabled, and Linux guest support won't be built in.
-
-if HYPERVISOR_GUEST
-
-config PARAVIRT
-	bool "Enable paravirtualization code"
-	depends on HAVE_STATIC_CALL
-	select HAVE_PV_STEAL_CLOCK_GEN
-	help
-	  This changes the kernel so it can modify itself when it is run
-	  under a hypervisor, potentially improving performance significantly
-	  over full virtualization.  However, when run without a hypervisor
-	  the kernel is theoretically slower and slightly larger.
-
-config X86_HV_CALLBACK_VECTOR
-	def_bool n
-
-config ARCH_CPUIDLE_HALTPOLL
-	def_bool n
-	prompt "Disable host haltpoll when loading haltpoll driver"
-	help
-	  If virtualized under KVM, disable host haltpoll.
-
-config PARAVIRT_CLOCK
-	bool
-
-endif # HYPERVISOR_GUEST
 
 source "arch/x86/Kconfig.cpu"
 

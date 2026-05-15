@@ -1914,7 +1914,6 @@ struct dir_context {
  */
 #define COPY_FILE_SPLICE		(1 << 0)
 
-struct io_uring_cmd;
 struct offset_ctx;
 
 typedef unsigned int __bitwise fop_flags_t;
@@ -1959,9 +1958,6 @@ struct file_operations {
 				   struct file *file_out, loff_t pos_out,
 				   loff_t len, unsigned int remap_flags);
 	int (*fadvise)(struct file *, loff_t, loff_t, int);
-	int (*uring_cmd)(struct io_uring_cmd *ioucmd, unsigned int issue_flags);
-	int (*uring_cmd_iopoll)(struct io_uring_cmd *, struct io_comp_batch *,
-				unsigned int poll_flags);
 	int (*mmap_prepare)(struct vm_area_desc *);
 } __randomize_layout;
 

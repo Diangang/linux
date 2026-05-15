@@ -29,7 +29,6 @@
 
 #include <linux/uaccess.h>
 
-#include <kunit/visibility.h>
 
 #include "internal.h"
 #include "swap.h"
@@ -485,7 +484,6 @@ void arch_pick_mmap_layout(struct mm_struct *mm, const struct rlimit *rlim_stack
 }
 #endif
 #ifdef CONFIG_MMU
-EXPORT_SYMBOL_IF_KUNIT(arch_pick_mmap_layout);
 #endif
 
 /**

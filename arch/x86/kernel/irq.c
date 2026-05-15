@@ -12,7 +12,6 @@
 #include <linux/delay.h>
 #include <linux/export.h>
 #include <linux/irq.h>
-#include <linux/kvm_types.h>
 
 #include <asm/irq_stack.h>
 #include <asm/apic.h>
@@ -370,7 +369,6 @@ void kvm_set_posted_intr_wakeup_handler(void (*handler)(void))
 		synchronize_rcu();
 	}
 }
-EXPORT_SYMBOL_FOR_KVM(kvm_set_posted_intr_wakeup_handler);
 
 /*
  * Handler for POSTED_INTERRUPT_VECTOR.

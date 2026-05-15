@@ -24,7 +24,6 @@
 #include <linux/export.h>
 #include <linux/atomic.h>
 #include <linux/sched/clock.h>
-#include <linux/kvm_types.h>
 
 #include <asm/cpu_entry_area.h>
 #include <asm/traps.h>
@@ -609,7 +608,6 @@ DEFINE_IDTENTRY_RAW(exc_nmi_kvm_vmx)
 {
 	exc_nmi(regs);
 }
-EXPORT_SYMBOL_FOR_KVM(asm_exc_nmi_kvm_vmx);
 #endif
 
 

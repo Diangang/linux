@@ -22,8 +22,6 @@
 #include <linux/serial_core.h>
 #include <linux/pgtable.h>
 
-#include <xen/xen.h>
-
 #include <asm/e820/api.h>
 #include <asm/irqdomain.h>
 #include <asm/pci_x86.h>
@@ -34,7 +32,6 @@
 #include <asm/smp.h>
 #include <asm/i8259.h>
 #include <asm/setup.h>
-#include <asm/hypervisor.h>
 
 #include "sleep.h" /* To include x86_acpi_suspend_lowlevel */
 static int __initdata acpi_force = 0;
@@ -167,11 +164,7 @@ static bool __init acpi_is_processor_usable(u32 lapic_flags)
 	if (acpi_support_online_capable)
 		return lapic_flags & ACPI_MADT_ONLINE_CAPABLE;
 
-	/*
-	 * QEMU expects legacy "Enabled=0" LAPIC entries to be counted as usable
-	 * in order to support CPU hotplug in guests.
-	 */
-	return !hypervisor_is_type(X86_HYPER_NATIVE);
+	return false;
 }
 
 static int __init
@@ -1717,14 +1710,6 @@ int __init acpi_mps_check(void)
 {
 #if defined(CONFIG_X86_LOCAL_APIC) && !defined(CONFIG_X86_MPPARSE)
 /* mptable code is not built-in*/
-
-	/*
-	 * Xen disables ACPI in PV DomU guests but it still emulates APIC and
-	 * supports SMP. Returning early here ensures that APIC is not disabled
-	 * unnecessarily and the guest is not limited to a single vCPU.
-	 */
-	if (xen_pv_domain() && !xen_initial_domain())
-		return 0;
 
 	if (acpi_disabled || acpi_noirq) {
 		pr_warn("MPS support code is not built-in, using acpi=off or acpi=noirq or pci=noacpi may have problem\n");

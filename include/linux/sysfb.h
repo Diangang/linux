@@ -9,7 +9,6 @@
 
 #include <linux/screen_info.h>
 
-#include <video/edid.h>
 
 struct device;
 struct screen_info;
@@ -17,9 +16,6 @@ struct screen_info;
 struct sysfb_display_info {
 	struct screen_info screen;
 
-#if defined(CONFIG_FIRMWARE_EDID)
-	struct edid_info edid;
-#endif
 };
 
 extern struct sysfb_display_info sysfb_primary_display;

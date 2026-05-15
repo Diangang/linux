@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/export.h>
-#include <linux/kvm_types.h>
 #include <linux/percpu.h>
 #include <linux/preempt.h>
 #include <asm/msr.h>
@@ -101,7 +100,6 @@ int msr_set_bit(u32 msr, u8 bit)
 {
 	return __flip_bit(msr, bit, true);
 }
-EXPORT_SYMBOL_FOR_KVM(msr_set_bit);
 
 /**
  * msr_clear_bit - Clear @bit in a MSR @msr.
@@ -117,4 +115,3 @@ int msr_clear_bit(u32 msr, u8 bit)
 {
 	return __flip_bit(msr, bit, false);
 }
-EXPORT_SYMBOL_FOR_KVM(msr_clear_bit);

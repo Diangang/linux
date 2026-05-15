@@ -44,8 +44,6 @@
 #include <linux/memcontrol.h>
 #include <linux/random.h>
 #include <linux/prandom.h>
-#include <kunit/test.h>
-#include <kunit/test-bug.h>
 #include <linux/sort.h>
 #include <linux/irq_work.h>
 #include <linux/kprobes.h>
@@ -877,40 +875,7 @@ static void __fill_map(unsigned long *obj_map, struct kmem_cache *s,
 		set_bit(__obj_to_index(s, addr, p), obj_map);
 }
 
-#if IS_ENABLED(CONFIG_KUNIT)
-static bool slab_add_kunit_errors(void)
-{
-	struct kunit_resource *resource;
-
-	if (!kunit_get_current_test())
-		return false;
-
-	resource = kunit_find_named_resource(current->kunit_test, "slab_errors");
-	if (!resource)
-		return false;
-
-	(*(int *)resource->data)++;
-	kunit_put_resource(resource);
-	return true;
-}
-
-bool slab_in_kunit_test(void)
-{
-	struct kunit_resource *resource;
-
-	if (!kunit_get_current_test())
-		return false;
-
-	resource = kunit_find_named_resource(current->kunit_test, "slab_errors");
-	if (!resource)
-		return false;
-
-	kunit_put_resource(resource);
-	return true;
-}
-#else
 static inline bool slab_add_kunit_errors(void) { return false; }
-#endif
 
 static inline unsigned int size_from_object(struct kmem_cache *s)
 {

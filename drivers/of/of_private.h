@@ -42,9 +42,6 @@ extern struct mutex of_mutex;
 extern raw_spinlock_t devtree_lock;
 extern struct list_head aliases_lookup;
 
-struct kunit;
-extern void of_root_kunit_skip(struct kunit *test);
-
 void __of_phandle_cache_inv_entry(phandle handle);
 
 extern void *__unflatten_device_tree(const void *blob,
@@ -129,9 +126,5 @@ static inline bool is_pseudo_property(const char *prop_name)
 		!of_prop_cmp(prop_name, "phandle") ||
 		!of_prop_cmp(prop_name, "linux,phandle");
 }
-
-#if IS_ENABLED(CONFIG_KUNIT)
-int __of_address_resource_bounds(struct resource *r, u64 start, u64 size);
-#endif
 
 #endif /* _LINUX_OF_PRIVATE_H */

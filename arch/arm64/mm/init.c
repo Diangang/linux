@@ -38,7 +38,6 @@
 #include <asm/fixmap.h>
 #include <asm/kasan.h>
 #include <asm/kernel-pgtable.h>
-#include <asm/kvm_host.h>
 #include <asm/memory.h>
 #include <asm/numa.h>
 #include <asm/rsi.h>
@@ -47,7 +46,6 @@
 #include <linux/sizes.h>
 #include <asm/tlb.h>
 #include <asm/alternative.h>
-#include <asm/xen/swiotlb-xen.h>
 
 /*
  * We need to be able to catch inadvertent references to memstart_addr
@@ -188,20 +186,6 @@ void __init arm64_memblock_init(void)
 {
 	s64 linear_region_size = PAGE_END - _PAGE_OFFSET(vabits_actual);
 
-	/*
-	 * Corner case: 52-bit VA capable systems running KVM in nVHE mode may
-	 * be limited in their ability to support a linear map that exceeds 51
-	 * bits of VA space, depending on the placement of the ID map. Given
-	 * that the placement of the ID map may be randomized, let's simply
-	 * limit the kernel's linear map to 51 bits as well if we detect this
-	 * configuration.
-	 */
-	if (IS_ENABLED(CONFIG_KVM) && vabits_actual == 52 &&
-	    is_hyp_mode_available() && !is_kernel_in_hyp_mode()) {
-		pr_info("Capping linear region to 51 bits for KVM in nVHE mode on LVA capable hardware.\n");
-		linear_region_size = min_t(u64, linear_region_size, BIT(51));
-	}
-
 	/* Remove memory above our supported physical address size */
 	memblock_remove(1ULL << PHYS_MASK_SHIFT, ULLONG_MAX);
 
@@ -305,7 +289,6 @@ void __init bootmem_init(void)
 
 	arch_numa_init();
 
-	kvm_hyp_reserve();
 	dma_limits_init();
 
 	/*

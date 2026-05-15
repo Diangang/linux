@@ -25,7 +25,6 @@
 #include <asm/desc.h>
 #include <asm/cpufeature.h>
 #include <asm/vdso/vsyscall.h>
-#include <clocksource/hyperv_timer.h>
 
 static_assert(VDSO_NR_PAGES + VDSO_NR_VCLOCK_PAGES == __VDSO_PAGES);
 
@@ -97,13 +96,6 @@ static vm_fault_t vvar_vclock_fault(const struct vm_special_mapping *sm,
 			return vmf_insert_pfn_prot(vma, vmf->address,
 					__pa(pvti) >> PAGE_SHIFT,
 					pgprot_decrypted(vma->vm_page_prot));
-		break;
-	}
-	case VDSO_PAGE_HVCLOCK_OFFSET:
-	{
-		unsigned long pfn = hv_get_tsc_pfn();
-		if (pfn && vclock_was_used(VDSO_CLOCKMODE_HVCLOCK))
-			return vmf_insert_pfn(vma, vmf->address, pfn);
 		break;
 	}
 	}

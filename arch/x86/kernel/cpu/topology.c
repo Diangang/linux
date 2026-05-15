@@ -24,8 +24,6 @@
 #define pr_fmt(fmt) "CPU topo: " fmt
 #include <linux/cpu.h>
 
-#include <xen/xen.h>
-
 #include <asm/apic.h>
 #include <asm/io_apic.h>
 #include <asm/mpspec.h>
@@ -437,15 +435,6 @@ static __init bool restrict_to_up(void)
 {
 	if (!smp_found_config)
 		return true;
-	/*
-	 * XEN PV is special as it does not advertise the local APIC
-	 * properly, but provides a fake topology for it so that the
-	 * infrastructure works. So don't apply the restrictions vs. APIC
-	 * here.
-	 */
-	if (xen_pv_domain())
-		return false;
-
 	return apic_is_disabled;
 }
 

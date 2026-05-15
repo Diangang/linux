@@ -52,7 +52,6 @@
 #include <asm/tlbflush.h>
 #include <asm/traps.h>
 #include <asm/efi.h>
-#include <asm/xen/hypervisor.h>
 #include <asm/mmu_context.h>
 
 static int num_standard_resources;
@@ -319,7 +318,6 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	 */
 	cpu_uninstall_idmap();
 
-	xen_early_init();
 	efi_init();
 
 	if (!efi_enabled(EFI_BOOT)) {

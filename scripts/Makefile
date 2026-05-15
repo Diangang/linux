@@ -17,7 +17,6 @@ $(obj)/target.json: scripts/generate_rust_target include/config/auto.conf FORCE
 hostprogs += generate_rust_target
 generate_rust_target-rust := y
 rustdoc_test_builder-rust := y
-rustdoc_test_gen-rust := y
 
 HOSTCFLAGS_elf-parse.o = -I$(srctree)/tools/include
 HOSTCFLAGS_sorttable.o = -I$(srctree)/tools/include
