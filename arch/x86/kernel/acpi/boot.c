@@ -1579,7 +1579,6 @@ static const struct dmi_system_id acpi_dmi_table_late[] __initconst = {
  *	acpi_lapic = 1 if LAPIC found
  *	acpi_ioapic = 1 if IOAPIC found
  *	if (acpi_lapic && acpi_ioapic) smp_found_config = 1;
- *	if acpi_blacklisted() acpi_disabled = 1;
  *	acpi_irq_model=...
  *	...
  */
@@ -1612,18 +1611,7 @@ int __init early_acpi_boot_init(void)
 
 	acpi_table_parse(ACPI_SIG_BOOT, acpi_parse_sbf);
 
-	/*
-	 * blacklist may disable ACPI entirely
-	 */
-	if (acpi_blacklisted()) {
-		if (acpi_force) {
-			pr_warn("acpi=force override\n");
-		} else {
-			pr_warn("Disabling ACPI support\n");
-			disable_acpi();
-			return 1;
-		}
-	}
+	early_acpi_osi_init();
 
 	/*
 	 * Process the Multiple APIC Description Table (MADT), if present

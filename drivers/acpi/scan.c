@@ -25,7 +25,6 @@
 #include <linux/dma-direct.h>
 
 #include "internal.h"
-#include "sleep.h"
 
 #define ACPI_BUS_CLASS			"system_bus"
 #define ACPI_BUS_HID			"LNXSYBUS"
@@ -114,10 +113,6 @@ bool acpi_scan_is_offline(struct acpi_device *adev, bool uevent)
 	bool offline = true;
 	char *envp[] = { "EVENT=offline", NULL };
 
-	/*
-	 * acpi_container_offline() calls this for all of the container's
-	 * children under the container's physical_node_lock lock.
-	 */
 	mutex_lock_nested(&adev->physical_node_lock, SINGLE_DEPTH_NESTING);
 
 	list_for_each_entry(pn, &adev->physical_node_list, node)
@@ -454,9 +449,7 @@ void acpi_device_hotplug(struct acpi_device *adev, u32 src)
 	if (adev->handle == INVALID_ACPI_HANDLE)
 		goto err_out;
 
-	if (adev->flags.is_dock_station) {
-		error = dock_notify(adev, src);
-	} else if (adev->flags.hotplug_notify) {
+	if (adev->flags.hotplug_notify) {
 		error = acpi_generic_hotplug_event(adev, src);
 	} else {
 		acpi_hp_notify notify;
@@ -1214,26 +1207,6 @@ bool acpi_ata_match(acpi_handle handle)
 	       acpi_has_method(handle, "_SDD");
 }
 
-/*
- * acpi_bay_match - see if an acpi object is an ejectable driver bay
- *
- * If an acpi object is ejectable and has one of the ACPI ATA methods defined,
- * then we can safely call it an ejectable drive bay
- */
-bool acpi_bay_match(acpi_handle handle)
-{
-	acpi_handle phandle;
-
-	if (!acpi_has_method(handle, "_EJ0"))
-		return false;
-	if (acpi_ata_match(handle))
-		return true;
-	if (ACPI_FAILURE(acpi_get_parent(handle, &phandle)))
-		return false;
-
-	return acpi_ata_match(phandle);
-}
-
 bool acpi_device_is_battery(struct acpi_device *adev)
 {
 	struct acpi_hardware_id *hwid;
@@ -1243,24 +1216,6 @@ bool acpi_device_is_battery(struct acpi_device *adev)
 			return true;
 
 	return false;
-}
-
-static bool is_ejectable_bay(struct acpi_device *adev)
-{
-	acpi_handle handle = adev->handle;
-
-	if (acpi_has_method(handle, "_EJ0") && acpi_device_is_battery(adev))
-		return true;
-
-	return acpi_bay_match(handle);
-}
-
-/*
- * acpi_dock_match - see if an acpi object has a _DCK method
- */
-bool acpi_dock_match(acpi_handle handle)
-{
-	return acpi_has_method(handle, "_DCK");
 }
 
 static acpi_status
@@ -1434,11 +1389,7 @@ static void acpi_set_pnp_ids(acpi_handle handle, struct acpi_device_pnp *pnp,
 			pnp->type.backlight = 1;
 			break;
 		}
-		if (acpi_bay_match(handle))
-			acpi_add_id(pnp, ACPI_BAY_HID);
-		else if (acpi_dock_match(handle))
-			acpi_add_id(pnp, ACPI_DOCK_HID);
-		else if (acpi_ibm_smbus_match(handle))
+		if (acpi_ibm_smbus_match(handle))
 			acpi_add_id(pnp, ACPI_SMBUS_IBM_HID);
 		else if (list_empty(&pnp->ids) &&
 			 acpi_object_is_system_bus(handle)) {
@@ -2048,10 +1999,6 @@ static void acpi_scan_init_hotplug(struct acpi_device *adev)
 {
 	struct acpi_hardware_id *hwid;
 
-	if (acpi_dock_match(adev->handle) || is_ejectable_bay(adev)) {
-		acpi_dock_add(adev);
-		return;
-	}
 	list_for_each_entry(hwid, &adev->pnp.ids, list) {
 		struct acpi_scan_handler *handler;
 
@@ -2097,12 +2044,6 @@ static u32 acpi_scan_check_dep(acpi_handle handle)
 	return count;
 }
 
-static acpi_status acpi_scan_check_crs_csi2_cb(acpi_handle handle, u32 a, void *b, void **c)
-{
-	acpi_mipi_check_crs_csi2(handle);
-	return AE_OK;
-}
-
 static acpi_status acpi_bus_check_add(acpi_handle handle, bool first_pass,
 				      struct acpi_device **adev_p)
 {
@@ -2122,23 +2063,9 @@ static acpi_status acpi_bus_check_add(acpi_handle handle, bool first_pass,
 			return AE_OK;
 
 		if (first_pass) {
-			acpi_mipi_check_crs_csi2(handle);
-
 			/* Bail out if there are dependencies. */
-			if (acpi_scan_check_dep(handle) > 0) {
-				/*
-				 * The entire CSI-2 connection graph needs to be
-				 * extracted before any drivers or scan handlers
-				 * are bound to struct device objects, so scan
-				 * _CRS CSI-2 resource descriptors for all
-				 * devices below the current handle.
-				 */
-				acpi_walk_namespace(ACPI_TYPE_DEVICE, handle,
-						    ACPI_UINT32_MAX,
-						    acpi_scan_check_crs_csi2_cb,
-						    NULL, NULL, NULL);
+			if (acpi_scan_check_dep(handle) > 0)
 				return AE_CTRL_DEPTH;
-			}
 		}
 
 		fallthrough;
@@ -2271,9 +2198,6 @@ static void acpi_default_enumeration(struct acpi_device *device)
 		parent = acpi_dev_parent(device);
 		if (parent)
 			acpi_create_video_bus_device(device, parent);
-	} else {
-		/* For a regular device object, create a platform device. */
-		acpi_create_platform_device(device, NULL);
 	}
 	acpi_device_set_enumerated(device);
 }
@@ -2333,14 +2257,10 @@ static int acpi_scan_attach_handler(struct acpi_device *device)
 static int acpi_bus_attach(struct acpi_device *device, void *first_pass)
 {
 	bool skip = !first_pass && device->flags.visited;
-	acpi_handle ejd;
 	int ret;
 
 	if (skip)
 		goto ok;
-
-	if (ACPI_SUCCESS(acpi_bus_get_ejd(device->handle, &ejd)))
-		register_dock_dependent_device(device, ejd);
 
 	acpi_bus_get_status(device);
 	/* Skip devices that are not ready for enumeration (e.g. not present) */
@@ -2352,8 +2272,6 @@ static int acpi_bus_attach(struct acpi_device *device, void *first_pass)
 	}
 	if (device->handler)
 		goto ok;
-
-	acpi_ec_register_opregions(device);
 
 	if (!device->flags.initialized) {
 		device->flags.power_manageable =
@@ -2574,12 +2492,6 @@ static void acpi_scan_postponed_branch(acpi_handle handle)
 	acpi_walk_namespace(ACPI_TYPE_ANY, handle, ACPI_UINT32_MAX,
 			    acpi_bus_check_add_2, NULL, NULL, (void **)&adev);
 
-	/*
-	 * Populate the ACPI _CRS CSI-2 software nodes for the ACPI devices that
-	 * have been added above.
-	 */
-	acpi_mipi_init_crs_csi2_swnodes();
-
 	acpi_bus_attach(adev, NULL);
 }
 
@@ -2729,21 +2641,11 @@ int acpi_bus_scan(acpi_handle handle)
 	if (!device)
 		return -ENODEV;
 
-	/*
-	 * Set up ACPI _CRS CSI-2 software nodes using information extracted
-	 * from the _CRS CSI-2 resource descriptors during the ACPI namespace
-	 * walk above and MIPI DisCo for Imaging device properties.
-	 */
-	acpi_mipi_scan_crs_csi2();
-	acpi_mipi_init_crs_csi2_swnodes();
-
 	acpi_bus_attach(device, (void *)true);
 
 	/* Pass 2: Enumerate all of the remaining devices. */
 
 	acpi_scan_postponed();
-
-	acpi_mipi_crs_csi2_cleanup();
 
 	return 0;
 }
@@ -2820,16 +2722,7 @@ void __init acpi_scan_init(void)
 
 	acpi_pci_root_init();
 	acpi_pci_link_init();
-	acpi_processor_init();
-	acpi_platform_init();
-	acpi_lpss_init();
-	acpi_apd_init();
-	acpi_cmos_rtc_init();
-	acpi_container_init();
-	acpi_memory_hotplug_init();
-	acpi_pnp_init();
 	acpi_power_resources_init();
-	acpi_init_lpit();
 
 	acpi_scan_add_handler(&generic_device_handler);
 

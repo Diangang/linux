@@ -760,16 +760,6 @@ struct acpi_pci_root *acpi_pci_find_root(acpi_handle handle);
 int acpi_enable_wakeup_device_power(struct acpi_device *dev, int state);
 int acpi_disable_wakeup_device_power(struct acpi_device *dev);
 
-#ifdef CONFIG_X86
-bool acpi_device_override_status(struct acpi_device *adev, unsigned long long *status);
-bool acpi_quirk_skip_acpi_ac_and_battery(void);
-int acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip);
-#else
-static inline bool acpi_device_override_status(struct acpi_device *adev,
-					       unsigned long long *status)
-{
-	return false;
-}
 static inline bool acpi_quirk_skip_acpi_ac_and_battery(void)
 {
 	return false;
@@ -780,7 +770,6 @@ acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip)
 	*skip = false;
 	return 0;
 }
-#endif
 
 #if IS_ENABLED(CONFIG_X86_ANDROID_TABLETS)
 bool acpi_quirk_skip_i2c_client_enumeration(struct acpi_device *adev);
@@ -836,17 +825,9 @@ static inline int acpi_pm_set_device_wakeup(struct device *dev, bool enable)
 }
 #endif
 
-#ifdef CONFIG_ACPI_SYSTEM_POWER_STATES_SUPPORT
-bool acpi_sleep_state_supported(u8 sleep_state);
-#else
 static inline bool acpi_sleep_state_supported(u8 sleep_state) { return false; }
-#endif
 
-#ifdef CONFIG_ACPI_SLEEP
-u32 acpi_target_system_state(void);
-#else
 static inline u32 acpi_target_system_state(void) { return ACPI_STATE_S0; }
-#endif
 
 static inline bool acpi_device_power_manageable(struct acpi_device *adev)
 {

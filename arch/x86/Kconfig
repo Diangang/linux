@@ -20,7 +20,6 @@ config X86_64
 	select NEED_DMA_MAP_STATE
 	select SWIOTLB
 	select ZONE_DMA32
-	select ACPI_MRRM if ACPI
 
 # Arch settings
 #
@@ -33,8 +32,6 @@ config X86
 	# Note: keep this list sorted alphabetically
 	#
 	select ACPI_LEGACY_TABLES_LOOKUP	if ACPI
-	select ACPI_SYSTEM_POWER_STATES_SUPPORT	if ACPI
-	select ACPI_HOTPLUG_CPU			if ACPI_PROCESSOR && HOTPLUG_CPU
 		select ARCH_CLOCKSOURCE_INIT
 		select ARCH_CONFIGURES_CPU_MITIGATIONS
 		select ARCH_ENABLE_MEMORY_HOTPLUG if X86_64
@@ -76,7 +73,6 @@ config X86
 		select ARCH_HAVE_NMI_SAFE_CMPXCHG
 	select ARCH_HAVE_EXTRA_ELF_NOTES
 	select ARCH_MHP_MEMMAP_ON_MEMORY_ENABLE
-	select ARCH_MIGHT_HAVE_ACPI_PDC		if ACPI
 	select ARCH_MIGHT_HAVE_PC_PARPORT
 	select ARCH_MIGHT_HAVE_PC_SERIO
 	select ARCH_STACKWALK
@@ -682,16 +678,7 @@ config AMD_NUMA
 	  Enable AMD NUMA node topology detection.  You should say Y here if
 	  you have a multi processor AMD system. This uses an old method to
 	  read the NUMA configuration directly from the builtin Northbridge
-	  of Opteron. It is recommended to use X86_64_ACPI_NUMA instead,
-	  which also takes priority if both are compiled in.
-
-config X86_64_ACPI_NUMA
-	def_bool y
-	prompt "ACPI NUMA detection"
-	depends on X86_64 && NUMA && ACPI && PCI
-	select ACPI_NUMA
-	help
-	  Enable ACPI SRAT based node topology detection.
+	  of Opteron.
 
 config NODES_SHIFT
 	int "Maximum NUMA Nodes (as a power of 2)" if !n

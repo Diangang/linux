@@ -48,131 +48,14 @@ if ACPI
 config ACPI_LEGACY_TABLES_LOOKUP
 	bool
 
-config ARCH_MIGHT_HAVE_ACPI_PDC
-	bool
-
 config ACPI_GENERIC_GSI
-	bool
-
-config ACPI_SYSTEM_POWER_STATES_SUPPORT
 	bool
 
 config ACPI_CCA_REQUIRED
 	bool
 
-config ACPI_SPCR_TABLE
-	bool "ACPI Serial Port Console Redirection Support"
-	default y if X86
-	help
-	  Enable support for Serial Port Console Redirection (SPCR) Table.
-	  This table provides information about the configuration of the
-	  earlycon console.
-
-config ACPI_LPIT
-	bool
-	depends on X86_64
-	default y
-
-config ACPI_SLEEP
-	bool
-	depends on SUSPEND || n
-	depends on ACPI_SYSTEM_POWER_STATES_SUPPORT
-	default y
-
-config ACPI_EC
-	bool "Embedded Controller"
-	depends on HAS_IOPORT
-	default X86 || LOONGARCH
-	help
-	  This driver handles communication with the microcontroller
-	  on many x86/LoongArch laptops and other machines.
-
-config ACPI_DOCK
-	bool "Dock"
-	help
-	  This driver supports ACPI-controlled docking stations and removable
-	  drive bays such as the IBM Ultrabay and the Dell Module Bay.
-
-config ACPI_CPU_FREQ_PSS
-	bool
-
-config ACPI_PROCESSOR_CSTATE
-	def_bool y
-	depends on ACPI_PROCESSOR
-	depends on X86
-
-config ACPI_PROCESSOR_IDLE
-	bool
-	select CPU_IDLE
-
 config ACPI_MCFG
 	bool
-
-config ACPI_PROCESSOR
-	tristate "Processor"
-	depends on X86 || ARM64 || LOONGARCH || RISCV
-	select ACPI_PROCESSOR_IDLE
-	select ACPI_CPU_FREQ_PSS if X86 || LOONGARCH
-	default y
-	help
-	  This driver adds support for the ACPI Processor package. It is required
-	  by several flavors of cpufreq performance-state, thermal, throttling and
-	  idle drivers.
-
-	  To compile this driver as a module, choose M here:
-	  the module will be called processor.
-
-config ACPI_HOTPLUG_CPU
-	bool
-	depends on ACPI_PROCESSOR && HOTPLUG_CPU
-	select ACPI_CONTAINER
-
-config ACPI_DEBUG
-	bool "Debug Statements"
-	default y
-	help
-	  The ACPI subsystem can produce debug output.  Saying Y enables this
-	  output and increases the kernel size by around 50K.
-
-	  Use the acpi.debug_layer and acpi.debug_level kernel command-line
-	  parameters documented in Documentation/firmware-guide/acpi/debug.rst and
-	  Documentation/admin-guide/kernel-parameters.rst to control the type and
-	  amount of debug output.
-
-config ACPI_CONTAINER
-	bool "Container and Module Devices"
-	default (ACPI_HOTPLUG_MEMORY || ACPI_HOTPLUG_CPU)
-	help
-	  This driver supports ACPI Container and Module devices (IDs
-	  ACPI0004, PNP0A05, and PNP0A06).
-
-	  This helps support hotplug of nodes, CPUs, and memory.
-
-config ACPI_HOTPLUG_MEMORY
-	bool "Memory Hotplug"
-	depends on MEMORY_HOTPLUG
-	help
-	  This driver supports ACPI memory hotplug.  The driver
-	  fields notifications on ACPI memory devices (PNP0C80),
-	  which represent memory ranges that may be onlined or
-	  offlined during runtime.
-
-	  If your hardware and firmware do not support adding or
-	  removing memory devices at runtime, you need not enable
-	  this driver.
-
-config ACPI_HOTPLUG_IOAPIC
-	bool
-	depends on PCI
-	depends on X86_IO_APIC
-	default y
-
-config ACPI_HED
-	bool "Hardware Error Device"
-	help
-	  This driver supports the Hardware Error Device (PNP0C33),
-	  which is used to report some hardware errors notified via
-	  SCI, mainly the corrected errors.
 
 config ACPI_REDUCED_HARDWARE_ONLY
 	bool "Hardware-reduced ACPI support only" if EXPERT
@@ -184,14 +67,6 @@ config ACPI_REDUCED_HARDWARE_ONLY
 	  running in ACPI reduced hardware mode ONLY.
 
 	  If you are unsure what to do, do not enable this option.
-
-source "drivers/acpi/numa/Kconfig"
-
-config ACPI_PPTT
-	bool
-
-config ACPI_MRRM
-	bool
 
 endif	# ACPI
 

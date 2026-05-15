@@ -633,8 +633,6 @@ void acpi_init_properties(struct acpi_device *adev)
 		acpi_handle_info(adev->handle,
 			 ACPI_DT_NAMESPACE_HID " requires 'compatible' property\n");
 
-	if (!adev->data.pointer)
-		acpi_extract_apple_properties(adev);
 }
 
 static void acpi_free_device_properties(struct list_head *list)

@@ -94,11 +94,6 @@ int acpi_bus_get_status(struct acpi_device *device)
 	acpi_status status;
 	unsigned long long sta;
 
-	if (acpi_device_override_status(device, &sta)) {
-		acpi_set_device_status(device, sta);
-		return 0;
-	}
-
 	/* Battery devices must have their deps met before calling _STA */
 	if (acpi_device_is_battery(device) && device->dep_unmet) {
 		acpi_set_device_status(device, 0);
@@ -458,9 +453,6 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 		if (IS_ENABLED(CONFIG_SCHED_MC_PRIO))
 			feature_mask |= OSC_SB_CPC_DIVERSE_HIGH_SUPPORT;
 	}
-
-	if (IS_ENABLED(CONFIG_ACPI_PROCESSOR))
-		feature_mask |= OSC_SB_PPC_OST_SUPPORT;
 
 	if (IS_ENABLED(CONFIG_USB4))
 		feature_mask |= OSC_SB_NATIVE_USB4_SUPPORT;
@@ -1094,7 +1086,7 @@ static int acpi_device_probe(struct device *dev)
 	struct acpi_driver *acpi_drv = to_acpi_driver(dev->driver);
 	int ret;
 
-	if (acpi_dev->handler && !acpi_is_pnp_device(acpi_dev))
+	if (acpi_dev->handler)
 		return -EINVAL;
 
 	if (!acpi_drv->ops.add)
@@ -1376,18 +1368,6 @@ static int __init acpi_bus_init(void)
 		goto error1;
 	}
 
-	/*
-	 * ACPI 2.0 requires the EC driver to be loaded and work before the EC
-	 * device is found in the namespace.
-	 *
-	 * This is accomplished by looking for the ECDT table and getting the EC
-	 * parameters out of that.
-	 *
-	 * Do that before calling acpi_initialize_objects() which may trigger EC
-	 * address space accesses.
-	 */
-	acpi_ec_ecdt_probe();
-
 	status = acpi_enable_subsystem(ACPI_NO_ACPI_ENABLE);
 	if (ACPI_FAILURE(status)) {
 		pr_err("Unable to start the ACPI Interpreter\n");
@@ -1415,18 +1395,7 @@ static int __init acpi_bus_init(void)
 
 	acpi_sysfs_init();
 
-	acpi_early_processor_control_setup();
-
-	/*
-	 * Maybe EC region is required at bus_scan/acpi_get_devices. So it
-	 * is necessary to enable it as early as possible.
-	 */
-	acpi_ec_dsdt_probe();
-
 	pr_info("Interpreter enabled\n");
-
-	/* Initialize sleep structures */
-	acpi_sleep_init();
 
 	/*
 	 * Get the system interrupt model and evaluate \_PIC.
@@ -1492,10 +1461,7 @@ static int __init acpi_init(void)
 	pci_mmcfg_late_init();
 	acpi_arch_init();
 	acpi_scan_init();
-	acpi_ec_init();
 	acpi_debugfs_init();
-	acpi_sleep_proc_init();
-	acpi_wakeup_device_init();
 	acpi_debugger_init();
 	acpi_setup_sb_notify_handler();
 	return 0;

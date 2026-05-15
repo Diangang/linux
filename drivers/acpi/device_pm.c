@@ -20,7 +20,6 @@
 #include <linux/pm_runtime.h>
 #include <linux/suspend.h>
 
-#include "fan.h"
 #include "internal.h"
 
 /**
@@ -522,7 +521,7 @@ static DEFINE_MUTEX(acpi_pm_notifier_install_lock);
 
 void acpi_pm_wakeup_event(struct device *dev)
 {
-	pm_wakeup_dev_event(dev, 0, acpi_s2idle_wakeup());
+	pm_wakeup_dev_event(dev, 0, false);
 }
 EXPORT_SYMBOL_GPL(acpi_pm_wakeup_event);
 
@@ -542,7 +541,7 @@ static void acpi_pm_notify_handler(acpi_handle handle, u32 val, void *not_used)
 	mutex_lock(&acpi_pm_notifier_lock);
 
 	if (adev->wakeup.flags.notifier_present) {
-		pm_wakeup_ws_event(adev->wakeup.ws, 0, acpi_s2idle_wakeup());
+		pm_wakeup_ws_event(adev->wakeup.ws, 0, false);
 		if (adev->wakeup.context.func) {
 			acpi_handle_debug(handle, "Running %pS for %s\n",
 					  adev->wakeup.context.func,
@@ -1442,18 +1441,9 @@ static void acpi_dev_pm_detach(struct device *dev, bool power_off)
  */
 int acpi_dev_pm_attach(struct device *dev, bool power_on)
 {
-	/*
-	 * Skip devices whose ACPI companions match the device IDs below,
-	 * because they require special power management handling incompatible
-	 * with the generic ACPI PM domain.
-	 */
-	static const struct acpi_device_id special_pm_ids[] = {
-		ACPI_FAN_DEVICE_IDS,
-		{}
-	};
 	struct acpi_device *adev = ACPI_COMPANION(dev);
 
-	if (!adev || !acpi_match_device_ids(adev, special_pm_ids))
+	if (!adev)
 		return 0;
 
 	/*
@@ -1493,9 +1483,6 @@ bool acpi_storage_d3(struct device *dev)
 {
 	struct acpi_device *adev = ACPI_COMPANION(dev);
 	u8 val;
-
-	if (force_storage_d3())
-		return true;
 
 	if (!adev)
 		return false;

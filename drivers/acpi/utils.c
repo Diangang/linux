@@ -18,7 +18,6 @@
 #include <linux/dynamic_debug.h>
 
 #include "internal.h"
-#include "sleep.h"
 
 /* --------------------------------------------------------------------------
                             Object Evaluation Helpers

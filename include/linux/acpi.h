@@ -281,28 +281,7 @@ int __init acpi_get_madt_revision(void);
 
 /* Validate the processor object's proc_id */
 bool acpi_duplicate_processor_id(int proc_id);
-/* Processor _CTS control */
-struct acpi_processor_power;
-
-#ifdef CONFIG_ACPI_PROCESSOR_CSTATE
-bool acpi_processor_claim_cst_control(void);
-int acpi_processor_evaluate_cst(acpi_handle handle, u32 cpu,
-				struct acpi_processor_power *info);
-#else
 static inline bool acpi_processor_claim_cst_control(void) { return false; }
-static inline int acpi_processor_evaluate_cst(acpi_handle handle, u32 cpu,
-					      struct acpi_processor_power *info)
-{
-	return -ENODEV;
-}
-#endif
-
-#ifdef CONFIG_ACPI_HOTPLUG_CPU
-/* Arch dependent functions for cpu hotplug support */
-int acpi_map_cpu(acpi_handle handle, phys_cpuid_t physid, u32 acpi_id,
-		 int *pcpu);
-int acpi_unmap_cpu(int cpu);
-#endif /* CONFIG_ACPI_HOTPLUG_CPU */
 
 acpi_handle acpi_get_processor_handle(int cpu);
 
@@ -316,10 +295,6 @@ acpi_handle acpi_get_processor_handle(int cpu);
  *         -ENODEV if ACPI Processor UID for the CPU is not found.
  */
 int acpi_get_cpu_uid(unsigned int cpu, u32 *uid);
-
-#ifdef CONFIG_ACPI_HOTPLUG_IOAPIC
-int acpi_get_ioapic_id(acpi_handle handle, u32 gsi_base, u64 *phys_addr);
-#endif
 
 int acpi_register_ioapic(acpi_handle handle, u64 phys_addr, u32 gsi_base);
 int acpi_unregister_ioapic(acpi_handle handle, u32 gsi_base);
@@ -392,8 +367,6 @@ extern int ec_transaction(u8 command,
                           u8 *rdata, unsigned rdata_len);
 extern acpi_handle ec_get_handle(void);
 
-extern bool acpi_is_pnp_device(struct acpi_device *);
-
 #if defined(CONFIG_ACPI_WMI)
 
 typedef void (*wmi_notify_handler) (union acpi_object *data, void *context);
@@ -434,42 +407,14 @@ extern long acpi_is_video_device(acpi_handle handle);
 
 extern void acpi_osi_setup(char *str);
 extern bool acpi_osi_is_win8(void);
+int early_acpi_osi_init(void);
 
-#ifdef CONFIG_ACPI_HMAT
-int acpi_get_genport_coordinates(u32 uid, struct access_coordinate *coord);
-#else
 static inline int acpi_get_genport_coordinates(u32 uid,
 					       struct access_coordinate *coord)
 {
 	return -EOPNOTSUPP;
 }
-#endif
 
-#ifdef CONFIG_ACPI_NUMA
-int acpi_map_pxm_to_node(int pxm);
-int acpi_get_node(acpi_handle handle);
-
-/**
- * pxm_to_online_node - Map proximity ID to online node
- * @pxm: ACPI proximity ID
- *
- * This is similar to pxm_to_node(), but always returns an online
- * node.  When the mapped node from a given proximity ID is offline, it
- * looks up the node distance table and returns the nearest online node.
- *
- * ACPI device drivers, which are called after the NUMA initialization has
- * completed in the kernel, can call this interface to obtain their device
- * NUMA topology from ACPI tables.  Such drivers do not have to deal with
- * offline nodes.  A node may be offline when SRAT memory entry does not exist,
- * or NUMA is disabled, ex. "numa=off" on x86.
- */
-static inline int pxm_to_online_node(int pxm)
-{
-	int node = pxm_to_node(pxm);
-
-	return numa_map_to_online_node(node);
-}
-#else
 static inline int pxm_to_online_node(int pxm)
 {
 	return 0;
@@ -482,7 +427,6 @@ static inline int acpi_get_node(acpi_handle handle)
 {
 	return 0;
 }
-#endif
 extern int pnpacpi_disabled;
 
 #define PXM_INVAL	(-1)
@@ -526,13 +470,6 @@ int acpi_resources_are_enforced(void);
 #if 0
 extern int acpi_check_s4_hw_signature;
 #endif
-
-#ifdef CONFIG_PM_SLEEP
-void __init acpi_old_suspend_ordering(void);
-void __init acpi_nvs_nosave(void);
-void __init acpi_nvs_nosave_s3(void);
-void __init acpi_sleep_no_blacklist(void);
-#endif /* CONFIG_PM_SLEEP */
 
 int acpi_register_wakeup_handler(
 	int wake_irq, bool (*wakeup)(void *context), void *context);
@@ -653,13 +590,6 @@ static inline u32 acpi_osc_ctx_get_cxl_control(struct acpi_osc_context *context)
 #define ACPI_GSB_ACCESS_ATTRIB_RAW_BYTES	0x0000000E
 #define ACPI_GSB_ACCESS_ATTRIB_RAW_PROCESS	0x0000000F
 
-/* Enable _OST when all relevant hotplug operations are enabled */
-#if defined(CONFIG_ACPI_HOTPLUG_CPU) &&			\
-	defined(CONFIG_ACPI_HOTPLUG_MEMORY) &&		\
-	defined(CONFIG_ACPI_CONTAINER)
-#define ACPI_HOTPLUG_OST
-#endif
-
 /* _OST Source Event Code (OSPM Action) */
 #define ACPI_OST_EC_OSPM_SHUTDOWN		0x100
 #define ACPI_OST_EC_OSPM_EJECT			0x103
@@ -727,8 +657,6 @@ extern bool acpi_driver_match_device(struct device *dev,
 int acpi_device_uevent_modalias(const struct device *, struct kobj_uevent_env *);
 int acpi_device_modalias(struct device *, char *, int);
 
-struct platform_device *acpi_create_platform_device(struct acpi_device *,
-						    const struct property_entry *);
 #define ACPI_PTR(_ptr)	(_ptr)
 
 static inline void acpi_device_set_enumerated(struct acpi_device *adev)
@@ -772,17 +700,13 @@ int acpi_get_local_u64_address(acpi_handle handle, u64 *addr);
 int acpi_get_local_address(acpi_handle handle, u32 *addr);
 const char *acpi_get_subsystem_id(acpi_handle handle);
 
-#ifdef CONFIG_ACPI_MRRM
-int acpi_mrrm_max_mem_region(void);
-#endif
-
 #define ACPI_CMOS_RTC_IDS	\
 	{ "PNP0B00", },		\
 	{ "PNP0B01", },		\
 	{ "PNP0B02", },		\
 	{ "", }
 
-extern bool cmos_rtc_platform_device_present;
+#define cmos_rtc_platform_device_present	false
 
 #else	/* !CONFIG_ACPI */
 
@@ -1010,13 +934,6 @@ static inline int acpi_device_modalias(struct device *dev,
 	return -ENODEV;
 }
 
-static inline struct platform_device *
-acpi_create_platform_device(struct acpi_device *adev,
-			    const struct property_entry *properties)
-{
-	return NULL;
-}
-
 static inline bool acpi_dma_supported(const struct acpi_device *adev)
 {
 	return false;
@@ -1110,33 +1027,19 @@ static inline acpi_handle acpi_get_processor_handle(int cpu)
 	return NULL;
 }
 
-static inline int acpi_mrrm_max_mem_region(void)
-{
-	return 1;
-}
-
 #define cmos_rtc_platform_device_present	false
 
 #endif	/* !CONFIG_ACPI */
 
-#ifdef CONFIG_ACPI_HMAT
-int hmat_get_extended_linear_cache_size(struct resource *backing_res, int nid,
-					resource_size_t *size);
-#else
 static inline int hmat_get_extended_linear_cache_size(struct resource *backing_res,
 						      int nid, resource_size_t *size)
 {
 	return -EOPNOTSUPP;
 }
-#endif
 
 extern void arch_post_acpi_subsys_init(void);
 
-#ifdef CONFIG_ACPI_HOTPLUG_IOAPIC
-int acpi_ioapic_add(acpi_handle root);
-#else
 static inline int acpi_ioapic_add(acpi_handle root) { return 0; }
-#endif
 
 #ifdef CONFIG_ACPI
 void acpi_os_set_prepare_sleep(int (*func)(u8 sleep_state,
@@ -1218,13 +1121,8 @@ static inline int acpi_subsys_poweroff(struct device *dev) { return 0; }
 static inline int acpi_subsys_restore_early(struct device *dev) { return 0; }
 #endif
 
-#if defined(CONFIG_ACPI_EC) && defined(CONFIG_PM_SLEEP)
-void acpi_ec_mark_gpe_for_wake(void);
-void acpi_ec_set_gpe_wake_mask(u8 action);
-#else
 static inline void acpi_ec_mark_gpe_for_wake(void) {}
 static inline void acpi_ec_set_gpe_wake_mask(u8 action) {}
-#endif
 
 #ifdef CONFIG_ACPI
 char *acpi_handle_path(acpi_handle handle);
@@ -1477,15 +1375,10 @@ acpi_graph_get_remote_endpoint(const struct fwnode_handle *fwnode,
 #define acpi_probe_device_table(t)	({ int __r = 0; __r;})
 #endif
 
-#ifdef CONFIG_ACPI_SPCR_TABLE
-extern bool qdf2400_e44_present;
-int acpi_parse_spcr(bool enable_earlycon, bool enable_console);
-#else
 static inline int acpi_parse_spcr(bool enable_earlycon, bool enable_console)
 {
 	return -ENODEV;
 }
-#endif
 
 #if IS_ENABLED(CONFIG_ACPI_GENERIC_GSI)
 int acpi_irq_get(acpi_handle handle, unsigned int index, struct resource *res);
@@ -1504,34 +1397,11 @@ static inline const struct cpumask *acpi_irq_get_affinity(acpi_handle handle,
 }
 #endif
 
-#ifdef CONFIG_ACPI_LPIT
-int lpit_read_residency_count_address(u64 *address);
-#else
 static inline int lpit_read_residency_count_address(u64 *address)
 {
 	return -EINVAL;
 }
-#endif
 
-#ifdef CONFIG_ACPI_PROCESSOR_IDLE
-#ifndef arch_get_idle_state_flags
-static inline unsigned int arch_get_idle_state_flags(u32 arch_flags)
-{
-	return 0;
-}
-#endif
-#endif /* CONFIG_ACPI_PROCESSOR_IDLE */
-
-#ifdef CONFIG_ACPI_PPTT
-int acpi_pptt_cpu_is_thread(unsigned int cpu);
-int find_acpi_cpu_topology(unsigned int cpu, int level);
-int find_acpi_cpu_topology_cluster(unsigned int cpu);
-int find_acpi_cpu_topology_package(unsigned int cpu);
-int find_acpi_cpu_topology_hetero_id(unsigned int cpu);
-void acpi_pptt_get_cpus_from_container(u32 acpi_cpu_id, cpumask_t *cpus);
-int find_acpi_cache_level_from_id(u32 cache_id);
-int acpi_pptt_get_cpumask_from_cache_id(u32 cache_id, cpumask_t *cpus);
-#else
 static inline int acpi_pptt_cpu_is_thread(unsigned int cpu)
 {
 	return -EINVAL;
@@ -1563,7 +1433,6 @@ static inline int acpi_pptt_get_cpumask_from_cache_id(u32 cache_id,
 {
 	return -ENOENT;
 }
-#endif
 
 void acpi_arch_init(void);
 
@@ -1582,13 +1451,9 @@ static inline void acpi_use_parent_companion(struct device *dev)
 	ACPI_COMPANION_SET(dev, ACPI_COMPANION(dev->parent));
 }
 
-#ifdef CONFIG_ACPI_NUMA
-bool acpi_node_backed_by_real_pxm(int nid);
-#else
 static inline bool acpi_node_backed_by_real_pxm(int nid)
 {
 	return false;
 }
-#endif
 
 #endif	/*_LINUX_ACPI_H*/
