@@ -12,8 +12,6 @@ obj-y += realmode/
 obj-y += kernel/
 obj-y += mm/
 
-obj-y += platform/
-
 obj-y += virt/
 
 # for cleaning
