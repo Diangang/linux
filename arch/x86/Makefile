@@ -224,7 +224,6 @@ libs-y  += arch/x86/lib/
 drivers-$(CONFIG_PCI)            += arch/x86/pci/
 
 # suspend and hibernation support
-drivers-$(CONFIG_PM) += arch/x86/power/
 
 ####
 # boot loader support. Several targets are kept for legacy purposes

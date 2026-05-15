@@ -35,7 +35,6 @@
 
 #include "base.h"
 #include "physical_location.h"
-#include "power/power.h"
 
 /* Device links support. */
 static LIST_HEAD(deferred_sync);

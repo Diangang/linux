@@ -42,7 +42,6 @@ CFLAGS_kcov.o := $(call cc-option, -fno-conserve-stack) -fno-stack-protector
 
 obj-y += sched/
 obj-y += locking/
-obj-y += power/
 obj-y += printk/
 obj-y += irq/
 obj-y += rcu/
@@ -78,7 +77,6 @@ obj-$(CONFIG_SECCOMP) += seccomp.o
 obj-$(CONFIG_SYSCTL) += utsname_sysctl.o
 obj-$(CONFIG_TRACE_CLOCK) += trace/
 obj-$(CONFIG_IRQ_WORK) += irq_work.o
-obj-$(CONFIG_CPU_PM) += cpu_pm.o
 obj-$(CONFIG_HAVE_STATIC_CALL) += static_call.o
 obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 

@@ -34,7 +34,6 @@
 #include <linux/dma-map-ops.h>
 
 #include "base.h"
-#include "power/power.h"
 
 /* For automatically allocated device IDs */
 static DEFINE_IDA(platform_devid_ida);

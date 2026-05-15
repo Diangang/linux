@@ -2,7 +2,7 @@
 /*
  * kernel/freezer.c - Function to freeze a process
  *
- * Originally from kernel/power/process.c
+ * Originally from the system suspend process freezer.
  */
 
 #include <linux/interrupt.h>

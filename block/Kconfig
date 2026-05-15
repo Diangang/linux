@@ -27,9 +27,6 @@ if BLOCK
 
 source "block/partitions/Kconfig"
 
-config BLK_PM
-	def_bool PM
-
 # do not use in new code
 source "block/Kconfig.iosched"
 

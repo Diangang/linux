@@ -31,7 +31,6 @@
 #include <linux/slab.h>
 
 #include "base.h"
-#include "power/power.h"
 
 /*
  * Deferred Probe infrastructure.
@@ -603,7 +602,6 @@ static void device_unbind_cleanup(struct device *dev)
 	dev_pm_domain_detach(dev, dev->power.detach_power_off);
 	if (dev->pm_domain && dev->pm_domain->dismiss)
 		dev->pm_domain->dismiss(dev);
-	pm_runtime_reinit(dev);
 	dev_pm_set_driver_flags(dev, 0);
 }
 

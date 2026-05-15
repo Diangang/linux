@@ -370,7 +370,7 @@ struct platform_hibernation_ops {
 };
 
 #if 0
-/* kernel/power/snapshot.c */
+/* Hibernation support has been removed from this trimmed tree. */
 extern void register_nosave_region(unsigned long b, unsigned long e);
 extern int swsusp_page_is_forbidden(struct page *);
 extern void swsusp_set_page_free(struct page *);
@@ -429,7 +429,7 @@ extern struct mutex system_transition_mutex;
 void save_processor_state(void);
 void restore_processor_state(void);
 
-/* kernel/power/main.c */
+/* System sleep support has been removed from this trimmed tree. */
 extern int register_pm_notifier(struct notifier_block *nb);
 extern int unregister_pm_notifier(struct notifier_block *nb);
 extern void ksys_sync_helper(void);
@@ -444,7 +444,7 @@ void pm_restore_gfp_mask(void);
 	register_pm_notifier(&fn##_nb);			\
 }
 
-/* drivers/base/power/wakeup.c */
+/* Wakeup event support has been removed from this trimmed tree. */
 extern bool events_check_enabled;
 
 static inline bool pm_suspended_storage(void)

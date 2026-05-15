@@ -23,7 +23,6 @@
 #include <linux/cache.h>
 #include <linux/sched/topology.h>
 #include <linux/sched/signal.h>
-#include <linux/suspend.h>
 #include <linux/delay.h>
 #include <linux/crash_dump.h>
 #include <linux/prefetch.h>
@@ -35,7 +34,6 @@
 #include "blk.h"
 #include "blk-mq.h"
 #include "blk-mq-debugfs.h"
-#include "blk-pm.h"
 #include "blk-stat.h"
 #include "blk-mq-sched.h"
 #include "blk-rq-qos.h"
@@ -796,7 +794,6 @@ static void __blk_mq_free_request(struct request *rq)
 	const int sched_tag = rq->internal_tag;
 
 	blk_crypto_free_request(rq);
-	blk_pm_mark_last_busy(rq);
 	rq->mq_hctx = NULL;
 
 	if (rq->tag != BLK_MQ_NO_TAG) {
@@ -1211,7 +1208,6 @@ void blk_mq_end_request_batch(struct io_comp_batch *iob)
 			continue;
 
 		blk_crypto_free_request(rq);
-		blk_pm_mark_last_busy(rq);
 
 		if (nr_tags == TAG_COMP_BATCH || cur_hctx != rq->mq_hctx) {
 			if (cur_hctx)
@@ -3744,20 +3740,8 @@ static int blk_mq_hctx_notify_offline(unsigned int cpu, struct hlist_node *node)
 	 * frozen and there are no requests.
 	 */
 	if (percpu_ref_tryget(&hctx->queue->q_usage_counter)) {
-		while (blk_mq_hctx_has_requests(hctx)) {
-			/*
-			 * The wakeup capable IRQ handler of block device is
-			 * not called during suspend. Skip the loop by checking
-			 * pm_wakeup_pending to prevent the deadlock and improve
-			 * suspend latency.
-			 */
-			if (pm_wakeup_pending()) {
-				clear_bit(BLK_MQ_S_INACTIVE, &hctx->state);
-				ret = -EBUSY;
-				break;
-			}
+		while (blk_mq_hctx_has_requests(hctx))
 			msleep(5);
-		}
 		percpu_ref_put(&hctx->queue->q_usage_counter);
 	}
 

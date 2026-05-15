@@ -1308,7 +1308,6 @@ int devtmpfs_mount(void);
 static inline int devtmpfs_mount(void) { return 0; }
 #endif
 
-/* drivers/base/power/shutdown.c */
 void device_shutdown(void);
 
 /* debugging and troubleshooting/diagnostic helpers. */

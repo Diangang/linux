@@ -45,7 +45,6 @@
 #include <linux/init.h>
 #include <linux/blkdev.h>
 #include <linux/blkpg.h>
-#include <linux/blk-pm.h>
 #include <linux/delay.h>
 #include <linux/rw_hint.h>
 #include <linux/major.h>
@@ -4092,12 +4091,6 @@ static int sd_probe(struct scsi_device *sdp)
 		gd->event_flags = DISK_EVENT_FLAG_POLL | DISK_EVENT_FLAG_UEVENT;
 	}
 
-	blk_pm_runtime_init(sdp->request_queue, dev);
-	if (sdp->rpm_autosuspend) {
-		pm_runtime_set_autosuspend_delay(dev,
-			sdp->host->rpm_autosuspend_delay);
-	}
-
 	error = device_add_disk(dev, gd, NULL);
 	if (error) {
 		device_unregister(&sdkp->disk_dev);
@@ -4302,19 +4295,6 @@ static int sd_suspend_common(struct device *dev, bool runtime)
 	return ret;
 }
 
-static int sd_suspend_system(struct device *dev)
-{
-	if (pm_runtime_suspended(dev))
-		return 0;
-
-	return sd_suspend_common(dev, false);
-}
-
-static int sd_suspend_runtime(struct device *dev)
-{
-	return sd_suspend_common(dev, true);
-}
-
 static int sd_resume(struct device *dev)
 {
 	struct scsi_disk *sdkp = dev_get_drvdata(dev);
@@ -4329,80 +4309,6 @@ static int sd_resume(struct device *dev)
 	return 0;
 }
 
-static int sd_resume_common(struct device *dev, bool runtime)
-{
-	struct scsi_disk *sdkp = dev_get_drvdata(dev);
-	int ret;
-
-	if (!sdkp)	/* E.g.: runtime resume at the start of sd_probe() */
-		return 0;
-
-	if (!sd_do_start_stop(sdkp->device, runtime)) {
-		sdkp->suspended = false;
-		return 0;
-	}
-
-	sd_printk(KERN_NOTICE, sdkp, "Starting disk\n");
-	ret = sd_start_stop_device(sdkp, 1);
-	if (!ret) {
-		sd_resume(dev);
-		sdkp->suspended = false;
-	}
-
-	return ret;
-}
-
-static int sd_resume_system(struct device *dev)
-{
-	if (pm_runtime_suspended(dev)) {
-		struct scsi_disk *sdkp = dev_get_drvdata(dev);
-		struct scsi_device *sdp = sdkp ? sdkp->device : NULL;
-
-		if (sdp && sdp->force_runtime_start_on_system_start)
-			pm_request_resume(dev);
-
-		return 0;
-	}
-
-	return sd_resume_common(dev, false);
-}
-
-static int sd_resume_runtime(struct device *dev)
-{
-	struct scsi_disk *sdkp = dev_get_drvdata(dev);
-	struct scsi_device *sdp;
-
-	if (!sdkp)	/* E.g.: runtime resume at the start of sd_probe() */
-		return 0;
-
-	sdp = sdkp->device;
-
-	if (sdp->ignore_media_change) {
-		/* clear the device's sense data */
-		static const u8 cmd[10] = { REQUEST_SENSE };
-		const struct scsi_exec_args exec_args = {
-			.req_flags = BLK_MQ_REQ_PM,
-		};
-
-		if (scsi_execute_cmd(sdp, cmd, REQ_OP_DRV_IN, NULL, 0,
-				     sdp->request_queue->rq_timeout, 1,
-				     &exec_args))
-			sd_printk(KERN_NOTICE, sdkp,
-				  "Failed to clear sense data\n");
-	}
-
-	return sd_resume_common(dev, true);
-}
-
-static const struct dev_pm_ops sd_pm_ops = {
-	.suspend		= sd_suspend_system,
-	.resume			= sd_resume_system,
-	.poweroff		= sd_suspend_system,
-	.restore		= sd_resume_system,
-	.runtime_suspend	= sd_suspend_runtime,
-	.runtime_resume		= sd_resume_runtime,
-};
-
 static struct scsi_driver sd_template = {
 	.probe = sd_probe,
 	.remove = sd_remove,
@@ -4410,7 +4316,6 @@ static struct scsi_driver sd_template = {
 	.gendrv = {
 		.name		= "sd",
 		.probe_type	= PROBE_PREFER_ASYNCHRONOUS,
-		.pm		= &sd_pm_ops,
 	},
 	.rescan			= sd_rescan,
 	.resume			= sd_resume,

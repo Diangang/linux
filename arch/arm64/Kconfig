@@ -97,7 +97,6 @@ config ARM64
 	select BUILDTIME_TABLE_SORT
 	select CLONE_BACKWARDS
 	select COMMON_CLK
-	select CPU_PM if (SUSPEND || CPU_IDLE)
 	select CPUMASK_OFFSTACK if NR_CPUS > 256
 	select DCACHE_WORD_ACCESS
 	select DMA_BOUNCE_UNALIGNED_KMALLOC
@@ -841,19 +840,6 @@ config CMDLINE
 	  continue to boot on existing non-UEFI platforms.
 
 endmenu # "Boot options"
-
-menu "Power management options"
-
-source "kernel/power/Kconfig"
-
-config ARCH_HIBERNATION_POSSIBLE
-	def_bool y
-	depends on CPU_PM
-
-config ARCH_SUSPEND_POSSIBLE
-	def_bool y
-
-endmenu # "Power management options"
 
 menu "CPU Power Management"
 

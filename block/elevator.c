@@ -39,7 +39,6 @@
 #include "elevator.h"
 #include "blk.h"
 #include "blk-mq-sched.h"
-#include "blk-pm.h"
 #include "blk-wbt.h"
 #include "blk-cgroup.h"
 

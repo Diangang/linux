@@ -8,7 +8,6 @@ obj-y			:= component.o core.o bus.o dd.o syscore.o \
 			   topology.o container.o property.o cacheinfo.o \
 			   swnode.o faux.o
 obj-$(CONFIG_DEVTMPFS)	+= devtmpfs.o
-obj-y			+= power/
 obj-$(CONFIG_NUMA)	+= node.o
 obj-$(CONFIG_MEMORY_HOTPLUG) += memory.o
 obj-$(CONFIG_PINCTRL) += pinctrl.o

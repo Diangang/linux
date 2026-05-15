@@ -11,7 +11,7 @@
 
 #include <linux/device.h>
 
-/* drivers/base/power/container.c */
+/* Container bus type */
 extern const struct bus_type container_subsys;
 
 struct container_dev {

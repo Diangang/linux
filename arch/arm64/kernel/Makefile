@@ -33,7 +33,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 			   rsi.o jump_label.o
 
 obj-$(CONFIG_HAVE_STATIC_CALL)		+= static_call.o
-obj-$(CONFIG_CPU_PM)			+= sleep.o suspend.o
 obj-$(CONFIG_PCI)			+= pci.o
 obj-$(CONFIG_PARAVIRT)			+= paravirt.o
 obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr.o

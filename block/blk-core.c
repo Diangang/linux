@@ -16,7 +16,6 @@
 #include <linux/module.h>
 #include <linux/bio.h>
 #include <linux/blkdev.h>
-#include <linux/blk-pm.h>
 #include <linux/blk-integrity.h>
 #include <linux/highmem.h>
 #include <linux/mm.h>
@@ -42,7 +41,6 @@
 #include <linux/blk-crypto.h>
 #include "blk.h"
 #include "blk-mq-sched.h"
-#include "blk-pm.h"
 #include "blk-cgroup.h"
 #include "blk-throttle.h"
 
@@ -305,9 +303,7 @@ int blk_queue_enter(struct request_queue *q, blk_mq_req_flags_t flags)
 		 */
 		smp_rmb();
 		wait_event(q->mq_freeze_wq,
-			   (!q->mq_freeze_depth &&
-			    blk_pm_resume_queue(pm, q)) ||
-			   blk_queue_dying(q));
+			   !q->mq_freeze_depth || blk_queue_dying(q));
 		if (blk_queue_dying(q))
 			return -ENODEV;
 	}
@@ -338,8 +334,7 @@ int __bio_queue_enter(struct request_queue *q, struct bio *bio)
 		 */
 		smp_rmb();
 		wait_event(q->mq_freeze_wq,
-			   (!q->mq_freeze_depth &&
-			    blk_pm_resume_queue(false, q)) ||
+			   !q->mq_freeze_depth ||
 			   test_bit(GD_DEAD, &disk->state));
 		if (test_bit(GD_DEAD, &disk->state))
 			goto dead;

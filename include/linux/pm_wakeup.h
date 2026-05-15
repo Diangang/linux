@@ -104,7 +104,7 @@ static inline bool device_out_band_wakeup(struct device *dev)
 	return dev->power.out_band_wakeup;
 }
 
-/* drivers/base/power/wakeup.c */
+/* Wakeup source helpers */
 extern struct wakeup_source *wakeup_source_register(struct device *dev,
 						    const char *name);
 extern void wakeup_source_unregister(struct wakeup_source *ws);
