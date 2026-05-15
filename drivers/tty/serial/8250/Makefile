@@ -10,14 +10,9 @@ obj-$(CONFIG_SERIAL_8250)		+= 8250.o
 
 obj-$(CONFIG_SERIAL_8250)		+= 8250_base.o
 8250_base-y				:= 8250_port.o
-8250_base-$(CONFIG_SERIAL_8250_DWLIB)	+= 8250_dwlib.o
 8250_base-$(CONFIG_SERIAL_8250_PCILIB)	+= 8250_pcilib.o
 
 obj-$(CONFIG_SERIAL_8250_CONSOLE)	+= 8250_early.o
 
-obj-$(CONFIG_SERIAL_8250_FSL)		+= 8250_fsl.o
-obj-$(CONFIG_SERIAL_8250_LPSS)		+= 8250_lpss.o
-obj-$(CONFIG_SERIAL_8250_MID)		+= 8250_mid.o
 obj-$(CONFIG_SERIAL_OF_PLATFORM)	+= 8250_of.o
 obj-$(CONFIG_SERIAL_8250_PCI)		+= 8250_pci.o
-obj-$(CONFIG_SERIAL_8250_PERICOM)	+= 8250_pericom.o

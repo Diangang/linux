@@ -36,7 +36,6 @@ void __init driver_init(void)
 	of_core_init();
 	software_node_init();
 	platform_bus_init();
-	auxiliary_bus_init();
 	memory_dev_init();
 	node_dev_init();
 	cpu_dev_init();

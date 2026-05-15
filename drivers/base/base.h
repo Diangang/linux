@@ -142,11 +142,6 @@ int platform_bus_init(void);
 int faux_bus_init(void);
 void cpu_dev_init(void);
 void container_dev_init(void);
-#ifdef CONFIG_AUXILIARY_BUS
-void auxiliary_bus_init(void);
-#else
-static inline void auxiliary_bus_init(void) { }
-#endif
 
 struct kobject *virtual_device_parent(void);
 

@@ -868,14 +868,6 @@ struct mhi_device_id {
 	kernel_ulong_t driver_data;
 };
 
-#define AUXILIARY_NAME_SIZE 40
-#define AUXILIARY_MODULE_PREFIX "auxiliary:"
-
-struct auxiliary_device_id {
-	char name[AUXILIARY_NAME_SIZE];
-	kernel_ulong_t driver_data;
-};
-
 /* Surface System Aggregator Module */
 
 #define SSAM_MATCH_TARGET	0x1

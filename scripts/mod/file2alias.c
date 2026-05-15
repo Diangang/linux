@@ -1289,13 +1289,6 @@ static void do_ishtp_entry(struct module *mod, void *symval)
 	module_alias_printf(mod, false, ISHTP_MODULE_PREFIX "{%s}", alias);
 }
 
-static void do_auxiliary_entry(struct module *mod, void *symval)
-{
-	DEF_FIELD_ADDR(symval, auxiliary_device_id, name);
-
-	module_alias_printf(mod, false, AUXILIARY_MODULE_PREFIX "%s", *name);
-}
-
 /*
  * Looks like: ssam:dNcNtNiNfN
  *
@@ -1465,7 +1458,6 @@ static const struct devtable devtable[] = {
 	{"wmi", SIZE_wmi_device_id, do_wmi_entry},
 	{"mhi", SIZE_mhi_device_id, do_mhi_entry},
 	{"mhi_ep", SIZE_mhi_device_id, do_mhi_ep_entry},
-	{"auxiliary", SIZE_auxiliary_device_id, do_auxiliary_entry},
 	{"ssam", SIZE_ssam_device_id, do_ssam_entry},
 	{"dfl", SIZE_dfl_device_id, do_dfl_entry},
 	{"ishtp", SIZE_ishtp_device_id, do_ishtp_entry},

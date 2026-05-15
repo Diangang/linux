@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 menu "Generic Driver Options"
 
-config AUXILIARY_BUS
-	bool
-
 config DEVTMPFS
 	bool "Maintain a devtmpfs filesystem to mount at /dev"
 	help
@@ -84,8 +81,6 @@ config GENERIC_CPU_AUTOPROBE
 
 config GENERIC_CPU_VULNERABILITIES
 	bool
-
-source "drivers/base/regmap/Kconfig"
 
 config GENERIC_ARCH_TOPOLOGY
 	bool

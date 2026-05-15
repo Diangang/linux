@@ -251,9 +251,6 @@ int main(void)
 	DEVID(mhi_device_id);
 	DEVID_FIELD(mhi_device_id, chan);
 
-	DEVID(auxiliary_device_id);
-	DEVID_FIELD(auxiliary_device_id, name);
-
 	DEVID(ssam_device_id);
 	DEVID_FIELD(ssam_device_id, match_flags);
 	DEVID_FIELD(ssam_device_id, domain);
