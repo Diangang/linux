@@ -27,6 +27,7 @@
 #include <linux/compat.h>
 #include <linux/rcupdate.h>
 #include <linux/time_namespace.h>
+#include <linux/uio.h>
 
 struct timerfd_ctx {
 	union {

@@ -24,7 +24,6 @@ struct proc_ns_operations {
 	struct ns_common *(*get_parent)(struct ns_common *ns);
 } __randomize_layout;
 
-extern const struct proc_ns_operations netns_operations;
 extern const struct proc_ns_operations utsns_operations;
 extern const struct proc_ns_operations ipcns_operations;
 extern const struct proc_ns_operations pidns_operations;
@@ -45,7 +44,6 @@ enum {
 	PROC_PID_INIT_INO	= PID_NS_INIT_INO,
 	PROC_CGROUP_INIT_INO	= CGROUP_NS_INIT_INO,
 	PROC_TIME_INIT_INO	= TIME_NS_INIT_INO,
-	PROC_NET_INIT_INO	= NET_NS_INIT_INO,
 	PROC_MNT_INIT_INO	= MNT_NS_INIT_INO,
 };
 

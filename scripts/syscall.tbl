@@ -237,21 +237,6 @@
 195	common	shmctl				sys_shmctl			compat_sys_shmctl
 196	common	shmat				sys_shmat			compat_sys_shmat
 197	common	shmdt				sys_shmdt
-198	common	socket				sys_socket
-199	common	socketpair			sys_socketpair
-200	common	bind				sys_bind
-201	common	listen				sys_listen
-202	common	accept				sys_accept
-203	common	connect				sys_connect
-204	common	getsockname			sys_getsockname
-205	common	getpeername			sys_getpeername
-206	common	sendto				sys_sendto
-207	common	recvfrom			sys_recvfrom			compat_sys_recvfrom
-208	common	setsockopt			sys_setsockopt			sys_setsockopt
-209	common	getsockopt			sys_getsockopt			sys_getsockopt
-210	common	shutdown			sys_shutdown
-211	common	sendmsg				sys_sendmsg			compat_sys_sendmsg
-212	common	recvmsg				sys_recvmsg			compat_sys_recvmsg
 213	common	readahead			sys_readahead			compat_sys_readahead
 214	common	brk				sys_brk
 215	common	munmap				sys_munmap
@@ -282,9 +267,6 @@
 238	common	migrate_pages			sys_migrate_pages
 239	common	move_pages			sys_move_pages
 240	common	rt_tgsigqueueinfo		sys_rt_tgsigqueueinfo		compat_sys_rt_tgsigqueueinfo
-242	common	accept4				sys_accept4
-243	time32	recvmmsg			sys_recvmmsg_time32		compat_sys_recvmmsg_time32
-243	64	recvmmsg			sys_recvmmsg
 # Architectures may provide up to 16 syscalls of their own between 244 and 259
 244	arc	cacheflush			sys_cacheflush
 245	arc	arc_settls			sys_arc_settls
@@ -313,7 +295,6 @@
 266	64	clock_adjtime			sys_clock_adjtime
 267	common	syncfs				sys_syncfs
 268	common	setns				sys_setns
-269	common	sendmmsg			sys_sendmmsg			compat_sys_sendmmsg
 270	common	process_vm_readv		sys_process_vm_readv
 271	common	process_vm_writev		sys_process_vm_writev
 272	common	kcmp				sys_kcmp
@@ -323,7 +304,6 @@
 277	common	seccomp				sys_seccomp
 278	common	getrandom			sys_getrandom
 279	common	memfd_create			sys_memfd_create
-280	common	bpf				sys_bpf
 281	common	execveat			sys_execveat			compat_sys_execveat
 282	common	userfaultfd			sys_userfaultfd
 283	common	membarrier			sys_membarrier
@@ -353,7 +333,6 @@
 413	32	pselect6_time64			sys_pselect6			compat_sys_pselect6_time64
 414	32	ppoll_time64			sys_ppoll			compat_sys_ppoll_time64
 416	32	io_pgetevents_time64		sys_io_pgetevents		compat_sys_io_pgetevents_time64
-417	32	recvmmsg_time64			sys_recvmmsg			compat_sys_recvmmsg_time64
 418	32	mq_timedsend_time64		sys_mq_timedsend
 419	32	mq_timedreceive_time64		sys_mq_timedreceive
 420	32	semtimedop_time64		sys_semtimedop

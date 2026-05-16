@@ -13,6 +13,7 @@
 #include <linux/cleanup.h>
 #include <linux/cpufreq.h>
 #include <linux/device.h>
+#include <linux/delay.h>
 #include <linux/dma-map-ops.h> /* for dma_default_coherent */
 #include <linux/err.h>
 #include <linux/fwnode.h>
@@ -21,7 +22,6 @@
 #include <linux/kstrtox.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/netdevice.h>
 #include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -4869,7 +4869,6 @@ set_dev_info(const struct device *dev, struct dev_printk_info *dev_info)
 	 * Add device identifier DEVICE=:
 	 *   b12:8         block dev_t
 	 *   c127:3        char dev_t
-	 *   n8            netdev ifindex
 	 *   +sound:card0  subsystem:devname
 	 */
 	if (MAJOR(dev->devt)) {
@@ -4882,11 +4881,6 @@ set_dev_info(const struct device *dev, struct dev_printk_info *dev_info)
 
 		snprintf(dev_info->device, sizeof(dev_info->device),
 			 "%c%u:%u", c, MAJOR(dev->devt), MINOR(dev->devt));
-	} else if (strcmp(subsys, "net") == 0) {
-		struct net_device *net = to_net_dev(dev);
-
-		snprintf(dev_info->device, sizeof(dev_info->device),
-			 "n%u", net->ifindex);
 	} else {
 		snprintf(dev_info->device, sizeof(dev_info->device),
 			 "+%s:%s", subsys, dev_name(dev));

@@ -5,7 +5,7 @@
 #include <linux/kasan-checks.h>
 #include <linux/kernel.h>
 
-#include <net/checksum.h>
+#include <asm/checksum.h>
 
 /* Looks dumb, but generates nice-ish code */
 static u64 accumulate(u64 sum, u64 data)

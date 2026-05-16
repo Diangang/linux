@@ -31,13 +31,10 @@
 #include <linux/err.h>
 #include <linux/string.h>
 #include <linux/mm.h>
-#include <linux/sockptr.h>
-#include <linux/bpf.h>
 #include <uapi/linux/lsm.h>
 #include <linux/lsm/selinux.h>
 #include <linux/lsm/smack.h>
 #include <linux/lsm/apparmor.h>
-#include <linux/lsm/bpf.h>
 
 struct linux_binprm;
 struct cred;
@@ -59,7 +56,6 @@ struct file_operations;
 struct msg_msg;
 struct xattr;
 struct kernfs_node;
-struct xfrm_sec_ctx;
 struct mm_struct;
 struct fs_context;
 struct fs_parameter;
@@ -165,7 +161,6 @@ struct lsm_prop {
 	struct lsm_prop_selinux selinux;
 	struct lsm_prop_smack smack;
 	struct lsm_prop_apparmor apparmor;
-	struct lsm_prop_bpf bpf;
 };
 
 extern const char *const lockdown_reasons[LOCKDOWN_CONFIDENTIALITY_MAX+1];
@@ -201,19 +196,8 @@ extern int cap_task_setioprio(struct task_struct *p, int ioprio);
 extern int cap_task_setnice(struct task_struct *p, int nice);
 extern int cap_vm_enough_memory(struct mm_struct *mm, long pages);
 
-struct msghdr;
-struct sk_buff;
-struct sock;
-struct sockaddr;
-struct socket;
-struct flowi_common;
 struct dst_entry;
-struct xfrm_selector;
-struct xfrm_policy;
-struct xfrm_state;
-struct xfrm_user_sec_ctx;
 struct seq_file;
-struct sctp_association;
 
 #ifdef CONFIG_MMU
 extern unsigned long mmap_min_addr;
@@ -1659,311 +1643,9 @@ static inline int security_watch_key(struct key *key)
 }
 #endif
 
-#ifdef CONFIG_SECURITY_NETWORK
 
-int security_netlink_send(struct sock *sk, struct sk_buff *skb);
-int security_unix_stream_connect(struct sock *sock, struct sock *other, struct sock *newsk);
-int security_unix_may_send(struct socket *sock,  struct socket *other);
-int security_socket_create(int family, int type, int protocol, int kern);
-int security_socket_post_create(struct socket *sock, int family,
-				int type, int protocol, int kern);
-int security_socket_socketpair(struct socket *socka, struct socket *sockb);
-int security_socket_bind(struct socket *sock, struct sockaddr *address, int addrlen);
-int security_socket_connect(struct socket *sock, struct sockaddr *address, int addrlen);
-int security_socket_listen(struct socket *sock, int backlog);
-int security_socket_accept(struct socket *sock, struct socket *newsock);
-int security_socket_sendmsg(struct socket *sock, struct msghdr *msg, int size);
-int security_socket_recvmsg(struct socket *sock, struct msghdr *msg,
-			    int size, int flags);
-int security_socket_getsockname(struct socket *sock);
-int security_socket_getpeername(struct socket *sock);
-int security_socket_getsockopt(struct socket *sock, int level, int optname);
-int security_socket_setsockopt(struct socket *sock, int level, int optname);
-int security_socket_shutdown(struct socket *sock, int how);
-int security_sock_rcv_skb(struct sock *sk, struct sk_buff *skb);
-int security_socket_getpeersec_stream(struct socket *sock, sockptr_t optval,
-				      sockptr_t optlen, unsigned int len);
-int security_socket_getpeersec_dgram(struct socket *sock, struct sk_buff *skb, u32 *secid);
-int security_sk_alloc(struct sock *sk, int family, gfp_t priority);
-void security_sk_free(struct sock *sk);
-void security_sk_clone(const struct sock *sk, struct sock *newsk);
-void security_sk_classify_flow(const struct sock *sk,
-			       struct flowi_common *flic);
-void security_req_classify_flow(const struct request_sock *req,
-				struct flowi_common *flic);
-void security_sock_graft(struct sock*sk, struct socket *parent);
-int security_inet_conn_request(const struct sock *sk,
-			struct sk_buff *skb, struct request_sock *req);
-void security_inet_csk_clone(struct sock *newsk,
-			const struct request_sock *req);
-void security_inet_conn_established(struct sock *sk,
-			struct sk_buff *skb);
-int security_secmark_relabel_packet(u32 secid);
-void security_secmark_refcount_inc(void);
-void security_secmark_refcount_dec(void);
-int security_tun_dev_alloc_security(void **security);
-void security_tun_dev_free_security(void *security);
-int security_tun_dev_create(void);
-int security_tun_dev_attach_queue(void *security);
-int security_tun_dev_attach(struct sock *sk, void *security);
-int security_tun_dev_open(void *security);
-int security_sctp_assoc_request(struct sctp_association *asoc, struct sk_buff *skb);
-int security_sctp_bind_connect(struct sock *sk, int optname,
-			       struct sockaddr *address, int addrlen);
-void security_sctp_sk_clone(struct sctp_association *asoc, struct sock *sk,
-			    struct sock *newsk);
-int security_sctp_assoc_established(struct sctp_association *asoc,
-				    struct sk_buff *skb);
-int security_mptcp_add_subflow(struct sock *sk, struct sock *ssk);
 
-#else	/* CONFIG_SECURITY_NETWORK */
-static inline int security_netlink_send(struct sock *sk, struct sk_buff *skb)
-{
-	return 0;
-}
 
-static inline int security_unix_stream_connect(struct sock *sock,
-					       struct sock *other,
-					       struct sock *newsk)
-{
-	return 0;
-}
-
-static inline int security_unix_may_send(struct socket *sock,
-					 struct socket *other)
-{
-	return 0;
-}
-
-static inline int security_socket_create(int family, int type,
-					 int protocol, int kern)
-{
-	return 0;
-}
-
-static inline int security_socket_post_create(struct socket *sock,
-					      int family,
-					      int type,
-					      int protocol, int kern)
-{
-	return 0;
-}
-
-static inline int security_socket_socketpair(struct socket *socka,
-					     struct socket *sockb)
-{
-	return 0;
-}
-
-static inline int security_socket_bind(struct socket *sock,
-				       struct sockaddr *address,
-				       int addrlen)
-{
-	return 0;
-}
-
-static inline int security_socket_connect(struct socket *sock,
-					  struct sockaddr *address,
-					  int addrlen)
-{
-	return 0;
-}
-
-static inline int security_socket_listen(struct socket *sock, int backlog)
-{
-	return 0;
-}
-
-static inline int security_socket_accept(struct socket *sock,
-					 struct socket *newsock)
-{
-	return 0;
-}
-
-static inline int security_socket_sendmsg(struct socket *sock,
-					  struct msghdr *msg, int size)
-{
-	return 0;
-}
-
-static inline int security_socket_recvmsg(struct socket *sock,
-					  struct msghdr *msg, int size,
-					  int flags)
-{
-	return 0;
-}
-
-static inline int security_socket_getsockname(struct socket *sock)
-{
-	return 0;
-}
-
-static inline int security_socket_getpeername(struct socket *sock)
-{
-	return 0;
-}
-
-static inline int security_socket_getsockopt(struct socket *sock,
-					     int level, int optname)
-{
-	return 0;
-}
-
-static inline int security_socket_setsockopt(struct socket *sock,
-					     int level, int optname)
-{
-	return 0;
-}
-
-static inline int security_socket_shutdown(struct socket *sock, int how)
-{
-	return 0;
-}
-static inline int security_sock_rcv_skb(struct sock *sk,
-					struct sk_buff *skb)
-{
-	return 0;
-}
-
-static inline int security_socket_getpeersec_stream(struct socket *sock,
-						    sockptr_t optval,
-						    sockptr_t optlen,
-						    unsigned int len)
-{
-	return -ENOPROTOOPT;
-}
-
-static inline int security_socket_getpeersec_dgram(struct socket *sock, struct sk_buff *skb, u32 *secid)
-{
-	return -ENOPROTOOPT;
-}
-
-static inline int security_sk_alloc(struct sock *sk, int family, gfp_t priority)
-{
-	return 0;
-}
-
-static inline void security_sk_free(struct sock *sk)
-{
-}
-
-static inline void security_sk_clone(const struct sock *sk, struct sock *newsk)
-{
-}
-
-static inline void security_sk_classify_flow(const struct sock *sk,
-					     struct flowi_common *flic)
-{
-}
-
-static inline void security_req_classify_flow(const struct request_sock *req,
-					      struct flowi_common *flic)
-{
-}
-
-static inline void security_sock_graft(struct sock *sk, struct socket *parent)
-{
-}
-
-static inline int security_inet_conn_request(const struct sock *sk,
-			struct sk_buff *skb, struct request_sock *req)
-{
-	return 0;
-}
-
-static inline void security_inet_csk_clone(struct sock *newsk,
-			const struct request_sock *req)
-{
-}
-
-static inline void security_inet_conn_established(struct sock *sk,
-			struct sk_buff *skb)
-{
-}
-
-static inline int security_secmark_relabel_packet(u32 secid)
-{
-	return 0;
-}
-
-static inline void security_secmark_refcount_inc(void)
-{
-}
-
-static inline void security_secmark_refcount_dec(void)
-{
-}
-
-static inline int security_tun_dev_alloc_security(void **security)
-{
-	return 0;
-}
-
-static inline void security_tun_dev_free_security(void *security)
-{
-}
-
-static inline int security_tun_dev_create(void)
-{
-	return 0;
-}
-
-static inline int security_tun_dev_attach_queue(void *security)
-{
-	return 0;
-}
-
-static inline int security_tun_dev_attach(struct sock *sk, void *security)
-{
-	return 0;
-}
-
-static inline int security_tun_dev_open(void *security)
-{
-	return 0;
-}
-
-static inline int security_sctp_assoc_request(struct sctp_association *asoc,
-					      struct sk_buff *skb)
-{
-	return 0;
-}
-
-static inline int security_sctp_bind_connect(struct sock *sk, int optname,
-					     struct sockaddr *address,
-					     int addrlen)
-{
-	return 0;
-}
-
-static inline void security_sctp_sk_clone(struct sctp_association *asoc,
-					  struct sock *sk,
-					  struct sock *newsk)
-{
-}
-
-static inline int security_sctp_assoc_established(struct sctp_association *asoc,
-						  struct sk_buff *skb)
-{
-	return 0;
-}
-
-static inline int security_mptcp_add_subflow(struct sock *sk, struct sock *ssk)
-{
-	return 0;
-}
-#endif	/* CONFIG_SECURITY_NETWORK */
-
-#if defined(CONFIG_SECURITY_NETWORK) && defined(CONFIG_SECURITY_PATH)
-
-int security_unix_find(const struct path *path, struct sock *other, int flags);
-
-#else /* CONFIG_SECURITY_NETWORK && CONFIG_SECURITY_PATH */
-static inline int security_unix_find(const struct path *path, struct sock *other, int flags)
-{
-	return 0;
-}
-#endif /* CONFIG_SECURITY_NETWORK && CONFIG_SECURITY_PATH */
 
 #ifdef CONFIG_SECURITY_INFINIBAND
 int security_ib_pkey_access(void *sec, u64 subnet_prefix, u16 pkey);
@@ -1991,92 +1673,7 @@ static inline void security_ib_free_security(void *sec)
 }
 #endif	/* CONFIG_SECURITY_INFINIBAND */
 
-#ifdef CONFIG_SECURITY_NETWORK_XFRM
 
-int security_xfrm_policy_alloc(struct xfrm_sec_ctx **ctxp,
-			       struct xfrm_user_sec_ctx *sec_ctx, gfp_t gfp);
-int security_xfrm_policy_clone(struct xfrm_sec_ctx *old_ctx, struct xfrm_sec_ctx **new_ctxp);
-void security_xfrm_policy_free(struct xfrm_sec_ctx *ctx);
-int security_xfrm_policy_delete(struct xfrm_sec_ctx *ctx);
-int security_xfrm_state_alloc(struct xfrm_state *x, struct xfrm_user_sec_ctx *sec_ctx);
-int security_xfrm_state_alloc_acquire(struct xfrm_state *x,
-				      struct xfrm_sec_ctx *polsec, u32 secid);
-int security_xfrm_state_delete(struct xfrm_state *x);
-void security_xfrm_state_free(struct xfrm_state *x);
-int security_xfrm_policy_lookup(struct xfrm_sec_ctx *ctx, u32 fl_secid);
-int security_xfrm_state_pol_flow_match(struct xfrm_state *x,
-				       struct xfrm_policy *xp,
-				       const struct flowi_common *flic);
-int security_xfrm_decode_session(struct sk_buff *skb, u32 *secid);
-void security_skb_classify_flow(struct sk_buff *skb, struct flowi_common *flic);
-
-#else	/* CONFIG_SECURITY_NETWORK_XFRM */
-
-static inline int security_xfrm_policy_alloc(struct xfrm_sec_ctx **ctxp,
-					     struct xfrm_user_sec_ctx *sec_ctx,
-					     gfp_t gfp)
-{
-	return 0;
-}
-
-static inline int security_xfrm_policy_clone(struct xfrm_sec_ctx *old, struct xfrm_sec_ctx **new_ctxp)
-{
-	return 0;
-}
-
-static inline void security_xfrm_policy_free(struct xfrm_sec_ctx *ctx)
-{
-}
-
-static inline int security_xfrm_policy_delete(struct xfrm_sec_ctx *ctx)
-{
-	return 0;
-}
-
-static inline int security_xfrm_state_alloc(struct xfrm_state *x,
-					struct xfrm_user_sec_ctx *sec_ctx)
-{
-	return 0;
-}
-
-static inline int security_xfrm_state_alloc_acquire(struct xfrm_state *x,
-					struct xfrm_sec_ctx *polsec, u32 secid)
-{
-	return 0;
-}
-
-static inline void security_xfrm_state_free(struct xfrm_state *x)
-{
-}
-
-static inline int security_xfrm_state_delete(struct xfrm_state *x)
-{
-	return 0;
-}
-
-static inline int security_xfrm_policy_lookup(struct xfrm_sec_ctx *ctx, u32 fl_secid)
-{
-	return 0;
-}
-
-static inline int security_xfrm_state_pol_flow_match(struct xfrm_state *x,
-						     struct xfrm_policy *xp,
-						     const struct flowi_common *flic)
-{
-	return 1;
-}
-
-static inline int security_xfrm_decode_session(struct sk_buff *skb, u32 *secid)
-{
-	return 0;
-}
-
-static inline void security_skb_classify_flow(struct sk_buff *skb,
-					      struct flowi_common *flic)
-{
-}
-
-#endif	/* CONFIG_SECURITY_NETWORK_XFRM */
 
 #ifdef CONFIG_SECURITY_PATH
 int security_path_unlink(const struct path *dir, struct dentry *dentry);

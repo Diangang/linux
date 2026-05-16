@@ -21,7 +21,6 @@
 #include <linux/ipc_namespace.h>
 #include <linux/time_namespace.h>
 #include <linux/utsname.h>
-#include <net/net_namespace.h>
 #include <linux/coredump.h>
 #include <linux/rhashtable.h>
 #include <linux/llist.h>
@@ -510,7 +509,6 @@ static bool pidfs_ioctl_valid(unsigned int cmd)
 	case PIDFD_GET_CGROUP_NAMESPACE:
 	case PIDFD_GET_IPC_NAMESPACE:
 	case PIDFD_GET_MNT_NAMESPACE:
-	case PIDFD_GET_NET_NAMESPACE:
 	case PIDFD_GET_PID_FOR_CHILDREN_NAMESPACE:
 	case PIDFD_GET_TIME_NAMESPACE:
 	case PIDFD_GET_TIME_FOR_CHILDREN_NAMESPACE:
@@ -597,8 +595,6 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (!ns_ref_get(nsp->mnt_ns))
 			break;
 		ns_common = to_ns_common(nsp->mnt_ns);
-		break;
-	case PIDFD_GET_NET_NAMESPACE:
 		break;
 	case PIDFD_GET_PID_FOR_CHILDREN_NAMESPACE:
 #ifdef CONFIG_PID_NS

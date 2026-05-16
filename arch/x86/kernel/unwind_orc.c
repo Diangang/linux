@@ -2,7 +2,6 @@
 #include <linux/objtool.h>
 #include <linux/module.h>
 #include <linux/sort.h>
-#include <linux/bpf.h>
 #include <asm/ptrace.h>
 #include <asm/stacktrace.h>
 #include <asm/unwind.h>
@@ -160,11 +159,6 @@ static struct orc_entry *orc_ftrace_find(unsigned long ip)
 }
 #endif
 
-static struct orc_entry *orc_bpf_find(unsigned long ip)
-{
-	return NULL;
-}
-
 /* Fake frame pointer entry -- used as a fallback for generated code */
 static struct orc_entry orc_fp_entry = {
 	.type		= ORC_TYPE_CALL,
@@ -228,11 +222,6 @@ static struct orc_entry *orc_find(unsigned long ip)
 
 	/* Module lookup: */
 	orc = orc_module_find(ip);
-	if (orc)
-		return orc;
-
-	/* BPF lookup: */
-	orc = orc_bpf_find(ip);
 	if (orc)
 		return orc;
 

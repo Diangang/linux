@@ -17,7 +17,6 @@
 #include <linux/mnt_namespace.h>
 #include <linux/utsname.h>
 #include <linux/pid_namespace.h>
-#include <net/net_namespace.h>
 #include <linux/ipc_namespace.h>
 #include <linux/time_namespace.h>
 #include <linux/fs_struct.h>
@@ -38,9 +37,6 @@ struct nsproxy init_nsproxy = {
 #endif
 	.mnt_ns			= NULL,
 	.pid_ns_for_children	= &init_pid_ns,
-#ifdef CONFIG_NET
-	.net_ns			= &init_net,
-#endif
 #ifdef CONFIG_CGROUPS
 	.cgroup_ns		= &init_cgroup_ns,
 #endif
@@ -69,7 +65,6 @@ static inline void nsproxy_free(struct nsproxy *ns)
 	put_time_ns(ns->time_ns);
 	put_time_ns(ns->time_ns_for_children);
 	put_cgroup_ns(ns->cgroup_ns);
-	put_net(ns->net_ns);
 	kmem_cache_free(nsproxy_cachep, ns);
 }
 
@@ -128,12 +123,6 @@ static struct nsproxy *create_new_namespaces(u64 flags,
 		goto out_cgroup;
 	}
 
-	new_nsp->net_ns = copy_net_ns(flags, user_ns, tsk->nsproxy->net_ns);
-	if (IS_ERR(new_nsp->net_ns)) {
-		err = PTR_ERR(new_nsp->net_ns);
-		goto out_net;
-	}
-
 	new_nsp->time_ns_for_children = copy_time_ns(flags, user_ns,
 					tsk->nsproxy->time_ns_for_children);
 	if (IS_ERR(new_nsp->time_ns_for_children)) {
@@ -145,8 +134,6 @@ static struct nsproxy *create_new_namespaces(u64 flags,
 	return new_nsp;
 
 out_time:
-	put_net(new_nsp->net_ns);
-out_net:
 	put_cgroup_ns(new_nsp->cgroup_ns);
 out_cgroup:
 	put_pid_ns(new_nsp->pid_ns_for_children);
@@ -322,8 +309,6 @@ static int check_setns_flags(unsigned long flags)
 	if (flags & CLONE_NEWCGROUP)
 		return -EINVAL;
 #endif
-	if (flags & CLONE_NEWNET)
-		return -EINVAL;
 #ifndef CONFIG_TIME_NS
 	if (flags & CLONE_NEWTIME)
 		return -EINVAL;

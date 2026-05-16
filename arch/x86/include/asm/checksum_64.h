@@ -9,7 +9,7 @@
  */
 
 #include <linux/compiler.h>
-#include <linux/in6.h>
+#include <uapi/linux/in6.h>
 #include <asm/byteorder.h>
 
 /**

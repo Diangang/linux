@@ -19,7 +19,6 @@
 #include <linux/kmemleak.h>
 #include <linux/crash_core.h>
 #include <linux/reboot.h>
-#include <linux/btf.h>
 #include <linux/objtool.h>
 #include <linux/delay.h>
 #include <linux/panic.h>
@@ -149,7 +148,7 @@ void __noclone __crash_kexec(struct pt_regs *regs)
 }
 STACK_FRAME_NON_STANDARD(__crash_kexec);
 
-__bpf_kfunc void crash_kexec(struct pt_regs *regs)
+void crash_kexec(struct pt_regs *regs)
 {
 	if (panic_try_start()) {
 		/* This is the 1st CPU which comes here, so go ahead. */

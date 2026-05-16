@@ -134,26 +134,6 @@ COND_SYSCALL_COMPAT(old_shmctl);
 COND_SYSCALL(shmat);
 COND_SYSCALL_COMPAT(shmat);
 COND_SYSCALL(shmdt);
-COND_SYSCALL(socket);
-COND_SYSCALL(socketpair);
-COND_SYSCALL(bind);
-COND_SYSCALL(listen);
-COND_SYSCALL(accept);
-COND_SYSCALL(connect);
-COND_SYSCALL(getsockname);
-COND_SYSCALL(getpeername);
-COND_SYSCALL(setsockopt);
-COND_SYSCALL_COMPAT(setsockopt);
-COND_SYSCALL(getsockopt);
-COND_SYSCALL_COMPAT(getsockopt);
-COND_SYSCALL(sendto);
-COND_SYSCALL(shutdown);
-COND_SYSCALL(recvfrom);
-COND_SYSCALL_COMPAT(recvfrom);
-COND_SYSCALL(sendmsg);
-COND_SYSCALL_COMPAT(sendmsg);
-COND_SYSCALL(recvmsg);
-COND_SYSCALL_COMPAT(recvmsg);
 COND_SYSCALL(mremap);
 COND_SYSCALL(add_key);
 COND_SYSCALL(request_key);
@@ -191,11 +171,6 @@ COND_SYSCALL(set_mempolicy_home_node);
 COND_SYSCALL(cachestat);
 COND_SYSCALL(mseal);
 
-COND_SYSCALL(accept4);
-COND_SYSCALL(recvmmsg);
-COND_SYSCALL(recvmmsg_time32);
-COND_SYSCALL_COMPAT(recvmmsg_time32);
-COND_SYSCALL_COMPAT(recvmmsg_time64);
 
 /* Posix timer syscalls may be configured out */
 COND_SYSCALL(timer_create);
@@ -240,9 +215,6 @@ COND_SYSCALL(seccomp);
 
 COND_SYSCALL(memfd_create);
 
-/* access BPF programs and maps */
-COND_SYSCALL(bpf);
-
 /* execveat */
 COND_SYSCALL(execveat);
 
@@ -271,10 +243,6 @@ COND_SYSCALL(memfd_secret);
 COND_SYSCALL(pciconfig_read);
 COND_SYSCALL(pciconfig_write);
 COND_SYSCALL(pciconfig_iobase);
-
-/* sys_socketcall: arm, mips, x86, ... */
-COND_SYSCALL(socketcall);
-COND_SYSCALL_COMPAT(socketcall);
 
 /* compat syscalls for arm64, x86, ... */
 COND_SYSCALL_COMPAT(fanotify_mark);

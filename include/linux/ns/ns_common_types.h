@@ -13,7 +13,6 @@ struct cgroup_namespace;
 struct dentry;
 struct ipc_namespace;
 struct mnt_namespace;
-struct net;
 struct pid_namespace;
 struct proc_ns_operations;
 struct time_namespace;
@@ -23,7 +22,6 @@ struct uts_namespace;
 extern struct cgroup_namespace init_cgroup_ns;
 extern struct ipc_namespace init_ipc_ns;
 extern struct mnt_namespace init_mnt_ns;
-extern struct net init_net;
 extern struct pid_namespace init_pid_ns;
 extern struct time_namespace init_time_ns;
 extern struct user_namespace init_user_ns;
@@ -32,7 +30,6 @@ extern struct uts_namespace init_uts_ns;
 extern const struct proc_ns_operations cgroupns_operations;
 extern const struct proc_ns_operations ipcns_operations;
 extern const struct proc_ns_operations mntns_operations;
-extern const struct proc_ns_operations netns_operations;
 extern const struct proc_ns_operations pidns_operations;
 extern const struct proc_ns_operations pidns_for_children_operations;
 extern const struct proc_ns_operations timens_operations;
@@ -130,8 +127,6 @@ struct ns_common {
 		const struct ipc_namespace *:    &(__ns)->ns, \
 		struct mnt_namespace *:          &(__ns)->ns, \
 		const struct mnt_namespace *:    &(__ns)->ns, \
-		struct net *:                    &(__ns)->ns, \
-		const struct net *:              &(__ns)->ns, \
 		struct pid_namespace *:          &(__ns)->ns, \
 		const struct pid_namespace *:    &(__ns)->ns, \
 		struct time_namespace *:         &(__ns)->ns, \
@@ -146,7 +141,6 @@ struct ns_common {
 		struct cgroup_namespace *: CGROUP_NS_INIT_INO, \
 		struct ipc_namespace *:    IPC_NS_INIT_INO,    \
 		struct mnt_namespace *:    MNT_NS_INIT_INO,    \
-		struct net *:              NET_NS_INIT_INO,    \
 		struct pid_namespace *:    PID_NS_INIT_INO,    \
 		struct time_namespace *:   TIME_NS_INIT_INO,   \
 		struct user_namespace *:   USER_NS_INIT_INO,   \
@@ -157,7 +151,6 @@ struct ns_common {
 		struct cgroup_namespace *: &init_cgroup_ns, \
 		struct ipc_namespace *:    &init_ipc_ns,    \
 		struct mnt_namespace *:    &init_mnt_ns,     \
-		struct net *:              &init_net,       \
 		struct pid_namespace *:    &init_pid_ns,    \
 		struct time_namespace *:   &init_time_ns,   \
 		struct user_namespace *:   &init_user_ns,   \
@@ -168,7 +161,6 @@ struct ns_common {
 		struct cgroup_namespace *:	CGROUP_NS_INIT_ID,	\
 		struct ipc_namespace *:		IPC_NS_INIT_ID,		\
 		struct mnt_namespace *:		MNT_NS_INIT_ID,		\
-		struct net *:			NET_NS_INIT_ID,		\
 		struct pid_namespace *:		PID_NS_INIT_ID,		\
 		struct time_namespace *:	TIME_NS_INIT_ID,	\
 		struct user_namespace *:	USER_NS_INIT_ID,	\
@@ -179,7 +171,6 @@ struct ns_common {
 		struct cgroup_namespace *: (IS_ENABLED(CONFIG_CGROUPS) ? &cgroupns_operations : NULL), \
 		struct ipc_namespace *:    (0  ? &ipcns_operations    : NULL), \
 		struct mnt_namespace *:    &mntns_operations,                                          \
-		struct net *:              (0  ? &netns_operations    : NULL), \
 		struct pid_namespace *:    (IS_ENABLED(CONFIG_PID_NS)  ? &pidns_operations    : NULL), \
 		struct time_namespace *:   (IS_ENABLED(CONFIG_TIME_NS) ? &timens_operations   : NULL), \
 		struct user_namespace *:   (IS_ENABLED(CONFIG_USER_NS) ? &userns_operations   : NULL), \
@@ -199,7 +190,6 @@ struct ns_common {
 	X(cgroup_namespace, CLONE_NEWCGROUP) \
 	X(ipc_namespace, CLONE_NEWIPC)       \
 	X(mnt_namespace, CLONE_NEWNS)        \
-	X(net, CLONE_NEWNET)                 \
 	X(pid_namespace, CLONE_NEWPID)       \
 	X(time_namespace, CLONE_NEWTIME)     \
 	X(user_namespace, CLONE_NEWUSER)     \

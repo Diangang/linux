@@ -29,9 +29,16 @@
  kills, so most of the assembly has to go. */
 
 #include <linux/export.h>
-#include <net/checksum.h>
+#include <asm-generic/checksum.h>
 
 #include <asm/byteorder.h>
+
+static inline unsigned int csum_from32to16(unsigned int sum)
+{
+	sum = (sum & 0xffff) + (sum >> 16);
+	sum = (sum & 0xffff) + (sum >> 16);
+	return sum;
+}
 
 #ifndef do_csum
 static unsigned int do_csum(const unsigned char *buff, int len)

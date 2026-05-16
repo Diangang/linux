@@ -14,7 +14,6 @@
 #include <linux/mm.h>
 #include <linux/uio.h>
 #include <linux/module.h>
-#include <linux/bpf-cgroup.h>
 #include <linux/mount.h>
 #include <linux/kmemleak.h>
 #include <linux/lockdep.h>
@@ -590,11 +589,6 @@ static ssize_t proc_sys_call_handler(struct kiocb *iocb, struct iov_iter *iter,
 			goto out_free_buf;
 		kbuf[count] = '\0';
 	}
-
-	error = BPF_CGROUP_RUN_PROG_SYSCTL(head, table, write, &kbuf, &count,
-					   &iocb->ki_pos);
-	if (error)
-		goto out_free_buf;
 
 	/* careful: calling conventions are nasty here */
 	error = table->proc_handler(table, write, kbuf, &count, &iocb->ki_pos);

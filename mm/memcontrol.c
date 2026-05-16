@@ -64,8 +64,6 @@
 #include <linux/sched/isolation.h>
 #include <linux/kmemleak.h>
 #include "internal.h"
-#include <net/sock.h>
-#include <net/ip.h>
 #include "slab.h"
 #include "memcontrol-v1.h"
 
@@ -80,14 +78,9 @@ EXPORT_SYMBOL(root_mem_cgroup);
 DEFINE_PER_CPU(struct mem_cgroup *, int_active_memcg);
 EXPORT_PER_CPU_SYMBOL_GPL(int_active_memcg);
 
-/* Socket memory accounting disabled? */
-static bool cgroup_memory_nosocket __ro_after_init;
-
 /* Kernel memory accounting disabled? */
 static bool cgroup_memory_nokmem __ro_after_init;
 
-/* BPF memory accounting disabled? */
-static bool cgroup_memory_nobpf __ro_after_init;
 
 static struct workqueue_struct *memcg_wq __ro_after_init;
 
@@ -304,9 +297,6 @@ retry:
 DEFINE_STATIC_KEY_FALSE(memcg_kmem_online_key);
 EXPORT_SYMBOL(memcg_kmem_online_key);
 
-DEFINE_STATIC_KEY_FALSE(memcg_bpf_enabled_key);
-EXPORT_SYMBOL(memcg_bpf_enabled_key);
-
 /**
  * get_mem_cgroup_css_from_folio - acquire a css of the memcg associated with a folio
  * @folio: folio of interest
@@ -420,7 +410,6 @@ static const unsigned int memcg_node_stat_items[] = {
 
 static const unsigned int memcg_stat_items[] = {
 	MEMCG_SWAP,
-	MEMCG_SOCK,
 	MEMCG_PERCPU_B,
 	MEMCG_KMEM,
 	MEMCG_ZSWAP_B,
@@ -1525,7 +1514,6 @@ static const struct memory_stat memory_stats[] = {
 	{ "pagetables",			NR_PAGETABLE			},
 	{ "sec_pagetables",		NR_SECONDARY_PAGETABLE		},
 	{ "percpu",			MEMCG_PERCPU_B			},
-	{ "sock",			MEMCG_SOCK			},
 	{ "vmalloc",			NR_VMALLOC			},
 	{ "shmem",			NR_SHMEM			},
 	{ "file_mapped",		NR_FILE_MAPPED			},
@@ -3987,10 +3975,6 @@ static struct mem_cgroup *mem_cgroup_alloc(struct mem_cgroup *parent)
 	INIT_LIST_HEAD(&memcg->memory_peaks);
 	INIT_LIST_HEAD(&memcg->swap_peaks);
 	spin_lock_init(&memcg->peaks_lock);
-	memcg->socket_pressure = get_jiffies_64();
-#if BITS_PER_LONG < 64
-	seqlock_init(&memcg->socket_pressure_seqlock);
-#endif
 	memcg1_memcg_init(memcg);
 	memcg->kmemcg_id = -1;
 #ifdef CONFIG_CGROUP_WRITEBACK
@@ -4033,30 +4017,14 @@ mem_cgroup_css_alloc(struct cgroup_subsys_state *parent_css)
 
 		page_counter_init(&memcg->memory, &parent->memory, memcg_on_dfl);
 		page_counter_init(&memcg->swap, &parent->swap, false);
-#if 0
-		memcg->memory.track_failcnt = !memcg_on_dfl;
-		WRITE_ONCE(memcg->oom_kill_disable, READ_ONCE(parent->oom_kill_disable));
-		page_counter_init(&memcg->kmem, &parent->kmem, false);
-		page_counter_init(&memcg->tcpmem, &parent->tcpmem, false);
-#endif
 	} else {
 		init_memcg_stats();
 		init_memcg_events();
 		page_counter_init(&memcg->memory, NULL, true);
 		page_counter_init(&memcg->swap, NULL, false);
-#if 0
-		page_counter_init(&memcg->kmem, NULL, false);
-		page_counter_init(&memcg->tcpmem, NULL, false);
-#endif
 		root_mem_cgroup = memcg;
 		return &memcg->css;
 	}
-
-	if (memcg_on_dfl && !cgroup_memory_nosocket)
-		static_branch_inc(&memcg_sockets_enabled_key);
-
-	if (!cgroup_memory_nobpf)
-		static_branch_inc(&memcg_bpf_enabled_key);
 
 	return &memcg->css;
 }
@@ -4183,15 +4151,6 @@ static void mem_cgroup_css_free(struct cgroup_subsys_state *css)
 	for (i = 0; i < MEMCG_CGWB_FRN_CNT; i++)
 		wb_wait_for_completion(&memcg->cgwb_frn[i].done);
 #endif
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys) && !cgroup_memory_nosocket)
-		static_branch_dec(&memcg_sockets_enabled_key);
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys) && memcg1_tcpmem_active(memcg))
-		static_branch_dec(&memcg_sockets_enabled_key);
-
-	if (!cgroup_memory_nobpf)
-		static_branch_dec(&memcg_bpf_enabled_key);
-
 	vmpressure_cleanup(&memcg->vmpressure);
 	cancel_work_sync(&memcg->high_work);
 	memcg1_remove_from_trees(memcg);
@@ -4218,10 +4177,6 @@ static void mem_cgroup_css_reset(struct cgroup_subsys_state *css)
 
 	page_counter_set_max(&memcg->memory, PAGE_COUNTER_MAX);
 	page_counter_set_max(&memcg->swap, PAGE_COUNTER_MAX);
-#if 0
-	page_counter_set_max(&memcg->kmem, PAGE_COUNTER_MAX);
-	page_counter_set_max(&memcg->tcpmem, PAGE_COUNTER_MAX);
-#endif
 	page_counter_set_min(&memcg->memory, 0);
 	page_counter_set_low(&memcg->memory, 0);
 	page_counter_set_high(&memcg->memory, PAGE_COUNTER_MAX);
@@ -4712,8 +4667,6 @@ static void __memory_events_show(struct seq_file *m, atomic_long_t *events)
 		   atomic_long_read(&events[MEMCG_OOM_KILL]));
 	seq_printf(m, "oom_group_kill %lu\n",
 		   atomic_long_read(&events[MEMCG_OOM_GROUP_KILL]));
-	seq_printf(m, "sock_throttled %lu\n",
-		   atomic_long_read(&events[MEMCG_SOCK_THROTTLED]));
 }
 
 static int memory_events_show(struct seq_file *m, void *v)
@@ -5241,100 +5194,6 @@ void mem_cgroup_migrate(struct folio *old, struct folio *new)
 	old->memcg_data = 0;
 }
 
-DEFINE_STATIC_KEY_FALSE(memcg_sockets_enabled_key);
-EXPORT_SYMBOL(memcg_sockets_enabled_key);
-
-void mem_cgroup_sk_alloc(struct sock *sk)
-{
-	struct mem_cgroup *memcg;
-
-	if (!mem_cgroup_sockets_enabled)
-		return;
-
-	/* Do not associate the sock with unrelated interrupted task's memcg. */
-	if (!in_task())
-		return;
-
-	rcu_read_lock();
-	memcg = mem_cgroup_from_task(current);
-	if (mem_cgroup_is_root(memcg))
-		goto out;
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys) && !memcg1_tcpmem_active(memcg))
-		goto out;
-	if (css_tryget(&memcg->css))
-		sk->sk_memcg = memcg;
-out:
-	rcu_read_unlock();
-}
-
-void mem_cgroup_sk_free(struct sock *sk)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_sk(sk);
-
-	if (memcg)
-		css_put(&memcg->css);
-}
-
-void mem_cgroup_sk_inherit(const struct sock *sk, struct sock *newsk)
-{
-	struct mem_cgroup *memcg;
-
-	if (sk->sk_memcg == newsk->sk_memcg)
-		return;
-
-	mem_cgroup_sk_free(newsk);
-
-	memcg = mem_cgroup_from_sk(sk);
-	if (memcg)
-		css_get(&memcg->css);
-
-	newsk->sk_memcg = sk->sk_memcg;
-}
-
-/**
- * mem_cgroup_sk_charge - charge socket memory
- * @sk: socket in memcg to charge
- * @nr_pages: number of pages to charge
- * @gfp_mask: reclaim mode
- *
- * Charges @nr_pages to @memcg. Returns %true if the charge fit within
- * @memcg's configured limit, %false if it doesn't.
- */
-bool mem_cgroup_sk_charge(const struct sock *sk, unsigned int nr_pages,
-			  gfp_t gfp_mask)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_sk(sk);
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return memcg1_charge_skmem(memcg, nr_pages, gfp_mask);
-
-	if (try_charge_memcg(memcg, gfp_mask, nr_pages) == 0) {
-		mod_memcg_state(memcg, MEMCG_SOCK, nr_pages);
-		return true;
-	}
-
-	return false;
-}
-
-/**
- * mem_cgroup_sk_uncharge - uncharge socket memory
- * @sk: socket in memcg to uncharge
- * @nr_pages: number of pages to uncharge
- */
-void mem_cgroup_sk_uncharge(const struct sock *sk, unsigned int nr_pages)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_sk(sk);
-
-	if (!cgroup_subsys_on_dfl(memory_cgrp_subsys)) {
-		memcg1_uncharge_skmem(memcg, nr_pages);
-		return;
-	}
-
-	mod_memcg_state(memcg, MEMCG_SOCK, -nr_pages);
-
-	refill_stock(memcg, nr_pages);
-}
-
 void mem_cgroup_flush_workqueue(void)
 {
 	flush_workqueue(memcg_wq);
@@ -5347,12 +5206,8 @@ static int __init cgroup_memory(char *s)
 	while ((token = strsep(&s, ",")) != NULL) {
 		if (!*token)
 			continue;
-		if (!strcmp(token, "nosocket"))
-			cgroup_memory_nosocket = true;
 		if (!strcmp(token, "nokmem"))
 			cgroup_memory_nokmem = true;
-		if (!strcmp(token, "nobpf"))
-			cgroup_memory_nobpf = true;
 	}
 	return 1;
 }

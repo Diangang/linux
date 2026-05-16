@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/smp.h>
 #include <linux/string.h>
+#include <linux/string_choices.h>
 #include <linux/types.h>
 #include <linux/irq.h>
 #include <linux/errno.h>

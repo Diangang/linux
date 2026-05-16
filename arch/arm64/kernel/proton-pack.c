@@ -18,7 +18,6 @@
  */
 
 #include <linux/arm-smccc.h>
-#include <linux/bpf.h>
 #include <linux/cpu.h>
 #include <linux/device.h>
 #include <linux/nospec.h>

@@ -147,7 +147,6 @@ extern const struct attribute_group *scsi_shost_groups[];
 #ifdef CONFIG_SCSI_NETLINK
 extern void scsi_netlink_init(void);
 extern void scsi_netlink_exit(void);
-extern struct sock *scsi_nl_sock;
 #else
 static inline void scsi_netlink_init(void) {}
 static inline void scsi_netlink_exit(void) {}

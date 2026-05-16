@@ -68,7 +68,7 @@
 /* Set the Edge Triggered behaviour for the target file descriptor */
 #define EPOLLET		((__force __poll_t)(1U << 31))
 
-/* 
+/*
  * On x86-64 make the 64bit structure have the same alignment as the
  * 32bit structure. This makes 32bit emulation easier.
  *
@@ -84,18 +84,5 @@ struct epoll_event {
 	__poll_t events;
 	__u64 data;
 } EPOLL_PACKED;
-
-struct epoll_params {
-	__u32 busy_poll_usecs;
-	__u16 busy_poll_budget;
-	__u8 prefer_busy_poll;
-
-	/* pad the struct to a multiple of 64bits */
-	__u8 __pad;
-};
-
-#define EPOLL_IOC_TYPE 0x8A
-#define EPIOCSPARAMS _IOW(EPOLL_IOC_TYPE, 0x01, struct epoll_params)
-#define EPIOCGPARAMS _IOR(EPOLL_IOC_TYPE, 0x02, struct epoll_params)
 
 #endif /* _UAPI_LINUX_EVENTPOLL_H */

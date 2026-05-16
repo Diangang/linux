@@ -12,8 +12,6 @@
 #include <linux/stat.h>
 #include <linux/param.h>	/* for HZ */
 #include <linux/sem.h>
-#include <linux/socket.h>
-#include <linux/if.h>
 #include <linux/fs.h>
 #include <linux/aio_abi.h>	/* for aio_context_t */
 #include <linux/uaccess.h>
@@ -328,41 +326,6 @@ typedef struct compat_sigevent {
 	} _sigev_un;
 } compat_sigevent_t;
 
-struct compat_ifmap {
-	compat_ulong_t mem_start;
-	compat_ulong_t mem_end;
-	unsigned short base_addr;
-	unsigned char irq;
-	unsigned char dma;
-	unsigned char port;
-};
-
-struct compat_if_settings {
-	unsigned int type;	/* Type of physical device or protocol */
-	unsigned int size;	/* Size of the data allocated by the caller */
-	compat_uptr_t ifs_ifsu;	/* union of pointers */
-};
-
-struct compat_ifreq {
-	union {
-		char	ifrn_name[IFNAMSIZ];    /* if name, e.g. "en0" */
-	} ifr_ifrn;
-	union {
-		struct	sockaddr ifru_addr;
-		struct	sockaddr ifru_dstaddr;
-		struct	sockaddr ifru_broadaddr;
-		struct	sockaddr ifru_netmask;
-		struct	sockaddr ifru_hwaddr;
-		short	ifru_flags;
-		compat_int_t	ifru_ivalue;
-		compat_int_t	ifru_mtu;
-		struct	compat_ifmap ifru_map;
-		char	ifru_slave[IFNAMSIZ];   /* Just fits the size */
-		char	ifru_newname[IFNAMSIZ];
-		compat_caddr_t	ifru_data;
-		struct	compat_if_settings ifru_settings;
-	} ifr_ifru;
-};
 
 struct compat_ifconf {
 	compat_int_t	ifc_len;                /* size of buffer */
@@ -730,13 +693,6 @@ asmlinkage long compat_sys_msgsnd(int msqid, compat_uptr_t msgp,
 asmlinkage long compat_sys_semctl(int semid, int semnum, int cmd, int arg);
 asmlinkage long compat_sys_shmctl(int first, int second, void __user *uptr);
 asmlinkage long compat_sys_shmat(int shmid, compat_uptr_t shmaddr, int shmflg);
-asmlinkage long compat_sys_recvfrom(int fd, void __user *buf, compat_size_t len,
-			    unsigned flags, struct sockaddr __user *addr,
-			    int __user *addrlen);
-asmlinkage long compat_sys_sendmsg(int fd, struct compat_msghdr __user *msg,
-				   unsigned flags);
-asmlinkage long compat_sys_recvmsg(int fd, struct compat_msghdr __user *msg,
-				   unsigned int flags);
 /* No generic prototype for readahead */
 asmlinkage long compat_sys_keyctl(u32 option,
 			      u32 arg2, u32 arg3, u32 arg4, u32 arg5);
@@ -747,12 +703,6 @@ asmlinkage long compat_sys_execve(const char __user *filename, const compat_uptr
 asmlinkage long compat_sys_rt_tgsigqueueinfo(compat_pid_t tgid,
 					compat_pid_t pid, int sig,
 					struct compat_siginfo __user *uinfo);
-asmlinkage long compat_sys_recvmmsg_time64(int fd, struct compat_mmsghdr __user *mmsg,
-				    unsigned vlen, unsigned int flags,
-				    struct __kernel_timespec __user *timeout);
-asmlinkage long compat_sys_recvmmsg_time32(int fd, struct compat_mmsghdr __user *mmsg,
-				    unsigned vlen, unsigned int flags,
-				    struct old_timespec32 __user *timeout);
 asmlinkage long compat_sys_wait4(compat_pid_t pid,
 				 compat_uint_t __user *stat_addr, int options,
 				 struct compat_rusage __user *ru);
@@ -761,8 +711,6 @@ asmlinkage long compat_sys_fanotify_mark(int, unsigned int, __u32, __u32,
 asmlinkage long compat_sys_open_by_handle_at(int mountdirfd,
 					     struct file_handle __user *handle,
 					     int flags);
-asmlinkage long compat_sys_sendmmsg(int fd, struct compat_mmsghdr __user *mmsg,
-				    unsigned vlen, unsigned int flags);
 asmlinkage long compat_sys_execveat(int dfd, const char __user *filename,
 		     const compat_uptr_t __user *argv,
 		     const compat_uptr_t __user *envp, int flags);
@@ -838,9 +786,6 @@ asmlinkage long compat_sys_sigaction(int sig,
                                    const struct compat_old_sigaction __user *act,
                                    struct compat_old_sigaction __user *oact);
 #endif
-
-/* obsolete */
-asmlinkage long compat_sys_socketcall(int call, u32 __user *args);
 
 #ifdef __ARCH_WANT_COMPAT_TRUNCATE64
 asmlinkage long compat_sys_truncate64(const char __user *pathname, compat_arg_u64(len));

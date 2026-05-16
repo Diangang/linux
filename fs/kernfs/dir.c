@@ -15,6 +15,7 @@
 #include <linux/security.h>
 #include <linux/hash.h>
 #include <linux/ns_common.h>
+#include <asm/sections.h>
 
 #include "kernfs-internal.h"
 

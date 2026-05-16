@@ -19,7 +19,6 @@
 #include <linux/mnt_namespace.h>
 #include <linux/pid_namespace.h>
 #include <linux/user_namespace.h>
-#include <net/net_namespace.h>
 #include <asm/sections.h>
 #include "mount.h"
 #include "internal.h"
@@ -273,7 +272,6 @@ static struct fs_context *alloc_fs_context(struct file_system_type *fs_type,
 	fc->sb_flags_mask = sb_flags_mask;
 	fc->fs_type	= get_filesystem(fs_type);
 	fc->cred	= get_current_cred();
-	fc->net_ns	= get_net(current->nsproxy->net_ns);
 	fc->log.prefix	= fs_type->name;
 
 	mutex_init(&fc->uapi_mutex);
@@ -378,7 +376,6 @@ struct fs_context *vfs_dup_fs_context(struct fs_context *src_fc)
 	fc->source	= NULL;
 	fc->security	= NULL;
 	get_filesystem(fc->fs_type);
-	get_net(fc->net_ns);
 	get_user_ns(fc->user_ns);
 	get_cred(fc->cred);
 	if (fc->log.log)
@@ -498,7 +495,6 @@ void put_fs_context(struct fs_context *fc)
 		fc->ops->free(fc);
 
 	security_free_mnt_opts(&fc->security);
-	put_net(fc->net_ns);
 	put_user_ns(fc->user_ns);
 	put_cred(fc->cred);
 	put_fc_log(fc);

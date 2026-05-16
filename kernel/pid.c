@@ -29,6 +29,7 @@
 
 #include <linux/mm.h>
 #include <linux/export.h>
+#include <linux/file.h>
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/rculist.h>
@@ -43,7 +44,6 @@
 #include <linux/sched/task.h>
 #include <linux/idr.h>
 #include <linux/pidfs.h>
-#include <net/sock.h>
 #include <uapi/linux/pidfd.h>
 
 struct pid init_struct_pid = {

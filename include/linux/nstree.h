@@ -16,7 +16,6 @@ struct ns_common;
 extern struct ns_tree_root cgroup_ns_tree;
 extern struct ns_tree_root ipc_ns_tree;
 extern struct ns_tree_root mnt_ns_tree;
-extern struct ns_tree_root net_ns_tree;
 extern struct ns_tree_root pid_ns_tree;
 extern struct ns_tree_root time_ns_tree;
 extern struct ns_tree_root user_ns_tree;
@@ -34,7 +33,6 @@ void ns_tree_node_del(struct ns_tree_node *node, struct ns_tree_root *root);
 	_Generic((__ns),					\
 		struct cgroup_namespace *: &(cgroup_ns_tree),	\
 		struct ipc_namespace *:    &(ipc_ns_tree),	\
-		struct net *:              &(net_ns_tree),	\
 		struct pid_namespace *:    &(pid_ns_tree),	\
 		struct mnt_namespace *:    &(mnt_ns_tree),	\
 		struct time_namespace *:   &(time_ns_tree),	\

@@ -23,8 +23,6 @@ struct linux_dirent64;
 struct list_head;
 struct mmap_arg_struct;
 struct msgbuf;
-struct user_msghdr;
-struct mmsghdr;
 struct msqid_ds;
 struct new_utsname;
 struct nfsctl_arg;
@@ -41,7 +39,6 @@ struct sel_arg_struct;
 struct semaphore;
 struct sembuf;
 struct shmid_ds;
-struct sockaddr;
 struct stat;
 struct stat64;
 struct statfs;
@@ -63,7 +60,6 @@ struct old_linux_dirent;
 struct file_handle;
 struct sigaltstack;
 struct rseq;
-union bpf_attr;
 struct clone_args;
 struct open_how;
 struct mount_attr;
@@ -754,25 +750,6 @@ asmlinkage long sys_old_shmctl(int shmid, int cmd, struct shmid_ds __user *buf);
 asmlinkage long sys_shmctl(int shmid, int cmd, struct shmid_ds __user *buf);
 asmlinkage long sys_shmat(int shmid, char __user *shmaddr, int shmflg);
 asmlinkage long sys_shmdt(char __user *shmaddr);
-asmlinkage long sys_socket(int, int, int);
-asmlinkage long sys_socketpair(int, int, int, int __user *);
-asmlinkage long sys_bind(int, struct sockaddr __user *, int);
-asmlinkage long sys_listen(int, int);
-asmlinkage long sys_accept(int, struct sockaddr __user *, int __user *);
-asmlinkage long sys_connect(int, struct sockaddr __user *, int);
-asmlinkage long sys_getsockname(int, struct sockaddr __user *, int __user *);
-asmlinkage long sys_getpeername(int, struct sockaddr __user *, int __user *);
-asmlinkage long sys_sendto(int, void __user *, size_t, unsigned,
-				struct sockaddr __user *, int);
-asmlinkage long sys_recvfrom(int, void __user *, size_t, unsigned,
-				struct sockaddr __user *, int __user *);
-asmlinkage long sys_setsockopt(int fd, int level, int optname,
-				char __user *optval, int optlen);
-asmlinkage long sys_getsockopt(int fd, int level, int optname,
-				char __user *optval, int __user *optlen);
-asmlinkage long sys_shutdown(int, int);
-asmlinkage long sys_sendmsg(int fd, struct user_msghdr __user *msg, unsigned flags);
-asmlinkage long sys_recvmsg(int fd, struct user_msghdr __user *msg, unsigned flags);
 asmlinkage long sys_readahead(int fd, loff_t offset, size_t count);
 asmlinkage long sys_brk(unsigned long brk);
 asmlinkage long sys_munmap(unsigned long addr, size_t len);
@@ -851,13 +828,6 @@ asmlinkage long sys_move_pages(pid_t pid, unsigned long nr_pages,
 				int flags);
 asmlinkage long sys_rt_tgsigqueueinfo(pid_t tgid, pid_t  pid, int sig,
 		siginfo_t __user *uinfo);
-asmlinkage long sys_accept4(int, struct sockaddr __user *, int __user *, int);
-asmlinkage long sys_recvmmsg(int fd, struct mmsghdr __user *msg,
-			     unsigned int vlen, unsigned flags,
-			     struct __kernel_timespec __user *timeout);
-asmlinkage long sys_recvmmsg_time32(int fd, struct mmsghdr __user *msg,
-			     unsigned int vlen, unsigned flags,
-			     struct old_timespec32 __user *timeout);
 asmlinkage long sys_wait4(pid_t pid, int __user *stat_addr,
 				int options, struct rusage __user *ru);
 asmlinkage long sys_prlimit64(pid_t pid, unsigned int resource,
@@ -880,8 +850,6 @@ asmlinkage long sys_clock_adjtime32(clockid_t which_clock,
 asmlinkage long sys_syncfs(int fd);
 asmlinkage long sys_setns(int fd, int nstype);
 asmlinkage long sys_pidfd_open(pid_t pid, unsigned int flags);
-asmlinkage long sys_sendmmsg(int fd, struct mmsghdr __user *msg,
-			     unsigned int vlen, unsigned flags);
 asmlinkage long sys_process_vm_readv(pid_t pid,
 				     const struct iovec __user *lvec,
 				     unsigned long liovcnt,
@@ -911,7 +879,6 @@ asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
 asmlinkage long sys_getrandom(char __user *buf, size_t count,
 			      unsigned int flags);
 asmlinkage long sys_memfd_create(const char __user *uname_ptr, unsigned int flags);
-asmlinkage long sys_bpf(int cmd, union bpf_attr __user *attr, unsigned int size);
 asmlinkage long sys_execveat(int dfd, const char __user *filename,
 			const char __user *const __user *argv,
 			const char __user *const __user *envp, int flags);
@@ -1083,8 +1050,6 @@ asmlinkage long sys_epoll_wait(int epfd, struct epoll_event __user *events,
 				int maxevents, int timeout);
 asmlinkage long sys_ustat(unsigned dev, struct ustat __user *ubuf);
 asmlinkage long sys_vfork(void);
-asmlinkage long sys_recv(int, void __user *, size_t, unsigned);
-asmlinkage long sys_send(int, void __user *, size_t, unsigned);
 asmlinkage long sys_oldumount(char __user *name);
 asmlinkage long sys_uselib(const char __user *library);
 asmlinkage long sys_sysfs(int option,
@@ -1144,9 +1109,6 @@ asmlinkage long sys_geteuid16(void);
 asmlinkage long sys_getgid16(void);
 asmlinkage long sys_getegid16(void);
 #endif
-
-/* obsolete */
-asmlinkage long sys_socketcall(int call, unsigned long __user *args);
 
 /* obsolete */
 asmlinkage long sys_stat(const char __user *filename,
@@ -1285,8 +1247,4 @@ long __do_semtimedop(int semid, struct sembuf *tsems, unsigned int nsops,
 		     const struct timespec64 *timeout,
 		     struct ipc_namespace *ns);
 
-int __sys_getsockopt(int fd, int level, int optname, char __user *optval,
-		int __user *optlen);
-int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
-		int optlen);
 #endif

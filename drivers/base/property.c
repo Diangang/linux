@@ -13,7 +13,6 @@
 #include <linux/kconfig.h>
 #include <linux/of.h>
 #include <linux/property.h>
-#include <linux/phy.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/types.h>
@@ -995,48 +994,6 @@ enum dev_dma_attr device_get_dma_attr(const struct device *dev)
 	return fwnode_call_int_op(dev_fwnode(dev), device_get_dma_attr);
 }
 EXPORT_SYMBOL_GPL(device_get_dma_attr);
-
-/**
- * fwnode_get_phy_mode - Get phy mode for given firmware node
- * @fwnode:	Pointer to the given node
- *
- * The function gets phy interface string from property 'phy-mode' or
- * 'phy-connection-type', and return its index in phy_modes table, or errno in
- * error case.
- */
-int fwnode_get_phy_mode(const struct fwnode_handle *fwnode)
-{
-	const char *pm;
-	int err, i;
-
-	err = fwnode_property_read_string(fwnode, "phy-mode", &pm);
-	if (err < 0)
-		err = fwnode_property_read_string(fwnode,
-						  "phy-connection-type", &pm);
-	if (err < 0)
-		return err;
-
-	for (i = 0; i < PHY_INTERFACE_MODE_MAX; i++)
-		if (!strcasecmp(pm, phy_modes(i)))
-			return i;
-
-	return -ENODEV;
-}
-EXPORT_SYMBOL_GPL(fwnode_get_phy_mode);
-
-/**
- * device_get_phy_mode - Get phy mode for given device
- * @dev:	Pointer to the given device
- *
- * The function gets phy interface string from property 'phy-mode' or
- * 'phy-connection-type', and return its index in phy_modes table, or errno in
- * error case.
- */
-int device_get_phy_mode(struct device *dev)
-{
-	return fwnode_get_phy_mode(dev_fwnode(dev));
-}
-EXPORT_SYMBOL_GPL(device_get_phy_mode);
 
 /**
  * fwnode_iomap - Maps the memory mapped IO for a given fwnode

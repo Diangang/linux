@@ -17,7 +17,6 @@
 #define _LINUX_KOBJECT_NS_H
 
 struct ns_common;
-struct sock;
 struct kobject;
 
 /*
@@ -26,14 +25,12 @@ struct kobject;
  */
 enum kobj_ns_type {
 	KOBJ_NS_TYPE_NONE = 0,
-	KOBJ_NS_TYPE_NET,
 	KOBJ_NS_TYPES
 };
 
 /*
  * Callbacks so sysfs can determine namespaces
  *   @grab_current_ns: return a new reference to calling task's namespace
- *   @netlink_ns: return namespace to which a sock belongs (right?)
  *   @initial_ns: return the initial namespace (i.e. init_net_ns)
  *   @drop_ns: drops a reference to namespace
  */
@@ -41,7 +38,6 @@ struct kobj_ns_type_operations {
 	enum kobj_ns_type type;
 	bool (*current_may_mount)(void);
 	struct ns_common *(*grab_current_ns)(void);
-	const struct ns_common *(*netlink_ns)(struct sock *sk);
 	const struct ns_common *(*initial_ns)(void);
 	void (*drop_ns)(struct ns_common *);
 };

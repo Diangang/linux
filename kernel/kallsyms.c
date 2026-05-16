@@ -22,7 +22,6 @@
 #include <linux/sched.h>	/* for cond_resched */
 #include <linux/ctype.h>
 #include <linux/slab.h>
-#include <linux/filter.h>
 #include <linux/ftrace.h>
 #include <linux/kprobes.h>
 #include <linux/build_bug.h>
@@ -30,7 +29,6 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/bsearch.h>
-#include <linux/btf_ids.h>
 
 #include "kallsyms_internal.h"
 
@@ -346,8 +344,7 @@ int kallsyms_lookup_size_offset(unsigned long addr, unsigned long *symbolsize,
 		get_symbol_pos(addr, symbolsize, offset);
 		return 1;
 	}
-	return !!module_address_lookup(addr, symbolsize, offset, NULL, NULL, namebuf) ||
-	       !!bpf_address_lookup(addr, symbolsize, offset, namebuf);
+	return !!module_address_lookup(addr, symbolsize, offset, NULL, NULL, namebuf);
 }
 
 static int kallsyms_lookup_buildid(unsigned long addr,
@@ -366,7 +363,7 @@ static int kallsyms_lookup_buildid(unsigned long addr,
 	namebuf[0] = 0;
 	/*
 	 * Initialize the module-related return values. They are not set
-	 * when the symbol is in vmlinux or it is a bpf address.
+	 * when the symbol is in vmlinux.
 	 */
 	if (modname)
 		*modname = NULL;
@@ -384,11 +381,9 @@ static int kallsyms_lookup_buildid(unsigned long addr,
 		return strlen(namebuf);
 	}
 
-	/* See if it's in a module or a BPF JITed image. */
+	/* See if it's in a module. */
 	ret = module_address_lookup(addr, symbolsize, offset,
 				    modname, modbuildid, namebuf);
-	if (!ret)
-		ret = bpf_address_lookup(addr, symbolsize, offset, namebuf);
 
 	if (!ret)
 		ret = ftrace_mod_address_lookup(addr, symbolsize, offset,
@@ -572,7 +567,6 @@ struct kallsym_iter {
 	loff_t pos;
 	loff_t pos_mod_end;
 	loff_t pos_ftrace_mod_end;
-	loff_t pos_bpf_end;
 	unsigned long value;
 	unsigned int nameoff; /* If iterating in core kernel symbols. */
 	char type;
@@ -615,23 +609,6 @@ static int get_ksymbol_ftrace_mod(struct kallsym_iter *iter)
 	return 1;
 }
 
-static int get_ksymbol_bpf(struct kallsym_iter *iter)
-{
-	int ret;
-
-	strscpy(iter->module_name, "bpf", MODULE_NAME_LEN);
-	iter->exported = 0;
-	ret = bpf_get_kallsym(iter->pos - iter->pos_ftrace_mod_end,
-			      &iter->value, &iter->type,
-			      iter->name);
-	if (ret < 0) {
-		iter->pos_bpf_end = iter->pos;
-		return 0;
-	}
-
-	return 1;
-}
-
 /* Returns space to next name. */
 static unsigned long get_ksymbol_core(struct kallsym_iter *iter)
 {
@@ -655,7 +632,6 @@ static void reset_iter(struct kallsym_iter *iter, loff_t new_pos)
 	if (new_pos == 0) {
 		iter->pos_mod_end = 0;
 		iter->pos_ftrace_mod_end = 0;
-		iter->pos_bpf_end = 0;
 	}
 }
 
@@ -674,10 +650,6 @@ static int update_iter_mod(struct kallsym_iter *iter, loff_t pos)
 
 	if ((!iter->pos_ftrace_mod_end || iter->pos_ftrace_mod_end > pos) &&
 	    get_ksymbol_ftrace_mod(iter))
-		return 1;
-
-	if ((!iter->pos_bpf_end || iter->pos_bpf_end > pos) &&
-	    get_ksymbol_bpf(iter))
 		return 1;
 
 	return 0;

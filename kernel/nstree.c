@@ -28,12 +28,6 @@ struct ns_tree_root mnt_ns_tree = {
 	.ns_list_head = LIST_HEAD_INIT(mnt_ns_tree.ns_list_head),
 };
 
-struct ns_tree_root net_ns_tree = {
-	.ns_rb = RB_ROOT,
-	.ns_list_head = LIST_HEAD_INIT(net_ns_tree.ns_list_head),
-};
-EXPORT_SYMBOL_GPL(net_ns_tree);
-
 struct ns_tree_root uts_ns_tree = {
 	.ns_rb = RB_ROOT,
 	.ns_list_head = LIST_HEAD_INIT(uts_ns_tree.ns_list_head),
@@ -292,8 +286,6 @@ static struct ns_tree_root *ns_tree_from_type(int ns_type)
 		return &ipc_ns_tree;
 	case CLONE_NEWNS:
 		return &mnt_ns_tree;
-	case CLONE_NEWNET:
-		return &net_ns_tree;
 	case CLONE_NEWPID:
 		return &pid_ns_tree;
 	case CLONE_NEWUSER:
@@ -419,7 +411,7 @@ static void __free_klistns_free(const struct klistns *kls)
 		kls->first_ns->ops->put(kls->first_ns);
 }
 
-#define NS_ALL (PID_NS | USER_NS | MNT_NS | UTS_NS | IPC_NS | NET_NS | CGROUP_NS | TIME_NS)
+#define NS_ALL (PID_NS | USER_NS | MNT_NS | UTS_NS | IPC_NS | CGROUP_NS | TIME_NS)
 
 static int copy_ns_id_req(const struct ns_id_req __user *req,
 			  struct ns_id_req *kreq)

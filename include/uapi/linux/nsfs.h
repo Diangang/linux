@@ -51,7 +51,6 @@ enum init_ns_ino {
 	PID_NS_INIT_INO		= 0xEFFFFFFCU,
 	CGROUP_NS_INIT_INO	= 0xEFFFFFFBU,
 	TIME_NS_INIT_INO	= 0xEFFFFFFAU,
-	NET_NS_INIT_INO		= 0xEFFFFFF9U,
 	MNT_NS_INIT_INO		= 0xEFFFFFF8U,
 #ifdef __KERNEL__
 	MNT_NS_ANON_INO		= 0xEFFFFFF7U,
@@ -74,7 +73,6 @@ enum init_ns_id {
 	PID_NS_INIT_ID		= 4ULL,
 	CGROUP_NS_INIT_ID	= 5ULL,
 	TIME_NS_INIT_ID		= 6ULL,
-	NET_NS_INIT_ID		= 7ULL,
 	MNT_NS_INIT_ID		= 8ULL,
 #ifdef __KERNEL__
 	NS_LAST_INIT_ID		= MNT_NS_INIT_ID,
@@ -89,7 +87,6 @@ enum ns_type {
 	IPC_NS     = (1ULL << 27), /* CLONE_NEWIPC */
 	USER_NS    = (1ULL << 28), /* CLONE_NEWUSER */
 	PID_NS     = (1ULL << 29), /* CLONE_NEWPID */
-	NET_NS     = (1ULL << 30), /* CLONE_NEWNET */
 };
 
 /**

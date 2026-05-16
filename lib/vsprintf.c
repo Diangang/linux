@@ -39,7 +39,6 @@
 #include <linux/time.h>
 #include <linux/uuid.h>
 #include <linux/of.h>
-#include <net/addrconf.h>
 #include <linux/siphash.h>
 #include <linux/compiler.h>
 #include <linux/property.h>
@@ -236,8 +235,8 @@ static const u16 decpair[100] = {
 /*
  * This will print a single '0' even if r == 0, since we would
  * immediately jump to out_r where two 0s would be written but only
- * one of them accounted for in buf. This is needed by ip4_string
- * below. All other callers pass a non-zero value of r.
+ * one of them accounted for in buf. All current callers pass a non-zero
+ * value of r.
 */
 static noinline_for_stack
 char *put_dec_trunc8(char *buf, unsigned r)
@@ -1344,312 +1343,6 @@ char *mac_address_string(char *buf, char *end, u8 *addr,
 }
 
 static noinline_for_stack
-char *ip4_string(char *p, const u8 *addr, const char *fmt)
-{
-	int i;
-	bool leading_zeros = (fmt[0] == 'i');
-	int index;
-	int step;
-
-	switch (fmt[2]) {
-	case 'h':
-#ifdef __BIG_ENDIAN
-		index = 0;
-		step = 1;
-#else
-		index = 3;
-		step = -1;
-#endif
-		break;
-	case 'l':
-		index = 3;
-		step = -1;
-		break;
-	case 'n':
-	case 'b':
-	default:
-		index = 0;
-		step = 1;
-		break;
-	}
-	for (i = 0; i < 4; i++) {
-		char temp[4] __aligned(2);	/* hold each IP quad in reverse order */
-		int digits = put_dec_trunc8(temp, addr[index]) - temp;
-		if (leading_zeros) {
-			if (digits < 3)
-				*p++ = '0';
-			if (digits < 2)
-				*p++ = '0';
-		}
-		/* reverse the digits in the quad */
-		while (digits--)
-			*p++ = temp[digits];
-		if (i < 3)
-			*p++ = '.';
-		index += step;
-	}
-	*p = '\0';
-
-	return p;
-}
-
-static noinline_for_stack
-char *ip6_compressed_string(char *p, const char *addr)
-{
-	int i, j, range;
-	unsigned char zerolength[8];
-	int longest = 1;
-	int colonpos = -1;
-	u16 word;
-	u8 hi, lo;
-	bool needcolon = false;
-	bool useIPv4;
-	struct in6_addr in6;
-
-	memcpy(&in6, addr, sizeof(struct in6_addr));
-
-	useIPv4 = ipv6_addr_v4mapped(&in6) || ipv6_addr_is_isatap(&in6);
-
-	memset(zerolength, 0, sizeof(zerolength));
-
-	if (useIPv4)
-		range = 6;
-	else
-		range = 8;
-
-	/* find position of longest 0 run */
-	for (i = 0; i < range; i++) {
-		for (j = i; j < range; j++) {
-			if (in6.s6_addr16[j] != 0)
-				break;
-			zerolength[i]++;
-		}
-	}
-	for (i = 0; i < range; i++) {
-		if (zerolength[i] > longest) {
-			longest = zerolength[i];
-			colonpos = i;
-		}
-	}
-	if (longest == 1)		/* don't compress a single 0 */
-		colonpos = -1;
-
-	/* emit address */
-	for (i = 0; i < range; i++) {
-		if (i == colonpos) {
-			if (needcolon || i == 0)
-				*p++ = ':';
-			*p++ = ':';
-			needcolon = false;
-			i += longest - 1;
-			continue;
-		}
-		if (needcolon) {
-			*p++ = ':';
-			needcolon = false;
-		}
-		/* hex u16 without leading 0s */
-		word = ntohs(in6.s6_addr16[i]);
-		hi = word >> 8;
-		lo = word & 0xff;
-		if (hi) {
-			if (hi > 0x0f)
-				p = hex_byte_pack(p, hi);
-			else
-				*p++ = hex_asc_lo(hi);
-			p = hex_byte_pack(p, lo);
-		}
-		else if (lo > 0x0f)
-			p = hex_byte_pack(p, lo);
-		else
-			*p++ = hex_asc_lo(lo);
-		needcolon = true;
-	}
-
-	if (useIPv4) {
-		if (needcolon)
-			*p++ = ':';
-		p = ip4_string(p, &in6.s6_addr[12], "I4");
-	}
-	*p = '\0';
-
-	return p;
-}
-
-static noinline_for_stack
-char *ip6_string(char *p, const char *addr, const char *fmt)
-{
-	int i;
-
-	for (i = 0; i < 8; i++) {
-		p = hex_byte_pack(p, *addr++);
-		p = hex_byte_pack(p, *addr++);
-		if (fmt[0] == 'I' && i != 7)
-			*p++ = ':';
-	}
-	*p = '\0';
-
-	return p;
-}
-
-static noinline_for_stack
-char *ip6_addr_string(char *buf, char *end, const u8 *addr,
-		      struct printf_spec spec, const char *fmt)
-{
-	char ip6_addr[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:255.255.255.255")];
-
-	if (fmt[0] == 'I' && fmt[2] == 'c')
-		ip6_compressed_string(ip6_addr, addr);
-	else
-		ip6_string(ip6_addr, addr, fmt);
-
-	return string_nocheck(buf, end, ip6_addr, spec);
-}
-
-static noinline_for_stack
-char *ip4_addr_string(char *buf, char *end, const u8 *addr,
-		      struct printf_spec spec, const char *fmt)
-{
-	char ip4_addr[sizeof("255.255.255.255")];
-
-	ip4_string(ip4_addr, addr, fmt);
-
-	return string_nocheck(buf, end, ip4_addr, spec);
-}
-
-static noinline_for_stack
-char *ip6_addr_string_sa(char *buf, char *end, const struct sockaddr_in6 *sa,
-			 struct printf_spec spec, const char *fmt)
-{
-	bool have_p = false, have_s = false, have_f = false, have_c = false;
-	char ip6_addr[sizeof("[xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:255.255.255.255]") +
-		      sizeof(":12345") + sizeof("/123456789") +
-		      sizeof("%1234567890")];
-	char *p = ip6_addr, *pend = ip6_addr + sizeof(ip6_addr);
-	const u8 *addr = (const u8 *) &sa->sin6_addr;
-	char fmt6[2] = { fmt[0], '6' };
-	u8 off = 0;
-
-	fmt++;
-	while (isalpha(*++fmt)) {
-		switch (*fmt) {
-		case 'p':
-			have_p = true;
-			break;
-		case 'f':
-			have_f = true;
-			break;
-		case 's':
-			have_s = true;
-			break;
-		case 'c':
-			have_c = true;
-			break;
-		}
-	}
-
-	if (have_p || have_s || have_f) {
-		*p = '[';
-		off = 1;
-	}
-
-	if (fmt6[0] == 'I' && have_c)
-		p = ip6_compressed_string(ip6_addr + off, addr);
-	else
-		p = ip6_string(ip6_addr + off, addr, fmt6);
-
-	if (have_p || have_s || have_f)
-		*p++ = ']';
-
-	if (have_p) {
-		*p++ = ':';
-		p = number(p, pend, ntohs(sa->sin6_port), spec);
-	}
-	if (have_f) {
-		*p++ = '/';
-		p = number(p, pend, ntohl(sa->sin6_flowinfo &
-					  IPV6_FLOWINFO_MASK), spec);
-	}
-	if (have_s) {
-		*p++ = '%';
-		p = number(p, pend, sa->sin6_scope_id, spec);
-	}
-	*p = '\0';
-
-	return string_nocheck(buf, end, ip6_addr, spec);
-}
-
-static noinline_for_stack
-char *ip4_addr_string_sa(char *buf, char *end, const struct sockaddr_in *sa,
-			 struct printf_spec spec, const char *fmt)
-{
-	bool have_p = false;
-	char *p, ip4_addr[sizeof("255.255.255.255") + sizeof(":12345")];
-	char *pend = ip4_addr + sizeof(ip4_addr);
-	const u8 *addr = (const u8 *) &sa->sin_addr.s_addr;
-	char fmt4[3] = { fmt[0], '4', 0 };
-
-	fmt++;
-	while (isalpha(*++fmt)) {
-		switch (*fmt) {
-		case 'p':
-			have_p = true;
-			break;
-		case 'h':
-		case 'l':
-		case 'n':
-		case 'b':
-			fmt4[2] = *fmt;
-			break;
-		}
-	}
-
-	p = ip4_string(ip4_addr, addr, fmt4);
-	if (have_p) {
-		*p++ = ':';
-		p = number(p, pend, ntohs(sa->sin_port), spec);
-	}
-	*p = '\0';
-
-	return string_nocheck(buf, end, ip4_addr, spec);
-}
-
-static noinline_for_stack
-char *ip_addr_string(char *buf, char *end, const void *ptr,
-		     struct printf_spec spec, const char *fmt)
-{
-	char *err_fmt_msg;
-
-	if (check_pointer(&buf, end, ptr, spec))
-		return buf;
-
-	switch (fmt[1]) {
-	case '6':
-		return ip6_addr_string(buf, end, ptr, spec, fmt);
-	case '4':
-		return ip4_addr_string(buf, end, ptr, spec, fmt);
-	case 'S': {
-		const union {
-			struct sockaddr		raw;
-			struct sockaddr_in	v4;
-			struct sockaddr_in6	v6;
-		} *sa = ptr;
-
-		switch (sa->raw.sa_family) {
-		case AF_INET:
-			return ip4_addr_string_sa(buf, end, &sa->v4, spec, fmt);
-		case AF_INET6:
-			return ip6_addr_string_sa(buf, end, &sa->v6, spec, fmt);
-		default:
-			return error_string(buf, end, "(einval)", spec);
-		}}
-	}
-
-	err_fmt_msg = fmt[0] == 'i' ? "(%pi?)" : "(%pI?)";
-	return error_string(buf, end, err_fmt_msg, spec);
-}
-
-static noinline_for_stack
 char *escaped_string(char *buf, char *end, u8 *addr, struct printf_spec spec,
 		     const char *fmt)
 {
@@ -1770,28 +1463,6 @@ char *uuid_string(char *buf, char *end, const u8 *addr,
 	*p = 0;
 
 	return string_nocheck(buf, end, uuid, spec);
-}
-
-static noinline_for_stack
-char *netdev_bits(char *buf, char *end, const void *addr,
-		  struct printf_spec spec,  const char *fmt)
-{
-	unsigned long long num;
-	int size;
-
-	if (check_pointer(&buf, end, addr, spec))
-		return buf;
-
-	switch (fmt[1]) {
-	case 'F':
-		num = *(const netdev_features_t *)addr;
-		size = sizeof(netdev_features_t);
-		break;
-	default:
-		return error_string(buf, end, "(%pN?)", spec);
-	}
-
-	return special_hex_number(buf, end, num, size);
 }
 
 static noinline_for_stack
@@ -2416,21 +2087,6 @@ early_param("no_hash_pointers", no_hash_pointers_enable);
  * - 'MF' For a 6-byte MAC FDDI address, it prints the address
  *       with a dash-separated hex notation
  * - '[mM]R' For a 6-byte MAC address, Reverse order (Bluetooth)
- * - 'I' [46] for IPv4/IPv6 addresses printed in the usual way
- *       IPv4 uses dot-separated decimal without leading 0's (1.2.3.4)
- *       IPv6 uses colon separated network-order 16 bit hex with leading 0's
- *       [S][pfs]
- *       Generic IPv4/IPv6 address (struct sockaddr *) that falls back to
- *       [4] or [6] and is able to print port [p], flowinfo [f], scope [s]
- * - 'i' [46] for 'raw' IPv4/IPv6 addresses
- *       IPv6 omits the colons (01020304...0f)
- *       IPv4 uses dot-separated decimal with leading 0's (010.123.045.006)
- *       [S][pfs]
- *       Generic IPv4/IPv6 address (struct sockaddr *) that falls back to
- *       [4] or [6] and is able to print port [p], flowinfo [f], scope [s]
- * - '[Ii][4S][hnbl]' IPv4 addresses in host, network, big or little endian order
- * - 'I[6S]c' for IPv6 addresses printed as specified by
- *       https://tools.ietf.org/html/rfc5952
  * - 'E[achnops]' For an escaped buffer, where rules are defined by combination
  *                of the following flags (see string_escape_mem() for the
  *                details):
@@ -2461,7 +2117,6 @@ early_param("no_hash_pointers", no_hash_pointers_enable);
  * - 'K' For a kernel pointer that should be hidden from unprivileged users.
  *       Use only for procfs, sysfs and similar files, not printk(); please
  *       read the documentation (path below) first.
- * - 'NF' For a netdev_features_t
  * - '4cc' V4L2 or DRM FourCC code, with endianness and raw numerical value.
  * - '4c[h[R]lb]' For generic FourCC code with raw numerical value. Both are
  *	 displayed in the big-endian format. This is the opposite of V4L2 or
@@ -2508,11 +2163,6 @@ early_param("no_hash_pointers", no_hash_pointers_enable);
  *		P node name, including a possible unit address
  * - 'x' For printing the address unmodified. Equivalent to "%lx".
  *       Please read the documentation (path below) before using!
- * - '[ku]s' For a BPF/tracing related format specifier, e.g. used out of
- *           bpf_trace_printk() where [ku] prefix specifies either kernel (k)
- *           or user (u) memory to probe, and:
- *              s a string, equivalent to "%s" on direct vsnprintf() use
- *
  * ** When making changes please also update:
  *	Documentation/core-api/printk-formats.rst
  *
@@ -2551,16 +2201,6 @@ char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 					/* [mM]F (FDDI) */
 					/* [mM]R (Reverse order; Bluetooth) */
 		return mac_address_string(buf, end, ptr, spec, fmt);
-	case 'I':			/* Formatted IP supported
-					 * 4:	1.2.3.4
-					 * 6:	0001:0203:...:0708
-					 * 6c:	1::708 or 1::1.2.3.4
-					 */
-	case 'i':			/* Contiguous:
-					 * 4:	001.002.003.004
-					 * 6:   000102...0f
-					 */
-		return ip_addr_string(buf, end, ptr, spec, fmt);
 	case 'E':
 		return escaped_string(buf, end, ptr, spec, fmt);
 	case 'U':
@@ -2569,8 +2209,6 @@ char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 		return va_format(buf, end, ptr, spec);
 	case 'K':
 		return restricted_pointer(buf, end, ptr, spec);
-	case 'N':
-		return netdev_bits(buf, end, ptr, spec, fmt);
 	case '4':
 		return fourcc_string(buf, end, ptr, spec, fmt);
 	case 'a':

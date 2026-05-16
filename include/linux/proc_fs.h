@@ -130,29 +130,7 @@ extern void proc_remove(struct proc_dir_entry *);
 extern void remove_proc_entry(const char *, struct proc_dir_entry *);
 extern int remove_proc_subtree(const char *, struct proc_dir_entry *);
 
-struct proc_dir_entry *proc_create_net_data(const char *name, umode_t mode,
-		struct proc_dir_entry *parent, const struct seq_operations *ops,
-		unsigned int state_size, void *data);
-#define proc_create_net(name, mode, parent, ops, state_size) \
-	proc_create_net_data(name, mode, parent, ops, state_size, NULL)
-struct proc_dir_entry *proc_create_net_single(const char *name, umode_t mode,
-		struct proc_dir_entry *parent,
-		int (*show)(struct seq_file *, void *), void *data);
-struct proc_dir_entry *proc_create_net_data_write(const char *name, umode_t mode,
-						  struct proc_dir_entry *parent,
-						  const struct seq_operations *ops,
-						  proc_write_t write,
-						  unsigned int state_size, void *data);
-struct proc_dir_entry *proc_create_net_single_write(const char *name, umode_t mode,
-						    struct proc_dir_entry *parent,
-						    int (*show)(struct seq_file *, void *),
-						    proc_write_t write,
-						    void *data);
 extern struct pid *tgid_pidfd_to_pid(const struct file *file);
-
-struct bpf_iter_aux_info;
-extern int bpf_iter_init_seq_net(void *priv_data, struct bpf_iter_aux_info *aux);
-extern void bpf_iter_fini_seq_net(void *priv_data);
 
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 /*
@@ -215,26 +193,12 @@ static inline void proc_remove(struct proc_dir_entry *de) {}
 #define remove_proc_entry(name, parent) do {} while (0)
 static inline int remove_proc_subtree(const char *name, struct proc_dir_entry *parent) { return 0; }
 
-#define proc_create_net_data(name, mode, parent, ops, state_size, data) ({NULL;})
-#define proc_create_net_data_write(name, mode, parent, ops, write, state_size, data) ({NULL;})
-#define proc_create_net(name, mode, parent, state_size, ops) ({NULL;})
-#define proc_create_net_single(name, mode, parent, show, data) ({NULL;})
-#define proc_create_net_single_write(name, mode, parent, show, write, data) ({NULL;})
-
 static inline struct pid *tgid_pidfd_to_pid(const struct file *file)
 {
 	return ERR_PTR(-EBADF);
 }
 
 #endif /* CONFIG_PROC_FS */
-
-struct net;
-
-static inline struct proc_dir_entry *proc_net_mkdir(
-	struct net *net, const char *name, struct proc_dir_entry *parent)
-{
-	return _proc_mkdir(name, 0, parent, net, true);
-}
 
 struct ns_common;
 int open_related_ns(struct ns_common *ns,

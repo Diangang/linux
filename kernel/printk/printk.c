@@ -38,6 +38,7 @@
 #include <linux/vmcore_info.h>
 #include <linux/ratelimit.h>
 #include <linux/kmsg_dump.h>
+#include <linux/kthread.h>
 #include <linux/syslog.h>
 #include <linux/cpu.h>
 #include <linux/rculist.h>

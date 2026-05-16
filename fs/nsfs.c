@@ -18,7 +18,6 @@
 #include <linux/utsname.h>
 #include <linux/exportfs.h>
 #include <linux/nstree.h>
-#include <net/net_namespace.h>
 
 #include "mount.h"
 #include "internal.h"
@@ -686,7 +685,6 @@ void nsproxy_ns_active_get(struct nsproxy *ns)
 	ns_ref_active_get(ns->ipc_ns);
 	ns_ref_active_get(ns->pid_ns_for_children);
 	ns_ref_active_get(ns->cgroup_ns);
-	ns_ref_active_get(ns->net_ns);
 	ns_ref_active_get(ns->time_ns);
 	ns_ref_active_get(ns->time_ns_for_children);
 }
@@ -698,7 +696,6 @@ void nsproxy_ns_active_put(struct nsproxy *ns)
 	ns_ref_active_put(ns->ipc_ns);
 	ns_ref_active_put(ns->pid_ns_for_children);
 	ns_ref_active_put(ns->cgroup_ns);
-	ns_ref_active_put(ns->net_ns);
 	ns_ref_active_put(ns->time_ns);
 	ns_ref_active_put(ns->time_ns_for_children);
 }

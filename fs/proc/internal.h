@@ -323,18 +323,6 @@ extern const struct inode_operations proc_ns_dir_inode_operations;
 extern const struct file_operations proc_ns_dir_operations;
 
 /*
- * proc_net.c
- */
-extern const struct file_operations proc_net_operations;
-extern const struct inode_operations proc_net_inode_operations;
-
-#ifdef CONFIG_NET
-extern int proc_net_init(void);
-#else
-static inline int proc_net_init(void) { return 0; }
-#endif
-
-/*
  * proc_self.c
  */
 extern int proc_setup_self(struct super_block *);
@@ -417,7 +405,7 @@ extern void task_mem(struct seq_file *, struct mm_struct *);
 extern const struct dentry_operations proc_net_dentry_ops;
 static inline void pde_force_lookup(struct proc_dir_entry *pde)
 {
-	/* /proc/net/ entries can be changed under us by setns(CLONE_NEWNET) */
+	/* proc entries can be changed under us by namespace transitions */
 	pde->flags |= PROC_ENTRY_FORCE_LOOKUP;
 }
 

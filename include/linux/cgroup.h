@@ -821,16 +821,6 @@ static inline void cgroup_account_cputime_field(struct task_struct *task,
 
 #endif	/* CONFIG_CGROUPS */
 
-/*
- * sock->sk_cgrp_data handling.  For more info, see sock_cgroup_data
- * definition in cgroup-defs.h.
- */
-
-static inline void cgroup_sk_alloc(struct sock_cgroup_data *skcd) {}
-static inline void cgroup_sk_clone(struct sock_cgroup_data *skcd) {}
-static inline void cgroup_sk_free(struct sock_cgroup_data *skcd) {}
-
-
 #ifdef CONFIG_CGROUPS
 
 void cgroup_enter_frozen(void);
@@ -855,9 +845,6 @@ static inline bool cgroup_task_frozen(struct task_struct *task)
 }
 
 #endif /* !CONFIG_CGROUPS */
-
-static inline void cgroup_bpf_get(struct cgroup *cgrp) {}
-static inline void cgroup_bpf_put(struct cgroup *cgrp) {}
 
 struct cgroup *task_get_cgroup1(struct task_struct *tsk, int hierarchy_id);
 

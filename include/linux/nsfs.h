@@ -6,6 +6,7 @@
 
 #include <linux/ns_common.h>
 #include <linux/cred.h>
+#include <linux/cgroup_namespace.h>
 #include <linux/pid_namespace.h>
 
 struct path;
@@ -28,7 +29,6 @@ void nsfs_init(void);
 	_Generic((__ns),						\
 		struct cgroup_namespace *: current->nsproxy->cgroup_ns,	\
 		struct ipc_namespace *:    current->nsproxy->ipc_ns,	\
-		struct net *:              current->nsproxy->net_ns,	\
 		struct pid_namespace *:    task_active_pid_ns(current),	\
 		struct mnt_namespace *:    current->nsproxy->mnt_ns,	\
 		struct time_namespace *:   current->nsproxy->time_ns,	\

@@ -515,36 +515,6 @@ __SC_COMP(__NR_shmctl, sys_shmctl, compat_sys_shmctl)
 __SC_COMP(__NR_shmat, sys_shmat, compat_sys_shmat)
 #define __NR_shmdt 197
 __SYSCALL(__NR_shmdt, sys_shmdt)
-#define __NR_socket 198
-__SYSCALL(__NR_socket, sys_socket)
-#define __NR_socketpair 199
-__SYSCALL(__NR_socketpair, sys_socketpair)
-#define __NR_bind 200
-__SYSCALL(__NR_bind, sys_bind)
-#define __NR_listen 201
-__SYSCALL(__NR_listen, sys_listen)
-#define __NR_accept 202
-__SYSCALL(__NR_accept, sys_accept)
-#define __NR_connect 203
-__SYSCALL(__NR_connect, sys_connect)
-#define __NR_getsockname 204
-__SYSCALL(__NR_getsockname, sys_getsockname)
-#define __NR_getpeername 205
-__SYSCALL(__NR_getpeername, sys_getpeername)
-#define __NR_sendto 206
-__SYSCALL(__NR_sendto, sys_sendto)
-#define __NR_recvfrom 207
-__SC_COMP(__NR_recvfrom, sys_recvfrom, compat_sys_recvfrom)
-#define __NR_setsockopt 208
-__SC_COMP(__NR_setsockopt, sys_setsockopt, sys_setsockopt)
-#define __NR_getsockopt 209
-__SC_COMP(__NR_getsockopt, sys_getsockopt, sys_getsockopt)
-#define __NR_shutdown 210
-__SYSCALL(__NR_shutdown, sys_shutdown)
-#define __NR_sendmsg 211
-__SC_COMP(__NR_sendmsg, sys_sendmsg, compat_sys_sendmsg)
-#define __NR_recvmsg 212
-__SC_COMP(__NR_recvmsg, sys_recvmsg, compat_sys_recvmsg)
 #define __NR_readahead 213
 __SC_COMP(__NR_readahead, sys_readahead, compat_sys_readahead)
 #define __NR_brk 214
@@ -607,14 +577,6 @@ __SYSCALL(__NR_move_pages, sys_move_pages)
 #define __NR_rt_tgsigqueueinfo 240
 __SC_COMP(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo, \
 	  compat_sys_rt_tgsigqueueinfo)
-#define __NR_accept4 242
-__SYSCALL(__NR_accept4, sys_accept4)
-
-#if defined(__ARCH_WANT_TIME32_SYSCALLS) || __BITS_PER_LONG != 32
-#define __NR_recvmmsg 243
-__SC_COMP_3264(__NR_recvmmsg, sys_recvmmsg_time32, sys_recvmmsg, compat_sys_recvmmsg_time32)
-#endif
-
 /*
  * Architectures may provide up to 16 syscalls of their own
  * starting with this value.
@@ -646,8 +608,6 @@ __SC_3264(__NR_clock_adjtime, sys_clock_adjtime32, sys_clock_adjtime)
 __SYSCALL(__NR_syncfs, sys_syncfs)
 #define __NR_setns 268
 __SYSCALL(__NR_setns, sys_setns)
-#define __NR_sendmmsg 269
-__SC_COMP(__NR_sendmmsg, sys_sendmmsg, compat_sys_sendmmsg)
 #define __NR_process_vm_readv 270
 __SYSCALL(__NR_process_vm_readv, sys_process_vm_readv)
 #define __NR_process_vm_writev 271
@@ -666,8 +626,6 @@ __SYSCALL(__NR_seccomp, sys_seccomp)
 __SYSCALL(__NR_getrandom, sys_getrandom)
 #define __NR_memfd_create 279
 __SYSCALL(__NR_memfd_create, sys_memfd_create)
-#define __NR_bpf 280
-__SYSCALL(__NR_bpf, sys_bpf)
 #define __NR_execveat 281
 __SC_COMP(__NR_execveat, sys_execveat, compat_sys_execveat)
 #define __NR_userfaultfd 282
@@ -730,8 +688,6 @@ __SC_COMP(__NR_pselect6_time64, sys_pselect6, compat_sys_pselect6_time64)
 __SC_COMP(__NR_ppoll_time64, sys_ppoll, compat_sys_ppoll_time64)
 #define __NR_io_pgetevents_time64 416
 __SC_COMP(__NR_io_pgetevents_time64, sys_io_pgetevents, compat_sys_io_pgetevents_time64)
-#define __NR_recvmmsg_time64 417
-__SC_COMP(__NR_recvmmsg_time64, sys_recvmmsg, compat_sys_recvmmsg_time64)
 #define __NR_mq_timedsend_time64 418
 __SYSCALL(__NR_mq_timedsend_time64, sys_mq_timedsend)
 #define __NR_mq_timedreceive_time64 419

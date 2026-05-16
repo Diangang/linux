@@ -19,7 +19,6 @@ struct dentry;
 struct file_operations;
 struct file_system_type;
 struct mnt_namespace;
-struct net;
 struct pid_namespace;
 struct super_block;
 struct user_namespace;
@@ -95,7 +94,6 @@ struct fs_context {
 	void			*sget_key;
 	struct dentry		*root;		/* The root and superblock */
 	struct user_namespace	*user_ns;	/* The user namespace for this mount */
-	struct net		*net_ns;	/* The network namespace for this mount */
 	const struct cred	*cred;		/* The mounter's credentials */
 	struct p_log		log;		/* Logging buffer */
 	const char		*source;	/* The source name (eg. dev path) */

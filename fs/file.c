@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/sched/signal.h>
+#include <linux/security.h>
 #include <linux/slab.h>
 #include <linux/file.h>
 #include <linux/fdtable.h>
@@ -21,7 +22,6 @@
 #include <linux/rcupdate.h>
 #include <linux/close_range.h>
 #include <linux/file_ref.h>
-#include <net/sock.h>
 #include <linux/init_task.h>
 
 #include "internal.h"
@@ -1403,7 +1403,6 @@ int receive_fd(struct file *file, int __user *ufd, unsigned int o_flags)
 			return error;
 	}
 
-	__receive_sock(fd_prepare_file(fdf));
 	return fd_publish(fdf);
 }
 EXPORT_SYMBOL_GPL(receive_fd);
@@ -1418,7 +1417,6 @@ int receive_fd_replace(int new_fd, struct file *file, unsigned int o_flags)
 	error = replace_fd(new_fd, file, o_flags);
 	if (error)
 		return error;
-	__receive_sock(file);
 	return new_fd;
 }
 

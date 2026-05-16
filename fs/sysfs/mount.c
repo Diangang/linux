@@ -16,7 +16,6 @@
 #include <linux/slab.h>
 #include <linux/user_namespace.h>
 #include <linux/fs_context.h>
-#include <net/net_namespace.h>
 
 #include "sysfs.h"
 
@@ -41,8 +40,6 @@ static void sysfs_fs_context_free(struct fs_context *fc)
 {
 	struct kernfs_fs_context *kfc = fc->fs_private;
 
-	if (kfc->ns_tag)
-		kobj_ns_drop(KOBJ_NS_TYPE_NET, kfc->ns_tag);
 	kernfs_free_fs_context(fc);
 	kfree(kfc);
 }
@@ -55,38 +52,22 @@ static const struct fs_context_operations sysfs_fs_context_ops = {
 static int sysfs_init_fs_context(struct fs_context *fc)
 {
 	struct kernfs_fs_context *kfc;
-	struct ns_common *ns;
-
-	if (!(fc->sb_flags & SB_KERNMOUNT)) {
-		if (!kobj_ns_current_may_mount(KOBJ_NS_TYPE_NET))
-			return -EPERM;
-	}
 
 	kfc = kzalloc_obj(struct kernfs_fs_context);
 	if (!kfc)
 		return -ENOMEM;
 
-	kfc->ns_tag = ns = kobj_ns_grab_current(KOBJ_NS_TYPE_NET);
 	kfc->root = sysfs_root;
 	kfc->magic = SYSFS_MAGIC;
 	fc->fs_private = kfc;
 	fc->ops = &sysfs_fs_context_ops;
-	if (ns) {
-		struct net *netns = to_net_ns(ns);
-
-		put_user_ns(fc->user_ns);
-		fc->user_ns = get_user_ns(netns->user_ns);
-	}
 	fc->global = true;
 	return 0;
 }
 
 static void sysfs_kill_sb(struct super_block *sb)
 {
-	struct ns_common *ns = (struct ns_common *)kernfs_super_ns(sb);
-
 	kernfs_kill_sb(sb);
-	kobj_ns_drop(KOBJ_NS_TYPE_NET, ns);
 }
 
 static struct file_system_type sysfs_fs_type = {

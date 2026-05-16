@@ -36,14 +36,12 @@ struct audit_sig_info {
 struct audit_buffer;
 struct audit_context;
 struct inode;
-struct netlink_skb_parms;
 struct path;
 struct linux_binprm;
 struct mq_attr;
 struct mqstat;
 struct audit_watch;
 struct audit_tree;
-struct sk_buff;
 struct kern_ipc_perm;
 struct lsm_id;
 struct lsm_prop;
@@ -97,31 +95,6 @@ enum audit_ntp_type {
 };
 
 struct audit_ntp_data {};
-
-enum audit_nfcfgop {
-	AUDIT_XT_OP_REGISTER,
-	AUDIT_XT_OP_REPLACE,
-	AUDIT_XT_OP_UNREGISTER,
-	AUDIT_NFT_OP_TABLE_REGISTER,
-	AUDIT_NFT_OP_TABLE_UNREGISTER,
-	AUDIT_NFT_OP_CHAIN_REGISTER,
-	AUDIT_NFT_OP_CHAIN_UNREGISTER,
-	AUDIT_NFT_OP_RULE_REGISTER,
-	AUDIT_NFT_OP_RULE_UNREGISTER,
-	AUDIT_NFT_OP_SET_REGISTER,
-	AUDIT_NFT_OP_SET_UNREGISTER,
-	AUDIT_NFT_OP_SETELEM_REGISTER,
-	AUDIT_NFT_OP_SETELEM_UNREGISTER,
-	AUDIT_NFT_OP_GEN_REGISTER,
-	AUDIT_NFT_OP_OBJ_REGISTER,
-	AUDIT_NFT_OP_OBJ_UNREGISTER,
-	AUDIT_NFT_OP_OBJ_RESET,
-	AUDIT_NFT_OP_FLOWTABLE_REGISTER,
-	AUDIT_NFT_OP_FLOWTABLE_UNREGISTER,
-	AUDIT_NFT_OP_SETELEM_RESET,
-	AUDIT_NFT_OP_RULE_RESET,
-	AUDIT_NFT_OP_INVALID,
-};
 
 extern int __init audit_register_class(int class, unsigned *list);
 extern int audit_classify_syscall(int abi, unsigned syscall);
@@ -200,12 +173,6 @@ static inline int audit_log_task_context(struct audit_buffer *ab)
 }
 static inline void audit_log_task_info(struct audit_buffer *ab)
 { }
-
-static inline int audit_log_nf_skb(struct audit_buffer *ab,
-				   const struct sk_buff *skb, u8 nfproto)
-{
-	return 0;
-}
 
 static inline kuid_t audit_get_loginuid(struct task_struct *tsk)
 {
@@ -361,11 +328,6 @@ static inline void audit_ntp_log(const struct audit_ntp_data *ad)
 { }
 
 static inline void audit_ptrace(struct task_struct *t)
-{ }
-
-static inline void audit_log_nfcfg(const char *name, u8 af,
-				   unsigned int nentries,
-				   enum audit_nfcfgop op, gfp_t gfp)
 { }
 
 #define audit_n_rules 0

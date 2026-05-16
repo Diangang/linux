@@ -5,7 +5,6 @@
 #include <linux/namei.h>
 #include <linux/file.h>
 #include <linux/utsname.h>
-#include <net/net_namespace.h>
 #include <linux/ipc_namespace.h>
 #include <linux/pid_namespace.h>
 #include <linux/user_namespace.h>

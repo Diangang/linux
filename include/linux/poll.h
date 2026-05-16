@@ -123,7 +123,7 @@ static inline __u16 mangle_poll(__poll_t val)
 #define M(X) __MAP(v, (__force __u16)EPOLL##X, POLL##X)
 	return M(IN) | M(OUT) | M(PRI) | M(ERR) | M(NVAL) |
 		M(RDNORM) | M(RDBAND) | M(WRNORM) | M(WRBAND) |
-		M(HUP) | M(RDHUP) | M(MSG);
+		M(HUP);
 #undef M
 }
 
@@ -132,7 +132,7 @@ static inline __poll_t demangle_poll(u16 val)
 #define M(X) (__force __poll_t)__MAP(val, POLL##X, (__force __u16)EPOLL##X)
 	return M(IN) | M(OUT) | M(PRI) | M(ERR) | M(NVAL) |
 		M(RDNORM) | M(RDBAND) | M(WRNORM) | M(WRBAND) |
-		M(HUP) | M(RDHUP) | M(MSG);
+		M(HUP);
 #undef M
 }
 #undef __MAP

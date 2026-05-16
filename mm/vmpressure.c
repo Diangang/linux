@@ -289,8 +289,6 @@ void vmpressure(gfp_t gfp, struct mem_cgroup *memcg, bool tree,
 			return;
 		schedule_work(&vmpr->work);
 	} else {
-		enum vmpressure_levels level;
-
 		/* For now, no users for root-level efficiency */
 		if (!memcg || mem_cgroup_is_root(memcg))
 			return;
@@ -304,20 +302,6 @@ void vmpressure(gfp_t gfp, struct mem_cgroup *memcg, bool tree,
 		}
 		vmpr->scanned = vmpr->reclaimed = 0;
 		spin_unlock(&vmpr->sr_lock);
-
-		level = vmpressure_calc_level(scanned, reclaimed);
-
-		if (level > VMPRESSURE_LOW) {
-			/*
-			 * Let the socket buffer allocator know that
-			 * we are having trouble reclaiming LRU pages.
-			 *
-			 * For hysteresis keep the pressure state
-			 * asserted for a second in which subsequent
-			 * pressure events can occur.
-			 */
-			mem_cgroup_set_socket_pressure(memcg);
-		}
 	}
 }
 

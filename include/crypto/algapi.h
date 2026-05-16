@@ -53,7 +53,6 @@ struct notifier_block;
 struct rtattr;
 struct scatterlist;
 struct seq_file;
-struct sk_buff;
 union crypto_no_such_thing;
 
 struct crypto_instance {

@@ -142,8 +142,6 @@ struct kobj_attribute {
 
 extern const struct sysfs_ops kobj_sysfs_ops;
 
-struct sock;
-
 /**
  * struct kset - a set of kobjects of a specific type, belonging to a specific subsystem.
  *

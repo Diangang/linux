@@ -38,7 +38,6 @@
 #include <linux/compat.h>
 #include <linux/rculist.h>
 #include <linux/capability.h>
-#include <net/busy_poll.h>
 
 /*
  * LOCKING:
@@ -219,16 +218,6 @@ struct eventpoll {
 	/* used to defer freeing past ep_get_upwards_depth_proc() RCU walk */
 	struct rcu_head rcu;
 
-#ifdef CONFIG_NET_RX_BUSY_POLL
-	/* used to track busy poll napi_id */
-	unsigned int napi_id;
-	/* busy poll timeout */
-	u32 busy_poll_usecs;
-	/* busy poll packet budget */
-	u16 busy_poll_budget;
-	bool prefer_busy_poll;
-#endif
-
 };
 
 /* Wrapper struct used by poll queueing */
@@ -237,9 +226,6 @@ struct ep_pqueue {
 	struct epitem *epi;
 };
 
-/*
- * Configuration options available inside /proc/sys/fs/epoll/
- */
 /* Maximum number of epoll watched descriptors, per user */
 static long max_user_watches __read_mostly;
 
@@ -291,7 +277,7 @@ static void unlist_file(struct epitems_head *head)
 	struct epitems_head *to_free = head;
 	struct hlist_node *p = rcu_dereference(hlist_first_rcu(&head->epitems));
 	if (p) {
-		struct epitem *epi= container_of(p, struct epitem, fllink);
+		struct epitem *epi = container_of(p, struct epitem, fllink);
 		spin_lock(&epi->ffd.file->f_lock);
 		if (!hlist_empty(&head->epitems))
 			to_free = NULL;
@@ -382,198 +368,7 @@ static inline int ep_events_available(struct eventpoll *ep)
 		READ_ONCE(ep->ovflist) != EP_UNACTIVE_PTR;
 }
 
-#ifdef CONFIG_NET_RX_BUSY_POLL
-/**
- * busy_loop_ep_timeout - check if busy poll has timed out. The timeout value
- * from the epoll instance ep is preferred, but if it is not set fallback to
- * the system-wide global via busy_loop_timeout.
- *
- * @start_time: The start time used to compute the remaining time until timeout.
- * @ep: Pointer to the eventpoll context.
- *
- * Return: true if the timeout has expired, false otherwise.
- */
-static bool busy_loop_ep_timeout(unsigned long start_time,
-				 struct eventpoll *ep)
-{
-	unsigned long bp_usec = READ_ONCE(ep->busy_poll_usecs);
 
-	if (bp_usec) {
-		unsigned long end_time = start_time + bp_usec;
-		unsigned long now = busy_loop_current_time();
-
-		return time_after(now, end_time);
-	} else {
-		return busy_loop_timeout(start_time);
-	}
-}
-
-static bool ep_busy_loop_on(struct eventpoll *ep)
-{
-	return !!READ_ONCE(ep->busy_poll_usecs) ||
-	       READ_ONCE(ep->prefer_busy_poll) ||
-	       net_busy_loop_on();
-}
-
-static bool ep_busy_loop_end(void *p, unsigned long start_time)
-{
-	struct eventpoll *ep = p;
-
-	return ep_events_available(ep) || busy_loop_ep_timeout(start_time, ep);
-}
-
-/*
- * Busy poll if globally on and supporting sockets found && no events,
- * busy loop will return if need_resched or ep_events_available.
- *
- * we must do our busy polling with irqs enabled
- */
-static bool ep_busy_loop(struct eventpoll *ep)
-{
-	unsigned int napi_id = READ_ONCE(ep->napi_id);
-	u16 budget = READ_ONCE(ep->busy_poll_budget);
-	bool prefer_busy_poll = READ_ONCE(ep->prefer_busy_poll);
-
-	if (!budget)
-		budget = BUSY_POLL_BUDGET;
-
-	if (napi_id_valid(napi_id) && ep_busy_loop_on(ep)) {
-		napi_busy_loop(napi_id, ep_busy_loop_end,
-			       ep, prefer_busy_poll, budget);
-		if (ep_events_available(ep))
-			return true;
-		/*
-		 * Busy poll timed out.  Drop NAPI ID for now, we can add
-		 * it back in when we have moved a socket with a valid NAPI
-		 * ID onto the ready list.
-		 */
-		if (prefer_busy_poll)
-			napi_resume_irqs(napi_id);
-		ep->napi_id = 0;
-		return false;
-	}
-	return false;
-}
-
-/*
- * Set epoll busy poll NAPI ID from sk.
- */
-static inline void ep_set_busy_poll_napi_id(struct epitem *epi)
-{
-	struct eventpoll *ep = epi->ep;
-	unsigned int napi_id;
-	struct socket *sock;
-	struct sock *sk;
-
-	if (!ep_busy_loop_on(ep))
-		return;
-
-	sock = sock_from_file(epi->ffd.file);
-	if (!sock)
-		return;
-
-	sk = sock->sk;
-	if (!sk)
-		return;
-
-	napi_id = READ_ONCE(sk->sk_napi_id);
-
-	/* Non-NAPI IDs can be rejected
-	 *	or
-	 * Nothing to do if we already have this ID
-	 */
-	if (!napi_id_valid(napi_id) || napi_id == ep->napi_id)
-		return;
-
-	/* record NAPI ID for use in next busy poll */
-	ep->napi_id = napi_id;
-}
-
-static long ep_eventpoll_bp_ioctl(struct file *file, unsigned int cmd,
-				  unsigned long arg)
-{
-	struct eventpoll *ep = file->private_data;
-	void __user *uarg = (void __user *)arg;
-	struct epoll_params epoll_params;
-
-	switch (cmd) {
-	case EPIOCSPARAMS:
-		if (copy_from_user(&epoll_params, uarg, sizeof(epoll_params)))
-			return -EFAULT;
-
-		/* pad byte must be zero */
-		if (epoll_params.__pad)
-			return -EINVAL;
-
-		if (epoll_params.busy_poll_usecs > S32_MAX)
-			return -EINVAL;
-
-		if (epoll_params.prefer_busy_poll > 1)
-			return -EINVAL;
-
-		if (epoll_params.busy_poll_budget > NAPI_POLL_WEIGHT &&
-		    !capable(CAP_NET_ADMIN))
-			return -EPERM;
-
-		WRITE_ONCE(ep->busy_poll_usecs, epoll_params.busy_poll_usecs);
-		WRITE_ONCE(ep->busy_poll_budget, epoll_params.busy_poll_budget);
-		WRITE_ONCE(ep->prefer_busy_poll, epoll_params.prefer_busy_poll);
-		return 0;
-	case EPIOCGPARAMS:
-		memset(&epoll_params, 0, sizeof(epoll_params));
-		epoll_params.busy_poll_usecs = READ_ONCE(ep->busy_poll_usecs);
-		epoll_params.busy_poll_budget = READ_ONCE(ep->busy_poll_budget);
-		epoll_params.prefer_busy_poll = READ_ONCE(ep->prefer_busy_poll);
-		if (copy_to_user(uarg, &epoll_params, sizeof(epoll_params)))
-			return -EFAULT;
-		return 0;
-	default:
-		return -ENOIOCTLCMD;
-	}
-}
-
-static void ep_suspend_napi_irqs(struct eventpoll *ep)
-{
-	unsigned int napi_id = READ_ONCE(ep->napi_id);
-
-	if (napi_id_valid(napi_id) && READ_ONCE(ep->prefer_busy_poll))
-		napi_suspend_irqs(napi_id);
-}
-
-static void ep_resume_napi_irqs(struct eventpoll *ep)
-{
-	unsigned int napi_id = READ_ONCE(ep->napi_id);
-
-	if (napi_id_valid(napi_id) && READ_ONCE(ep->prefer_busy_poll))
-		napi_resume_irqs(napi_id);
-}
-
-#else
-
-static inline bool ep_busy_loop(struct eventpoll *ep)
-{
-	return false;
-}
-
-static inline void ep_set_busy_poll_napi_id(struct epitem *epi)
-{
-}
-
-static long ep_eventpoll_bp_ioctl(struct file *file, unsigned int cmd,
-				  unsigned long arg)
-{
-	return -EOPNOTSUPP;
-}
-
-static void ep_suspend_napi_irqs(struct eventpoll *ep)
-{
-}
-
-static void ep_resume_napi_irqs(struct eventpoll *ep)
-{
-}
-
-#endif /* CONFIG_NET_RX_BUSY_POLL */
 
 /*
  * As described in commit 0ccf831cb lockdep: annotate epoll
@@ -581,16 +376,16 @@ static void ep_resume_napi_irqs(struct eventpoll *ep)
  * manner. Wake ups can nest inside each other, but are never done
  * with the same locking. For example:
  *
- *   dfd = socket(...);
+ *   dfd = open(...);
  *   efd1 = epoll_create();
  *   efd2 = epoll_create();
  *   epoll_ctl(efd1, EPOLL_CTL_ADD, dfd, ...);
  *   epoll_ctl(efd2, EPOLL_CTL_ADD, efd1, ...);
  *
- * When a packet arrives to the device underneath "dfd", the net code will
- * issue a wake_up() on its poll wake list. Epoll (efd1) has installed a
+ * When "dfd" becomes readable, its driver will issue a wake_up() on its
+ * poll wake list. Epoll (efd1) has installed a
  * callback wakeup entry on that queue, and the wake_up() performed by the
- * "dfd" net code will end up in ep_poll_callback(). At this point epoll
+ * "dfd" file operations will end up in ep_poll_callback(). At this point epoll
  * (efd1) notices that it may have some event ready, so it needs to wake up
  * the waiters on its poll wait list (efd2). So it calls ep_poll_safewake()
  * that ends up in another wake_up(), after having checked about the
@@ -763,7 +558,6 @@ static bool ep_refcount_dec_and_test(struct eventpoll *ep)
 
 static void ep_free(struct eventpoll *ep)
 {
-	ep_resume_napi_irqs(ep);
 	mutex_destroy(&ep->mtx);
 	free_uid(ep->user);
 	wakeup_source_unregister(ep->ws);
@@ -927,10 +721,6 @@ static long ep_eventpoll_ioctl(struct file *file, unsigned int cmd,
 		return -EINVAL;
 
 	switch (cmd) {
-	case EPIOCSPARAMS:
-	case EPIOCGPARAMS:
-		ret = ep_eventpoll_bp_ioctl(file, cmd, arg);
-		break;
 	default:
 		ret = -EINVAL;
 		break;
@@ -1211,8 +1001,6 @@ static int ep_poll_callback(wait_queue_entry_t *wait, unsigned mode, int sync, v
 	int ewake = 0;
 
 	spin_lock_irqsave(&ep->lock, flags);
-
-	ep_set_busy_poll_napi_id(epi);
 
 	/*
 	 * If the event mask does not contain any poll(2) event, we consider the
@@ -1617,9 +1405,6 @@ static int ep_insert(struct eventpoll *ep, const struct epoll_event *event,
 	/* We have to drop the new item inside our item list to keep track of it */
 	spin_lock_irq(&ep->lock);
 
-	/* record NAPI ID of new item if present */
-	ep_set_busy_poll_napi_id(epi);
-
 	/* If the file is already "ready" we drop it inside the ready list */
 	if (revents && !ep_is_linked(epi)) {
 		list_add_tail(&epi->rdllink, &ep->rdllist);
@@ -1860,8 +1645,6 @@ static int ep_try_send_events(struct eventpoll *ep,
 	 * more luck.
 	 */
 	res = ep_send_events(ep, events, maxevents);
-	if (res > 0)
-		ep_suspend_napi_irqs(ep);
 	return res;
 }
 
@@ -1931,10 +1714,6 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 
 		if (timed_out)
 			return 0;
-
-		eavail = ep_busy_loop(ep);
-		if (eavail)
-			continue;
 
 		if (signal_pending(current))
 			return -EINTR;

@@ -20,7 +20,6 @@
 #include <linux/sched.h>
 #include <linux/u64_stats_sync.h>
 #include <linux/workqueue.h>
-#include <linux/bpf-cgroup-defs.h>
 #include <linux/psi_types.h>
 
 #ifdef CONFIG_CGROUPS
@@ -617,15 +616,8 @@ struct cgroup {
 	/* used to track pressure stalls */
 	struct psi_group *psi;
 
-	/* used to store eBPF programs */
-	struct cgroup_bpf bpf;
-
 	/* Used to store internal freezer state */
 	struct cgroup_freezer_state freezer;
-
-#ifdef CONFIG_EXT_SUB_SCHED
-	struct scx_sched __rcu *scx_sched;
-#endif
 
 	/* All ancestors including self */
 	union {
@@ -907,10 +899,6 @@ static inline void cgroup_threadgroup_change_begin(struct task_struct *tsk)
 static inline void cgroup_threadgroup_change_end(struct task_struct *tsk) {}
 
 #endif	/* CONFIG_CGROUPS */
-
-
-struct sock_cgroup_data {
-};
 
 
 #endif	/* _LINUX_CGROUP_DEFS_H */

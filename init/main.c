@@ -104,7 +104,6 @@
 #include <linux/time_namespace.h>
 #include <linux/unaligned.h>
 #include <linux/vdso_datastore.h>
-#include <net/net_namespace.h>
 
 #include <asm/io.h>
 #include <asm/setup.h>
@@ -1019,7 +1018,6 @@ void start_kernel(void)
 	key_init();
 	security_init();
 	dbg_late_init();
-	net_ns_init();
 	vfs_caches_init();
 	pagecache_init();
 	signals_init();

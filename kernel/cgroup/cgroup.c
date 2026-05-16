@@ -27,7 +27,6 @@
 
 #include "cgroup-internal.h"
 
-#include <linux/bpf-cgroup.h>
 #include <linux/cred.h>
 #include <linux/errno.h>
 #include <linux/init_task.h>
@@ -58,7 +57,6 @@
 #include <linux/psi.h>
 #include <linux/nstree.h>
 #include <linux/irq_work.h>
-#include <net/sock.h>
 #define CGROUP_FILE_NAME_MAX		(MAX_CGROUP_TYPE_NAMELEN +	\
 					 MAX_CFTYPE_NAME + 2)
 /* let's not notify more than 100 times per second */
@@ -5244,8 +5242,6 @@ static void css_free_rwork_fn(struct work_struct *work)
 		if (!cgroup_on_dfl(cgrp))
 			cgroup1_pidlist_destroy_all(cgrp);
 		cancel_work_sync(&cgrp->release_agent_work);
-		bpf_cgrp_storage_free(cgrp);
-
 		if (cgroup_parent(cgrp)) {
 			/*
 			 * We get a ref to the parent, and put the ref when
@@ -6092,8 +6088,6 @@ int __init cgroup_init(void)
 	 */
 	hash_add(css_set_table, &init_css_set.hlist,
 		 css_set_hash(init_css_set.subsys));
-
-	cgroup_bpf_lifetime_notifier_init();
 
 	BUG_ON(cgroup_setup_root(&cgrp_dfl_root, 0));
 

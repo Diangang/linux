@@ -3,10 +3,6 @@
 
 #include <linux/sched/cputime.h>
 
-#include <linux/bpf.h>
-#include <linux/btf.h>
-#include <linux/btf_ids.h>
-
 static DEFINE_SPINLOCK(rstat_base_lock);
 static DEFINE_PER_CPU(struct llist_head, rstat_backlog_list);
 
@@ -65,16 +61,12 @@ static inline struct llist_head *ss_lhead_cpu(struct cgroup_subsys *ss, int cpu)
  * barrier after updating the per-cpu stats and before calling
  * css_rstat_updated().
  */
-__bpf_kfunc void css_rstat_updated(struct cgroup_subsys_state *css, int cpu)
+void css_rstat_updated(struct cgroup_subsys_state *css, int cpu)
 {
 	struct llist_head *lhead;
 	struct css_rstat_cpu *rstatc;
 	struct llist_node *self;
 
-	/*
-	 * Since bpf programs can call this function, prevent access to
-	 * uninitialized rstat pointers.
-	 */
 	if (!css_uses_rstat(css))
 		return;
 
@@ -323,28 +315,6 @@ static struct cgroup_subsys_state *css_rstat_updated_list(
 }
 
 /*
- * A hook for bpf stat collectors to attach to and flush their stats.
- * Together with providing bpf kfuncs for css_rstat_updated() and
- * css_rstat_flush(), this enables a complete workflow where bpf progs that
- * collect cgroup stats can integrate with rstat for efficient flushing.
- *
- * A static noinline declaration here could cause the compiler to optimize away
- * the function. A global noinline declaration will keep the definition, but may
- * optimize away the callsite. Therefore, __weak is needed to ensure that the
- * call is still emitted, by telling the compiler that we don't know what the
- * function might eventually be.
- */
-
-__bpf_hook_start();
-
-__weak noinline void bpf_rstat_flush(struct cgroup *cgrp,
-				     struct cgroup *parent, int cpu)
-{
-}
-
-__bpf_hook_end();
-
-/*
  * Helper functions for locking.
  *
  * This makes it easier to diagnose locking issues and contention in
@@ -390,15 +360,11 @@ static inline void __css_rstat_unlock(struct cgroup_subsys_state *css,
  *
  * This function may block.
  */
-__bpf_kfunc void css_rstat_flush(struct cgroup_subsys_state *css)
+void css_rstat_flush(struct cgroup_subsys_state *css)
 {
 	int cpu;
 	bool is_self = css_is_self(css);
 
-	/*
-	 * Since bpf programs can call this function, prevent access to
-	 * uninitialized rstat pointers.
-	 */
 	if (!css_uses_rstat(css))
 		return;
 
@@ -410,11 +376,9 @@ __bpf_kfunc void css_rstat_flush(struct cgroup_subsys_state *css)
 		__css_rstat_lock(css, cpu);
 		pos = css_rstat_updated_list(css, cpu);
 		for (; pos; pos = pos->rstat_flush_next) {
-			if (is_self) {
+			if (is_self)
 				cgroup_base_stat_flush(pos->cgroup, cpu);
-				bpf_rstat_flush(pos->cgroup,
-						cgroup_parent(pos->cgroup), cpu);
-			} else
+			else
 				pos->ss->css_rstat_flush(pos, cpu);
 		}
 		__css_rstat_unlock(css, cpu);
@@ -715,21 +679,3 @@ void cgroup_base_stat_cputime_show(struct seq_file *seq)
 
 	cgroup_force_idle_show(seq, &bstat);
 }
-
-/* Add bpf kfuncs for css_rstat_updated() and css_rstat_flush() */
-BTF_KFUNCS_START(bpf_rstat_kfunc_ids)
-BTF_ID_FLAGS(func, css_rstat_updated)
-BTF_ID_FLAGS(func, css_rstat_flush, KF_SLEEPABLE)
-BTF_KFUNCS_END(bpf_rstat_kfunc_ids)
-
-static const struct btf_kfunc_id_set bpf_rstat_kfunc_set = {
-	.owner          = THIS_MODULE,
-	.set            = &bpf_rstat_kfunc_ids,
-};
-
-static int __init bpf_rstat_kfunc_init(void)
-{
-	return register_btf_kfunc_id_set(BPF_PROG_TYPE_TRACING,
-					 &bpf_rstat_kfunc_set);
-}
-late_initcall(bpf_rstat_kfunc_init);
