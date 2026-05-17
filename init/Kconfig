@@ -927,7 +927,6 @@ config PROFILING
 	  Say Y here to enable the extended profiling support mechanisms used
 	  by profilers.
 
-source "kernel/Kconfig.kexec"
 
 endmenu		# General setup
 

@@ -29,13 +29,6 @@ config PROC_FS
 	  This option will enlarge your kernel by about 67 KB. Several
 	  programs depend on this, so everyone should say Y here.
 
-config PROC_VMCORE
-	bool "/proc/vmcore support"
-	depends on PROC_FS && CRASH_DUMP
-	default y
-	help
-	  Exports the dump image of crashed kernel in ELF format.
-
 config PROC_SYSCTL
 	bool "Sysctl support (/proc/sys)" if EXPERT
 	depends on PROC_FS

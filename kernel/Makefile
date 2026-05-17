@@ -62,12 +62,6 @@ endif
 obj-$(CONFIG_UID16) += uid16.o
 obj-$(CONFIG_KALLSYMS) += kallsyms.o
 obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
-obj-$(CONFIG_VMCORE_INFO) += vmcore_info.o elfcorehdr.o
-obj-$(CONFIG_CRASH_RESERVE) += crash_reserve.o
-obj-$(CONFIG_KEXEC_CORE) += kexec_core.o
-obj-$(CONFIG_CRASH_DUMP) += crash_core.o
-obj-$(CONFIG_CRASH_DM_CRYPT) += crash_dump_dm_crypt.o
-obj-$(CONFIG_KEXEC) += kexec.o
 obj-$(CONFIG_CGROUPS) += cgroup/
 obj-$(CONFIG_UTS_NS) += utsname.o
 obj-$(CONFIG_USER_NS) += user_namespace.o

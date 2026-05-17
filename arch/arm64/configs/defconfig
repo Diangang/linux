@@ -177,11 +177,6 @@ CONFIG_PROFILING=y
 #
 # Kexec and crash features
 #
-CONFIG_CRASH_RESERVE=y
-CONFIG_VMCORE_INFO=y
-CONFIG_KEXEC_CORE=y
-CONFIG_KEXEC=y
-CONFIG_CRASH_DUMP=y
 # end of Kexec and crash features
 # end of General setup
 
@@ -693,7 +688,6 @@ CONFIG_FILE_LOCKING=y
 # Pseudo filesystems
 #
 CONFIG_PROC_FS=y
-CONFIG_PROC_VMCORE=y
 CONFIG_PROC_SYSCTL=y
 CONFIG_PROC_PAGE_MONITOR=y
 CONFIG_KERNFS=y

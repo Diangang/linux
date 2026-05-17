@@ -30,20 +30,6 @@ KCOV_INSTRUMENT_unwind_orc.o				:= n
 KCOV_INSTRUMENT_unwind_frame.o				:= n
 KCOV_INSTRUMENT_unwind_guess.o				:= n
 
-# Disable KCOV to prevent crashes during kexec: load_segments() invalidates
-# the GS base, which KCOV relies on for per-CPU data.
-#
-# As KCOV and KEXEC compatibility should be preserved (e.g. syzkaller is
-# using it to collect crash dumps during kernel fuzzing), disabling
-# KCOV for KEXEC kernels is not an option. Selectively disabling KCOV
-# instrumentation for individual affected functions can be fragile, while
-# adding more checks to KCOV would slow it down.
-#
-# As a compromise solution, disable KCOV instrumentation for the whole
-# source code file. If its coverage is ever needed, other approaches
-# should be considered.
-KCOV_INSTRUMENT_machine_kexec_64.o			:= n
-
 CFLAGS_head32.o := -fno-stack-protector
 CFLAGS_head64.o := -fno-stack-protector
 CFLAGS_irq.o := -I $(src)/../include/asm/trace
@@ -93,10 +79,6 @@ obj-$(CONFIG_SMP)		+= setup_percpu.o
 obj-$(CONFIG_X86_MPPARSE)	+= mpparse.o
 obj-y				+= apic/
 obj-$(CONFIG_X86_TSC)		+= trace_clock.o
-obj-$(CONFIG_VMCORE_INFO)	+= vmcore_info_$(BITS).o
-obj-$(CONFIG_KEXEC_CORE)	+= machine_kexec_$(BITS).o
-obj-$(CONFIG_KEXEC_CORE)	+= relocate_kernel_$(BITS).o
-obj-$(CONFIG_CRASH_DUMP)	+= crash_dump_$(BITS).o crash.o
 obj-$(CONFIG_HPET_TIMER) 	+= hpet.o
 
 obj-$(CONFIG_AMD_NB)		+= amd_nb.o

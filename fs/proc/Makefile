@@ -28,6 +28,5 @@ proc-y	+= namespaces.o
 proc-y	+= self.o
 proc-y	+= thread_self.o
 proc-$(CONFIG_PROC_SYSCTL)	+= proc_sysctl.o
-proc-$(CONFIG_PROC_VMCORE)	+= vmcore.o
 proc-$(CONFIG_PRINTK)	+= kmsg.o
 proc-$(CONFIG_PROC_PAGE_MONITOR)	+= page.o
