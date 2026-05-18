@@ -438,7 +438,6 @@ CONFIG_COREDUMP=y
 #
 # Memory Management options
 #
-CONFIG_SWAP=y
 
 #
 # Slab allocator options
