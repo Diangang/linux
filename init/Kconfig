@@ -566,40 +566,6 @@ config FUTEX_MPOL
 	depends on FUTEX && NUMA
 	default y
 
-config EPOLL
-	bool "Enable eventpoll support" if EXPERT
-	default y
-	help
-	  Disabling this option will cause the kernel to be built without
-	  support for epoll family of system calls.
-
-config SIGNALFD
-	bool "Enable signalfd() system call" if EXPERT
-	default y
-	help
-	  Enable the signalfd() system call that allows to receive signals
-	  on a file descriptor.
-
-	  If unsure, say Y.
-
-config TIMERFD
-	bool "Enable timerfd() system call" if EXPERT
-	default y
-	help
-	  Enable the timerfd() system call that allows to receive timer
-	  events on a file descriptor.
-
-	  If unsure, say Y.
-
-config EVENTFD
-	bool "Enable eventfd() system call" if EXPERT
-	default y
-	help
-	  Enable the eventfd() system call that allows to receive both
-	  kernel notification (ie. KAIO) or userspace notifications.
-
-	  If unsure, say Y.
-
 config SHMEM
 	bool "Use full shmem filesystem" if EXPERT
 	default y
@@ -610,14 +576,6 @@ config SHMEM
 	  to userspace as tmpfs if TMPFS is enabled. Disabling this
 	  option replaces shmem and tmpfs with the much simpler ramfs code,
 	  which may be appropriate on small systems without swap.
-
-config AIO
-	bool "Enable AIO support" if EXPERT
-	default y
-	help
-	  This option enables POSIX asynchronous I/O which may by used
-	  by some high performance threaded applications. Disabling
-	  this option saves about 7k.
 
 config MEMBARRIER
 	bool "Enable membarrier() system call" if EXPERT

@@ -20,12 +20,7 @@ obj-y :=	open.o read_write.o file_table.o super.o \
 
 obj-$(CONFIG_BUFFER_HEAD)	+= buffer.o mpage.o
 obj-$(CONFIG_PROC_FS)		+= proc_namespace.o
-obj-$(CONFIG_EPOLL)		+= eventpoll.o
 obj-y				+= anon_inodes.o
-obj-$(CONFIG_SIGNALFD)		+= signalfd.o
-obj-$(CONFIG_TIMERFD)		+= timerfd.o
-obj-$(CONFIG_EVENTFD)		+= eventfd.o
-obj-$(CONFIG_AIO)               += aio.o
 obj-$(CONFIG_FILE_LOCKING)      += locks.o
 obj-$(CONFIG_BINFMT_SCRIPT)	+= binfmt_script.o
 obj-$(CONFIG_BINFMT_ELF)	+= binfmt_elf.o
