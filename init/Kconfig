@@ -534,13 +534,6 @@ config BUG
 	  option for embedded systems with no facilities for reporting errors.
 	  Just say Y.
 
-config ELF_CORE
-	depends on COREDUMP
-	default y
-	bool "Enable ELF core dumps" if EXPERT
-	help
-	  Enable support for generating core dumps. Disabling saves about 4k.
-
 config FUTEX
 	bool "Enable futex support" if EXPERT
 	depends on !(SPARC32 && SMP)

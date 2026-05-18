@@ -59,12 +59,4 @@ config BINFMT_SCRIPT
 
 	  Most systems will not boot if you say M or N here.  If unsure, say Y.
 
-config COREDUMP
-	bool "Enable core dump support" if EXPERT
-	default y
-	help
-	  This option enables support for performing core dumps. You almost
-	  certainly want to say Y here. Not necessary on systems that never
-	  need debugging or only ever run flawless code.
-
 endmenu
