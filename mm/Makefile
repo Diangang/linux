@@ -38,10 +38,6 @@ mmu-$(CONFIG_MMU)	:= highmem.o memory.o mincore.o \
 			   pgtable-generic.o rmap.o vmalloc.o vma.o vma_exec.o
 
 
-ifdef CONFIG_CROSS_MEMORY_ATTACH
-mmu-$(CONFIG_MMU)	+= process_vm_access.o
-endif
-
 ifdef CONFIG_64BIT
 mmu-$(CONFIG_MMU)	+= mseal.o
 endif
@@ -66,10 +62,6 @@ obj-y += init-mm.o
 obj-y += memblock.o
 obj-y += slub.o
 
-ifdef CONFIG_MMU
-	obj-$(CONFIG_ADVISE_SYSCALLS)	+= madvise.o
-endif
-
 obj-$(CONFIG_HAS_DMA)	+= dmapool.o
 obj-$(CONFIG_HUGETLBFS)	+= hugetlb.o hugetlb_sysfs.o hugetlb_sysctl.o
 obj-$(CONFIG_HUGETLB_PAGE_OPTIMIZE_VMEMMAP)	+= hugetlb_vmemmap.o
@@ -89,7 +81,6 @@ obj-$(CONFIG_MEMORY_ISOLATION) += page_isolation.o
 obj-$(CONFIG_GENERIC_EARLY_IOREMAP) += early_ioremap.o
 obj-$(CONFIG_NUMA) += numa.o
 obj-$(CONFIG_NUMA_MEMBLKS) += numa_memblks.o
-obj-$(CONFIG_SECRETMEM) += secretmem.o
 obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
 obj-$(CONFIG_MEMFD_CREATE) += memfd.o
 obj-$(CONFIG_GENERIC_IOREMAP) += ioremap.o

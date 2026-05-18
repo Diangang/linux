@@ -330,15 +330,6 @@ config VM_EVENT_COUNTERS
 config ARCH_HAS_PTE_SPECIAL
 	bool
 
-config SECRETMEM
-	default y
-	bool "Enable memfd_secret() system call" if EXPERT
-	depends on ARCH_HAS_SET_DIRECT_MAP
-	help
-	  Enable the memfd_secret() system call with the ability to create
-	  memory areas visible only in the context of the owning process and
-	  not mapped to other processes and other kernel page tables.
-
 if USERFAULTFD
 endif # USERFAULTFD
 
