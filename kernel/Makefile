@@ -72,7 +72,6 @@ obj-$(CONFIG_JUMP_LABEL) += jump_label.o
 obj-$(CONFIG_CONTEXT_TRACKING) += context_tracking.o
 
 obj-$(CONFIG_HAS_IOMEM) += iomem.o
-obj-$(CONFIG_RSEQ) += rseq.o
 
 
 CFLAGS_kstack_erase.o += $(DISABLE_KSTACK_ERASE)
