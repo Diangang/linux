@@ -59,7 +59,6 @@ ifneq ($(CONFIG_SMP),y)
 obj-y += up.o
 endif
 obj-$(CONFIG_UID16) += uid16.o
-obj-$(CONFIG_KALLSYMS) += kallsyms.o
 obj-$(CONFIG_SMP) += stop_machine.o
 obj-$(CONFIG_SECCOMP) += seccomp.o
 obj-$(CONFIG_SYSCTL) += utsname_sysctl.o

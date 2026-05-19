@@ -3,21 +3,6 @@ menu "Kernel hacking"
 
 menu "printk and dmesg options"
 
-config PRINTK_TIME
-	bool "Show timing information on printks"
-	depends on PRINTK
-	help
-	  Selecting this option causes time stamps of the printk()
-	  messages to be added to the output of the syslog() system
-	  call and at the console.
-
-	  The timestamp is always recorded internally, and exported
-	  to /dev/kmsg. This flag just specifies if the timestamp should
-	  be included, not that the timestamp is recorded.
-
-	  The behavior is also controlled by the kernel command line
-	  parameter printk.time=1. See Documentation/admin-guide/kernel-parameters.rst
-
 config CONSOLE_LOGLEVEL_DEFAULT
 	int "Default console loglevel (1-15)"
 	range 1 15
@@ -58,24 +43,6 @@ config MESSAGE_LOGLEVEL_DEFAULT
 	  Note: This does not affect what message level gets printed on the console
 	  by default. To change that, use loglevel=<x> in the kernel bootargs,
 	  or pick a different CONSOLE_LOGLEVEL_DEFAULT configuration value.
-
-config SYMBOLIC_ERRNAME
-	bool "Support symbolic error names in printf"
-	default y if PRINTK
-	help
-	  If you say Y here, the kernel's printf implementation will
-	  be able to print symbolic error names such as ENOSPC instead
-	  of the number 28. It makes the kernel image slightly larger
-	  (about 3KB), but can make the kernel logs easier to read.
-
-config DEBUG_BUGVERBOSE
-	bool "Verbose BUG() reporting (adds 70K)" if DEBUG_KERNEL && EXPERT
-	depends on BUG && (GENERIC_BUG || n)
-	default y
-	help
-	  Say Y here to make BUG() panics output the file name and line number
-	  of the BUG call as well as the EIP and oops trace.  This aids
-	  debugging but costs about 70-100K of memory.
 
 endmenu # "printk and dmesg options"
 
