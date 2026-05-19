@@ -5,7 +5,6 @@ menu "Executable file formats"
 config BINFMT_ELF
 	bool "Kernel support for ELF binaries"
 	depends on MMU
-	select ELFCORE
 	default y
 	help
 	  ELF (Executable and Linkable Format) is a format for libraries and
@@ -39,10 +38,5 @@ config ARCH_HAVE_ELF_PROT
 
 config ARCH_USE_GNU_PROPERTY
 	bool
-
-config ELFCORE
-	bool
-	help
-	  This option enables kernel/elfcore.o.
 
 endmenu

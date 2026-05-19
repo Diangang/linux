@@ -511,7 +511,6 @@ CONFIG_FREEZER=y
 # Executable file formats
 #
 CONFIG_BINFMT_ELF=y
-CONFIG_ELFCORE=y
 # end of Executable file formats
 
 #
