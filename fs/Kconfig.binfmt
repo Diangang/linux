@@ -45,18 +45,4 @@ config ELFCORE
 	help
 	  This option enables kernel/elfcore.o.
 
-config BINFMT_SCRIPT
-	tristate "Kernel support for scripts starting with #!"
-	default y
-	help
-	  Say Y here if you want to execute interpreted scripts starting with
-	  #! followed by the path to an interpreter.
-
-	  You can build this support as a module; however, until that module
-	  gets loaded, you cannot run scripts.  Thus, if you want to load this
-	  module from an initramfs, the portion of the initramfs before loading
-	  this module must consist of compiled binaries only.
-
-	  Most systems will not boot if you say M or N here.  If unsure, say Y.
-
 endmenu

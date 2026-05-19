@@ -22,7 +22,6 @@ obj-$(CONFIG_BUFFER_HEAD)	+= buffer.o mpage.o
 obj-$(CONFIG_PROC_FS)		+= proc_namespace.o
 obj-y				+= anon_inodes.o
 obj-$(CONFIG_FILE_LOCKING)      += locks.o
-obj-$(CONFIG_BINFMT_SCRIPT)	+= binfmt_script.o
 obj-$(CONFIG_BINFMT_ELF)	+= binfmt_elf.o
 
 obj-$(CONFIG_SYSCTL)		+= drop_caches.o sysctls.o
