@@ -481,8 +481,6 @@ CONFIG_BLOCK=y
 #
 # Partition Types
 #
-CONFIG_MSDOS_PARTITION=y
-CONFIG_EFI_PARTITION=y
 # end of Partition Types
 
 

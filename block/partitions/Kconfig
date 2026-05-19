@@ -4,18 +4,4 @@
 #
 menu "Partition Types"
 
-config MSDOS_PARTITION
-	bool "PC BIOS (MSDOS partition tables) support" if PARTITION_ADVANCED
-	default y
-	help
-	  Say Y here.
-
-config EFI_PARTITION
-	bool "EFI GUID Partition support" if PARTITION_ADVANCED
-	default y
-	select CRC32
-	help
-	  Say Y here if you would like to use hard disks under Linux which
-	  were partitioned using EFI GPT.
-
 endmenu
