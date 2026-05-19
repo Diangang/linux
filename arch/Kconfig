@@ -400,23 +400,6 @@ config HAVE_ARCH_SECCOMP_FILTER
 	    SECCOMP_ARCH_NATIVE_NR, SECCOMP_ARCH_NATIVE_NAME defined. If
 	    COMPAT is supported, have the SECCOMP_ARCH_COMPAT* defines too.
 
-config SECCOMP
-	prompt "Enable seccomp to safely execute untrusted bytecode"
-	def_bool y
-	depends on HAVE_ARCH_SECCOMP
-	help
-	  This kernel feature is useful for number crunching applications
-	  that may need to handle untrusted bytecode during their
-	  execution. By using pipes or other transports made available
-	  to the process as file descriptors supporting the read/write
-	  syscalls, it's possible to isolate those applications in their
-	  own address space using seccomp. Once seccomp is enabled via
-	  prctl(PR_SET_SECCOMP) or the seccomp() syscall, it cannot be
-	  disabled and the task is only allowed to execute a few safe
-	  syscalls defined by each seccomp mode.
-
-	  If unsure, say Y.
-
 config HAVE_ARCH_KSTACK_ERASE
 	bool
 	help
