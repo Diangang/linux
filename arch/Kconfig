@@ -168,9 +168,6 @@ config HAVE_NMI
 config TRACE_IRQFLAGS_SUPPORT
 	bool
 
-config TRACE_IRQFLAGS_NMI_SUPPORT
-	bool
-
 #
 # An arch should select this if it provides all these things:
 #
@@ -272,9 +269,6 @@ config HAVE_FUNCTION_ARG_ACCESS_API
 	  the API needed to access function arguments from pt_regs,
 	  declared in asm/ptrace.h
 
-config HAVE_USER_RETURN_NOTIFIER
-	bool
-
 config UNWIND_USER
 	bool
 
@@ -361,13 +355,6 @@ config HAVE_CMPXCHG_LOCAL
 	bool
 
 config HAVE_CMPXCHG_DOUBLE
-	bool
-
-config ARCH_WANT_COMPAT_IPC_PARSE_VERSION
-	bool
-
-config ARCH_WANT_OLD_COMPAT_IPC
-	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
 	bool
 
 config HAVE_ARCH_SECCOMP
@@ -490,9 +477,6 @@ config LTO_NONE
 
 endchoice
 
-config ARCH_SUPPORTS_AUTOFDO_CLANG
-	bool
-
 config ARCH_SUPPORTS_PROPELLER_CLANG
 	bool
 
@@ -539,23 +523,6 @@ config HAVE_CONTEXT_TRACKING_USER_OFFSTACK
 	  - No use of instrumentation, unless instrumentation_begin() got
 	    called.
 
-config HAVE_VIRT_CPU_ACCOUNTING_GEN
-	bool
-	default y if 64BIT
-	help
-	  With VIRT_CPU_ACCOUNTING_GEN, cputime_t becomes 64-bit.
-	  Before enabling this option, arch code must be audited
-	  to ensure there are no races in concurrent read/write of
-	  cputime_t. For example, reading/writing 64-bit cputime_t on
-	  some 32-bit arches may require multiple accesses, so proper
-	  locking is needed to protect against concurrent accesses.
-
-config HAVE_IRQ_TIME_ACCOUNTING
-	bool
-	help
-	  Archs need to ensure they use a high enough resolution clock to
-	  support irq time accounting and then call enable_sched_clock_irqtime().
-
 config HAVE_PV_STEAL_CLOCK_GEN
 	bool
 
@@ -597,13 +564,6 @@ config ARCH_WANT_PMD_MKWRITE
 
 config HAVE_ARCH_SOFT_DIRTY
 	bool
-
-config HAVE_MOD_ARCH_SPECIFIC
-	bool
-	help
-	  The arch uses struct mod_arch_specific to store data.  Many arches
-	  just need a simple module loader without arch specific data - those
-	  should not enable this.
 
 config ARCH_WANTS_EXECMEM_LATE
 	bool
@@ -984,19 +944,10 @@ config ARCH_WANT_LD_ORPHAN_WARN
 	  by the linker, since the locations of such sections can change between linker
 	  versions.
 
-config ARCH_SUPPORTS_DEBUG_PAGEALLOC
-	bool
-
-config ARCH_SUPPORTS_PAGE_TABLE_CHECK
-	bool
-
 config ARCH_HAS_ELFCORE_COMPAT
 	bool
 
 config ARCH_HAS_PARANOID_L1D_FLUSH
-	bool
-
-config ARCH_HAVE_TRACE_MMIO_ACCESS
 	bool
 
 config DYNAMIC_SIGFRAME

@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config SLUB_DEBUG
-	default y
 	bool "Enable SLUB debugging support" if EXPERT
 	depends on SYSFS
 	select STACKDEPOT if STACKTRACE_SUPPORT
@@ -9,12 +8,3 @@ config SLUB_DEBUG
 	  result in significant savings in code size. While /sys/kernel/slab
 	  will still exist (with SYSFS enabled), it will not provide e.g. cache
 	  validation.
-
-config ARCH_HAS_DEBUG_WX
-	bool
-
-config ARCH_HAS_PTDUMP
-	bool
-
-config HAVE_DEBUG_KMEMLEAK
-	bool

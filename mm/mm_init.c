@@ -64,125 +64,6 @@ struct page *__zero_page __ro_after_init;
 EXPORT_SYMBOL(__zero_page);
 #endif /* __HAVE_COLOR_ZERO_PAGE */
 
-#ifdef CONFIG_DEBUG_MEMORY_INIT
-int __meminitdata mminit_loglevel;
-
-/* The zonelists are simply reported, validation is manual. */
-void __init mminit_verify_zonelist(void)
-{
-	int nid;
-
-	if (mminit_loglevel < MMINIT_VERIFY)
-		return;
-
-	for_each_online_node(nid) {
-		pg_data_t *pgdat = NODE_DATA(nid);
-		struct zone *zone;
-		struct zoneref *z;
-		struct zonelist *zonelist;
-		int i, listid, zoneid;
-
-		for (i = 0; i < MAX_ZONELISTS * MAX_NR_ZONES; i++) {
-
-			/* Identify the zone and nodelist */
-			zoneid = i % MAX_NR_ZONES;
-			listid = i / MAX_NR_ZONES;
-			zonelist = &pgdat->node_zonelists[listid];
-			zone = &pgdat->node_zones[zoneid];
-			if (!populated_zone(zone))
-				continue;
-
-			/* Print information about the zonelist */
-			printk(KERN_DEBUG "mminit::zonelist %s %d:%s = ",
-				listid > 0 ? "thisnode" : "general", nid,
-				zone->name);
-
-			/* Iterate the zonelist */
-			for_each_zone_zonelist(zone, z, zonelist, zoneid)
-				pr_cont("%d:%s ", zone_to_nid(zone), zone->name);
-			pr_cont("\n");
-		}
-	}
-}
-
-void __init mminit_verify_pageflags_layout(void)
-{
-	int shift, width;
-	unsigned long or_mask, add_mask;
-
-	shift = BITS_PER_LONG;
-	width = shift - NR_NON_PAGEFLAG_BITS;
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_widths",
-		"Section %d Node %d Zone %d Lastcpupid %d Kasantag %d Gen %d Tier %d Flags %d\n",
-		SECTIONS_WIDTH,
-		NODES_WIDTH,
-		ZONES_WIDTH,
-		LAST_CPUPID_WIDTH,
-		KASAN_TAG_WIDTH,
-		LRU_GEN_WIDTH,
-		LRU_REFS_WIDTH,
-		NR_PAGEFLAGS);
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_shifts",
-		"Section %d Node %d Zone %d Lastcpupid %d Kasantag %d\n",
-		SECTIONS_SHIFT,
-		NODES_SHIFT,
-		ZONES_SHIFT,
-		LAST_CPUPID_SHIFT,
-		KASAN_TAG_WIDTH);
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_pgshifts",
-		"Section %lu Node %lu Zone %lu Lastcpupid %lu Kasantag %lu\n",
-		(unsigned long)SECTIONS_PGSHIFT,
-		(unsigned long)NODES_PGSHIFT,
-		(unsigned long)ZONES_PGSHIFT,
-		(unsigned long)LAST_CPUPID_PGSHIFT,
-		(unsigned long)KASAN_TAG_PGSHIFT);
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_nodezoneid",
-		"Node/Zone ID: %lu -> %lu\n",
-		(unsigned long)(ZONEID_PGOFF + ZONEID_SHIFT),
-		(unsigned long)ZONEID_PGOFF);
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_usage",
-		"location: %d -> %d layout %d -> %d unused %d -> %d page-flags\n",
-		shift, width, width, NR_PAGEFLAGS, NR_PAGEFLAGS, 0);
-#ifdef NODE_NOT_IN_PAGE_FLAGS
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_nodeflags",
-		"Node not in page flags");
-#endif
-#ifdef LAST_CPUPID_NOT_IN_PAGE_FLAGS
-	mminit_dprintk(MMINIT_TRACE, "pageflags_layout_nodeflags",
-		"Last cpupid not in page flags");
-#endif
-
-	if (SECTIONS_WIDTH) {
-		shift -= SECTIONS_WIDTH;
-		BUG_ON(shift != SECTIONS_PGSHIFT);
-	}
-	if (NODES_WIDTH) {
-		shift -= NODES_WIDTH;
-		BUG_ON(shift != NODES_PGSHIFT);
-	}
-	if (ZONES_WIDTH) {
-		shift -= ZONES_WIDTH;
-		BUG_ON(shift != ZONES_PGSHIFT);
-	}
-
-	/* Check for bitmask overlaps */
-	or_mask = (ZONES_MASK << ZONES_PGSHIFT) |
-			(NODES_MASK << NODES_PGSHIFT) |
-			(SECTIONS_MASK << SECTIONS_PGSHIFT);
-	add_mask = (ZONES_MASK << ZONES_PGSHIFT) +
-			(NODES_MASK << NODES_PGSHIFT) +
-			(SECTIONS_MASK << SECTIONS_PGSHIFT);
-	BUG_ON(or_mask != add_mask);
-}
-
-static __init int set_mminit_loglevel(char *str)
-{
-	get_option(&str, &mminit_loglevel);
-	return 0;
-}
-early_param("mminit_loglevel", set_mminit_loglevel);
-#endif /* CONFIG_DEBUG_MEMORY_INIT */
-
 struct kobject *mm_kobj;
 
 #ifdef CONFIG_SMP
@@ -1207,12 +1088,6 @@ void __meminit init_currently_empty_zone(struct zone *zone,
 
 	zone->zone_start_pfn = zone_start_pfn;
 
-	mminit_dprintk(MMINIT_TRACE, "memmap_init",
-			"Initialising map node %d zone %lu pfns %lu -> %lu\n",
-			pgdat->node_id,
-			(unsigned long)zone_idx(zone),
-			zone_start_pfn, (zone_start_pfn + size));
-
 	zone_init_free_lists(zone);
 	zone->initialized = 1;
 }
@@ -1641,7 +1516,6 @@ static void __init free_area_init(void)
 	}
 
 	/* Initialise every node */
-	mminit_verify_pageflags_layout();
 	setup_nr_node_ids();
 	set_pageblock_order();
 

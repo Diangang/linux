@@ -52,14 +52,6 @@ config DEBUG_KERNEL
 	  Say Y here if you are developing drivers or trying to debug and
 	  identify kernel problems.
 
-config DEBUG_MISC
-	bool "Miscellaneous debug code"
-	default DEBUG_KERNEL
-	depends on DEBUG_KERNEL
-	help
-	  Say Y here if you need to enable miscellaneous debug code that should
-	  be under a more specific debug option but isn't.
-
 menu "Compile-time checks and compiler options"
 
 # Clang generates .uleb128 with label differences for DWARF v5, a feature that
@@ -149,30 +141,6 @@ menu "Memory Debugging"
 
 source "mm/Kconfig.debug"
 
-config ARCH_HAS_DEBUG_VM_PGTABLE
-	bool
-	help
-	  An architecture should select this when it can successfully
-	  build and run DEBUG_VM_PGTABLE.
-
-config ARCH_HAS_DEBUG_VIRTUAL
-	bool
-
-config DEBUG_MEMORY_INIT
-	bool "Debug memory initialisation" if EXPERT
-	default !EXPERT
-	help
-	  Enable this for additional checks during memory initialisation.
-	  The sanity checks verify aspects of the VM such as the memory model
-	  and other information provided by the architecture. Verbose
-	  information will be printed at KERN_DEBUG loglevel depending
-	  on the mminit_loglevel= command-line option.
-
-	  If unsure, say Y
-
-config ARCH_SUPPORTS_KMAP_LOCAL_FORCE_MAP
-	bool
-
 endmenu # "Memory Debugging"
 
 menu "Debug Oops, Lockups and Hangs"
@@ -187,11 +155,6 @@ config PANIC_TIMEOUT
 	  value n < 0 will reboot immediately. This setting can be overridden
 	  with the kernel command line option panic=, and from userspace via
 	  /proc/sys/kernel/panic.
-
-config HAVE_HARDLOCKUP_DETECTOR_BUDDY
-	bool
-	depends on SMP
-	default y
 
 #
 # Global switch whether to build a hardlockup detector at all. It is available
@@ -209,11 +172,6 @@ config HARDLOCKUP_CHECK_TIMESTAMP
 endmenu # "Debug lockups and hangs"
 
 menu "Lock Debugging (spinlocks, mutexes, etc...)"
-
-config LOCK_DEBUGGING_SUPPORT
-	bool
-	depends on TRACE_IRQFLAGS_SUPPORT && STACKTRACE_SUPPORT && LOCKDEP_SUPPORT
-	default y
 
 endmenu # lock debugging
 
