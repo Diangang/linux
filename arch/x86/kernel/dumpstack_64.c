@@ -11,7 +11,6 @@
 #include <linux/kdebug.h>
 #include <linux/export.h>
 #include <linux/ptrace.h>
-#include <linux/kexec.h>
 #include <linux/sysfs.h>
 #include <linux/bug.h>
 #include <linux/nmi.h>

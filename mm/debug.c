@@ -136,10 +136,7 @@ static void __dump_page(const struct page *page)
 
 void dump_page(const struct page *page, const char *reason)
 {
-	if (PagePoisoned(page))
-		pr_warn("page:%p is uninitialized and poisoned\n", page);
-	else
-		__dump_page(page);
+	__dump_page(page);
 	if (reason)
 		pr_warn("page dumped because: %s\n", reason);
 	dump_page_owner(page);

@@ -216,22 +216,12 @@ static inline void audit_uring_entry(u8 op)
 { }
 static inline void audit_uring_exit(int success, long code)
 { }
-static inline void audit_syscall_entry(int major, unsigned long a0,
-				       unsigned long a1, unsigned long a2,
-				       unsigned long a3)
-{ }
-static inline void audit_syscall_exit(void *pt_regs)
-{ }
 static inline bool audit_dummy_context(void)
 {
 	return true;
 }
 static inline void audit_set_context(struct task_struct *task, struct audit_context *ctx)
 { }
-static inline struct audit_context *audit_context(void)
-{
-	return NULL;
-}
 static inline void audit_getname(struct filename *name)
 { }
 static inline void audit_inode(struct filename *name,

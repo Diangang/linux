@@ -83,7 +83,6 @@
 #include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <linux/workqueue.h>
-#include <linux/kmemleak.h>
 #include <linux/sched.h>
 #include <linux/sched/mm.h>
 #include <linux/memcontrol.h>
@@ -1872,8 +1871,6 @@ area_found:
 		memset((void *)pcpu_chunk_addr(chunk, cpu, 0) + off, 0, size);
 
 	ptr = __addr_to_pcpu_ptr(chunk->base_addr + off);
-	kmemleak_alloc_percpu(ptr, size, gfp);
-
 
 	pcpu_memcg_post_alloc_hook(objcg, chunk, off, size);
 
@@ -2214,8 +2211,6 @@ void free_percpu(void __percpu *ptr)
 
 	if (!ptr)
 		return;
-
-	kmemleak_free_percpu(ptr);
 
 	addr = __pcpu_ptr_to_addr(ptr);
 	chunk = pcpu_chunk_addr_search(addr);
@@ -3029,8 +3024,6 @@ int __init pcpu_embed_first_chunk(size_t reserved_size, size_t dyn_size,
 			rc = -ENOMEM;
 			goto out_free_areas;
 		}
-		/* kmemleak tracks the percpu allocations separately */
-		kmemleak_ignore_phys(__pa(ptr));
 		areas[group] = ptr;
 
 		base = min(ptr, base);
@@ -3209,8 +3202,6 @@ int __init pcpu_page_first_chunk(size_t reserved_size, pcpu_fc_cpu_to_node_fn_t 
 						psize_str, cpu);
 				goto enomem;
 			}
-			/* kmemleak tracks the percpu allocations separately */
-			kmemleak_ignore_phys(__pa(ptr));
 			pages[j++] = virt_to_page(ptr);
 		}
 	}
@@ -3316,9 +3307,6 @@ void __init setup_per_cpu_areas(void)
 	fc = memblock_alloc_from(unit_size, PAGE_SIZE, __pa(MAX_DMA_ADDRESS));
 	if (!ai || !fc)
 		panic("Failed to allocate memory for percpu areas.");
-	/* kmemleak tracks the percpu allocations separately */
-	kmemleak_ignore_phys(__pa(fc));
-
 	ai->dyn_size = unit_size;
 	ai->unit_size = unit_size;
 	ai->atom_size = unit_size;

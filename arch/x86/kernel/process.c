@@ -18,7 +18,6 @@
 #include <linux/pm.h>
 #include <linux/tick.h>
 #include <linux/random.h>
-#include <linux/user-return-notifier.h>
 #include <linux/dmi.h>
 #include <linux/utsname.h>
 #include <linux/stackprotector.h>
@@ -709,8 +708,6 @@ void __switch_to_xtra(struct task_struct *prev_p, struct task_struct *next_p)
 	tifp = read_task_thread_flags(prev_p);
 
 	switch_to_bitmap(tifp);
-
-	propagate_user_return_notify(prev_p, next_p);
 
 	if ((tifp & _TIF_BLOCKSTEP || tifn & _TIF_BLOCKSTEP) &&
 	    arch_has_block_step()) {

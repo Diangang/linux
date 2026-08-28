@@ -101,8 +101,8 @@
  * NOTE: builds *with* and *without* -ffunction-sections are both supported by
  * this single macro.  Even with -ffunction-sections, there may be some objects
  * NOT compiled with the flag due to the use of a specific Makefile override
- * like cflags-y or AUTOFDO_PROFILE_foo.o.  So this single catchall rule is
- * needed to support mixed object builds.
+ * like cflags-y.  So this single catchall rule is needed to support mixed
+ * object builds.
  *
  * One implication is that functions named startup(), exit(), split(),
  * unlikely(), hot(), and unknown() are not allowed in the kernel due to the

@@ -30,15 +30,13 @@ extern bool panic_on_taint_nousertaint;
 
 extern int sysctl_panic_on_stackoverflow;
 
-extern bool crash_kexec_post_notifiers;
-
 extern void __stack_chk_fail(void);
 void abort(void);
 
 /*
- * panic_cpu is used for synchronizing panic() and crash_kexec() execution. It
- * holds a CPU number which is executing panic() currently. A value of
- * PANIC_CPU_INVALID means no CPU has entered panic() or crash_kexec().
+ * panic_cpu is used for synchronizing panic() execution. It holds a CPU number
+ * which is executing panic() currently. A value of PANIC_CPU_INVALID means no
+ * CPU has entered panic().
  */
 extern atomic_t panic_cpu;
 

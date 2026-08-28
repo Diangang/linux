@@ -62,8 +62,6 @@ static inline void x86_intel_mid_early_setup(void) { }
 
 static inline void x86_ce4100_early_setup(void) { }
 
-#include <linux/kexec_handover.h>
-
 #ifndef _SETUP
 
 #include <asm/espfix.h>

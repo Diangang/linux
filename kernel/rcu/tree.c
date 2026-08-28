@@ -32,7 +32,6 @@
 #include <linux/bitops.h>
 #include <linux/export.h>
 #include <linux/completion.h>
-#include <linux/kmemleak.h>
 #include <linux/moduleparam.h>
 #include <linux/panic.h>
 #include <linux/panic_notifier.h>
@@ -2674,7 +2673,7 @@ static void strict_work_handler(struct work_struct *work)
 }
 
 /* Perform RCU core processing work for the current CPU.  */
-static __latent_entropy void rcu_core(void)
+static void rcu_core(void)
 {
 	struct rcu_data *rdp = raw_cpu_ptr(&rcu_data);
 	struct rcu_node *rnp = rdp->mynode;

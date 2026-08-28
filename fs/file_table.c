@@ -26,7 +26,6 @@
 #include <linux/percpu.h>
 #include <linux/task_work.h>
 #include <linux/swap.h>
-#include <linux/kmemleak.h>
 
 #include <linux/atomic.h>
 

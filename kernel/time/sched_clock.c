@@ -45,9 +45,6 @@ struct clock_data {
 };
 
 static struct hrtimer sched_clock_timer;
-static int irqtime = -1;
-
-core_param(irqtime, irqtime, int, 0400);
 
 static u64 notrace jiffy_sched_clock_read(void)
 {
@@ -237,10 +234,6 @@ void sched_clock_register(u64 (*read)(void), int bits, unsigned long rate)
 
 	pr_info("sched_clock: %u bits at %lu%cHz, resolution %lluns, wraps every %lluns\n",
 		bits, r, r_unit, res, wrap);
-
-	/* Enable IRQ time accounting if we have a fast enough sched_clock() */
-	if (irqtime > 0 || (irqtime == -1 && rate >= 1000000))
-		enable_sched_clock_irqtime();
 
 	local_irq_restore(flags);
 

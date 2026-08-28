@@ -168,10 +168,6 @@ struct mpc_intsrc mp_irqs[MAX_IRQ_SOURCES];
 /* # of MP IRQ source entries */
 int mp_irq_entries;
 
-#ifdef CONFIG_EISA
-int mp_bus_id_to_type[MAX_MP_BUSSES];
-#endif
-
 DECLARE_BITMAP(mp_bus_not_pci, MAX_MP_BUSSES);
 
 bool ioapic_is_disabled __ro_after_init;
@@ -663,45 +659,6 @@ static bool irq_active_low(int idx)
 	}
 }
 
-#ifdef CONFIG_EISA
-/*
- * EISA Edge/Level control register, ELCR
- */
-static bool EISA_ELCR(unsigned int irq)
-{
-	if (irq < nr_legacy_irqs()) {
-		unsigned int port = PIC_ELCR1 + (irq >> 3);
-		return (inb(port) >> (irq & 7)) & 1;
-	}
-	apic_pr_verbose("Broken MPtable reports ISA irq %d\n", irq);
-	return false;
-}
-
-/*
- * EISA interrupts are always active high and can be edge or level
- * triggered depending on the ELCR value.  If an interrupt is listed as
- * EISA conforming in the MP table, that means its trigger type must be
- * read in from the ELCR.
- */
-static bool eisa_irq_is_level(int idx, int bus, bool level)
-{
-	switch (mp_bus_id_to_type[bus]) {
-	case MP_BUS_PCI:
-	case MP_BUS_ISA:
-		return level;
-	case MP_BUS_EISA:
-		return EISA_ELCR(mp_irqs[idx].srcbusirq);
-	}
-	pr_warn("IOAPIC: Invalid srcbus: %d defaulting to level\n", bus);
-	return true;
-}
-#else
-static inline int eisa_irq_is_level(int idx, int bus, bool level)
-{
-	return level;
-}
-#endif
-
 static bool irq_is_level(int idx)
 {
 	int bus = mp_irqs[idx].srcbus;
@@ -717,8 +674,7 @@ static bool irq_is_level(int idx)
 		 * mode. PCI defaults to level, ISA to edge.
 		 */
 		level = !test_bit(bus, mp_bus_not_pci);
-		/* Take EISA into account */
-		return eisa_irq_is_level(idx, bus, level);
+		return level;
 	case MP_IRQTRIG_EDGE:
 		return false;
 	case MP_IRQTRIG_RESERVED:

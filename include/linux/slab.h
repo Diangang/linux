@@ -35,7 +35,6 @@ enum _slab_flag_bits {
 	_SLAB_PANIC,
 	_SLAB_TYPESAFE_BY_RCU,
 	_SLAB_TRACE,
-	_SLAB_NOLEAKTRACE,
 	_SLAB_NO_MERGE,
 #ifdef CONFIG_FAILSLAB
 	_SLAB_FAILSLAB,
@@ -159,9 +158,6 @@ enum _slab_flag_bits {
 
 /* Flag to prevent checks on free */
 # define SLAB_DEBUG_OBJECTS	__SLAB_FLAG_UNUSED
-
-/* Avoid kmemleak tracing */
-#define SLAB_NOLEAKTRACE	__SLAB_FLAG_BIT(_SLAB_NOLEAKTRACE)
 
 /*
  * Prevent merging with compatible kmem caches. This flag should be used

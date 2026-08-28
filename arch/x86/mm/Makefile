@@ -22,9 +22,6 @@ CFLAGS_physaddr.o		:= -fno-stack-protector
 KMSAN_SANITIZE_kmsan_shadow.o	:= n
 
 
-mmiotrace-y			:= kmmio.o pf_in.o mmio-mod.o
-
-
 obj-$(CONFIG_NUMA)		+= numa.o
 obj-$(CONFIG_AMD_NUMA)		+= amdtopology.o
 obj-$(CONFIG_ACPI_NUMA)		+= srat.o

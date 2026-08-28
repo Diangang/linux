@@ -339,31 +339,6 @@ struct acpi_prt_entry *acpi_pci_irq_lookup(struct pci_dev *dev, int pin)
 	return NULL;
 }
 
-#if 0 || IS_ENABLED(CONFIG_EISA)
-static int acpi_isa_register_gsi(struct pci_dev *dev)
-{
-	u32 dev_gsi;
-
-	/* Interrupt Line values above 0xF are forbidden */
-	if (dev->irq > 0 && (dev->irq <= 0xF) &&
-	    acpi_isa_irq_available(dev->irq) &&
-	    (acpi_isa_irq_to_gsi(dev->irq, &dev_gsi) == 0)) {
-		dev_warn(&dev->dev, "PCI INT %c: no GSI - using ISA IRQ %d\n",
-			 pin_name(dev->pin), dev->irq);
-		acpi_register_gsi(&dev->dev, dev_gsi,
-				  ACPI_LEVEL_SENSITIVE,
-				  ACPI_ACTIVE_LOW);
-		return 0;
-	}
-	return -EINVAL;
-}
-#else
-static inline int acpi_isa_register_gsi(struct pci_dev *dev)
-{
-	return -ENODEV;
-}
-#endif
-
 static inline bool acpi_pci_irq_valid(struct pci_dev *dev, u8 pin)
 {
 #ifdef CONFIG_X86
@@ -446,9 +421,7 @@ int acpi_pci_irq_enable(struct pci_dev *dev)
 			return 0;
 		}
 
-		if (acpi_isa_register_gsi(dev))
-			dev_warn(&dev->dev, "PCI INT %c: no GSI\n",
-				 pin_name(pin));
+		dev_warn(&dev->dev, "PCI INT %c: no GSI\n", pin_name(pin));
 
 		kfree(entry);
 		return 0;

@@ -10,7 +10,6 @@
 #include <linux/memblock.h>		/* max_low_pfn			*/
 #include <linux/kfence.h>		/* kfence_handle_page_fault	*/
 #include <linux/kprobes.h>		/* NOKPROBE_SYMBOL, ...		*/
-#include <linux/mmiotrace.h>		/* kmmio_handler, ...		*/
 #include <linux/hugetlb.h>		/* hstate_index_to_shift	*/
 #include <linux/context_tracking.h>	/* exception_enter(), ...	*/
 #include <linux/uaccess.h>		/* faulthandler_disabled()	*/
@@ -34,19 +33,6 @@
 #include <asm/irq_stack.h>
 #include <asm/fred.h>
 #include <asm/sev.h>			/* snp_dump_hva_rmpentry()	*/
-/*
- * Returns 0 if mmiotrace is disabled, or if the fault is not
- * handled by mmiotrace:
- */
-static nokprobe_inline int
-kmmio_fault(struct pt_regs *regs, unsigned long addr)
-{
-	if (unlikely(is_kmmio_active()))
-		if (kmmio_handler(regs, addr) == 1)
-			return -1;
-	return 0;
-}
-
 /*
  * Prefetch quirks:
  *
@@ -1248,9 +1234,6 @@ static __always_inline void
 handle_page_fault(struct pt_regs *regs, unsigned long error_code,
 			      unsigned long address)
 {
-
-	if (unlikely(kmmio_fault(regs, address)))
-		return;
 
 	/* Was the fault on kernel-controlled part of the address space? */
 	if (unlikely(fault_in_kernel_space(address))) {

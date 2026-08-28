@@ -79,7 +79,6 @@ struct mpc_bus {
 };
 
 /* List of Bus Type string values, Intel MP Spec. */
-#define BUSTYPE_EISA	"EISA"
 #define BUSTYPE_ISA	"ISA"
 #define BUSTYPE_INTERN	"INTERN"	/* Internal BUS */
 #define BUSTYPE_MCA	"MCA"		/* Obsolete */
@@ -171,9 +170,4 @@ struct mpc_oemtable {
  *	7	2 CPU MCA+PCI
  */
 
-enum mp_bustype {
-	MP_BUS_ISA = 1,
-	MP_BUS_EISA,
-	MP_BUS_PCI,
-};
 #endif /* _ASM_X86_MPSPEC_DEF_H */

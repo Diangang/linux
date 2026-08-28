@@ -43,7 +43,6 @@
 #include <linux/sync_core.h>
 #include <linux/task_work.h>
 #include <linux/hardirq.h>
-#include <linux/kexec.h>
 #include <linux/vmcore_info.h>
 
 #include <asm/fred.h>
@@ -323,20 +322,6 @@ static noinstr void mce_panic(const char *msg, struct mce_hw_err *final, char *e
 		if (panic_timeout == 0)
 			panic_timeout = mca_cfg.panic_timeout;
 
-		/*
-		 * Kdump skips the poisoned page in order to avoid
-		 * touching the error bits again. Poison the page even
-		 * if the error is fatal and the machine is about to
-		 * panic.
-		 */
-		if (kexec_crash_loaded()) {
-			if (final && (final->m.status & MCI_STATUS_ADDRV)) {
-				struct page *p;
-				p = pfn_to_online_page(final->m.addr >> PAGE_SHIFT);
-				if (p)
-					SetPageHWPoison(p);
-			}
-		}
 		panic(msg);
 	} else
 		pr_emerg(HW_ERR "Fake kernel panic: %s\n", msg);

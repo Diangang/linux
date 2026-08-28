@@ -31,7 +31,6 @@
 #include <linux/of.h>
 #include <linux/irq_work.h>
 #include <linux/kernel_stat.h>
-#include <linux/kexec.h>
 #include <linux/kgdb.h>
 #include <linux/nmi.h>
 
@@ -72,8 +71,6 @@ static DEFINE_PER_CPU_READ_MOSTLY(struct ipi_descs, pcpu_ipi_desc);
 #define get_ipi_desc(__cpu, __ipi) (per_cpu_ptr(&pcpu_ipi_desc, __cpu)->descs[__ipi])
 
 static bool percpu_ipi_descs __ro_after_init;
-
-static bool crash_stop;
 
 static void ipi_setup(int cpu);
 
@@ -872,35 +869,6 @@ void __noreturn panic_smp_self_stop(void)
 	local_cpu_stop(smp_processor_id());
 }
 
-static void __noreturn ipi_cpu_crash_stop(unsigned int cpu, struct pt_regs *regs)
-{
-#ifdef CONFIG_KEXEC_CORE
-	/*
-	 * Use local_daif_mask() instead of local_irq_disable() to make sure
-	 * that pseudo-NMIs are disabled. The "crash stop" code starts with
-	 * an IRQ and falls back to NMI (which might be pseudo). If the IRQ
-	 * finally goes through right as we're timing out then the NMI could
-	 * interrupt us. It's better to prevent the NMI and let the IRQ
-	 * finish since the pt_regs will be better.
-	 */
-	local_daif_mask();
-
-	crash_save_cpu(regs, cpu);
-
-	set_cpu_online(cpu, false);
-
-	sdei_mask_local_cpu();
-
-	if (IS_ENABLED(CONFIG_HOTPLUG_CPU))
-		__cpu_try_die(cpu);
-
-	/* just in case */
-	cpu_park_loop();
-#else
-	BUG();
-#endif
-}
-
 static void arm64_send_ipi(const cpumask_t *mask, unsigned int nr)
 {
 	unsigned int cpu;
@@ -946,12 +914,7 @@ static void do_handle_IPI(int ipinr)
 
 	case IPI_CPU_STOP:
 	case IPI_CPU_STOP_NMI:
-		if (IS_ENABLED(CONFIG_KEXEC_CORE) && crash_stop) {
-			ipi_cpu_crash_stop(cpu, get_irq_regs());
-			unreachable();
-		} else {
-			local_cpu_stop(cpu);
-		}
+		local_cpu_stop(cpu);
 		break;
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
@@ -1235,30 +1198,6 @@ skip_ipi:
 	sdei_mask_local_cpu();
 }
 
-#ifdef CONFIG_KEXEC_CORE
-void crash_smp_send_stop(void)
-{
-	/*
-	 * This function can be called twice in panic path, but obviously
-	 * we execute this only once.
-	 *
-	 * We use this same boolean to tell whether the IPI we send was a
-	 * stop or a "crash stop".
-	 */
-	if (crash_stop)
-		return;
-	crash_stop = 1;
-
-	smp_send_stop();
-
-	sdei_handler_abort();
-}
-
-bool smp_crash_stop_failed(void)
-{
-	return num_other_online_cpus() != 0;
-}
-#endif
 
 static bool have_cpu_die(void)
 {

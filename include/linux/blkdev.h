@@ -794,7 +794,7 @@ bool set_capacity_and_notify(struct gendisk *disk, sector_t size);
 void disk_force_media_change(struct gendisk *disk);
 void bdev_mark_dead(struct block_device *bdev, bool surprise);
 
-void add_disk_randomness(struct gendisk *disk) __latent_entropy;
+void add_disk_randomness(struct gendisk *disk);
 void rand_initialize_disk(struct gendisk *disk);
 
 static inline sector_t get_start_sect(struct block_device *bdev)

@@ -347,11 +347,7 @@ xloadflags:
 # define XLF23 0
 #endif
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_EFI) && defined(CONFIG_KEXEC_CORE)
-# define XLF4 XLF_EFI_KEXEC
-#else
 # define XLF4 0
-#endif
 
 #ifdef CONFIG_X86_64
 #define XLF56 (XLF_5LEVEL|XLF_5LEVEL_ENABLED)

@@ -855,11 +855,6 @@ void __init random_init_early(const char *command_line)
 	unsigned long entropy[BLAKE2S_BLOCK_SIZE / sizeof(long)];
 	size_t i, longs, arch_bits;
 
-#if defined(LATENT_ENTROPY_PLUGIN)
-	static const u8 compiletime_seed[BLAKE2S_BLOCK_SIZE] __initconst __latent_entropy;
-	_mix_pool_bytes(compiletime_seed, sizeof(compiletime_seed));
-#endif
-
 	for (i = 0, arch_bits = sizeof(entropy) * 8; i < ARRAY_SIZE(entropy);) {
 		longs = arch_get_random_seed_longs(entropy, ARRAY_SIZE(entropy) - i);
 		if (longs) {
@@ -898,7 +893,7 @@ void __init random_init(void)
 
 	_mix_pool_bytes(&now, sizeof(now));
 	_mix_pool_bytes(&entropy, sizeof(entropy));
-	add_latent_entropy();
+	add_device_randomness(NULL, 0);
 
 	/*
 	 * If we were initialized by the cpu or bootloader before workqueues

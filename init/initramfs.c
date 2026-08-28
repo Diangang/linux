@@ -602,7 +602,6 @@ __setup("initramfs_async=", initramfs_async_setup);
 extern char __initramfs_start[];
 extern unsigned long __initramfs_size;
 #include <linux/initrd.h>
-#include <linux/kexec.h>
 
 static BIN_ATTR(initrd, 0440, sysfs_bin_attr_simple_read, NULL, 0);
 
@@ -685,7 +684,7 @@ static inline bool kexec_free_initrd(void)
 {
 	return false;
 }
-#endif /* CONFIG_KEXEC_CORE */
+#endif /* CONFIG_CRASH_RESERVE */
 
 
 static void __init do_populate_rootfs(void *unused, async_cookie_t cookie)

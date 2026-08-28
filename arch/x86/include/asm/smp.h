@@ -117,7 +117,6 @@ void wbinvd_on_cpus_mask(struct cpumask *cpus);
 void wbnoinvd_on_all_cpus(void);
 void wbnoinvd_on_cpus_mask(struct cpumask *cpus);
 
-void smp_kick_mwait_play_dead(void);
 void __noreturn mwait_play_dead(unsigned int eax_hint);
 
 void native_smp_send_reschedule(int cpu);

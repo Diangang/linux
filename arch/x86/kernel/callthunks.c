@@ -12,7 +12,6 @@
 #include <asm/cpu.h>
 #include <asm/ftrace.h>
 #include <asm/insn.h>
-#include <asm/kexec.h>
 #include <asm/nospec-branch.h>
 #include <asm/sections.h>
 #include <asm/switch_to.h>
@@ -120,17 +119,6 @@ static bool skip_addr(void *dest)
 #ifdef CONFIG_FUNCTION_TRACER
 	if (dest == __fentry__)
 		return true;
-#endif
-#ifdef CONFIG_KEXEC_CORE
-# ifdef CONFIG_X86_64
-	if (dest >= (void *)__relocate_kernel_start &&
-	    dest < (void *)__relocate_kernel_end)
-		return true;
-# else
-	if (dest >= (void *)relocate_kernel &&
-	    dest < (void*)relocate_kernel + KEXEC_CONTROL_CODE_MAX_SIZE)
-		return true;
-# endif
 #endif
 	return false;
 }

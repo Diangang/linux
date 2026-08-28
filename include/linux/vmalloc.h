@@ -31,12 +31,6 @@ struct iov_iter;		/* in uio.h */
 #define VM_MAP_PUT_PAGES	0x00000200	/* put pages and free array in vfree */
 #define VM_ALLOW_HUGE_VMAP	0x00000400      /* Allow for huge pages on archs with HAVE_ARCH_HUGE_VMALLOC */
 
-#if (0 || 0) && \
-	!0
-#define VM_DEFER_KMEMLEAK	0x00000800	/* defer kmemleak object creation */
-#else
-#define VM_DEFER_KMEMLEAK	0
-#endif
 #define VM_SPARSE		0x00001000	/* sparse vm_area. not all pages are present. */
 
 /* bits [20..32] reserved for arch specific ioremap internals */

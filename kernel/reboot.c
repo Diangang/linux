@@ -10,8 +10,8 @@
 #include <linux/atomic.h>
 #include <linux/ctype.h>
 #include <linux/export.h>
-#include <linux/kexec.h>
 #include <linux/kmsg_dump.h>
+#include <linux/pid_namespace.h>
 #include <linux/reboot.h>
 #include <linux/suspend.h>
 #include <linux/syscalls.h>
@@ -795,11 +795,6 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 		kernel_restart(buffer);
 		break;
 
-#ifdef CONFIG_KEXEC_CORE
-	case LINUX_REBOOT_CMD_KEXEC:
-		ret = kernel_kexec();
-		break;
-#endif
 
 #if 0
 	case LINUX_REBOOT_CMD_SW_SUSPEND:

@@ -12,7 +12,6 @@
 #include <linux/delay.h>
 #include <linux/objtool.h>
 #include <linux/pgtable.h>
-#include <linux/kexec.h>
 #include <acpi/reboot.h>
 #include <asm/io.h>
 #include <asm/apic.h>
@@ -662,14 +661,6 @@ static void native_machine_emergency_restart(void)
 
 void native_machine_shutdown(void)
 {
-	/*
-	 * Call enc_kexec_begin() while all CPUs are still active and
-	 * interrupts are enabled. This will allow all in-flight memory
-	 * conversions to finish cleanly.
-	 */
-	if (kexec_in_progress)
-		x86_platform.guest.enc_kexec_begin();
-
 	/* Stop the cpus and apics */
 #ifdef CONFIG_X86_IO_APIC
 	/*
@@ -707,8 +698,6 @@ void native_machine_shutdown(void)
 	x86_platform.iommu_shutdown();
 #endif
 
-	if (kexec_in_progress)
-		x86_platform.guest.enc_kexec_finish();
 }
 
 static void __machine_emergency_restart(int emergency)
@@ -756,9 +745,6 @@ struct machine_ops machine_ops __ro_after_init = {
 	.emergency_restart = native_machine_emergency_restart,
 	.restart = native_machine_restart,
 	.halt = native_machine_halt,
-#ifdef CONFIG_CRASH_DUMP
-	.crash_shutdown = native_machine_crash_shutdown,
-#endif
 };
 
 void machine_power_off(void)
@@ -786,12 +772,6 @@ void machine_halt(void)
 	machine_ops.halt();
 }
 
-#ifdef CONFIG_CRASH_DUMP
-void machine_crash_shutdown(struct pt_regs *regs)
-{
-	machine_ops.crash_shutdown(regs);
-}
-#endif
 
 /* This is the CPU performing the emergency shutdown work. */
 int crashing_cpu = -1;

@@ -20,7 +20,7 @@
  * arch/x86/power/cpu.c, still work as required.
  *
  * Because the structure is packed, make sure to avoid unaligned members. For
- * optimisation purposes but also because tools like kmemleak only search for
+ * optimisation purposes but also because analysis tools only search for
  * pointers that are aligned.
  */
 struct saved_context {

@@ -6,7 +6,6 @@
 #include <linux/init.h>
 #include <linux/memblock.h>
 #include <linux/percpu.h>
-#include <linux/kexec.h>
 #include <linux/crash_dump.h>
 #include <linux/smp.h>
 #include <linux/topology.h>

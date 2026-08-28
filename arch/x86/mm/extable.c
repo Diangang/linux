@@ -46,7 +46,7 @@ static bool ex_handler_default(const struct exception_table_entry *e,
  *
  * This happens when we optimistically load a pathname a word-at-a-time
  * and the name is less than the full word and the  next page is not
- * mapped. Typically that only happens for CONFIG_DEBUG_PAGEALLOC.
+ * mapped.
  *
  * NOTE! The faulting address is always a 'mov mem,reg' type instruction
  * of size 'long', and the exception fixup must always point to right

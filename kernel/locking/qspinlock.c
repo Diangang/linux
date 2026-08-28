@@ -23,11 +23,8 @@
 #include <asm/byteorder.h>
 #include <asm/qspinlock.h>
 
-/*
- * Include queued spinlock definitions and statistics code
- */
+/* Include queued spinlock definitions. */
 #include "qspinlock.h"
-#include "qspinlock_stat.h"
 
 /*
  * The basic principle of a queue-based spinlock can best be understood
@@ -198,7 +195,6 @@ void __lockfunc queued_spin_lock_slowpath(struct qspinlock *lock, u32 val)
 	 * 0,1,0 -> 0,0,1
 	 */
 	clear_pending_set_locked(lock);
-	lockevent_inc(lock_pending);
 	return;
 
 	/*
@@ -206,7 +202,6 @@ void __lockfunc queued_spin_lock_slowpath(struct qspinlock *lock, u32 val)
 	 * queuing.
 	 */
 queue:
-	lockevent_inc(lock_slowpath);
 pv_queue:
 	node = this_cpu_ptr(&qnodes[0].mcs);
 	idx = node->count++;
@@ -223,18 +218,12 @@ pv_queue:
 	 * simple enough.
 	 */
 	if (unlikely(idx >= _Q_MAX_NODES)) {
-		lockevent_inc(lock_no_node);
 		while (!queued_spin_trylock(lock))
 			cpu_relax();
 		goto release;
 	}
 
 	node = grab_mcs_node(node, idx);
-
-	/*
-	 * Keep counts of non-zero index values:
-	 */
-	lockevent_cond_inc(lock_use_node2 + idx - 1, idx);
 
 	/*
 	 * Ensure that we increment the head node->count before initialising

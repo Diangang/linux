@@ -21,7 +21,6 @@
 #include <linux/interrupt.h>
 #include <linux/cpu.h>
 #include <linux/gfp.h>
-#include <linux/kexec.h>
 
 #include <asm/mtrr.h>
 #include <asm/tlbflush.h>
@@ -32,7 +31,6 @@
 #include <asm/idtentry.h>
 #include <asm/nmi.h>
 #include <asm/mce.h>
-#include <asm/kexec.h>
 #include <asm/reboot.h>
 #include <asm/virt.h>
 
@@ -160,10 +158,6 @@ static void native_stop_other_cpus(int wait)
 	if (!atomic_try_cmpxchg(&stopping_cpu, &old_cpu, this_cpu))
 		return;
 
-	/* For kexec, ensure that offline CPUs are out of MWAIT and in HLT */
-	if (kexec_in_progress)
-		smp_kick_mwait_play_dead();
-
 	/*
 	 * 1) Send an IPI on the reboot vector to all other CPUs.
 	 *
@@ -280,9 +274,6 @@ struct smp_ops smp_ops = {
 	.smp_cpus_done		= native_smp_cpus_done,
 
 	.stop_other_cpus	= native_stop_other_cpus,
-#if defined(CONFIG_CRASH_DUMP)
-	.crash_stop_other_cpus	= kdump_nmi_shootdown_cpus,
-#endif
 	.smp_send_reschedule	= native_smp_send_reschedule,
 
 	.kick_ap_alive		= native_kick_ap,

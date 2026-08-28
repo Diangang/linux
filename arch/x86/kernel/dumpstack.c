@@ -13,7 +13,6 @@
 #include <linux/sched/debug.h>
 #include <linux/sched/task_stack.h>
 #include <linux/ftrace.h>
-#include <linux/kexec.h>
 #include <linux/bug.h>
 #include <linux/nmi.h>
 #include <linux/sysfs.h>
@@ -370,9 +369,6 @@ void __noreturn rewind_stack_and_make_dead(int signr);
 
 void oops_end(unsigned long flags, struct pt_regs *regs, int signr)
 {
-	if (regs && kexec_should_crash(current))
-		crash_kexec(regs);
-
 	bust_spinlocks(0);
 	die_owner = -1;
 	add_taint(TAINT_DIE, LOCKDEP_NOW_UNRELIABLE);
@@ -412,10 +408,9 @@ static void __die_header(const char *str, struct pt_regs *regs, long err)
 		exec_summary_regs = *regs;
 
 	printk(KERN_DEFAULT
-	       "Oops: %s: %04lx [#%d]%s%s%s\n", str, err & 0xffff,
+	       "Oops: %s: %04lx [#%d]%s%s\n", str, err & 0xffff,
 	       ++die_counter,
 	       IS_ENABLED(CONFIG_SMP)     ? " SMP"             : "",
-	       debug_pagealloc_enabled()  ? " DEBUG_PAGEALLOC" : "",
 	       IS_ENABLED(CONFIG_MITIGATION_PAGE_TABLE_ISOLATION) ?
 	       (boot_cpu_has(X86_FEATURE_PTI) ? " PTI" : " NOPTI") : "");
 }

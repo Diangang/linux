@@ -25,7 +25,6 @@
 #include <linux/ww_mutex.h>
 
 #include "rtmutex_common.h"
-#include "lock_events.h"
 
 #ifndef WW_RT
 # define build_ww_mutex()	(false)
@@ -1576,11 +1575,9 @@ static int __sched rt_mutex_slowlock_block(struct rt_mutex_base *lock,
 
 	__assume_ctx_lock(&rtm->rtmutex.wait_lock);
 
-	lockevent_inc(rtmutex_slow_block);
 	for (;;) {
 		/* Try to acquire the lock: */
 		if (try_to_take_rt_mutex(lock, current, waiter)) {
-			lockevent_inc(rtmutex_slow_acq3);
 			break;
 		}
 
@@ -1605,10 +1602,8 @@ static int __sched rt_mutex_slowlock_block(struct rt_mutex_base *lock,
 			owner = NULL;
 		raw_spin_unlock_irq_wake(&lock->wait_lock, wake_q);
 
-		if (!owner || !rtmutex_spin_on_owner(lock, waiter, owner)) {
-			lockevent_inc(rtmutex_slow_sleep);
+		if (!owner || !rtmutex_spin_on_owner(lock, waiter, owner))
 			rt_mutex_schedule();
-		}
 
 		raw_spin_lock_irq(&lock->wait_lock);
 		set_current_state(state);
@@ -1666,7 +1661,6 @@ static int __sched __rt_mutex_slowlock(struct rt_mutex_base *lock,
 
 	__assume_ctx_lock(&rtm->rtmutex.wait_lock);
 	lockdep_assert_held(&lock->wait_lock);
-	lockevent_inc(rtmutex_slowlock);
 
 	/* Try to acquire the lock again: */
 	if (try_to_take_rt_mutex(lock, current, NULL)) {
@@ -1674,7 +1668,6 @@ static int __sched __rt_mutex_slowlock(struct rt_mutex_base *lock,
 			__ww_mutex_check_waiters(rtm, ww_ctx, wake_q);
 			ww_mutex_lock_acquired(ww, ww_ctx);
 		}
-		lockevent_inc(rtmutex_slow_acq1);
 		return 0;
 	}
 
@@ -1692,12 +1685,10 @@ static int __sched __rt_mutex_slowlock(struct rt_mutex_base *lock,
 				__ww_mutex_check_waiters(rtm, ww_ctx, wake_q);
 			ww_mutex_lock_acquired(ww, ww_ctx);
 		}
-		lockevent_inc(rtmutex_slow_acq2);
 	} else {
 		__set_current_state(TASK_RUNNING);
 		remove_waiter(lock, waiter);
 		rt_mutex_handle_deadlock(ret, chwalk, lock, waiter);
-		lockevent_inc(rtmutex_deadlock);
 	}
 
 	/*
@@ -1726,7 +1717,6 @@ static inline int __rt_mutex_slowlock_locked(struct rt_mutex_base *lock,
 				  &waiter, wake_q);
 
 	debug_rt_mutex_free_waiter(&waiter);
-	lockevent_cond_inc(rtmutex_slow_wake, !wake_q_empty(wake_q));
 	return ret;
 }
 
@@ -1799,10 +1789,8 @@ static void __sched rtlock_slowlock_locked(struct rt_mutex_base *lock,
 	struct task_struct *owner;
 
 	lockdep_assert_held(&lock->wait_lock);
-	lockevent_inc(rtlock_slowlock);
 
 	if (try_to_take_rt_mutex(lock, current, NULL)) {
-		lockevent_inc(rtlock_slow_acq1);
 		return;
 	}
 
@@ -1817,7 +1805,6 @@ static void __sched rtlock_slowlock_locked(struct rt_mutex_base *lock,
 	for (;;) {
 		/* Try to acquire the lock again */
 		if (try_to_take_rt_mutex(lock, current, &waiter)) {
-			lockevent_inc(rtlock_slow_acq2);
 			break;
 		}
 
@@ -1827,10 +1814,8 @@ static void __sched rtlock_slowlock_locked(struct rt_mutex_base *lock,
 			owner = NULL;
 		raw_spin_unlock_irq_wake(&lock->wait_lock, wake_q);
 
-		if (!owner || !rtmutex_spin_on_owner(lock, &waiter, owner)) {
-			lockevent_inc(rtlock_slow_sleep);
+		if (!owner || !rtmutex_spin_on_owner(lock, &waiter, owner))
 			schedule_rtlock();
-		}
 
 		raw_spin_lock_irq(&lock->wait_lock);
 		set_current_state(TASK_RTLOCK_WAIT);
@@ -1846,7 +1831,6 @@ static void __sched rtlock_slowlock_locked(struct rt_mutex_base *lock,
 	fixup_rt_mutex_waiters(lock, true);
 	debug_rt_mutex_free_waiter(&waiter);
 
-	lockevent_cond_inc(rtlock_slow_wake, !wake_q_empty(wake_q));
 }
 
 static __always_inline void __sched rtlock_slowlock(struct rt_mutex_base *lock)

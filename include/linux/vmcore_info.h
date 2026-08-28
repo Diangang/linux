@@ -28,9 +28,6 @@
 				     VMCOREINFO_BYTES)
 
 typedef u32 note_buf_t[CRASH_CORE_NOTE_BYTES/4];
-/* Per cpu memory for storing cpu states in case of system crash. */
-extern note_buf_t __percpu *crash_notes;
-
 void crash_update_vmcoreinfo_safecopy(void *ptr);
 void crash_save_vmcoreinfo(void);
 void arch_crash_save_vmcoreinfo(void);

@@ -29,8 +29,6 @@
 #include <linux/atomic.h>
 #include <linux/hung_task.h>
 
-#include "lock_events.h"
-
 /*
  * The least significant 2 bits of the owner value has the following
  * meanings when set.
@@ -428,7 +426,6 @@ static void rwsem_mark_wake(struct rw_semaphore *sem,
 			 * will notice the queued writer.
 			 */
 			wake_q_add(wake_q, waiter->task);
-			lockevent_inc(rwsem_wake_writer);
 		}
 
 		return;
@@ -459,7 +456,6 @@ static void rwsem_mark_wake(struct rw_semaphore *sem,
 			if (time_after(jiffies, waiter->timeout)) {
 				if (!(oldcount & RWSEM_FLAG_HANDOFF)) {
 					adjustment -= RWSEM_FLAG_HANDOFF;
-					lockevent_inc(rwsem_rlock_handoff);
 				}
 				waiter->handoff_set = true;
 			}
@@ -519,7 +515,6 @@ static void rwsem_mark_wake(struct rw_semaphore *sem,
 	} while ((waiter = next) != NULL);
 
 	adjustment = woken * RWSEM_READER_BIAS - adjustment;
-	lockevent_cond_inc(rwsem_wake_reader, woken);
 
 	oldcount = atomic_long_read(&sem->count);
 	if (!sem->first_waiter) {
@@ -650,7 +645,6 @@ static inline bool rwsem_try_write_lock(struct rw_semaphore *sem,
 	 */
 	if (new & RWSEM_FLAG_HANDOFF) {
 		first->handoff_set = true;
-		lockevent_inc(rwsem_wlock_handoff);
 		return false;
 	}
 
@@ -694,7 +688,6 @@ static inline bool rwsem_try_write_lock_unqueued(struct rw_semaphore *sem)
 		if (atomic_long_try_cmpxchg_acquire(&sem->count, &count,
 					count | RWSEM_WRITER_LOCKED)) {
 			rwsem_set_owner(sem);
-			lockevent_inc(rwsem_opt_lock);
 			return true;
 		}
 	}
@@ -707,10 +700,8 @@ static inline bool rwsem_can_spin_on_owner(struct rw_semaphore *sem)
 	unsigned long flags;
 	bool ret = true;
 
-	if (need_resched()) {
-		lockevent_inc(rwsem_opt_fail);
+	if (need_resched())
 		return false;
-	}
 
 	/*
 	 * Disable preemption is equal to the RCU read-side crital section,
@@ -724,7 +715,6 @@ static inline bool rwsem_can_spin_on_owner(struct rw_semaphore *sem)
 	    (owner && !(flags & RWSEM_READER_OWNED) && !owner_on_cpu(owner)))
 		ret = false;
 
-	lockevent_cond_inc(rwsem_opt_fail, !ret);
 	return ret;
 }
 
@@ -872,7 +862,6 @@ static bool rwsem_optimistic_spin(struct rw_semaphore *sem)
 			 */
 			else if (!(++loop & 0xf) && (sched_clock() > rspin_threshold)) {
 				rwsem_set_nonspinnable(sem);
-				lockevent_inc(rwsem_opt_nospin);
 				break;
 			}
 		}
@@ -927,7 +916,6 @@ static bool rwsem_optimistic_spin(struct rw_semaphore *sem)
 	}
 	osq_unlock(&sem->osq);
 done:
-	lockevent_cond_inc(rwsem_opt_fail, !taken);
 	return taken;
 }
 
@@ -1011,7 +999,6 @@ rwsem_down_read_slowpath(struct rw_semaphore *sem, long count, unsigned int stat
 	 */
 	if (!(count & (RWSEM_WRITER_LOCKED | RWSEM_FLAG_HANDOFF))) {
 		rwsem_set_reader_owned(sem);
-		lockevent_inc(rwsem_rlock_steal);
 
 		/*
 		 * Wake up other readers in the wait queue if it is
@@ -1048,7 +1035,6 @@ queue:
 			smp_acquire__after_ctrl_dep();
 			raw_spin_unlock_irq(&sem->wait_lock);
 			rwsem_set_reader_owned(sem);
-			lockevent_inc(rwsem_rlock_fast);
 			return sem;
 		}
 		adjustment += RWSEM_FLAG_WAITERS;
@@ -1087,7 +1073,6 @@ queue:
 			break;
 		}
 		schedule_preempt_disabled();
-		lockevent_inc(rwsem_sleep_reader);
 		set_current_state(state);
 	}
 
@@ -1095,13 +1080,11 @@ queue:
 		hung_task_clear_blocker();
 
 	__set_current_state(TASK_RUNNING);
-	lockevent_inc(rwsem_rlock);
 	return sem;
 
 out_nolock:
 	rwsem_del_wake_waiter(sem, &waiter, &wake_q);
 	__set_current_state(TASK_RUNNING);
-	lockevent_inc(rwsem_rlock_fail);
 	return ERR_PTR(-EINTR);
 }
 
@@ -1185,7 +1168,6 @@ rwsem_down_write_slowpath(struct rw_semaphore *sem, int state)
 		}
 
 		schedule_preempt_disabled();
-		lockevent_inc(rwsem_sleep_writer);
 		set_current_state(state);
 trylock_again:
 		raw_spin_lock_irq(&sem->wait_lock);
@@ -1196,14 +1178,12 @@ trylock_again:
 
 	__set_current_state(TASK_RUNNING);
 	raw_spin_unlock_irq(&sem->wait_lock);
-	lockevent_inc(rwsem_wlock);
 	return sem;
 
 out_nolock:
 	__set_current_state(TASK_RUNNING);
 	raw_spin_lock_irq(&sem->wait_lock);
 	rwsem_del_wake_waiter(sem, &waiter, &wake_q);
-	lockevent_inc(rwsem_wlock_fail);
 	return ERR_PTR(-EINTR);
 }
 

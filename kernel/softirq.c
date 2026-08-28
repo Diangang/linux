@@ -572,13 +572,13 @@ static void tasklet_action_common(struct tasklet_head *tl_head,
 	tasklet_unlock_callback();
 }
 
-static __latent_entropy void tasklet_action(void)
+static void tasklet_action(void)
 {
 	workqueue_softirq_action(false);
 	tasklet_action_common(this_cpu_ptr(&tasklet_vec), TASKLET_SOFTIRQ);
 }
 
-static __latent_entropy void tasklet_hi_action(void)
+static void tasklet_hi_action(void)
 {
 	workqueue_softirq_action(true);
 	tasklet_action_common(this_cpu_ptr(&tasklet_hi_vec), HI_SOFTIRQ);

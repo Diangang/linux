@@ -329,15 +329,12 @@ enum {
 	TSC_WATCHDOG_ON,
 };
 
-static int no_sched_irq_time;
 static int tsc_watchdog;
 
 static int __init tsc_setup(char *str)
 {
 	if (!strcmp(str, "reliable"))
 		tsc_clocksource_reliable = 1;
-	if (!strncmp(str, "noirqtime", 9))
-		no_sched_irq_time = 1;
 	if (!strcmp(str, "unstable"))
 		mark_tsc_unstable("boot parameter");
 	if (!strcmp(str, "nowatchdog"))
@@ -1552,9 +1549,6 @@ void __init tsc_init(void)
 	}
 
 	cyc2ns_init_secondary_cpus();
-
-	if (!no_sched_irq_time)
-		enable_sched_clock_irqtime();
 
 	lpj_fine = get_loops_per_jiffy();
 

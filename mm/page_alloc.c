@@ -44,7 +44,6 @@
 #include <linux/migrate.h>
 #include <linux/sched/mm.h>
 #include <linux/page_owner.h>
-#include <linux/page_table_check.h>
 #include <linux/memcontrol.h>
 #include <linux/ftrace.h>
 #include <linux/lockdep.h>
@@ -170,11 +169,6 @@ EXPORT_PER_CPU_SYMBOL(_numa_mem_);
 #endif
 
 static DEFINE_MUTEX(pcpu_drain_mutex);
-
-#ifdef CONFIG_GCC_PLUGIN_LATENT_ENTROPY
-volatile unsigned long latent_entropy __latent_entropy;
-EXPORT_SYMBOL(latent_entropy);
-#endif
 
 /*
  * Array of node states.
@@ -907,7 +901,7 @@ static inline void __free_one_page(struct page *page,
 		}
 
 		/*
-		 * Our buddy is free or it is CONFIG_DEBUG_PAGEALLOC guard page,
+			 * Our buddy is free or it is a guard page,
 		 * merge with it and move up one order.
 		 */
 		if (page_is_guard(buddy))
@@ -1187,7 +1181,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	if (unlikely(PageHWPoison(page)) && !order) {
 		/* Do not let hwpoison pages hit pcplists/buddy */
 		reset_page_owner(page, order);
-		page_table_check_free(page, order);
 		pgalloc_tag_sub(page, 1 << order);
 
 		/*
@@ -1253,7 +1246,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	page->flags.f &= ~PAGE_FLAGS_CHECK_AT_PREP;
 	page->private = 0;
 	reset_page_owner(page, order);
-	page_table_check_free(page, order);
 	pgalloc_tag_sub(page, 1 << order);
 
 	if (!PageHighMem(page) && !(fpi_flags & FPI_TRYLOCK)) {
@@ -1263,15 +1255,13 @@ __always_inline bool __free_pages_prepare(struct page *page,
 					   PAGE_SIZE << order);
 	}
 
-	kernel_poison_pages(page, 1 << order);
-
 	/*
 	 * As memory initialization might be integrated into KASAN,
 	 * KASAN poisoning and memory initialization code must be
 	 * kept together to avoid discrepancies in behavior.
 	 *
 	 * With hardware tag-based KASAN, memory tags must be set before the
-	 * page becomes unavailable via debug_pagealloc or arch_free_page.
+	 * page becomes unavailable via arch_free_page.
 	 */
 	if (!skip_kasan_poison) {
 		kasan_poison_pages(page, order, init);
@@ -1290,7 +1280,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	 */
 	arch_free_page(page, order);
 
-	debug_pagealloc_unmap_pages(page, 1 << order);
 
 	return true;
 }
@@ -1668,14 +1657,6 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 	set_page_private(page, 0);
 
 	arch_alloc_page(page, order);
-	debug_pagealloc_map_pages(page, 1 << order);
-
-	/*
-	 * Page unpoisoning must happen before memory initialization.
-	 * Otherwise, the poison pattern will be overwritten for __GFP_ZERO
-	 * allocations and the page unpoisoning code will complain.
-	 */
-	kernel_unpoison_pages(page, 1 << order);
 
 	/*
 	 * As memory initialization might be integrated into KASAN,
@@ -1708,7 +1689,6 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 		kernel_init_pages(page, 1 << order);
 
 	set_page_owner(page, order, gfp_flags);
-	page_table_check_alloc(page, order);
 	pgalloc_tag_add(page, current, 1 << order);
 }
 

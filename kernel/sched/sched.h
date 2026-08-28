@@ -2914,12 +2914,6 @@ static inline void sched_core_account_forceidle(struct rq *rq) { }
 static inline void sched_core_tick(struct rq *rq) { }
 
 
-static inline int irqtime_enabled(void)
-{
-	return 0;
-}
-
-
 #ifdef CONFIG_CPU_FREQ
 
 DECLARE_PER_CPU(struct update_util_data __rcu *, cpufreq_update_util_data);

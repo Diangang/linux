@@ -925,7 +925,7 @@ SYM_CODE_START(__sdei_asm_handler)
 
 	mov	x19, x1
 
-	/* Store the registered-event for crash_smp_send_stop() */
+	/* Store the registered-event for NMI stop handling */
 	ldrb	w4, [x19, #SDEI_EVENT_PRIORITY]
 	cbnz	w4, 1f
 	adr_this_cpu dst=x5, sym=sdei_active_normal_event, tmp=x6
@@ -988,7 +988,7 @@ SYM_CODE_START(__sdei_asm_handler)
 
 	ldr_l	x2, sdei_exit_mode
 
-	/* Clear the registered-event seen by crash_smp_send_stop() */
+	/* Clear the registered-event seen by NMI stop handling */
 	ldrb	w3, [x4, #SDEI_EVENT_PRIORITY]
 	cbnz	w3, 1f
 	adr_this_cpu dst=x5, sym=sdei_active_normal_event, tmp=x6

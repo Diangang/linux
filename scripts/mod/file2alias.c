@@ -720,12 +720,6 @@ static void do_input_entry(struct module *mod, void *symval)
 	module_alias_printf(mod, false, "input:%s", alias);
 }
 
-static void do_eisa_entry(struct module *mod, void *symval)
-{
-	DEF_FIELD_ADDR(symval, eisa_device_id, sig);
-	module_alias_printf(mod, false, EISA_DEVICE_MODALIAS_FMT "*", *sig);
-}
-
 /* Looks like: parisc:tNhvNrevNsvN */
 static void do_parisc_entry(struct module *mod, void *symval)
 {
@@ -1423,7 +1417,6 @@ static const struct devtable devtable[] = {
 	{"pcmcia", SIZE_pcmcia_device_id, do_pcmcia_entry},
 	{"vio", SIZE_vio_device_id, do_vio_entry},
 	{"input", SIZE_input_device_id, do_input_entry},
-	{"eisa", SIZE_eisa_device_id, do_eisa_entry},
 	{"parisc", SIZE_parisc_device_id, do_parisc_entry},
 	{"sdio", SIZE_sdio_device_id, do_sdio_entry},
 	{"ssb", SIZE_ssb_device_id, do_ssb_entry},

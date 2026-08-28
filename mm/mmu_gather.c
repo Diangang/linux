@@ -105,7 +105,7 @@ static void __tlb_batch_free_encoded_pages(struct mmu_gather_batch *batch)
 	unsigned int nr, nr_pages;
 
 	while (batch->nr) {
-		if (!page_poisoning_enabled_static() && !want_init_on_free()) {
+		if (!want_init_on_free()) {
 			nr = min(MAX_NR_FOLIOS_PER_FREE, batch->nr);
 
 			/*
@@ -117,7 +117,7 @@ static void __tlb_batch_free_encoded_pages(struct mmu_gather_batch *batch)
 				nr++;
 		} else {
 			/*
-			 * With page poisoning and init_on_free, the time it
+			 * With init_on_free, the time it
 			 * takes to free memory grows proportionally with the
 			 * actual memory size. Therefore, limit based on the
 			 * actual memory size and not the number of involved

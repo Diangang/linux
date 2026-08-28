@@ -62,7 +62,6 @@
 #include <linux/psi.h>
 #include <linux/seq_buf.h>
 #include <linux/sched/isolation.h>
-#include <linux/kmemleak.h>
 #include "internal.h"
 #include "slab.h"
 #include "memcontrol-v1.h"

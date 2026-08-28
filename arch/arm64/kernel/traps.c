@@ -16,7 +16,7 @@
 #include <linux/hardirq.h>
 #include <linux/kdebug.h>
 #include <linux/module.h>
-#include <linux/kexec.h>
+#include <linux/ptrace.h>
 #include <linux/delay.h>
 #include <linux/efi.h>
 #include <linux/init.h>
@@ -215,9 +215,6 @@ void die(const char *str, struct pt_regs *regs, long err)
 	console_verbose();
 	bust_spinlocks(1);
 	ret = __die(str, err, regs);
-
-	if (regs && kexec_should_crash(current))
-		crash_kexec(regs);
 
 	bust_spinlocks(0);
 	add_taint(TAINT_DIE, LOCKDEP_NOW_UNRELIABLE);

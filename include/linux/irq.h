@@ -698,9 +698,6 @@ void irq_chip_pre_redirect_parent(struct irq_data *data);
 int irq_chip_redirect_set_affinity(struct irq_data *data, const struct cpumask *dest, bool force);
 #endif
 
-/* Disable or mask interrupts during a kernel kexec */
-extern void machine_kexec_mask_interrupts(void);
-
 /* Handling of unhandled and spurious interrupts: */
 extern void note_interrupt(struct irq_desc *desc, irqreturn_t action_ret);
 

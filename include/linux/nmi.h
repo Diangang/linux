@@ -39,8 +39,6 @@ void watchdog_hardlockup_check(unsigned int cpu, struct pt_regs *regs);
 static inline void hardlockup_detector_perf_stop(void) { }
 static inline void hardlockup_detector_perf_restart(void) { }
 
-static inline void watchdog_buddy_check_hardlockup(int hrtimer_interrupts) {}
-
 /**
  * touch_nmi_watchdog - manually reset the hardlockup watchdog timeout.
  *

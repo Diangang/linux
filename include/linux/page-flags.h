@@ -316,16 +316,6 @@ static __always_inline int PageCompound(const struct page *page)
 	       READ_ONCE(page->compound_info) & 1;
 }
 
-#define	PAGE_POISON_PATTERN	-1l
-static inline int PagePoisoned(const struct page *page)
-{
-	return READ_ONCE(page->flags.f) == PAGE_POISON_PATTERN;
-}
-
-static inline void page_init_poison(struct page *page, size_t size)
-{
-}
-
 static const unsigned long *const_folio_flags(const struct folio *folio,
 		unsigned n)
 {
@@ -348,9 +338,6 @@ static unsigned long *folio_flags(struct folio *folio, unsigned n)
 /*
  * Page flags policies wrt compound pages
  *
- * PF_POISONED_CHECK
- *     check if this struct page poisoned/uninitialized
- *
  * PF_ANY:
  *     the page flag is relevant for small, head and tail pages.
  *
@@ -368,20 +355,17 @@ static unsigned long *folio_flags(struct folio *folio, unsigned n)
  * PF_SECOND:
  *     the page flag is stored in the first tail page.
  */
-#define PF_POISONED_CHECK(page) ({					\
-		VM_BUG_ON_PGFLAGS(PagePoisoned(page), page);		\
-		page; })
-#define PF_ANY(page, enforce)	PF_POISONED_CHECK(page)
-#define PF_HEAD(page, enforce)	PF_POISONED_CHECK(compound_head(page))
+#define PF_ANY(page, enforce)	(page)
+#define PF_HEAD(page, enforce)	compound_head(page)
 #define PF_NO_TAIL(page, enforce) ({					\
 		VM_BUG_ON_PGFLAGS(enforce && PageTail(page), page);	\
-		PF_POISONED_CHECK(compound_head(page)); })
+		compound_head(page); })
 #define PF_NO_COMPOUND(page, enforce) ({				\
 		VM_BUG_ON_PGFLAGS(enforce && PageCompound(page), page);	\
-		PF_POISONED_CHECK(page); })
+		page; })
 #define PF_SECOND(page, enforce) ({					\
 		VM_BUG_ON_PGFLAGS(!PageHead(page), page);		\
-		PF_POISONED_CHECK(&page[1]); })
+		&page[1]; })
 
 /* Which page is the flag stored in */
 #define FOLIO_PF_ANY		0
@@ -824,7 +808,6 @@ static __always_inline bool folio_test_head(const struct folio *folio)
 
 static __always_inline int PageHead(const struct page *page)
 {
-	PF_POISONED_CHECK(page);
 	return test_bit(PG_head, &page->flags.f);
 }
 
@@ -1013,7 +996,7 @@ extern void page_offline_end(void);
 PAGE_TYPE_OPS(Table, table, pgtable)
 
 /*
- * Marks guardpages used with debug_pagealloc.
+ * Marks allocator guard pages.
  */
 PAGE_TYPE_OPS(Guard, guard, guard)
 

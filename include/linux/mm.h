@@ -36,7 +36,6 @@
 #include <linux/rcuwait.h>
 #include <linux/bitmap.h>
 #include <linux/bitops.h>
-#include <linux/iommu-debug-pagealloc.h>
 
 struct mempolicy;
 struct anon_vma;
@@ -2254,7 +2253,7 @@ static inline int memdesc_nid(memdesc_flags_t mdf)
 
 static inline int page_to_nid(const struct page *page)
 {
-	return memdesc_nid(PF_POISONED_CHECK(page)->flags);
+	return memdesc_nid(page->flags);
 }
 
 static inline int folio_nid(const struct folio *folio)
@@ -4597,12 +4596,6 @@ extern int apply_to_existing_page_range(struct mm_struct *mm,
 				   unsigned long address, unsigned long size,
 				   pte_fn_t fn, void *data);
 
-static inline bool page_poisoning_enabled(void) { return false; }
-static inline bool page_poisoning_enabled_static(void) { return false; }
-static inline void __kernel_poison_pages(struct page *page, int nunmpages) { }
-static inline void kernel_poison_pages(struct page *page, int numpages) { }
-static inline void kernel_unpoison_pages(struct page *page, int numpages) { }
-
 DECLARE_STATIC_KEY_MAYBE(CONFIG_INIT_ON_ALLOC_DEFAULT_ON, init_on_alloc);
 static inline bool want_init_on_alloc(gfp_t flags)
 {
@@ -4619,34 +4612,6 @@ static inline bool want_init_on_free(void)
 				   &init_on_free);
 }
 
-extern bool _debug_pagealloc_enabled_early;
-DECLARE_STATIC_KEY_FALSE(_debug_pagealloc_enabled);
-
-static inline bool debug_pagealloc_enabled(void)
-{
-	return IS_ENABLED(CONFIG_DEBUG_PAGEALLOC) &&
-		_debug_pagealloc_enabled_early;
-}
-
-/*
- * For use in fast paths after mem_debugging_and_hardening_init() has run,
- * or when a false negative result is not harmful when called too early.
- */
-static inline bool debug_pagealloc_enabled_static(void)
-{
-	if (!IS_ENABLED(CONFIG_DEBUG_PAGEALLOC))
-		return false;
-
-	return static_branch_unlikely(&_debug_pagealloc_enabled);
-}
-
-/*
- * To support DEBUG_PAGEALLOC architecture must ensure that
- * __kernel_map_pages() never fails
- */
-extern void __kernel_map_pages(struct page *page, int numpages, int enable);
-static inline void debug_pagealloc_map_pages(struct page *page, int numpages) {}
-static inline void debug_pagealloc_unmap_pages(struct page *page, int numpages) {}
 static inline unsigned int debug_guardpage_minorder(void) { return 0; }
 static inline bool debug_guardpage_enabled(void) { return false; }
 static inline bool page_is_guard(const struct page *page) { return false; }

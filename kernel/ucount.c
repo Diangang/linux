@@ -5,7 +5,6 @@
 #include <linux/slab.h>
 #include <linux/cred.h>
 #include <linux/hash.h>
-#include <linux/kmemleak.h>
 #include <linux/user_namespace.h>
 
 struct ucounts init_ucounts = {
@@ -351,7 +350,6 @@ static __init int user_namespace_sysctl_init(void)
 	 * properly.
 	 */
 	user_header = register_sysctl_sz("user", empty, 0);
-	kmemleak_ignore(user_header);
 	BUG_ON(!user_header);
 	BUG_ON(!setup_userns_sysctls(&init_user_ns));
 #endif

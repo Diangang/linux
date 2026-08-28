@@ -15,7 +15,6 @@
 #include <linux/bug.h>
 #include <linux/errno.h>
 #include <asm-generic/pgtable_uffd.h>
-#include <linux/page_table_check.h>
 
 #if 5 - defined(__PAGETABLE_P4D_FOLDED) - defined(__PAGETABLE_PUD_FOLDED) - \
 	defined(__PAGETABLE_PMD_FOLDED) != CONFIG_PGTABLE_LEVELS
@@ -410,8 +409,6 @@ static inline pte_t pte_advance_pfn(pte_t pte, unsigned long nr)
 static inline void set_ptes(struct mm_struct *mm, unsigned long addr,
 		pte_t *ptep, pte_t pte, unsigned int nr)
 {
-	page_table_check_ptes_set(mm, addr, ptep, pte, nr);
-
 	for (;;) {
 		set_pte(ptep, pte);
 		if (--nr == 0)
@@ -614,7 +611,6 @@ static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 {
 	pte_t pte = ptep_get(ptep);
 	pte_clear(mm, address, ptep);
-	page_table_check_pte_clear(mm, address, pte);
 	return pte;
 }
 #endif
@@ -666,14 +662,7 @@ static inline void clear_young_dirty_ptes(struct vm_area_struct *vma,
 static inline void ptep_clear(struct mm_struct *mm, unsigned long addr,
 			      pte_t *ptep)
 {
-	pte_t pte = ptep_get(ptep);
-
 	pte_clear(mm, addr, ptep);
-	/*
-	 * No need for ptep_get_and_clear(): page table check doesn't care about
-	 * any bits that could have been set by HW concurrently.
-	 */
-	page_table_check_pte_clear(mm, addr, pte);
 }
 
 #if 0
@@ -768,7 +757,6 @@ static inline pmd_t pmdp_huge_get_and_clear(struct mm_struct *mm,
 	pmd_t pmd = *pmdp;
 
 	pmd_clear(pmdp);
-	page_table_check_pmd_clear(mm, address, pmd);
 
 	return pmd;
 }
@@ -781,7 +769,6 @@ static inline pud_t pudp_huge_get_and_clear(struct mm_struct *mm,
 	pud_t pud = *pudp;
 
 	pud_clear(pudp);
-	page_table_check_pud_clear(mm, address, pud);
 
 	return pud;
 }

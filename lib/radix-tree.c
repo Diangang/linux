@@ -18,7 +18,6 @@
 #include <linux/idr.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/kmemleak.h>
 #include <linux/percpu.h>
 #include <linux/preempt.h>		/* in_interrupt() */
 #include <linux/radix-tree.h>
@@ -270,7 +269,6 @@ radix_tree_node_alloc(gfp_t gfp_mask, struct radix_tree_node *parent,
 		 * Update the allocation stack trace as this is more useful
 		 * for debugging.
 		 */
-		kmemleak_update_trace(ret);
 		goto out;
 	}
 	ret = kmem_cache_alloc(radix_tree_node_cachep, gfp_mask);

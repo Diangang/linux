@@ -23,7 +23,6 @@
 #include <linux/sort.h>
 #include <linux/slab.h>
 #include <linux/memblock.h>
-#include <linux/kmemleak.h>
 
 #include "of_private.h"
 
@@ -51,9 +50,6 @@ static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
 		if (err)
 			memblock_phys_free(base, size);
 	}
-
-	if (!err)
-		kmemleak_ignore_phys(base);
 
 	return err;
 }

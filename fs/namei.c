@@ -2292,7 +2292,7 @@ static __always_inline const char *walk_component(struct nameidata *nd, int flag
  *   do a "get_unaligned()" if this helps and is sufficiently
  *   fast.
  *
- * - non-CONFIG_DEBUG_PAGEALLOC configurations (so that we
+ * - configurations without page-allocation debugging (so that we
  *   do not trap on the (extremely unlikely) case of a page
  *   crossing operation.
  *

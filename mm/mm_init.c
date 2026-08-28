@@ -19,7 +19,6 @@
 #include <linux/padata.h>
 #include <linux/nmi.h>
 #include <linux/buffer_head.h>
-#include <linux/kmemleak.h>
 #include <linux/kfence.h>
 #include <linux/page_ext.h>
 #include <linux/pti.h>
@@ -30,7 +29,7 @@
 #include <linux/crash_dump.h>
 #include <linux/execmem.h>
 #include <linux/vmstat.h>
-#include <linux/kexec_handover.h>
+#include <linux/vmalloc.h>
 #include <linux/hugetlb.h>
 #include "internal.h"
 #include "slab.h"
@@ -1248,21 +1247,14 @@ void __init *memmap_alloc(phys_addr_t size, phys_addr_t align,
 {
 	void *ptr;
 
-	/*
-	 * Kmemleak will explicitly scan mem_map by traversing all valid
-	 * `struct *page`,so memblock does not need to be added to the scan list.
-	 */
 	if (exact_nid)
 		ptr = memblock_alloc_exact_nid_raw(size, align, min_addr,
-						   MEMBLOCK_ALLOC_NOLEAKTRACE,
+						   MEMBLOCK_ALLOC_ACCESSIBLE,
 						   nid);
 	else
 		ptr = memblock_alloc_try_nid_raw(size, align, min_addr,
-						 MEMBLOCK_ALLOC_NOLEAKTRACE,
+						 MEMBLOCK_ALLOC_ACCESSIBLE,
 						 nid);
-
-	if (ptr && size > 0)
-		page_init_poison(ptr, size);
 
 	return ptr;
 }
@@ -1788,7 +1780,6 @@ void *__init alloc_large_system_hash(const char *tablename,
 			 * alloc_pages_exact() automatically does
 			 */
 			table = alloc_pages_exact(size, gfp_flags);
-			kmemleak_alloc(table, size, 1, gfp_flags);
 		}
 	} while (!table && size > PAGE_SIZE && --log2qty);
 
@@ -1869,17 +1860,7 @@ early_param("check_pages", early_check_pages);
  */
 static void __init mem_debugging_and_hardening_init(void)
 {
-	bool page_poisoning_requested = false;
 	bool want_check_pages = check_pages_enabled_early;
-
-
-	if ((_init_on_alloc_enabled_early || _init_on_free_enabled_early) &&
-	    page_poisoning_requested) {
-		pr_info("mem auto-init: CONFIG_PAGE_POISONING is on, "
-			"will take precedence over init_on_alloc and init_on_free\n");
-		_init_on_alloc_enabled_early = false;
-		_init_on_free_enabled_early = false;
-	}
 
 	if (_init_on_alloc_enabled_early) {
 		want_check_pages = true;
@@ -2035,12 +2016,6 @@ void __init mm_core_init(void)
 	kmsan_init_shadow();
 	stack_depot_early_init();
 
-	/*
-	 * KHO memory setup must happen while memblock is still active, but
-	 * as close as possible to buddy initialization
-	 */
-	kho_memory_init();
-
 	memblock_free_all();
 	mem_init();
 	kmem_cache_init();
@@ -2049,7 +2024,6 @@ void __init mm_core_init(void)
 	 * slab is ready so that stack_depot_init() works properly
 	 */
 	page_ext_init_flatmem_late();
-	kmemleak_init();
 	ptlock_cache_init();
 	pgtable_cache_init();
 	debug_objects_mem_init();

@@ -179,34 +179,11 @@ void __printf(1, 0) acpi_os_vprintf(const char *fmt, va_list args)
 #endif
 }
 
-#ifdef CONFIG_KEXEC
-static unsigned long acpi_rsdp;
-static int __init setup_acpi_rsdp(char *arg)
-{
-	return kstrtoul(arg, 16, &acpi_rsdp);
-}
-early_param("acpi_rsdp", setup_acpi_rsdp);
-#endif
 
 acpi_physical_address __init acpi_os_get_root_pointer(void)
 {
 	acpi_physical_address pa;
 
-#ifdef CONFIG_KEXEC
-	/*
-	 * We may have been provided with an RSDP on the command line,
-	 * but if a malicious user has done so they may be pointing us
-	 * at modified ACPI tables that could alter kernel behaviour -
-	 * so, we check the lockdown status before making use of
-	 * it. If we trust it then also stash it in an architecture
-	 * specific location (if appropriate) so it can be carried
-	 * over further kexec()s.
-	 */
-	if (acpi_rsdp && !security_locked_down(LOCKDOWN_ACPI_TABLES)) {
-		acpi_arch_set_root_pointer(acpi_rsdp);
-		return acpi_rsdp;
-	}
-#endif
 	pa = acpi_arch_get_root_pointer();
 	if (pa)
 		return pa;

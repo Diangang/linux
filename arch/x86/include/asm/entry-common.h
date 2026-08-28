@@ -3,7 +3,6 @@
 #define _ASM_X86_ENTRY_COMMON_H
 
 #include <linux/randomize_kstack.h>
-#include <linux/user-return-notifier.h>
 
 #include <asm/nospec-branch.h>
 #include <asm/io_bitmap.h>
@@ -18,9 +17,6 @@ static __always_inline void arch_enter_from_user_mode(struct pt_regs *regs)
 
 static inline void arch_exit_work(unsigned long ti_work)
 {
-	if (ti_work & _TIF_USER_RETURN_NOTIFY)
-		fire_user_return_notifiers();
-
 	if (unlikely(ti_work & _TIF_IO_BITMAP))
 		tss_update_io_bitmap();
 

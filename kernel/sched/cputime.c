@@ -8,12 +8,6 @@
 
 
 
-static u64 irqtime_tick_accounted(u64 dummy)
-{
-	return 0;
-}
-
-
 static inline void task_group_account_field(struct task_struct *p, int index,
 					    u64 tmp)
 {
@@ -188,16 +182,9 @@ static __always_inline u64 steal_account_process_time(u64 maxtime)
  */
 static inline u64 account_other_time(u64 max)
 {
-	u64 accounted;
-
 	lockdep_assert_irqs_disabled();
 
-	accounted = steal_account_process_time(max);
-
-	if (accounted < max)
-		accounted += irqtime_tick_accounted(max - accounted);
-
-	return accounted;
+	return steal_account_process_time(max);
 }
 
 #ifdef CONFIG_64BIT
@@ -255,10 +242,6 @@ void thread_group_cputime(struct task_struct *tsk, struct task_cputime *times)
 		}
 	}
 }
-
-static inline void irqtime_account_idle_ticks(int ticks) { }
-static inline void irqtime_account_process_tick(struct task_struct *p, int user_tick,
-						int nr_ticks) { }
 
 /*
  * Use precise platform statistics if available:
@@ -425,4 +408,3 @@ void thread_group_cputime_adjusted(struct task_struct *p, u64 *ut, u64 *st)
 	thread_group_cputime(p, &cputime);
 	cputime_adjust(&cputime, &p->signal->prev_cputime, ut, st);
 }
-

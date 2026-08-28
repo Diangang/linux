@@ -11,7 +11,6 @@
 #include <linux/arm_sdei.h>
 #include <linux/sched.h>
 #include <linux/ftrace.h>
-#include <linux/kexec.h>
 #include <linux/mm.h>
 #include <linux/suspend.h>
 #include <asm/cpufeature.h>
@@ -156,16 +155,6 @@ int main(void)
 #ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
   DEFINE(PTRAUTH_KERNEL_KEY_APIA,	offsetof(struct ptrauth_keys_kernel, apia));
 #endif
-  BLANK();
-#endif
-#ifdef CONFIG_KEXEC_CORE
-  DEFINE(KIMAGE_ARCH_DTB_MEM,		offsetof(struct kimage, arch.dtb_mem));
-  DEFINE(KIMAGE_ARCH_EL2_VECTORS,	offsetof(struct kimage, arch.el2_vectors));
-  DEFINE(KIMAGE_ARCH_ZERO_PAGE,		offsetof(struct kimage, arch.zero_page));
-  DEFINE(KIMAGE_ARCH_PHYS_OFFSET,	offsetof(struct kimage, arch.phys_offset));
-  DEFINE(KIMAGE_ARCH_TTBR1,		offsetof(struct kimage, arch.ttbr1));
-  DEFINE(KIMAGE_HEAD,			offsetof(struct kimage, head));
-  DEFINE(KIMAGE_START,			offsetof(struct kimage, start));
   BLANK();
 #endif
 #ifdef CONFIG_FUNCTION_TRACER

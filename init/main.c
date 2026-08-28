@@ -66,7 +66,6 @@
 #include <linux/debug_locks.h>
 #include <linux/debugobjects.h>
 #include <linux/lockdep.h>
-#include <linux/kmemleak.h>
 #include <linux/padata.h>
 #include <linux/pid_namespace.h>
 #include <linux/device/driver.h>
@@ -100,7 +99,6 @@
 #include <linux/stackdepot.h>
 #include <linux/randomize_kstack.h>
 #include <linux/pidfs.h>
-#include <linux/ptdump.h>
 #include <linux/time_namespace.h>
 #include <linux/unaligned.h>
 #include <linux/vdso_datastore.h>
@@ -1200,7 +1198,7 @@ int __init_or_module do_one_initcall(initcall_t fn)
 	}
 	WARN(msgbuf[0], "initcall %pS returned with %s\n", fn, msgbuf);
 
-	add_latent_entropy();
+	add_device_randomness(NULL, 0);
 	return ret;
 }
 
@@ -1354,7 +1352,6 @@ static void mark_readonly(void)
 	if (IS_ENABLED(CONFIG_STRICT_KERNEL_RWX) && rodata_enabled) {
 		jump_label_init_ro();
 		mark_rodata_ro();
-		debug_checkwx();
 		rodata_test();
 	} else if (IS_ENABLED(CONFIG_STRICT_KERNEL_RWX)) {
 		pr_info("Kernel memory protection disabled.\n");

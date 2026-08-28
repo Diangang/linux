@@ -12,7 +12,6 @@
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/ioport.h>
-#include <linux/kexec.h>
 #include <linux/libfdt.h>
 #include <linux/mman.h>
 #include <linux/nodemask.h>
@@ -107,7 +106,7 @@ static phys_addr_t __init early_pgtable_alloc(enum pgtable_level pgtable_level)
 	phys_addr_t phys;
 
 	phys = memblock_phys_alloc_range(PAGE_SIZE, PAGE_SIZE, 0,
-					 MEMBLOCK_ALLOC_NOLEAKTRACE);
+					 MEMBLOCK_ALLOC_ACCESSIBLE);
 	if (!phys)
 		panic("Failed to allocate page table page\n");
 
@@ -757,8 +756,6 @@ static inline bool force_pte_mapping(void)
 	const bool bbml2 = system_capabilities_finalized() ?
 		system_supports_bbml2_noabort() : cpu_supports_bbml2_noabort();
 
-	if (debug_pagealloc_enabled())
-		return true;
 	if (bbml2)
 		return false;
 	return rodata_full || arm64_kfence_can_set_direct_map() || is_realm_world();
@@ -773,10 +770,7 @@ int split_kernel_leaf_mapping(unsigned long start, unsigned long end)
 
 	/*
 	 * If the region is within a pte-mapped area, there is no need to try to
-	 * split. Additionally, CONFIG_DEBUG_PAGEALLOC may
-	 * change permissions from atomic context so for those cases (which are
-	 * always pte-mapped), we must not go any further because taking the
-	 * mutex below may sleep. Do not call force_pte_mapping() here because
+	 * split. Do not call force_pte_mapping() here because
 	 * it could return a confusing result if called from a secondary cpu
 	 * prior to finalizing caps. Instead, linear_map_requires_bbml2 gives us
 	 * what we need.

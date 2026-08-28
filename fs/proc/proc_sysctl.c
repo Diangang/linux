@@ -15,7 +15,6 @@
 #include <linux/uio.h>
 #include <linux/module.h>
 #include <linux/mount.h>
-#include <linux/kmemleak.h>
 #include <linux/lockdep.h>
 #include "internal.h"
 
@@ -1462,7 +1461,6 @@ void __init __register_sysctl_init(const char *path, const struct ctl_table *tab
 		pr_err("failed when register_sysctl_sz %s to %s\n", table_name, path);
 		return;
 	}
-	kmemleak_not_leak(hdr);
 }
 
 static void put_links(struct ctl_table_header *header)

@@ -28,7 +28,6 @@
 #include <linux/io.h>
 #include <linux/rcupdate.h>
 #include <linux/pfn.h>
-#include <linux/kmemleak.h>
 #include <linux/atomic.h>
 #include <linux/compiler.h>
 #include <linux/memcontrol.h>
@@ -2055,12 +2054,6 @@ static struct vmap_area *alloc_vmap_area(unsigned long size,
 		va = kmem_cache_alloc_node(vmap_area_cachep, gfp_mask, node);
 		if (unlikely(!va))
 			return ERR_PTR(-ENOMEM);
-
-		/*
-		 * Only scan the relevant parts containing pointers to other objects
-		 * to avoid false negatives.
-		 */
-		kmemleak_scan_area(&va->rb_node, SIZE_MAX, gfp_mask);
 	}
 
 retry:
@@ -2467,9 +2460,6 @@ static void free_unmap_vmap_area(struct vmap_area *va)
 {
 	flush_cache_vunmap(va->va_start, va->va_end);
 	vunmap_range_noflush(va->va_start, va->va_end);
-	if (debug_pagealloc_enabled_static())
-		flush_tlb_kernel_range(va->va_start, va->va_end);
-
 	free_vmap_area_noflush(va);
 }
 
@@ -2913,9 +2903,6 @@ static void vb_free(unsigned long addr, unsigned long size)
 	spin_unlock(&vb->lock);
 
 	vunmap_range_noflush(addr, addr + size);
-
-	if (debug_pagealloc_enabled_static())
-		flush_tlb_kernel_range(addr, addr + size);
 
 	spin_lock(&vb->lock);
 
@@ -3396,8 +3383,6 @@ void vfree_atomic(const void *addr)
 	struct vfree_deferred *p = raw_cpu_ptr(&vfree_deferred);
 
 	BUG_ON(in_nmi());
-	kmemleak_free(addr);
-
 	/*
 	 * Use raw_cpu_ptr() because this can be called from preemptible
 	 * context. Preemption is absolutely fine here, because the llist_add()
@@ -3436,7 +3421,6 @@ void vfree(const void *addr)
 	}
 
 	BUG_ON(in_nmi());
-	kmemleak_free(addr);
 	might_sleep();
 
 	if (!addr)
@@ -4024,9 +4008,6 @@ again:
 	 * Now, it is fully initialized, so remove this flag here.
 	 */
 	clear_vm_uninitialized_flag(area);
-
-	if (!(vm_flags & VM_DEFER_KMEMLEAK))
-		kmemleak_vmalloc(area, PAGE_ALIGN(size), gfp_mask);
 
 	return area->addr;
 

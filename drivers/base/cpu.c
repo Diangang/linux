@@ -145,61 +145,12 @@ static DEVICE_ATTR(release, S_IWUSR, NULL, cpu_release_store);
 #endif /* CONFIG_ARCH_CPU_PROBE_RELEASE */
 #endif /* CONFIG_HOTPLUG_CPU */
 
-#ifdef CONFIG_CRASH_DUMP
-#include <linux/kexec.h>
-
-static ssize_t crash_notes_show(struct device *dev,
-				struct device_attribute *attr,
-				char *buf)
-{
-	struct cpu *cpu = container_of(dev, struct cpu, dev);
-	unsigned long long addr;
-	int cpunum;
-
-	cpunum = cpu->dev.id;
-
-	/*
-	 * Might be reading other cpu's data based on which cpu read thread
-	 * has been scheduled. But cpu data (memory) is allocated once during
-	 * boot up and this data does not change there after. Hence this
-	 * operation should be safe. No locking required.
-	 */
-	addr = per_cpu_ptr_to_phys(per_cpu_ptr(crash_notes, cpunum));
-
-	return sysfs_emit(buf, "%llx\n", addr);
-}
-static DEVICE_ATTR_ADMIN_RO(crash_notes);
-
-static ssize_t crash_notes_size_show(struct device *dev,
-				     struct device_attribute *attr,
-				     char *buf)
-{
-	return sysfs_emit(buf, "%zu\n", sizeof(note_buf_t));
-}
-static DEVICE_ATTR_ADMIN_RO(crash_notes_size);
-
-static struct attribute *crash_note_cpu_attrs[] = {
-	&dev_attr_crash_notes.attr,
-	&dev_attr_crash_notes_size.attr,
-	NULL
-};
-
-static const struct attribute_group crash_note_cpu_attr_group = {
-	.attrs = crash_note_cpu_attrs,
-};
-#endif
 
 static const struct attribute_group *common_cpu_attr_groups[] = {
-#ifdef CONFIG_CRASH_DUMP
-	&crash_note_cpu_attr_group,
-#endif
 	NULL
 };
 
 static const struct attribute_group *hotplugable_cpu_attr_groups[] = {
-#ifdef CONFIG_CRASH_DUMP
-	&crash_note_cpu_attr_group,
-#endif
 	NULL
 };
 
@@ -314,15 +265,6 @@ static ssize_t housekeeping_show(struct device *dev,
 static DEVICE_ATTR_RO(housekeeping);
 
 
-#ifdef CONFIG_CRASH_HOTPLUG
-static ssize_t crash_hotplug_show(struct device *dev,
-				     struct device_attribute *attr,
-				     char *buf)
-{
-	return sysfs_emit(buf, "%d\n", crash_check_hotplug_support());
-}
-static DEVICE_ATTR_RO(crash_hotplug);
-#endif
 
 static void cpu_device_release(struct device *dev)
 {
@@ -511,9 +453,6 @@ static struct attribute *cpu_root_attrs[] = {
 	&dev_attr_enabled.attr,
 	&dev_attr_isolated.attr,
 	&dev_attr_housekeeping.attr,
-#ifdef CONFIG_CRASH_HOTPLUG
-	&dev_attr_crash_hotplug.attr,
-#endif
 #ifdef CONFIG_GENERIC_CPU_AUTOPROBE
 	&dev_attr_modalias.attr,
 #endif

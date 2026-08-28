@@ -38,7 +38,6 @@
 #include <linux/memory.h>
 #include <linux/math64.h>
 #include <linux/fault-inject.h>
-#include <linux/kmemleak.h>
 #include <linux/stacktrace.h>
 #include <linux/prefetch.h>
 #include <linux/memcontrol.h>
@@ -1869,14 +1868,6 @@ slab_flags_t kmem_cache_flags(slab_flags_t flags, const char *name)
 	if (flags & SLAB_NO_USER_FLAGS)
 		return flags;
 
-	/*
-	 * If the slab cache is for debugging (e.g. kmemleak) then
-	 * don't store user (stack trace) information by default,
-	 * but let the user enable it via the command line below.
-	 */
-	if (flags & SLAB_NOLEAKTRACE)
-		slub_debug_local &= ~SLAB_STORE_USER;
-
 	len = strlen(name);
 	next_block = slub_debug_string;
 	/* Go through all blocks of debug options, see if any matches our slab's name */
@@ -2135,8 +2126,6 @@ retry:
 		goto retry;
 	}
 
-	if (allow_spin)
-		kmemleak_not_leak(vec);
 	return 0;
 }
 
@@ -2410,7 +2399,6 @@ static inline bool memcg_slab_post_charge(void *p, gfp_t flags)
  * - alloc_tagging_slab_alloc_hook()
  *
  * Free hooks that must handle missing corresponding alloc hooks:
- * - kmemleak_free_recursive()
  * - kfence_free()
  *
  * Free hooks that have no alloc hook counterpart, and thus safe to call:
@@ -2425,7 +2413,6 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 	/* Are the object contents still accessible? */
 	bool still_accessible = (s->flags & SLAB_TYPESAFE_BY_RCU) && !after_rcu_delay;
 
-	kmemleak_free_recursive(x, s->flags);
 	kmsan_slab_free(s, x);
 
 	debug_check_no_locks_freed(x, s->object_size);
@@ -4243,16 +4230,13 @@ bool slab_post_alloc_hook(struct kmem_cache *s, struct list_lru *lru,
 	 * kasan_slab_alloc and initialization memset must be
 	 * kept together to avoid discrepancies in behavior.
 	 *
-	 * As p[i] might get tagged, memset and kmemleak hook come after KASAN.
+	 * As p[i] might get tagged, memset comes after KASAN.
 	 */
 	for (i = 0; i < size; i++) {
 		p[i] = kasan_slab_alloc(s, p[i], init_flags, kasan_init);
 		if (p[i] && init && (!kasan_init ||
 				     !kasan_has_integrated_init()))
 			memset(p[i], 0, zero_size);
-		if (gfpflags_allow_spinning(flags))
-			kmemleak_alloc_recursive(p[i], s->object_size, 1,
-						 s->flags, init_flags);
 		kmsan_slab_alloc(s, p[i], init_flags);
 		alloc_tagging_slab_alloc_hook(s, p[i], flags);
 	}
@@ -4921,8 +4905,6 @@ static void *___kmalloc_large_node(size_t size, gfp_t flags, int node)
 	}
 
 	ptr = kasan_kmalloc_large(ptr, size, flags);
-	/* As ptr might get tagged, call kmemleak hook after KASAN. */
-	kmemleak_alloc(ptr, size, 1, flags);
 	kmsan_kmalloc_large(ptr, size, flags);
 
 	return ptr;
@@ -6114,7 +6096,6 @@ static void free_large_kmalloc(struct page *page, void *object)
 	if (WARN_ON_ONCE(order == 0))
 		pr_warn_once("object pointer: 0x%p\n", object);
 
-	kmemleak_free(object);
 	kasan_kfree_large(object);
 	kmsan_kfree_large(object);
 
@@ -6202,10 +6183,10 @@ EXPORT_SYMBOL(kfree);
 /*
  * Can be called while holding raw_spinlock_t or from IRQ and NMI,
  * but ONLY for objects allocated by kmalloc_nolock().
- * Debug checks (like kmemleak and kfence) were skipped on allocation,
+ * Debug checks such as kfence were skipped on allocation,
  * hence
  * obj = kmalloc(); kfree_nolock(obj);
- * will miss kmemleak/kfence book keeping and will cause false positives.
+ * will miss kfence bookkeeping and will cause false positives.
  * large_kmalloc is not supported either.
  */
 void kfree_nolock(const void *object)
@@ -6229,7 +6210,6 @@ void kfree_nolock(const void *object)
 	alloc_tagging_slab_free_hook(s, slab, &x, 1);
 	/*
 	 * Unlike slab_free() do NOT call the following:
-	 * kmemleak_free_recursive(x, s->flags);
 	 * debug_check_no_locks_freed(x, s->object_size);
 	 * debug_check_no_obj_freed(x, s->object_size);
 	 * __kcsan_check_access(x, s->object_size, ..);
@@ -7320,13 +7300,8 @@ static unsigned int calculate_sheaf_capacity(struct kmem_cache *s,
 	if (0 || s->flags & SLAB_DEBUG_FLAGS)
 		return 0;
 
-	/*
-	 * Bootstrap caches can't have sheaves for now (SLAB_NO_OBJ_EXT).
-	 * SLAB_NOLEAKTRACE caches (e.g., kmemleak's object_cache) must not
-	 * have sheaves to avoid recursion when sheaf allocation triggers
-	 * kmemleak tracking.
-	 */
-	if (s->flags & (SLAB_NO_OBJ_EXT | SLAB_NOLEAKTRACE))
+	/* Bootstrap caches can't have sheaves for now (SLAB_NO_OBJ_EXT). */
+	if (s->flags & SLAB_NO_OBJ_EXT)
 		return 0;
 
 	/*

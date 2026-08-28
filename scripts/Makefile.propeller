@@ -16,10 +16,7 @@ else
 endif
 
 # Propeller requires debug information to embed module names in the profiles.
-# AutoFDO already sets the option.
-ifndef CONFIG_AUTOFDO_CLANG
-  CFLAGS_PROPELLER_CLANG += -gmlt
-endif
+CFLAGS_PROPELLER_CLANG += -gmlt
 
 ifdef CONFIG_LTO_CLANG_THIN
   ifdef CLANG_PROPELLER_PROFILE_PREFIX

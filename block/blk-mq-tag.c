@@ -10,7 +10,6 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/mm.h>
-#include <linux/kmemleak.h>
 
 #include <linux/delay.h>
 #include "blk.h"
@@ -591,11 +590,6 @@ static void blk_mq_free_tags_callback(struct rcu_head *head)
 	while (!list_empty(&tags->page_list)) {
 		page = list_first_entry(&tags->page_list, struct page, lru);
 		list_del_init(&page->lru);
-		/*
-		 * Remove kmemleak object previously allocated in
-		 * blk_mq_alloc_rqs().
-		 */
-		kmemleak_free(page_address(page));
 		__free_pages(page, page->private);
 	}
 	kfree(tags);

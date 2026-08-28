@@ -3,7 +3,6 @@
 #include <linux/cpu.h>
 #include <linux/delay.h>
 #include <linux/io.h>
-#include <linux/kexec.h>
 #include <linux/memblock.h>
 #include <linux/pgtable.h>
 #include <linux/sched/hotplug.h>

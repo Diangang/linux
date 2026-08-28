@@ -82,7 +82,6 @@
 #include <linux/fs_struct.h>
 #include <linux/magic.h>
 #include <linux/posix-timers.h>
-#include <linux/user-return-notifier.h>
 #include <linux/oom.h>
 #include <linux/khugepaged.h>
 #include <linux/signalfd.h>
@@ -927,7 +926,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 #endif
 
 	setup_thread_stack(tsk, orig);
-	clear_user_return_notifier(tsk);
 	clear_tsk_need_resched(tsk);
 	set_task_stack_end_magic(tsk);
 	clear_syscall_work_syscall_user_dispatch(tsk);
@@ -1924,7 +1922,7 @@ static bool need_futex_hash_allocate_default(u64 clone_flags)
  * parts of the process environment (as per the clone
  * flags). The actual kick-off is left to the caller.
  */
-__latent_entropy struct task_struct *copy_process(
+struct task_struct *copy_process(
 					struct pid *pid,
 					int trace,
 					int node,
@@ -2636,7 +2634,7 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 	}
 
 	p = copy_process(NULL, trace, NUMA_NO_NODE, args);
-	add_latent_entropy();
+	add_device_randomness(NULL, 0);
 
 	if (IS_ERR(p))
 		return PTR_ERR(p);

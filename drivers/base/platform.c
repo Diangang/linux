@@ -28,7 +28,6 @@
 #include <linux/clk/clk-conf.h>
 #include <linux/limits.h>
 #include <linux/property.h>
-#include <linux/kmemleak.h>
 #include <linux/types.h>
 #include <linux/iommu.h>
 #include <linux/dma-map-ops.h>

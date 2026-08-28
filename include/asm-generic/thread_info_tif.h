@@ -31,9 +31,6 @@
 # define _TIF_POLLING_NRFLAG	BIT(TIF_POLLING_NRFLAG)
 #endif
 
-#define TIF_USER_RETURN_NOTIFY	7	// notify kernel of userspace return
-#define _TIF_USER_RETURN_NOTIFY	BIT(TIF_USER_RETURN_NOTIFY)
-
 #define TIF_UPROBE		8	// breakpointed or singlestepping
 #define _TIF_UPROBE		BIT(TIF_UPROBE)
 

@@ -3,7 +3,6 @@
 #include <linux/export.h>
 #include <linux/generic-radix-tree.h>
 #include <linux/gfp.h>
-#include <linux/kmemleak.h>
 
 /*
  * Returns pointer to the specified byte @offset within @radix, or NULL if not

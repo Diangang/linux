@@ -86,19 +86,11 @@ static void __init MP_bus_info(struct mpc_bus *m)
 #endif
 
 	set_bit(m->busid, mp_bus_not_pci);
-	if (strncmp(str, BUSTYPE_ISA, sizeof(BUSTYPE_ISA) - 1) == 0) {
-#ifdef CONFIG_EISA
-		mp_bus_id_to_type[m->busid] = MP_BUS_ISA;
-#endif
-	} else if (strncmp(str, BUSTYPE_PCI, sizeof(BUSTYPE_PCI) - 1) == 0) {
+	if (strncmp(str, BUSTYPE_PCI, sizeof(BUSTYPE_PCI) - 1) == 0) {
 		clear_bit(m->busid, mp_bus_not_pci);
-#ifdef CONFIG_EISA
-		mp_bus_id_to_type[m->busid] = MP_BUS_PCI;
-	} else if (strncmp(str, BUSTYPE_EISA, sizeof(BUSTYPE_EISA) - 1) == 0) {
-		mp_bus_id_to_type[m->busid] = MP_BUS_EISA;
-#endif
-	} else
+	} else if (strncmp(str, BUSTYPE_ISA, sizeof(BUSTYPE_ISA) - 1) != 0) {
 		pr_warn("Unknown bustype %s - ignoring\n", str);
+	}
 }
 
 static void __init MP_ioapic_info(struct mpc_ioapic *m)

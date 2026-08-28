@@ -8,7 +8,6 @@
 #include <asm/set_memory.h>
 #include <asm/realmode.h>
 #include <asm/tlbflush.h>
-#include <asm/crash.h>
 #include <asm/msr.h>
 #include <asm/sev.h>
 
@@ -63,7 +62,6 @@ void __init reserve_real_mode(void)
 	 */
 	memblock_reserve(0, SZ_1M);
 
-	memblock_clear_kho_scratch(0, SZ_1M);
 }
 
 static void __init sme_sev_setup_real_mode(struct trampoline_header *th)

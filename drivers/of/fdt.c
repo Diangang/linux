@@ -8,7 +8,6 @@
 
 #define pr_fmt(fmt)	"OF: fdt: " fmt
 
-#include <linux/crash_dump.h>
 #include <linux/crc32.h>
 #include <linux/kernel.h>
 #include <linux/initrd.h>
@@ -25,7 +24,6 @@
 #include <linux/serial_core.h>
 #include <linux/sysfs.h>
 #include <linux/random.h>
-#include <linux/kexec_handover.h>
 
 #include <asm/setup.h>  /* for COMMAND_LINE_SIZE */
 #include <asm/page.h>
@@ -470,22 +468,6 @@ static u32 of_fdt_crc32;
  * information about primary kernel's core image and is used by a dump
  * capture kernel to access the system memory on primary kernel.
  */
-static void __init fdt_reserve_elfcorehdr(void)
-{
-	if (!IS_ENABLED(CONFIG_CRASH_DUMP) || !elfcorehdr_size)
-		return;
-
-	if (memblock_is_region_reserved(elfcorehdr_addr, elfcorehdr_size)) {
-		pr_warn("elfcorehdr is overlapped\n");
-		return;
-	}
-
-	memblock_reserve(elfcorehdr_addr, elfcorehdr_size);
-
-	pr_info("Reserving %llu KiB of memory at 0x%llx for elfcorehdr\n",
-		elfcorehdr_size >> 10, elfcorehdr_addr);
-}
-
 /**
  * early_init_fdt_scan_reserved_mem() - create reserved memory regions
  *
@@ -502,7 +484,6 @@ void __init early_init_fdt_scan_reserved_mem(void)
 	if (!initial_boot_params)
 		return;
 
-	fdt_reserve_elfcorehdr();
 	fdt_scan_reserved_mem();
 
 	/* Process header /memreserve/ fields */
@@ -834,46 +815,6 @@ static void __init early_init_dt_check_for_initrd(unsigned long node)
 	pr_debug("initrd_start=0x%llx  initrd_end=0x%llx\n", start, end);
 }
 
-/**
- * early_init_dt_check_for_elfcorehdr - Decode elfcorehdr location from flat
- * tree
- * @node: reference to node containing elfcorehdr location ('chosen')
- */
-static void __init early_init_dt_check_for_elfcorehdr(unsigned long node)
-{
-	if (!IS_ENABLED(CONFIG_CRASH_DUMP))
-		return;
-
-	pr_debug("Looking for elfcorehdr property... ");
-
-	if (!of_flat_dt_get_addr_size(node, "linux,elfcorehdr",
-				      &elfcorehdr_addr, &elfcorehdr_size))
-		return;
-
-	pr_debug("elfcorehdr_start=0x%llx elfcorehdr_size=0x%llx\n",
-		 elfcorehdr_addr, elfcorehdr_size);
-}
-
-static void __init early_init_dt_check_for_dmcryptkeys(unsigned long node)
-{
-	const char *prop_name = "linux,dmcryptkeys";
-	const __be32 *prop;
-
-	if (!IS_ENABLED(CONFIG_CRASH_DM_CRYPT))
-		return;
-
-	pr_debug("Looking for dmcryptkeys property... ");
-
-	prop = of_get_flat_dt_prop(node, prop_name, NULL);
-	if (!prop)
-		return;
-
-	dm_crypt_keys_addr = dt_mem_next_cell(dt_root_addr_cells, &prop);
-
-	/* Property only accessible to crash dump kernel */
-	fdt_delprop(initial_boot_params, node, prop_name);
-}
-
 static unsigned long chosen_node_offset = -FDT_ERR_NOTFOUND;
 
 /*
@@ -921,28 +862,6 @@ void __init early_init_dt_check_for_usable_mem_range(void)
 	memblock_cap_memory_range(rgn[0].base, rgn[0].size);
 	for (i = 1; i < MAX_USABLE_RANGES && rgn[i].size; i++)
 		memblock_add(rgn[i].base, rgn[i].size);
-}
-
-/**
- * early_init_dt_check_kho - Decode info required for kexec handover from DT
- */
-static void __init early_init_dt_check_kho(void)
-{
-	unsigned long node = chosen_node_offset;
-	u64 fdt_start, fdt_size, scratch_start, scratch_size;
-
-	if (!IS_ENABLED(CONFIG_KEXEC_HANDOVER) || (long)node < 0)
-		return;
-
-	if (!of_flat_dt_get_addr_size(node, "linux,kho-fdt",
-				      &fdt_start, &fdt_size))
-		return;
-
-	if (!of_flat_dt_get_addr_size(node, "linux,kho-scratch",
-				      &scratch_start, &scratch_size))
-		return;
-
-	kho_populate(fdt_start, fdt_size, scratch_start, scratch_size);
 }
 
 #ifdef CONFIG_SERIAL_EARLYCON
@@ -1105,9 +1024,6 @@ int __init early_init_dt_scan_chosen(char *cmdline)
 	chosen_node_offset = node;
 
 	early_init_dt_check_for_initrd(node);
-	early_init_dt_check_for_elfcorehdr(node);
-	early_init_dt_check_for_dmcryptkeys(node);
-
 	rng_seed = of_get_flat_dt_prop(node, "rng-seed", &l);
 	if (rng_seed && l > 0) {
 		add_bootloader_randomness(rng_seed, l);
@@ -1240,8 +1156,6 @@ void __init early_init_dt_scan_nodes(void)
 	/* Handle linux,usable-memory-range property */
 	early_init_dt_check_for_usable_mem_range();
 
-	/* Handle kexec handover */
-	early_init_dt_check_kho();
 }
 
 bool __init early_init_dt_scan(void *dt_virt, phys_addr_t dt_phys)

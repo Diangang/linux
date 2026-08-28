@@ -19,7 +19,6 @@
 #include <linux/blk-crypto.h>
 #include <linux/cpuhotplug.h>
 #include <linux/xarray.h>
-#include <linux/kmemleak.h>
 #include "blk.h"
 #include "blk-rq-qos.h"
 #include "blk-cgroup.h"
@@ -483,8 +482,6 @@ static struct bio *bio_alloc_percpu_cache(struct bio_set *bs)
 	put_cpu();
 	bio->bi_pool = bs;
 
-	kmemleak_alloc(bio_slab_addr(bio),
-		       kmem_cache_size(bs->bio_slab), 1, GFP_NOIO);
 	return bio;
 }
 
@@ -728,9 +725,6 @@ static int __bio_alloc_cache_prune(struct bio_alloc_cache *cache,
 	while ((bio = cache->free_list) != NULL) {
 		cache->free_list = bio->bi_next;
 		cache->nr--;
-		kmemleak_alloc(bio_slab_addr(bio),
-			       kmem_cache_size(bio->bi_pool->bio_slab),
-			       1, GFP_KERNEL);
 		bio_free(bio);
 		if (++i == nr)
 			break;
@@ -794,7 +788,6 @@ static inline void bio_put_percpu_cache(struct bio *bio)
 		bio->bi_bdev = NULL;
 		cache->free_list = bio;
 		cache->nr++;
-		kmemleak_free(bio_slab_addr(bio));
 	} else if (in_hardirq()) {
 		lockdep_assert_irqs_disabled();
 
@@ -802,7 +795,6 @@ static inline void bio_put_percpu_cache(struct bio *bio)
 		bio->bi_next = cache->free_list_irq;
 		cache->free_list_irq = bio;
 		cache->nr_irq++;
-		kmemleak_free(bio_slab_addr(bio));
 	} else {
 		goto out_free;
 	}

@@ -9,10 +9,10 @@
 #include <linux/console.h>
 #include <linux/cpu.h>
 #include <linux/crash_dump.h>
+#include <linux/crash_reserve.h>
 #include <linux/dma-map-ops.h>
 #include <linux/efi.h>
 #include <linux/hugetlb.h>
-#include <linux/ima.h>
 #include <linux/initrd.h>
 #include <linux/iscsi_ibft.h>
 #include <linux/memblock.h>
@@ -116,11 +116,6 @@ EXPORT_SYMBOL(boot_cpu_data);
 SYM_PIC_ALIAS(boot_cpu_data);
 
 __visible unsigned long mmu_cr4_features __ro_after_init;
-
-#ifdef CONFIG_IMA
-static phys_addr_t ima_kexec_buffer_phys;
-static size_t ima_kexec_buffer_size;
-#endif
 
 /* Boot loader ID and version as integers, for the benefit of proc_dointvec */
 int bootloader_type, bootloader_version;
@@ -369,85 +364,6 @@ static void __init reserve_initrd(void)
 }
 #endif /* CONFIG_BLK_DEV_INITRD */
 
-static void __init add_early_ima_buffer(u64 phys_addr)
-{
-#ifdef CONFIG_IMA
-	struct ima_setup_data *data;
-
-	data = early_memremap(phys_addr + sizeof(struct setup_data), sizeof(*data));
-	if (!data) {
-		pr_warn("setup: failed to memremap ima_setup_data entry\n");
-		return;
-	}
-
-	if (data->size) {
-		memblock_reserve_kern(data->addr, data->size);
-		ima_kexec_buffer_phys = data->addr;
-		ima_kexec_buffer_size = data->size;
-	}
-
-	early_memunmap(data, sizeof(*data));
-#else
-	pr_warn("Passed IMA kexec data, but CONFIG_IMA not set. Ignoring.\n");
-#endif
-}
-
-#if defined(CONFIG_HAVE_IMA_KEXEC) && !defined(CONFIG_OF_FLATTREE)
-int __init ima_free_kexec_buffer(void)
-{
-	if (!ima_kexec_buffer_size)
-		return -ENOENT;
-
-	memblock_phys_free(ima_kexec_buffer_phys,
-			   ima_kexec_buffer_size);
-
-	ima_kexec_buffer_phys = 0;
-	ima_kexec_buffer_size = 0;
-
-	return 0;
-}
-
-int __init ima_get_kexec_buffer(void **addr, size_t *size)
-{
-	int ret;
-
-	if (!ima_kexec_buffer_size)
-		return -ENOENT;
-
-	ret = ima_validate_range(ima_kexec_buffer_phys, ima_kexec_buffer_size);
-	if (ret)
-		return ret;
-
-	*addr = __va(ima_kexec_buffer_phys);
-	*size = ima_kexec_buffer_size;
-
-	return 0;
-}
-#endif
-
-static void __init add_kho(u64 phys_addr, u32 data_len)
-{
-	struct kho_data *kho;
-	u64 addr = phys_addr + sizeof(struct setup_data);
-	u64 size = data_len - sizeof(struct setup_data);
-
-	if (!IS_ENABLED(CONFIG_KEXEC_HANDOVER)) {
-		pr_warn("Passed KHO data, but CONFIG_KEXEC_HANDOVER not set. Ignoring.\n");
-		return;
-	}
-
-	kho = early_memremap(addr, size);
-	if (!kho) {
-		pr_warn("setup: failed to memremap kho data (0x%llx, 0x%llx)\n",
-			addr, size);
-		return;
-	}
-
-	kho_populate(kho->fdt_addr, kho->fdt_size, kho->scratch_addr, kho->scratch_size);
-
-	early_memunmap(kho, size);
-}
-
 static void __init parse_setup_data(void)
 {
 	struct setup_data *data;
@@ -472,12 +388,6 @@ static void __init parse_setup_data(void)
 			break;
 		case SETUP_EFI:
 			parse_efi_setup(pa_data, data_len);
-			break;
-		case SETUP_IMA:
-			add_early_ima_buffer(pa_data);
-			break;
-		case SETUP_KEXEC_KHO:
-			add_kho(pa_data, data_len);
 			break;
 		case SETUP_RNG_SEED:
 			data = early_memremap(pa_data, data_len);

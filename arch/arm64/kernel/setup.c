@@ -17,7 +17,6 @@
 #include <linux/cache.h>
 #include <linux/screen_info.h>
 #include <linux/init.h>
-#include <linux/kexec.h>
 #include <linux/root_dev.h>
 #include <linux/cpu.h>
 #include <linux/interrupt.h>

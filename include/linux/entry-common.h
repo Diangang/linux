@@ -2,7 +2,6 @@
 #ifndef __LINUX_ENTRYCOMMON_H
 #define __LINUX_ENTRYCOMMON_H
 
-#include <linux/audit.h>
 #include <linux/irq-entry-common.h>
 #include <linux/livepatch.h>
 #include <linux/ptrace.h>
@@ -23,14 +22,12 @@
 #define SYSCALL_WORK_ENTER	(SYSCALL_WORK_SECCOMP |			\
 				 SYSCALL_WORK_SYSCALL_TRACE |		\
 				 SYSCALL_WORK_SYSCALL_EMU |		\
-				 SYSCALL_WORK_SYSCALL_AUDIT |		\
 				 SYSCALL_WORK_SYSCALL_USER_DISPATCH |	\
 				 SYSCALL_WORK_SYSCALL_RSEQ_SLICE)
 /*
  * SYSCALL_WORK flags handled in syscall_exit_to_user_mode()
  */
 #define SYSCALL_WORK_EXIT	(SYSCALL_WORK_SYSCALL_TRACE |		\
-				 SYSCALL_WORK_SYSCALL_AUDIT |		\
 				 SYSCALL_WORK_SYSCALL_USER_DISPATCH |	\
 				 SYSCALL_WORK_SYSCALL_EXIT_TRAP)
 
@@ -54,16 +51,6 @@ static __always_inline int arch_ptrace_report_syscall_entry(struct pt_regs *regs
 #endif
 
 bool syscall_user_dispatch(struct pt_regs *regs);
-
-static inline void syscall_enter_audit(struct pt_regs *regs, long syscall)
-{
-	if (unlikely(audit_context())) {
-		unsigned long args[6];
-
-		syscall_get_arguments(current, regs, args);
-		audit_syscall_entry(syscall, args[0], args[1], args[2], args[3]);
-	}
-}
 
 static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned long work)
 {
@@ -104,8 +91,6 @@ static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned l
 	/* Either of the above might have changed the syscall number */
 	syscall = syscall_get_nr(current, regs);
 
-	syscall_enter_audit(regs, syscall);
-
 	return ret ? : syscall;
 }
 
@@ -126,11 +111,8 @@ static __always_inline long syscall_trace_enter(struct pt_regs *regs, unsigned l
  * syscall_set_return_value() first.  If neither of those are called and -1
  * is returned, then the syscall will fail with ENOSYS.
  *
- * It handles the following work items:
- *
- *  1) syscall_work flag dependent invocations of
- *     ptrace_report_syscall_entry() and __secure_computing()
- *  2) Invocation of audit_syscall_entry()
+ * It handles syscall_work flag dependent invocations of
+ * ptrace_report_syscall_entry() and __secure_computing().
  */
 static __always_inline long syscall_enter_from_user_mode_work(struct pt_regs *regs, long syscall)
 {
@@ -230,8 +212,6 @@ static __always_inline void syscall_exit_work(struct pt_regs *regs, unsigned lon
 			return;
 		}
 	}
-
-	audit_syscall_exit(regs);
 
 	step = report_single_step(work);
 	if (step || work & SYSCALL_WORK_SYSCALL_TRACE)

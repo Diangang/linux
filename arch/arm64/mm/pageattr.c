@@ -90,7 +90,7 @@ bool rodata_full __ro_after_init = true;
 bool can_set_direct_map(void)
 {
 	/*
-	 * rodata_full, DEBUG_PAGEALLOC and a Realm guest all require linear
+	 * rodata_full and a Realm guest require the linear
 	 * map to be mapped at page granularity, so that it is possible to
 	 * protect/unprotect single pages.
 	 *
@@ -98,8 +98,8 @@ bool can_set_direct_map(void)
 	 *
 	 * Realms need to make pages shared/protected at page granularity.
 	 */
-	return rodata_full || debug_pagealloc_enabled() ||
-		arm64_kfence_can_set_direct_map() || is_realm_world();
+	return rodata_full || arm64_kfence_can_set_direct_map() ||
+		is_realm_world();
 }
 
 static int update_range_prot(unsigned long start, unsigned long size,
@@ -371,7 +371,7 @@ int set_direct_map_valid_noflush(struct page *page, unsigned nr, bool valid)
  * not-valid. Walk the page table and check the PTE_VALID bit.
  *
  * Because this is only called on the kernel linear map,  p?d_sect() implies
- * p?d_present(). When debug_pagealloc is enabled, sections mappings are
+ * p?d_present(). When page-allocation debugging is enabled, section mappings are
  * disabled.
  */
 bool kernel_page_present(struct page *page)

@@ -6,7 +6,6 @@
 #define pr_fmt(fmt)	"GICv5 IRS: " fmt
 
 #include <linux/acpi.h>
-#include <linux/kmemleak.h>
 #include <linux/log2.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
@@ -119,7 +118,6 @@ static int __init gicv5_irs_init_ist_linear(struct gicv5_irs_chip_data *irs_data
 		kfree(ist);
 		return ret;
 	}
-	kmemleak_ignore(ist);
 
 	return 0;
 }
@@ -235,7 +233,6 @@ int gicv5_irs_iste_alloc(const u32 lpi)
 		kfree(l2ist);
 		return ret;
 	}
-	kmemleak_ignore(l2ist);
 
 	/*
 	 * Make sure we invalidate the cache line pulled before the IRS

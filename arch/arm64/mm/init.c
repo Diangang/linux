@@ -27,11 +27,10 @@
 #include <linux/swiotlb.h>
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
-#include <linux/kexec.h>
 #include <linux/crash_dump.h>
+#include <linux/crash_reserve.h>
 #include <linux/hugetlb.h>
 #include <linux/acpi_iort.h>
-#include <linux/kmemleak.h>
 #include <linux/execmem.h>
 
 #include <asm/boot.h>

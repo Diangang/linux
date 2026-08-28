@@ -13,17 +13,11 @@
 #include <linux/poison.h>
 #include <linux/pfn.h>
 #include <linux/debugfs.h>
-#include <linux/kmemleak.h>
 #include <linux/seq_file.h>
 #include <linux/memblock.h>
 #include <linux/mutex.h>
 #include <linux/string_helpers.h>
 
-#ifdef CONFIG_KEXEC_HANDOVER
-#include <linux/libfdt.h>
-#include <linux/kexec_handover.h>
-#include <linux/kho/abi/memblock.h>
-#endif /* CONFIG_KEXEC_HANDOVER */
 
 #include <asm/sections.h>
 #include <linux/io.h>
@@ -114,13 +108,6 @@ unsigned long min_low_pfn;
 unsigned long max_pfn;
 unsigned long long max_possible_pfn;
 
-#if 0
-/* When set to true, only allocate from MEMBLOCK_KHO_SCRATCH ranges */
-static bool kho_scratch_only;
-#else
-#define kho_scratch_only false
-#endif
-
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS] __initdata_memblock;
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_RESERVED_REGIONS] __initdata_memblock;
 #ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
@@ -180,10 +167,6 @@ bool __init_memblock memblock_has_mirror(void)
 
 static enum memblock_flags __init_memblock choose_memblock_flags(void)
 {
-	/* skip non-scratch memory for kho early boot allocations */
-	if (kho_scratch_only)
-		return MEMBLOCK_KHO_SCRATCH;
-
 	return system_has_some_mirror ? MEMBLOCK_MIRROR : MEMBLOCK_NONE;
 }
 
@@ -312,8 +295,7 @@ static phys_addr_t __init_memblock memblock_find_in_range_node(phys_addr_t size,
 					enum memblock_flags flags)
 {
 	/* pump up @end */
-	if (end == MEMBLOCK_ALLOC_ACCESSIBLE ||
-	    end == MEMBLOCK_ALLOC_NOLEAKTRACE)
+	if (end == MEMBLOCK_ALLOC_ACCESSIBLE)
 		end = memblock.current_limit;
 
 	/* avoid allocating the first page */
@@ -994,7 +976,6 @@ int __init_memblock memblock_phys_free(phys_addr_t base, phys_addr_t size)
 	memblock_dbg("%s: [%pa-%pa] %pS\n", __func__,
 		     &base, &end, (void *)_RET_IP_);
 
-	kmemleak_free_part_phys(base, size);
 	ret = memblock_remove_range(&memblock.reserved, base, size);
 
 	if (slab_is_available())
@@ -1023,40 +1004,6 @@ int __init_memblock memblock_physmem_add(phys_addr_t base, phys_addr_t size)
 		     &base, &end, (void *)_RET_IP_);
 
 	return memblock_add_range(&physmem, base, size, MAX_NUMNODES, 0);
-}
-#endif
-
-#if 0
-__init void memblock_set_kho_scratch_only(void)
-{
-	kho_scratch_only = true;
-}
-
-__init void memblock_clear_kho_scratch_only(void)
-{
-	kho_scratch_only = false;
-}
-
-__init void memmap_init_kho_scratch_pages(void)
-{
-	phys_addr_t start, end;
-	unsigned long pfn;
-	int nid;
-	u64 i;
-
-	if (!IS_ENABLED(CONFIG_DEFERRED_STRUCT_PAGE_INIT))
-		return;
-
-	/*
-	 * Initialize struct pages for free scratch memory.
-	 * The struct pages for reserved scratch memory will be set up in
-	 * memmap_init_reserved_pages()
-	 */
-	__for_each_mem_range(i, &memblock.memory, NULL, NUMA_NO_NODE,
-			     MEMBLOCK_KHO_SCRATCH, &start, &end, &nid) {
-		for (pfn = PFN_UP(start); pfn < PFN_DOWN(end); pfn++)
-			init_deferred_page(pfn, nid);
-	}
 }
 #endif
 
@@ -1145,9 +1092,6 @@ int __init_memblock memblock_mark_mirror(phys_addr_t base, phys_addr_t size)
  * covered by the memory map. The struct page representing NOMAP memory
  * frames in the memory map will be PageReserved()
  *
- * Note: if the memory being marked %MEMBLOCK_NOMAP was allocated from
- * memblock, the caller must inform kmemleak to ignore that memory
- *
  * Return: 0 on success, -errno on failure.
  */
 int __init_memblock memblock_mark_nomap(phys_addr_t base, phys_addr_t size)
@@ -1207,36 +1151,6 @@ int __init_memblock memblock_reserved_mark_kern(phys_addr_t base, phys_addr_t si
 				    MEMBLOCK_RSRV_KERN);
 }
 
-/**
- * memblock_mark_kho_scratch - Mark a memory region as MEMBLOCK_KHO_SCRATCH.
- * @base: the base phys addr of the region
- * @size: the size of the region
- *
- * Only memory regions marked with %MEMBLOCK_KHO_SCRATCH will be considered
- * for allocations during early boot with kexec handover.
- *
- * Return: 0 on success, -errno on failure.
- */
-__init int memblock_mark_kho_scratch(phys_addr_t base, phys_addr_t size)
-{
-	return memblock_setclr_flag(&memblock.memory, base, size, 1,
-				    MEMBLOCK_KHO_SCRATCH);
-}
-
-/**
- * memblock_clear_kho_scratch - Clear MEMBLOCK_KHO_SCRATCH flag for a
- * specified region.
- * @base: the base phys addr of the region
- * @size: the size of the region
- *
- * Return: 0 on success, -errno on failure.
- */
-__init int memblock_clear_kho_scratch(phys_addr_t base, phys_addr_t size)
-{
-	return memblock_setclr_flag(&memblock.memory, base, size, 0,
-				    MEMBLOCK_KHO_SCRATCH);
-}
-
 static bool should_skip_region(struct memblock_type *type,
 			       struct memblock_region *m,
 			       int nid, int flags)
@@ -1266,13 +1180,6 @@ static bool should_skip_region(struct memblock_type *type,
 
 	/* skip driver-managed memory unless we were asked for it explicitly */
 	if (!(flags & MEMBLOCK_DRIVER_MANAGED) && memblock_is_driver_managed(m))
-		return true;
-
-	/*
-	 * In early alloc during kexec handover, we can only consider
-	 * MEMBLOCK_KHO_SCRATCH regions for the allocations
-	 */
-	if ((flags & MEMBLOCK_KHO_SCRATCH) && !memblock_is_kho_scratch(m))
 		return true;
 
 	return false;
@@ -1557,9 +1464,6 @@ int __init_memblock memblock_set_node(phys_addr_t base, phys_addr_t size,
  * from the regions with mirroring enabled and then retried from any
  * memory region.
  *
- * In addition, function using kmemleak_alloc_phys for allocated boot
- * memory block, it is never reported as leaks.
- *
  * Return:
  * Physical address of allocated memory block on success, %0 on failure.
  */
@@ -1612,19 +1516,6 @@ again:
 	return 0;
 
 done:
-	/*
-	 * Skip kmemleak for those places like kasan_init() and
-	 * early_pgtable_alloc() due to high volume.
-	 */
-	if (end != MEMBLOCK_ALLOC_NOLEAKTRACE)
-		/*
-		 * Memblock allocated blocks are never reported as
-		 * leaks. This is because many of these blocks are
-		 * only referred via the physical address which is
-		 * not looked up by kmemleak.
-		 */
-		kmemleak_alloc_phys(found, size, 0);
-
 	/*
 	 * Some Virtual Machine platforms, such as Intel TDX or AMD SEV-SNP,
 	 * require memory to be accepted before it can be used by the
@@ -2435,7 +2326,6 @@ void __init memblock_free_all(void)
 	free_unused_memmap();
 	reset_all_zones_managed_pages();
 
-	memblock_clear_kho_scratch_only();
 	pages = free_low_memory_core_early();
 	totalram_pages_add(pages);
 }
@@ -2533,195 +2423,6 @@ int reserve_mem_release_by_name(const char *name)
 	return 1;
 }
 
-#ifdef CONFIG_KEXEC_HANDOVER
-
-static int __init reserved_mem_preserve(void)
-{
-	unsigned int nr_preserved = 0;
-	int err;
-
-	for (unsigned int i = 0; i < reserved_mem_count; i++, nr_preserved++) {
-		struct reserve_mem_table *map = &reserved_mem_table[i];
-		struct page *page = phys_to_page(map->start);
-		unsigned int nr_pages = map->size >> PAGE_SHIFT;
-
-		err = kho_preserve_pages(page, nr_pages);
-		if (err)
-			goto err_unpreserve;
-	}
-
-	return 0;
-
-err_unpreserve:
-	for (unsigned int i = 0; i < nr_preserved; i++) {
-		struct reserve_mem_table *map = &reserved_mem_table[i];
-		struct page *page = phys_to_page(map->start);
-		unsigned int nr_pages = map->size >> PAGE_SHIFT;
-
-		kho_unpreserve_pages(page, nr_pages);
-	}
-
-	return err;
-}
-
-static int __init prepare_kho_fdt(void)
-{
-	struct page *fdt_page;
-	void *fdt;
-	int err;
-
-	fdt_page = alloc_page(GFP_KERNEL);
-	if (!fdt_page) {
-		err = -ENOMEM;
-		goto err_report;
-	}
-
-	fdt = page_to_virt(fdt_page);
-	err = kho_preserve_pages(fdt_page, 1);
-	if (err)
-		goto err_free_fdt;
-
-	err |= fdt_create(fdt, PAGE_SIZE);
-	err |= fdt_finish_reservemap(fdt);
-	err |= fdt_begin_node(fdt, "");
-	err |= fdt_property_string(fdt, "compatible", MEMBLOCK_KHO_NODE_COMPATIBLE);
-
-	for (unsigned int i = 0; !err && i < reserved_mem_count; i++) {
-		struct reserve_mem_table *map = &reserved_mem_table[i];
-
-		err |= fdt_begin_node(fdt, map->name);
-		err |= fdt_property_string(fdt, "compatible", RESERVE_MEM_KHO_NODE_COMPATIBLE);
-		err |= fdt_property(fdt, "start", &map->start, sizeof(map->start));
-		err |= fdt_property(fdt, "size", &map->size, sizeof(map->size));
-		err |= fdt_end_node(fdt);
-	}
-	err |= fdt_end_node(fdt);
-	err |= fdt_finish(fdt);
-
-	if (err)
-		goto err_unpreserve_fdt;
-
-	err = kho_add_subtree(MEMBLOCK_KHO_FDT, fdt, fdt_totalsize(fdt));
-	if (err)
-		goto err_unpreserve_fdt;
-
-	err = reserved_mem_preserve();
-	if (err)
-		goto err_remove_subtree;
-
-	return 0;
-
-err_remove_subtree:
-	kho_remove_subtree(fdt);
-err_unpreserve_fdt:
-	kho_unpreserve_pages(fdt_page, 1);
-err_free_fdt:
-	put_page(fdt_page);
-err_report:
-	pr_err("failed to prepare memblock FDT for KHO: %d\n", err);
-
-	return err;
-}
-
-static int __init reserve_mem_init(void)
-{
-	int err;
-
-	if (!kho_is_enabled() || !reserved_mem_count)
-		return 0;
-
-	err = prepare_kho_fdt();
-	if (err)
-		return err;
-	return err;
-}
-late_initcall(reserve_mem_init);
-
-static void *__init reserve_mem_kho_retrieve_fdt(void)
-{
-	phys_addr_t fdt_phys;
-	static void *fdt;
-	int err;
-
-	if (fdt)
-		return fdt;
-
-	err = kho_retrieve_subtree(MEMBLOCK_KHO_FDT, &fdt_phys, NULL);
-	if (err) {
-		if (err != -ENOENT)
-			pr_warn("failed to retrieve FDT '%s' from KHO: %d\n",
-				MEMBLOCK_KHO_FDT, err);
-		return NULL;
-	}
-
-	fdt = phys_to_virt(fdt_phys);
-
-	err = fdt_node_check_compatible(fdt, 0, MEMBLOCK_KHO_NODE_COMPATIBLE);
-	if (err) {
-		pr_warn("FDT '%s' is incompatible with '%s': %d\n",
-			MEMBLOCK_KHO_FDT, MEMBLOCK_KHO_NODE_COMPATIBLE, err);
-		fdt = NULL;
-	}
-
-	return fdt;
-}
-
-static bool __init reserve_mem_kho_revive(const char *name, phys_addr_t size,
-					  phys_addr_t align)
-{
-	int err, len_start, len_size, offset;
-	const phys_addr_t *p_start, *p_size;
-	const void *fdt;
-
-	fdt = reserve_mem_kho_retrieve_fdt();
-	if (!fdt)
-		return false;
-
-	offset = fdt_subnode_offset(fdt, 0, name);
-	if (offset < 0) {
-		pr_warn("FDT '%s' has no child '%s': %d\n",
-			MEMBLOCK_KHO_FDT, name, offset);
-		return false;
-	}
-	err = fdt_node_check_compatible(fdt, offset, RESERVE_MEM_KHO_NODE_COMPATIBLE);
-	if (err) {
-		pr_warn("Node '%s' is incompatible with '%s': %d\n",
-			name, RESERVE_MEM_KHO_NODE_COMPATIBLE, err);
-		return false;
-	}
-
-	p_start = fdt_getprop(fdt, offset, "start", &len_start);
-	p_size = fdt_getprop(fdt, offset, "size", &len_size);
-	if (!p_start || len_start != sizeof(*p_start) || !p_size ||
-	    len_size != sizeof(*p_size)) {
-		return false;
-	}
-
-	if (*p_start & (align - 1)) {
-		pr_warn("KHO reserve-mem '%s' has wrong alignment (0x%lx, 0x%lx)\n",
-			name, (long)align, (long)*p_start);
-		return false;
-	}
-
-	if (*p_size != size) {
-		pr_warn("KHO reserve-mem '%s' has wrong size (0x%lx != 0x%lx)\n",
-			name, (long)*p_size, (long)size);
-		return false;
-	}
-
-	reserved_mem_add(*p_start, size, name);
-	pr_info("Revived memory reservation '%s' from KHO\n", name);
-
-	return true;
-}
-#else
-static bool __init reserve_mem_kho_revive(const char *name, phys_addr_t size,
-					  phys_addr_t align)
-{
-	return false;
-}
-#endif /* CONFIG_KEXEC_HANDOVER */
-
 /*
  * Parse reserve_mem=nn:align:name
  */
@@ -2781,10 +2482,6 @@ static int __init reserve_mem(char *p)
 		return -EBUSY;
 	}
 
-	/* Pick previous allocations up from KHO if available */
-	if (reserve_mem_kho_revive(name, size, align))
-		return 1;
-
 	/* TODO: Allocation must be outside of scratch region */
 	start = memblock_phys_alloc(size, align);
 	if (!start) {
@@ -2800,4 +2497,3 @@ err_param:
 	return -EINVAL;
 }
 __setup("reserve_mem=", reserve_mem);
-

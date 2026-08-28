@@ -382,18 +382,6 @@ struct input_device_id {
 	kernel_ulong_t driver_info;
 };
 
-/* EISA */
-
-#define EISA_SIG_LEN   8
-
-/* The EISA signature, in ASCII form, null terminated */
-struct eisa_device_id {
-	char          sig[EISA_SIG_LEN];
-	kernel_ulong_t driver_data;
-};
-
-#define EISA_DEVICE_MODALIAS_FMT "eisa:s%s"
-
 struct parisc_device_id {
 	__u8	hw_type;	/* 5 bits used */
 	__u8	hversion_rev;	/* 4 bits */

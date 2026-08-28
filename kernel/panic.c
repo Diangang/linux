@@ -22,7 +22,6 @@
 #include <linux/ftrace.h>
 #include <linux/reboot.h>
 #include <linux/delay.h>
-#include <linux/kexec.h>
 #include <linux/panic_notifier.h>
 #include <linux/sched.h>
 #include <linux/string_helpers.h>
@@ -59,7 +58,6 @@ static unsigned long tainted_mask =
 static int pause_on_oops;
 static int pause_on_oops_flag;
 static DEFINE_SPINLOCK(pause_on_oops_lock);
-bool crash_kexec_post_notifiers;
 int panic_on_warn __read_mostly;
 unsigned long panic_on_taint;
 bool panic_on_taint_nousertaint = false;
@@ -275,187 +273,20 @@ void __weak __noreturn nmi_panic_self_stop(struct pt_regs *regs)
 	panic_smp_self_stop();
 }
 
-/*
- * Stop other CPUs in panic.  Architecture dependent code may override this
- * with more suitable version.  For example, if the architecture supports
- * crash dump, it should save registers of each stopped CPU and disable
- * per-CPU features such as virtualization extensions.
- */
-void __weak crash_smp_send_stop(void)
-{
-	static int cpus_stopped;
-
-	/*
-	 * This function can be called twice in panic path, but obviously
-	 * we execute this only once.
-	 */
-	if (cpus_stopped)
-		return;
-
-	/*
-	 * Note smp_send_stop is the usual smp shutdown function, which
-	 * unfortunately means it may not be hardened to work in a panic
-	 * situation.
-	 */
-	smp_send_stop();
-	cpus_stopped = 1;
-}
-
 atomic_t panic_cpu = ATOMIC_INIT(PANIC_CPU_INVALID);
 atomic_t panic_redirect_cpu = ATOMIC_INIT(PANIC_CPU_INVALID);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_CRASH_DUMP)
-static char *panic_force_buf;
-
-static int __init panic_force_cpu_setup(char *str)
-{
-	int cpu;
-
-	if (!str)
-		return -EINVAL;
-
-	if (kstrtoint(str, 0, &cpu) || cpu < 0 || cpu >= nr_cpu_ids) {
-		pr_warn("panic_force_cpu: invalid value '%s'\n", str);
-		return -EINVAL;
-	}
-
-	panic_force_cpu = cpu;
-	return 0;
-}
-early_param("panic_force_cpu", panic_force_cpu_setup);
-
-static int __init panic_force_cpu_late_init(void)
-{
-	if (panic_force_cpu < 0)
-		return 0;
-
-	panic_force_buf = kmalloc(PANIC_MSG_BUFSZ, GFP_KERNEL);
-
-	return 0;
-}
-late_initcall(panic_force_cpu_late_init);
-
-static void do_panic_on_target_cpu(void *info)
-{
-	panic("%s", (char *)info);
-}
-
-/**
- * panic_smp_redirect_cpu - Redirect panic to target CPU
- * @target_cpu: CPU that should handle the panic
- * @msg: formatted panic message
- *
- * Default implementation uses IPI. Architectures with NMI support
- * can override this for more reliable delivery.
- *
- * Return: 0 on success, negative errno on failure
- */
-int __weak panic_smp_redirect_cpu(int target_cpu, void *msg)
-{
-	static call_single_data_t panic_csd;
-
-	panic_csd.func = do_panic_on_target_cpu;
-	panic_csd.info = msg;
-
-	return smp_call_function_single_async(target_cpu, &panic_csd);
-}
-
-/**
- * panic_try_force_cpu - Redirect panic to a specific CPU for crash kernel
- * @fmt: panic message format string
- * @args: arguments for format string
- *
- * Some platforms require panic handling to occur on a specific CPU
- * for the crash kernel to function correctly. This function redirects
- * panic handling to the CPU specified via the panic_force_cpu= boot parameter.
- *
- * Returns false if panic should proceed on current CPU.
- * Returns true if panic was redirected.
- */
-__printf(1, 0)
-static bool panic_try_force_cpu(const char *fmt, va_list args)
-{
-	int this_cpu = raw_smp_processor_id();
-	int old_cpu = PANIC_CPU_INVALID;
-	const char *msg;
-
-	/* Feature not enabled via boot parameter */
-	if (panic_force_cpu < 0)
-		return false;
-
-	/* Already on target CPU - proceed normally */
-	if (this_cpu == panic_force_cpu)
-		return false;
-
-	/* Target CPU is offline, can't redirect */
-	if (!cpu_online(panic_force_cpu)) {
-		pr_warn("panic: target CPU %d is offline, continuing on CPU %d\n",
-			panic_force_cpu, this_cpu);
-		return false;
-	}
-
-	/* Another panic already in progress */
-	if (panic_in_progress())
-		return false;
-
-	/*
-	 * Only one CPU can do the redirect. Use atomic cmpxchg to ensure
-	 * we don't race with another CPU also trying to redirect.
-	 */
-	if (!atomic_try_cmpxchg(&panic_redirect_cpu, &old_cpu, this_cpu))
-		return false;
-
-	/*
-	 * Use dynamically allocated buffer if available, otherwise
-	 * fall back to static message for early boot panics or allocation failure.
-	 */
-	if (panic_force_buf) {
-		vsnprintf(panic_force_buf, PANIC_MSG_BUFSZ, fmt, args);
-		msg = panic_force_buf;
-	} else {
-		msg = "Redirected panic (buffer unavailable)";
-	}
-
-	console_verbose();
-	bust_spinlocks(1);
-
-	pr_emerg("panic: Redirecting from CPU %d to CPU %d for crash kernel.\n",
-		 this_cpu, panic_force_cpu);
-
-	/* Dump original CPU before redirecting */
-	if (!test_taint(TAINT_DIE) &&
-	    oops_in_progress <= 1 &&
-	    IS_ENABLED(CONFIG_DEBUG_BUGVERBOSE)) {
-		dump_stack();
-	}
-
-	if (panic_smp_redirect_cpu(panic_force_cpu, (void *)msg) != 0) {
-		atomic_set(&panic_redirect_cpu, PANIC_CPU_INVALID);
-		pr_warn("panic: failed to redirect to CPU %d, continuing on CPU %d\n",
-			panic_force_cpu, this_cpu);
-		return false;
-	}
-
-	/* IPI/NMI sent, this CPU should stop */
-	return true;
-}
-#else
 __printf(1, 0)
 static inline bool panic_try_force_cpu(const char *fmt, va_list args)
 {
 	return false;
 }
-#endif /* CONFIG_SMP && CONFIG_CRASH_DUMP */
 
 bool panic_try_start(void)
 {
 	int old_cpu, this_cpu;
 
-	/*
-	 * Only one CPU is allowed to execute the crash_kexec() code as with
-	 * panic().  Otherwise parallel calls of panic() and crash_kexec()
-	 * may stop each other.  To exclude them, we use panic_cpu here too.
-	 */
+	/* Only one CPU is allowed to execute panic(). */
 	old_cpu = PANIC_CPU_INVALID;
 	this_cpu = raw_smp_processor_id();
 
@@ -546,23 +377,12 @@ static void panic_trigger_all_cpu_backtrace(void)
  * and then performs the secondary CPUs shutdown - we cannot have
  * the NMI backtrace after the CPUs are off!
  */
-static void panic_other_cpus_shutdown(bool crash_kexec)
+static void panic_other_cpus_shutdown(void)
 {
 	if (panic_print & SYS_INFO_ALL_BT)
 		panic_trigger_all_cpu_backtrace();
 
-	/*
-	 * Note that smp_send_stop() is the usual SMP shutdown function,
-	 * which unfortunately may not be hardened to work in a panic
-	 * situation. If we want to do crash dump after notifier calls
-	 * and kmsg_dump, we will need architecture dependent extra
-	 * bits in addition to stopping other CPUs, hence we rely on
-	 * crash_smp_send_stop() for that.
-	 */
-	if (!crash_kexec)
-		smp_send_stop();
-	else
-		crash_smp_send_stop();
+	smp_send_stop();
 }
 
 /**
@@ -577,7 +397,6 @@ void vpanic(const char *fmt, va_list args)
 	static char buf[PANIC_MSG_BUFSZ];
 	long i, i_next = 0, len;
 	int state = 0;
-	bool _crash_kexec_post_notifiers = crash_kexec_post_notifiers;
 
 	if (panic_on_warn) {
 		/*
@@ -657,18 +476,7 @@ void vpanic(const char *fmt, va_list args)
 	 */
 	kgdb_panic(buf);
 
-	/*
-	 * If we have crashed and we have a crash kernel loaded let it handle
-	 * everything else.
-	 * If we want to run this after calling panic_notifiers, pass
-	 * the "crash_kexec_post_notifiers" option to the kernel.
-	 *
-	 * Bypass the panic_cpu check and call __crash_kexec directly.
-	 */
-	if (!_crash_kexec_post_notifiers)
-		__crash_kexec(NULL);
-
-	panic_other_cpus_shutdown(_crash_kexec_post_notifiers);
+	panic_other_cpus_shutdown();
 
 	printk_legacy_allow_panic_sync();
 
@@ -681,18 +489,6 @@ void vpanic(const char *fmt, va_list args)
 	sys_info(panic_print);
 
 	kmsg_dump_desc(KMSG_DUMP_PANIC, buf);
-
-	/*
-	 * If you doubt kdump always works fine in any situation,
-	 * "crash_kexec_post_notifiers" offers you a chance to run
-	 * panic_notifiers and dumping kmsg before kdump.
-	 * Note: since some panic_notifiers can make crashed kernel
-	 * more unstable, it can increase risks of the kdump failure too.
-	 *
-	 * Bypass the panic_cpu check and call __crash_kexec directly.
-	 */
-	if (_crash_kexec_post_notifiers)
-		__crash_kexec(NULL);
 
 	console_unblank();
 
@@ -1203,7 +999,6 @@ EXPORT_SYMBOL(__stack_chk_fail);
 core_param(panic, panic_timeout, int, 0644);
 core_param(pause_on_oops, pause_on_oops, int, 0644);
 core_param(panic_on_warn, panic_on_warn, int, 0644);
-core_param(crash_kexec_post_notifiers, crash_kexec_post_notifiers, bool, 0644);
 core_param(panic_console_replay, panic_console_replay, bool, 0644);
 
 static int panic_print_set(const char *val, const struct kernel_param *kp)

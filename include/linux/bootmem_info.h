@@ -3,7 +3,6 @@
 #define __LINUX_BOOTMEM_INFO_H
 
 #include <linux/mm.h>
-#include <linux/kmemleak.h>
 
 /*
  * Types for free bootmem stored in the low bits of page->private.
@@ -82,7 +81,6 @@ static inline void get_page_bootmem(unsigned long info, struct page *page,
 
 static inline void free_bootmem_page(struct page *page)
 {
-	kmemleak_free_part_phys(PFN_PHYS(page_to_pfn(page)), PAGE_SIZE);
 	free_reserved_page(page);
 }
 #endif

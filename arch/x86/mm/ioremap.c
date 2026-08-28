@@ -14,7 +14,6 @@
 #include <linux/ioremap.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
-#include <linux/mmiotrace.h>
 #include <linux/cc_platform.h>
 #include <linux/efi.h>
 #include <linux/pgtable.h>
@@ -302,8 +301,6 @@ __ioremap_caller(resource_size_t phys_addr, unsigned long size,
 		goto err_free_area;
 
 	ret_addr = (void __iomem *) (vaddr + offset);
-	mmiotrace_ioremap(unaligned_phys_addr, unaligned_size, ret_addr);
-
 	/*
 	 * Check if the request spans more than any BAR in the iomem resource
 	 * tree.
@@ -472,8 +469,6 @@ void iounmap(volatile void __iomem *addr)
 		WARN(1, "iounmap() called for ISA range not obtained using ioremap()\n");
 		return;
 	}
-
-	mmiotrace_iounmap(addr);
 
 	addr = (volatile void __iomem *)
 		(PAGE_MASK & (unsigned long __force)addr);
