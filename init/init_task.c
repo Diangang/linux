@@ -192,9 +192,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 	.ret_stack		= NULL,
 	.tracing_graph_pause	= ATOMIC_INIT(0),
 #endif
-#ifdef CONFIG_LIVEPATCH
-	.patch_state	= KLP_TRANSITION_IDLE,
-#endif
 #ifdef CONFIG_SECURITY
 	.security	= NULL,
 #endif

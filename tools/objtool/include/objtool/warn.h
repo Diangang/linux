@@ -147,15 +147,4 @@ static inline void unindent(int *unused) { indent--; }
 	__dbg_indent(args);						\
 	indent++
 
-#define dbg_checksum(func, insn, checksum)				\
-({									\
-	if (unlikely(insn->sym && insn->sym->pfunc &&			\
-		     insn->sym->pfunc->debug_checksum)) {		\
-		char *insn_off = offstr(insn->sec, insn->offset);	\
-		__dbg("checksum: %s %s %016llx",			\
-		      func->name, insn_off, (unsigned long long)checksum);\
-		free(insn_off);						\
-	}								\
-})
-
 #endif /* _WARN_H */

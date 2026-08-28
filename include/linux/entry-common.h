@@ -3,7 +3,6 @@
 #define __LINUX_ENTRYCOMMON_H
 
 #include <linux/irq-entry-common.h>
-#include <linux/livepatch.h>
 #include <linux/ptrace.h>
 #include <linux/resume_user_mode.h>
 #include <linux/seccomp.h>

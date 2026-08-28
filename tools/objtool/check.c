@@ -18,7 +18,6 @@
 #include <objtool/special.h>
 #include <objtool/trace.h>
 #include <objtool/warn.h>
-#include <objtool/checksum.h>
 #include <objtool/util.h>
 
 #include <linux/objtool_types.h>
@@ -648,20 +647,6 @@ static int init_pv_ops(struct objtool_file *file)
 	return 0;
 }
 
-static bool is_livepatch_module(struct objtool_file *file)
-{
-	struct section *sec;
-
-	if (!opts.module)
-		return false;
-
-	sec = find_section_by_name(file->elf, ".modinfo");
-	if (!sec)
-		return false;
-
-	return memmem(sec->data->d_buf, sec_size(sec), "\0livepatch=Y", 12);
-}
-
 static int create_static_call_sections(struct objtool_file *file)
 {
 	struct static_call_site *site;
@@ -673,14 +658,7 @@ static int create_static_call_sections(struct objtool_file *file)
 
 	sec = find_section_by_name(file->elf, ".static_call_sites");
 	if (sec) {
-		/*
-		 * Livepatch modules may have already extracted the static call
-		 * site entries to take advantage of vmlinux static call
-		 * privileges.
-		 */
-		if (!file->klp)
-			WARN("file already has .static_call_sites section, skipping");
-
+		WARN("file already has .static_call_sites section, skipping");
 		return 0;
 	}
 
@@ -933,13 +911,7 @@ static int create_mcount_loc_sections(struct objtool_file *file)
 
 	sec = find_section_by_name(file->elf, "__mcount_loc");
 	if (sec) {
-		/*
-		 * Livepatch modules have already extracted their __mcount_loc
-		 * entries to cover the !CONFIG_FTRACE_MCOUNT_USE_OBJTOOL case.
-		 */
-		if (!file->klp)
-			WARN("file already has __mcount_loc section, skipping");
-
+		WARN("file already has __mcount_loc section, skipping");
 		return 0;
 	}
 
@@ -1013,58 +985,6 @@ static int create_direct_call_sections(struct objtool_file *file)
 	return 0;
 }
 
-#ifdef BUILD_KLP
-static int create_sym_checksum_section(struct objtool_file *file)
-{
-	struct section *sec;
-	struct symbol *sym;
-	unsigned int idx = 0;
-	struct sym_checksum *checksum;
-	size_t entsize = sizeof(struct sym_checksum);
-
-	sec = find_section_by_name(file->elf, ".discard.sym_checksum");
-	if (sec) {
-		if (!opts.dryrun)
-			WARN("file already has .discard.sym_checksum section, skipping");
-
-		return 0;
-	}
-
-	for_each_sym(file->elf, sym)
-		if (sym->csum.checksum)
-			idx++;
-
-	if (!idx)
-		return 0;
-
-	sec = elf_create_section_pair(file->elf, ".discard.sym_checksum", entsize,
-				      idx, idx);
-	if (!sec)
-		return -1;
-
-	idx = 0;
-	for_each_sym(file->elf, sym) {
-		if (!sym->csum.checksum)
-			continue;
-
-		if (!elf_init_reloc(file->elf, sec->rsec, idx, idx * entsize,
-				    sym, 0, R_TEXT64))
-			return -1;
-
-		checksum = (struct sym_checksum *)sec->data->d_buf + idx;
-		checksum->addr = 0; /* reloc */
-		checksum->checksum = sym->csum.checksum;
-
-		mark_sec_changed(file->elf, sec, true);
-
-		idx++;
-	}
-
-	return 0;
-}
-#else
-static int create_sym_checksum_section(struct objtool_file *file) { return -EINVAL; }
-#endif
 
 /*
  * Warnings shouldn't be reported for ignored functions.
@@ -2622,14 +2542,11 @@ static bool validate_branch_enabled(void)
 {
 	return opts.stackval ||
 	       opts.orc ||
-	       opts.uaccess ||
-	       opts.checksum;
+	       opts.uaccess;
 }
 
 static int decode_sections(struct objtool_file *file)
 {
-	file->klp = is_livepatch_module(file);
-
 	mark_rodata(file);
 
 	if (init_pv_ops(file))
@@ -3652,88 +3569,6 @@ static bool skip_alt_group(struct instruction *insn)
 	return alt_insn->type == INSN_CLAC || alt_insn->type == INSN_STAC;
 }
 
-static int checksum_debug_init(struct objtool_file *file)
-{
-	char *dup, *s;
-
-	if (!opts.debug_checksum)
-		return 0;
-
-	dup = strdup(opts.debug_checksum);
-	if (!dup) {
-		ERROR_GLIBC("strdup");
-		return -1;
-	}
-
-	s = dup;
-	while (*s) {
-		struct symbol *func;
-		char *comma;
-
-		comma = strchr(s, ',');
-		if (comma)
-			*comma = '\0';
-
-		func = find_symbol_by_name(file->elf, s);
-		if (!func || !is_func_sym(func))
-			WARN("--debug-checksum: can't find '%s'", s);
-		else
-			func->debug_checksum = 1;
-
-		if (!comma)
-			break;
-
-		s = comma + 1;
-	}
-
-	free(dup);
-	return 0;
-}
-
-static void checksum_update_insn(struct objtool_file *file, struct symbol *func,
-				 struct instruction *insn)
-{
-	struct reloc *reloc = insn_reloc(file, insn);
-	unsigned long offset;
-	struct symbol *sym;
-
-	if (insn->fake)
-		return;
-
-	checksum_update(func, insn, insn->sec->data->d_buf + insn->offset, insn->len);
-
-	if (!reloc) {
-		struct symbol *call_dest = insn_call_dest(insn);
-
-		if (call_dest)
-			checksum_update(func, insn, call_dest->demangled_name,
-					strlen(call_dest->demangled_name));
-		return;
-	}
-
-	sym = reloc->sym;
-	offset = arch_insn_adjusted_addend(insn, reloc);
-
-	if (is_string_sec(sym->sec)) {
-		char *str;
-
-		str = sym->sec->data->d_buf + sym->offset + offset;
-		checksum_update(func, insn, str, strlen(str));
-		return;
-	}
-
-	if (is_sec_sym(sym)) {
-		sym = find_symbol_containing(reloc->sym->sec, offset);
-		if (!sym)
-			return;
-
-		offset -= sym->offset;
-	}
-
-	checksum_update(func, insn, sym->demangled_name, strlen(sym->demangled_name));
-	checksum_update(func, insn, &offset, sizeof(offset));
-}
-
 static int validate_branch(struct objtool_file *file, struct symbol *func,
 			   struct instruction *insn, struct insn_state state);
 static int do_validate_branch(struct objtool_file *file, struct symbol *func,
@@ -4015,9 +3850,6 @@ static int do_validate_branch(struct objtool_file *file, struct symbol *func,
 		insn->trace = 0;
 		next_insn = next_insn_to_validate(file, insn);
 
-		if (opts.checksum && func && insn->sec)
-			checksum_update_insn(file, func, insn);
-
 		if (func && insn_func(insn) && func != insn_func(insn)->pfunc) {
 			/* Ignore KCFI type preambles, which always fall through */
 			if (is_prefix_func(func))
@@ -4082,9 +3914,6 @@ static int validate_unwind_hint(struct objtool_file *file,
 	if (insn->hint && !insn->visited) {
 		struct symbol *func = insn_func(insn);
 		int ret;
-
-		if (opts.checksum)
-			checksum_init(func);
 
 		ret = validate_branch(file, func, insn, *state);
 		if (ret)
@@ -4428,14 +4257,6 @@ static int create_prefix_symbol(struct objtool_file *file, struct symbol *func)
 	if (snprintf_check(name, SYM_NAME_LEN, "__pfx_%s", func->name))
 		return -1;
 
-	if (file->klp) {
-		struct symbol *pfx;
-
-		pfx = find_symbol_by_offset(func->sec, func->offset - opts.prefix);
-		if (pfx && is_prefix_func(pfx) && !strcmp(pfx->name, name))
-			return 0;
-	}
-
 	insn = find_insn(file, func->sec, func->offset);
 	if (!insn) {
 		WARN("%s: can't find starting instruction", func->name);
@@ -4528,9 +4349,6 @@ static int validate_symbol(struct objtool_file *file, struct section *sec,
 
 	func = insn_func(insn);
 
-	if (opts.checksum)
-		checksum_init(func);
-
 	if (opts.trace && !fnmatch(opts.trace, sym->name, 0)) {
 		trace_enable();
 		TRACE("%s: validation begin\n", sym->name);
@@ -4542,9 +4360,6 @@ static int validate_symbol(struct objtool_file *file, struct section *sec,
 
 	TRACE("%s: validation %s\n\n", sym->name, ret ? "failed" : "end");
 	trace_disable();
-
-	if (opts.checksum)
-		checksum_finish(func);
 
 	return ret;
 }
@@ -4806,7 +4621,6 @@ static int validate_ibt(struct objtool_file *file)
 		    !strcmp(sec->name, "__bug_table")			||
 		    !strcmp(sec->name, "__ex_table")			||
 		    !strcmp(sec->name, "__jump_table")			||
-		    !strcmp(sec->name, ".init.klp_funcs")		||
 		    !strcmp(sec->name, "__mcount_loc")			||
 		    !strcmp(sec->name, ".llvm.call-graph-profile")	||
 		    !strcmp(sec->name, ".llvm_bb_addr_map")		||
@@ -5000,10 +4814,6 @@ int check(struct objtool_file *file)
 	cfi_hash_add(&init_cfi);
 	cfi_hash_add(&func_cfi);
 
-	ret = checksum_debug_init(file);
-	if (ret)
-		goto out;
-
 	ret = decode_sections(file);
 	if (ret)
 		goto out;
@@ -5092,12 +4902,6 @@ int check(struct objtool_file *file)
 
 	if (opts.noabs)
 		warnings += check_abs_references(file);
-
-	if (opts.checksum) {
-		ret = create_sym_checksum_section(file);
-		if (ret)
-			goto out;
-	}
 
 	if (opts.orc && nr_insns) {
 		ret = orc_create(file);

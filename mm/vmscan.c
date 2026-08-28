@@ -131,8 +131,6 @@ struct scan_control {
 	/* Shared cgroup tree walk failed, rescan the whole tree */
 	unsigned int memcg_full_walk:1;
 
-	unsigned int hibernation_mode:1;
-
 	/* One of the zones is ready for compaction */
 	unsigned int compaction_ready:1;
 
@@ -2967,7 +2965,6 @@ again:
 	 * the LRU too quickly.
 	 */
 	if (!current_is_kswapd() && current_may_throttle() &&
-	    !sc->hibernation_mode &&
 	    (test_bit(LRUVEC_CGROUP_CONGESTED, &target_lruvec->flags) ||
 	     test_bit(LRUVEC_NODE_CONGESTED, &target_lruvec->flags)))
 		reclaim_throttle(pgdat, VMSCAN_THROTTLE_CONGESTED);
@@ -4257,45 +4254,6 @@ bool kswapd_test_hopeless(pg_data_t *pgdat)
 {
 	return atomic_read(&pgdat->kswapd_failures) >= MAX_RECLAIM_RETRIES;
 }
-
-#if 0
-/*
- * Try to free `nr_to_reclaim' of memory, system-wide, and return the number of
- * freed pages.
- *
- * Rather than trying to age LRUs the aim is to preserve the overall
- * LRU order by reclaiming preferentially
- * inactive > active > active referenced > active mapped
- */
-unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
-{
-	struct scan_control sc = {
-		.nr_to_reclaim = nr_to_reclaim,
-		.gfp_mask = GFP_HIGHUSER_MOVABLE,
-		.reclaim_idx = MAX_NR_ZONES - 1,
-		.priority = DEF_PRIORITY,
-		.may_writepage = 1,
-		.may_unmap = 1,
-		.may_swap = 1,
-		.hibernation_mode = 1,
-	};
-	struct zonelist *zonelist = node_zonelist(numa_node_id(), sc.gfp_mask);
-	unsigned long nr_reclaimed;
-	unsigned int noreclaim_flag;
-
-	fs_reclaim_acquire(sc.gfp_mask);
-	noreclaim_flag = memalloc_noreclaim_save();
-	set_task_reclaim_state(current, &sc.reclaim_state);
-
-	nr_reclaimed = do_try_to_free_pages(zonelist, &sc);
-
-	set_task_reclaim_state(current, NULL);
-	memalloc_noreclaim_restore(noreclaim_flag);
-	fs_reclaim_release(sc.gfp_mask);
-
-	return nr_reclaimed;
-}
-#endif /* CONFIG_HIBERNATION */
 
 /*
  * This kswapd start function will be called by init and node-hot-add.

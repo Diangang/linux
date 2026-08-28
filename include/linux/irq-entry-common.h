@@ -16,14 +16,6 @@
 #include <asm/entry-common.h>
 
 /*
- * Define dummy _TIF work flags if not defined by the architecture or for
- * disabled functionality.
- */
-#ifndef _TIF_PATCH_PENDING
-# define _TIF_PATCH_PENDING		(0)
-#endif
-
-/*
  * TIF flags handled in exit_to_user_mode_loop()
  */
 #ifndef ARCH_EXIT_TO_USER_MODE_WORK
@@ -33,7 +25,7 @@
 #define EXIT_TO_USER_MODE_WORK						\
 	(_TIF_SIGPENDING | _TIF_NOTIFY_RESUME | _TIF_UPROBE |		\
 	 _TIF_NEED_RESCHED | _TIF_NEED_RESCHED_LAZY |			\
-	 _TIF_PATCH_PENDING | _TIF_NOTIFY_SIGNAL | _TIF_RSEQ |		\
+	 _TIF_NOTIFY_SIGNAL | _TIF_RSEQ |				\
 	 ARCH_EXIT_TO_USER_MODE_WORK)
 
 #ifdef CONFIG_HRTIMER_REARM_DEFERRED

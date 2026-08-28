@@ -1164,11 +1164,7 @@ int fragmentation_index(struct zone *zone, unsigned int order)
 #define TEXT_FOR_DMA32(xx, yy)
 #endif
 
-#if 0
-#define TEXT_FOR_HIGHMEM(xx, yy) [xx##_HIGH] = yy "_high",
-#else
 #define TEXT_FOR_HIGHMEM(xx, yy)
-#endif
 
 #define TEXT_FOR_DEVICE(xx, yy)
 

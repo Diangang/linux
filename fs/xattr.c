@@ -21,7 +21,6 @@
 #include <linux/fsnotify.h>
 #include <linux/audit.h>
 #include <linux/vmalloc.h>
-#include <linux/posix_acl_xattr.h>
 #include <linux/rhashtable.h>
 
 #include <linux/uaccess.h>
@@ -1024,7 +1023,7 @@ static long
 removexattr(struct mnt_idmap *idmap, struct dentry *d, const char *name)
 {
 	if (is_posix_acl_xattr(name))
-		return vfs_remove_acl(idmap, d, name);
+		return -EOPNOTSUPP;
 	return vfs_removexattr(idmap, d, name);
 }
 
@@ -1535,10 +1534,6 @@ ssize_t simple_xattr_list(struct inode *inode, struct simple_xattrs *xattrs,
 	struct simple_xattr *xattr;
 	ssize_t remaining_size = size;
 	int err = 0;
-
-	err = posix_acl_listxattr(inode, &buffer, &remaining_size);
-	if (err)
-		return err;
 
 	err = security_inode_listsecurity(inode, buffer, remaining_size);
 	if (err < 0)

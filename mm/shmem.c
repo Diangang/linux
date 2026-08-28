@@ -54,8 +54,6 @@ static struct vfsmount *shm_mnt __ro_after_init;
 
 #include <linux/xattr.h>
 #include <linux/exportfs.h>
-#include <linux/posix_acl.h>
-#include <linux/posix_acl_xattr.h>
 #include <linux/mman.h>
 #include <linux/string.h>
 #include <linux/slab.h>
@@ -1369,15 +1367,13 @@ static int shmem_setattr(struct mnt_idmap *idmap,
 	}
 
 	setattr_copy(idmap, inode, attr);
-	if (attr->ia_valid & ATTR_MODE)
-		error = posix_acl_chmod(idmap, dentry, inode->i_mode);
-	if (!error && update_ctime) {
+	if (update_ctime) {
 		inode_set_ctime_current(inode);
 		if (update_mtime)
 			inode_set_mtime_to_ts(inode, inode_get_ctime(inode));
 		inode_inc_iversion(inode);
 	}
-	return error;
+	return 0;
 }
 
 static void shmem_evict_inode(struct inode *inode)
@@ -3009,7 +3005,6 @@ static struct inode *__shmem_get_inode(struct mnt_idmap *idmap,
 		shmem_set_inode_flags(inode, info->fsflags, NULL);
 	INIT_LIST_HEAD(&info->shrinklist);
 	INIT_LIST_HEAD(&info->swaplist);
-	cache_no_acl(inode);
 	if (sbinfo->noswap)
 		mapping_set_unevictable(inode->i_mapping);
 

@@ -835,9 +835,9 @@ static int random_pm_notification(struct notifier_block *nb, unsigned long actio
 	_mix_pool_bytes(&entropy, sizeof(entropy));
 	spin_unlock_irqrestore(&input_pool.lock, flags);
 
-	if (crng_ready() && (action == PM_RESTORE_PREPARE ||
-	    (action == PM_POST_SUSPEND && !IS_ENABLED(CONFIG_PM_AUTOSLEEP) &&
-	     !IS_ENABLED(CONFIG_PM_USERSPACE_AUTOSLEEP)))) {
+	if (crng_ready() && action == PM_POST_SUSPEND &&
+	    !IS_ENABLED(CONFIG_PM_AUTOSLEEP) &&
+	    !IS_ENABLED(CONFIG_PM_USERSPACE_AUTOSLEEP)) {
 		crng_reseed(NULL);
 		pr_notice("crng reseeded on system resumption\n");
 	}

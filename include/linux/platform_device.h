@@ -390,17 +390,10 @@ extern int platform_pm_resume(struct device *dev);
 #define platform_pm_resume		NULL
 #endif
 
-#if 0
-extern int platform_pm_freeze(struct device *dev);
-extern int platform_pm_thaw(struct device *dev);
-extern int platform_pm_poweroff(struct device *dev);
-extern int platform_pm_restore(struct device *dev);
-#else
 #define platform_pm_freeze		NULL
 #define platform_pm_thaw		NULL
 #define platform_pm_poweroff		NULL
 #define platform_pm_restore		NULL
-#endif
 
 #ifdef CONFIG_PM_SLEEP
 #define USE_PLATFORM_PM_SLEEP_OPS \

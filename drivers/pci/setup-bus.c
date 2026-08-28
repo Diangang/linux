@@ -1394,9 +1394,7 @@ void __pci_bus_size_bridges(struct pci_bus *bus, struct list_head *realloc_head)
 
 		switch (dev->hdr_type) {
 		case PCI_HEADER_TYPE_CARDBUS:
-			if (pci_bus_size_cardbus_bridge(b, realloc_head))
-				continue;
-			break;
+			continue;
 
 		case PCI_HEADER_TYPE_BRIDGE:
 		default:
@@ -1519,7 +1517,6 @@ void __pci_bus_assign_resources(const struct pci_bus *bus,
 			break;
 
 		case PCI_HEADER_TYPE_CARDBUS:
-			pci_setup_cardbus_bridge(b);
 			break;
 
 		default:
@@ -1626,7 +1623,6 @@ static void __pci_bridge_assign_resources(const struct pci_dev *bridge,
 		break;
 
 	case PCI_CLASS_BRIDGE_CARDBUS:
-		pci_setup_cardbus_bridge(b);
 		break;
 
 	default:

@@ -516,21 +516,6 @@ static void quirk_apple_mbp_poweroff(struct pci_dev *pdev)
 }
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x8c10, quirk_apple_mbp_poweroff);
 
-/*
- * VMD-enabled root ports will change the source ID for all messages
- * to the VMD device. Rather than doing device matching with the source
- * ID, the AER driver should traverse the child device tree, reading
- * AER registers to find the faulting device.
- */
-static void quirk_no_aersid(struct pci_dev *pdev)
-{
-	/* VMD Domain */
-	if (is_vmd(pdev->bus) && pci_is_root_bus(pdev->bus))
-		pdev->bus->bus_flags |= PCI_BUS_FLAGS_NO_AERSID;
-}
-DECLARE_PCI_FIXUP_CLASS_EARLY(PCI_VENDOR_ID_INTEL, PCI_ANY_ID,
-			      PCI_CLASS_BRIDGE_PCI, 8, quirk_no_aersid);
-
 static void quirk_intel_th_dnv(struct pci_dev *dev)
 {
 	struct resource *r = &dev->resource[4];

@@ -68,8 +68,6 @@
 #include <linux/vtime.h>
 #include <linux/wait_api.h>
 #include <linux/workqueue_api.h>
-#include <linux/livepatch_sched.h>
-
 #ifdef CONFIG_PREEMPT_DYNAMIC
 # ifdef CONFIG_GENERIC_IRQ_ENTRY
 #  include <linux/irq-entry-common.h>
@@ -4691,8 +4689,6 @@ static void __sched notrace __schedule(int sched_mode)
 	prev = rq->curr;
 
 	schedule_debug(prev, preempt);
-
-	klp_sched_try_switch(prev);
 
 	local_irq_disable();
 	rcu_note_context_switch(preempt);

@@ -5,7 +5,6 @@
 #include <linux/highmem.h>
 #include <linux/jump_label.h>
 #include <linux/kmsan.h>
-#include <linux/livepatch.h>
 #include <linux/tick.h>
 
 /* Workaround to allow gradual conversion of architecture code */
@@ -39,9 +38,6 @@ static __always_inline unsigned long __exit_to_user_mode_loop(struct pt_regs *re
 
 		if (ti_work & _TIF_UPROBE)
 			uprobe_notify_resume(regs);
-
-		if (ti_work & _TIF_PATCH_PENDING)
-			klp_update_patch_state(current);
 
 		if (ti_work & (_TIF_SIGPENDING | _TIF_NOTIFY_SIGNAL))
 			arch_do_signal_or_restart(regs);

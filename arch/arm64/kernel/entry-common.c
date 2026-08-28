@@ -9,7 +9,6 @@
 #include <linux/irq-entry-common.h>
 #include <linux/kasan.h>
 #include <linux/linkage.h>
-#include <linux/livepatch.h>
 #include <linux/lockdep.h>
 #include <linux/ptrace.h>
 #include <linux/resume_user_mode.h>

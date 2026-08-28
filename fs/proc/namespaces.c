@@ -5,7 +5,6 @@
 #include <linux/namei.h>
 #include <linux/file.h>
 #include <linux/utsname.h>
-#include <linux/ipc_namespace.h>
 #include <linux/pid_namespace.h>
 #include <linux/user_namespace.h>
 #include "internal.h"
@@ -14,9 +13,6 @@
 static const struct proc_ns_operations *const ns_entries[] = {
 #ifdef CONFIG_UTS_NS
 	&utsns_operations,
-#endif
-#if 0
-	&ipcns_operations,
 #endif
 #ifdef CONFIG_PID_NS
 	&pidns_operations,

@@ -228,17 +228,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 			    nid, K(node_page_state(pgdat, NR_UNEVICTABLE)),
 			    nid, K(sum_zone_node_page_state(nid, NR_MLOCK)));
 
-#if 0
-	len += sysfs_emit_at(buf, len,
-			     "Node %d HighTotal:      %8lu kB\n"
-			     "Node %d HighFree:       %8lu kB\n"
-			     "Node %d LowTotal:       %8lu kB\n"
-			     "Node %d LowFree:        %8lu kB\n",
-			     nid, K(i.totalhigh),
-			     nid, K(i.freehigh),
-			     nid, K(i.totalram - i.totalhigh),
-			     nid, K(i.freeram - i.freehigh));
-#endif
 	len += sysfs_emit_at(buf, len,
 			     "Node %d Dirty:          %8lu kB\n"
 			     "Node %d Writeback:      %8lu kB\n"
@@ -700,9 +689,6 @@ static struct node_attr node_state_attr[] = {
 	[N_POSSIBLE] = _NODE_ATTR(possible, N_POSSIBLE),
 	[N_ONLINE] = _NODE_ATTR(online, N_ONLINE),
 	[N_NORMAL_MEMORY] = _NODE_ATTR(has_normal_memory, N_NORMAL_MEMORY),
-#if 0
-	[N_HIGH_MEMORY] = _NODE_ATTR(has_high_memory, N_HIGH_MEMORY),
-#endif
 	[N_MEMORY] = _NODE_ATTR(has_memory, N_MEMORY),
 	[N_CPU] = _NODE_ATTR(has_cpu, N_CPU),
 	[N_GENERIC_INITIATOR] = _NODE_ATTR(has_generic_initiator,
@@ -713,9 +699,6 @@ static struct attribute *node_state_attrs[] = {
 	&node_state_attr[N_POSSIBLE].attr.attr,
 	&node_state_attr[N_ONLINE].attr.attr,
 	&node_state_attr[N_NORMAL_MEMORY].attr.attr,
-#if 0
-	&node_state_attr[N_HIGH_MEMORY].attr.attr,
-#endif
 	&node_state_attr[N_MEMORY].attr.attr,
 	&node_state_attr[N_CPU].attr.attr,
 	&node_state_attr[N_GENERIC_INITIATOR].attr.attr,

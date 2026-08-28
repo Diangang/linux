@@ -1698,31 +1698,6 @@ int add_cpu(unsigned int cpu)
 }
 EXPORT_SYMBOL_GPL(add_cpu);
 
-/**
- * bringup_hibernate_cpu - Bring up the CPU that we hibernated on
- * @sleep_cpu: The cpu we hibernated on and should be brought up.
- *
- * On some architectures like arm64, we can hibernate on any CPU, but on
- * wake up the CPU we hibernated on might be offline as a side effect of
- * using maxcpus= for example.
- *
- * Return: %0 on success or a negative errno code
- */
-int bringup_hibernate_cpu(unsigned int sleep_cpu)
-{
-	int ret;
-
-	if (!cpu_online(sleep_cpu)) {
-		pr_info("Hibernated on a CPU that is offline! Bringing CPU up.\n");
-		ret = cpu_up(sleep_cpu, CPUHP_ONLINE);
-		if (ret) {
-			pr_err("Failed to bring hibernate-CPU up!\n");
-			return ret;
-		}
-	}
-	return 0;
-}
-
 static void __init cpuhp_bringup_mask(const struct cpumask *mask, unsigned int ncpus,
 				      enum cpuhp_state target)
 {
@@ -1965,12 +1940,10 @@ cpu_hotplug_pm_callback(struct notifier_block *nb,
 	switch (action) {
 
 	case PM_SUSPEND_PREPARE:
-	case PM_HIBERNATION_PREPARE:
 		cpu_hotplug_disable();
 		break;
 
 	case PM_POST_SUSPEND:
-	case PM_POST_HIBERNATION:
 		cpu_hotplug_enable();
 		break;
 

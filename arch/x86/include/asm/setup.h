@@ -54,12 +54,6 @@ extern void __pi_startup_64_load_idt(void *vc_handler);
 extern void early_setup_idt(void);
 extern void __init do_early_exception(struct pt_regs *regs, int trapnr);
 
-#ifdef CONFIG_X86_INTEL_MID
-extern void x86_intel_mid_early_setup(void);
-#else
-static inline void x86_intel_mid_early_setup(void) { }
-#endif
-
 static inline void x86_ce4100_early_setup(void) { }
 
 #ifndef _SETUP

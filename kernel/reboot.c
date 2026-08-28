@@ -794,14 +794,6 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 
 		kernel_restart(buffer);
 		break;
-
-
-#if 0
-	case LINUX_REBOOT_CMD_SW_SUSPEND:
-		ret = hibernate();
-		break;
-#endif
-
 	default:
 		ret = -EINVAL;
 		break;

@@ -71,13 +71,6 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 	show_val_kb(m, "Unevictable:    ", pages[LRU_UNEVICTABLE]);
 	show_val_kb(m, "Mlocked:        ", global_zone_page_state(NR_MLOCK));
 
-#if 0
-	show_val_kb(m, "HighTotal:      ", i.totalhigh);
-	show_val_kb(m, "HighFree:       ", i.freehigh);
-	show_val_kb(m, "LowTotal:       ", i.totalram - i.totalhigh);
-	show_val_kb(m, "LowFree:        ", i.freeram - i.freehigh);
-#endif
-
 #ifndef CONFIG_MMU
 	show_val_kb(m, "MmapCopy:       ",
 		    (unsigned long)atomic_long_read(&mmap_pages_allocated));

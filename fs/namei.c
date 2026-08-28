@@ -35,7 +35,6 @@
 #include <linux/fcntl.h>
 #include <linux/device_cgroup.h>
 #include <linux/fs_struct.h>
-#include <linux/posix_acl.h>
 #include <linux/hash.h>
 #include <linux/bitops.h>
 #include <linux/init_task.h>
@@ -369,29 +368,6 @@ struct filename *complete_getname(struct delayed_filename *v)
 static int check_acl(struct mnt_idmap *idmap,
 		     struct inode *inode, int mask)
 {
-#if 0
-	struct posix_acl *acl;
-
-	if (mask & MAY_NOT_BLOCK) {
-		acl = get_cached_acl_rcu(inode, ACL_TYPE_ACCESS);
-	        if (!acl)
-	                return -EAGAIN;
-		/* no ->get_inode_acl() calls in RCU mode... */
-		if (is_uncached_acl(acl))
-			return -ECHILD;
-	        return posix_acl_permission(idmap, inode, acl, mask);
-	}
-
-	acl = get_inode_acl(inode, ACL_TYPE_ACCESS);
-	if (IS_ERR(acl))
-		return PTR_ERR(acl);
-	if (acl) {
-	        int error = posix_acl_permission(idmap, inode, acl, mask);
-	        posix_acl_release(acl);
-	        return error;
-	}
-#endif
-
 	return -EAGAIN;
 }
 
@@ -407,11 +383,7 @@ static int check_acl(struct mnt_idmap *idmap,
  */
 static inline bool no_acl_inode(struct inode *inode)
 {
-#if 0
-	return likely(!READ_ONCE(inode->i_acl));
-#else
 	return true;
-#endif
 }
 
 /**

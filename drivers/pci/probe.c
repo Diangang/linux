@@ -1443,9 +1443,6 @@ static int pci_scan_bridge_extend(struct pci_bus *bus, struct pci_dev *dev,
 			      bctl & ~PCI_BRIDGE_CTL_MASTER_ABORT);
 
 	if (pci_is_cardbus_bridge(dev)) {
-		max = pci_cardbus_scan_bridge_extend(bus, dev, buses, max,
-						     available_buses,
-						     pass);
 		goto out;
 	}
 

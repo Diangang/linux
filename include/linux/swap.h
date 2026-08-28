@@ -367,7 +367,6 @@ extern unsigned long mem_cgroup_shrink_node(struct mem_cgroup *mem,
 						gfp_t gfp_mask, bool noswap,
 						pg_data_t *pgdat,
 						unsigned long *nr_scanned);
-extern unsigned long shrink_all_memory(unsigned long nr_pages);
 extern int vm_swappiness;
 long remove_mapping(struct address_space *mapping, struct folio *folio);
 
@@ -458,10 +457,6 @@ void swap_put_entries_direct(swp_entry_t entry, int nr);
  * folio, it has to be here to be called by other components.
  */
 bool folio_free_swap(struct folio *folio);
-
-/* Allocate / free (hibernation) exclusive entries */
-swp_entry_t swap_alloc_hibernation_slot(int type);
-void swap_free_hibernation_slot(swp_entry_t entry);
 
 static inline void put_swap_device(struct swap_info_struct *si)
 {

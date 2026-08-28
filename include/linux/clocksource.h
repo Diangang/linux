@@ -284,8 +284,6 @@ extern u64 clocksource_mmio_readw_down(struct clocksource *);
 extern int clocksource_mmio_init(void __iomem *, const char *,
 	unsigned long, int, unsigned, u64 (*)(struct clocksource *));
 
-extern int clocksource_i8253_init(void);
-
 #define TIMER_OF_DECLARE(name, compat, fn) \
 	OF_DECLARE_1_RET(timer, name, compat, fn)
 

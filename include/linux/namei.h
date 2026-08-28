@@ -181,8 +181,7 @@ void end_renaming(struct renamedata *rd);
  * In most filesystems, umask stripping depends on whether or not the
  * filesystem supports POSIX ACLs. If the filesystem doesn't support it umask
  * stripping is done directly in here. If the filesystem does support POSIX
- * ACLs umask stripping is deferred until the filesystem calls
- * posix_acl_create().
+ * ACLs umask stripping is deferred to the filesystem.
  *
  * Some filesystems (like NFSv4) also want to avoid umask stripping by the
  * VFS, but don't support POSIX ACLs. Those filesystems can set SB_I_NOUMASK

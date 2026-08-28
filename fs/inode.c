@@ -16,7 +16,6 @@
 #include <linux/fsnotify.h>
 #include <linux/fsverity.h>
 #include <linux/mount.h>
-#include <linux/posix_acl.h>
 #include <linux/ratelimit.h>
 #include <linux/list_lru.h>
 #include <linux/iversion.h>
@@ -226,10 +225,6 @@ int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp
 	inode->i_private = NULL;
 	inode->i_mapping = mapping;
 	INIT_HLIST_HEAD(&inode->i_dentry);	/* buggered by rcu freeing */
-#if 0
-	inode->i_acl = inode->i_default_acl = ACL_NOT_CACHED;
-#endif
-
 #ifdef CONFIG_FSNOTIFY
 	inode->i_fsnotify_mask = 0;
 #endif
@@ -307,12 +302,6 @@ void __destroy_inode(struct inode *inode)
 		atomic_long_dec(&inode->i_sb->s_remove_count);
 	}
 
-#if 0
-	if (inode->i_acl && !is_uncached_acl(inode->i_acl))
-		posix_acl_release(inode->i_acl);
-	if (inode->i_default_acl && !is_uncached_acl(inode->i_default_acl))
-		posix_acl_release(inode->i_default_acl);
-#endif
 	this_cpu_dec(nr_inodes);
 }
 EXPORT_SYMBOL(__destroy_inode);
@@ -2920,4 +2909,3 @@ umode_t mode_strip_sgid(struct mnt_idmap *idmap,
 	return mode & ~S_ISGID;
 }
 EXPORT_SYMBOL(mode_strip_sgid);
-

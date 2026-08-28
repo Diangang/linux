@@ -39,11 +39,6 @@ static void __used common(void)
 	OFFSET(TASK_stack_canary, task_struct, stack_canary);
 #endif
 
-	BLANK();
-	OFFSET(pbe_address, pbe, address);
-	OFFSET(pbe_orig_address, pbe, orig_address);
-	OFFSET(pbe_next, pbe, next);
-
 #if 0 || defined(CONFIG_IA32_EMULATION)
 	BLANK();
 	OFFSET(IA32_SIGCONTEXT_ax, sigcontext_32, ax);

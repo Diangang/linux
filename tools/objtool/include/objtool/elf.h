@@ -15,7 +15,6 @@
 #include <linux/jhash.h>
 
 #include <objtool/endianness.h>
-#include <objtool/checksum_types.h>
 #include <arch/elf.h>
 
 #define SEC_NAME_LEN		1024
@@ -85,14 +84,11 @@ struct symbol {
 	u8 nocfi             : 1;
 	u8 cold		     : 1;
 	u8 prefix	     : 1;
-	u8 debug_checksum    : 1;
 	u8 changed	     : 1;
 	u8 included	     : 1;
-	u8 klp		     : 1;
 	struct list_head pv_target;
 	struct reloc *relocs;
 	struct section *group_sec;
-	struct checksum csum;
 	struct symbol *twin, *clone;
 };
 

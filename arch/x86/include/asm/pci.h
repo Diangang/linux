@@ -23,9 +23,6 @@ struct pci_sysdata {
 #ifdef CONFIG_PCI_MSI
 	void		*fwnode;	/* IRQ domain for MSI assignment */
 #endif
-#if 0
-	struct pci_dev	*vmd_dev;	/* VMD Device if in Intel VMD domain */
-#endif
 };
 
 extern int pci_routeirq;
@@ -59,15 +56,6 @@ static inline void *_pci_root_bus_fwnode(struct pci_bus *bus)
 
 #define pci_root_bus_fwnode	_pci_root_bus_fwnode
 #endif
-
-#if 0
-static inline bool is_vmd(struct pci_bus *bus)
-{
-	return to_pci_sysdata(bus)->vmd_dev != NULL;
-}
-#else
-#define is_vmd(bus)		false
-#endif /* CONFIG_VMD */
 
 /* Can be used to override the logic in pci_scan_bus for skipping
    already-configured bus numbers - to be used for buggy BIOSes

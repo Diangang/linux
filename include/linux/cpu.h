@@ -120,7 +120,6 @@ int cpu_device_up(struct device *dev);
 void notify_cpu_starting(unsigned int cpu);
 extern void cpu_maps_update_begin(void);
 extern void cpu_maps_update_done(void);
-int bringup_hibernate_cpu(unsigned int sleep_cpu);
 void bringup_nonboot_cpus(unsigned int max_cpus);
 int arch_cpu_rescan_dead_smt_siblings(void);
 

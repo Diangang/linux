@@ -301,12 +301,6 @@ int import_xattr_name(struct xattr_name *kname, const char __user *name);
 
 int may_write_xattr(struct mnt_idmap *idmap, struct inode *inode);
 
-#if 0
-int do_set_acl(struct mnt_idmap *idmap, struct dentry *dentry,
-	       const char *acl_name, const void *kvalue, size_t size);
-ssize_t do_get_acl(struct mnt_idmap *idmap, struct dentry *dentry,
-		   const char *acl_name, void *kvalue, size_t size);
-#else
 static inline int do_set_acl(struct mnt_idmap *idmap,
 			     struct dentry *dentry, const char *acl_name,
 			     const void *kvalue, size_t size)
@@ -319,7 +313,6 @@ static inline ssize_t do_get_acl(struct mnt_idmap *idmap,
 {
 	return -EOPNOTSUPP;
 }
-#endif
 
 ssize_t __kernel_write_iter(struct file *file, struct iov_iter *from, loff_t *pos);
 

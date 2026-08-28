@@ -1042,22 +1042,10 @@ int __init early_init_dt_scan_chosen(char *cmdline)
 		strscpy(cmdline, p, min(l, COMMAND_LINE_SIZE));
 
 handle_cmdline:
-	/*
-	 * CONFIG_CMDLINE is meant to be a default in case nothing else
-	 * managed to set the command line, unless CONFIG_CMDLINE_FORCE
-	 * is set in which case we override whatever was found earlier.
-	 */
 #ifdef CONFIG_CMDLINE
-#if defined(CONFIG_CMDLINE_EXTEND)
-	strlcat(cmdline, " ", COMMAND_LINE_SIZE);
-	strlcat(cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
-#elif 0
-	strscpy(cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
-#else
-	/* No arguments from boot loader, use kernel's  cmdl*/
+	/* No arguments from boot loader, use the kernel command line. */
 	if (!((char *)cmdline)[0])
 		strscpy(cmdline, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
-#endif
 #endif /* CONFIG_CMDLINE */
 
 	pr_debug("Command line is: %s\n", (char *)cmdline);

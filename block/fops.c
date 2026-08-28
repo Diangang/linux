@@ -754,7 +754,7 @@ static ssize_t blkdev_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	if (bdev_read_only(bdev))
 		return -EPERM;
 
-	if (IS_SWAPFILE(bd_inode) && !is_hibernate_resume_dev(bd_inode->i_rdev))
+	if (IS_SWAPFILE(bd_inode))
 		return -ETXTBSY;
 
 	if (!iov_iter_count(from))

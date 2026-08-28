@@ -526,8 +526,6 @@ static u64 __of_translate_address(struct device_node *node,
 
 	/* Translate */
 	for (;;) {
-		struct logic_pio_hwaddr *iorange;
-
 		/* Switch to parent bus */
 		of_node_put(dev);
 		dev = parent;
@@ -537,19 +535,6 @@ static u64 __of_translate_address(struct device_node *node,
 		if (parent == NULL) {
 			pr_debug("reached root node\n");
 			return of_read_number(addr, na);
-		}
-
-		/*
-		 * For indirectIO device which has no ranges property, get
-		 * the address from reg directly.
-		 */
-		iorange = find_io_range_by_fwnode(&dev->fwnode);
-		if (iorange && (iorange->flags != LOGIC_PIO_CPU_MMIO)) {
-			u64 result = of_read_number(addr + 1, na - 1);
-			pr_debug("indirectIO matched(%pOF) 0x%llx\n",
-				 dev, result);
-			*host = no_free_ptr(dev);
-			return result;
 		}
 
 		/* Get new parent bus and counts */
@@ -843,8 +828,7 @@ struct of_pci_range *of_pci_range_parser_one(struct of_pci_range_parser *parser,
 }
 EXPORT_SYMBOL_GPL(of_pci_range_parser_one);
 
-static u64 of_translate_ioport(struct device_node *dev, const __be32 *in_addr,
-			u64 size)
+static u64 of_translate_ioport(struct device_node *dev, const __be32 *in_addr)
 {
 	u64 taddr;
 	unsigned long port;
@@ -853,13 +837,12 @@ static u64 of_translate_ioport(struct device_node *dev, const __be32 *in_addr,
 	taddr = __of_translate_address(dev, of_get_parent,
 				       in_addr, "ranges", &host);
 	if (host) {
-		/* host-specific port access */
-		port = logic_pio_trans_hwaddr(&host->fwnode, taddr, size);
 		of_node_put(host);
-	} else {
-		/* memory-mapped I/O range */
-		port = pci_address_to_pio(taddr);
+		return OF_BAD_ADDR;
 	}
+
+	/* memory-mapped I/O range */
+	port = pci_address_to_pio(taddr);
 
 	if (port == (unsigned long)-1)
 		return OF_BAD_ADDR;
@@ -1056,7 +1039,7 @@ static int __of_address_to_resource(struct device_node *dev, int index, int bar_
 	if (flags & IORESOURCE_MEM)
 		taddr = of_translate_address(dev, addrp);
 	else if (flags & IORESOURCE_IO)
-		taddr = of_translate_ioport(dev, addrp, size);
+		taddr = of_translate_ioport(dev, addrp);
 	else
 		return -EINVAL;
 

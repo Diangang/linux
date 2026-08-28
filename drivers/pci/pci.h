@@ -412,35 +412,6 @@ static inline bool pci_is_cardbus_bridge(struct pci_dev *dev)
 {
 	return dev->hdr_type == PCI_HEADER_TYPE_CARDBUS;
 }
-#ifdef CONFIG_CARDBUS
-unsigned long pci_cardbus_resource_alignment(struct resource *res);
-int pci_bus_size_cardbus_bridge(struct pci_bus *bus,
-				struct list_head *realloc_head);
-int pci_cardbus_scan_bridge_extend(struct pci_bus *bus, struct pci_dev *dev,
-				   u32 buses, int max,
-				   unsigned int available_buses, int pass);
-int pci_setup_cardbus(char *str);
-
-#else
-static inline unsigned long pci_cardbus_resource_alignment(struct resource *res)
-{
-	return 0;
-}
-static inline int pci_bus_size_cardbus_bridge(struct pci_bus *bus,
-					      struct list_head *realloc_head)
-{
-	return -EOPNOTSUPP;
-}
-static inline int pci_cardbus_scan_bridge_extend(struct pci_bus *bus,
-						 struct pci_dev *dev,
-						 u32 buses, int max,
-						 unsigned int available_buses,
-						 int pass)
-{
-	return max;
-}
-static inline int pci_setup_cardbus(char *str) { return -ENOENT; }
-#endif /* CONFIG_CARDBUS */
 
 /**
  * pci_match_one_device - Tell if a PCI device structure has a matching
@@ -862,7 +833,7 @@ static inline resource_size_t pci_resource_alignment(struct pci_dev *dev,
 	if (pci_resource_is_iov(resno))
 		return pci_sriov_resource_alignment(dev, resno);
 	if (dev->class >> 8 == PCI_CLASS_BRIDGE_CARDBUS)
-		return pci_cardbus_resource_alignment(res);
+		return 0;
 	return resource_alignment(res);
 }
 
@@ -1093,25 +1064,6 @@ static inline bool acpi_pci_need_resume(struct pci_dev *dev)
 static inline pci_power_t acpi_pci_choose_state(struct pci_dev *pdev)
 {
 	return PCI_POWER_ERROR;
-}
-#endif
-
-#ifdef CONFIG_X86_INTEL_MID
-bool pci_use_mid_pm(void);
-int mid_pci_set_power_state(struct pci_dev *pdev, pci_power_t state);
-pci_power_t mid_pci_get_power_state(struct pci_dev *pdev);
-#else
-static inline bool pci_use_mid_pm(void)
-{
-	return false;
-}
-static inline int mid_pci_set_power_state(struct pci_dev *pdev, pci_power_t state)
-{
-	return -ENODEV;
-}
-static inline pci_power_t mid_pci_get_power_state(struct pci_dev *pdev)
-{
-	return PCI_UNKNOWN;
 }
 #endif
 

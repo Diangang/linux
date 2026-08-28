@@ -1022,64 +1022,42 @@ static void pci_restore_bars(struct pci_dev *dev)
 
 static inline bool platform_pci_power_manageable(struct pci_dev *dev)
 {
-	if (pci_use_mid_pm())
-		return true;
-
 	return acpi_pci_power_manageable(dev);
 }
 
 static inline int platform_pci_set_power_state(struct pci_dev *dev,
 					       pci_power_t t)
 {
-	if (pci_use_mid_pm())
-		return mid_pci_set_power_state(dev, t);
-
 	return acpi_pci_set_power_state(dev, t);
 }
 
 static inline pci_power_t platform_pci_get_power_state(struct pci_dev *dev)
 {
-	if (pci_use_mid_pm())
-		return mid_pci_get_power_state(dev);
-
 	return acpi_pci_get_power_state(dev);
 }
 
 static inline void platform_pci_refresh_power_state(struct pci_dev *dev)
 {
-	if (!pci_use_mid_pm())
-		acpi_pci_refresh_power_state(dev);
+	acpi_pci_refresh_power_state(dev);
 }
 
 static inline pci_power_t platform_pci_choose_state(struct pci_dev *dev)
 {
-	if (pci_use_mid_pm())
-		return PCI_POWER_ERROR;
-
 	return acpi_pci_choose_state(dev);
 }
 
 static inline int platform_pci_set_wakeup(struct pci_dev *dev, bool enable)
 {
-	if (pci_use_mid_pm())
-		return PCI_POWER_ERROR;
-
 	return acpi_pci_wakeup(dev, enable);
 }
 
 static inline bool platform_pci_need_resume(struct pci_dev *dev)
 {
-	if (pci_use_mid_pm())
-		return false;
-
 	return acpi_pci_need_resume(dev);
 }
 
 static inline bool platform_pci_bridge_d3(struct pci_dev *dev)
 {
-	if (pci_use_mid_pm())
-		return false;
-
 	return acpi_pci_bridge_d3(dev);
 }
 
@@ -3900,8 +3878,6 @@ int pci_register_io_range(const struct fwnode_handle *fwnode, phys_addr_t addr,
 	range->fwnode = fwnode;
 	range->size = size;
 	range->hw_start = addr;
-	range->flags = LOGIC_PIO_CPU_MMIO;
-
 	ret = logic_pio_register_range(range);
 	if (ret)
 		kfree(range);
@@ -6634,9 +6610,7 @@ static int __init pci_setup(char *str)
 		if (k)
 			*k++ = 0;
 		if (*str && (str = pcibios_setup(str)) && *str) {
-			if (!pci_setup_cardbus(str)) {
-				/* Function handled the parameters */
-			} else if (!strcmp(str, "nomsi")) {
+			if (!strcmp(str, "nomsi")) {
 				pci_no_msi();
 			} else if (!strcmp(str, "noaer")) {
 				pci_no_aer();

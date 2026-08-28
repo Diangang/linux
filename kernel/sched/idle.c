@@ -8,7 +8,6 @@
  */
 #include <linux/cpuidle.h>
 #include <linux/suspend.h>
-#include <linux/livepatch.h>
 #include "sched.h"
 #include "smp.h"
 
@@ -376,8 +375,6 @@ static void do_idle(void)
 	flush_smp_call_function_queue();
 	schedule_idle();
 
-	if (unlikely(klp_patch_pending(current)))
-		klp_update_patch_state(current);
 }
 
 bool cpu_in_idle(unsigned long pc)

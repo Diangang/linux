@@ -5,6 +5,7 @@
 #include <linux/fs.h>
 #include <linux/proc_fs.h>
 #include <linux/proc_ns.h>
+#include <linux/ipc_namespace.h>
 #include <linux/magic.h>
 #include <linux/ktime.h>
 #include <linux/seq_file.h>
@@ -13,7 +14,6 @@
 #include <linux/nsfs.h>
 #include <linux/uaccess.h>
 #include <linux/mnt_namespace.h>
-#include <linux/ipc_namespace.h>
 #include <linux/time_namespace.h>
 #include <linux/utsname.h>
 #include <linux/exportfs.h>
@@ -482,10 +482,6 @@ bool is_current_namespace(struct ns_common *ns)
 	case CLONE_NEWCGROUP:
 		return current_in_namespace(to_cg_ns(ns));
 #endif
-#if 0
-	case CLONE_NEWIPC:
-		return current_in_namespace(to_ipc_ns(ns));
-#endif
 	case CLONE_NEWNS:
 		return current_in_namespace(to_mnt_ns(ns));
 #ifdef CONFIG_PID_NS
@@ -572,12 +568,6 @@ static struct dentry *nsfs_fh_to_dentry(struct super_block *sb, struct fid *fh,
 	case CLONE_NEWCGROUP:
 		if (!current_in_namespace(to_cg_ns(ns)))
 			owning_ns = to_cg_ns(ns)->user_ns;
-		break;
-#endif
-#if 0
-	case CLONE_NEWIPC:
-		if (!current_in_namespace(to_ipc_ns(ns)))
-			owning_ns = to_ipc_ns(ns)->user_ns;
 		break;
 #endif
 	case CLONE_NEWNS:

@@ -16,9 +16,7 @@ obj-$(CONFIG_GENERIC_PCI_IOMAP) += iomap.o
 endif
 
 obj-$(CONFIG_OF)		+= of.o
-obj-$(CONFIG_X86_INTEL_MID)	+= pci-mid.o
 obj-$(CONFIG_PCI_SYSCALL)	+= syscall.o
 obj-$(CONFIG_PCI_ECAM)		+= ecam.o
-obj-$(CONFIG_CARDBUS)		+= setup-cardbus.o
 
 obj-y				+= controller/

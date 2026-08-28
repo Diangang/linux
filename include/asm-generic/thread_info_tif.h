@@ -34,9 +34,6 @@
 #define TIF_UPROBE		8	// breakpointed or singlestepping
 #define _TIF_UPROBE		BIT(TIF_UPROBE)
 
-#define TIF_PATCH_PENDING	9	// pending live patching update
-#define _TIF_PATCH_PENDING	BIT(TIF_PATCH_PENDING)
-
 #ifdef HAVE_TIF_RESTORE_SIGMASK
 # define TIF_RESTORE_SIGMASK	10	// Restore signal mask in do_signal()
 # define _TIF_RESTORE_SIGMASK	BIT(TIF_RESTORE_SIGMASK)

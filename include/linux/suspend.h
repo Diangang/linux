@@ -294,134 +294,9 @@ static inline bool pm_suspend_in_progress(void)
 	return pm_suspend_target_state != PM_SUSPEND_ON;
 }
 
-/* struct pbe is used for creating lists of pages that should be restored
- * atomically during the resume from disk, because the page frames they have
- * occupied before the suspend are in use.
- */
-struct pbe {
-	void *address;		/* address of the copy */
-	void *orig_address;	/* original address of a page */
-	struct pbe *next;
-};
-
-/**
- * struct platform_hibernation_ops - hibernation platform support
- *
- * The methods in this structure allow a platform to carry out special
- * operations required by it during a hibernation transition.
- *
- * All the methods below, except for @recover(), must be implemented.
- *
- * @begin: Tell the platform driver that we're starting hibernation.
- *	Called right after shrinking memory and before freezing devices.
- *
- * @end: Called by the PM core right after resuming devices, to indicate to
- *	the platform that the system has returned to the working state.
- *
- * @pre_snapshot: Prepare the platform for creating the hibernation image.
- *	Called right after devices have been frozen and before the nonboot
- *	CPUs are disabled (runs with IRQs on).
- *
- * @finish: Restore the previous state of the platform after the hibernation
- *	image has been created *or* put the platform into the normal operation
- *	mode after the hibernation (the same method is executed in both cases).
- *	Called right after the nonboot CPUs have been enabled and before
- *	thawing devices (runs with IRQs on).
- *
- * @prepare: Prepare the platform for entering the low power state.
- *	Called right after the hibernation image has been saved and before
- *	devices are prepared for entering the low power state.
- *
- * @enter: Put the system into the low power state after the hibernation image
- *	has been saved to disk.
- *	Called after the nonboot CPUs have been disabled and all of the low
- *	level devices have been shut down (runs with IRQs off).
- *
- * @leave: Perform the first stage of the cleanup after the system sleep state
- *	indicated by @set_target() has been left.
- *	Called right after the control has been passed from the boot kernel to
- *	the image kernel, before the nonboot CPUs are enabled and before devices
- *	are resumed.  Executed with interrupts disabled.
- *
- * @pre_restore: Prepare system for the restoration from a hibernation image.
- *	Called right after devices have been frozen and before the nonboot
- *	CPUs are disabled (runs with IRQs on).
- *
- * @restore_cleanup: Clean up after a failing image restoration.
- *	Called right after the nonboot CPUs have been enabled and before
- *	thawing devices (runs with IRQs on).
- *
- * @recover: Recover the platform from a failure to suspend devices.
- *	Called by the PM core if the suspending of devices during hibernation
- *	fails.  This callback is optional and should only be implemented by
- *	platforms which require special recovery actions in that situation.
- */
-struct platform_hibernation_ops {
-	int (*begin)(pm_message_t stage);
-	void (*end)(void);
-	int (*pre_snapshot)(void);
-	void (*finish)(void);
-	int (*prepare)(void);
-	int (*enter)(void);
-	void (*leave)(void);
-	int (*pre_restore)(void);
-	void (*restore_cleanup)(void);
-	void (*recover)(void);
-};
-
-#if 0
-/* Hibernation support has been removed from this trimmed tree. */
-extern void register_nosave_region(unsigned long b, unsigned long e);
-extern int swsusp_page_is_forbidden(struct page *);
-extern void swsusp_set_page_free(struct page *);
-extern void swsusp_unset_page_free(struct page *);
-extern unsigned long get_safe_page(gfp_t gfp_mask);
-extern asmlinkage int swsusp_arch_suspend(void);
-extern asmlinkage int swsusp_arch_resume(void);
-
-extern u32 swsusp_hardware_signature;
-extern void hibernation_set_ops(const struct platform_hibernation_ops *ops);
-extern int hibernate(void);
-extern bool system_entering_hibernation(void);
-extern bool hibernation_available(void);
-asmlinkage int swsusp_save(void);
-extern struct pbe *restore_pblist;
-int pfn_is_nosave(unsigned long pfn);
-
-int hibernate_quiet_exec(int (*func)(void *data), void *data);
-int hibernate_resume_nonboot_cpu_disable(void);
-int arch_hibernation_header_save(void *addr, unsigned int max_size);
-int arch_hibernation_header_restore(void *addr);
-
-#else /* CONFIG_HIBERNATION */
-static inline void register_nosave_region(unsigned long b, unsigned long e) {}
-static inline int swsusp_page_is_forbidden(struct page *p) { return 0; }
-static inline void swsusp_set_page_free(struct page *p) {}
-static inline void swsusp_unset_page_free(struct page *p) {}
-
-static inline void hibernation_set_ops(const struct platform_hibernation_ops *ops) {}
-static inline int hibernate(void) { return -ENOSYS; }
-static inline bool system_entering_hibernation(void) { return false; }
-static inline bool hibernation_available(void) { return false; }
-
-static inline int hibernate_quiet_exec(int (*func)(void *data), void *data) {
-	return -ENOTSUPP;
-}
-#endif /* CONFIG_HIBERNATION */
-
-static inline bool pm_hibernation_mode_is_suspend(void) { return false; }
-
-int arch_resume_nosmt(void);
-
-static inline int is_hibernate_resume_dev(dev_t dev) { return 0; }
-
 /* Hibernation and suspend events */
-#define PM_HIBERNATION_PREPARE	0x0001 /* Going to hibernate */
-#define PM_POST_HIBERNATION	0x0002 /* Hibernation finished */
 #define PM_SUSPEND_PREPARE	0x0003 /* Going to suspend the system */
 #define PM_POST_SUSPEND		0x0004 /* Suspend finished */
-#define PM_RESTORE_PREPARE	0x0005 /* Going to restore a saved image */
-#define PM_POST_RESTORE		0x0006 /* Restore failed */
 
 extern struct mutex system_transition_mutex;
 
@@ -467,7 +342,6 @@ extern unsigned int lock_system_sleep(void);
 extern void unlock_system_sleep(unsigned int);
 
 extern bool pm_sleep_transition_in_progress(void);
-bool pm_hibernate_is_recovering(void);
 
 #else /* !CONFIG_PM_SLEEP */
 
@@ -501,7 +375,6 @@ static inline unsigned int lock_system_sleep(void) { return 0; }
 static inline void unlock_system_sleep(unsigned int flags) {}
 
 static inline bool pm_sleep_transition_in_progress(void) { return false; }
-static inline bool pm_hibernate_is_recovering(void) { return false; }
 
 #endif /* !CONFIG_PM_SLEEP */
 

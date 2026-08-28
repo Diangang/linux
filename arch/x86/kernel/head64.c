@@ -299,14 +299,6 @@ void __init __noreturn x86_64_start_reservations(char *real_mode_data)
 
 	x86_early_init_platform_quirks();
 
-	switch (boot_params.hdr.hardware_subarch) {
-	case X86_SUBARCH_INTEL_MID:
-		x86_intel_mid_early_setup();
-		break;
-	default:
-		break;
-	}
-
 	start_kernel();
 }
 

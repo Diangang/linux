@@ -18,7 +18,6 @@
 #include <linux/ptrace.h>
 #include <linux/seq_file.h>
 #include <uapi/linux/pidfd.h>
-#include <linux/ipc_namespace.h>
 #include <linux/time_namespace.h>
 #include <linux/utsname.h>
 #include <linux/coredump.h>
@@ -585,11 +584,6 @@ static long pidfd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 		break;
 	case PIDFD_GET_IPC_NAMESPACE:
-#if 0
-		if (!ns_ref_get(nsp->ipc_ns))
-			break;
-		ns_common = to_ns_common(nsp->ipc_ns);
-#endif
 		break;
 	case PIDFD_GET_MNT_NAMESPACE:
 		if (!ns_ref_get(nsp->mnt_ns))

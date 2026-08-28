@@ -1239,9 +1239,6 @@ struct task_struct {
 	/* A live task holds one reference: */
 	refcount_t			stack_refcount;
 #endif
-#ifdef CONFIG_LIVEPATCH
-	int patch_state;
-#endif
 #ifdef CONFIG_SECURITY
 	/* Used by LSM modules for access restriction: */
 	void				*security;

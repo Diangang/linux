@@ -26,8 +26,3 @@ int __weak orc_create(struct objtool_file *file)
 {
 	UNSUPPORTED("ORC");
 }
-
-int __weak cmd_klp(int argc, const char **argv)
-{
-	UNSUPPORTED("klp");
-}

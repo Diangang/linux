@@ -138,9 +138,6 @@ int main(void)
   DEFINE(ARM_SMCCC_1_2_REGS_X14_OFFS,	offsetof(struct arm_smccc_1_2_regs, a14));
   DEFINE(ARM_SMCCC_1_2_REGS_X16_OFFS,	offsetof(struct arm_smccc_1_2_regs, a16));
   BLANK();
-  DEFINE(HIBERN_PBE_ORIG,	offsetof(struct pbe, orig_address));
-  DEFINE(HIBERN_PBE_ADDR,	offsetof(struct pbe, address));
-  DEFINE(HIBERN_PBE_NEXT,	offsetof(struct pbe, next));
   DEFINE(ARM64_FTR_SYSVAL,	offsetof(struct arm64_ftr_reg, sys_val));
   BLANK();
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0

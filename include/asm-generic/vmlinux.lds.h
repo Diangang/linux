@@ -257,13 +257,7 @@
 
 #define KPROBE_BLACKLIST()
 
-#if 0
-#define ERROR_INJECT_WHITELIST()			\
-	STRUCT_ALIGN();					\
-	BOUNDED_SECTION(_error_injection_whitelist)
-#else
 #define ERROR_INJECT_WHITELIST()
-#endif
 
 #ifdef CONFIG_EVENT_TRACING
 #define FTRACE_EVENTS()							\
