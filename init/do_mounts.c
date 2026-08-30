@@ -20,7 +20,6 @@
 #include <linux/shmem_fs.h>
 #include <linux/ktime.h>
 
-#include <linux/raid/detect.h>
 #include <uapi/linux/mount.h>
 
 #include "do_mounts.h"
@@ -398,7 +397,6 @@ void __init prepare_namespace(void)
 	 */
 	wait_for_device_probe();
 
-	md_run_setup();
 
 	if (saved_root_name[0])
 		ROOT_DEV = parse_root_device(saved_root_name);

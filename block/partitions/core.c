@@ -11,7 +11,6 @@
 #include <linux/sysfs.h>
 #include <linux/ctype.h>
 #include <linux/vmalloc.h>
-#include <linux/raid/detect.h>
 #include "check.h"
 
 static int (*const check_part[])(struct parsed_partitions *) = {
@@ -490,10 +489,6 @@ static bool blk_add_partition(struct gendisk *disk,
 		}
 		return true;
 	}
-
-	if (IS_BUILTIN(CONFIG_BLK_DEV_MD) &&
-	    (state->parts[p].flags & ADDPART_FLAG_RAID))
-		md_autodetect_dev(part->bd_dev);
 
 	return true;
 }
