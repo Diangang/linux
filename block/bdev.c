@@ -222,7 +222,7 @@ static int sb_validate_large_blocksize(struct super_block *sb, int size)
 	if (!(sb->s_type->fs_flags & FS_LBS))
 		err_str = "not supported by filesystem";
 	else
-		err_str = "is only supported with CONFIG_TRANSPARENT_HUGEPAGE";
+		err_str = "requires large-folio mapping support";
 
 	pr_warn_ratelimited("%s: block size(%d) > page size(%lu) %s\n",
 				sb->s_type->name, size, PAGE_SIZE, err_str);

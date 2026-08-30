@@ -296,24 +296,6 @@ static inline swp_entry_t make_guard_swp_entry(void)
 
 struct page_vma_mapped_walk;
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-extern int set_pmd_migration_entry(struct page_vma_mapped_walk *pvmw,
-		struct page *page);
-
-extern void remove_migration_pmd(struct page_vma_mapped_walk *pvmw,
-		struct page *new);
-
-extern void pmd_migration_entry_wait(struct mm_struct *mm, pmd_t *pmd);
-
-static inline pmd_t swp_entry_to_pmd(swp_entry_t entry)
-{
-	swp_entry_t arch_entry;
-
-	arch_entry = __swp_entry(swp_type(entry), swp_offset(entry));
-	return __swp_entry_to_pmd(arch_entry);
-}
-
-#else  /* CONFIG_ARCH_ENABLE_THP_MIGRATION */
 static inline int set_pmd_migration_entry(struct page_vma_mapped_walk *pvmw,
 		struct page *page)
 {
@@ -333,7 +315,6 @@ static inline pmd_t swp_entry_to_pmd(swp_entry_t entry)
 	return __pmd(0);
 }
 
-#endif  /* CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
 #endif /* CONFIG_MMU */
 #endif /* _LINUX_SWAPOPS_H */

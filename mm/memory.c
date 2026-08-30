@@ -763,67 +763,6 @@ struct folio *vm_normal_folio(struct vm_area_struct *vma, unsigned long addr,
 	return NULL;
 }
 
-#ifdef CONFIG_PGTABLE_HAS_HUGE_LEAVES
-/**
- * vm_normal_page_pmd() - Get the "struct page" associated with a PMD
- * @vma: The VMA mapping the @pmd.
- * @addr: The address where the @pmd is mapped.
- * @pmd: The PMD.
- *
- * Get the "struct page" associated with a PTE. See __vm_normal_page()
- * for details on "normal" and "special" mappings.
- *
- * Return: Returns the "struct page" if this is a "normal" mapping. Returns
- *	   NULL if this is a "special" mapping.
- */
-struct page *vm_normal_page_pmd(struct vm_area_struct *vma, unsigned long addr,
-				pmd_t pmd)
-{
-	return __vm_normal_page(vma, addr, pmd_pfn(pmd), pmd_special(pmd),
-				pmd_val(pmd), PGTABLE_LEVEL_PMD);
-}
-
-/**
- * vm_normal_folio_pmd() - Get the "struct folio" associated with a PMD
- * @vma: The VMA mapping the @pmd.
- * @addr: The address where the @pmd is mapped.
- * @pmd: The PMD.
- *
- * Get the "struct folio" associated with a PTE. See __vm_normal_page()
- * for details on "normal" and "special" mappings.
- *
- * Return: Returns the "struct folio" if this is a "normal" mapping. Returns
- *	   NULL if this is a "special" mapping.
- */
-struct folio *vm_normal_folio_pmd(struct vm_area_struct *vma,
-				  unsigned long addr, pmd_t pmd)
-{
-	struct page *page = vm_normal_page_pmd(vma, addr, pmd);
-
-	if (page)
-		return page_folio(page);
-	return NULL;
-}
-
-/**
- * vm_normal_page_pud() - Get the "struct page" associated with a PUD
- * @vma: The VMA mapping the @pud.
- * @addr: The address where the @pud is mapped.
- * @pud: The PUD.
- *
- * Get the "struct page" associated with a PUD. See __vm_normal_page()
- * for details on "normal" and "special" mappings.
- *
- * Return: Returns the "struct page" if this is a "normal" mapping. Returns
- *	   NULL if this is a "special" mapping.
- */
-struct page *vm_normal_page_pud(struct vm_area_struct *vma,
-		unsigned long addr, pud_t pud)
-{
-	return __vm_normal_page(vma, addr, pud_pfn(pud), pud_special(pud),
-				pud_val(pud), PGTABLE_LEVEL_PUD);
-}
-#endif
 
 /**
  * restore_exclusive_pte - Restore a device-exclusive entry
@@ -5770,58 +5709,6 @@ out_map:
 	return 0;
 }
 
-static inline vm_fault_t create_huge_pmd(struct vm_fault *vmf)
-{
-	struct vm_area_struct *vma = vmf->vma;
-	if (vma_is_anonymous(vma))
-		return do_huge_pmd_anonymous_page(vmf);
-	if (vma->vm_ops->huge_fault)
-		return vma->vm_ops->huge_fault(vmf, PMD_ORDER);
-	return VM_FAULT_FALLBACK;
-}
-
-/* `inline' is required to avoid gcc 4.1.2 build error */
-static inline vm_fault_t wp_huge_pmd(struct vm_fault *vmf)
-{
-	struct vm_area_struct *vma = vmf->vma;
-	const bool unshare = vmf->flags & FAULT_FLAG_UNSHARE;
-	vm_fault_t ret;
-
-	if (vma_is_anonymous(vma)) {
-		if (likely(!unshare) &&
-		    userfaultfd_huge_pmd_wp(vma, vmf->orig_pmd)) {
-			if (userfaultfd_wp_async(vmf->vma))
-				goto split;
-			return handle_userfault(vmf, VM_UFFD_WP);
-		}
-		return do_huge_pmd_wp_page(vmf);
-	}
-
-	if (vma->vm_flags & (VM_SHARED | VM_MAYSHARE)) {
-		if (vma->vm_ops->huge_fault) {
-			ret = vma->vm_ops->huge_fault(vmf, PMD_ORDER);
-			if (!(ret & VM_FAULT_FALLBACK))
-				return ret;
-		}
-	}
-
-split:
-	/* COW or write-notify handled on pte level: split pmd. */
-	__split_huge_pmd(vma, vmf->pmd, vmf->address, false);
-
-	return VM_FAULT_FALLBACK;
-}
-
-static vm_fault_t create_huge_pud(struct vm_fault *vmf)
-{
-	return VM_FAULT_FALLBACK;
-}
-
-static vm_fault_t wp_huge_pud(struct vm_fault *vmf, pud_t orig_pud)
-{
-	return VM_FAULT_FALLBACK;
-}
-
 /*
  * The page faults may be spurious because of the racy access to the
  * page table.  For example, a non-populated virtual page is accessed
@@ -5970,10 +5857,8 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
 		.gfp_mask = __get_fault_gfp_mask(vma),
 	};
 	struct mm_struct *mm = vma->vm_mm;
-	vm_flags_t vm_flags = vma->vm_flags;
 	pgd_t *pgd;
 	p4d_t *p4d;
-	vm_fault_t ret;
 
 	pgd = pgd_offset(mm, address);
 	p4d = p4d_alloc(mm, pgd, address);
@@ -5983,81 +5868,18 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
 	vmf.pud = pud_alloc(mm, p4d, address);
 	if (!vmf.pud)
 		return VM_FAULT_OOM;
-retry_pud:
-	if (pud_none(*vmf.pud) &&
-	    thp_vma_allowable_order(vma, vm_flags, TVA_PAGEFAULT, PUD_ORDER)) {
-		ret = create_huge_pud(&vmf);
-		if (!(ret & VM_FAULT_FALLBACK))
-			return ret;
-	} else {
-		pud_t orig_pud = *vmf.pud;
-
-		barrier();
-		if (pud_trans_huge(orig_pud)) {
-
-			/*
-			 * TODO once we support anonymous PUDs: NUMA case and
-			 * FAULT_FLAG_UNSHARE handling.
-			 */
-			if ((flags & FAULT_FLAG_WRITE) && !pud_write(orig_pud)) {
-				ret = wp_huge_pud(&vmf, orig_pud);
-				if (!(ret & VM_FAULT_FALLBACK))
-					return ret;
-			} else {
-				huge_pud_set_accessed(&vmf, orig_pud);
-				return 0;
-			}
-		}
-	}
 
 	vmf.pmd = pmd_alloc(mm, vmf.pud, address);
 	if (!vmf.pmd)
 		return VM_FAULT_OOM;
 
-	/* Huge pud page fault raced with pmd_alloc? */
-	if (pud_trans_unstable(vmf.pud))
-		goto retry_pud;
-
-	if (pmd_none(*vmf.pmd) &&
-	    thp_vma_allowable_order(vma, vm_flags, TVA_PAGEFAULT, PMD_ORDER)) {
-		ret = create_huge_pmd(&vmf);
-		if (ret & VM_FAULT_FALLBACK)
-			goto fallback;
-		else
-			return ret;
-	}
-
 	vmf.orig_pmd = pmdp_get_lockless(vmf.pmd);
 	if (pmd_none(vmf.orig_pmd))
-		goto fallback;
+		return handle_pte_fault(&vmf);
 
-	if (unlikely(!pmd_present(vmf.orig_pmd))) {
-		if (pmd_is_device_private_entry(vmf.orig_pmd))
-			return do_huge_pmd_device_private(&vmf);
-
-		if (pmd_is_migration_entry(vmf.orig_pmd))
-			pmd_migration_entry_wait(mm, vmf.pmd);
+	if (unlikely(!pmd_present(vmf.orig_pmd)))
 		return 0;
-	}
-	if (pmd_trans_huge(vmf.orig_pmd)) {
-		if (pmd_protnone(vmf.orig_pmd) && vma_is_accessible(vma))
-			return do_huge_pmd_numa_page(&vmf);
 
-		if ((flags & (FAULT_FLAG_WRITE|FAULT_FLAG_UNSHARE)) &&
-		    !pmd_write(vmf.orig_pmd)) {
-			ret = wp_huge_pmd(&vmf);
-			if (!(ret & VM_FAULT_FALLBACK))
-				return ret;
-		} else {
-			vmf.ptl = pmd_lock(mm, vmf.pmd);
-			if (!huge_pmd_set_accessed(&vmf))
-				fix_spurious_fault(&vmf, PGTABLE_LEVEL_PMD);
-			spin_unlock(vmf.ptl);
-			return 0;
-		}
-	}
-
-fallback:
 	return handle_pte_fault(&vmf);
 }
 

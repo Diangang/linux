@@ -159,9 +159,6 @@ config MIGRATION
 	bool
 	depends on MMU
 
-config ARCH_ENABLE_THP_MIGRATION
-	bool
-
 config CONTIG_ALLOC
 	def_bool (MEMORY_ISOLATION && COMPACTION) || CMA
 
@@ -215,9 +212,6 @@ config MEMORY_FAILURE
 config ARCH_WANT_GENERAL_HUGETLB
 	bool
 
-config ARCH_WANTS_THP_SWAP
-	def_bool n
-
 config MM_ID
 	def_bool n
 
@@ -225,23 +219,6 @@ config MM_ID
 # simple helper to make the code a bit easier to read
 config PAGE_MAPCOUNT
 	def_bool y
-
-#
-# The architecture supports pgtable leaves that is larger than PAGE_SIZE
-#
-config PGTABLE_HAS_HUGE_LEAVES
-	def_bool TRANSPARENT_HUGEPAGE || HUGETLB_PAGE
-
-#
-# We can end up creating gigantic folio.
-#
-config ARCH_SUPPORTS_HUGE_PFNMAP
-	def_bool n
-	depends on TRANSPARENT_HUGEPAGE
-
-config ARCH_SUPPORTS_PMD_PFNMAP
-	def_bool y
-	depends on ARCH_SUPPORTS_HUGE_PFNMAP && HAVE_ARCH_TRANSPARENT_HUGEPAGE
 
 config NEED_PER_CPU_EMBED_FIRST_CHUNK
 	bool

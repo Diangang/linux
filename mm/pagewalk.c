@@ -887,69 +887,11 @@ struct folio *folio_walk_start(struct folio_walk *fw,
 	pud = pudp_get(pudp);
 	if (pud_none(pud))
 		goto not_found;
-	if (IS_ENABLED(CONFIG_PGTABLE_HAS_HUGE_LEAVES) &&
-	    (!pud_present(pud) || pud_leaf(pud))) {
-		ptl = pud_lock(vma->vm_mm, pudp);
-		pud = pudp_get(pudp);
-
-		entry_size = PUD_SIZE;
-		fw->level = FW_LEVEL_PUD;
-		fw->pudp = pudp;
-		fw->pud = pud;
-
-		if (pud_none(pud)) {
-			spin_unlock(ptl);
-			goto not_found;
-		} else if (pud_present(pud) && !pud_leaf(pud)) {
-			spin_unlock(ptl);
-			goto pmd_table;
-		} else if (pud_present(pud)) {
-			page = vm_normal_page_pud(vma, addr, pud);
-			if (page)
-				goto found;
-		}
-		spin_unlock(ptl);
-		goto not_found;
-	}
-
-pmd_table:
 	VM_WARN_ON_ONCE(!pud_present(pud) || pud_leaf(pud));
 	pmdp = pmd_offset(pudp, addr);
 	pmd = pmdp_get_lockless(pmdp);
 	if (pmd_none(pmd))
 		goto not_found;
-	if (IS_ENABLED(CONFIG_PGTABLE_HAS_HUGE_LEAVES) &&
-	    (!pmd_present(pmd) || pmd_leaf(pmd))) {
-		ptl = pmd_lock(vma->vm_mm, pmdp);
-		pmd = pmdp_get(pmdp);
-
-		entry_size = PMD_SIZE;
-		fw->level = FW_LEVEL_PMD;
-		fw->pmdp = pmdp;
-		fw->pmd = pmd;
-
-		if (pmd_none(pmd)) {
-			spin_unlock(ptl);
-			goto not_found;
-		} else if (pmd_present(pmd) && !pmd_leaf(pmd)) {
-			spin_unlock(ptl);
-			goto pte_table;
-		} else if (pmd_present(pmd)) {
-			page = vm_normal_page_pmd(vma, addr, pmd);
-			if (page) {
-				goto found;
-			} else if ((flags & FW_ZEROPAGE) &&
-				    is_huge_zero_pmd(pmd)) {
-				page = pfn_to_page(pmd_pfn(pmd));
-				zeropage = true;
-				goto found;
-			}
-		}
-		spin_unlock(ptl);
-		goto not_found;
-	}
-
-pte_table:
 	VM_WARN_ON_ONCE(!pmd_present(pmd) || pmd_leaf(pmd));
 	ptep = pte_offset_map_lock(vma->vm_mm, pmdp, addr, &ptl);
 	if (!ptep)

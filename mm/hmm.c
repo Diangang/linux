@@ -294,54 +294,6 @@ fault:
 	return hmm_vma_fault(addr, end, required_fault, walk);
 }
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-static int hmm_vma_handle_absent_pmd(struct mm_walk *walk, unsigned long start,
-				     unsigned long end, unsigned long *hmm_pfns,
-				     pmd_t pmd)
-{
-	struct hmm_vma_walk *hmm_vma_walk = walk->private;
-	struct hmm_range *range = hmm_vma_walk->range;
-	unsigned long npages = (end - start) >> PAGE_SHIFT;
-	const softleaf_t entry = softleaf_from_pmd(pmd);
-	unsigned long addr = start;
-	unsigned int required_fault;
-
-	if (softleaf_is_device_private(entry) &&
-	    softleaf_to_folio(entry)->pgmap->owner ==
-	    range->dev_private_owner) {
-		unsigned long cpu_flags = HMM_PFN_VALID |
-			hmm_pfn_flags_order(PMD_SHIFT - PAGE_SHIFT);
-		unsigned long pfn = softleaf_to_pfn(entry);
-		unsigned long i;
-
-		if (softleaf_is_device_private_write(entry))
-			cpu_flags |= HMM_PFN_WRITE;
-
-		/*
-		 * Fully populate the PFN list though subsequent PFNs could be
-		 * inferred, because drivers which are not yet aware of large
-		 * folios probably do not support sparsely populated PFN lists.
-		 */
-		for (i = 0; addr < end; addr += PAGE_SIZE, i++, pfn++) {
-			hmm_pfns[i] &= HMM_PFN_INOUT_FLAGS;
-			hmm_pfns[i] |= pfn | cpu_flags;
-		}
-
-		return 0;
-	}
-
-	required_fault = hmm_range_need_fault(hmm_vma_walk, hmm_pfns,
-					      npages, 0);
-	if (required_fault) {
-		if (softleaf_is_device_private(entry))
-			return hmm_vma_fault(addr, end, required_fault, walk);
-		else
-			return -EFAULT;
-	}
-
-	return hmm_pfns_fill(start, end, range, HMM_PFN_ERROR);
-}
-#else
 static int hmm_vma_handle_absent_pmd(struct mm_walk *walk, unsigned long start,
 				     unsigned long end, unsigned long *hmm_pfns,
 				     pmd_t pmd)
@@ -354,7 +306,6 @@ static int hmm_vma_handle_absent_pmd(struct mm_walk *walk, unsigned long start,
 		return -EFAULT;
 	return hmm_pfns_fill(start, end, range, HMM_PFN_ERROR);
 }
-#endif  /* CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
 static int hmm_vma_walk_pmd(pmd_t *pmdp,
 			    unsigned long start,
@@ -433,74 +384,7 @@ again:
 	return 0;
 }
 
-#if defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-static inline unsigned long pud_to_hmm_pfn_flags(struct hmm_range *range,
-						 pud_t pud)
-{
-	if (!pud_present(pud))
-		return 0;
-	return (pud_write(pud) ? (HMM_PFN_VALID | HMM_PFN_WRITE) :
-				 HMM_PFN_VALID) |
-	       hmm_pfn_flags_order(PUD_SHIFT - PAGE_SHIFT);
-}
-
-static int hmm_vma_walk_pud(pud_t *pudp, unsigned long start, unsigned long end,
-		struct mm_walk *walk)
-{
-	struct hmm_vma_walk *hmm_vma_walk = walk->private;
-	struct hmm_range *range = hmm_vma_walk->range;
-	unsigned long addr = start;
-	pud_t pud;
-	spinlock_t *ptl = pud_trans_huge_lock(pudp, walk->vma);
-
-	if (!ptl)
-		return 0;
-
-	/* Normally we don't want to split the huge page */
-	walk->action = ACTION_CONTINUE;
-
-	pud = pudp_get(pudp);
-	if (!pud_present(pud)) {
-		spin_unlock(ptl);
-		return hmm_vma_walk_hole(start, end, -1, walk);
-	}
-
-	if (pud_leaf(pud)) {
-		unsigned long i, npages, pfn;
-		unsigned int required_fault;
-		unsigned long *hmm_pfns;
-		unsigned long cpu_flags;
-
-		i = (addr - range->start) >> PAGE_SHIFT;
-		npages = (end - addr) >> PAGE_SHIFT;
-		hmm_pfns = &range->hmm_pfns[i];
-
-		cpu_flags = pud_to_hmm_pfn_flags(range, pud);
-		required_fault = hmm_range_need_fault(hmm_vma_walk, hmm_pfns,
-						      npages, cpu_flags);
-		if (required_fault) {
-			spin_unlock(ptl);
-			return hmm_vma_fault(addr, end, required_fault, walk);
-		}
-
-		pfn = pud_pfn(pud) + ((addr & ~PUD_MASK) >> PAGE_SHIFT);
-		for (i = 0; i < npages; ++i, ++pfn) {
-			hmm_pfns[i] &= HMM_PFN_INOUT_FLAGS;
-			hmm_pfns[i] |= pfn | cpu_flags;
-		}
-		goto out_unlock;
-	}
-
-	/* Ask for the PUD to be split */
-	walk->action = ACTION_SUBTREE;
-
-out_unlock:
-	spin_unlock(ptl);
-	return 0;
-}
-#else
 #define hmm_vma_walk_pud	NULL
-#endif
 
 #define hmm_vma_walk_hugetlb_entry NULL
 

@@ -1245,19 +1245,6 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
 }
 #endif
 
-#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-static inline pud_t pudp_establish(struct vm_area_struct *vma,
-		unsigned long address, pud_t *pudp, pud_t pud)
-{
-	if (IS_ENABLED(CONFIG_SMP)) {
-		return xchg(pudp, pud);
-	} else {
-		pud_t old = *pudp;
-		WRITE_ONCE(*pudp, pud);
-		return old;
-	}
-}
-#endif
 
 #define __HAVE_ARCH_PMDP_INVALIDATE_AD
 extern pmd_t pmdp_invalidate_ad(struct vm_area_struct *vma,
@@ -1417,22 +1404,6 @@ static inline pte_t pte_swp_clear_soft_dirty(pte_t pte)
 	return pte_clear_flags(pte, _PAGE_SWP_SOFT_DIRTY);
 }
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-static inline pmd_t pmd_swp_mksoft_dirty(pmd_t pmd)
-{
-	return pmd_set_flags(pmd, _PAGE_SWP_SOFT_DIRTY);
-}
-
-static inline int pmd_swp_soft_dirty(pmd_t pmd)
-{
-	return pmd_flags(pmd) & _PAGE_SWP_SOFT_DIRTY;
-}
-
-static inline pmd_t pmd_swp_clear_soft_dirty(pmd_t pmd)
-{
-	return pmd_clear_flags(pmd, _PAGE_SWP_SOFT_DIRTY);
-}
-#endif
 #endif
 
 

@@ -591,113 +591,6 @@ static struct page *no_page_table(struct vm_area_struct *vma,
 	return NULL;
 }
 
-#ifdef CONFIG_PGTABLE_HAS_HUGE_LEAVES
-/* FOLL_FORCE can write to even unwritable PUDs in COW mappings. */
-static inline bool can_follow_write_pud(pud_t pud, struct page *page,
-					struct vm_area_struct *vma,
-					unsigned int flags)
-{
-	/* If the pud is writable, we can write to the page. */
-	if (pud_write(pud))
-		return true;
-
-	return can_follow_write_common(page, vma, flags);
-}
-
-static struct page *follow_huge_pud(struct vm_area_struct *vma,
-				    unsigned long addr, pud_t *pudp,
-				    int flags, unsigned long *page_mask)
-{
-	struct mm_struct *mm = vma->vm_mm;
-	struct page *page;
-	pud_t pud = *pudp;
-	unsigned long pfn = pud_pfn(pud);
-	int ret;
-
-	assert_spin_locked(pud_lockptr(mm, pudp));
-
-	if (!pud_present(pud))
-		return NULL;
-
-	if ((flags & FOLL_WRITE) &&
-	    !can_follow_write_pud(pud, pfn_to_page(pfn), vma, flags))
-		return NULL;
-
-	pfn += (addr & ~PUD_MASK) >> PAGE_SHIFT;
-	page = pfn_to_page(pfn);
-
-	if (!pud_write(pud) && gup_must_unshare(vma, flags, page))
-		return ERR_PTR(-EMLINK);
-
-	ret = try_grab_folio(page_folio(page), 1, flags);
-	if (ret)
-		page = ERR_PTR(ret);
-	else
-		*page_mask = HPAGE_PUD_NR - 1;
-
-	return page;
-}
-
-/* FOLL_FORCE can write to even unwritable PMDs in COW mappings. */
-static inline bool can_follow_write_pmd(pmd_t pmd, struct page *page,
-					struct vm_area_struct *vma,
-					unsigned int flags)
-{
-	/* If the pmd is writable, we can write to the page. */
-	if (pmd_write(pmd))
-		return true;
-
-	if (!can_follow_write_common(page, vma, flags))
-		return false;
-
-	/* ... and a write-fault isn't required for other reasons. */
-	if (pmd_needs_soft_dirty_wp(vma, pmd))
-		return false;
-	return !userfaultfd_huge_pmd_wp(vma, pmd);
-}
-
-static struct page *follow_huge_pmd(struct vm_area_struct *vma,
-				    unsigned long addr, pmd_t *pmd,
-				    unsigned int flags,
-				    unsigned long *page_mask)
-{
-	struct mm_struct *mm = vma->vm_mm;
-	pmd_t pmdval = *pmd;
-	struct page *page;
-	int ret;
-
-	assert_spin_locked(pmd_lockptr(mm, pmd));
-
-	page = pmd_page(pmdval);
-	if ((flags & FOLL_WRITE) &&
-	    !can_follow_write_pmd(pmdval, page, vma, flags))
-		return NULL;
-
-	/* Avoid dumping huge zero page */
-	if ((flags & FOLL_DUMP) && is_huge_zero_pmd(pmdval))
-		return ERR_PTR(-EFAULT);
-
-	if (pmd_protnone(*pmd) && !gup_can_follow_protnone(vma, flags))
-		return NULL;
-
-	if (!pmd_write(pmdval) && gup_must_unshare(vma, flags, page))
-		return ERR_PTR(-EMLINK);
-
-	VM_WARN_ON_ONCE_PAGE((flags & FOLL_PIN) && PageAnon(page) &&
-			     !PageAnonExclusive(page), page);
-
-	ret = try_grab_folio(page_folio(page), 1, flags);
-	if (ret)
-		return ERR_PTR(ret);
-
-
-	page += (addr & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
-	*page_mask = HPAGE_PMD_NR - 1;
-
-	return page;
-}
-
-#else  /* CONFIG_PGTABLE_HAS_HUGE_LEAVES */
 static struct page *follow_huge_pud(struct vm_area_struct *vma,
 				    unsigned long addr, pud_t *pudp,
 				    int flags, unsigned long *page_mask)
@@ -712,7 +605,6 @@ static struct page *follow_huge_pmd(struct vm_area_struct *vma,
 {
 	return NULL;
 }
-#endif	/* CONFIG_PGTABLE_HAS_HUGE_LEAVES */
 
 static int follow_pfn_pte(struct vm_area_struct *vma, unsigned long address,
 		pte_t *pte, unsigned int flags)

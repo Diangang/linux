@@ -2699,7 +2699,7 @@ static inline bool folio_maybe_mapped_shared(struct folio *folio)
 		return mapcount > 1;
 
 	/*
-	 * vm_insert_page() without CONFIG_TRANSPARENT_HUGEPAGE ...
+	 * vm_insert_page() with an arbitrary kernel allocation ...
 	 * simply assume "mapped shared", nobody should really care
 	 * about this for arbitrary kernel allocations.
 	 */
@@ -3249,7 +3249,6 @@ static inline pte_t pte_mkspecial(pte_t pte)
 }
 #endif
 
-#ifndef CONFIG_ARCH_SUPPORTS_PMD_PFNMAP
 static inline bool pmd_special(pmd_t pmd)
 {
 	return false;
@@ -3259,7 +3258,6 @@ static inline pmd_t pmd_mkspecial(pmd_t pmd)
 {
 	return pmd;
 }
-#endif	/* CONFIG_ARCH_SUPPORTS_PMD_PFNMAP */
 
 static inline bool pud_special(pud_t pud)
 {

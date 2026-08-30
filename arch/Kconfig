@@ -528,12 +528,6 @@ config HAVE_MOVE_PMD
 	help
 	  Archs that select this are able to move page tables at the PMD level.
 
-config HAVE_ARCH_TRANSPARENT_HUGEPAGE
-	bool
-
-config HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-	bool
-
 config HAVE_ARCH_HUGE_VMAP
 	bool
 
@@ -548,9 +542,6 @@ config HAVE_ARCH_HUGE_VMALLOC
 
 config ARCH_WANT_HUGE_PMD_SHARE
 	bool
-
-config ARCH_WANT_PMD_MKWRITE
-	def_bool TRANSPARENT_HUGEPAGE
 
 config HAVE_ARCH_SOFT_DIRTY
 	bool

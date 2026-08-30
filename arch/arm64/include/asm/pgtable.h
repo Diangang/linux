@@ -540,13 +540,6 @@ static inline pmd_t pmd_mkhuge(pmd_t pmd)
 	return __pmd((pmd_val(pmd) & ~mask) | val);
 }
 
-#ifdef CONFIG_ARCH_SUPPORTS_PMD_PFNMAP
-#define pmd_special(pte)	(!!((pmd_val(pte) & PTE_SPECIAL)))
-static inline pmd_t pmd_mkspecial(pmd_t pmd)
-{
-	return set_pmd_bit(pmd, __pgprot(PTE_SPECIAL));
-}
-#endif
 
 #define __pmd_to_phys(pmd)	__pte_to_phys(pmd_pte(pmd))
 #define __phys_to_pmd_val(phys)	__phys_to_pte_val(phys)
@@ -1229,7 +1222,7 @@ static inline bool pmdp_test_and_clear_young(struct vm_area_struct *vma,
 	VM_WARN_ON(pmd_table(READ_ONCE(*pmdp)) && !system_supports_haft());
 	return __ptep_test_and_clear_young(vma, address, (pte_t *)pmdp);
 }
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE || CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG */
+#endif /* CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG */
 
 static inline pte_t __ptep_get_and_clear_anysz(struct mm_struct *mm,
 					       unsigned long address,
@@ -1389,10 +1382,6 @@ static inline void __clear_young_dirty_ptes(struct vm_area_struct *vma,
 #define __pte_to_swp_entry(pte)	((swp_entry_t) { pte_val(pte) })
 #define __swp_entry_to_pte(swp)	((pte_t) { (swp).val })
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-#define __pmd_to_swp_entry(pmd)		((swp_entry_t) { pmd_val(pmd) })
-#define __swp_entry_to_pmd(swp)		__pmd((swp).val)
-#endif /* CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
 /*
  * Ensure that there are not more swap files than can be encoded in the kernel
@@ -1476,289 +1465,6 @@ extern void modify_prot_commit_ptes(struct vm_area_struct *vma, unsigned long ad
 				    pte_t *ptep, pte_t old_pte, pte_t pte,
 				    unsigned int nr);
 
-#ifdef CONFIG_ARM64_CONTPTE
-
-/*
- * The contpte APIs are used to transparently manage the contiguous bit in ptes
- * where it is possible and makes sense to do so. The PTE_CONT bit is considered
- * a private implementation detail of the public ptep API (see below).
- */
-extern void __contpte_try_fold(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, pte_t pte);
-extern void __contpte_try_unfold(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, pte_t pte);
-extern pte_t contpte_ptep_get(pte_t *ptep, pte_t orig_pte);
-extern pte_t contpte_ptep_get_lockless(pte_t *orig_ptep);
-extern void contpte_set_ptes(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, pte_t pte, unsigned int nr);
-extern void contpte_clear_full_ptes(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, unsigned int nr, int full);
-extern pte_t contpte_get_and_clear_full_ptes(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep,
-				unsigned int nr, int full);
-bool contpte_test_and_clear_young_ptes(struct vm_area_struct *vma,
-				unsigned long addr, pte_t *ptep, unsigned int nr);
-bool contpte_clear_flush_young_ptes(struct vm_area_struct *vma,
-				unsigned long addr, pte_t *ptep, unsigned int nr);
-extern void contpte_wrprotect_ptes(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, unsigned int nr);
-extern int contpte_ptep_set_access_flags(struct vm_area_struct *vma,
-				unsigned long addr, pte_t *ptep,
-				pte_t entry, int dirty);
-extern void contpte_clear_young_dirty_ptes(struct vm_area_struct *vma,
-				unsigned long addr, pte_t *ptep,
-				unsigned int nr, cydp_t flags);
-
-static __always_inline void contpte_try_fold(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep, pte_t pte)
-{
-	/*
-	 * Only bother trying if both the virtual and physical addresses are
-	 * aligned and correspond to the last entry in a contig range. The core
-	 * code mostly modifies ranges from low to high, so this is the likely
-	 * the last modification in the contig range, so a good time to fold.
-	 * We can't fold special mappings, because there is no associated folio.
-	 */
-
-	const unsigned long contmask = CONT_PTES - 1;
-	bool valign = ((addr >> PAGE_SHIFT) & contmask) == contmask;
-
-	if (unlikely(valign)) {
-		bool palign = (pte_pfn(pte) & contmask) == contmask;
-
-		if (unlikely(palign &&
-		    pte_valid(pte) && !pte_cont(pte) && !pte_special(pte)))
-			__contpte_try_fold(mm, addr, ptep, pte);
-	}
-}
-
-static __always_inline void contpte_try_unfold(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep, pte_t pte)
-{
-	if (unlikely(pte_valid_cont(pte)))
-		__contpte_try_unfold(mm, addr, ptep, pte);
-}
-
-#define pte_batch_hint pte_batch_hint
-static inline unsigned int pte_batch_hint(pte_t *ptep, pte_t pte)
-{
-	if (!pte_valid_cont(pte))
-		return 1;
-
-	return CONT_PTES - (((unsigned long)ptep >> 3) & (CONT_PTES - 1));
-}
-
-/*
- * The below functions constitute the public API that arm64 presents to the
- * core-mm to manipulate PTE entries within their page tables (or at least this
- * is the subset of the API that arm64 needs to implement). These public
- * versions will automatically and transparently apply the contiguous bit where
- * it makes sense to do so. Therefore any users that are contig-aware (e.g.
- * hugetlb, kernel mapper) should NOT use these APIs, but instead use the
- * private versions, which are prefixed with double underscore. All of these
- * APIs except for ptep_get_lockless() are expected to be called with the PTL
- * held. Although the contiguous bit is considered private to the
- * implementation, it is deliberately allowed to leak through the getters (e.g.
- * ptep_get()), back to core code. This is required so that pte_leaf_size() can
- * provide an accurate size for perf_get_pgtable_size(). But this leakage means
- * its possible a pte will be passed to a setter with the contiguous bit set, so
- * we explicitly clear the contiguous bit in those cases to prevent accidentally
- * setting it in the pgtable.
- */
-
-#define ptep_get ptep_get
-static inline pte_t ptep_get(pte_t *ptep)
-{
-	pte_t pte = __ptep_get(ptep);
-
-	if (likely(!pte_valid_cont(pte)))
-		return pte;
-
-	return contpte_ptep_get(ptep, pte);
-}
-
-#define ptep_get_lockless ptep_get_lockless
-static inline pte_t ptep_get_lockless(pte_t *ptep)
-{
-	pte_t pte = __ptep_get(ptep);
-
-	if (likely(!pte_valid_cont(pte)))
-		return pte;
-
-	return contpte_ptep_get_lockless(ptep);
-}
-
-static inline void set_pte(pte_t *ptep, pte_t pte)
-{
-	/*
-	 * We don't have the mm or vaddr so cannot unfold contig entries (since
-	 * it requires tlb maintenance). set_pte() is not used in core code, so
-	 * this should never even be called. Regardless do our best to service
-	 * any call and emit a warning if there is any attempt to set a pte on
-	 * top of an existing contig range.
-	 */
-	pte_t orig_pte = __ptep_get(ptep);
-
-	WARN_ON_ONCE(pte_valid_cont(orig_pte));
-	__set_pte(ptep, pte_mknoncont(pte));
-}
-
-#define set_ptes set_ptes
-static __always_inline void set_ptes(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, pte_t pte, unsigned int nr)
-{
-	pte = pte_mknoncont(pte);
-
-	if (likely(nr == 1)) {
-		contpte_try_unfold(mm, addr, ptep, __ptep_get(ptep));
-		__set_ptes(mm, addr, ptep, pte, 1);
-		contpte_try_fold(mm, addr, ptep, pte);
-	} else {
-		contpte_set_ptes(mm, addr, ptep, pte, nr);
-	}
-}
-
-static inline void pte_clear(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep)
-{
-	contpte_try_unfold(mm, addr, ptep, __ptep_get(ptep));
-	__pte_clear(mm, addr, ptep);
-}
-
-#define clear_full_ptes clear_full_ptes
-static inline void clear_full_ptes(struct mm_struct *mm, unsigned long addr,
-				pte_t *ptep, unsigned int nr, int full)
-{
-	if (likely(nr == 1)) {
-		contpte_try_unfold(mm, addr, ptep, __ptep_get(ptep));
-		__clear_full_ptes(mm, addr, ptep, nr, full);
-	} else {
-		contpte_clear_full_ptes(mm, addr, ptep, nr, full);
-	}
-}
-
-#define get_and_clear_full_ptes get_and_clear_full_ptes
-static inline pte_t get_and_clear_full_ptes(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep,
-				unsigned int nr, int full)
-{
-	pte_t pte;
-
-	if (likely(nr == 1)) {
-		contpte_try_unfold(mm, addr, ptep, __ptep_get(ptep));
-		pte = __get_and_clear_full_ptes(mm, addr, ptep, nr, full);
-	} else {
-		pte = contpte_get_and_clear_full_ptes(mm, addr, ptep, nr, full);
-	}
-
-	return pte;
-}
-
-#define __HAVE_ARCH_PTEP_GET_AND_CLEAR
-static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep)
-{
-	contpte_try_unfold(mm, addr, ptep, __ptep_get(ptep));
-	return __ptep_get_and_clear(mm, addr, ptep);
-}
-
-#define test_and_clear_young_ptes test_and_clear_young_ptes
-static inline bool test_and_clear_young_ptes(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep, unsigned int nr)
-{
-	if (likely(nr == 1 && !pte_cont(__ptep_get(ptep))))
-		return __ptep_test_and_clear_young(vma, addr, ptep);
-
-	return contpte_test_and_clear_young_ptes(vma, addr, ptep, nr);
-}
-
-#define __HAVE_ARCH_PTEP_TEST_AND_CLEAR_YOUNG
-static inline bool ptep_test_and_clear_young(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep)
-{
-	return test_and_clear_young_ptes(vma, addr, ptep, 1);
-}
-
-#define __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH
-static inline bool ptep_clear_flush_young(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep)
-{
-	pte_t orig_pte = __ptep_get(ptep);
-
-	if (likely(!pte_valid_cont(orig_pte)))
-		return __ptep_clear_flush_young(vma, addr, ptep);
-
-	return contpte_clear_flush_young_ptes(vma, addr, ptep, 1);
-}
-
-#define clear_flush_young_ptes clear_flush_young_ptes
-static inline bool clear_flush_young_ptes(struct vm_area_struct *vma,
-		unsigned long addr, pte_t *ptep, unsigned int nr)
-{
-	if (likely(nr == 1 && !pte_cont(__ptep_get(ptep))))
-		return __ptep_clear_flush_young(vma, addr, ptep);
-
-	return contpte_clear_flush_young_ptes(vma, addr, ptep, nr);
-}
-
-#define wrprotect_ptes wrprotect_ptes
-static __always_inline void wrprotect_ptes(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep, unsigned int nr)
-{
-	if (likely(nr == 1)) {
-		/*
-		 * Optimization: wrprotect_ptes() can only be called for present
-		 * ptes so we only need to check contig bit as condition for
-		 * unfold, and we can remove the contig bit from the pte we read
-		 * to avoid re-reading. This speeds up fork() which is sensitive
-		 * for order-0 folios. Equivalent to contpte_try_unfold().
-		 */
-		pte_t orig_pte = __ptep_get(ptep);
-
-		if (unlikely(pte_cont(orig_pte))) {
-			__contpte_try_unfold(mm, addr, ptep, orig_pte);
-			orig_pte = pte_mknoncont(orig_pte);
-		}
-		___ptep_set_wrprotect(mm, addr, ptep, orig_pte);
-	} else {
-		contpte_wrprotect_ptes(mm, addr, ptep, nr);
-	}
-}
-
-#define __HAVE_ARCH_PTEP_SET_WRPROTECT
-static inline void ptep_set_wrprotect(struct mm_struct *mm,
-				unsigned long addr, pte_t *ptep)
-{
-	wrprotect_ptes(mm, addr, ptep, 1);
-}
-
-#define __HAVE_ARCH_PTEP_SET_ACCESS_FLAGS
-static inline int ptep_set_access_flags(struct vm_area_struct *vma,
-				unsigned long addr, pte_t *ptep,
-				pte_t entry, int dirty)
-{
-	pte_t orig_pte = __ptep_get(ptep);
-
-	entry = pte_mknoncont(entry);
-
-	if (likely(!pte_valid_cont(orig_pte)))
-		return __ptep_set_access_flags(vma, addr, ptep, entry, dirty);
-
-	return contpte_ptep_set_access_flags(vma, addr, ptep, entry, dirty);
-}
-
-#define clear_young_dirty_ptes clear_young_dirty_ptes
-static inline void clear_young_dirty_ptes(struct vm_area_struct *vma,
-					  unsigned long addr, pte_t *ptep,
-					  unsigned int nr, cydp_t flags)
-{
-	if (likely(nr == 1 && !pte_cont(__ptep_get(ptep))))
-		__clear_young_dirty_ptes(vma, addr, ptep, nr, flags);
-	else
-		contpte_clear_young_dirty_ptes(vma, addr, ptep, nr, flags);
-}
-
-#else /* CONFIG_ARM64_CONTPTE */
 
 #define ptep_get				__ptep_get
 #define set_pte					__set_pte
@@ -1779,7 +1485,6 @@ static inline void clear_young_dirty_ptes(struct vm_area_struct *vma,
 #define ptep_set_access_flags			__ptep_set_access_flags
 #define clear_young_dirty_ptes			__clear_young_dirty_ptes
 
-#endif /* CONFIG_ARM64_CONTPTE */
 
 #endif /* !__ASSEMBLER__ */
 

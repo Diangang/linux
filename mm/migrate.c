@@ -360,15 +360,6 @@ static bool remove_migration_pte(struct folio *folio,
 			idx = linear_page_index(vma, pvmw.address) - pvmw.pgoff;
 		new = folio_page(folio, idx);
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-		/* PMD-mapped THP migration entry */
-		if (!pvmw.pte) {
-			VM_BUG_ON_FOLIO(folio_test_hugetlb(folio) ||
-					!folio_test_pmd_mappable(folio), folio);
-			remove_migration_pmd(&pvmw, new);
-			continue;
-		}
-#endif
 		old_pte = ptep_get(pvmw.pte);
 		if (rmap_walk_arg->map_unused_to_zeropage &&
 		    try_to_map_unused_to_zeropage(&pvmw, folio, old_pte, idx))
@@ -487,20 +478,6 @@ out:
 }
 
 
-#ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
-void pmd_migration_entry_wait(struct mm_struct *mm, pmd_t *pmd)
-{
-	spinlock_t *ptl;
-
-	ptl = pmd_lock(mm, pmd);
-	if (!pmd_is_migration_entry(*pmd))
-		goto unlock;
-	softleaf_entry_wait_on_locked(softleaf_from_pmd(*pmd), ptl);
-	return;
-unlock:
-	spin_unlock(ptl);
-}
-#endif
 
 /*
  * Replace the folio in the mapping.

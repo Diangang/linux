@@ -268,8 +268,7 @@ out:
 #define folio_sub_large_mapcount folio_sub_return_large_mapcount
 #else /* !CONFIG_MM_ID */
 /*
- * See __folio_rmap_sanity_checks(), we might map large folios even without
- * CONFIG_TRANSPARENT_HUGEPAGE. We'll keep that working for now.
+ * See __folio_rmap_sanity_checks(), we might map large folios here.
  */
 static inline void folio_set_large_mapcount(struct folio *folio, int mapcount,
 		struct vm_area_struct *vma)
