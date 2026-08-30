@@ -2843,7 +2843,7 @@ static void *get_from_partial_node(struct kmem_cache *s,
 		if (!pfmemalloc_match(slab, pc->flags))
 			continue;
 
-		if (0 || kmem_cache_debug(s)) {
+		if (kmem_cache_debug(s)) {
 			object = alloc_single_from_partial(s, n, slab,
 							pc->orig_size);
 			if (object)
@@ -3437,7 +3437,7 @@ static unsigned int alloc_from_new_slab(struct kmem_cache *s, struct slab *slab,
 
 /*
  * Slow path. We failed to allocate via percpu sheaves or they are not available
- * due to bootstrap or debugging enabled or SLUB_TINY.
+ * due to bootstrap or debugging being enabled.
  *
  * We try to allocate from partial slab lists and fall back to allocating a new
  * slab.
@@ -3495,7 +3495,7 @@ new_objects:
 
 	stat(s, ALLOC_SLAB);
 
-	if (0 || kmem_cache_debug(s)) {
+	if (kmem_cache_debug(s)) {
 		object = alloc_single_from_new_slab(s, slab, orig_size, gfpflags);
 
 		if (likely(object))
@@ -4511,7 +4511,7 @@ static void __slab_free(struct kmem_cache *s, struct slab *slab,
 	unsigned long flags;
 	bool on_node_partial;
 
-	if (0 || kmem_cache_debug(s)) {
+	if (kmem_cache_debug(s)) {
 		free_to_partial_list(s, slab, head, tail, cnt, addr);
 		return;
 	}
@@ -6197,7 +6197,7 @@ int __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 {
 	int i;
 
-	if (0 || kmem_cache_debug(s)) {
+	if (kmem_cache_debug(s)) {
 		for (i = 0; i < size; i++) {
 
 			p[i] = ___slab_alloc(s, flags, NUMA_NO_NODE, _RET_IP_,
@@ -6460,7 +6460,7 @@ static int init_percpu_sheaves(struct kmem_cache *s)
 		 * cache.
 		 *
 		 * We keep bootstrap_sheaf for kmem_cache and kmem_cache_node,
-		 * caches with debug enabled, and all caches with SLUB_TINY.
+		 * and caches with debug enabled.
 		 * For kmalloc caches it's used temporarily during the initial
 		 * bootstrap.
 		 */
@@ -6598,7 +6598,7 @@ static unsigned int calculate_sheaf_capacity(struct kmem_cache *s,
 	size_t size;
 
 
-	if (0 || s->flags & SLAB_DEBUG_FLAGS)
+	if (s->flags & SLAB_DEBUG_FLAGS)
 		return 0;
 
 	/* Bootstrap caches can't have sheaves for now. */
@@ -7244,7 +7244,7 @@ static void __init bootstrap_cache_sheaves(struct kmem_cache *s)
 
 	capacity = calculate_sheaf_capacity(s, &empty_args);
 
-	/* capacity can be 0 due to debugging or SLUB_TINY */
+	/* capacity can be 0 due to debugging. */
 	if (!capacity)
 		return;
 
