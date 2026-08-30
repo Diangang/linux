@@ -5,7 +5,6 @@
 #include <linux/rbtree.h>
 #include <linux/kthread.h>
 #include <linux/backing-dev.h>
-#include <linux/blk-cgroup.h>
 #include <linux/freezer.h>
 #include <linux/fs.h>
 #include <linux/pagemap.h>
@@ -33,17 +32,6 @@ LIST_HEAD(bdi_list);
 
 /* bdi_wq serves all asynchronous writeback tasks */
 struct workqueue_struct *bdi_wq;
-
-static inline void bdi_debug_init(void)
-{
-}
-static inline void bdi_debug_register(struct backing_dev_info *bdi,
-				      const char *name)
-{
-}
-static inline void bdi_debug_unregister(struct backing_dev_info *bdi)
-{
-}
 
 static ssize_t read_ahead_kb_store(struct device *dev,
 				  struct device_attribute *attr,
@@ -265,15 +253,7 @@ static const struct class bdi_class = {
 
 static __init int bdi_class_init(void)
 {
-	int ret;
-
-	ret = class_register(&bdi_class);
-	if (ret)
-		return ret;
-
-	bdi_debug_init();
-
-	return 0;
+	return class_register(&bdi_class);
 }
 postcore_initcall(bdi_class_init);
 
@@ -338,8 +318,6 @@ static int wb_init(struct bdi_writeback *wb, struct backing_dev_info *bdi,
 	return err;
 }
 
-static void cgwb_remove_from_bdi_list(struct bdi_writeback *wb);
-
 /*
  * Remove bdi from the global list and shutdown any threads we have running
  */
@@ -353,7 +331,7 @@ static void wb_shutdown(struct bdi_writeback *wb)
 	}
 	spin_unlock_irq(&wb->work_lock);
 
-	cgwb_remove_from_bdi_list(wb);
+	list_del_rcu(&wb->bdi_node);
 	/*
 	 * Drain work list and shutdown the delayed_work.  !WB_registered
 	 * tells wb_workfn() that @wb is dying and its work_list needs to
@@ -373,24 +351,6 @@ static void wb_exit(struct bdi_writeback *wb)
 }
 
 
-static int cgwb_bdi_init(struct backing_dev_info *bdi)
-{
-	return wb_init(&bdi->wb, bdi, GFP_KERNEL);
-}
-
-static void cgwb_bdi_unregister(struct backing_dev_info *bdi) { }
-
-static void cgwb_bdi_register(struct backing_dev_info *bdi)
-{
-	list_add_tail_rcu(&bdi->wb.bdi_node, &bdi->wb_list);
-}
-
-static void cgwb_remove_from_bdi_list(struct bdi_writeback *wb)
-{
-	list_del_rcu(&wb->bdi_node);
-}
-
-
 int bdi_init(struct backing_dev_info *bdi)
 {
 	bdi->dev = NULL;
@@ -404,7 +364,7 @@ int bdi_init(struct backing_dev_info *bdi)
 	init_waitqueue_head(&bdi->wb_waitq);
 	bdi->last_bdp_sleep = jiffies;
 
-	return cgwb_bdi_init(bdi);
+	return wb_init(&bdi->wb, bdi, GFP_KERNEL);
 }
 
 struct backing_dev_info *bdi_alloc(int node_id)
@@ -487,10 +447,9 @@ int bdi_register_va(struct backing_dev_info *bdi, const char *fmt, va_list args)
 	if (IS_ERR(dev))
 		return PTR_ERR(dev);
 
-	cgwb_bdi_register(bdi);
+	list_add_tail_rcu(&bdi->wb.bdi_node, &bdi->wb_list);
 	bdi->dev = dev;
 
-	bdi_debug_register(bdi, dev_name(dev));
 	set_bit(WB_registered, &bdi->wb.state);
 
 	spin_lock_bh(&bdi_lock);
@@ -545,7 +504,6 @@ void bdi_unregister(struct backing_dev_info *bdi)
 	/* make sure nobody finds us on the bdi_list anymore */
 	bdi_remove_from_list(bdi);
 	wb_shutdown(&bdi->wb);
-	cgwb_bdi_unregister(bdi);
 
 	/*
 	 * If this BDI's min ratio has been set, use bdi_set_min_ratio() to
@@ -555,7 +513,6 @@ void bdi_unregister(struct backing_dev_info *bdi)
 		bdi_set_min_ratio(bdi, 0);
 
 	if (bdi->dev) {
-		bdi_debug_unregister(bdi);
 		device_unregister(bdi->dev);
 		bdi->dev = NULL;
 	}

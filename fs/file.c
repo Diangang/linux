@@ -205,18 +205,18 @@ static struct fdtable *alloc_fdtable(unsigned int slots_wanted)
 	if (unlikely(nr > INT_MAX / sizeof(struct file *)))
 		return ERR_PTR(-EMFILE);
 
-	fdt = kmalloc_obj(struct fdtable, GFP_KERNEL_ACCOUNT);
+	fdt = kmalloc_obj(struct fdtable, GFP_KERNEL);
 	if (!fdt)
 		goto out;
 	fdt->max_fds = nr;
-	data = kvmalloc_objs(struct file *, nr, GFP_KERNEL_ACCOUNT);
+	data = kvmalloc_objs(struct file *, nr, GFP_KERNEL);
 	if (!data)
 		goto out_fdt;
 	fdt->fd = data;
 
 	data = kvmalloc(max_t(size_t,
 				 2 * nr / BITS_PER_BYTE + BITBIT_SIZE(nr), L1_CACHE_BYTES),
-				 GFP_KERNEL_ACCOUNT);
+				 GFP_KERNEL);
 	if (!data)
 		goto out_arr;
 	fdt->open_fds = data;

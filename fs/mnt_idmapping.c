@@ -248,13 +248,13 @@ static int copy_mnt_idmap(struct uid_gid_map *map_from,
 
 	forward = kmemdup_array(map_from->forward, nr_extents,
 				sizeof(struct uid_gid_extent),
-				GFP_KERNEL_ACCOUNT);
+				GFP_KERNEL);
 	if (!forward)
 		return -ENOMEM;
 
 	reverse = kmemdup_array(map_from->reverse, nr_extents,
 				sizeof(struct uid_gid_extent),
-				GFP_KERNEL_ACCOUNT);
+				GFP_KERNEL);
 	if (!reverse) {
 		kfree(forward);
 		return -ENOMEM;
@@ -289,7 +289,7 @@ struct mnt_idmap *alloc_mnt_idmap(struct user_namespace *mnt_userns)
 	struct mnt_idmap *idmap;
 	int ret;
 
-	idmap = kzalloc_obj(struct mnt_idmap, GFP_KERNEL_ACCOUNT);
+	idmap = kzalloc_obj(struct mnt_idmap, GFP_KERNEL);
 	if (!idmap)
 		return ERR_PTR(-ENOMEM);
 

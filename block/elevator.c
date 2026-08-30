@@ -40,7 +40,6 @@
 #include "blk.h"
 #include "blk-mq-sched.h"
 #include "blk-wbt.h"
-#include "blk-cgroup.h"
 
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);

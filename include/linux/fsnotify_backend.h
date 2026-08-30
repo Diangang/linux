@@ -133,8 +133,6 @@ struct fsnotify_event_private_data;
 struct fsnotify_fname;
 struct fsnotify_iter_info;
 
-struct mem_cgroup;
-
 /*
  * Each group much define these ops.  The fsnotify infrastructure will call
  * these operations for each relevant group.
@@ -249,7 +247,6 @@ struct fsnotify_group {
 						 * notification list is too
 						 * full */
 
-	struct mem_cgroup *memcg;	/* memcg to charge allocations */
 	struct user_namespace *user_ns;	/* user ns where group was created */
 
 	/* groups can define private fields here or use the void *private */

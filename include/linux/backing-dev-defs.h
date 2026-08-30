@@ -82,26 +82,8 @@ struct wb_completion {
 	struct wb_completion cmpl = WB_COMPLETION_INIT(bdi)
 
 /*
- * Each wb (bdi_writeback) can perform writeback operations, is measured
- * and throttled, independently.  Without cgroup writeback, each bdi
- * (bdi_writeback) is served by its embedded bdi->wb.
- *
- * On the default hierarchy, blkcg implicitly enables memcg.  This allows
- * using memcg's page ownership for attributing writeback IOs, and every
- * memcg - blkcg combination can be served by its own wb by assigning a
- * dedicated wb to each memcg, which enables isolation across different
- * cgroups and propagation of IO back pressure down from the IO layer upto
- * the tasks which are generating the dirty pages to be written back.
- *
- * A cgroup wb is indexed on its bdi by the ID of the associated memcg,
- * refcounted with the number of inodes attached to it, and pins the memcg
- * and the corresponding blkcg.  As the corresponding blkcg for a memcg may
- * change as blkcg is disabled and enabled higher up in the hierarchy, a wb
- * is tested for blkcg after lookup and removed from index on mismatch so
- * that a new wb for the combination can be created.
- *
- * Each bdi_writeback that is not embedded into the backing_dev_info must hold
- * a reference to the parent backing_dev_info.  See cgwb_create() for details.
+ * Each wb (bdi_writeback) can perform writeback operations and is measured
+ * and throttled independently. Each bdi is served by its embedded bdi->wb.
  */
 struct bdi_writeback {
 	struct backing_dev_info *bdi;	/* our parent bdi */
@@ -182,32 +164,10 @@ struct backing_dev_info {
 };
 
 struct wb_lock_cookie {
-	bool locked;
-	unsigned long flags;
 };
-
-
-static inline bool wb_tryget(struct bdi_writeback *wb)
-{
-	return true;
-}
-
-static inline void wb_get(struct bdi_writeback *wb)
-{
-}
 
 static inline void wb_put(struct bdi_writeback *wb)
 {
 }
-
-static inline void wb_put_many(struct bdi_writeback *wb, unsigned long nr)
-{
-}
-
-static inline bool wb_dying(struct bdi_writeback *wb)
-{
-	return false;
-}
-
 
 #endif	/* __LINUX_BACKING_DEV_DEFS_H */

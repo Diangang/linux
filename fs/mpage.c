@@ -598,7 +598,6 @@ alloc_new:
 				REQ_OP_WRITE | wbc_to_write_flags(wbc),
 				GFP_NOFS);
 		bio->bi_iter.bi_sector = first_block << (blkbits - 9);
-		wbc_init_bio(wbc, bio);
 		bio->bi_write_hint = inode->i_write_hint;
 	}
 
@@ -607,7 +606,6 @@ alloc_new:
 	 * the confused fail path above (OOM) will be very confused when
 	 * it finds all bh marked clean (i.e. it will not write anything)
 	 */
-	wbc_account_cgroup_owner(wbc, folio, folio_size(folio));
 	length = first_unmapped << blkbits;
 	if (!bio_add_folio(bio, folio, length, 0)) {
 		bio = mpage_bio_submit_write(bio);

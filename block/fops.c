@@ -18,6 +18,7 @@
 #include <linux/fs.h>
 #include <linux/iomap.h>
 #include <linux/module.h>
+#include <linux/writeback.h>
 #include "blk.h"
 
 static inline struct inode *bdev_file_inode(struct file *file)

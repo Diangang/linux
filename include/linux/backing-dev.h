@@ -136,28 +136,9 @@ static inline bool mapping_can_writeback(struct address_space *mapping)
 	return inode_to_bdi(mapping->host)->capabilities & BDI_CAP_WRITEBACK;
 }
 
-/* Must not be used by file systems that support cgroup writeback */
-static inline int bdi_wb_dirty_exceeded(struct backing_dev_info *bdi)
-{
-	return bdi->wb.dirty_exceeded;
-}
-
-/* Must not be used by file systems that support cgroup writeback */
-static inline void bdi_wb_stat_mod(struct inode *inode, enum wb_stat_item item,
-				   s64 amount)
-{
-	wb_stat_mod(&inode_to_bdi(inode)->wb, item, amount);
-}
-
-
 static inline bool inode_cgwb_enabled(struct inode *inode)
 {
 	return false;
-}
-
-static inline struct bdi_writeback *wb_find_current(struct backing_dev_info *bdi)
-{
-	return &bdi->wb;
 }
 
 static inline struct bdi_writeback *
@@ -189,15 +170,6 @@ static inline void unlocked_inode_to_wb_end(struct inode *inode,
 					    struct wb_lock_cookie *cookie)
 {
 }
-
-static inline void wb_memcg_offline(struct mem_cgroup *memcg)
-{
-}
-
-static inline void wb_blkcg_offline(struct cgroup_subsys_state *css)
-{
-}
-
 
 const char *bdi_dev_name(struct backing_dev_info *bdi);
 

@@ -23,7 +23,6 @@
 #include <linux/file.h>
 #include <linux/pagemap.h>
 #include <linux/splice.h>
-#include <linux/memcontrol.h>
 #include <linux/mm_inline.h>
 #include <linux/swap.h>
 #include <linux/writeback.h>

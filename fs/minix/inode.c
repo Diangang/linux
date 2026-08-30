@@ -107,7 +107,7 @@ static int __init init_inodecache(void)
 	minix_inode_cachep = kmem_cache_create("minix_inode_cache",
 					     sizeof(struct minix_inode_info),
 					     0, (SLAB_RECLAIM_ACCOUNT|
-						SLAB_ACCOUNT),
+						0),
 					     init_once);
 	if (minix_inode_cachep == NULL)
 		return -ENOMEM;
@@ -767,4 +767,3 @@ module_init(init_minix_fs)
 module_exit(exit_minix_fs)
 MODULE_DESCRIPTION("Minix file system");
 MODULE_LICENSE("GPL");
-

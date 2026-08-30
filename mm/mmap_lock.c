@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/mm.h>
 #include <linux/cgroup.h>
-#include <linux/memcontrol.h>
 #include <linux/mmap_lock.h>
 #include <linux/mutex.h>
 #include <linux/percpu.h>

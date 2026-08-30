@@ -34,7 +34,7 @@ enum {
 	___GFP_NOMEMALLOC_BIT,
 	___GFP_HARDWALL_BIT,
 	___GFP_THISNODE_BIT,
-	___GFP_ACCOUNT_BIT,
+	___GFP_UNUSED2_BIT,
 	___GFP_ZEROTAGS_BIT,
 	___GFP_NO_OBJ_EXT_BIT,
 	___GFP_LAST_BIT
@@ -63,7 +63,6 @@ enum {
 #define ___GFP_NOMEMALLOC	BIT(___GFP_NOMEMALLOC_BIT)
 #define ___GFP_HARDWALL		BIT(___GFP_HARDWALL_BIT)
 #define ___GFP_THISNODE		BIT(___GFP_THISNODE_BIT)
-#define ___GFP_ACCOUNT		BIT(___GFP_ACCOUNT_BIT)
 #define ___GFP_ZEROTAGS		BIT(___GFP_ZEROTAGS_BIT)
 #define ___GFP_SKIP_ZERO	0
 #define ___GFP_SKIP_KASAN	0
@@ -108,8 +107,6 @@ enum {
  * %__GFP_THISNODE forces the allocation to be satisfied from the requested
  * node with no fallbacks or placement policy enforcements.
  *
- * %__GFP_ACCOUNT causes the allocation to be accounted to kmemcg.
- *
  * %__GFP_NO_OBJ_EXT causes slab allocation to have no object extension.
  * mark_obj_codetag_empty() should be called upon freeing for objects allocated
  * with this flag to indicate that their NULL tags are expected and normal.
@@ -118,7 +115,6 @@ enum {
 #define __GFP_WRITE	((__force gfp_t)___GFP_WRITE)
 #define __GFP_HARDWALL   ((__force gfp_t)___GFP_HARDWALL)
 #define __GFP_THISNODE	((__force gfp_t)___GFP_THISNODE)
-#define __GFP_ACCOUNT	((__force gfp_t)___GFP_ACCOUNT)
 #define __GFP_NO_OBJ_EXT   ((__force gfp_t)___GFP_NO_OBJ_EXT)
 
 /**
@@ -291,9 +287,6 @@ enum {
  * %GFP_KERNEL is typical for kernel-internal allocations. The caller requires
  * %ZONE_NORMAL or a lower zone for direct access but can direct reclaim.
  *
- * %GFP_KERNEL_ACCOUNT is the same as GFP_KERNEL, except the allocation is
- * accounted to kmemcg.
- *
  * %GFP_NOWAIT is for kernel allocations that should not stall for direct
  * reclaim, start physical IO or use any filesystem callback.  It is very
  * likely to fail to allocate memory, even for very small allocations.
@@ -347,7 +340,6 @@ enum {
  */
 #define GFP_ATOMIC	(__GFP_HIGH|__GFP_KSWAPD_RECLAIM)
 #define GFP_KERNEL	(__GFP_RECLAIM | __GFP_IO | __GFP_FS)
-#define GFP_KERNEL_ACCOUNT (GFP_KERNEL | __GFP_ACCOUNT)
 #define GFP_NOWAIT	(__GFP_KSWAPD_RECLAIM | __GFP_NOWARN)
 #define GFP_NOIO	(__GFP_RECLAIM)
 #define GFP_NOFS	(__GFP_RECLAIM | __GFP_IO)

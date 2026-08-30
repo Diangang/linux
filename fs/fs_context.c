@@ -263,7 +263,7 @@ static struct fs_context *alloc_fs_context(struct file_system_type *fs_type,
 	struct fs_context *fc;
 	int ret = -ENOMEM;
 
-	fc = kzalloc_obj(struct fs_context, GFP_KERNEL_ACCOUNT);
+	fc = kzalloc_obj(struct fs_context, GFP_KERNEL);
 	if (!fc)
 		return ERR_PTR(-ENOMEM);
 

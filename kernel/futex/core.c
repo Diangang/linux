@@ -1660,7 +1660,7 @@ static int futex_hash_allocate(unsigned int hash_slots, unsigned int flags)
 	}
 
 	fph = kvzalloc(struct_size(fph, queues, hash_slots),
-		       GFP_KERNEL_ACCOUNT | __GFP_NOWARN);
+		       GFP_KERNEL | __GFP_NOWARN);
 	if (!fph)
 		return -ENOMEM;
 

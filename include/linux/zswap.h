@@ -28,7 +28,6 @@ static inline int zswap_swapon(int type, unsigned long nr_pages)
 	return 0;
 }
 static inline void zswap_swapoff(int type) {}
-static inline void zswap_memcg_offline_cleanup(struct mem_cgroup *memcg) {}
 static inline void zswap_lruvec_state_init(struct lruvec *lruvec) {}
 static inline void zswap_folio_swapin(struct folio *folio) {}
 

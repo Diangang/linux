@@ -436,12 +436,6 @@ static inline void memalloc_pin_restore(unsigned int flags)
 	memalloc_flags_restore(flags);
 }
 
-static inline struct mem_cgroup *
-set_active_memcg(struct mem_cgroup *memcg)
-{
-	return NULL;
-}
-
 static inline void membarrier_exec_mmap(struct mm_struct *mm)
 {
 }

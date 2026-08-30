@@ -9,7 +9,6 @@
 #include <linux/slab.h>
 #include <linux/mm.h>
 #include <linux/rwsem.h>
-#include <linux/memcontrol.h>
 #include <linux/highmem.h>
 #include <linux/pagemap.h>
 #include <linux/memremap.h>
@@ -423,28 +422,6 @@ void folio_remove_rmap_pmd(struct folio *, struct page *,
 void folio_remove_rmap_pud(struct folio *, struct page *,
 		struct vm_area_struct *);
 
-void hugetlb_add_anon_rmap(struct folio *, struct vm_area_struct *,
-		unsigned long address, rmap_t flags);
-void hugetlb_add_new_anon_rmap(struct folio *, struct vm_area_struct *,
-		unsigned long address);
-
-/* See folio_try_dup_anon_rmap_*() */
-static inline int hugetlb_try_dup_anon_rmap(struct folio *folio,
-		struct vm_area_struct *vma)
-{
-	VM_WARN_ON_FOLIO(!folio_test_hugetlb(folio), folio);
-	VM_WARN_ON_FOLIO(!folio_test_anon(folio), folio);
-
-	if (PageAnonExclusive(&folio->page)) {
-		if (unlikely(folio_needs_cow_for_dma(vma, folio)))
-			return -EBUSY;
-		ClearPageAnonExclusive(&folio->page);
-	}
-	atomic_inc(&folio->_entire_mapcount);
-	atomic_inc(&folio->_large_mapcount);
-	return 0;
-}
-
 /* See folio_try_share_anon_rmap_*() */
 static inline int hugetlb_try_share_anon_rmap(struct folio *folio)
 {
@@ -467,15 +444,6 @@ static inline int hugetlb_try_share_anon_rmap(struct folio *folio)
 	if (IS_ENABLED(CONFIG_HAVE_GUP_FAST))
 		smp_mb__after_atomic();
 	return 0;
-}
-
-static inline void hugetlb_add_file_rmap(struct folio *folio)
-{
-	VM_WARN_ON_FOLIO(!folio_test_hugetlb(folio), folio);
-	VM_WARN_ON_FOLIO(folio_test_anon(folio), folio);
-
-	atomic_inc(&folio->_entire_mapcount);
-	atomic_inc(&folio->_large_mapcount);
 }
 
 static inline void hugetlb_remove_rmap(struct folio *folio)
@@ -539,22 +507,6 @@ static __always_inline void folio_dup_file_rmap_pte(struct folio *folio,
 		struct page *page, struct vm_area_struct *dst_vma)
 {
 	__folio_dup_file_rmap(folio, page, 1, dst_vma, PGTABLE_LEVEL_PTE);
-}
-
-/**
- * folio_dup_file_rmap_pmd - duplicate a PMD mapping of a page range of a folio
- * @folio:	The folio to duplicate the mapping of
- * @page:	The first page to duplicate the mapping of
- * @dst_vma:	The destination vm area
- *
- * The page range of the folio is defined by [page, page + HPAGE_PMD_NR)
- *
- * The caller needs to hold the page table lock.
- */
-static inline void folio_dup_file_rmap_pmd(struct folio *folio,
-		struct page *page, struct vm_area_struct *dst_vma)
-{
-	WARN_ON_ONCE(true);
 }
 
 static __always_inline int __folio_try_dup_anon_rmap(struct folio *folio,
@@ -662,37 +614,6 @@ static __always_inline int folio_try_dup_anon_rmap_pte(struct folio *folio,
 					 PGTABLE_LEVEL_PTE);
 }
 
-/**
- * folio_try_dup_anon_rmap_pmd - try duplicating a PMD mapping of a page range
- *				 of a folio
- * @folio:	The folio to duplicate the mapping of
- * @page:	The first page to duplicate the mapping of
- * @dst_vma:	The destination vm area
- * @src_vma:	The vm area from which the mapping is duplicated
- *
- * The page range of the folio is defined by [page, page + HPAGE_PMD_NR)
- *
- * The caller needs to hold the page table lock and the
- * vma->vma_mm->write_protect_seq.
- *
- * Duplicating the mapping can only fail if the folio may be pinned; device
- * private folios cannot get pinned and consequently this function cannot fail
- * for them.
- *
- * If duplicating the mapping succeeds, the duplicated PMD has to be R/O in
- * the parent and the child. They must *not* be writable after this call
- * succeeded.
- *
- * Returns 0 if duplicating the mapping succeeded. Returns -EBUSY otherwise.
- */
-static inline int folio_try_dup_anon_rmap_pmd(struct folio *folio,
-		struct page *page, struct vm_area_struct *dst_vma,
-		struct vm_area_struct *src_vma)
-{
-	WARN_ON_ONCE(true);
-	return -EBUSY;
-}
-
 static __always_inline int __folio_try_share_anon_rmap(struct folio *folio,
 		struct page *page, int nr_pages, enum pgtable_level level)
 {
@@ -792,47 +713,13 @@ static inline int folio_try_share_anon_rmap_pte(struct folio *folio,
 	return __folio_try_share_anon_rmap(folio, page, 1, PGTABLE_LEVEL_PTE);
 }
 
-/**
- * folio_try_share_anon_rmap_pmd - try marking an exclusive anonymous page
- *				   range mapped by a PMD possibly shared to
- *				   prepare for temporary unmapping
- * @folio:	The folio to share the mapping of
- * @page:	The first page to share the mapping of
- *
- * The page range of the folio is defined by [page, page + HPAGE_PMD_NR)
- *
- * The caller needs to hold the page table lock and has to have the page table
- * entries cleared/invalidated.
- *
- * This is similar to folio_try_dup_anon_rmap_pmd(), however, not used during
- * fork() to duplicate a mapping, but instead to prepare for temporarily
- * unmapping parts of a folio (swap, migration) via folio_remove_rmap_pmd().
- *
- * Marking the mapped pages shared can only fail if the folio maybe pinned;
- * device private folios cannot get pinned and consequently this function cannot
- * fail.
- *
- * Returns 0 if marking the mapped pages possibly shared succeeded. Returns
- * -EBUSY otherwise.
- */
-static inline int folio_try_share_anon_rmap_pmd(struct folio *folio,
-		struct page *page)
-{
-	WARN_ON_ONCE(true);
-	return -EBUSY;
-}
-
 /*
  * Called from mm/vmscan.c to handle paging out
  */
-int folio_referenced(struct folio *, int is_locked,
-			struct mem_cgroup *memcg, vm_flags_t *vm_flags);
+int folio_referenced(struct folio *, int is_locked, vm_flags_t *vm_flags);
 
 void try_to_migrate(struct folio *folio, enum ttu_flags flags);
 void try_to_unmap(struct folio *, enum ttu_flags flags);
-
-struct page *make_device_exclusive(struct mm_struct *mm, unsigned long addr,
-		void *owner, struct folio **foliop);
 
 /* Avoid racy checks */
 #define PVMW_SYNC		(1 << 0)
@@ -958,7 +845,6 @@ struct anon_vma *folio_lock_anon_vma_read(const struct folio *folio,
 #define anon_vma_prepare(vma)	(0)
 
 static inline int folio_referenced(struct folio *folio, int is_locked,
-				  struct mem_cgroup *memcg,
 				  vm_flags_t *vm_flags)
 {
 	*vm_flags = 0;

@@ -5,9 +5,7 @@
 
 #include <linux/sched.h>
 #include <linux/task_work.h>
-#include <linux/memcontrol.h>
 #include <linux/rseq.h>
-#include <linux/blk-cgroup.h>
 
 /**
  * set_notify_resume - cause resume_user_mode_work() to be called
@@ -48,11 +46,6 @@ static inline void resume_user_mode_work(struct pt_regs *regs)
 	smp_mb__after_atomic();
 	if (unlikely(task_work_pending(current)))
 		task_work_run();
-
-
-	mem_cgroup_handle_over_high(GFP_KERNEL);
-	blkcg_maybe_throttle_current();
-
 	rseq_handle_slowpath(regs);
 }
 

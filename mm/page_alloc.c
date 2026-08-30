@@ -36,6 +36,7 @@
 #include <linux/memory_hotplug.h>
 #include <linux/nodemask.h>
 #include <linux/vmstat.h>
+#include <linux/writeback.h>
 #include <linux/fault-inject.h>
 #include <linux/compaction.h>
 #include <linux/prefetch.h>
@@ -44,7 +45,6 @@
 #include <linux/migrate.h>
 #include <linux/sched/mm.h>
 #include <linux/page_owner.h>
-#include <linux/memcontrol.h>
 #include <linux/ftrace.h>
 #include <linux/lockdep.h>
 #include <linux/psi.h>
@@ -1072,9 +1072,6 @@ out:
  */
 static inline bool should_skip_kasan_poison(struct page *page)
 {
-	if (0)
-		return deferred_pages_enabled();
-
 	return page_kasan_tag(page) == KASAN_TAG_KERNEL;
 }
 
@@ -1108,9 +1105,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	VM_BUG_ON_PAGE(PageTail(page), page);
 
 	kmsan_free_page(page, order);
-
-	if (memcg_kmem_online() && PageMemcgKmem(page))
-		__memcg_kmem_uncharge_page(page, order);
 
 	/*
 	 * In rare cases, when truncation or holepunching raced with
@@ -1557,11 +1551,6 @@ static inline bool check_new_pages(struct page *page, unsigned int order)
 
 static inline bool should_skip_kasan_unpoison(gfp_t flags)
 {
-	/* Don't skip if a software KASAN mode is enabled. */
-	if (0 ||
-	    0)
-		return false;
-
 	/* Skip, if hardware tag-based KASAN is not enabled. */
 	if (!kasan_hw_tags_enabled())
 		return true;
@@ -2825,7 +2814,6 @@ static void __split_page(struct page *page, unsigned int order)
 
 	split_page_owner(page, order, 0);
 	pgalloc_tag_split(page_folio(page), order, 0);
-	split_page_memcg(page, order);
 }
 
 /*
@@ -3719,7 +3707,6 @@ static void warn_alloc_show_mem(gfp_t gfp_mask, nodemask_t *nodemask)
 		filter &= ~SHOW_MEM_FILTER_NODES;
 
 	__show_mem(filter, nodemask, gfp_zone(gfp_mask));
-	mem_cgroup_show_protected_memory(NULL);
 }
 
 void warn_alloc(gfp_t gfp_mask, nodemask_t *nodemask, const char *fmt, ...)
@@ -3773,7 +3760,6 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
 	struct oom_control oc = {
 		.zonelist = ac->zonelist,
 		.nodemask = ac->nodemask,
-		.memcg = NULL,
 		.gfp_mask = gfp_mask,
 		.order = order,
 	};
@@ -4722,10 +4708,6 @@ unsigned long alloc_pages_bulk_noprof(gfp_t gfp, int preferred_nid,
 	if (unlikely(nr_pages - nr_populated == 0))
 		goto out;
 
-	/* Bulk allocator does not support memcg accounting. */
-	if (memcg_kmem_online() && (gfp & __GFP_ACCOUNT))
-		goto failed;
-
 	/* Use the single page allocator for one page. */
 	if (nr_pages - nr_populated == 1)
 		goto failed;
@@ -4882,12 +4864,6 @@ struct page *__alloc_frozen_pages_noprof(gfp_t gfp, unsigned int order,
 	page = __alloc_pages_slowpath(alloc_gfp, order, &ac);
 
 out:
-	if (memcg_kmem_online() && (gfp & __GFP_ACCOUNT) && page &&
-	    unlikely(__memcg_kmem_charge_page(page, gfp, order) != 0)) {
-		free_frozen_pages(page, order);
-		page = NULL;
-	}
-
 	kmsan_alloc_page(page, order, alloc_gfp);
 
 	return page;
@@ -7144,7 +7120,7 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
 	struct alloc_context ac = { };
 	struct page *page;
 
-	VM_WARN_ON_ONCE(gfp_flags & ~__GFP_ACCOUNT);
+	VM_WARN_ON_ONCE(gfp_flags);
 	/*
 	 * In PREEMPT_RT spin_trylock() will call raw_spin_lock() which is
 	 * unsafe in NMI. If spin_trylock() is called from hard IRQ the current
@@ -7156,8 +7132,6 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
 	 * Note, irqs_disabled() case is ok. This function can be called
 	 * from raw_spin_lock_irqsave region.
 	 */
-	if (0 && (in_nmi() || in_hardirq()))
-		return NULL;
 	if (!pcp_allowed_order(order))
 		return NULL;
 
@@ -7179,17 +7153,12 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
 
 	/* Unlike regular alloc_pages() there is no __alloc_pages_slowpath(). */
 
-	if (memcg_kmem_online() && page && (gfp_flags & __GFP_ACCOUNT) &&
-	    unlikely(__memcg_kmem_charge_page(page, alloc_gfp, order) != 0)) {
-		__free_frozen_pages(page, order, FPI_TRYLOCK);
-		page = NULL;
-	}
 	kmsan_alloc_page(page, order, alloc_gfp);
 	return page;
 }
 /**
  * alloc_pages_nolock - opportunistic reentrant allocation from any context
- * @gfp_flags: GFP flags. Only __GFP_ACCOUNT allowed.
+ * @gfp_flags: must be zero.
  * @nid: node to allocate from
  * @order: allocation order size
  *

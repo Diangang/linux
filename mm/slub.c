@@ -40,7 +40,6 @@
 #include <linux/fault-inject.h>
 #include <linux/stacktrace.h>
 #include <linux/prefetch.h>
-#include <linux/memcontrol.h>
 #include <linux/random.h>
 #include <linux/prandom.h>
 #include <linux/sort.h>
@@ -716,24 +715,11 @@ static inline unsigned long get_orig_size(struct kmem_cache *s, void *object)
 
 #ifdef CONFIG_SLAB_OBJ_EXT
 
-/*
- * Check if memory cgroup or memory allocation profiling is enabled.
- * If enabled, SLUB tries to reduce memory overhead of accounting
- * slab objects. If neither is enabled when this function is called,
- * the optimization is simply skipped to avoid affecting caches that do not
- * need slabobj_ext metadata.
- *
- * However, this may disable optimization when memory cgroup or memory
- * allocation profiling is used, but slabs are created too early
- * even before those subsystems are initialized.
- */
+/* Check if memory allocation profiling is enabled. */
 static inline bool need_slab_obj_exts(struct kmem_cache *s)
 {
 	if (s->flags & SLAB_NO_OBJ_EXT)
 		return false;
-
-	if (memcg_kmem_online() && (s->flags & SLAB_ACCOUNT))
-		return true;
 
 	if (mem_alloc_profiling_enabled())
 		return true;
@@ -1942,8 +1928,7 @@ static inline void dec_slabs_node(struct kmem_cache *s, int node,
  * Moreover, it should not come from DMA buffer and is not readily
  * reclaimable. So those GFP bits should be masked off.
  */
-#define OBJCGS_CLEAR_MASK	(__GFP_DMA | __GFP_RECLAIMABLE | \
-				__GFP_ACCOUNT | __GFP_NOFAIL)
+#define OBJCGS_CLEAR_MASK	(__GFP_DMA | __GFP_RECLAIMABLE | __GFP_NOFAIL)
 
 #ifdef CONFIG_SLAB_OBJ_EXT
 
@@ -2191,25 +2176,6 @@ alloc_tagging_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
 
 
 
-static inline bool memcg_slab_post_alloc_hook(struct kmem_cache *s,
-					      struct list_lru *lru,
-					      gfp_t flags, size_t size,
-					      void **p)
-{
-	return true;
-}
-
-static inline void memcg_slab_free_hook(struct kmem_cache *s, struct slab *slab,
-					void **p, int objects)
-{
-}
-
-static inline bool memcg_slab_post_charge(void *p, gfp_t flags)
-{
-	return true;
-}
-
-
 /*
  * Hooks for other subsystems that check memory allocations. In a typical
  * production configuration these hooks all should produce no code at all.
@@ -2224,7 +2190,6 @@ static inline bool memcg_slab_post_charge(void *p, gfp_t flags)
  * Alloc hooks called for kmalloc_nolock():
  * - kmsan_slab_alloc()
  * - kasan_slab_alloc()
- * - memcg_slab_post_alloc_hook()
  * - alloc_tagging_slab_alloc_hook()
  *
  * Free hooks that must handle missing corresponding alloc hooks:
@@ -2543,7 +2508,6 @@ static bool __rcu_free_sheaf_prepare(struct kmem_cache *s,
 	while (i < sheaf->size) {
 		struct slab *slab = virt_to_slab(p[i]);
 
-		memcg_slab_free_hook(s, slab, p + i, 1);
 		alloc_tagging_slab_free_hook(s, slab, p + i, 1);
 
 		if (unlikely(!slab_free_hook(s, p[i], init, true))) {
@@ -2909,13 +2873,8 @@ static inline bool shuffle_freelist(struct kmem_cache *s, struct slab *slab,
 }
 
 static __always_inline void account_slab(struct slab *slab, int order,
-					 struct kmem_cache *s, gfp_t gfp)
+					 struct kmem_cache *s)
 {
-	if (memcg_kmem_online() &&
-			(s->flags & SLAB_ACCOUNT) &&
-			!slab_obj_exts(slab))
-		alloc_slab_obj_exts(slab, s, gfp, true);
-
 	mod_node_page_state(slab_pgdat(slab), cache_vmstat_idx(s),
 			    PAGE_SIZE << order);
 }
@@ -2991,7 +2950,7 @@ static struct slab *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 	 * to prevent the array from being overwritten.
 	 */
 	alloc_slab_obj_exts_early(s, slab);
-	account_slab(slab, oo_order(oo), s, flags);
+	account_slab(slab, oo_order(oo), s);
 
 	shuffle = shuffle_freelist(s, slab, allow_spin);
 
@@ -4022,9 +3981,8 @@ struct kmem_cache *slab_pre_alloc_hook(struct kmem_cache *s, gfp_t flags)
 }
 
 static __fastpath_inline
-bool slab_post_alloc_hook(struct kmem_cache *s, struct list_lru *lru,
-			  gfp_t flags, size_t size, void **p, bool init,
-			  unsigned int orig_size)
+void slab_post_alloc_hook(struct kmem_cache *s, gfp_t flags, size_t size,
+			  void **p, bool init, unsigned int orig_size)
 {
 	unsigned int zero_size = s->object_size;
 	bool kasan_init = init;
@@ -4070,7 +4028,6 @@ bool slab_post_alloc_hook(struct kmem_cache *s, struct list_lru *lru,
 		alloc_tagging_slab_alloc_hook(s, p[i], flags);
 	}
 
-	return memcg_slab_post_alloc_hook(s, lru, flags, size, p);
 }
 
 /*
@@ -4359,7 +4316,7 @@ do_alloc:
  *
  * Otherwise we can simply pick the next object from the lockless free list.
  */
-static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s, struct list_lru *lru,
+static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s,
 		gfp_t gfpflags, int node, unsigned long addr, size_t orig_size)
 {
 	void *object;
@@ -4381,21 +4338,19 @@ static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s, struct list
 	maybe_wipe_obj_freeptr(s, object);
 	init = slab_want_init_on_alloc(gfpflags, s);
 
-out:
+	out:
 	/*
 	 * When init equals 'true', like for kzalloc() family, only
-	 * @orig_size bytes might be zeroed instead of s->object_size
-	 * In case this fails due to memcg_slab_post_alloc_hook(),
-	 * object is set to NULL
+	 * @orig_size bytes might be zeroed instead of s->object_size.
 	 */
-	slab_post_alloc_hook(s, lru, gfpflags, 1, &object, init, orig_size);
+	slab_post_alloc_hook(s, gfpflags, 1, &object, init, orig_size);
 
 	return object;
 }
 
 void *kmem_cache_alloc_noprof(struct kmem_cache *s, gfp_t gfpflags)
 {
-	void *ret = slab_alloc_node(s, NULL, gfpflags, NUMA_NO_NODE, _RET_IP_,
+	void *ret = slab_alloc_node(s, gfpflags, NUMA_NO_NODE, _RET_IP_,
 				    s->object_size);
 
 
@@ -4406,22 +4361,13 @@ EXPORT_SYMBOL(kmem_cache_alloc_noprof);
 void *kmem_cache_alloc_lru_noprof(struct kmem_cache *s, struct list_lru *lru,
 			   gfp_t gfpflags)
 {
-	void *ret = slab_alloc_node(s, lru, gfpflags, NUMA_NO_NODE, _RET_IP_,
+	void *ret = slab_alloc_node(s, gfpflags, NUMA_NO_NODE, _RET_IP_,
 				    s->object_size);
 
 
 	return ret;
 }
 EXPORT_SYMBOL(kmem_cache_alloc_lru_noprof);
-
-bool kmem_cache_charge(void *objp, gfp_t gfpflags)
-{
-	if (!memcg_kmem_online())
-		return true;
-
-	return memcg_slab_post_charge(objp, gfpflags);
-}
-EXPORT_SYMBOL(kmem_cache_charge);
 
 /**
  * kmem_cache_alloc_node - Allocate an object on the specified node
@@ -4438,7 +4384,7 @@ EXPORT_SYMBOL(kmem_cache_charge);
  */
 void *kmem_cache_alloc_node_noprof(struct kmem_cache *s, gfp_t gfpflags, int node)
 {
-	void *ret = slab_alloc_node(s, NULL, gfpflags, node, _RET_IP_, s->object_size);
+	void *ret = slab_alloc_node(s, gfpflags, node, _RET_IP_, s->object_size);
 
 
 	return ret;
@@ -4671,8 +4617,7 @@ int kmem_cache_refill_sheaf(struct kmem_cache *s, gfp_t gfp,
  * Guaranteed not to fail as many allocations as was the requested size.
  * After the sheaf is emptied, it fails - no fallback to the slab cache itself.
  *
- * The gfp parameter is meant only to specify __GFP_ZERO or __GFP_ACCOUNT
- * memcg charging is forced over limit if necessary, to avoid failure.
+	 * The gfp parameter is meant only to specify __GFP_ZERO.
  *
  * It is possible that the allocation comes from kfence and then the sheaf
  * size is not decreased.
@@ -4694,8 +4639,7 @@ kmem_cache_alloc_from_sheaf_noprof(struct kmem_cache *s, gfp_t gfp,
 
 	init = slab_want_init_on_alloc(gfp, s);
 
-	/* add __GFP_NOFAIL to force successful memcg charging */
-	slab_post_alloc_hook(s, NULL, gfp | __GFP_NOFAIL, 1, &ret, init, s->object_size);
+	slab_post_alloc_hook(s, gfp, 1, &ret, init, s->object_size);
 out:
 
 	return ret;
@@ -4772,7 +4716,7 @@ void *__do_kmalloc_node(size_t size, kmem_buckets *b, gfp_t flags, int node,
 
 	s = kmalloc_slab(size, b, flags, caller);
 
-	ret = slab_alloc_node(s, NULL, flags, node, caller, size);
+	ret = slab_alloc_node(s, flags, node, caller, size);
 	ret = kasan_kmalloc(s, ret, size, flags);
 	return ret;
 }
@@ -4791,8 +4735,7 @@ EXPORT_SYMBOL(__kmalloc_noprof);
 /**
  * kmalloc_nolock - Allocate an object of given size from any context.
  * @size: size to allocate
- * @gfp_flags: GFP flags. Only __GFP_ACCOUNT, __GFP_ZERO, __GFP_NO_OBJ_EXT
- * allowed.
+ * @gfp_flags: GFP flags. Only __GFP_ZERO and __GFP_NO_OBJ_EXT are allowed.
  * @node: node number of the target node.
  *
  * Return: pointer to the new object or NULL in case of error.
@@ -4806,7 +4749,7 @@ void *kmalloc_nolock_noprof(size_t size, gfp_t gfp_flags, int node)
 	bool can_retry = true;
 	void *ret;
 
-	VM_WARN_ON_ONCE(gfp_flags & ~(__GFP_ACCOUNT | __GFP_ZERO |
+	VM_WARN_ON_ONCE(gfp_flags & ~(__GFP_ZERO |
 				      __GFP_NO_OBJ_EXT));
 
 	if (unlikely(!size))
@@ -4857,19 +4800,13 @@ retry:
 	if (!ret && can_retry) {
 		/* pick the next kmalloc bucket */
 		size = s->object_size + 1;
-		/*
-		 * Another alternative is to
-		 * if (memcg) alloc_gfp &= ~__GFP_ACCOUNT;
-		 * else if (!memcg) alloc_gfp |= __GFP_ACCOUNT;
-		 * to retry from bucket of the same size.
-		 */
 		can_retry = false;
 		goto retry;
 	}
 
 success:
 	maybe_wipe_obj_freeptr(s, ret);
-	slab_post_alloc_hook(s, NULL, alloc_gfp, 1, &ret,
+	slab_post_alloc_hook(s, alloc_gfp, 1, &ret,
 			     slab_want_init_on_alloc(alloc_gfp, s), size);
 
 	ret = kasan_kmalloc(s, ret, size, alloc_gfp);
@@ -4887,8 +4824,8 @@ EXPORT_SYMBOL(__kmalloc_node_track_caller_noprof);
 
 void *__kmalloc_cache_noprof(struct kmem_cache *s, gfp_t gfpflags, size_t size)
 {
-	void *ret = slab_alloc_node(s, NULL, gfpflags, NUMA_NO_NODE,
-					    _RET_IP_, size);
+	void *ret = slab_alloc_node(s, gfpflags, NUMA_NO_NODE,
+				    _RET_IP_, size);
 
 
 	ret = kasan_kmalloc(s, ret, size, gfpflags);
@@ -4899,7 +4836,7 @@ EXPORT_SYMBOL(__kmalloc_cache_noprof);
 void *__kmalloc_cache_node_noprof(struct kmem_cache *s, gfp_t gfpflags,
 				  int node, size_t size)
 {
-	void *ret = slab_alloc_node(s, NULL, gfpflags, node, _RET_IP_, size);
+	void *ret = slab_alloc_node(s, gfpflags, node, _RET_IP_, size);
 
 
 	ret = kasan_kmalloc(s, ret, size, gfpflags);
@@ -5529,7 +5466,6 @@ next_remote_batch:
 	while (i < size) {
 		struct slab *slab = virt_to_slab(p[i]);
 
-		memcg_slab_free_hook(s, slab, p + i, 1);
 		alloc_tagging_slab_free_hook(s, slab, p + i, 1);
 
 		if (unlikely(!slab_free_hook(s, p[i], init, false))) {
@@ -5707,7 +5643,6 @@ static __fastpath_inline
 void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	       unsigned long addr)
 {
-	memcg_slab_free_hook(s, slab, &object, 1);
 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
 
 	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s), false)))
@@ -5725,7 +5660,6 @@ static __fastpath_inline
 void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
 		    void *tail, void **p, int cnt, unsigned long addr)
 {
-	memcg_slab_free_hook(s, slab, p, cnt);
 	alloc_tagging_slab_free_hook(s, slab, p, cnt);
 	/*
 	 * With KASAN enabled slab_free_freelist_hook modifies the freelist
@@ -6003,7 +5937,6 @@ void kfree_nolock(const void *object)
 
 	s = slab->slab_cache;
 
-	memcg_slab_free_hook(s, slab, &x, 1);
 	alloc_tagging_slab_free_hook(s, slab, &x, 1);
 	/*
 	 * Unlike slab_free() do NOT call the following:
@@ -6026,7 +5959,7 @@ void kfree_nolock(const void *object)
 	if (kasan_slab_pre_free(s, x))
 		return;
 	/*
-	 * memcg, kasan_slab_pre_free are done for 'x'.
+	 * kasan_slab_pre_free is done for 'x'.
 	 * The only thing left is kasan_poison without quarantine,
 	 * since kasan quarantine takes locks and not supported from NMI.
 	 */
@@ -6771,14 +6704,9 @@ int kmem_cache_alloc_bulk_noprof(struct kmem_cache *s, gfp_t flags, size_t size,
 	}
 
 out:
-	/*
-	 * memcg and kmem_cache debug support and memory initialization.
-	 * Done outside of the IRQ disabled fastpath loop.
-	 */
-	if (unlikely(!slab_post_alloc_hook(s, NULL, flags, size, p,
-		    slab_want_init_on_alloc(flags, s), s->object_size))) {
-		return 0;
-	}
+	/* kmem_cache debug support and memory initialization. */
+	slab_post_alloc_hook(s, flags, size, p,
+			     slab_want_init_on_alloc(flags, s), s->object_size);
 
 	return size;
 }
@@ -8537,8 +8465,6 @@ static char *create_unique_id(struct kmem_cache *s)
 		*p++ = 'a';
 	if (s->flags & SLAB_CONSISTENCY_CHECKS)
 		*p++ = 'F';
-	if (s->flags & SLAB_ACCOUNT)
-		*p++ = 'A';
 	if (p != name + 1)
 		*p++ = '-';
 	p += snprintf(p, ID_STR_LENGTH - (p - name), "%07u", s->size);

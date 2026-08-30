@@ -30,7 +30,6 @@
 #include <linux/cpu.h>
 #include <linux/notifier.h>
 #include <linux/backing-dev.h>
-#include <linux/memcontrol.h>
 #include <linux/gfp.h>
 #include <linux/uio.h>
 #include <linux/hugetlb.h>
@@ -104,7 +103,6 @@ void __folio_put(struct folio *folio)
 
 	page_cache_release(folio);
 	folio_unqueue_deferred_split(folio);
-	mem_cgroup_uncharge(folio);
 	free_frozen_pages(&folio->page, folio_order(folio));
 }
 EXPORT_SYMBOL(__folio_put);
@@ -159,7 +157,7 @@ static void folio_batch_move_lru(struct folio_batch *fbatch, move_fn_t move_fn)
 	for (i = 0; i < folio_batch_count(fbatch); i++) {
 		struct folio *folio = fbatch->folios[i];
 
-		/* block memcg migration while the folio moves between lru */
+		/* Keep the folio off the LRU while moving it between lists. */
 		if (move_fn != lru_add && !folio_test_clear_lru(folio))
 			continue;
 
@@ -253,7 +251,7 @@ void lru_note_cost_unlock_irq(struct lruvec *lruvec, bool file,
 		return;
 	}
 
-	for (;;) {
+	{
 		unsigned long lrusize;
 
 		/* Record cost event */
@@ -281,12 +279,7 @@ void lru_note_cost_unlock_irq(struct lruvec *lruvec, bool file,
 		}
 
 		spin_unlock_irq(&lruvec->lru_lock);
-		lruvec = parent_lruvec(lruvec);
-		if (!lruvec) {
-			rcu_read_unlock();
-			break;
-		}
-		spin_lock_irq(&lruvec->lru_lock);
+		rcu_read_unlock();
 	}
 }
 
@@ -312,7 +305,6 @@ static void lru_activate(struct lruvec *lruvec, struct folio *folio)
 	lruvec_add_folio(lruvec, folio);
 
 	__count_vm_events(PGACTIVATE, nr_pages);
-	count_memcg_events(lruvec_memcg(lruvec), PGACTIVATE, nr_pages);
 }
 
 #ifdef CONFIG_SMP
@@ -541,8 +533,6 @@ static void lru_deactivate_file(struct lruvec *lruvec, struct folio *folio)
 
 	if (active) {
 		__count_vm_events(PGDEACTIVATE, nr_pages);
-		count_memcg_events(lruvec_memcg(lruvec), PGDEACTIVATE,
-				     nr_pages);
 	}
 }
 
@@ -559,7 +549,6 @@ static void lru_deactivate(struct lruvec *lruvec, struct folio *folio)
 	lruvec_add_folio(lruvec, folio);
 
 	__count_vm_events(PGDEACTIVATE, nr_pages);
-	count_memcg_events(lruvec_memcg(lruvec), PGDEACTIVATE, nr_pages);
 }
 
 static void lru_lazyfree(struct lruvec *lruvec, struct folio *folio)
@@ -585,7 +574,6 @@ static void lru_lazyfree(struct lruvec *lruvec, struct folio *folio)
 	lruvec_add_folio(lruvec, folio);
 
 	__count_vm_events(PGLAZYFREE, nr_pages);
-	count_memcg_events(lruvec_memcg(lruvec), PGLAZYFREE, nr_pages);
 }
 
 /*
@@ -928,7 +916,7 @@ void folios_put_refs(struct folio_batch *folios, unsigned int *refs)
 		if (!folio_ref_sub_and_test(folio, nr_refs))
 			continue;
 
-		/* hugetlb has its own memcg */
+			/* HugeTLB folios use their own release path. */
 		if (folio_test_hugetlb(folio)) {
 			if (lruvec) {
 				lruvec_unlock_irqrestore(lruvec, flags);
@@ -952,7 +940,6 @@ void folios_put_refs(struct folio_batch *folios, unsigned int *refs)
 	}
 
 	folios->nr = j;
-	mem_cgroup_uncharge_folios(folios);
 	free_unref_folios(folios);
 }
 EXPORT_SYMBOL(folios_put_refs);

@@ -122,28 +122,6 @@ struct wb_domain global_wb_domain;
 
 #define GDTC_INIT(__wb)		.wb = (__wb),                           \
 				.wb_completions = &(__wb)->completions
-#define GDTC_INIT_NO_WB
-#define MDTC_INIT(__wb, __gdtc)
-
-static bool mdtc_valid(struct dirty_throttle_control *dtc)
-{
-	return false;
-}
-
-static struct wb_domain *dtc_dom(struct dirty_throttle_control *dtc)
-{
-	return &global_wb_domain;
-}
-
-static struct dirty_throttle_control *mdtc_gdtc(struct dirty_throttle_control *mdtc)
-{
-	return NULL;
-}
-
-static struct fprop_local_percpu *wb_memcg_completions(struct bdi_writeback *wb)
-{
-	return NULL;
-}
 
 static void wb_min_max_ratio(struct bdi_writeback *wb,
 			     unsigned long *minp, unsigned long *maxp)
@@ -249,7 +227,6 @@ static unsigned long global_dirtyable_memory(void)
 static void domain_dirty_limits(struct dirty_throttle_control *dtc)
 {
 	const unsigned long available_memory = dtc->avail;
-	struct dirty_throttle_control *gdtc = mdtc_gdtc(dtc);
 	unsigned long bytes = vm_dirty_bytes;
 	unsigned long bg_bytes = dirty_background_bytes;
 	/* convert ratios to per-PAGE_SIZE for higher precision */
@@ -258,26 +235,6 @@ static void domain_dirty_limits(struct dirty_throttle_control *dtc)
 	unsigned long thresh;
 	unsigned long bg_thresh;
 	struct task_struct *tsk;
-
-	/* gdtc is !NULL iff @dtc is for memcg domain */
-	if (gdtc) {
-		unsigned long global_avail = gdtc->avail;
-
-		/*
-		 * The byte settings can't be applied directly to memcg
-		 * domains.  Convert them to ratios by scaling against
-		 * globally available memory.  As the ratios are in
-		 * per-PAGE_SIZE, they can be obtained by dividing bytes by
-		 * number of pages.
-		 */
-		if (bytes)
-			ratio = min(DIV_ROUND_UP(bytes, global_avail),
-				    PAGE_SIZE);
-		if (bg_bytes)
-			bg_ratio = min(DIV_ROUND_UP(bg_bytes, global_avail),
-				       PAGE_SIZE);
-		bytes = bg_bytes = 0;
-	}
 
 	if (bytes)
 		thresh = DIV_ROUND_UP(bytes, PAGE_SIZE);
@@ -318,7 +275,7 @@ static void domain_dirty_limits(struct dirty_throttle_control *dtc)
  */
 void global_dirty_limits(unsigned long *pbackground, unsigned long *pdirty)
 {
-	struct dirty_throttle_control gdtc = { GDTC_INIT_NO_WB };
+	struct dirty_throttle_control gdtc = { };
 
 	gdtc.avail = global_dirtyable_memory();
 	domain_dirty_limits(&gdtc);
@@ -471,16 +428,9 @@ static void wb_domain_writeout_add(struct wb_domain *dom,
  */
 static inline void __wb_writeout_add(struct bdi_writeback *wb, long nr)
 {
-	struct wb_domain *cgdom;
-
 	wb_stat_mod(wb, WB_WRITTEN, nr);
 	wb_domain_writeout_add(&global_wb_domain, &wb->completions,
 			       wb->bdi->max_prop_frac, nr);
-
-	cgdom = mem_cgroup_wb_domain(wb);
-	if (cgdom)
-		wb_domain_writeout_add(cgdom, wb_memcg_completions(wb),
-				       wb->bdi->max_prop_frac, nr);
 }
 
 void wb_writeout_inc(struct bdi_writeback *wb)
@@ -715,46 +665,16 @@ static unsigned long hard_dirty_limit(struct wb_domain *dom,
 }
 
 /*
- * Memory which can be further allocated to a memcg domain is capped by
- * system-wide clean memory excluding the amount being used in the domain.
- */
-static void mdtc_calc_avail(struct dirty_throttle_control *mdtc,
-			    unsigned long filepages, unsigned long headroom)
-{
-	struct dirty_throttle_control *gdtc = mdtc_gdtc(mdtc);
-	unsigned long clean = filepages - min(filepages, mdtc->dirty);
-	unsigned long global_clean = gdtc->avail - min(gdtc->avail, gdtc->dirty);
-	unsigned long other_clean = global_clean - min(global_clean, clean);
-
-	mdtc->avail = filepages + min(headroom, other_clean);
-}
-
-static inline bool dtc_is_global(struct dirty_throttle_control *dtc)
-{
-	return mdtc_gdtc(dtc) == NULL;
-}
-
-/*
  * Dirty background will ignore pages being written as we're trying to
  * decide whether to put more under writeback.
  */
 static void domain_dirty_avail(struct dirty_throttle_control *dtc,
 			       bool include_writeback)
 {
-	if (dtc_is_global(dtc)) {
-		dtc->avail = global_dirtyable_memory();
-		dtc->dirty = global_node_page_state(NR_FILE_DIRTY);
-		if (include_writeback)
-			dtc->dirty += global_node_page_state(NR_WRITEBACK);
-	} else {
-		unsigned long filepages = 0, headroom = 0, writeback = 0;
-
-		mem_cgroup_wb_stats(dtc->wb, &filepages, &headroom, &dtc->dirty,
-				    &writeback);
-		if (include_writeback)
-			dtc->dirty += writeback;
-		mdtc_calc_avail(dtc, filepages, headroom);
-	}
+	dtc->avail = global_dirtyable_memory();
+	dtc->dirty = global_node_page_state(NR_FILE_DIRTY);
+	if (include_writeback)
+		dtc->dirty += global_node_page_state(NR_WRITEBACK);
 }
 
 /**
@@ -784,7 +704,7 @@ static void domain_dirty_avail(struct dirty_throttle_control *dtc,
 static unsigned long __wb_calc_thresh(struct dirty_throttle_control *dtc,
 				      unsigned long thresh)
 {
-	struct wb_domain *dom = dtc_dom(dtc);
+	struct wb_domain *dom = &global_wb_domain;
 	struct bdi_writeback *wb = dtc->wb;
 	u64 wb_thresh;
 	u64 wb_max_thresh;
@@ -836,14 +756,12 @@ unsigned long wb_calc_thresh(struct bdi_writeback *wb, unsigned long thresh)
 
 unsigned long cgwb_calc_thresh(struct bdi_writeback *wb)
 {
-	struct dirty_throttle_control gdtc = { GDTC_INIT_NO_WB };
-	struct dirty_throttle_control mdtc = { MDTC_INIT(wb, &gdtc) };
+	struct dirty_throttle_control gdtc = { GDTC_INIT(wb) };
 
 	domain_dirty_avail(&gdtc, true);
-	domain_dirty_avail(&mdtc, true);
-	domain_dirty_limits(&mdtc);
+	domain_dirty_limits(&gdtc);
 
-	return __wb_calc_thresh(&mdtc, mdtc.thresh);
+	return __wb_calc_thresh(&gdtc, gdtc.thresh);
 }
 
 /*
@@ -957,7 +875,8 @@ static void wb_position_ratio(struct dirty_throttle_control *dtc)
 	struct bdi_writeback *wb = dtc->wb;
 	unsigned long write_bw = READ_ONCE(wb->avg_write_bandwidth);
 	unsigned long freerun = dirty_freerun_ceiling(dtc->thresh, dtc->bg_thresh);
-	unsigned long limit = dtc->limit = hard_dirty_limit(dtc_dom(dtc), dtc->thresh);
+	unsigned long limit = dtc->limit = hard_dirty_limit(&global_wb_domain,
+							  dtc->thresh);
 	unsigned long wb_thresh = dtc->wb_thresh;
 	unsigned long x_intercept;
 	unsigned long setpoint;		/* dirty pages' target balance point */
@@ -1167,7 +1086,7 @@ out:
 
 static void update_dirty_limit(struct dirty_throttle_control *dtc)
 {
-	struct wb_domain *dom = dtc_dom(dtc);
+	struct wb_domain *dom = &global_wb_domain;
 	unsigned long thresh = dtc->thresh;
 	unsigned long limit = dom->dirty_limit;
 
@@ -1197,7 +1116,7 @@ update:
 static void domain_update_dirty_limit(struct dirty_throttle_control *dtc,
 				      unsigned long now)
 {
-	struct wb_domain *dom = dtc_dom(dtc);
+	struct wb_domain *dom = &global_wb_domain;
 
 	/*
 	 * check locklessly first to optimize away locking for the most time
@@ -1226,7 +1145,7 @@ static void wb_update_dirty_ratelimit(struct dirty_throttle_control *dtc,
 	struct bdi_writeback *wb = dtc->wb;
 	unsigned long dirty = dtc->dirty;
 	unsigned long freerun = dirty_freerun_ceiling(dtc->thresh, dtc->bg_thresh);
-	unsigned long limit = hard_dirty_limit(dtc_dom(dtc), dtc->thresh);
+	unsigned long limit = hard_dirty_limit(&global_wb_domain, dtc->thresh);
 	unsigned long setpoint = (freerun + limit) / 2;
 	unsigned long write_bw = wb->avg_write_bandwidth;
 	unsigned long dirty_ratelimit = wb->dirty_ratelimit;
@@ -1684,11 +1603,7 @@ static int balance_dirty_pages(struct bdi_writeback *wb,
 			       unsigned long pages_dirtied, unsigned int flags)
 {
 	struct dirty_throttle_control gdtc_stor = { GDTC_INIT(wb) };
-	struct dirty_throttle_control mdtc_stor = { MDTC_INIT(wb, &gdtc_stor) };
 	struct dirty_throttle_control * const gdtc = &gdtc_stor;
-	struct dirty_throttle_control * const mdtc = mdtc_valid(&mdtc_stor) ?
-						     &mdtc_stor : NULL;
-	struct dirty_throttle_control *sdtc;
 	unsigned long nr_dirty;
 	long period;
 	long pause;
@@ -1707,34 +1622,19 @@ static int balance_dirty_pages(struct bdi_writeback *wb,
 		nr_dirty = global_node_page_state(NR_FILE_DIRTY);
 
 		balance_domain_limits(gdtc, strictlimit);
-		if (mdtc) {
-			/*
-			 * If @wb belongs to !root memcg, repeat the same
-			 * basic calculations for the memcg domain.
-			 */
-			balance_domain_limits(mdtc, strictlimit);
-		}
 
 		if (nr_dirty > gdtc->bg_thresh && !writeback_in_progress(wb))
 			wb_start_background_writeback(wb);
 
-		/*
-		 * If memcg domain is in effect, @dirty should be under
-		 * both global and memcg freerun ceilings.
-		 */
-		if (gdtc->freerun && (!mdtc || mdtc->freerun)) {
+		if (gdtc->freerun) {
 			unsigned long intv;
-			unsigned long m_intv;
 
 free_running:
 			intv = domain_poll_intv(gdtc, strictlimit);
-			m_intv = ULONG_MAX;
 
 			current->dirty_paused_when = now;
 			current->nr_dirtied = 0;
-			if (mdtc)
-				m_intv = domain_poll_intv(mdtc, strictlimit);
-			current->nr_dirtied_pause = min(intv, m_intv);
+			current->nr_dirtied_pause = intv;
 			break;
 		}
 
@@ -1742,15 +1642,9 @@ free_running:
 		 * Unconditionally start background writeback if it's not
 		 * already in progress. We need to do this because the global
 		 * dirty threshold check above (nr_dirty > gdtc->bg_thresh)
-		 * doesn't account for these cases:
-		 *
-		 * a) strictlimit BDIs: throttling is calculated using per-wb
-		 * thresholds. The per-wb threshold can be exceeded even when
-		 * nr_dirty < gdtc->bg_thresh
-		 *
-		 * b) memcg-based throttling: memcg uses its own dirty count and
-		 * thresholds and can trigger throttling even when global
-		 * nr_dirty < gdtc->bg_thresh
+		 * doesn't account for strictlimit BDIs, where throttling is
+		 * calculated using per-wb thresholds. The per-wb threshold can be
+		 * exceeded even when nr_dirty < gdtc->bg_thresh.
 		 *
 		 * Writeback needs to be started else the writer stalls in the
 		 * throttle loop waiting for dirty pages to be written back
@@ -1759,42 +1653,19 @@ free_running:
 		if (unlikely(!writeback_in_progress(wb)))
 			wb_start_background_writeback(wb);
 
-		mem_cgroup_flush_foreign(wb);
-
-		/*
-		 * Calculate global domain's pos_ratio and select the
-		 * global dtc by default.
-		 */
 		balance_wb_limits(gdtc, strictlimit);
 		if (gdtc->freerun)
 			goto free_running;
-		sdtc = gdtc;
 
-		if (mdtc) {
-			/*
-			 * If memcg domain is in effect, calculate its
-			 * pos_ratio.  @wb should satisfy constraints from
-			 * both global and memcg domains.  Choose the one
-			 * w/ lower pos_ratio.
-			 */
-			balance_wb_limits(mdtc, strictlimit);
-			if (mdtc->freerun)
-				goto free_running;
-			if (mdtc->pos_ratio < gdtc->pos_ratio)
-				sdtc = mdtc;
-		}
-
-		wb->dirty_exceeded = gdtc->dirty_exceeded ||
-				     (mdtc && mdtc->dirty_exceeded);
+		wb->dirty_exceeded = gdtc->dirty_exceeded;
 		if (time_is_before_jiffies(READ_ONCE(wb->bw_time_stamp) +
 					   BANDWIDTH_INTERVAL))
 			__wb_update_bandwidth(gdtc, true);
 
-		/* throttle according to the chosen dtc */
 		dirty_ratelimit = READ_ONCE(wb->dirty_ratelimit);
-		task_ratelimit = ((u64)dirty_ratelimit * sdtc->pos_ratio) >>
+		task_ratelimit = ((u64)dirty_ratelimit * gdtc->pos_ratio) >>
 							RATELIMIT_CALC_SHIFT;
-		max_pause = wb_max_pause(wb, sdtc->wb_dirty);
+		max_pause = wb_max_pause(wb, gdtc->wb_dirty);
 		min_pause = wb_min_pause(wb, max_pause,
 					 task_ratelimit, dirty_ratelimit,
 					 &nr_dirtied_pause);
@@ -1862,7 +1733,7 @@ pause:
 		 * more page. However wb_dirty has accounting errors.  So use
 		 * the larger and more IO friendly wb_stat_error.
 		 */
-		if (sdtc->wb_dirty <= wb_stat_error())
+		if (gdtc->wb_dirty <= wb_stat_error())
 			break;
 
 		if (fatal_signal_pending(current))
@@ -1911,18 +1782,13 @@ int balance_dirty_pages_ratelimited_flags(struct address_space *mapping,
 {
 	struct inode *inode = mapping->host;
 	struct backing_dev_info *bdi = inode_to_bdi(inode);
-	struct bdi_writeback *wb = NULL;
+	struct bdi_writeback *wb = &bdi->wb;
 	int ratelimit;
 	int ret = 0;
 	int *p;
 
 	if (!(bdi->capabilities & BDI_CAP_WRITEBACK))
 		return ret;
-
-	if (inode_cgwb_enabled(inode))
-		wb = wb_get_create_current(bdi, GFP_KERNEL);
-	if (!wb)
-		wb = &bdi->wb;
 
 	ratelimit = current->nr_dirtied_pause;
 	if (wb->dirty_exceeded)
@@ -2023,15 +1889,8 @@ static bool domain_over_bg_thresh(struct dirty_throttle_control *dtc)
 bool wb_over_bg_thresh(struct bdi_writeback *wb)
 {
 	struct dirty_throttle_control gdtc = { GDTC_INIT(wb) };
-	struct dirty_throttle_control mdtc = { MDTC_INIT(wb, &gdtc) };
 
-	if (domain_over_bg_thresh(&gdtc))
-		return true;
-
-	if (mdtc_valid(&mdtc))
-		return domain_over_bg_thresh(&mdtc);
-
-	return false;
+	return domain_over_bg_thresh(&gdtc);
 }
 
 #ifdef CONFIG_SYSCTL
@@ -2489,7 +2348,6 @@ static void folio_account_dirtied(struct folio *folio,
 		current->nr_dirtied += nr;
 		__this_cpu_add(bdp_ratelimits, nr);
 
-		mem_cgroup_track_foreign_dirty(folio, wb);
 	}
 }
 

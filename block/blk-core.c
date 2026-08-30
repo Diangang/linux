@@ -40,7 +40,6 @@
 #include <linux/blk-crypto.h>
 #include "blk.h"
 #include "blk-mq-sched.h"
-#include "blk-cgroup.h"
 #include "blk-throttle.h"
 
 struct dentry *blk_debugfs_root;
@@ -197,8 +196,7 @@ EXPORT_SYMBOL_GPL(blk_status_to_str);
  *     this function.
  *
  *     This function does not cancel any asynchronous activity arising
- *     out of elevator or throttling code. That would require elevator_exit()
- *     and blkcg_exit_queue() to be called with queue lock initialized.
+ *     out of elevator or throttling code.
  *
  */
 void blk_sync_queue(struct request_queue *q)
@@ -418,8 +416,6 @@ struct request_queue *blk_alloc_queue(struct queue_limits *lim, int node_id)
 
 	init_waitqueue_head(&q->mq_freeze_wq);
 	mutex_init(&q->mq_freeze_lock);
-
-	blkg_init_queue(q);
 
 	/*
 	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
@@ -679,8 +675,6 @@ static void __submit_bio_noacct_mq(struct bio *bio)
 
 void submit_bio_noacct_nocheck(struct bio *bio, bool split)
 {
-	blk_cgroup_bio_start(bio);
-
 	if (!bio_flagged(bio, BIO_TRACE_COMPLETION)) {
 		/*
 		 * Now that enqueuing has been traced, we need to trace

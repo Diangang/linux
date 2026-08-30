@@ -35,7 +35,6 @@
 #include <linux/security.h>
 #include <linux/cpuset.h>
 #include <linux/hugetlb.h>
-#include <linux/memcontrol.h>
 #include <linux/shmem_fs.h>
 #include <linux/rmap.h>
 #include <linux/delayacct.h>
@@ -815,8 +814,6 @@ void replace_page_cache_folio(struct folio *old, struct folio *new)
 	new->mapping = mapping;
 	new->index = offset;
 
-	mem_cgroup_replace_folio(old, new);
-
 	xas_lock_irq(&xas);
 	xas_store(&xas, new);
 
@@ -942,21 +939,11 @@ int filemap_add_folio(struct address_space *mapping, struct folio *folio,
 {
 	void *shadow = NULL;
 	int ret;
-	struct mem_cgroup *tmp;
 	bool kernel_file = test_bit(AS_KERNEL_FILE, &mapping->flags);
-
-	if (kernel_file)
-		tmp = set_active_memcg(root_mem_cgroup);
-	ret = mem_cgroup_charge(folio, NULL, gfp);
-	if (kernel_file)
-		set_active_memcg(tmp);
-	if (ret)
-		return ret;
 
 	__folio_set_locked(folio);
 	ret = __filemap_add_folio(mapping, folio, index, gfp, &shadow);
 	if (unlikely(ret)) {
-		mem_cgroup_uncharge(folio);
 		__folio_clear_locked(folio);
 	} else {
 		/*
@@ -3514,7 +3501,6 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
 
 		/* No page in the page cache at all */
 		count_vm_event(PGMAJFAULT);
-		count_memcg_event_mm(vmf->vma->vm_mm, PGMAJFAULT);
 		ret = VM_FAULT_MAJOR;
 		fpin = do_sync_mmap_readahead(vmf);
 retry_find:

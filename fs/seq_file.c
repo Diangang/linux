@@ -36,7 +36,7 @@ static void *seq_buf_alloc(unsigned long size)
 	if (unlikely(size > MAX_RW_COUNT))
 		return NULL;
 
-	return kvmalloc(size, GFP_KERNEL_ACCOUNT);
+	return kvmalloc(size, GFP_KERNEL);
 }
 
 /**
@@ -556,7 +556,7 @@ static void single_stop(struct seq_file *p, void *v)
 int single_open(struct file *file, int (*show)(struct seq_file *, void *),
 		void *data)
 {
-	struct seq_operations *op = kmalloc_obj(*op, GFP_KERNEL_ACCOUNT);
+	struct seq_operations *op = kmalloc_obj(*op, GFP_KERNEL);
 	int res = -ENOMEM;
 
 	if (op) {
@@ -618,7 +618,7 @@ void *__seq_open_private(struct file *f, const struct seq_operations *ops,
 	void *private;
 	struct seq_file *seq;
 
-	private = kzalloc(psize, GFP_KERNEL_ACCOUNT);
+	private = kzalloc(psize, GFP_KERNEL);
 	if (private == NULL)
 		goto out;
 
@@ -1123,5 +1123,5 @@ EXPORT_SYMBOL(seq_hlist_next_percpu);
 
 void __init seq_file_init(void)
 {
-	seq_file_cache = KMEM_CACHE(seq_file, SLAB_ACCOUNT|SLAB_PANIC);
+	seq_file_cache = KMEM_CACHE(seq_file, SLAB_PANIC);
 }

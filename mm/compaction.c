@@ -512,13 +512,8 @@ compact_folio_lruvec_lock_irqsave(struct folio *folio, unsigned long *flags,
 	struct lruvec *lruvec;
 
 	rcu_read_lock();
-retry:
 	lruvec = folio_lruvec(folio);
 	compact_lock_irqsave(&lruvec->lru_lock, flags, cc);
-	if (unlikely(lruvec_memcg(lruvec) != folio_memcg(folio))) {
-		spin_unlock_irqrestore(&lruvec->lru_lock, *flags);
-		goto retry;
-	}
 
 	return lruvec;
 }

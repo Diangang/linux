@@ -5,7 +5,6 @@
  * Copyright (C) 2013 Red Hat, Inc., Johannes Weiner
  */
 
-#include <linux/memcontrol.h>
 #include <linux/mm_inline.h>
 #include <linux/writeback.h>
 #include <linux/shmem_fs.h>
@@ -183,8 +182,7 @@
 
 #define WORKINGSET_SHIFT 1
 #define EVICTION_SHIFT	((BITS_PER_LONG - BITS_PER_XA_VALUE) +	\
-			 WORKINGSET_SHIFT + NODES_SHIFT + \
-			 MEM_CGROUP_ID_SHIFT)
+				 WORKINGSET_SHIFT + NODES_SHIFT)
 #define EVICTION_SHIFT_ANON	(EVICTION_SHIFT + SWAP_COUNT_SHIFT)
 #define EVICTION_MASK	(~0UL >> EVICTION_SHIFT)
 #define EVICTION_MASK_ANON	(~0UL >> EVICTION_SHIFT_ANON)
@@ -199,32 +197,28 @@
  */
 static unsigned int bucket_order[ANON_AND_FILE] __read_mostly;
 
-static void *pack_shadow(int memcgid, pg_data_t *pgdat, unsigned long eviction,
+static void *pack_shadow(pg_data_t *pgdat, unsigned long eviction,
 			 bool workingset, bool file)
 {
 	eviction &= file ? EVICTION_MASK : EVICTION_MASK_ANON;
-	eviction = (eviction << MEM_CGROUP_ID_SHIFT) | memcgid;
 	eviction = (eviction << NODES_SHIFT) | pgdat->node_id;
 	eviction = (eviction << WORKINGSET_SHIFT) | workingset;
 
 	return xa_mk_value(eviction);
 }
 
-static void unpack_shadow(void *shadow, int *memcgidp, pg_data_t **pgdat,
+static void unpack_shadow(void *shadow, pg_data_t **pgdat,
 			  unsigned long *evictionp, bool *workingsetp)
 {
 	unsigned long entry = xa_to_value(shadow);
-	int memcgid, nid;
+	int nid;
 	bool workingset;
 
 	workingset = entry & ((1UL << WORKINGSET_SHIFT) - 1);
 	entry >>= WORKINGSET_SHIFT;
 	nid = entry & ((1UL << NODES_SHIFT) - 1);
 	entry >>= NODES_SHIFT;
-	memcgid = entry & ((1UL << MEM_CGROUP_ID_SHIFT) - 1);
-	entry >>= MEM_CGROUP_ID_SHIFT;
 
-	*memcgidp = memcgid;
 	*pgdat = NODE_DATA(nid);
 	*evictionp = entry;
 	*workingsetp = workingset;
@@ -259,39 +253,24 @@ static void lru_gen_refault(struct folio *folio, void *shadow)
  */
 void workingset_age_nonresident(struct lruvec *lruvec, unsigned long nr_pages)
 {
-	/*
-	 * Reclaiming a cgroup means reclaiming all its children in a
-	 * round-robin fashion. That means that each cgroup has an LRU
-	 * order that is composed of the LRU orders of its child
-	 * cgroups; and every page has an LRU position not just in the
-	 * cgroup that owns it, but in all of that group's ancestors.
-	 *
-	 * So when the physical inactive list of a leaf cgroup ages,
-	 * the virtual inactive lists of all its parents, including
-	 * the root cgroup's, age as well.
-	 */
-	do {
-		atomic_long_add(nr_pages, &lruvec->nonresident_age);
-	} while ((lruvec = parent_lruvec(lruvec)));
+	atomic_long_add(nr_pages, &lruvec->nonresident_age);
 }
 
 /**
  * workingset_eviction - note the eviction of a folio from memory
- * @target_memcg: the cgroup that is causing the reclaim
  * @folio: the folio being evicted
  *
  * Return: a shadow entry to be stored in @folio->mapping->i_pages in place
  * of the evicted @folio so that a later refault can be detected.
  */
-void *workingset_eviction(struct folio *folio, struct mem_cgroup *target_memcg)
+void *workingset_eviction(struct folio *folio)
 {
 	struct pglist_data *pgdat = folio_pgdat(folio);
 	int file = folio_is_file_lru(folio);
 	unsigned long eviction;
-	struct lruvec *lruvec;
-	int memcgid;
+	struct lruvec *lruvec = &pgdat->__lruvec;
 
-	/* Folio is fully exclusive and pins folio's memory cgroup pointer */
+	/* The folio is fully exclusive while its shadow entry is created. */
 	VM_BUG_ON_FOLIO(folio_test_lru(folio), folio);
 	VM_BUG_ON_FOLIO(folio_ref_count(folio), folio);
 	VM_BUG_ON_FOLIO(!folio_test_locked(folio), folio);
@@ -299,13 +278,10 @@ void *workingset_eviction(struct folio *folio, struct mem_cgroup *target_memcg)
 	if (lru_gen_enabled())
 		return lru_gen_eviction(folio);
 
-	lruvec = mem_cgroup_lruvec(target_memcg, pgdat);
-	/* XXX: target_memcg can be NULL, go through lruvec */
-	memcgid = mem_cgroup_private_id(lruvec_memcg(lruvec));
 	eviction = atomic_long_read(&lruvec->nonresident_age);
 	eviction >>= bucket_order[file];
 	workingset_age_nonresident(lruvec, folio_nr_pages(folio));
-	return pack_shadow(memcgid, pgdat, eviction,
+	return pack_shadow(pgdat, eviction,
 			   folio_test_workingset(folio), file);
 }
 
@@ -324,12 +300,10 @@ void *workingset_eviction(struct folio *folio, struct mem_cgroup *target_memcg)
 bool workingset_test_recent(void *shadow, bool file, bool *workingset,
 				bool flush)
 {
-	struct mem_cgroup *eviction_memcg;
 	struct lruvec *eviction_lruvec;
 	unsigned long refault_distance;
 	unsigned long workingset_size;
 	unsigned long refault;
-	int memcgid;
 	struct pglist_data *pgdat;
 	unsigned long eviction;
 
@@ -343,47 +317,10 @@ bool workingset_test_recent(void *shadow, bool file, bool *workingset,
 		return recent;
 	}
 
-	rcu_read_lock();
-	unpack_shadow(shadow, &memcgid, &pgdat, &eviction, workingset);
+	unpack_shadow(shadow, &pgdat, &eviction, workingset);
 	eviction <<= bucket_order[file];
 
-	/*
-	 * Look up the memcg associated with the stored ID. It might
-	 * have been deleted since the folio's eviction.
-	 *
-	 * Note that in rare events the ID could have been recycled
-	 * for a new cgroup that refaults a shared folio. This is
-	 * impossible to tell from the available data. However, this
-	 * should be a rare and limited disturbance, and activations
-	 * are always speculative anyway. Ultimately, it's the aging
-	 * algorithm's job to shake out the minimum access frequency
-	 * for the active cache.
-	 *
-	 * XXX: On !CONFIG_MEMCG, this will always return NULL; it
-	 * would be better if the root_mem_cgroup existed in all
-	 * configurations instead.
-	 */
-	eviction_memcg = mem_cgroup_from_private_id(memcgid);
-	if (!mem_cgroup_tryget(eviction_memcg))
-		eviction_memcg = NULL;
-	rcu_read_unlock();
-
-	if (!mem_cgroup_disabled() && !eviction_memcg)
-		return false;
-	/*
-	 * Flush stats (and potentially sleep) outside the RCU read section.
-	 *
-	 * Note that workingset_test_recent() itself might be called in RCU read
-	 * section (for e.g, in cachestat) - these callers need to skip flushing
-	 * stats (via the flush argument).
-	 *
-	 * XXX: With per-memcg flushing and thresholding, is ratelimiting
-	 * still needed here?
-	 */
-	if (flush)
-		mem_cgroup_flush_stats_ratelimited(eviction_memcg);
-
-	eviction_lruvec = mem_cgroup_lruvec(eviction_memcg, pgdat);
+	eviction_lruvec = &pgdat->__lruvec;
 	refault = atomic_long_read(&eviction_lruvec->nonresident_age);
 
 	/*
@@ -412,21 +349,17 @@ bool workingset_test_recent(void *shadow, bool file, bool *workingset,
 	 * workingset competition needs to consider anon or not depends
 	 * on having free swap space.
 	 */
-	workingset_size = lruvec_page_state(eviction_lruvec, NR_ACTIVE_FILE);
+	workingset_size = node_page_state(pgdat, NR_ACTIVE_FILE);
 	if (!file) {
-		workingset_size += lruvec_page_state(eviction_lruvec,
-						     NR_INACTIVE_FILE);
+		workingset_size += node_page_state(pgdat, NR_INACTIVE_FILE);
 	}
-	if (mem_cgroup_get_nr_swap_pages(eviction_memcg) > 0) {
-		workingset_size += lruvec_page_state(eviction_lruvec,
-						     NR_ACTIVE_ANON);
+	if (get_nr_swap_pages() > 0) {
+		workingset_size += node_page_state(pgdat, NR_ACTIVE_ANON);
 		if (file) {
-			workingset_size += lruvec_page_state(eviction_lruvec,
-						     NR_INACTIVE_ANON);
+			workingset_size += node_page_state(pgdat, NR_INACTIVE_ANON);
 		}
 	}
 
-	mem_cgroup_put(eviction_memcg);
 	return refault_distance <= workingset_size;
 }
 
@@ -436,13 +369,12 @@ bool workingset_test_recent(void *shadow, bool file, bool *workingset,
  * @shadow: Shadow entry of the evicted folio.
  *
  * Calculates and evaluates the refault distance of the previously
- * evicted folio in the context of the node and the memcg whose memory
- * pressure caused the eviction.
+	 * evicted folio in the context of the node whose memory pressure caused
+	 * the eviction.
  */
 void workingset_refault(struct folio *folio, void *shadow)
 {
 	bool file = folio_is_file_lru(folio);
-	struct mem_cgroup *memcg;
 	struct lruvec *lruvec;
 	bool workingset;
 	long nr;
@@ -459,13 +391,9 @@ void workingset_refault(struct folio *folio, void *shadow)
 	 * where the eviction occurred, as that is where the LRU order
 	 * during folio reclaim is being determined.
 	 *
-	 * However, the cgroup that will own the folio is the one that
-	 * is actually experiencing the refault event. Make sure the folio is
-	 * locked to guarantee folio_memcg() stability throughout.
 	 */
 	nr = folio_nr_pages(folio);
-	memcg = get_mem_cgroup_from_folio(folio);
-	lruvec = mem_cgroup_lruvec(memcg, folio_pgdat(folio));
+	lruvec = &folio_pgdat(folio)->__lruvec;
 	mod_lruvec_state(lruvec, WORKINGSET_REFAULT_BASE + file, nr);
 
 	if (!workingset_test_recent(shadow, file, &workingset, true))
@@ -486,7 +414,6 @@ void workingset_refault(struct folio *folio, void *shadow)
 		mod_lruvec_state(lruvec, WORKINGSET_RESTORE_BASE + file, nr);
 	}
 out:
-	mem_cgroup_put(memcg);
 }
 
 /**
@@ -495,15 +422,9 @@ out:
  */
 void workingset_activation(struct folio *folio)
 {
-	/*
-	 * Filter non-memcg pages here, e.g. unmap can call
-	 * mark_page_accessed() on VDSO pages.
-	 */
-	if (mem_cgroup_disabled() || folio_memcg_charged(folio)) {
-		rcu_read_lock();
-		workingset_age_nonresident(folio_lruvec(folio), folio_nr_pages(folio));
-		rcu_read_unlock();
-	}
+	struct lruvec *lruvec = &folio_pgdat(folio)->__lruvec;
+
+	workingset_age_nonresident(lruvec, folio_nr_pages(folio));
 }
 
 /*
@@ -643,7 +564,8 @@ static enum lru_status shadow_lru_isolate(struct list_head *item,
 	if (WARN_ON_ONCE(node->count != node->nr_values))
 		goto out_invalid;
 	xa_delete_node(node, workingset_update_node);
-	mod_lruvec_kmem_state(node, WORKINGSET_NODERECLAIM, 1);
+	mod_node_page_state(page_pgdat(virt_to_page(node)),
+			    WORKINGSET_NODERECLAIM, 1);
 
 out_invalid:
 	xa_unlock_irq(&mapping->i_pages);
@@ -698,14 +620,12 @@ static int __init workingset_init(void)
 		timestamp_bits, timestamp_bits_anon, max_order,
 		bucket_order[WORKINGSET_FILE], bucket_order[WORKINGSET_ANON]);
 
-	workingset_shadow_shrinker = shrinker_alloc(SHRINKER_NUMA_AWARE |
-						    SHRINKER_MEMCG_AWARE,
+	workingset_shadow_shrinker = shrinker_alloc(SHRINKER_NUMA_AWARE,
 						    "mm-shadow");
 	if (!workingset_shadow_shrinker)
 		goto err;
 
-	ret = list_lru_init_memcg_key(&shadow_nodes, workingset_shadow_shrinker,
-				      &shadow_nodes_key);
+	ret = list_lru_init(&shadow_nodes);
 	if (ret)
 		goto err_list_lru;
 

@@ -26,7 +26,6 @@
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 #include <asm/page.h>
-#include <linux/memcontrol.h>
 #include <linux/stackdepot.h>
 
 #include "../kernel/rcu/rcu.h"
@@ -47,7 +46,7 @@ struct kmem_cache *kmem_cache;
 		SLAB_OBJ_EXT_IN_OBJ)
 
 #define SLAB_MERGE_SAME (SLAB_RECLAIM_ACCOUNT | SLAB_CACHE_DMA | \
-			 SLAB_CACHE_DMA32 | SLAB_ACCOUNT)
+				 SLAB_CACHE_DMA32)
 
 /*
  * Merge control. If this is set then no merging of slab caches will occur.
@@ -260,8 +259,6 @@ __kmem_cache_alias(const char *name, unsigned int size, slab_flags_t flags,
  *
  * Commonly used @flags:
  *
- * &SLAB_ACCOUNT - Account allocations to memcg.
- *
  * &SLAB_HWCACHE_ALIGN - Align objects on cache line boundaries.
  *
  * &SLAB_RECLAIM_ACCOUNT - Objects are reclaimable.
@@ -409,22 +406,6 @@ void kmem_cache_destroy(struct kmem_cache *s)
 
 	/* in-flight kfree_rcu()'s may include objects from our cache */
 	kvfree_rcu_barrier_on_cache(s);
-
-	if (0 &&
-	    (s->flags & SLAB_TYPESAFE_BY_RCU)) {
-		/*
-		 * Under CONFIG_SLUB_RCU_DEBUG, when objects in a
-		 * SLAB_TYPESAFE_BY_RCU slab are freed, SLUB will internally
-		 * defer their freeing with call_rcu().
-		 * Wait for such call_rcu() invocations here before actually
-		 * destroying the cache.
-		 *
-		 * It doesn't matter that we haven't looked at the slab refcount
-		 * yet - slabs with SLAB_TYPESAFE_BY_RCU can't be merged, so
-		 * the refcount should be 1 here.
-		 */
-		rcu_barrier();
-	}
 
 	/* Wait for deferred work from kmalloc/kfree_nolock() */
 	defer_free_barrier();

@@ -29,7 +29,6 @@
 #include <linux/backing-dev.h>
 #include <linux/tracepoint.h>
 #include <linux/device.h>
-#include <linux/memcontrol.h>
 #include "internal.h"
 
 /*
@@ -256,11 +255,6 @@ static struct bdi_writeback *inode_to_wb_and_lock_list(struct inode *inode)
 
 	spin_lock(&wb->list_lock);
 	return wb;
-}
-
-static long wb_split_bdi_pages(struct bdi_writeback *wb, long nr_pages)
-{
-	return nr_pages;
 }
 
 static void bdi_split_work_to_wbs(struct backing_dev_info *bdi,
@@ -852,8 +846,6 @@ static int writeback_single_inode(struct inode *inode,
 
 	ret = __writeback_single_inode(inode, wbc);
 
-	wbc_detach_inode(wbc);
-
 	wb = inode_to_wb_and_lock_list(inode);
 	spin_lock(&inode->i_lock);
 	/*
@@ -1029,7 +1021,6 @@ static long writeback_sb_inodes(struct super_block *sb,
 		   (jiffies - work->done->progress_stamp) > HZ * timeout / 2)
 			wake_up_all(work->done->waitq);
 
-		wbc_detach_inode(&wbc);
 		work->nr_pages -= write_chunk - wbc.nr_to_write;
 		wrote = write_chunk - wbc.nr_to_write - wbc.pages_skipped;
 		wrote = wrote < 0 ? 0 : wrote;
@@ -1326,7 +1317,7 @@ static long wb_check_start_all(struct bdi_writeback *wb)
 	nr_pages = get_nr_dirty_pages();
 	if (nr_pages) {
 		struct wb_writeback_work work = {
-			.nr_pages	= wb_split_bdi_pages(wb, nr_pages),
+			.nr_pages	= nr_pages,
 			.sync_mode	= WB_SYNC_NONE,
 			.range_cyclic	= 1,
 			.reason		= wb->start_all_reason,

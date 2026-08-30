@@ -33,7 +33,6 @@
 #include <linux/cpuset.h>
 #include <linux/export.h>
 #include <linux/notifier.h>
-#include <linux/memcontrol.h>
 #include <linux/mempolicy.h>
 #include <linux/security.h>
 #include <linux/ptrace.h>
@@ -64,11 +63,6 @@ static int sysctl_oom_dump_tasks = 1;
 DEFINE_MUTEX(oom_lock);
 /* Serializes oom_score_adj and oom_score_adj_min updates */
 DEFINE_MUTEX(oom_adj_mutex);
-
-static inline bool is_memcg_oom(struct oom_control *oc)
-{
-	return oc->memcg != NULL;
-}
 
 #ifdef CONFIG_NUMA
 /**
@@ -236,7 +230,6 @@ static const char * const oom_constraint_text[] = {
 	[CONSTRAINT_NONE] = "CONSTRAINT_NONE",
 	[CONSTRAINT_CPUSET] = "CONSTRAINT_CPUSET",
 	[CONSTRAINT_MEMORY_POLICY] = "CONSTRAINT_MEMORY_POLICY",
-	[CONSTRAINT_MEMCG] = "CONSTRAINT_MEMCG",
 };
 
 /*
@@ -249,11 +242,6 @@ static enum oom_constraint constrained_alloc(struct oom_control *oc)
 	enum zone_type highest_zoneidx = gfp_zone(oc->gfp_mask);
 	bool cpuset_limited = false;
 	int nid;
-
-	if (is_memcg_oom(oc)) {
-		oc->totalpages = mem_cgroup_get_max(oc->memcg) ?: 1;
-		return CONSTRAINT_MEMCG;
-	}
 
 	/* Default to all available memory */
 	oc->totalpages = totalram_pages() + total_swap_pages;
@@ -308,7 +296,7 @@ static int oom_evaluate_task(struct task_struct *task, void *arg)
 		goto next;
 
 	/* p may not have freeable memory in nodemask */
-	if (!is_memcg_oom(oc) && !oom_cpuset_eligible(task, oc))
+	if (!oom_cpuset_eligible(task, oc))
 		goto next;
 
 	/*
@@ -359,9 +347,7 @@ static void select_bad_process(struct oom_control *oc)
 {
 	oc->chosen_points = LONG_MIN;
 
-	if (is_memcg_oom(oc))
-		mem_cgroup_scan_tasks(oc->memcg, oom_evaluate_task, oc);
-	else {
+	{
 		struct task_struct *p;
 
 		rcu_read_lock();
@@ -381,7 +367,7 @@ static int dump_task(struct task_struct *p, void *arg)
 		return 0;
 
 	/* p may not have freeable memory in nodemask */
-	if (!is_memcg_oom(oc) && !oom_cpuset_eligible(p, oc))
+	if (!oom_cpuset_eligible(p, oc))
 		return 0;
 
 	task = find_lock_task_mm(p);
@@ -409,9 +395,8 @@ static int dump_task(struct task_struct *p, void *arg)
  * dump_tasks - dump current memory state of all system tasks
  * @oc: pointer to struct oom_control
  *
- * Dumps the current memory state of all eligible tasks.  Tasks not in the same
- * memcg, not in the same cpuset, or bound to a disjoint set of mempolicy nodes
- * are not shown.
+ * Dumps the current memory state of all eligible tasks. Tasks outside the
+ * cpuset or bound to a disjoint set of mempolicy nodes are not shown.
  * State information includes task's pid, uid, tgid, vm size, rss,
  * pgtables_bytes, swapents, oom_score_adj value, and name.
  */
@@ -420,9 +405,7 @@ static void dump_tasks(struct oom_control *oc)
 	pr_info("Tasks state (memory values in pages):\n");
 	pr_info("[  pid  ]   uid  tgid total_vm      rss rss_anon rss_file rss_shmem pgtables_bytes swapents oom_score_adj name\n");
 
-	if (is_memcg_oom(oc))
-		mem_cgroup_scan_tasks(oc->memcg, dump_task, oc);
-	else {
+	{
 		struct task_struct *p;
 		int i = 0;
 
@@ -444,7 +427,6 @@ static void dump_oom_victim(struct oom_control *oc, struct task_struct *victim)
 			oom_constraint_text[oc->constraint],
 			nodemask_pr_args(oc->nodemask));
 	cpuset_print_current_mems_allowed();
-	mem_cgroup_print_oom_context(oc->memcg, victim);
 	pr_cont(",task=%s,pid=%d,uid=%d\n", victim->comm, victim->pid,
 		from_kuid(&init_user_ns, task_uid(victim)));
 }
@@ -458,14 +440,9 @@ static void dump_header(struct oom_control *oc)
 		pr_warn("COMPACTION is disabled!!!\n");
 
 	dump_stack();
-	if (is_memcg_oom(oc))
-		mem_cgroup_print_oom_meminfo(oc->memcg);
-	else {
-		__show_mem(SHOW_MEM_FILTER_NODES, oc->nodemask, gfp_zone(oc->gfp_mask));
-		if (should_dump_unreclaim_slab())
-			dump_unreclaimable_slab();
-	}
-	mem_cgroup_show_protected_memory(oc->memcg);
+	__show_mem(SHOW_MEM_FILTER_NODES, oc->nodemask, gfp_zone(oc->gfp_mask));
+	if (should_dump_unreclaim_slab())
+		dump_unreclaimable_slab();
 	if (sysctl_oom_dump_tasks)
 		dump_tasks(oc);
 }
@@ -745,7 +722,6 @@ static void mark_oom_victim(struct task_struct *tsk)
 	struct mm_struct *mm = tsk->mm;
 
 	WARN_ON(oom_killer_disabled);
-	/* OOM killer might race with memcg OOM */
 	if (test_and_set_tsk_thread_flag(tsk, TIF_MEMDIE))
 		return;
 
@@ -923,7 +899,6 @@ static void __oom_kill_process(struct task_struct *victim, const char *message)
 
 	/* Raise event before sending signal: task reaper must see this */
 	count_vm_event(OOM_KILL);
-	memcg_memory_event_mm(mm, MEMCG_OOM_KILL);
 
 	/*
 	 * We should send SIGKILL before granting access to memory reserves
@@ -985,20 +960,9 @@ static void __oom_kill_process(struct task_struct *victim, const char *message)
  * Kill provided task unless it's secured by setting
  * oom_score_adj to OOM_SCORE_ADJ_MIN.
  */
-static int oom_kill_memcg_member(struct task_struct *task, void *message)
-{
-	if (task->signal->oom_score_adj != OOM_SCORE_ADJ_MIN &&
-	    !is_global_init(task)) {
-		get_task_struct(task);
-		__oom_kill_process(task, message);
-	}
-	return 0;
-}
-
 static void oom_kill_process(struct oom_control *oc, const char *message)
 {
 	struct task_struct *victim = oc->chosen;
-	struct mem_cgroup *oom_group;
 	static DEFINE_RATELIMIT_STATE(oom_rs, DEFAULT_RATELIMIT_INTERVAL,
 					      DEFAULT_RATELIMIT_BURST);
 
@@ -1022,25 +986,7 @@ static void oom_kill_process(struct oom_control *oc, const char *message)
 		dump_oom_victim(oc, victim);
 	}
 
-	/*
-	 * Do we need to kill the entire memory cgroup?
-	 * Or even one of the ancestor memory cgroups?
-	 * Check this out before killing the victim task.
-	 */
-	oom_group = mem_cgroup_get_oom_group(victim, oc->memcg);
-
 	__oom_kill_process(victim, message);
-
-	/*
-	 * If necessary, kill all tasks in the selected memory cgroup.
-	 */
-	if (oom_group) {
-		memcg_memory_event(oom_group, MEMCG_OOM_GROUP_KILL);
-		mem_cgroup_print_oom_group(oom_group);
-		mem_cgroup_scan_tasks(oom_group, oom_kill_memcg_member,
-				      (void *)message);
-		mem_cgroup_put(oom_group);
-	}
 }
 
 /*
@@ -1053,8 +999,7 @@ static void check_panic_on_oom(struct oom_control *oc)
 	if (sysctl_panic_on_oom != 2) {
 		/*
 		 * panic_on_oom == 1 only affects CONSTRAINT_NONE, the kernel
-		 * does not panic for cpuset, mempolicy, or memcg allocation
-		 * failures.
+			 * does not panic for cpuset or mempolicy allocation failures.
 		 */
 		if (oc->constraint != CONSTRAINT_NONE)
 			return;
@@ -1097,12 +1042,10 @@ bool out_of_memory(struct oom_control *oc)
 	if (oom_killer_disabled)
 		return false;
 
-	if (!is_memcg_oom(oc)) {
-		blocking_notifier_call_chain(&oom_notify_list, 0, &freed);
-		if (freed > 0 && !is_sysrq_oom(oc))
-			/* Got some memory back in the last second. */
-			return true;
-	}
+	blocking_notifier_call_chain(&oom_notify_list, 0, &freed);
+	if (freed > 0 && !is_sysrq_oom(oc))
+		/* Got some memory back in the last second. */
+		return true;
 
 	/*
 	 * If current has a pending SIGKILL or is exiting, then automatically
@@ -1117,22 +1060,19 @@ bool out_of_memory(struct oom_control *oc)
 
 	/*
 	 * The OOM killer does not compensate for IO-less reclaim.
-	 * But mem_cgroup_oom() has to invoke the OOM killer even
-	 * if it is a GFP_NOFS allocation.
 	 */
-	if (!(oc->gfp_mask & __GFP_FS) && !is_memcg_oom(oc))
+	if (!(oc->gfp_mask & __GFP_FS))
 		return true;
 
 	/*
-	 * Check if there were limitations on the allocation (only relevant for
-	 * NUMA and memcg) that may require different handling.
+	 * Check if NUMA limitations on the allocation require different handling.
 	 */
 	oc->constraint = constrained_alloc(oc);
 	if (oc->constraint != CONSTRAINT_MEMORY_POLICY)
 		oc->nodemask = NULL;
 	check_panic_on_oom(oc);
 
-	if (!is_memcg_oom(oc) && sysctl_oom_kill_allocating_task &&
+	if (sysctl_oom_kill_allocating_task &&
 	    current->mm && !oom_unkillable_task(current) &&
 	    oom_cpuset_eligible(current, oc) &&
 	    current->signal->oom_score_adj != OOM_SCORE_ADJ_MIN) {
@@ -1152,28 +1092,21 @@ bool out_of_memory(struct oom_control *oc)
 		 * system level, we cannot survive this and will enter
 		 * an endless loop in the allocator. Bail out now.
 		 */
-		if (!is_sysrq_oom(oc) && !is_memcg_oom(oc))
+		if (!is_sysrq_oom(oc))
 			panic("System is deadlocked on memory\n");
 	}
 	if (oc->chosen && oc->chosen != (void *)-1UL)
-		oom_kill_process(oc, !is_memcg_oom(oc) ? "Out of memory" :
-				 "Memory cgroup out of memory");
+		oom_kill_process(oc, "Out of memory");
 	return !!oc->chosen;
 }
 
 /*
- * The pagefault handler calls here because some allocation has failed. We have
- * to take care of the memcg OOM here because this is the only safe context without
- * any locks held but let the oom killer triggered from the allocation context care
- * about the global OOM.
+ * The pagefault handler calls here because some allocation has failed.
  */
 void pagefault_out_of_memory(void)
 {
 	static DEFINE_RATELIMIT_STATE(pfoom_rs, DEFAULT_RATELIMIT_INTERVAL,
 				      DEFAULT_RATELIMIT_BURST);
-
-	if (mem_cgroup_oom_synchronize(true))
-		return;
 
 	if (fatal_signal_pending(current))
 		return;

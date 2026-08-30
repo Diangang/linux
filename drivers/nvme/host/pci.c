@@ -22,6 +22,7 @@
 #include <linux/once.h>
 #include <linux/pci.h>
 #include <linux/suspend.h>
+#include <linux/string_choices.h>
 #include <linux/t10-pi.h>
 #include <linux/types.h>
 #include <linux/io-64-nonatomic-lo-hi.h>

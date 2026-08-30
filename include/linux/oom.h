@@ -11,14 +11,12 @@
 
 struct zonelist;
 struct notifier_block;
-struct mem_cgroup;
 struct task_struct;
 
 enum oom_constraint {
 	CONSTRAINT_NONE,
 	CONSTRAINT_CPUSET,
 	CONSTRAINT_MEMORY_POLICY,
-	CONSTRAINT_MEMCG,
 };
 
 /*
@@ -31,9 +29,6 @@ struct oom_control {
 
 	/* Used to determine mempolicy */
 	nodemask_t *nodemask;
-
-	/* Memory cgroup in which oom is invoked, or NULL for global oom */
-	struct mem_cgroup *memcg;
 
 	/* Used to determine cpuset and node locality requirement */
 	const gfp_t gfp_mask;

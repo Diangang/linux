@@ -64,7 +64,6 @@
 #include <linux/rmap.h>
 #include <linux/rcupdate.h>
 #include <linux/export.h>
-#include <linux/memcontrol.h>
 #include <linux/mmu_notifier.h>
 #include <linux/migrate.h>
 #include <linux/hugetlb.h>
@@ -548,10 +547,10 @@ static void anon_vma_ctor(void *data)
 void __init anon_vma_init(void)
 {
 	anon_vma_cachep = kmem_cache_create("anon_vma", sizeof(struct anon_vma),
-			0, SLAB_TYPESAFE_BY_RCU|SLAB_PANIC|SLAB_ACCOUNT,
+			0, SLAB_TYPESAFE_BY_RCU|SLAB_PANIC,
 			anon_vma_ctor);
 	anon_vma_chain_cachep = KMEM_CACHE(anon_vma_chain,
-			SLAB_PANIC|SLAB_ACCOUNT);
+			SLAB_PANIC);
 }
 
 /*
@@ -904,7 +903,6 @@ struct folio_referenced_arg {
 	int mapcount;
 	int referenced;
 	vm_flags_t vm_flags;
-	struct mem_cgroup *memcg;
 };
 
 /*
@@ -1019,9 +1017,6 @@ static bool folio_referenced_one(struct folio *folio,
 
 static bool invalid_folio_referenced_vma(struct vm_area_struct *vma, void *arg)
 {
-	struct folio_referenced_arg *pra = arg;
-	struct mem_cgroup *memcg = pra->memcg;
-
 	/*
 	 * Ignore references from this mapping if it has no recency. If the
 	 * folio has been used in another mapping, we will catch it; if this
@@ -1031,13 +1026,6 @@ static bool invalid_folio_referenced_vma(struct vm_area_struct *vma, void *arg)
 	if (!vma_has_recency(vma))
 		return true;
 
-	/*
-	 * If we are reclaiming on behalf of a cgroup, skip counting on behalf
-	 * of references from different cgroups.
-	 */
-	if (memcg && !mm_match_cgroup(vma->vm_mm, memcg))
-		return true;
-
 	return false;
 }
 
@@ -1045,7 +1033,6 @@ static bool invalid_folio_referenced_vma(struct vm_area_struct *vma, void *arg)
  * folio_referenced() - Test if the folio was referenced.
  * @folio: The folio to test.
  * @is_locked: Caller holds lock on the folio.
- * @memcg: target memory cgroup
  * @vm_flags: A combination of all the vma->vm_flags which referenced the folio.
  *
  * Quick test_and_clear_referenced for all mappings of a folio,
@@ -1053,13 +1040,11 @@ static bool invalid_folio_referenced_vma(struct vm_area_struct *vma, void *arg)
  * Return: The number of mappings which referenced the folio. Return -1 if
  * the function bailed out due to rmap lock contention.
  */
-int folio_referenced(struct folio *folio, int is_locked,
-		     struct mem_cgroup *memcg, vm_flags_t *vm_flags)
+int folio_referenced(struct folio *folio, int is_locked, vm_flags_t *vm_flags)
 {
 	bool we_locked = false;
 	struct folio_referenced_arg pra = {
 		.mapcount = folio_mapcount(folio),
-		.memcg = memcg,
 	};
 	struct rmap_walk_control rwc = {
 		.rmap_one = folio_referenced_one,
@@ -1309,7 +1294,6 @@ static void __folio_mod_stat(struct folio *folio, int nr, int nr_pmdmapped)
 			idx = NR_ANON_THPS;
 			lruvec_stat_mod_folio(folio, idx, nr_pmdmapped);
 		} else {
-			/* NR_*_PMDMAPPED are not maintained per-memcg */
 			idx = folio_test_swapbacked(folio) ?
 				NR_SHMEM_PMDMAPPED : NR_FILE_PMDMAPPED;
 			__mod_node_page_state(folio_pgdat(folio), idx,
@@ -1335,16 +1319,6 @@ static __always_inline void __folio_add_rmap(struct folio *folio,
 			break;
 		}
 
-		if (0) {
-			nr = folio_add_return_large_mapcount(folio, orig_nr_pages, vma);
-			if (nr == orig_nr_pages)
-				/* Was completely unmapped. */
-				nr = folio_large_nr_pages(folio);
-			else
-				nr = 0;
-			break;
-		}
-
 		do {
 			first += atomic_inc_and_test(&page->_mapcount);
 		} while (page++, --nr_pages > 0);
@@ -1358,18 +1332,6 @@ static __always_inline void __folio_add_rmap(struct folio *folio,
 	case PGTABLE_LEVEL_PMD:
 	case PGTABLE_LEVEL_PUD:
 		first = atomic_inc_and_test(&folio->_entire_mapcount);
-		if (0) {
-			if (level == PGTABLE_LEVEL_PMD && first)
-				nr_pmdmapped = folio_large_nr_pages(folio);
-			nr = folio_inc_return_large_mapcount(folio, vma);
-			if (nr == 1)
-				/* Was completely unmapped. */
-				nr = folio_large_nr_pages(folio);
-			else
-				nr = 0;
-			break;
-		}
-
 		if (first) {
 			nr = atomic_add_return_relaxed(ENTIRELY_MAPPED, mapped);
 			if (likely(nr < ENTIRELY_MAPPED + ENTIRELY_MAPPED)) {
@@ -1524,9 +1486,6 @@ static __always_inline void __folio_add_anon_rmap(struct folio *folio,
 		VM_WARN_ON_FOLIO(folio_test_large(folio) &&
 				 folio_entire_mapcount(folio) > 1 &&
 				 PageAnonExclusive(cur_page), folio);
-		if (0)
-			continue;
-
 		/*
 		 * While PTE-mapping a THP we have a PMD and a PTE
 		 * mapping.
@@ -1745,19 +1704,6 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 			break;
 		}
 
-		if (0) {
-			nr = folio_sub_return_large_mapcount(folio, nr_pages, vma);
-			if (!nr) {
-				/* Now completely unmapped. */
-				nr = folio_large_nr_pages(folio);
-			} else {
-				partially_mapped = nr < folio_large_nr_pages(folio) &&
-						   !folio_entire_mapcount(folio);
-				nr = 0;
-			}
-			break;
-		}
-
 		folio_sub_large_mapcount(folio, nr_pages, vma);
 		do {
 			last += atomic_add_negative(-1, &page->_mapcount);
@@ -1771,22 +1717,6 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 		break;
 	case PGTABLE_LEVEL_PMD:
 	case PGTABLE_LEVEL_PUD:
-		if (0) {
-			last = atomic_add_negative(-1, &folio->_entire_mapcount);
-			if (level == PGTABLE_LEVEL_PMD && last)
-				nr_pmdmapped = folio_large_nr_pages(folio);
-			nr = folio_dec_return_large_mapcount(folio, vma);
-			if (!nr) {
-				/* Now completely unmapped. */
-				nr = folio_large_nr_pages(folio);
-			} else {
-				partially_mapped = last &&
-						   nr < folio_large_nr_pages(folio);
-				nr = 0;
-			}
-			break;
-		}
-
 		folio_dec_large_mapcount(folio, vma);
 		last = atomic_add_negative(-1, &folio->_entire_mapcount);
 		if (last) {

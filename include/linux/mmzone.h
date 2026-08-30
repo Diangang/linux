@@ -275,9 +275,8 @@ static __always_inline bool vmstat_item_in_bytes(int idx)
 	 * It's expected that changes are multiples of PAGE_SIZE.
 	 * Internally values are stored in pages.
 	 *
-	 * Per-memcg and per-lruvec counters track memory, consumed
-	 * by individual slab objects. These counters are actually
-	 * byte-precise.
+		 * Slab byte counters track memory consumed by individual objects
+		 * and are byte-precise.
 	 */
 	return (idx == NR_SLAB_RECLAIMABLE_B ||
 		idx == NR_SLAB_UNRECLAIMABLE_B);
@@ -449,48 +448,9 @@ static inline bool lru_gen_look_around(struct page_vma_mapped_walk *pvmw,
 	return false;
 }
 
-static inline void lru_gen_init_memcg(struct mem_cgroup *memcg)
-{
-}
-
-static inline void lru_gen_exit_memcg(struct mem_cgroup *memcg)
-{
-}
-
-static inline void lru_gen_online_memcg(struct mem_cgroup *memcg)
-{
-}
-
-static inline void lru_gen_offline_memcg(struct mem_cgroup *memcg)
-{
-}
-
-static inline void lru_gen_release_memcg(struct mem_cgroup *memcg)
-{
-}
-
-static inline void lru_gen_soft_reclaim(struct mem_cgroup *memcg, int nid)
-{
-}
-
-static inline void max_lru_gen_memcg(struct mem_cgroup *memcg, int nid)
-{
-}
-
-static inline bool recheck_lru_gen_max_memcg(struct mem_cgroup *memcg, int nid)
-{
-	return true;
-}
-
-static inline
-void lru_gen_reparent_memcg(struct mem_cgroup *memcg, struct mem_cgroup *parent, int nid)
-{
-}
-
-
 struct lruvec {
 	struct list_head		lists[NR_LRU_LISTS];
-	/* per lruvec lru_lock for memcg */
+	/* protects this lruvec */
 	spinlock_t			lru_lock;
 	/*
 	 * These track the cost of reclaiming one LRU - file or anon -
@@ -1188,11 +1148,7 @@ typedef struct pglist_data {
 #endif
 	/* Fields commonly accessed by the page reclaim scanner */
 
-	/*
-	 * NOTE: THIS IS UNUSED IF MEMCG IS ENABLED.
-	 *
-	 * Use mem_cgroup_lruvec() to look up lruvecs.
-	 */
+	/* Root LRU vector for this node. */
 	struct lruvec		__lruvec;
 
 	unsigned long		flags;

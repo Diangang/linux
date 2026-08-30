@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0
-#include <linux/memcontrol.h>
 #include <linux/rwsem.h>
 #include <linux/shrinker.h>
 #include <linux/rculist.h>
@@ -9,27 +8,6 @@
 LIST_HEAD(shrinker_list);
 DEFINE_MUTEX(shrinker_mutex);
 
-static int shrinker_memcg_alloc(struct shrinker *shrinker)
-{
-	return -ENOSYS;
-}
-
-static void shrinker_memcg_remove(struct shrinker *shrinker)
-{
-}
-
-static long xchg_nr_deferred_memcg(int nid, struct shrinker *shrinker,
-				   struct mem_cgroup *memcg)
-{
-	return 0;
-}
-
-static long add_nr_deferred_memcg(long nr, int nid, struct shrinker *shrinker,
-				  struct mem_cgroup *memcg)
-{
-	return 0;
-}
-
 static long xchg_nr_deferred(struct shrinker *shrinker,
 			     struct shrink_control *sc)
 {
@@ -37,11 +15,6 @@ static long xchg_nr_deferred(struct shrinker *shrinker,
 
 	if (!(shrinker->flags & SHRINKER_NUMA_AWARE))
 		nid = 0;
-
-	if (sc->memcg &&
-	    (shrinker->flags & SHRINKER_MEMCG_AWARE))
-		return xchg_nr_deferred_memcg(nid, shrinker,
-					      sc->memcg);
 
 	return atomic_long_xchg(&shrinker->nr_deferred[nid], 0);
 }
@@ -54,11 +27,6 @@ static long add_nr_deferred(long nr, struct shrinker *shrinker,
 
 	if (!(shrinker->flags & SHRINKER_NUMA_AWARE))
 		nid = 0;
-
-	if (sc->memcg &&
-	    (shrinker->flags & SHRINKER_MEMCG_AWARE))
-		return add_nr_deferred_memcg(nr, nid, shrinker,
-					     sc->memcg);
 
 	return atomic_long_add_return(nr, &shrinker->nr_deferred[nid]);
 }
@@ -159,17 +127,10 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	return freed;
 }
 
-static unsigned long shrink_slab_memcg(gfp_t gfp_mask, int nid,
-			struct mem_cgroup *memcg, int priority)
-{
-	return 0;
-}
-
 /**
  * shrink_slab - shrink slab caches
  * @gfp_mask: allocation context
  * @nid: node whose slab caches to target
- * @memcg: memory cgroup whose slab caches to target
  * @priority: the reclaim priority
  *
  * Call the shrink functions to age shrinkable caches.
@@ -177,29 +138,15 @@ static unsigned long shrink_slab_memcg(gfp_t gfp_mask, int nid,
  * @nid is passed along to shrinkers with SHRINKER_NUMA_AWARE set,
  * unaware shrinkers will receive a node id of 0 instead.
  *
- * @memcg specifies the memory cgroup to target. Unaware shrinkers
- * are called only if it is the root cgroup.
- *
  * @priority is sc->priority, we take the number of objects and >> by priority
  * in order to get the scan target.
  *
  * Returns the number of reclaimed slab objects.
  */
-unsigned long shrink_slab(gfp_t gfp_mask, int nid, struct mem_cgroup *memcg,
-			  int priority)
+unsigned long shrink_slab(gfp_t gfp_mask, int nid, int priority)
 {
 	unsigned long ret, freed = 0;
 	struct shrinker *shrinker;
-
-	/*
-	 * The root memcg might be allocated even though memcg is disabled
-	 * via "cgroup_disable=memory" boot parameter.  This could make
-	 * mem_cgroup_is_root() return false, then just run memcg slab
-	 * shrink, but skip global shrink.  This may result in premature
-	 * oom.
-	 */
-	if (!mem_cgroup_disabled() && !mem_cgroup_is_root(memcg))
-		return shrink_slab_memcg(gfp_mask, nid, memcg, priority);
 
 	/*
 	 * lockless algorithm of global shrink.
@@ -227,7 +174,6 @@ unsigned long shrink_slab(gfp_t gfp_mask, int nid, struct mem_cgroup *memcg,
 		struct shrink_control sc = {
 			.gfp_mask = gfp_mask,
 			.nid = nid,
-			.memcg = memcg,
 		};
 
 		if (!shrinker_try_get(shrinker))
@@ -269,29 +215,6 @@ struct shrinker *shrinker_alloc(unsigned int flags, const char *fmt, ...)
 	shrinker->flags = flags | SHRINKER_ALLOCATED;
 	shrinker->seeks = DEFAULT_SEEKS;
 
-	if (flags & SHRINKER_MEMCG_AWARE) {
-		err = shrinker_memcg_alloc(shrinker);
-		if (err == -ENOSYS) {
-			/* Memcg is not supported, fallback to non-memcg-aware shrinker. */
-			shrinker->flags &= ~SHRINKER_MEMCG_AWARE;
-			goto non_memcg;
-		}
-
-		if (err)
-			goto err_flags;
-
-		return shrinker;
-	}
-
-non_memcg:
-	/*
-	 * The nr_deferred is available on per memcg level for memcg aware
-	 * shrinkers, so only allocate nr_deferred in the following cases:
-	 *  - non-memcg-aware shrinkers
-	 *  - !CONFIG_MEMCG
-	 *  - memcg is disabled by kernel command line
-	 *  - non-slab shrinkers: when memcg kmem is disabled
-	 */
 	size = sizeof(*shrinker->nr_deferred);
 	if (flags & SHRINKER_NUMA_AWARE)
 		size *= nr_node_ids;
@@ -374,8 +297,6 @@ void shrinker_free(struct shrinker *shrinker)
 
 	shrinker_debugfs_name_free(shrinker);
 
-	if (shrinker->flags & SHRINKER_MEMCG_AWARE)
-		shrinker_memcg_remove(shrinker);
 	mutex_unlock(&shrinker_mutex);
 
 	if (debugfs_entry)

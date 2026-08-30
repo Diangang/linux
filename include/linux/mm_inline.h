@@ -9,6 +9,88 @@
 #include <linux/string.h>
 #include <linux/userfaultfd_k.h>
 #include <linux/leafops.h>
+#include <linux/vmstat.h>
+
+static inline struct lruvec *folio_lruvec(struct folio *folio)
+{
+	return &folio_pgdat(folio)->__lruvec;
+}
+
+static inline struct lruvec *folio_lruvec_lock_irq(struct folio *folio)
+{
+	struct lruvec *lruvec = folio_lruvec(folio);
+
+	rcu_read_lock();
+	spin_lock_irq(&lruvec->lru_lock);
+	return lruvec;
+}
+
+static inline struct lruvec *folio_lruvec_lock_irqsave(struct folio *folio,
+		unsigned long *flagsp)
+{
+	struct lruvec *lruvec = folio_lruvec(folio);
+
+	rcu_read_lock();
+	spin_lock_irqsave(&lruvec->lru_lock, *flagsp);
+	return lruvec;
+}
+
+static inline unsigned long lruvec_page_state(struct lruvec *lruvec,
+		enum node_stat_item idx)
+{
+	return node_page_state(lruvec_pgdat(lruvec), idx);
+}
+
+static inline void lruvec_lock_irq(struct lruvec *lruvec)
+{
+	rcu_read_lock();
+	spin_lock_irq(&lruvec->lru_lock);
+}
+
+static inline void lruvec_unlock_irq(struct lruvec *lruvec)
+{
+	spin_unlock_irq(&lruvec->lru_lock);
+	rcu_read_unlock();
+}
+
+static inline void lruvec_unlock_irqrestore(struct lruvec *lruvec,
+		unsigned long flags)
+{
+	spin_unlock_irqrestore(&lruvec->lru_lock, flags);
+	rcu_read_unlock();
+}
+
+static inline bool folio_matches_lruvec(struct folio *folio,
+		struct lruvec *lruvec)
+{
+	return lruvec_pgdat(lruvec) == folio_pgdat(folio);
+}
+
+static inline struct lruvec *folio_lruvec_relock_irq(struct folio *folio,
+		struct lruvec *locked_lruvec)
+{
+	if (locked_lruvec) {
+		if (folio_matches_lruvec(folio, locked_lruvec))
+			return locked_lruvec;
+
+		lruvec_unlock_irq(locked_lruvec);
+	}
+
+	return folio_lruvec_lock_irq(folio);
+}
+
+static inline void folio_lruvec_relock_irqsave(struct folio *folio,
+		struct lruvec **lruvecp, unsigned long *flags)
+{
+	if (*lruvecp) {
+		if (folio_matches_lruvec(folio, *lruvecp))
+			return;
+
+		lruvec_unlock_irqrestore(*lruvecp, *flags);
+	}
+
+	*lruvecp = folio_lruvec_lock_irqsave(folio, flags);
+}
 
 /**
  * folio_is_file_lru - Should the folio be on a file LRU or anon LRU?

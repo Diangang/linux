@@ -499,24 +499,12 @@ static inline void bio_release_pages(struct bio *bio, bool mark_dirty)
 #define bio_dev(bio) \
 	disk_devt((bio)->bi_bdev->bd_disk)
 
-static inline void bio_associate_blkg(struct bio *bio) { }
-static inline void bio_associate_blkg_from_css(struct bio *bio,
-					       struct cgroup_subsys_state *css)
-{ }
-static inline void bio_clone_blkg_association(struct bio *dst,
-					      struct bio *src) { }
-static inline void blkcg_punt_bio_submit(struct bio *bio)
-{
-	submit_bio(bio);
-}
-
 static inline void bio_set_dev(struct bio *bio, struct block_device *bdev)
 {
 	bio_clear_flag(bio, BIO_REMAPPED);
 	if (bio->bi_bdev != bdev)
 		bio_clear_flag(bio, BIO_BPS_THROTTLED);
 	bio->bi_bdev = bdev;
-	bio_associate_blkg(bio);
 }
 
 /*

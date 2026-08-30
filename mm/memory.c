@@ -58,7 +58,6 @@
 #include <linux/delayacct.h>
 #include <linux/init.h>
 #include <linux/writeback.h>
-#include <linux/memcontrol.h>
 #include <linux/mmu_notifier.h>
 #include <linux/leafops.h>
 #include <linux/elf.h>
@@ -1170,8 +1169,8 @@ copy_pte:
 	return 1;
 }
 
-static inline struct folio *folio_prealloc(struct mm_struct *src_mm,
-		struct vm_area_struct *vma, unsigned long addr, bool need_zero)
+static inline struct folio *folio_prealloc(struct vm_area_struct *vma,
+		unsigned long addr, bool need_zero)
 {
 	struct folio *new_folio;
 
@@ -1182,12 +1181,6 @@ static inline struct folio *folio_prealloc(struct mm_struct *src_mm,
 
 	if (!new_folio)
 		return NULL;
-
-	if (mem_cgroup_charge(new_folio, src_mm, GFP_KERNEL)) {
-		folio_put(new_folio);
-		return NULL;
-	}
-	folio_throttle_swaprate(new_folio, GFP_KERNEL);
 
 	return new_folio;
 }
@@ -1329,7 +1322,7 @@ again:
 	} else if (ret == -EBUSY || unlikely(ret == -EHWPOISON)) {
 		goto out;
 	} else if (ret ==  -EAGAIN) {
-		prealloc = folio_prealloc(src_mm, src_vma, addr, false);
+		prealloc = folio_prealloc(src_vma, addr, false);
 		if (!prealloc)
 			return -ENOMEM;
 	} else if (ret < 0) {
@@ -3844,7 +3837,7 @@ static vm_fault_t wp_page_copy(struct vm_fault *vmf)
 		goto out;
 
 	pfn_is_zero = is_zero_pfn(pte_pfn(vmf->orig_pte));
-	new_folio = folio_prealloc(mm, vma, vmf->address, pfn_is_zero);
+	new_folio = folio_prealloc(vma, vmf->address, pfn_is_zero);
 	if (!new_folio)
 		goto oom;
 
@@ -4416,7 +4409,7 @@ static inline bool should_try_to_free_swap(struct swap_info_struct *si,
 	 */
 	if (data_race(si->flags & SWP_SYNCHRONOUS_IO))
 		return true;
-	if (mem_cgroup_swap_full(folio) || (vma->vm_flags & VM_LOCKED) ||
+	if (vm_swap_full() || (vma->vm_flags & VM_LOCKED) ||
 	    folio_test_mlocked(folio))
 		return true;
 	/*
@@ -4504,18 +4497,10 @@ static struct folio *__alloc_swap_folio(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
 	struct folio *folio;
-	softleaf_t entry;
 
 	folio = vma_alloc_folio(GFP_HIGHUSER_MOVABLE, 0, vma, vmf->address);
 	if (!folio)
 		return NULL;
-
-	entry = softleaf_from_pte(vmf->orig_pte);
-	if (mem_cgroup_swapin_charge_folio(folio, vma->vm_mm,
-					   GFP_KERNEL, entry)) {
-		folio_put(folio);
-		return NULL;
-	}
 
 	return folio;
 }
@@ -4659,7 +4644,6 @@ vm_fault_t do_swap_page(struct vm_fault *vmf)
 		/* Had to read the page from swap area: Major fault */
 		ret = VM_FAULT_MAJOR;
 		count_vm_event(PGMAJFAULT);
-		count_memcg_event_mm(vma->vm_mm, PGMAJFAULT);
 	}
 
 	swapcache = folio;
@@ -4968,7 +4952,7 @@ static bool pte_range_none(pte_t *pte, int nr_pages)
 static struct folio *alloc_anon_folio(struct vm_fault *vmf)
 {
 	struct vm_area_struct *vma = vmf->vma;
-	return folio_prealloc(vma->vm_mm, vma, vmf->address, true);
+	return folio_prealloc(vma, vmf->address, true);
 }
 
 void map_anon_folio_pte_nopf(struct folio *folio, pte_t *pte,
@@ -5124,8 +5108,8 @@ static vm_fault_t __do_fault(struct vm_fault *vmf)
 	vm_fault_t ret;
 
 	/*
-	 * Preallocate pte before we take page_lock because this might lead to
-	 * deadlocks for memcg reclaim which waits for pages under writeback:
+	 * Preallocate pte before we take page_lock because reclaim can wait for
+	 * pages under writeback and deadlock as follows:
 	 *				lock_page(A)
 	 *				SetPageWriteback(A)
 	 *				unlock_page(A)
@@ -5237,8 +5221,7 @@ static bool vmf_pte_changed(struct vm_fault *vmf)
  *
  * This function handles all that is needed to finish a page fault once the
  * page to fault in is prepared. It handles locking of PTEs, inserts PTE for
- * given page, adds reverse page mapping, handles memcg charges and LRU
- * addition.
+	 * given page, adds reverse page mapping and handles LRU addition.
  *
  * The function expects the page to be locked and on success it consumes a
  * reference of a page being mapped (for the PTE which maps it).
@@ -5476,7 +5459,7 @@ static vm_fault_t do_cow_fault(struct vm_fault *vmf)
 	if (ret)
 		return ret;
 
-	folio = folio_prealloc(vma->vm_mm, vma, vmf->address, false);
+	folio = folio_prealloc(vma, vmf->address, false);
 	if (!folio)
 		return VM_FAULT_OOM;
 
@@ -5636,9 +5619,6 @@ int numa_migrate_check(struct folio *folio, struct vm_fault *vmf,
 	vma_set_access_pid_bit(vma);
 
 	count_vm_numa_event(NUMA_HINT_FAULTS);
-#ifdef CONFIG_NUMA_BALANCING
-	count_memcg_folio_events(folio, NUMA_HINT_FAULTS, 1);
-#endif
 	if (folio_nid(folio) == numa_node_id()) {
 		count_vm_numa_event(NUMA_HINT_FAULTS_LOCAL);
 		*flags |= TNF_FAULT_LOCAL;
@@ -6085,7 +6065,6 @@ fallback:
 
 /**
  * mm_account_fault - Do page fault accounting
- * @mm: mm from which memcg should be extracted. It can be NULL.
  * @regs: the pt_regs struct pointer.  When set to NULL, will skip accounting
  *        of perf event counters, but we'll still do the per-task accounting to
  *        the task who triggered this page fault.
@@ -6098,9 +6077,8 @@ fallback:
  * updates.  However, note that the handling of PERF_COUNT_SW_PAGE_FAULTS should
  * still be in per-arch page fault handlers at the entry of page fault.
  */
-static inline void mm_account_fault(struct mm_struct *mm, struct pt_regs *regs,
-				    unsigned long address, unsigned int flags,
-				    vm_fault_t ret)
+static inline void mm_account_fault(struct pt_regs *regs, unsigned long address,
+				    unsigned int flags, vm_fault_t ret)
 {
 	bool major;
 
@@ -6109,7 +6087,6 @@ static inline void mm_account_fault(struct mm_struct *mm, struct pt_regs *regs,
 		return;
 
 	count_vm_event(PGFAULT);
-	count_memcg_event_mm(mm, PGFAULT);
 
 	/*
 	 * Do not account for unsuccessful faults (e.g. when the address wasn't
@@ -6187,8 +6164,6 @@ static vm_fault_t sanitize_fault_flags(struct vm_area_struct *vma,
 vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 			   unsigned int flags, struct pt_regs *regs)
 {
-	/* If the fault handler drops the mmap_lock, vma may be freed */
-	struct mm_struct *mm = vma->vm_mm;
 	vm_fault_t ret;
 	bool is_droppable;
 
@@ -6206,13 +6181,6 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 	}
 
 	is_droppable = !!(vma->vm_flags & VM_DROPPABLE);
-
-	/*
-	 * Enable the memcg OOM handling for faults triggered in user
-	 * space.  Kernel faults are handled more gracefully.
-	 */
-	if (flags & FAULT_FLAG_USER)
-		mem_cgroup_enter_user_fault();
 
 	lru_gen_enter_fault(vma);
 
@@ -6233,19 +6201,8 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 	if (is_droppable)
 		ret &= ~VM_FAULT_OOM;
 
-	if (flags & FAULT_FLAG_USER) {
-		mem_cgroup_exit_user_fault();
-		/*
-		 * The task may have entered a memcg OOM situation but
-		 * if the allocation error was handled gracefully (no
-		 * VM_FAULT_OOM), there is no need to kill anything.
-		 * Just clean up the OOM state peacefully.
-		 */
-		if (task_in_memcg_oom(current) && !(ret & VM_FAULT_OOM))
-			mem_cgroup_oom_synchronize(false);
-	}
 out:
-	mm_account_fault(mm, regs, address, flags, ret);
+	mm_account_fault(regs, address, flags, ret);
 
 	return ret;
 }

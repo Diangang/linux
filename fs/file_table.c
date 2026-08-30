@@ -612,13 +612,13 @@ void __init files_init(void)
 
 	__filp_cache = kmem_cache_create("filp", sizeof(struct file), &args,
 				SLAB_HWCACHE_ALIGN | SLAB_PANIC |
-				SLAB_ACCOUNT | SLAB_TYPESAFE_BY_RCU);
+				SLAB_TYPESAFE_BY_RCU);
 	runtime_const_init(ptr, __filp_cache);
 
 	args.freeptr_offset = offsetof(struct backing_file, bf_freeptr);
 	__bfilp_cache = kmem_cache_create("bfilp", sizeof(struct backing_file),
 				&args, SLAB_HWCACHE_ALIGN | SLAB_PANIC |
-				SLAB_ACCOUNT | SLAB_TYPESAFE_BY_RCU);
+				SLAB_TYPESAFE_BY_RCU);
 	runtime_const_init(ptr, __bfilp_cache);
 
 	percpu_counter_init(&nr_files, 0, GFP_KERNEL);

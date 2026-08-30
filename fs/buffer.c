@@ -54,7 +54,7 @@
 #include "internal.h"
 
 static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
-			  enum rw_hint hint, struct writeback_control *wbc);
+			  enum rw_hint hint);
 
 #define BH_ENTRY(list) list_entry((list), struct buffer_head, b_assoc_buffers)
 
@@ -778,10 +778,6 @@ bool block_dirty_folio(struct address_space *mapping, struct folio *folio)
 			bh = bh->b_this_page;
 		} while (bh != head);
 	}
-	/*
-	 * Lock out page's memcg migration to keep PageDirty
-	 * synchronized with per-memcg dirty page counters.
-	 */
 	newly_dirty = !folio_test_set_dirty(folio);
 	spin_unlock(&mapping->i_private_lock);
 
@@ -825,10 +821,6 @@ struct buffer_head *folio_alloc_buffers(struct folio *folio, unsigned long size,
 {
 	struct buffer_head *bh, *head;
 	long offset;
-	struct mem_cgroup *memcg, *old_memcg;
-
-	memcg = get_mem_cgroup_from_folio(folio);
-	old_memcg = set_active_memcg(memcg);
 
 	head = NULL;
 	offset = folio_size(folio);
@@ -846,9 +838,6 @@ struct buffer_head *folio_alloc_buffers(struct folio *folio, unsigned long size,
 		/* Link the buffer to its folio */
 		folio_set_bh(bh, folio, offset);
 	}
-out:
-	set_active_memcg(old_memcg);
-	mem_cgroup_put(memcg);
 	return head;
 /*
  * In case anything failed, we just free everything we got.
@@ -862,13 +851,13 @@ no_grow:
 		} while (head);
 	}
 
-	goto out;
+	return NULL;
 }
 EXPORT_SYMBOL_GPL(folio_alloc_buffers);
 
 struct buffer_head *alloc_page_buffers(struct page *page, unsigned long size)
 {
-	gfp_t gfp = GFP_NOFS | __GFP_ACCOUNT;
+	gfp_t gfp = GFP_NOFS;
 
 	return folio_alloc_buffers(page_folio(page), size, gfp);
 }
@@ -974,7 +963,7 @@ static bool grow_dev_folio(struct block_device *bdev, sector_t block,
 		}
 	}
 
-	bh = folio_alloc_buffers(folio, size, gfp | __GFP_ACCOUNT);
+	bh = folio_alloc_buffers(folio, size, gfp);
 	if (!bh)
 		goto unlock;
 
@@ -1580,7 +1569,7 @@ struct buffer_head *create_empty_buffers(struct folio *folio,
 		unsigned long blocksize, unsigned long b_state)
 {
 	struct buffer_head *bh, *head, *tail;
-	gfp_t gfp = GFP_NOFS | __GFP_ACCOUNT | __GFP_NOFAIL;
+	gfp_t gfp = GFP_NOFS | __GFP_NOFAIL;
 
 	head = folio_alloc_buffers(folio, blocksize, gfp);
 	bh = head;
@@ -1825,7 +1814,7 @@ int __block_write_full_folio(struct inode *inode, struct folio *folio,
 		struct buffer_head *next = bh->b_this_page;
 		if (buffer_async_write(bh)) {
 			submit_bh_wbc(REQ_OP_WRITE | write_flags, bh,
-				      inode->i_write_hint, wbc);
+				      inode->i_write_hint);
 			nr_underway++;
 		}
 		bh = next;
@@ -1880,7 +1869,7 @@ recover:
 		if (buffer_async_write(bh)) {
 			clear_buffer_dirty(bh);
 			submit_bh_wbc(REQ_OP_WRITE | write_flags, bh,
-				      inode->i_write_hint, wbc);
+				      inode->i_write_hint);
 			nr_underway++;
 		}
 		bh = next;
@@ -2683,8 +2672,7 @@ static void buffer_set_crypto_ctx(struct bio *bio, const struct buffer_head *bh,
 }
 
 static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
-			  enum rw_hint write_hint,
-			  struct writeback_control *wbc)
+			  enum rw_hint write_hint)
 {
 	const enum req_op op = opf & REQ_OP_MASK;
 	struct bio *bio;
@@ -2719,17 +2707,12 @@ static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
 	/* Take care of bh's that straddle the end of the device */
 	guard_bio_eod(bio);
 
-	if (wbc) {
-		wbc_init_bio(wbc, bio);
-		wbc_account_cgroup_owner(wbc, bh->b_folio, bh->b_size);
-	}
-
 	blk_crypto_submit_bio(bio);
 }
 
 void submit_bh(blk_opf_t opf, struct buffer_head *bh)
 {
-	submit_bh_wbc(opf, bh, WRITE_LIFE_NOT_SET, NULL);
+	submit_bh_wbc(opf, bh, WRITE_LIFE_NOT_SET);
 }
 EXPORT_SYMBOL(submit_bh);
 

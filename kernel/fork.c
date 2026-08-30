@@ -65,7 +65,6 @@
 #include <linux/ptrace.h>
 #include <linux/mount.h>
 #include <linux/audit.h>
-#include <linux/memcontrol.h>
 #include <linux/ftrace.h>
 #include <linux/proc_fs.h>
 #include <linux/profile.h>
@@ -178,11 +177,6 @@ static inline void free_task_struct(struct task_struct *tsk)
  */
 #define NR_CACHED_STACKS 2
 static DEFINE_PER_CPU(struct vm_struct *, cached_stacks[NR_CACHED_STACKS]);
-/*
- * Allocated stacks are cached and later reused by new threads, so memcg
- * accounting is performed by the code assigning/releasing stacks to tasks.
- * We need a zeroed memory without __GFP_ACCOUNT.
- */
 #define GFP_VMAP_STACK (GFP_KERNEL | __GFP_ZERO)
 
 struct vm_stack {
@@ -287,27 +281,6 @@ static int free_vm_stack_cache(unsigned int cpu)
 	return 0;
 }
 
-static int memcg_charge_kernel_stack(struct vm_struct *vm_area)
-{
-	int i;
-	int ret;
-	int nr_charged = 0;
-
-	BUG_ON(vm_area->nr_pages != THREAD_SIZE / PAGE_SIZE);
-
-	for (i = 0; i < THREAD_SIZE / PAGE_SIZE; i++) {
-		ret = memcg_kmem_charge_page(vm_area->pages[i], GFP_KERNEL, 0);
-		if (ret)
-			goto err;
-		nr_charged++;
-	}
-	return 0;
-err:
-	for (i = 0; i < nr_charged; i++)
-		memcg_kmem_uncharge_page(vm_area->pages[i], 0);
-	return ret;
-}
-
 static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 {
 	struct vm_struct *vm_area;
@@ -315,10 +288,7 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 
 	vm_area = alloc_thread_stack_node_from_cache(tsk, node);
 	if (vm_area) {
-		if (memcg_charge_kernel_stack(vm_area)) {
-			vfree(vm_area->addr);
-			return -ENOMEM;
-		}
+		BUG_ON(vm_area->nr_pages != THREAD_SIZE / PAGE_SIZE);
 
 		/* Reset stack metadata. */
 		kasan_unpoison_range(vm_area->addr, THREAD_SIZE);
@@ -340,10 +310,7 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 		return -ENOMEM;
 
 	vm_area = find_vm_area(stack);
-	if (memcg_charge_kernel_stack(vm_area)) {
-		vfree(stack);
-		return -ENOMEM;
-	}
+	BUG_ON(vm_area->nr_pages != THREAD_SIZE / PAGE_SIZE);
 	/*
 	 * We can't call find_vm_area() in interrupt context, and
 	 * free_thread_stack() can be called in interrupt context,
@@ -470,25 +437,17 @@ static void account_kernel_stack(struct task_struct *tsk, int account)
 					      account * (PAGE_SIZE / 1024));
 	} else {
 		void *stack = task_stack_page(tsk);
+		struct page *page = virt_to_head_page(stack);
 
 		/* All stack pages are in the same node. */
-		mod_lruvec_kmem_state(stack, NR_KERNEL_STACK_KB,
-				      account * (THREAD_SIZE / 1024));
+		mod_node_page_state(page_pgdat(page), NR_KERNEL_STACK_KB,
+				    account * (THREAD_SIZE / 1024));
 	}
 }
 
 void exit_task_stack_account(struct task_struct *tsk)
 {
 	account_kernel_stack(tsk, -1);
-
-	if (IS_ENABLED(CONFIG_VMAP_STACK)) {
-		struct vm_struct *vm_area;
-		int i;
-
-		vm_area = task_stack_vm_area(tsk);
-		for (i = 0; i < THREAD_SIZE / PAGE_SIZE; i++)
-			memcg_kmem_uncharge_page(vm_area->pages[i], 0);
-	}
 }
 
 static void release_task_stack(struct task_struct *tsk)
@@ -823,7 +782,7 @@ void __init fork_init(void)
 	task_struct_whitelist(&useroffset, &usersize);
 	task_struct_cachep = kmem_cache_create_usercopy("task_struct",
 			arch_task_struct_size, align,
-			SLAB_PANIC|SLAB_ACCOUNT,
+			SLAB_PANIC,
 			useroffset, usersize, NULL);
 
 	/* do the arch specific task caches init */
@@ -1039,7 +998,7 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 	if (mm_alloc_cid(mm, p))
 		goto fail_cid;
 
-	if (percpu_counter_init_many(mm->rss_stat, 0, GFP_KERNEL_ACCOUNT,
+	if (percpu_counter_init_many(mm->rss_stat, 0, GFP_KERNEL,
 				     NR_MM_COUNTERS))
 		goto fail_pcpu;
 
@@ -2857,7 +2816,7 @@ void __init mm_cache_init(void)
 
 	mm_cachep = kmem_cache_create_usercopy("mm_struct",
 			mm_size, ARCH_MIN_MMSTRUCT_ALIGN,
-			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT,
+			SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 			offsetof(struct mm_struct, saved_auxv),
 			sizeof_field(struct mm_struct, saved_auxv),
 			NULL);
@@ -2868,18 +2827,18 @@ void __init proc_caches_init(void)
 	sighand_cachep = kmem_cache_create("sighand_cache",
 			sizeof(struct sighand_struct), 0,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_TYPESAFE_BY_RCU|
-			SLAB_ACCOUNT, sighand_ctor);
+			0, sighand_ctor);
 	signal_cachep = kmem_cache_create("signal_cache",
 			sizeof(struct signal_struct), 0,
-			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT,
+			SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 			NULL);
 	files_cachep = kmem_cache_create("files_cache",
 			sizeof(struct files_struct), 0,
-			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT,
+			SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 			NULL);
 	fs_cachep = kmem_cache_create("fs_cache",
 			sizeof(struct fs_struct), 0,
-			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT,
+			SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 			NULL);
 	mmap_init();
 	nsproxy_cache_init();

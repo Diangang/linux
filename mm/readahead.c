@@ -125,7 +125,6 @@
 #include <linux/syscalls.h>
 #include <linux/file.h>
 #include <linux/mm_inline.h>
-#include <linux/blk-cgroup.h>
 #include <linux/fadvise.h>
 #include <linux/sched/mm.h>
 #include "internal.h"
@@ -562,7 +561,7 @@ void page_cache_sync_ra(struct readahead_control *ractl,
 	 * readahead will do the right thing and limit the read to just the
 	 * requested range, which we'll set to 1 page for this case.
 	 */
-	if (!ra->ra_pages || blk_cgroup_congested()) {
+	if (!ra->ra_pages) {
 		if (!ractl->file)
 			return;
 		req_count = 1;
@@ -641,9 +640,6 @@ void page_cache_async_ra(struct readahead_control *ractl,
 		return;
 
 	folio_clear_readahead(folio);
-
-	if (blk_cgroup_congested())
-		return;
 
 	max_pages = ractl_max_pages(ractl, req_count);
 	/*

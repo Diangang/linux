@@ -152,7 +152,7 @@ static struct ldt_struct *alloc_ldt_struct(unsigned int num_entries)
 	if (num_entries > LDT_ENTRIES)
 		return NULL;
 
-	new_ldt = kmalloc_obj(struct ldt_struct, GFP_KERNEL_ACCOUNT);
+	new_ldt = kmalloc_obj(struct ldt_struct, GFP_KERNEL);
 	if (!new_ldt)
 		return NULL;
 
@@ -166,9 +166,9 @@ static struct ldt_struct *alloc_ldt_struct(unsigned int num_entries)
 	 * than PAGE_SIZE.
 	 */
 	if (alloc_size > PAGE_SIZE)
-		new_ldt->entries = __vmalloc(alloc_size, GFP_KERNEL_ACCOUNT | __GFP_ZERO);
+		new_ldt->entries = __vmalloc(alloc_size, GFP_KERNEL | __GFP_ZERO);
 	else
-		new_ldt->entries = (void *)get_zeroed_page(GFP_KERNEL_ACCOUNT);
+		new_ldt->entries = (void *)get_zeroed_page(GFP_KERNEL);
 
 	if (!new_ldt->entries) {
 		kfree(new_ldt);

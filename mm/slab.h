@@ -8,9 +8,14 @@
 #include <linux/random.h>
 #include <linux/kobject.h>
 #include <linux/sched/mm.h>
-#include <linux/memcontrol.h>
 #include <linux/kfence.h>
 #include <linux/kasan.h>
+
+#define OBJEXTS_ALLOC_FAIL	(1UL << 0)
+#define OBJEXTS_FLAGS_MASK	OBJEXTS_ALLOC_FAIL
+
+struct slabobj_ext {
+} __aligned(8);
 
 /*
  * Internal slab definitions
@@ -384,7 +389,7 @@ static inline bool is_kmalloc_normal(struct kmem_cache *s)
 {
 	if (!is_kmalloc_cache(s))
 		return false;
-	return !(s->flags & (SLAB_CACHE_DMA|SLAB_ACCOUNT|SLAB_RECLAIM_ACCOUNT));
+	return !(s->flags & (SLAB_CACHE_DMA|SLAB_RECLAIM_ACCOUNT));
 }
 
 bool __kfree_rcu_sheaf(struct kmem_cache *s, void *obj);
@@ -395,7 +400,7 @@ void flush_rcu_sheaves_on_cache(struct kmem_cache *s);
 			 SLAB_CACHE_DMA32 | SLAB_PANIC | \
 			 SLAB_TYPESAFE_BY_RCU | SLAB_DEBUG_OBJECTS | \
 			 SLAB_RECLAIM_ACCOUNT | \
-			 SLAB_TEMPORARY | SLAB_ACCOUNT | \
+			 SLAB_TEMPORARY | \
 			 SLAB_NO_USER_FLAGS | SLAB_KMALLOC | SLAB_NO_MERGE)
 
 #define SLAB_DEBUG_FLAGS (SLAB_RED_ZONE | SLAB_POISON | SLAB_STORE_USER | \

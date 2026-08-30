@@ -1529,7 +1529,7 @@ static int __init posixtimer_init(void)
 	posix_timers_cache = kmem_cache_create("posix_timers_cache",
 					       sizeof(struct k_itimer),
 					       __alignof__(struct k_itimer),
-					       SLAB_ACCOUNT, NULL);
+					       0, NULL);
 
 	if (0)
 		size = 512;

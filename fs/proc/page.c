@@ -11,7 +11,6 @@
 #include <linux/seq_file.h>
 #include <linux/hugetlb.h>
 #include <linux/memremap.h>
-#include <linux/memcontrol.h>
 #include <linux/mmu_notifier.h>
 #include <linux/page_idle.h>
 #include <linux/kernel-page-flags.h>
@@ -93,7 +92,7 @@ static ssize_t kpage_read(struct file *file, char __user *buf,
 				info = get_kpage_count(page);
 				break;
 			case KPAGE_CGROUP:
-				info = page_cgroup_ino(page);
+				info = 0;
 				break;
 			default:
 				info = 0;

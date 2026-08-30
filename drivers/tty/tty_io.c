@@ -2829,7 +2829,7 @@ struct tty_struct *alloc_tty_struct(struct tty_driver *driver, int idx)
 {
 	struct tty_struct *tty;
 
-	tty = kzalloc_obj(*tty, GFP_KERNEL_ACCOUNT);
+	tty = kzalloc_obj(*tty, GFP_KERNEL);
 	if (!tty)
 		return NULL;
 

@@ -92,12 +92,11 @@ void __init proc_init_kmemcache(void)
 	proc_inode_cachep = kmem_cache_create("proc_inode_cache",
 					     sizeof(struct proc_inode),
 					     0, (SLAB_RECLAIM_ACCOUNT|
-						SLAB_ACCOUNT|
 						SLAB_PANIC),
 					     init_once);
 	pde_opener_cache =
 		kmem_cache_create("pde_opener", sizeof(struct pde_opener), 0,
-				  SLAB_ACCOUNT|SLAB_PANIC, NULL);
+				  SLAB_PANIC, NULL);
 	proc_dir_entry_cache = kmem_cache_create_usercopy(
 		"proc_dir_entry", SIZEOF_PDE, 0, SLAB_PANIC,
 		offsetof(struct proc_dir_entry, inline_name),

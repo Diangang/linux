@@ -1052,7 +1052,7 @@ void __init pidfs_init(void)
 
 	pidfs_attr_cachep = kmem_cache_create("pidfs_attr_cache", sizeof(struct pidfs_attr), 0,
 					 (SLAB_HWCACHE_ALIGN | SLAB_RECLAIM_ACCOUNT |
-					  SLAB_ACCOUNT | SLAB_PANIC), NULL);
+					  SLAB_PANIC), NULL);
 
 	pidfs_mnt = kern_mount(&pidfs_type);
 	if (IS_ERR(pidfs_mnt))

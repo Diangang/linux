@@ -36,11 +36,7 @@
  * percpu variables from kernel modules.  Finally, the dynamic section
  * takes care of normal allocations.
  *
- * The allocator organizes chunks into lists according to free size and
- * memcg-awareness.  To make a percpu allocation memcg-aware the __GFP_ACCOUNT
- * flag should be passed.  All memcg-aware allocations are sharing one set
- * of chunks and all unaccounted allocations and allocations performed
- * by processes belonging to the root memory cgroup are using the second set.
+ * The allocator organizes chunks into lists according to free size.
  *
  * The allocator tries to allocate from the fullest chunk first. Each chunk
  * is managed by a bitmap with metadata blocks.  The allocation map is updated
@@ -85,8 +81,6 @@
 #include <linux/workqueue.h>
 #include <linux/sched.h>
 #include <linux/sched/mm.h>
-#include <linux/memcontrol.h>
-
 #include <asm/cacheflush.h>
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
@@ -1380,10 +1374,6 @@ static struct pcpu_chunk * __init pcpu_alloc_first_chunk(unsigned long tmp_addr,
 
 	alloc_size = pcpu_chunk_nr_blocks(chunk) * sizeof(chunk->md_blocks[0]);
 	chunk->md_blocks = memblock_alloc_or_panic(alloc_size, SMP_CACHE_BYTES);
-#ifdef NEED_PCPUOBJ_EXT
-	/* first chunk is free to use */
-	chunk->obj_exts = NULL;
-#endif
 	pcpu_init_md_blocks(chunk);
 
 	/* manage populated page bitmap */
@@ -1450,28 +1440,12 @@ static struct pcpu_chunk *pcpu_alloc_chunk(gfp_t gfp)
 					   sizeof(chunk->md_blocks[0]), gfp);
 	if (!chunk->md_blocks)
 		goto md_blocks_fail;
-
-#ifdef NEED_PCPUOBJ_EXT
-	if (need_pcpuobj_ext()) {
-		chunk->obj_exts =
-			pcpu_mem_zalloc(pcpu_chunk_map_bits(chunk) *
-					sizeof(struct pcpuobj_ext), gfp);
-		if (!chunk->obj_exts)
-			goto objcg_fail;
-	}
-#endif
-
 	pcpu_init_md_blocks(chunk);
 
 	/* init metadata */
 	chunk->free_bytes = chunk->nr_pages * PAGE_SIZE;
 
 	return chunk;
-
-#ifdef NEED_PCPUOBJ_EXT
-objcg_fail:
-	pcpu_mem_free(chunk->md_blocks);
-#endif
 md_blocks_fail:
 	pcpu_mem_free(chunk->bound_map);
 bound_map_fail:
@@ -1486,9 +1460,6 @@ static void pcpu_free_chunk(struct pcpu_chunk *chunk)
 {
 	if (!chunk)
 		return;
-#ifdef NEED_PCPUOBJ_EXT
-	pcpu_mem_free(chunk->obj_exts);
-#endif
 	pcpu_mem_free(chunk->md_blocks);
 	pcpu_mem_free(chunk->bound_map);
 	pcpu_mem_free(chunk->alloc_map);
@@ -1603,22 +1574,6 @@ static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
 	return pcpu_get_page_chunk(pcpu_addr_to_page(addr));
 }
 
-static bool
-pcpu_memcg_pre_alloc_hook(size_t size, gfp_t gfp, struct obj_cgroup **objcgp)
-{
-	return true;
-}
-
-static void pcpu_memcg_post_alloc_hook(struct obj_cgroup *objcg,
-				       struct pcpu_chunk *chunk, int off,
-				       size_t size)
-{
-}
-
-static void pcpu_memcg_free_hook(struct pcpu_chunk *chunk, int off, size_t size)
-{
-}
-
 static void pcpu_alloc_tag_alloc_hook(struct pcpu_chunk *chunk, int off,
 				      size_t size)
 {
@@ -1649,7 +1604,6 @@ void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved,
 	gfp_t pcpu_gfp;
 	bool is_atomic;
 	bool do_warn;
-	struct obj_cgroup *objcg = NULL;
 	static atomic_t warn_limit = ATOMIC_INIT(10);
 	struct pcpu_chunk *chunk, *next;
 	const char *err;
@@ -1684,9 +1638,6 @@ void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved,
 		return NULL;
 	}
 
-	if (unlikely(!pcpu_memcg_pre_alloc_hook(size, gfp, &objcg)))
-		return NULL;
-
 	if (!is_atomic) {
 		/*
 		 * pcpu_balance_workfn() allocates memory under this mutex,
@@ -1696,7 +1647,6 @@ void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved,
 		if (gfp & __GFP_NOFAIL) {
 			mutex_lock(&pcpu_alloc_mutex);
 		} else if (mutex_lock_killable(&pcpu_alloc_mutex)) {
-			pcpu_memcg_post_alloc_hook(objcg, NULL, 0, size);
 			return NULL;
 		}
 	}
@@ -1804,8 +1754,6 @@ area_found:
 
 	ptr = __addr_to_pcpu_ptr(chunk->base_addr + off);
 
-	pcpu_memcg_post_alloc_hook(objcg, chunk, off, size);
-
 	pcpu_alloc_tag_alloc_hook(chunk, off, size);
 
 	return ptr;
@@ -1834,8 +1782,6 @@ fail:
 	} else {
 		mutex_unlock(&pcpu_alloc_mutex);
 	}
-
-	pcpu_memcg_post_alloc_hook(objcg, NULL, 0, size);
 
 	return NULL;
 }
@@ -2159,8 +2105,6 @@ void free_percpu(void __percpu *ptr)
 	}
 
 	pcpu_alloc_tag_free_hook(chunk, off, size);
-
-	pcpu_memcg_free_hook(chunk, off, size);
 
 	/*
 	 * If there are more than one fully free chunks, wake up grim reaper.
@@ -2647,18 +2591,19 @@ static int __init percpu_alloc_setup(char *str)
 	if (!str)
 		return -EINVAL;
 
-	if (0)
-		/* nada */;
 #ifdef CONFIG_NEED_PER_CPU_EMBED_FIRST_CHUNK
-	else if (!strcmp(str, "embed"))
+	if (!strcmp(str, "embed")) {
 		pcpu_chosen_fc = PCPU_FC_EMBED;
+		return 0;
+	}
 #endif
 #ifdef CONFIG_NEED_PER_CPU_PAGE_FIRST_CHUNK
-	else if (!strcmp(str, "page"))
+	if (!strcmp(str, "page")) {
 		pcpu_chosen_fc = PCPU_FC_PAGE;
+		return 0;
+	}
 #endif
-	else
-		pr_warn("unknown allocator %s specified\n", str);
+	pr_warn("unknown allocator %s specified\n", str);
 
 	return 0;
 }

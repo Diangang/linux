@@ -39,7 +39,6 @@
 	TRACE_GFP_EM(NOMEMALLOC)		\
 	TRACE_GFP_EM(HARDWALL)			\
 	TRACE_GFP_EM(THISNODE)			\
-	TRACE_GFP_EM(ACCOUNT)			\
 	TRACE_GFP_EM(ZEROTAGS)
 
 # define TRACE_GFP_FLAGS_KASAN
@@ -66,6 +65,7 @@ TRACE_GFP_FLAGS
 
 /* Just in case these are ever used */
 TRACE_DEFINE_ENUM(___GFP_UNUSED_BIT);
+TRACE_DEFINE_ENUM(___GFP_UNUSED2_BIT);
 TRACE_DEFINE_ENUM(___GFP_LAST_BIT);
 
 #define gfpflag_string(flag) {(__force unsigned long)flag, #flag}
@@ -83,7 +83,6 @@ TRACE_DEFINE_ENUM(___GFP_LAST_BIT);
 	gfpflag_string(GFP_HIGHUSER_MOVABLE),	\
 	gfpflag_string(GFP_HIGHUSER),		\
 	gfpflag_string(GFP_USER),		\
-	gfpflag_string(GFP_KERNEL_ACCOUNT),	\
 	gfpflag_string(GFP_KERNEL),		\
 	gfpflag_string(GFP_NOFS),		\
 	gfpflag_string(GFP_ATOMIC),		\

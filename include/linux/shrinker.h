@@ -7,23 +7,6 @@
 #include <linux/refcount.h>
 #include <linux/completion.h>
 
-#define SHRINKER_UNIT_BITS	BITS_PER_LONG
-
-/*
- * Bitmap and deferred work of shrinker::id corresponding to memcg-aware
- * shrinkers, which have elements charged to the memcg.
- */
-struct shrinker_info_unit {
-	atomic_long_t nr_deferred[SHRINKER_UNIT_BITS];
-	DECLARE_BITMAP(map, SHRINKER_UNIT_BITS);
-};
-
-struct shrinker_info {
-	struct rcu_head rcu;
-	int map_nr_max;
-	struct shrinker_info_unit *unit[];
-};
-
 /*
  * This struct is used to pass information from page reclaim to the shrinkers.
  * We consolidate the values for easier extension later.
@@ -50,9 +33,6 @@ struct shrink_control {
 	 * should track its actual progress.
 	 */
 	unsigned long nr_scanned;
-
-	/* current memcg being shrunk (for memcg aware shrinkers) */
-	struct mem_cgroup *memcg;
 };
 
 #define SHRINK_STOP (~0UL)
@@ -115,12 +95,6 @@ struct shrinker {
 
 /* Flags for users to use */
 #define SHRINKER_NUMA_AWARE	BIT(2)
-#define SHRINKER_MEMCG_AWARE	BIT(3)
-/*
- * It just makes sense when the shrinker is also MEMCG_AWARE for now,
- * non-MEMCG_AWARE shrinker should not have this flag set.
- */
-#define SHRINKER_NONSLAB	BIT(4)
 
 __printf(2, 3)
 struct shrinker *shrinker_alloc(unsigned int flags, const char *fmt, ...);

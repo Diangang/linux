@@ -5,7 +5,7 @@
 #ifdef CONFIG_MMU
 
 #define GFP_PGTABLE_KERNEL	(GFP_KERNEL | __GFP_ZERO)
-#define GFP_PGTABLE_USER	(GFP_PGTABLE_KERNEL | __GFP_ACCOUNT)
+#define GFP_PGTABLE_USER	GFP_PGTABLE_KERNEL
 
 /**
  * __pte_alloc_one_kernel - allocate memory for a PTE-level kernel page table

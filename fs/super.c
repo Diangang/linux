@@ -216,8 +216,7 @@ static unsigned long super_cache_scan(struct shrinker *shrink,
 	 * prune the dcache first as the icache is pinned by it, then
 	 * prune the icache, followed by the filesystem specific caches
 	 *
-	 * Ensure that we always scan at least one object - memcg kmem
-	 * accounting uses this to fully empty the caches.
+	 * Ensure that we always scan at least one object from each cache.
 	 */
 	sc->nr_to_scan = dentries + 1;
 	freed = prune_dcache_sb(sb, sc);
@@ -377,7 +376,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
 	s->s_time_min = TIME64_MIN;
 	s->s_time_max = TIME64_MAX;
 
-	s->s_shrink = shrinker_alloc(SHRINKER_NUMA_AWARE | SHRINKER_MEMCG_AWARE,
+	s->s_shrink = shrinker_alloc(SHRINKER_NUMA_AWARE,
 				     "sb-%s", type->name);
 	if (!s->s_shrink)
 		goto fail;
@@ -387,9 +386,9 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
 	s->s_shrink->batch = 1024;
 	s->s_shrink->private_data = s;
 
-	if (list_lru_init_memcg(&s->s_dentry_lru, s->s_shrink))
+	if (list_lru_init(&s->s_dentry_lru))
 		goto fail;
-	if (list_lru_init_memcg(&s->s_inode_lru, s->s_shrink))
+	if (list_lru_init(&s->s_inode_lru))
 		goto fail;
 	s->s_min_writeback_pages = MIN_WRITEBACK_PAGES;
 	return s;
@@ -626,8 +625,6 @@ void generic_shutdown_super(struct super_block *sb)
 		sb->s_flags &= ~SB_ACTIVE;
 
 		fserror_unmount(sb);
-		cgroup_writeback_umount(sb);
-
 		/* Evict all inodes with zero refcount. */
 		evict_inodes(sb);
 

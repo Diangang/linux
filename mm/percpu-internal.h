@@ -4,7 +4,6 @@
 
 #include <linux/types.h>
 #include <linux/percpu.h>
-#include <linux/memcontrol.h>
 
 /*
  * pcpu_block_md is the metadata block struct.
@@ -31,10 +30,6 @@ struct pcpu_block_md {
 	int                     first_free;     /* block position of first free */
 	int			nr_bits;	/* total bits responsible for */
 };
-
-struct pcpuobj_ext {
-};
-
 
 struct pcpu_chunk {
 
@@ -64,20 +59,11 @@ struct pcpu_chunk {
 	int			end_offset;	/* additional area required to
 						   have the region end page
 						   aligned */
-#ifdef NEED_PCPUOBJ_EXT
-	struct pcpuobj_ext	*obj_exts;	/* vector of object cgroups */
-#endif
-
 	int			nr_pages;	/* # of pages served by this chunk */
 	int			nr_populated;	/* # of populated pages */
 	int                     nr_empty_pop_pages; /* # of empty populated pages */
 	unsigned long		populated[];	/* populated bitmap */
 };
-
-static inline bool need_pcpuobj_ext(void)
-{
-	return !mem_cgroup_kmem_disabled();
-}
 
 extern spinlock_t pcpu_lock;
 
@@ -127,18 +113,13 @@ static inline int pcpu_chunk_map_bits(struct pcpu_chunk *chunk)
 }
 
 /**
- * pcpu_obj_full_size - helper to calculate size of each accounted object
+ * pcpu_obj_full_size - calculate the total size across all CPUs
  * @size: size of area to allocate in bytes
  *
- * For each accounted object there is an extra space which is used to store
- * obj_cgroup membership if kmemcg is not disabled. Charge it too.
  */
 static inline size_t pcpu_obj_full_size(size_t size)
 {
-	size_t extra_size = 0;
-
-
-	return size * num_possible_cpus() + extra_size;
+	return size * num_possible_cpus();
 }
 
 

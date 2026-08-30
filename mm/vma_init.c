@@ -22,7 +22,7 @@ void __init vma_state_init(void)
 	vm_area_cachep = kmem_cache_create("vm_area_struct",
 			sizeof(struct vm_area_struct), &args,
 			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_TYPESAFE_BY_RCU|
-			SLAB_ACCOUNT);
+			0);
 }
 
 struct vm_area_struct *vm_area_alloc(struct mm_struct *mm)

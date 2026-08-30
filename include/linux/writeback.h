@@ -13,8 +13,6 @@
 #include <linux/blk_types.h>
 #include <linux/folio_batch.h>
 
-struct bio;
-
 DECLARE_PER_CPU(int, dirty_throttle_leaks);
 
 /*
@@ -63,14 +61,6 @@ struct writeback_control {
 	unsigned for_sync:1;		/* sync(2) WB_SYNC_ALL writeback */
 	unsigned unpinned_netfs_wb:1;	/* Cleared I_PINNING_NETFS_WB */
 
-	/*
-	 * When writeback IOs are bounced through async layers, only the
-	 * initial synchronous phase should be accounted towards inode
-	 * cgroup ownership arbitration to avoid confusion.  Later stages
-	 * can set the following flag to disable the accounting.
-	 */
-	unsigned no_cgroup_owner:1;
-
 	/* internal fields used by the ->writepages implementation: */
 	struct folio_batch fbatch;
 	pgoff_t index;
@@ -89,8 +79,6 @@ static inline blk_opf_t wbc_to_write_flags(struct writeback_control *wbc)
 
 	return flags;
 }
-
-#define wbc_blkcg_css(wbc)		(blkcg_root_css)
 
 /*
  * A wb_domain represents a domain that wb's (bdi_writeback's) belong to
@@ -137,26 +125,6 @@ struct wb_domain {
 	unsigned long dirty_limit;
 };
 
-/**
- * wb_domain_size_changed - memory available to a wb_domain has changed
- * @dom: wb_domain of interest
- *
- * This function should be called when the amount of memory available to
- * @dom has changed.  It resets @dom's dirty limit parameters to prevent
- * the past values which don't match the current configuration from skewing
- * dirty throttling.  Without this, when memory size of a wb_domain is
- * greatly reduced, the dirty throttling logic may allow too many pages to
- * be dirtied leading to consecutive unnecessary OOMs and may get stuck in
- * that situation.
- */
-static inline void wb_domain_size_changed(struct wb_domain *dom)
-{
-	spin_lock(&dom->lock);
-	dom->dirty_limit_tstamp = jiffies;
-	dom->dirty_limit = 0;
-	spin_unlock(&dom->lock);
-}
-
 /*
  * fs/fs-writeback.c
  */	
@@ -196,20 +164,6 @@ static inline void wbc_attach_fdatawrite_inode(struct writeback_control *wbc,
 static inline void wbc_detach_inode(struct writeback_control *wbc)
 {
 }
-
-static inline void wbc_init_bio(struct writeback_control *wbc, struct bio *bio)
-{
-}
-
-static inline void wbc_account_cgroup_owner(struct writeback_control *wbc,
-					    struct folio *folio, size_t bytes)
-{
-}
-
-static inline void cgroup_writeback_umount(struct super_block *sb)
-{
-}
-
 
 /*
  * mm/page-writeback.c

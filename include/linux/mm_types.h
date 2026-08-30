@@ -33,7 +33,6 @@
 
 struct address_space;
 struct futex_private_hash;
-struct mem_cgroup;
 
 typedef struct {
 	unsigned long f;
@@ -358,7 +357,6 @@ typedef unsigned short mm_id_t;
  *    find out how many times this folio is mapped by userspace.
  * @_refcount: Do not access this member directly.  Use folio_ref_count()
  *    to find how many references there are to this folio.
- * @memcg_data: Memory Control Group data.
  * @pgmap: Metadata for ZONE_DEVICE mappings
  * @virtual: Virtual address in the kernel direct map.
  * @_last_cpupid: IDs of last CPU and last process that accessed the folio.
@@ -546,7 +544,6 @@ FOLIO_MATCH(compound_info, _head_3);
  * @ptl:              Lock for the page table.
  * @__page_type:      Same as page->page_type. Unused for page tables.
  * @__page_refcount:  Same as page refcount.
- * @pt_memcg_data:    Memcg data. Tracked for page tables here.
  *
  * This struct overlays struct page for now. Do not modify without a good
  * understanding of the issues.

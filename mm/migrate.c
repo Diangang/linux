@@ -520,7 +520,7 @@ static int __folio_migrate_mapping(struct address_space *mapping,
 	long nr = folio_nr_pages(folio);
 
 	if (!mapping) {
-		/* Take off deferred split queue while frozen and memcg set */
+			/* Take off deferred split queue while frozen. */
 		if (folio_test_large(folio) &&
 		    folio_test_large_rmappable(folio)) {
 			if (!folio_ref_freeze(folio, expected_count))
@@ -556,7 +556,7 @@ static int __folio_migrate_mapping(struct address_space *mapping,
 		return -EAGAIN;
 	}
 
-	/* Take off deferred split queue while frozen and memcg set */
+	/* Take off deferred split queue while frozen. */
 	folio_unqueue_deferred_split(folio);
 
 	/*
@@ -612,12 +612,9 @@ static int __folio_migrate_mapping(struct address_space *mapping,
 	 */
 	if (newzone != oldzone) {
 		struct lruvec *old_lruvec, *new_lruvec;
-		struct mem_cgroup *memcg;
 
-		rcu_read_lock();
-		memcg = folio_memcg(folio);
-		old_lruvec = mem_cgroup_lruvec(memcg, oldzone->zone_pgdat);
-		new_lruvec = mem_cgroup_lruvec(memcg, newzone->zone_pgdat);
+		old_lruvec = &oldzone->zone_pgdat->__lruvec;
+		new_lruvec = &newzone->zone_pgdat->__lruvec;
 
 		mod_lruvec_state(old_lruvec, NR_FILE_PAGES, -nr);
 		mod_lruvec_state(new_lruvec, NR_FILE_PAGES, nr);
@@ -636,7 +633,6 @@ static int __folio_migrate_mapping(struct address_space *mapping,
 			mod_lruvec_state(new_lruvec, NR_FILE_DIRTY, nr);
 			__mod_zone_page_state(newzone, NR_ZONE_WRITE_PENDING, nr);
 		}
-		rcu_read_unlock();
 	}
 	local_irq_enable();
 
@@ -782,7 +778,6 @@ void folio_migrate_flags(struct folio *newfolio, struct folio *folio)
 	folio_copy_owner(newfolio, folio);
 	pgalloc_tag_swap(newfolio, folio);
 
-	mem_cgroup_migrate(folio, newfolio);
 }
 EXPORT_SYMBOL(folio_migrate_flags);
 
@@ -2671,8 +2666,7 @@ int migrate_misplaced_folio(struct folio *folio, int node)
 	int nr_remaining;
 	unsigned int nr_succeeded;
 	LIST_HEAD(migratepages);
-	struct mem_cgroup *memcg = get_mem_cgroup_from_folio(folio);
-	struct lruvec *lruvec = mem_cgroup_lruvec(memcg, pgdat);
+	struct lruvec *lruvec = &pgdat->__lruvec;
 
 	list_add(&folio->lru, &migratepages);
 	nr_remaining = migrate_pages(&migratepages, alloc_misplaced_dst_folio,
@@ -2682,13 +2676,11 @@ int migrate_misplaced_folio(struct folio *folio, int node)
 		putback_movable_pages(&migratepages);
 	if (nr_succeeded) {
 		count_vm_numa_events(NUMA_PAGE_MIGRATE, nr_succeeded);
-		count_memcg_events(memcg, NUMA_PAGE_MIGRATE, nr_succeeded);
 		if ((sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING)
 		    && !node_is_toptier(folio_nid(folio))
 		    && node_is_toptier(node))
 			mod_lruvec_state(lruvec, PGPROMOTE_SUCCESS, nr_succeeded);
 	}
-	mem_cgroup_put(memcg);
 	BUG_ON(!list_empty(&migratepages));
 	return nr_remaining ? -EAGAIN : 0;
 }

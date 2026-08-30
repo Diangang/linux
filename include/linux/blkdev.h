@@ -34,7 +34,6 @@ struct elevator_queue;
 struct blk_trace;
 struct request;
 struct sg_io_hdr;
-struct blkcg_gq;
 struct blk_flush_queue;
 struct kiocb;
 struct pr_ops;
@@ -48,12 +47,6 @@ struct blk_crypto_profile;
 extern const struct device_type disk_type;
 extern const struct device_type part_type;
 extern const struct class block_class;
-
-/*
- * Maximum number of blkcg policies allowed to be registered concurrently.
- * Defined here to simplify include dependency.
- */
-#define BLKCG_MAX_POLS		6
 
 #define DISK_MAX_PARTS			256
 #define DISK_NAME_LEN			32

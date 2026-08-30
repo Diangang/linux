@@ -142,7 +142,7 @@ struct cred *cred_alloc_blank(void)
 		return NULL;
 
 	atomic_long_set(&new->usage, 1);
-	if (security_cred_alloc_blank(new, GFP_KERNEL_ACCOUNT) < 0)
+	if (security_cred_alloc_blank(new, GFP_KERNEL) < 0)
 		goto error;
 
 	return new;
@@ -193,7 +193,7 @@ struct cred *prepare_creds(void)
 	if (!new->ucounts)
 		goto error;
 
-	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+	if (security_prepare_creds(new, old, GFP_KERNEL) < 0)
 		goto error;
 
 	return new;
@@ -484,7 +484,7 @@ void __init cred_init(void)
 {
 	/* allocate a slab in which we can store credentials */
 	cred_jar = KMEM_CACHE(cred,
-			      SLAB_HWCACHE_ALIGN | SLAB_PANIC | SLAB_ACCOUNT);
+			      SLAB_HWCACHE_ALIGN | SLAB_PANIC);
 }
 
 /**
@@ -531,7 +531,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
 	if (!new->ucounts)
 		goto error;
 
-	if (security_prepare_creds(new, old, GFP_KERNEL_ACCOUNT) < 0)
+	if (security_prepare_creds(new, old, GFP_KERNEL) < 0)
 		goto error;
 
 	put_cred(old);

@@ -304,8 +304,6 @@ bool xas_nomem(struct xa_state *xas, gfp_t gfp)
 		xas_destroy(xas);
 		return false;
 	}
-	if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
-		gfp |= __GFP_ACCOUNT;
 	xas->xa_alloc = kmem_cache_alloc_lru(radix_tree_node_cachep, xas->xa_lru, gfp);
 	if (!xas->xa_alloc)
 		return false;
@@ -334,8 +332,6 @@ static bool __xas_nomem(struct xa_state *xas, gfp_t gfp)
 		xas_destroy(xas);
 		return false;
 	}
-	if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
-		gfp |= __GFP_ACCOUNT;
 	if (gfpflags_allow_blocking(gfp)) {
 		xas_unlock_type(xas, lock_type);
 		xas->xa_alloc = kmem_cache_alloc_lru(radix_tree_node_cachep, xas->xa_lru, gfp);
@@ -371,9 +367,6 @@ static void *xas_alloc(struct xa_state *xas, unsigned int shift)
 		xas->xa_alloc = NULL;
 	} else {
 		gfp_t gfp = GFP_NOWAIT;
-
-		if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
-			gfp |= __GFP_ACCOUNT;
 
 		node = kmem_cache_alloc_lru(radix_tree_node_cachep, xas->xa_lru, gfp);
 		if (!node) {
@@ -1184,9 +1177,6 @@ void xas_try_split(struct xa_state *xas, void *entry, unsigned int order)
 	node = xas->xa_node;
 	if (xas_top(node))
 		return;
-
-	if (xas->xa->xa_flags & XA_FLAGS_ACCOUNT)
-		gfp |= __GFP_ACCOUNT;
 
 	marks = node_get_marks(node, xas->xa_offset);
 

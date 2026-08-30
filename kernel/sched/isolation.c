@@ -141,7 +141,6 @@ int housekeeping_update(struct cpumask *isol_mask)
 	synchronize_rcu();
 
 	pci_probe_flush_workqueue();
-	mem_cgroup_flush_workqueue();
 	vmstat_flush_workqueue();
 
 	err = workqueue_unbound_housekeeping_update(housekeeping_cpumask(HK_TYPE_DOMAIN));

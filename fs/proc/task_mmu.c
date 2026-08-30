@@ -1448,7 +1448,7 @@ static int smaps_rollup_open(struct inode *inode, struct file *file)
 	int ret;
 	struct proc_maps_private *priv;
 
-	priv = kzalloc_obj(*priv, GFP_KERNEL_ACCOUNT);
+	priv = kzalloc_obj(*priv, GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 

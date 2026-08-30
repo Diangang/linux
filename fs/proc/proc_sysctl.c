@@ -1370,7 +1370,7 @@ struct ctl_table_header *__register_sysctl_table(
 	struct ctl_node *node;
 
 	header = kzalloc(sizeof(struct ctl_table_header) +
-			 sizeof(struct ctl_node)*table_size, GFP_KERNEL_ACCOUNT);
+			 sizeof(struct ctl_node)*table_size, GFP_KERNEL);
 	if (!header)
 		return NULL;
 

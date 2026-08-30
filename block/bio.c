@@ -21,7 +21,6 @@
 #include <linux/xarray.h>
 #include "blk.h"
 #include "blk-rq-qos.h"
-#include "blk-cgroup.h"
 
 #define ALLOC_CACHE_THRESHOLD	16
 #define ALLOC_CACHE_MAX		256
@@ -257,8 +256,6 @@ void bio_reset(struct bio *bio, struct block_device *bdev, blk_opf_t opf)
 	atomic_set(&bio->__bi_remaining, 1);
 	bio->bi_io_vec = bv;
 	bio->bi_bdev = bdev;
-	if (bio->bi_bdev)
-		bio_associate_blkg(bio);
 	bio->bi_opf = opf;
 }
 EXPORT_SYMBOL(bio_reset);
@@ -827,7 +824,6 @@ static int __bio_clone(struct bio *bio, struct bio *bio_src, gfp_t gfp)
 		if (bio->bi_bdev == bio_src->bi_bdev &&
 		    bio_flagged(bio_src, BIO_REMAPPED))
 			bio_set_flag(bio, BIO_REMAPPED);
-		bio_clone_blkg_association(bio, bio_src);
 	}
 
 	if (bio_crypt_clone(bio, bio_src, gfp) < 0)

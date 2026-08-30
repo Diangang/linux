@@ -30,7 +30,6 @@
 #include <linux/pfn.h>
 #include <linux/atomic.h>
 #include <linux/compiler.h>
-#include <linux/memcontrol.h>
 #include <linux/llist.h>
 #include <linux/uio.h>
 #include <linux/bitops.h>
@@ -2267,9 +2266,6 @@ static void purge_vmap_node(struct work_struct *work)
 	struct vmap_area *va, *n_va;
 	LIST_HEAD(local_list);
 
-	if (0)
-		kasan_release_vmalloc_node(vn);
-
 	vn->nr_purged = 0;
 
 	list_for_each_entry_safe(va, n_va, &vn->purge_list, list) {
@@ -3831,13 +3827,12 @@ fail:
  * See __vmalloc_node_range() for a clear list of supported vmalloc flags.
  * This gfp lists all flags currently passed through vmalloc. Currently,
  * __GFP_ZERO is used by BPF and __GFP_NORETRY is used by percpu. Both drm
- * and BPF also use GFP_USER. Additionally, various users pass
- * GFP_KERNEL_ACCOUNT. Xfs uses __GFP_NOLOCKDEP.
+ * and BPF also use GFP_USER. Xfs uses __GFP_NOLOCKDEP.
  */
 #define GFP_VMALLOC_SUPPORTED (GFP_KERNEL | GFP_ATOMIC | GFP_NOWAIT |\
 				__GFP_NOFAIL | __GFP_ZERO |\
 				__GFP_NORETRY | __GFP_RETRY_MAYFAIL |\
-				GFP_NOFS | GFP_NOIO | GFP_KERNEL_ACCOUNT |\
+				GFP_NOFS | GFP_NOIO |\
 				GFP_USER | __GFP_NOLOCKDEP)
 
 static gfp_t vmalloc_fix_flags(gfp_t flags)

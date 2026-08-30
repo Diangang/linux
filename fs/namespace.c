@@ -291,7 +291,7 @@ static struct mount *alloc_vfsmnt(const char *name)
 
 		if (name)
 			mnt->mnt_devname = kstrdup_const(name,
-							 GFP_KERNEL_ACCOUNT);
+							 GFP_KERNEL);
 		else
 			mnt->mnt_devname = "none";
 		if (!mnt->mnt_devname)
@@ -4157,7 +4157,7 @@ static struct mnt_namespace *alloc_mnt_ns(struct user_namespace *user_ns, bool a
 	if (!ucounts)
 		return ERR_PTR(-ENOSPC);
 
-	new_ns = kzalloc_obj(struct mnt_namespace, GFP_KERNEL_ACCOUNT);
+	new_ns = kzalloc_obj(struct mnt_namespace, GFP_KERNEL);
 	if (!new_ns) {
 		dec_mnt_namespaces(ucounts);
 		return ERR_PTR(-ENOMEM);
@@ -5828,7 +5828,7 @@ static int prepare_kstatmount(struct kstatmount *ks, struct mnt_id_req *kreq,
 		if (bufsize == sizeof(ks->sm))
 			return -EOVERFLOW;
 
-		ks->seq.buf = kvmalloc(seq_size, GFP_KERNEL_ACCOUNT);
+		ks->seq.buf = kvmalloc(seq_size, GFP_KERNEL);
 		if (!ks->seq.buf)
 			return -ENOMEM;
 
@@ -5942,7 +5942,7 @@ SYSCALL_DEFINE4(statmount, const struct mnt_id_req __user *, req,
 			return -EPERM;
 	}
 
-	ks = kmalloc(sizeof(*ks), GFP_KERNEL_ACCOUNT);
+	ks = kmalloc(sizeof(*ks), GFP_KERNEL);
 	if (!ks)
 		return -ENOMEM;
 
@@ -6057,7 +6057,7 @@ static inline int prepare_klistmount(struct klistmount *kls, struct mnt_id_req *
 
 	kls->nr_mnt_ids = nr_mnt_ids;
 	kls->kmnt_ids = kvmalloc_array(nr_mnt_ids, sizeof(*kls->kmnt_ids),
-				       GFP_KERNEL_ACCOUNT);
+				       GFP_KERNEL);
 	if (!kls->kmnt_ids)
 		return -ENOMEM;
 
@@ -6196,7 +6196,7 @@ void __init mnt_init(void)
 	int err;
 
 	mnt_cache = kmem_cache_create("mnt_cache", sizeof(struct mount),
-			0, SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
+			0, SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
 
 	mount_hashtable = alloc_large_system_hash("Mount-cache",
 				sizeof(struct hlist_head),

@@ -323,12 +323,6 @@ static __must_check int __radix_tree_preload(gfp_t gfp_mask, unsigned nr)
 	struct radix_tree_node *node;
 	int ret = -ENOMEM;
 
-	/*
-	 * Nodes preloaded by one cgroup can be used by another cgroup, so
-	 * they should never be accounted to any particular memory cgroup.
-	 */
-	gfp_mask &= ~__GFP_ACCOUNT;
-
 	local_lock(&radix_tree_preloads.lock);
 	rtp = this_cpu_ptr(&radix_tree_preloads);
 	while (rtp->nr < nr) {

@@ -3,6 +3,7 @@
 #define _LINUX_HUGE_MM_H
 
 #include <linux/mm_types.h>
+#include <linux/pgtable.h>
 
 #include <linux/fs.h> /* only for vma_is_dax() */
 #include <linux/kobject.h>
@@ -234,7 +235,6 @@ static inline int try_folio_split_to_order(struct folio *folio,
 }
 
 static inline void deferred_split_folio(struct folio *folio, bool partially_mapped) {}
-static inline void reparent_deferred_split_queue(struct mem_cgroup *memcg) {}
 #define split_huge_pmd(__vma, __pmd, __address)	\
 	do { } while (0)
 

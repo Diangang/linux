@@ -1429,7 +1429,7 @@ static struct folio *shmem_alloc_folio(gfp_t gfp, int order,
 }
 
 static struct folio *shmem_alloc_and_add_folio(gfp_t gfp, struct inode *inode,
-		pgoff_t index, struct mm_struct *fault_mm)
+		pgoff_t index)
 {
 	struct address_space *mapping = inode->i_mapping;
 	struct shmem_inode_info *info = SHMEM_I(inode);
@@ -1443,23 +1443,6 @@ static struct folio *shmem_alloc_and_add_folio(gfp_t gfp, struct inode *inode,
 
 	__folio_set_locked(folio);
 	__folio_set_swapbacked(folio);
-
-	gfp &= GFP_RECLAIM_MASK;
-	error = mem_cgroup_charge(folio, fault_mm, gfp);
-	if (error) {
-		if (xa_find(&mapping->i_pages, &index,
-				index + pages - 1, XA_PRESENT)) {
-			error = -EEXIST;
-		} else if (pages > 1) {
-			if (pages == HPAGE_PMD_NR) {
-				count_vm_event(THP_FILE_FALLBACK);
-				count_vm_event(THP_FILE_FALLBACK_CHARGE);
-			}
-			count_mthp_stat(folio_order(folio), MTHP_STAT_SHMEM_FALLBACK);
-			count_mthp_stat(folio_order(folio), MTHP_STAT_SHMEM_FALLBACK_CHARGE);
-		}
-		goto unlock;
-	}
 
 	error = shmem_add_to_page_cache(folio, mapping, index, NULL, gfp);
 	if (error)
@@ -1504,8 +1487,7 @@ unlock:
 }
 
 static struct folio *shmem_swap_alloc_folio(struct inode *inode,
-		struct vm_area_struct *vma, pgoff_t index,
-		swp_entry_t entry, int order, gfp_t gfp)
+		pgoff_t index, swp_entry_t entry, int order, gfp_t gfp)
 {
 	struct shmem_inode_info *info = SHMEM_I(inode);
 	struct folio *new, *swapcache;
@@ -1517,19 +1499,12 @@ static struct folio *shmem_swap_alloc_folio(struct inode *inode,
 	if (!new)
 		return ERR_PTR(-ENOMEM);
 
-	if (mem_cgroup_swapin_charge_folio(new, vma ? vma->vm_mm : NULL,
-					   gfp, entry)) {
-		folio_put(new);
-		return ERR_PTR(-ENOMEM);
-	}
-
 	swapcache = swapin_folio(entry, new);
 	if (swapcache != new) {
 		folio_put(new);
 		if (!swapcache) {
 			/*
-			 * The new folio is charged already, swapin can
-			 * only fail due to another raced swapin.
+				 * Swapin can only fail due to another raced swapin.
 			 */
 			return ERR_PTR(-EEXIST);
 		}
@@ -1586,7 +1561,6 @@ static int shmem_replace_folio(struct folio **foliop, gfp_t gfp,
 
 	ci = swap_cluster_get_and_lock_irq(old);
 	__swap_cache_replace_folio(ci, old, new);
-	mem_cgroup_replace_folio(old, new);
 	shmem_update_stats(new, nr_pages);
 	shmem_update_stats(old, -nr_pages);
 	swap_cluster_unlock_irq(ci);
@@ -1718,7 +1692,6 @@ static int shmem_swapin_folio(struct inode *inode, pgoff_t index,
 			     vm_fault_t *fault_type)
 {
 	struct address_space *mapping = inode->i_mapping;
-	struct mm_struct *fault_mm = vma ? vma->vm_mm : NULL;
 	struct shmem_inode_info *info = SHMEM_I(inode);
 	swp_entry_t swap;
 	softleaf_t index_entry;
@@ -1759,7 +1732,7 @@ static int shmem_swapin_folio(struct inode *inode, pgoff_t index,
 	if (!folio) {
 		if (data_race(si->flags & SWP_SYNCHRONOUS_IO)) {
 			/* Direct swapin skipping swap cache & readahead */
-			folio = shmem_swap_alloc_folio(inode, vma, index,
+			folio = shmem_swap_alloc_folio(inode, index,
 						       index_entry, order, gfp);
 			if (IS_ERR(folio)) {
 				error = PTR_ERR(folio);
@@ -1777,7 +1750,6 @@ static int shmem_swapin_folio(struct inode *inode, pgoff_t index,
 		if (fault_type) {
 			*fault_type |= VM_FAULT_MAJOR;
 			count_vm_event(PGMAJFAULT);
-			count_memcg_event_mm(fault_mm, PGMAJFAULT);
 		}
 	} else {
 		swap_update_readahead(folio, NULL, 0);
@@ -1891,7 +1863,6 @@ static int shmem_get_folio_gfp(struct inode *inode, pgoff_t index,
 		gfp_t gfp, struct vm_fault *vmf, vm_fault_t *fault_type)
 {
 	struct vm_area_struct *vma = vmf ? vmf->vma : NULL;
-	struct mm_struct *fault_mm;
 	struct folio *folio;
 	int error;
 	bool alloced;
@@ -1908,8 +1879,6 @@ repeat:
 		return -EINVAL;
 
 	alloced = false;
-	fault_mm = vma ? vma->vm_mm : NULL;
-
 	folio = filemap_get_entry(inode->i_mapping, index);
 	if (folio && vma && userfaultfd_minor(vma)) {
 		if (!xa_is_value(folio))
@@ -1974,8 +1943,7 @@ repeat:
 
 		huge_gfp = vma_thp_gfp_mask(vma);
 		huge_gfp = limit_gfp_mask(huge_gfp, gfp);
-		folio = shmem_alloc_and_add_folio(huge_gfp, inode, index,
-						 fault_mm);
+		folio = shmem_alloc_and_add_folio(huge_gfp, inode, index);
 		if (!IS_ERR(folio)) {
 			if (folio_test_pmd_mappable(folio))
 				count_vm_event(THP_FILE_ALLOC);
@@ -1986,7 +1954,7 @@ repeat:
 			goto repeat;
 	}
 
-	folio = shmem_alloc_and_add_folio(gfp, inode, index, fault_mm);
+	folio = shmem_alloc_and_add_folio(gfp, inode, index);
 	if (IS_ERR(folio)) {
 		error = PTR_ERR(folio);
 		if (error == -EEXIST)
@@ -2539,7 +2507,7 @@ static void __init shmem_init_inodecache(void)
 {
 	shmem_inode_cachep = kmem_cache_create("shmem_inode_cache",
 				sizeof(struct shmem_inode_info),
-				0, SLAB_PANIC|SLAB_ACCOUNT, shmem_init_inode);
+				0, SLAB_PANIC, shmem_init_inode);
 }
 
 static void __init shmem_destroy_inodecache(void)

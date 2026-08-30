@@ -855,7 +855,6 @@ unsigned long change_prot_numa(struct vm_area_struct *vma,
 	nr_updated = change_protection(&tlb, vma, addr, end, MM_CP_PROT_NUMA);
 	if (nr_updated > 0) {
 		count_vm_numa_events(NUMA_PTE_UPDATES, nr_updated);
-		count_memcg_events_mm(vma->vm_mm, NUMA_PTE_UPDATES, nr_updated);
 	}
 
 	tlb_finish_mmu(&tlb);

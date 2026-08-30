@@ -6,7 +6,6 @@
 #include <linux/linkage.h>
 #include <linux/mmzone.h>
 #include <linux/list.h>
-#include <linux/memcontrol.h>
 #include <linux/sched.h>
 #include <linux/node.h>
 #include <linux/fs.h>
@@ -282,7 +281,7 @@ static inline swp_entry_t page_swap_entry(struct page *page)
 bool workingset_test_recent(void *shadow, bool file, bool *workingset,
 				bool flush);
 void workingset_age_nonresident(struct lruvec *lruvec, unsigned long nr_pages);
-void *workingset_eviction(struct folio *folio, struct mem_cgroup *target_memcg);
+void *workingset_eviction(struct folio *folio);
 void workingset_refault(struct folio *folio, void *shadow);
 void workingset_activation(struct folio *folio);
 
@@ -339,23 +338,12 @@ extern unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 					gfp_t gfp_mask, nodemask_t *mask);
 unsigned long lruvec_lru_size(struct lruvec *lruvec, enum lru_list lru, int zone_idx);
 
-#define MEMCG_RECLAIM_MAY_SWAP (1 << 1)
-#define MEMCG_RECLAIM_PROACTIVE (1 << 2)
 #define MIN_SWAPPINESS 0
 #define MAX_SWAPPINESS 200
 
 /* Just reclaim from anon folios in proactive memory reclaim */
 #define SWAPPINESS_ANON_ONLY (MAX_SWAPPINESS + 1)
 
-extern unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
-						  unsigned long nr_pages,
-						  gfp_t gfp_mask,
-						  unsigned int reclaim_options,
-						  int *swappiness);
-extern unsigned long mem_cgroup_shrink_node(struct mem_cgroup *mem,
-						gfp_t gfp_mask, bool noswap,
-						pg_data_t *pgdat,
-						unsigned long *nr_scanned);
 extern int vm_swappiness;
 long remove_mapping(struct address_space *mapping, struct folio *folio);
 
@@ -398,7 +386,6 @@ static inline void put_swap_device(struct swap_info_struct *si)
 #define total_swap_pages			0L
 #define total_swapcache_pages()			0UL
 #define vm_swap_full()				0
-
 #define si_swapinfo(val) \
 	do { (val)->freeswap = (val)->totalswap = 0; } while (0)
 #define free_folio_and_swap_cache(folio) \
@@ -424,11 +411,6 @@ static inline int __swap_count(swp_entry_t entry)
 	return 0;
 }
 
-static inline bool swap_entry_swapped(struct swap_info_struct *si, swp_entry_t entry)
-{
-	return false;
-}
-
 static inline int swp_swapcount(swp_entry_t entry)
 {
 	return 0;
@@ -439,40 +421,8 @@ static inline bool folio_free_swap(struct folio *folio)
 	return false;
 }
 
-static inline int add_swap_extent(struct swap_info_struct *sis,
-				  unsigned long start_page,
-				  unsigned long nr_pages, sector_t start_block)
-{
-	return -EINVAL;
-}
-static inline int mem_cgroup_swappiness(struct mem_cgroup *mem)
-{
-	return READ_ONCE(vm_swappiness);
-}
-
 static inline void folio_throttle_swaprate(struct folio *folio, gfp_t gfp)
 {
-}
-
-static inline int mem_cgroup_try_charge_swap(struct folio *folio,
-					     swp_entry_t entry)
-{
-	return 0;
-}
-
-static inline void mem_cgroup_uncharge_swap(swp_entry_t entry,
-					    unsigned int nr_pages)
-{
-}
-
-static inline long mem_cgroup_get_nr_swap_pages(struct mem_cgroup *memcg)
-{
-	return get_nr_swap_pages();
-}
-
-static inline bool mem_cgroup_swap_full(struct folio *folio)
-{
-	return vm_swap_full();
 }
 
 /* for_each_managed_zone_pgdat - helper macro to iterate over all managed zones in a pgdat up to

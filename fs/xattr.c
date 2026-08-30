@@ -1259,7 +1259,7 @@ struct simple_xattr *simple_xattr_alloc(const void *value, size_t size)
 	if (len < sizeof(*new_xattr))
 		return ERR_PTR(-ENOMEM);
 
-	new_xattr = kvmalloc(len, GFP_KERNEL_ACCOUNT);
+	new_xattr = kvmalloc(len, GFP_KERNEL);
 	if (!new_xattr)
 		return ERR_PTR(-ENOMEM);
 
@@ -1373,7 +1373,7 @@ struct simple_xattr *simple_xattr_set(struct simple_xattrs *xattrs,
 		return new_xattr;
 
 	if (new_xattr) {
-		new_xattr->name = kstrdup(name, GFP_KERNEL_ACCOUNT);
+		new_xattr->name = kstrdup(name, GFP_KERNEL);
 		if (!new_xattr->name)
 			return ERR_PTR(-ENOMEM);
 	}

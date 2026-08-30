@@ -8,10 +8,8 @@
 #include <linux/blkdev.h>
 #include <linux/blk-integrity.h>
 #include <linux/part_stat.h>
-#include <linux/blk-cgroup.h>
 
 #include "blk.h"
-#include "blk-cgroup.h"
 #include "blk-mq-sched.h"
 #include "blk-rq-qos.h"
 #include "blk-throttle.h"
@@ -536,9 +534,6 @@ static inline unsigned int blk_rq_get_max_sectors(struct request *rq,
 static inline int ll_new_hw_segment(struct request *req, struct bio *bio,
 		unsigned int nr_phys_segs)
 {
-	if (!blk_cgroup_mergeable(req, bio))
-		goto no_merge;
-
 	if (blk_integrity_merge_bio(req->q, req, bio) == false)
 		goto no_merge;
 
@@ -636,9 +631,6 @@ static int ll_merge_requests_fn(struct request_queue *q, struct request *req,
 
 	total_phys_segments = req->nr_phys_segments + next->nr_phys_segments;
 	if (total_phys_segments > blk_rq_get_max_segments(req))
-		return 0;
-
-	if (!blk_cgroup_mergeable(req, next->bio))
 		return 0;
 
 	if (blk_integrity_merge_rq(q, req, next) == false)
@@ -894,8 +886,6 @@ bool blk_rq_merge_ok(struct request *rq, struct bio *bio)
 	if (req_op(rq) != bio_op(bio))
 		return false;
 
-	if (!blk_cgroup_mergeable(rq, bio))
-		return false;
 	if (blk_integrity_merge_bio(rq->q, rq, bio) == false)
 		return false;
 	if (!bio_crypt_rq_ctx_compatible(rq, bio))

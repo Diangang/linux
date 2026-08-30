@@ -3,6 +3,7 @@
 #include <linux/spinlock.h>
 #include <linux/task_work.h>
 #include <linux/resume_user_mode.h>
+#include <linux/kasan.h>
 
 static struct callback_head work_exited; /* all we need is ->next == NULL */
 
