@@ -504,100 +504,45 @@ static int __init of_platform_default_populate_init(void)
 
 	device_links_supplier_sync_state_pause();
 
-	if (IS_ENABLED(CONFIG_PPC)) {
-		struct device_node *boot_display = NULL;
-		struct platform_device *dev;
-		int display_number = 0;
-		int ret;
-
-		/* Check if we have a MacOS display without a node spec */
-		if (of_property_present(of_chosen, "linux,bootx-noscreen")) {
-			/*
-			 * The old code tried to work out which node was the MacOS
-			 * display based on the address. I'm dropping that since the
-			 * lack of a node spec only happens with old BootX versions
-			 * (users can update) and with this code, they'll still get
-			 * a display (just not the palette hacks).
-			 */
-			dev = platform_device_alloc("bootx-noscreen", 0);
-			if (WARN_ON(!dev))
-				return -ENOMEM;
-			ret = platform_device_add(dev);
-			if (WARN_ON(ret)) {
-				platform_device_put(dev);
-				return ret;
-			}
+	/*
+	 * Handle certain compatibles explicitly, since we don't want to create
+	 * platform_devices for every node in /reserved-memory with a
+	 * "compatible",
+	 */
+	reserved = of_find_node_by_path("/reserved-memory");
+	if (reserved) {
+		for_each_child_of_node(reserved, node) {
+			if (of_match_node(reserved_mem_matches, node))
+				of_platform_device_create(node, NULL, NULL);
 		}
-
-		/*
-		 * For OF framebuffers, first create the device for the boot display,
-		 * then for the other framebuffers. Only fail for the boot display;
-		 * ignore errors for the rest.
-		 */
-		for_each_node_by_type(node, "display") {
-			if (!of_property_read_bool(node, "linux,opened") ||
-			    !of_property_read_bool(node, "linux,boot-display"))
-				continue;
-			dev = of_platform_device_create(node, "of-display", NULL);
-			of_node_put(node);
-			if (WARN_ON(!dev))
-				return -ENOMEM;
-			boot_display = node;
-			display_number++;
-			break;
-		}
-		for_each_node_by_type(node, "display") {
-			char buf[14];
-			const char *of_display_format = "of-display.%d";
-
-			if (!of_property_read_bool(node, "linux,opened") || node == boot_display)
-				continue;
-			ret = snprintf(buf, sizeof(buf), of_display_format, display_number++);
-			if (ret < sizeof(buf))
-				of_platform_device_create(node, buf, NULL);
-		}
-
-	} else {
-		/*
-		 * Handle certain compatibles explicitly, since we don't want to create
-		 * platform_devices for every node in /reserved-memory with a
-		 * "compatible",
-		 */
-		reserved = of_find_node_by_path("/reserved-memory");
-		if (reserved) {
-			for_each_child_of_node(reserved, node) {
-				if (of_match_node(reserved_mem_matches, node))
-					of_platform_device_create(node, NULL, NULL);
-			}
-			of_node_put(reserved);
-		}
-
-		node = of_find_node_by_path("/firmware");
-		if (node) {
-			of_platform_default_populate(node, NULL, NULL);
-			of_node_put(node);
-		}
-
-		node = of_get_compatible_child(of_chosen, "simple-framebuffer");
-		if (node) {
-			/*
-			 * Since a "simple-framebuffer" device is already added
-			 * here, disable the Generic System Framebuffers (sysfb)
-			 * to prevent it from registering another device for the
-			 * system framebuffer later (e.g: using the screen_info
-			 * data that may had been filled as well).
-			 *
-			 * This can happen for example on DT systems that do EFI
-			 * booting and may provide a GOP handle to the EFI stub.
-			 */
-			sysfb_disable(NULL);
-			of_platform_device_create(node, NULL, NULL);
-			of_node_put(node);
-		}
-
-		/* Populate everything else. */
-		of_platform_default_populate(NULL, NULL, NULL);
+		of_node_put(reserved);
 	}
+
+	node = of_find_node_by_path("/firmware");
+	if (node) {
+		of_platform_default_populate(node, NULL, NULL);
+		of_node_put(node);
+	}
+
+	node = of_get_compatible_child(of_chosen, "simple-framebuffer");
+	if (node) {
+		/*
+		 * Since a "simple-framebuffer" device is already added
+		 * here, disable the Generic System Framebuffers (sysfb)
+		 * to prevent it from registering another device for the
+		 * system framebuffer later (e.g: using the screen_info
+		 * data that may had been filled as well).
+		 *
+		 * This can happen for example on DT systems that do EFI
+		 * booting and may provide a GOP handle to the EFI stub.
+		 */
+		sysfb_disable(NULL);
+		of_platform_device_create(node, NULL, NULL);
+		of_node_put(node);
+	}
+
+	/* Populate everything else. */
+	of_platform_default_populate(NULL, NULL, NULL);
 
 	return 0;
 }

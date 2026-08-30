@@ -955,9 +955,6 @@ void __init arch_zone_limits_init(unsigned long *max_zone_pfns)
 	max_zone_pfns[ZONE_DMA32]	= min(MAX_DMA32_PFN, max_low_pfn);
 #endif
 	max_zone_pfns[ZONE_NORMAL]	= max_low_pfn;
-#if 0
-	max_zone_pfns[ZONE_HIGHMEM]	= max_pfn;
-#endif
 }
 
 __visible DEFINE_PER_CPU_ALIGNED(struct tlb_state, cpu_tlbstate) = {
@@ -975,28 +972,6 @@ void update_cache_mode_entry(unsigned entry, enum page_cache_mode cache)
 	__pte2cachemode_tbl[entry] = cache;
 }
 
-#ifdef CONFIG_SWAP
-unsigned long arch_max_swapfile_size(void)
-{
-	unsigned long pages;
-
-	pages = generic_max_swapfile_size();
-
-	if (boot_cpu_has_bug(X86_BUG_L1TF) && l1tf_mitigation != L1TF_MITIGATION_OFF) {
-		/* Limit the swap file size to MAX_PA/2 for L1TF workaround */
-		unsigned long long l1tf_limit = l1tf_pfn_limit();
-		/*
-		 * We encode swap offsets also with 3 bits below those for pfn
-		 * which makes the usable limit higher.
-		 */
-#if CONFIG_PGTABLE_LEVELS > 2
-		l1tf_limit <<= PAGE_SHIFT - SWP_OFFSET_FIRST_BIT;
-#endif
-		pages = min_t(unsigned long long, l1tf_limit, pages);
-	}
-	return pages;
-}
-#endif
 
 #ifdef CONFIG_EXECMEM
 static struct execmem_info execmem_info __ro_after_init;

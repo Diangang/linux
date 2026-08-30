@@ -9,17 +9,10 @@
 
 #include <linux/dma-direction.h>
 
-#ifdef CONFIG_IOMMU_DMA
-static inline bool use_dma_iommu(struct device *dev)
-{
-	return dev->dma_iommu;
-}
-#else
 static inline bool use_dma_iommu(struct device *dev)
 {
 	return false;
 }
-#endif /* CONFIG_IOMMU_DMA */
 
 dma_addr_t iommu_dma_map_phys(struct device *dev, phys_addr_t phys, size_t size,
 		enum dma_data_direction dir, unsigned long attrs);

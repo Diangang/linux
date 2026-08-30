@@ -39,34 +39,7 @@ static void __used common(void)
 	OFFSET(TASK_stack_canary, task_struct, stack_canary);
 #endif
 
-#if 0 || defined(CONFIG_IA32_EMULATION)
-	BLANK();
-	OFFSET(IA32_SIGCONTEXT_ax, sigcontext_32, ax);
-	OFFSET(IA32_SIGCONTEXT_bx, sigcontext_32, bx);
-	OFFSET(IA32_SIGCONTEXT_cx, sigcontext_32, cx);
-	OFFSET(IA32_SIGCONTEXT_dx, sigcontext_32, dx);
-	OFFSET(IA32_SIGCONTEXT_si, sigcontext_32, si);
-	OFFSET(IA32_SIGCONTEXT_di, sigcontext_32, di);
-	OFFSET(IA32_SIGCONTEXT_bp, sigcontext_32, bp);
-	OFFSET(IA32_SIGCONTEXT_sp, sigcontext_32, sp);
-	OFFSET(IA32_SIGCONTEXT_ip, sigcontext_32, ip);
-	OFFSET(IA32_SIGCONTEXT_es, sigcontext_32, es);
-	OFFSET(IA32_SIGCONTEXT_cs, sigcontext_32, cs);
-	OFFSET(IA32_SIGCONTEXT_ss, sigcontext_32, ss);
-	OFFSET(IA32_SIGCONTEXT_ds, sigcontext_32, ds);
-	OFFSET(IA32_SIGCONTEXT_flags, sigcontext_32, flags);
 
-	BLANK();
-	OFFSET(IA32_SIGFRAME_sigcontext,    sigframe_ia32,    sc);
-	OFFSET(IA32_RT_SIGFRAME_sigcontext, rt_sigframe_ia32, uc.uc_mcontext);
-#endif
-
-#ifdef CONFIG_XEN
-	BLANK();
-	OFFSET(XEN_vcpu_info_mask, vcpu_info, evtchn_upcall_mask);
-	OFFSET(XEN_vcpu_info_pending, vcpu_info, evtchn_upcall_pending);
-	OFFSET(XEN_vcpu_info_arch_cr2, vcpu_info, arch.cr2);
-#endif
 
 	BLANK();
 	OFFSET(TDX_MODULE_rcx, tdx_module_args, rcx);
@@ -109,13 +82,6 @@ static void __used common(void)
 	OFFSET(TSS_sp0, tss_struct, x86_tss.sp0);
 	OFFSET(TSS_sp1, tss_struct, x86_tss.sp1);
 	OFFSET(TSS_sp2, tss_struct, x86_tss.sp2);
-#if IS_ENABLED(CONFIG_CRYPTO_ARIA_AESNI_AVX_X86_64)
-	/* Offset for fields in aria_ctx */
-	BLANK();
-	OFFSET(ARIA_CTX_enc_key, aria_ctx, enc_key);
-	OFFSET(ARIA_CTX_dec_key, aria_ctx, dec_key);
-	OFFSET(ARIA_CTX_rounds, aria_ctx, rounds);
-#endif
 
 	BLANK();
 	DEFINE(ALT_INSTR_SIZE,	sizeof(struct alt_instr));

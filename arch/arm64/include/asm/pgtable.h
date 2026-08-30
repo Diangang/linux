@@ -83,15 +83,6 @@ static inline void arch_leave_lazy_mmu_mode(void)
 	arch_flush_lazy_mmu_mode();
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define __HAVE_ARCH_FLUSH_PMD_TLB_RANGE
-
-/* Set stride and tlb_level in flush_*_tlb_range */
-#define flush_pmd_tlb_range(vma, addr, end)	\
-	__flush_tlb_range(vma, addr, end, PMD_SIZE, 2, TLBF_NONE)
-#define flush_pud_tlb_range(vma, addr, end)	\
-	__flush_tlb_range(vma, addr, end, PUD_SIZE, 1, TLBF_NONE)
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 /*
  * We use local TLB invalidation instruction when reusing page in
@@ -339,22 +330,6 @@ static inline pmd_t pmd_mknoncont(pmd_t pmd)
 	return __pmd(pmd_val(pmd) & ~PMD_SECT_CONT);
 }
 
-#if 0
-static inline int pte_uffd_wp(pte_t pte)
-{
-	return !!(pte_val(pte) & PTE_UFFD_WP);
-}
-
-static inline pte_t pte_mkuffd_wp(pte_t pte)
-{
-	return pte_wrprotect(set_pte_bit(pte, __pgprot(PTE_UFFD_WP)));
-}
-
-static inline pte_t pte_clear_uffd_wp(pte_t pte)
-{
-	return clear_pte_bit(pte, __pgprot(PTE_UFFD_WP));
-}
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 static inline void __set_pte_nosync(pte_t *ptep, pte_t pte)
 {
@@ -404,32 +379,6 @@ bool pgattr_change_is_safe(pteval_t old, pteval_t new);
 static inline void __check_safe_pte_update(struct mm_struct *mm, pte_t *ptep,
 					   pte_t pte)
 {
-	pte_t old_pte;
-
-	if (!IS_ENABLED(CONFIG_DEBUG_VM))
-		return;
-
-	old_pte = __ptep_get(ptep);
-
-	if (!pte_valid(old_pte) || !pte_valid(pte))
-		return;
-	if (mm != current->active_mm && atomic_read(&mm->mm_users) <= 1)
-		return;
-
-	/*
-	 * Check for potential race with hardware updates of the pte
-	 * (__ptep_set_access_flags safely changes valid ptes without going
-	 * through an invalid entry).
-	 */
-	VM_WARN_ONCE(!pte_young(pte),
-		     "%s: racy access flag clearing: 0x%016llx -> 0x%016llx",
-		     __func__, pte_val(old_pte), pte_val(pte));
-	VM_WARN_ONCE(pte_write(old_pte) && !pte_dirty(pte),
-		     "%s: racy dirty state clearing: 0x%016llx -> 0x%016llx",
-		     __func__, pte_val(old_pte), pte_val(pte));
-	VM_WARN_ONCE(!pgattr_change_is_safe(pte_val(old_pte), pte_val(pte)),
-		     "%s: unsafe attribute change: 0x%016llx -> 0x%016llx",
-		     __func__, pte_val(old_pte), pte_val(pte));
 }
 
 static inline void __sync_cache_and_tags(pte_t pte, unsigned int nr_pages)
@@ -535,22 +484,6 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
 	return clear_pte_bit(pte, __pgprot(PTE_SWP_EXCLUSIVE));
 }
 
-#if 0
-static inline pte_t pte_swp_mkuffd_wp(pte_t pte)
-{
-	return set_pte_bit(pte, __pgprot(PTE_SWP_UFFD_WP));
-}
-
-static inline int pte_swp_uffd_wp(pte_t pte)
-{
-	return !!(pte_val(pte) & PTE_SWP_UFFD_WP);
-}
-
-static inline pte_t pte_swp_clear_uffd_wp(pte_t pte)
-{
-	return clear_pte_bit(pte, __pgprot(PTE_SWP_UFFD_WP));
-}
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 #ifdef CONFIG_NUMA_BALANCING
 /*
@@ -591,15 +524,6 @@ static inline int pmd_protnone(pmd_t pmd)
 #define pmd_mkyoung(pmd)	pte_pmd(pte_mkyoung(pmd_pte(pmd)))
 #define pmd_mkvalid_k(pmd)	pte_pmd(pte_mkvalid_k(pmd_pte(pmd)))
 #define pmd_mkinvalid(pmd)	pte_pmd(pte_mkinvalid(pmd_pte(pmd)))
-#if 0
-#define pmd_uffd_wp(pmd)	pte_uffd_wp(pmd_pte(pmd))
-#define pmd_mkuffd_wp(pmd)	pte_pmd(pte_mkuffd_wp(pmd_pte(pmd)))
-#define pmd_clear_uffd_wp(pmd)	pte_pmd(pte_clear_uffd_wp(pmd_pte(pmd)))
-#define pmd_swp_uffd_wp(pmd)	pte_swp_uffd_wp(pmd_pte(pmd))
-#define pmd_swp_mkuffd_wp(pmd)	pte_pmd(pte_swp_mkuffd_wp(pmd_pte(pmd)))
-#define pmd_swp_clear_uffd_wp(pmd) \
-				pte_pmd(pte_swp_clear_uffd_wp(pmd_pte(pmd)))
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 #define pmd_write(pmd)		pte_write(pmd_pte(pmd))
 
@@ -784,16 +708,6 @@ static inline bool pmd_leaf(pmd_t pmd)
 #define pmd_leaf_size(pmd)	(pmd_cont(pmd) ? CONT_PMD_SIZE : PMD_SIZE)
 #define pte_leaf_size(pte)	(pte_cont(pte) ? CONT_PTE_SIZE : PAGE_SIZE)
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline int pmd_trans_huge(pmd_t pmd)
-{
-	/*
-	 * If pmd is present-invalid, pmd_table() won't detect it
-	 * as a table, so force the valid bit for the comparison.
-	 */
-	return pmd_present(pmd) && !pmd_table(__pmd(pmd_val(pmd) | PTE_VALID));
-}
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 #if CONFIG_PGTABLE_LEVELS < 3
 static inline bool pud_table(pud_t pud) { return true; }
@@ -1258,16 +1172,6 @@ static inline int __ptep_set_access_flags(struct vm_area_struct *vma,
 					     PAGE_SIZE);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define __HAVE_ARCH_PMDP_SET_ACCESS_FLAGS
-static inline int pmdp_set_access_flags(struct vm_area_struct *vma,
-					unsigned long address, pmd_t *pmdp,
-					pmd_t entry, int dirty)
-{
-	return __ptep_set_access_flags_anysz(vma, address, (pte_t *)pmdp,
-					     pmd_pte(entry), dirty, PMD_SIZE);
-}
-#endif
 
 
 /*
@@ -1316,7 +1220,7 @@ static inline bool __ptep_clear_flush_young(struct vm_area_struct *vma,
 	return young;
 }
 
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
+#if defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
 #define __HAVE_ARCH_PMDP_TEST_AND_CLEAR_YOUNG
 static inline bool pmdp_test_and_clear_young(struct vm_area_struct *vma,
 		unsigned long address, pmd_t *pmdp)
@@ -1387,14 +1291,6 @@ static inline pte_t __get_and_clear_full_ptes(struct mm_struct *mm,
 	return pte;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define __HAVE_ARCH_PMDP_HUGE_GET_AND_CLEAR
-static inline pmd_t pmdp_huge_get_and_clear(struct mm_struct *mm,
-					    unsigned long address, pmd_t *pmdp)
-{
-	return pte_pmd(__ptep_get_and_clear_anysz(mm, address, (pte_t *)pmdp, PMD_SIZE));
-}
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 static inline void ___ptep_set_wrprotect(struct mm_struct *mm,
 					unsigned long address, pte_t *ptep,
@@ -1469,21 +1365,6 @@ static inline void __clear_young_dirty_ptes(struct vm_area_struct *vma,
 	}
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define __HAVE_ARCH_PMDP_SET_WRPROTECT
-static inline void pmdp_set_wrprotect(struct mm_struct *mm,
-				      unsigned long address, pmd_t *pmdp)
-{
-	__ptep_set_wrprotect(mm, address, (pte_t *)pmdp);
-}
-
-#define pmdp_establish pmdp_establish
-static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
-		unsigned long address, pmd_t *pmdp, pmd_t pmd)
-{
-	return __pmd(xchg_relaxed(&pmd_val(*pmdp), pmd_val(pmd)));
-}
-#endif
 
 /*
  * Encode and decode a swap entry:

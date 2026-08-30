@@ -433,15 +433,6 @@ struct blk_mq_hw_ctx {
 	/** @kobj: Kernel object for sysfs. */
 	struct kobject		kobj;
 
-#ifdef CONFIG_BLK_DEBUG_FS
-	/**
-	 * @debugfs_dir: debugfs directory for this hardware queue. Named
-	 * as cpu<cpu_number>.
-	 */
-	struct dentry		*debugfs_dir;
-	/** @sched_debugfs_dir:	debugfs directory for the scheduler. */
-	struct dentry		*sched_debugfs_dir;
-#endif
 
 	/**
 	 * @hctx_list: if this hctx is not in use, this is an entry in
@@ -665,13 +656,6 @@ struct blk_mq_ops {
 	 */
 	void (*map_queues)(struct blk_mq_tag_set *set);
 
-#ifdef CONFIG_BLK_DEBUG_FS
-	/**
-	 * @show_rq: Used by the debugfs implementation to show driver-specific
-	 * information about a request.
-	 */
-	void (*show_rq)(struct seq_file *m, struct request *rq);
-#endif
 };
 
 /* Keep hctx_flag_name[] in sync with the definitions below */
@@ -971,9 +955,6 @@ unsigned int blk_mq_rq_cpu(struct request *rq);
 bool __blk_should_fake_timeout(struct request_queue *q);
 static inline bool blk_should_fake_timeout(struct request_queue *q)
 {
-	if (IS_ENABLED(CONFIG_FAIL_IO_TIMEOUT) &&
-	    test_bit(QUEUE_FLAG_FAIL_IO, &q->queue_flags))
-		return __blk_should_fake_timeout(q);
 	return false;
 }
 

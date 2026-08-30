@@ -17,17 +17,9 @@ struct semaphore {
 	unsigned int		count;
 	struct semaphore_waiter *first_waiter;
 
-#ifdef CONFIG_DETECT_HUNG_TASK_BLOCKER
-	unsigned long		last_holder;
-#endif
 };
 
-#ifdef CONFIG_DETECT_HUNG_TASK_BLOCKER
-#define __LAST_HOLDER_SEMAPHORE_INITIALIZER				\
-	, .last_holder = 0UL
-#else
 #define __LAST_HOLDER_SEMAPHORE_INITIALIZER
-#endif
 
 #define __SEMAPHORE_INITIALIZER(name, n)				\
 {									\

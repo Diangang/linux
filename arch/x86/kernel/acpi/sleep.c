@@ -160,12 +160,6 @@ static int __init acpi_sleep_setup(char *str)
 			acpi_realmode_flags |= 2;
 		if (strncmp(str, "s3_beep", 7) == 0)
 			acpi_realmode_flags |= 4;
-#if 0
-		if (strncmp(str, "s4_hwsig", 8) == 0)
-			acpi_check_s4_hw_signature = 1;
-		if (strncmp(str, "s4_nohwsig", 10) == 0)
-			acpi_check_s4_hw_signature = 0;
-#endif
 		if (strncmp(str, "nonvs", 5) == 0)
 			acpi_nvs_nosave();
 		if (strncmp(str, "nonvs_s3", 8) == 0)

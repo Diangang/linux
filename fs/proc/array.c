@@ -204,20 +204,6 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
 	/* Trailing space shouldn't have been added in the first place. */
 	seq_putc(m, ' ');
 
-#ifdef CONFIG_PID_NS
-	seq_puts(m, "\nNStgid:");
-	for (g = ns->level; g <= pid->level; g++)
-		seq_put_decimal_ull(m, "\t", task_tgid_nr_ns(p, pid->numbers[g].ns));
-	seq_puts(m, "\nNSpid:");
-	for (g = ns->level; g <= pid->level; g++)
-		seq_put_decimal_ull(m, "\t", task_pid_nr_ns(p, pid->numbers[g].ns));
-	seq_puts(m, "\nNSpgid:");
-	for (g = ns->level; g <= pid->level; g++)
-		seq_put_decimal_ull(m, "\t", task_pgrp_nr_ns(p, pid->numbers[g].ns));
-	seq_puts(m, "\nNSsid:");
-	for (g = ns->level; g <= pid->level; g++)
-		seq_put_decimal_ull(m, "\t", task_session_nr_ns(p, pid->numbers[g].ns));
-#endif
 	seq_putc(m, '\n');
 
 	seq_printf(m, "Kthread:\t%c\n", p->flags & PF_KTHREAD ? '1' : '0');
@@ -332,9 +318,6 @@ static inline void task_cap(struct seq_file *m, struct task_struct *p)
 static inline void task_seccomp(struct seq_file *m, struct task_struct *p)
 {
 	seq_put_decimal_ull(m, "NoNewPrivs:\t", task_no_new_privs(p));
-#ifdef CONFIG_SECCOMP
-	seq_put_decimal_ull(m, "\nSeccomp:\t", p->seccomp.mode);
-#endif
 	seq_puts(m, "\nSpeculation_Store_Bypass:\t");
 	switch (arch_prctl_spec_ctrl_get(p, PR_SPEC_STORE_BYPASS)) {
 	case -EINVAL:
@@ -414,11 +397,7 @@ static inline void task_core_dumping(struct seq_file *m, struct task_struct *tas
 
 static inline void task_thp_status(struct seq_file *m, struct mm_struct *mm)
 {
-	bool thp_enabled = IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE);
-
-	if (thp_enabled)
-		thp_enabled = !mm_flags_test(MMF_DISABLE_THP_COMPLETELY, mm);
-	seq_printf(m, "THP_enabled:\t%d\n", thp_enabled);
+	seq_puts(m, "THP_enabled:\t0\n");
 }
 
 static inline void task_untag_mask(struct seq_file *m, struct mm_struct *mm)
@@ -704,4 +683,3 @@ int proc_pid_statm(struct seq_file *m, struct pid_namespace *ns,
 	}
 	return 0;
 }
-

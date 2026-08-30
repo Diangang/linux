@@ -72,49 +72,8 @@ static inline struct stack_info stackinfo_get_overflow(void)
 	};
 }
 
-#if defined(CONFIG_ARM_SDE_INTERFACE)
-DECLARE_PER_CPU(unsigned long *, sdei_stack_normal_ptr);
-DECLARE_PER_CPU(unsigned long *, sdei_stack_critical_ptr);
-
-static inline struct stack_info stackinfo_get_sdei_normal(void)
-{
-	unsigned long low = (unsigned long)raw_cpu_read(sdei_stack_normal_ptr);
-	unsigned long high = low + SDEI_STACK_SIZE;
-
-	return (struct stack_info) {
-		.low = low,
-		.high = high,
-	};
-}
-
-static inline struct stack_info stackinfo_get_sdei_critical(void)
-{
-	unsigned long low = (unsigned long)raw_cpu_read(sdei_stack_critical_ptr);
-	unsigned long high = low + SDEI_STACK_SIZE;
-
-	return (struct stack_info) {
-		.low = low,
-		.high = high,
-	};
-}
-#else
 #define stackinfo_get_sdei_normal()	stackinfo_get_unknown()
 #define stackinfo_get_sdei_critical()	stackinfo_get_unknown()
-#endif
 
-#ifdef CONFIG_EFI
-extern u64 *efi_rt_stack_top;
-
-static inline struct stack_info stackinfo_get_efi(void)
-{
-	unsigned long high = (u64)efi_rt_stack_top;
-	unsigned long low = high - THREAD_SIZE;
-
-	return (struct stack_info) {
-		.low = low,
-		.high = high,
-	};
-}
-#endif
 
 #endif	/* __ASM_STACKTRACE_H */

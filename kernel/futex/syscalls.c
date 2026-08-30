@@ -42,10 +42,6 @@ SYSCALL_DEFINE2(set_robust_list, struct robust_list_head __user *, head,
 
 static inline void __user *futex_task_robust_list(struct task_struct *p, bool compat)
 {
-#ifdef CONFIG_COMPAT
-	if (compat)
-		return p->compat_robust_list;
-#endif
 	return p->robust_list;
 }
 
@@ -475,33 +471,6 @@ SYSCALL_DEFINE4(futex_requeue,
 			     nr_wake, nr_requeue, &cmpval, 0);
 }
 
-#ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE2(set_robust_list,
-		struct compat_robust_list_head __user *, head,
-		compat_size_t, len)
-{
-	if (unlikely(len != sizeof(*head)))
-		return -EINVAL;
-
-	current->compat_robust_list = head;
-
-	return 0;
-}
-
-COMPAT_SYSCALL_DEFINE3(get_robust_list, int, pid,
-			compat_uptr_t __user *, head_ptr,
-			compat_size_t __user *, len_ptr)
-{
-	struct compat_robust_list_head __user *head = futex_get_robust_list_common(pid, true);
-
-	if (IS_ERR(head))
-		return PTR_ERR(head);
-
-	if (put_user(sizeof(*head), len_ptr))
-		return -EFAULT;
-	return put_user(ptr_to_compat(head), head_ptr);
-}
-#endif /* CONFIG_COMPAT */
 
 #ifdef CONFIG_COMPAT_32BIT_TIME
 SYSCALL_DEFINE6(futex_time32, u32 __user *, uaddr, int, op, u32, val,

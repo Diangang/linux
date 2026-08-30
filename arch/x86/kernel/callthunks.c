@@ -35,14 +35,6 @@ static int __init debug_thunks(char *str)
 }
 __setup("debug-callthunks", debug_thunks);
 
-#if 0
-DEFINE_PER_CPU(u64, __x86_call_count);
-DEFINE_PER_CPU(u64, __x86_ret_count);
-DEFINE_PER_CPU(u64, __x86_stuffs_count);
-DEFINE_PER_CPU(u64, __x86_ctxsw_count);
-EXPORT_PER_CPU_SYMBOL_GPL(__x86_ctxsw_count);
-EXPORT_PER_CPU_SYMBOL_GPL(__x86_call_count);
-#endif
 
 extern s32 __call_sites[], __call_sites_end[];
 
@@ -112,14 +104,6 @@ static bool skip_addr(void *dest)
 	/* Accounts directly */
 	if (dest == ret_from_fork)
 		return true;
-#if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_AMD_MEM_ENCRYPT)
-	if (dest == soft_restart_cpu)
-		return true;
-#endif
-#ifdef CONFIG_FUNCTION_TRACER
-	if (dest == __fentry__)
-		return true;
-#endif
 	return false;
 }
 

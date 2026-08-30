@@ -550,11 +550,7 @@ static unsigned long get_unmapped_area_zero(struct file *file,
 	 * attempt to map aligned to huge page size if possible, otherwise we
 	 * fall back to system page size mappings.
 	 */
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	return thp_get_unmapped_area(file, addr, len, pgoff, flags);
-#else
 	return mm_get_unmapped_area(file, addr, len, pgoff, flags);
-#endif
 }
 #endif /* CONFIG_MMU */
 

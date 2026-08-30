@@ -657,11 +657,7 @@ int acpi_device_power_add_dependent(struct acpi_device *adev,
 void acpi_device_power_remove_dependent(struct acpi_device *adev,
 					struct device *dev);
 
-#ifdef CONFIG_PM
-bool acpi_bus_can_wakeup(acpi_handle handle);
-#else
 static inline bool acpi_bus_can_wakeup(acpi_handle handle) { return false; }
-#endif
 
 void acpi_scan_lock_acquire(void);
 void acpi_scan_lock_release(void);
@@ -771,10 +767,6 @@ acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip)
 	return 0;
 }
 
-#if IS_ENABLED(CONFIG_X86_ANDROID_TABLETS)
-bool acpi_quirk_skip_i2c_client_enumeration(struct acpi_device *adev);
-bool acpi_quirk_skip_gpio_event_handlers(void);
-#else
 static inline bool acpi_quirk_skip_i2c_client_enumeration(struct acpi_device *adev)
 {
 	return false;
@@ -783,17 +775,7 @@ static inline bool acpi_quirk_skip_gpio_event_handlers(void)
 {
 	return false;
 }
-#endif
 
-#ifdef CONFIG_PM
-void acpi_pm_wakeup_event(struct device *dev);
-acpi_status acpi_add_pm_notifier(struct acpi_device *adev, struct device *dev,
-			void (*func)(struct acpi_device_wakeup_context *context));
-acpi_status acpi_remove_pm_notifier(struct acpi_device *adev);
-bool acpi_pm_device_can_wakeup(struct device *dev);
-int acpi_pm_device_sleep_state(struct device *, int *, int);
-int acpi_pm_set_device_wakeup(struct device *dev, bool enable);
-#else
 static inline void acpi_pm_wakeup_event(struct device *dev)
 {
 }
@@ -823,7 +805,6 @@ static inline int acpi_pm_set_device_wakeup(struct device *dev, bool enable)
 {
 	return -ENODEV;
 }
-#endif
 
 static inline bool acpi_sleep_state_supported(u8 sleep_state) { return false; }
 

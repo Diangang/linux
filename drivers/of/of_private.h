@@ -30,11 +30,7 @@ struct alias_prop {
 	char stem[];
 };
 
-#if defined(CONFIG_SPARC)
-#define OF_ROOT_NODE_ADDR_CELLS_DEFAULT 2
-#else
 #define OF_ROOT_NODE_ADDR_CELLS_DEFAULT 1
-#endif
 
 #define OF_ROOT_NODE_SIZE_CELLS_DEFAULT 1
 

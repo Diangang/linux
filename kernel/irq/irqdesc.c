@@ -416,9 +416,6 @@ struct irq_desc *irq_to_desc(unsigned int irq)
 {
 	return mtree_load(&sparse_irqs, irq);
 }
-#ifdef CONFIG_KVM_BOOK3S_64_HV_MODULE
-EXPORT_SYMBOL_GPL(irq_to_desc);
-#endif
 
 void irq_lock_sparse(void)
 {
@@ -1023,30 +1020,6 @@ static unsigned int kstat_irqs(unsigned int irq)
 	return kstat_irqs_desc(desc, cpu_possible_mask);
 }
 
-#if 0
-
-void kstat_snapshot_irqs(void)
-{
-	struct irq_desc *desc;
-	unsigned int irq;
-
-	for_each_irq_desc(irq, desc) {
-		if (!desc->kstat_irqs)
-			continue;
-		this_cpu_write(desc->kstat_irqs->ref, this_cpu_read(desc->kstat_irqs->cnt));
-	}
-}
-
-unsigned int kstat_get_irq_since_snapshot(unsigned int irq)
-{
-	struct irq_desc *desc = irq_to_desc(irq);
-
-	if (!desc || !desc->kstat_irqs)
-		return 0;
-	return this_cpu_read(desc->kstat_irqs->cnt) - this_cpu_read(desc->kstat_irqs->ref);
-}
-
-#endif
 
 /**
  * kstat_irqs_usr - Get the statistics for an interrupt from thread context
@@ -1067,17 +1040,3 @@ unsigned int kstat_irqs_usr(unsigned int irq)
 	rcu_read_unlock();
 	return sum;
 }
-
-#if 0
-void __irq_set_lockdep_class(unsigned int irq, struct lock_class_key *lock_class,
-			     struct lock_class_key *request_class)
-{
-	struct irq_desc *desc = irq_to_desc(irq);
-
-	if (desc) {
-		lockdep_set_class(&desc->lock, lock_class);
-		lockdep_set_class(&desc->request_mutex, request_class);
-	}
-}
-EXPORT_SYMBOL_GPL(__irq_set_lockdep_class);
-#endif

@@ -183,10 +183,6 @@ extern int seq_buf_hex_dump(struct seq_buf *s, const char *prefix_str,
 			    int prefix_type, int rowsize, int groupsize,
 			    const void *buf, size_t len, bool ascii);
 
-#ifdef CONFIG_BINARY_PRINTF
-__printf(2, 0)
-int seq_buf_bprintf(struct seq_buf *s, const char *fmt, const u32 *binary);
-#endif
 
 void seq_buf_do_printk(struct seq_buf *s, const char *lvl);
 

@@ -36,15 +36,6 @@ enum _slab_flag_bits {
 	_SLAB_TYPESAFE_BY_RCU,
 	_SLAB_TRACE,
 	_SLAB_NO_MERGE,
-#ifdef CONFIG_FAILSLAB
-	_SLAB_FAILSLAB,
-#endif
-#ifdef CONFIG_MEMCG
-	_SLAB_ACCOUNT,
-#endif
-#if 0
-	_SLAB_KASAN,
-#endif
 	_SLAB_NO_USER_FLAGS,
 	_SLAB_RECLAIM_ACCOUNT,
 	_SLAB_OBJECT_POISON,
@@ -172,28 +163,16 @@ enum _slab_flag_bits {
 #define SLAB_NO_MERGE		__SLAB_FLAG_BIT(_SLAB_NO_MERGE)
 
 /* Fault injection mark */
-#ifdef CONFIG_FAILSLAB
-# define SLAB_FAILSLAB		__SLAB_FLAG_BIT(_SLAB_FAILSLAB)
-#else
 # define SLAB_FAILSLAB		__SLAB_FLAG_UNUSED
-#endif
 /**
  * define SLAB_ACCOUNT - Account allocations to memcg.
  *
  * All object allocations from this cache will be memcg accounted, regardless of
  * __GFP_ACCOUNT being or not being passed to individual allocations.
  */
-#ifdef CONFIG_MEMCG
-# define SLAB_ACCOUNT		__SLAB_FLAG_BIT(_SLAB_ACCOUNT)
-#else
 # define SLAB_ACCOUNT		__SLAB_FLAG_UNUSED
-#endif
 
-#if 0
-#define SLAB_KASAN		__SLAB_FLAG_BIT(_SLAB_KASAN)
-#else
 #define SLAB_KASAN		__SLAB_FLAG_UNUSED
-#endif
 
 /*
  * Ignore user specified debugging flags.
@@ -603,17 +582,12 @@ enum kmalloc_cache_type {
 #ifndef CONFIG_ZONE_DMA
 	KMALLOC_DMA = KMALLOC_NORMAL,
 #endif
-#ifndef CONFIG_MEMCG
 	KMALLOC_CGROUP = KMALLOC_NORMAL,
-#endif
 	KMALLOC_RANDOM_START = KMALLOC_NORMAL,
 	KMALLOC_RANDOM_END = KMALLOC_RANDOM_START + RANDOM_KMALLOC_CACHES_NR,
 	KMALLOC_RECLAIM,
 #ifdef CONFIG_ZONE_DMA
 	KMALLOC_DMA,
-#endif
-#ifdef CONFIG_MEMCG
-	KMALLOC_CGROUP,
 #endif
 	NR_KMALLOC_TYPES
 };
@@ -627,8 +601,7 @@ extern kmem_buckets kmalloc_caches[NR_KMALLOC_TYPES];
  */
 #define KMALLOC_NOT_NORMAL_BITS					\
 	(__GFP_RECLAIMABLE |					\
-	(IS_ENABLED(CONFIG_ZONE_DMA)   ? __GFP_DMA : 0) |	\
-	(IS_ENABLED(CONFIG_MEMCG) ? __GFP_ACCOUNT : 0))
+	(IS_ENABLED(CONFIG_ZONE_DMA)   ? __GFP_DMA : 0))
 
 extern unsigned long random_kmalloc_seed;
 
@@ -646,14 +619,10 @@ static __always_inline enum kmalloc_cache_type kmalloc_type(gfp_t flags, unsigne
 	 * decreasing order are:
 	 *  1) __GFP_DMA
 	 *  2) __GFP_RECLAIMABLE
-	 *  3) __GFP_ACCOUNT
 	 */
 	if (IS_ENABLED(CONFIG_ZONE_DMA) && (flags & __GFP_DMA))
 		return KMALLOC_DMA;
-	if (!IS_ENABLED(CONFIG_MEMCG) || (flags & __GFP_RECLAIMABLE))
-		return KMALLOC_RECLAIM;
-	else
-		return KMALLOC_CGROUP;
+	return KMALLOC_RECLAIM;
 }
 
 /*
@@ -702,7 +671,7 @@ static __always_inline unsigned int __kmalloc_index(size_t size,
 	if (size <= 1024 * 1024) return 20;
 	if (size <=  2 * 1024 * 1024) return 21;
 
-	if (!IS_ENABLED(CONFIG_PROFILE_ALL_BRANCHES) && size_is_constant)
+	if (size_is_constant)
 		BUILD_BUG_ON_MSG(1, "unexpected size in kmalloc_index()");
 	else
 		BUG();

@@ -57,12 +57,6 @@ targets += .vmlinux.objs
 .vmlinux.objs: vmlinux.a $(KBUILD_VMLINUX_LIBS) FORCE
 	$(call if_changed,vmlinux_objs)
 
-ifdef CONFIG_TRIM_UNUSED_KSYMS
-ksym-wl := $(if $(filter-out /%, $(ksym-wl)),$(if $(wildcard $(ksym-wl)),,$(srctree)/))$(ksym-wl)
-modpost-args += -t $(addprefix -u , $(ksym-wl))
-modpost-deps += $(ksym-wl)
-endif
-
 ifeq ($(wildcard vmlinux.o),)
 missing-input := vmlinux.o
 output-symdump := modules-only.symvers

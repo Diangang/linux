@@ -1151,7 +1151,7 @@ int fragmentation_index(struct zone *zone, unsigned int order)
 #endif
 
 #if defined(CONFIG_PROC_FS) || defined(CONFIG_SYSFS) || \
-    defined(CONFIG_NUMA) || defined(CONFIG_MEMCG)
+    defined(CONFIG_NUMA)
 #ifdef CONFIG_ZONE_DMA
 #define TEXT_FOR_DMA(xx, yy) [xx##_DMA] = yy "_dma",
 #else
@@ -1188,13 +1188,7 @@ const char * const vmstat_text[] = {
 	[I(NR_ZONE_UNEVICTABLE)]		= "nr_zone_unevictable",
 	[I(NR_ZONE_WRITE_PENDING)]		= "nr_zone_write_pending",
 	[I(NR_MLOCK)]				= "nr_mlock",
-#if IS_ENABLED(CONFIG_ZSMALLOC)
-	[I(NR_ZSPAGES)]				= "nr_zspages",
-#endif
 	[I(NR_FREE_CMA_PAGES)]			= "nr_free_cma",
-#ifdef CONFIG_UNACCEPTED_MEMORY
-	[I(NR_UNACCEPTED)]			= "nr_unaccepted",
-#endif
 #undef I
 
 	/* enum numa_stat_item counters */
@@ -1249,17 +1243,8 @@ const char * const vmstat_text[] = {
 	[I(NR_FOLL_PIN_RELEASED)]		= "nr_foll_pin_released",
 	[I(NR_VMALLOC)]				= "nr_vmalloc",
 	[I(NR_KERNEL_STACK_KB)]			= "nr_kernel_stack",
-#if 0
-	[I(NR_KERNEL_SCS_KB)]			= "nr_shadow_call_stack",
-#endif
 	[I(NR_PAGETABLE)]			= "nr_page_table_pages",
 	[I(NR_SECONDARY_PAGETABLE)]		= "nr_sec_page_table_pages",
-#ifdef CONFIG_IOMMU_SUPPORT
-	[I(NR_IOMMU_PAGES)]			= "nr_iommu_pages",
-#endif
-#ifdef CONFIG_SWAP
-	[I(NR_SWAPCACHE)]			= "nr_swapcached",
-#endif
 #ifdef CONFIG_NUMA_BALANCING
 	[I(PGPROMOTE_SUCCESS)]			= "pgpromote_success",
 	[I(PGPROMOTE_CANDIDATE)]		= "pgpromote_candidate",
@@ -1282,9 +1267,6 @@ const char * const vmstat_text[] = {
 	[I(PGSCAN_ANON)]			= "pgscan_anon",
 	[I(PGSCAN_FILE)]			= "pgscan_file",
 	[I(PGREFILL)]				= "pgrefill",
-#ifdef CONFIG_HUGETLB_PAGE
-	[I(NR_HUGETLB)]				= "nr_hugetlb",
-#endif
 	[I(NR_BALLOON_PAGES)]			= "nr_balloon_pages",
 	[I(NR_KERNEL_FILE_PAGES)]		= "nr_kernel_file_pages",
 	[I(NR_GPU_ACTIVE)]			= "nr_gpu_active",
@@ -1372,10 +1354,6 @@ const char * const vmstat_text[] = {
 	[I(KCOMPACTD_FREE_SCANNED)]		= "compact_daemon_free_scanned",
 #endif
 
-#ifdef CONFIG_HUGETLB_PAGE
-	[I(HTLB_BUDDY_PGALLOC)]			= "htlb_buddy_alloc_success",
-	[I(HTLB_BUDDY_PGALLOC_FAIL)]		= "htlb_buddy_alloc_fail",
-#endif
 	[I(UNEVICTABLE_PGCULLED)]		= "unevictable_pgs_culled",
 	[I(UNEVICTABLE_PGSCANNED)]		= "unevictable_pgs_scanned",
 	[I(UNEVICTABLE_PGRESCUED)]		= "unevictable_pgs_rescued",
@@ -1384,51 +1362,7 @@ const char * const vmstat_text[] = {
 	[I(UNEVICTABLE_PGCLEARED)]		= "unevictable_pgs_cleared",
 	[I(UNEVICTABLE_PGSTRANDED)]		= "unevictable_pgs_stranded",
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	[I(THP_FAULT_ALLOC)]			= "thp_fault_alloc",
-	[I(THP_FAULT_FALLBACK)]			= "thp_fault_fallback",
-	[I(THP_FAULT_FALLBACK_CHARGE)]		= "thp_fault_fallback_charge",
-	[I(THP_COLLAPSE_ALLOC)]			= "thp_collapse_alloc",
-	[I(THP_COLLAPSE_ALLOC_FAILED)]		= "thp_collapse_alloc_failed",
-	[I(THP_FILE_ALLOC)]			= "thp_file_alloc",
-	[I(THP_FILE_FALLBACK)]			= "thp_file_fallback",
-	[I(THP_FILE_FALLBACK_CHARGE)]		= "thp_file_fallback_charge",
-	[I(THP_FILE_MAPPED)]			= "thp_file_mapped",
-	[I(THP_SPLIT_PAGE)]			= "thp_split_page",
-	[I(THP_SPLIT_PAGE_FAILED)]		= "thp_split_page_failed",
-	[I(THP_DEFERRED_SPLIT_PAGE)]		= "thp_deferred_split_page",
-	[I(THP_UNDERUSED_SPLIT_PAGE)]		= "thp_underused_split_page",
-	[I(THP_SPLIT_PMD)]			= "thp_split_pmd",
-	[I(THP_SCAN_EXCEED_NONE_PTE)]		= "thp_scan_exceed_none_pte",
-	[I(THP_SCAN_EXCEED_SWAP_PTE)]		= "thp_scan_exceed_swap_pte",
-	[I(THP_SCAN_EXCEED_SHARED_PTE)]		= "thp_scan_exceed_share_pte",
-#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-	[I(THP_SPLIT_PUD)]			= "thp_split_pud",
-#endif
-	[I(THP_ZERO_PAGE_ALLOC)]		= "thp_zero_page_alloc",
-	[I(THP_ZERO_PAGE_ALLOC_FAILED)]		= "thp_zero_page_alloc_failed",
-	[I(THP_SWPOUT)]				= "thp_swpout",
-	[I(THP_SWPOUT_FALLBACK)]		= "thp_swpout_fallback",
-#endif
-#if 0
-	[I(NR_TLB_REMOTE_FLUSH)]		= "nr_tlb_remote_flush",
-	[I(NR_TLB_REMOTE_FLUSH_RECEIVED)]	= "nr_tlb_remote_flush_received",
-	[I(NR_TLB_LOCAL_FLUSH_ALL)]		= "nr_tlb_local_flush_all",
-	[I(NR_TLB_LOCAL_FLUSH_ONE)]		= "nr_tlb_local_flush_one",
-#endif /* CONFIG_DEBUG_TLBFLUSH */
 
-#ifdef CONFIG_SWAP
-	[I(SWAP_RA)]				= "swap_ra",
-	[I(SWAP_RA_HIT)]			= "swap_ra_hit",
-	[I(SWPIN_ZERO)]				= "swpin_zero",
-	[I(SWPOUT_ZERO)]			= "swpout_zero",
-#ifdef CONFIG_KSM
-	[I(KSM_SWPIN_COPY)]			= "ksm_swpin_copy",
-#endif
-#endif
-#ifdef CONFIG_KSM
-	[I(COW_KSM)]				= "cow_ksm",
-#endif
 #ifdef CONFIG_X86
 	[I(DIRECT_MAP_LEVEL2_SPLIT)]		= "direct_map_level2_splits",
 	[I(DIRECT_MAP_LEVEL3_SPLIT)]		= "direct_map_level3_splits",

@@ -166,50 +166,6 @@ static const char *const hwcap_str[] = {
 	[KERNEL_HWCAP_LSFE]		= "lsfe",
 };
 
-#ifdef CONFIG_COMPAT
-#define COMPAT_KERNEL_HWCAP(x)	const_ilog2(COMPAT_HWCAP_ ## x)
-static const char *const compat_hwcap_str[] = {
-	[COMPAT_KERNEL_HWCAP(SWP)]	= "swp",
-	[COMPAT_KERNEL_HWCAP(HALF)]	= "half",
-	[COMPAT_KERNEL_HWCAP(THUMB)]	= "thumb",
-	[COMPAT_KERNEL_HWCAP(26BIT)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(FAST_MULT)] = "fastmult",
-	[COMPAT_KERNEL_HWCAP(FPA)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(VFP)]	= "vfp",
-	[COMPAT_KERNEL_HWCAP(EDSP)]	= "edsp",
-	[COMPAT_KERNEL_HWCAP(JAVA)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(IWMMXT)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(CRUNCH)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(THUMBEE)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(NEON)]	= "neon",
-	[COMPAT_KERNEL_HWCAP(VFPv3)]	= "vfpv3",
-	[COMPAT_KERNEL_HWCAP(VFPV3D16)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(TLS)]	= "tls",
-	[COMPAT_KERNEL_HWCAP(VFPv4)]	= "vfpv4",
-	[COMPAT_KERNEL_HWCAP(IDIVA)]	= "idiva",
-	[COMPAT_KERNEL_HWCAP(IDIVT)]	= "idivt",
-	[COMPAT_KERNEL_HWCAP(VFPD32)]	= NULL,	/* Not possible on arm64 */
-	[COMPAT_KERNEL_HWCAP(LPAE)]	= "lpae",
-	[COMPAT_KERNEL_HWCAP(EVTSTRM)]	= "evtstrm",
-	[COMPAT_KERNEL_HWCAP(FPHP)]	= "fphp",
-	[COMPAT_KERNEL_HWCAP(ASIMDHP)]	= "asimdhp",
-	[COMPAT_KERNEL_HWCAP(ASIMDDP)]	= "asimddp",
-	[COMPAT_KERNEL_HWCAP(ASIMDFHM)]	= "asimdfhm",
-	[COMPAT_KERNEL_HWCAP(ASIMDBF16)] = "asimdbf16",
-	[COMPAT_KERNEL_HWCAP(I8MM)]	= "i8mm",
-};
-
-#define COMPAT_KERNEL_HWCAP2(x)	const_ilog2(COMPAT_HWCAP2_ ## x)
-static const char *const compat_hwcap2_str[] = {
-	[COMPAT_KERNEL_HWCAP2(AES)]	= "aes",
-	[COMPAT_KERNEL_HWCAP2(PMULL)]	= "pmull",
-	[COMPAT_KERNEL_HWCAP2(SHA1)]	= "sha1",
-	[COMPAT_KERNEL_HWCAP2(SHA2)]	= "sha2",
-	[COMPAT_KERNEL_HWCAP2(CRC32)]	= "crc32",
-	[COMPAT_KERNEL_HWCAP2(SB)]	= "sb",
-	[COMPAT_KERNEL_HWCAP2(SSBS)]	= "ssbs",
-};
-#endif /* CONFIG_COMPAT */
 
 static int c_show(struct seq_file *m, void *v)
 {
@@ -241,24 +197,6 @@ static int c_show(struct seq_file *m, void *v)
 	 */
 	seq_puts(m, "Features\t:");
 	if (compat) {
-#ifdef CONFIG_COMPAT
-		for (j = 0; j < ARRAY_SIZE(compat_hwcap_str); j++) {
-			if (compat_elf_hwcap & (1 << j)) {
-				/*
-				 * Warn once if any feature should not
-				 * have been present on arm64 platform.
-				 */
-				if (WARN_ON_ONCE(!compat_hwcap_str[j]))
-					continue;
-
-				seq_printf(m, " %s", compat_hwcap_str[j]);
-			}
-		}
-
-		for (j = 0; j < ARRAY_SIZE(compat_hwcap2_str); j++)
-			if (compat_elf_hwcap2 & (1 << j))
-				seq_printf(m, " %s", compat_hwcap2_str[j]);
-#endif /* CONFIG_COMPAT */
 	} else {
 		for (j = 0; j < ARRAY_SIZE(hwcap_str); j++)
 			if (cpu_have_feature(j))

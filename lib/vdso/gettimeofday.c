@@ -237,35 +237,7 @@ bool do_coarse(const struct vdso_time_data *vd, const struct vdso_clock *vc,
 static __always_inline
 bool do_aux(const struct vdso_time_data *vd, clockid_t clock, struct __kernel_timespec *ts)
 {
-	const struct vdso_clock *vc;
-	u32 seq, idx;
-	u64 sec, ns;
-
-	if (!IS_ENABLED(CONFIG_POSIX_AUX_CLOCKS))
-		return false;
-
-	idx = clock - CLOCK_AUX;
-	vc = &vd->aux_clock_data[idx];
-
-	do {
-		if (vdso_read_begin_timens(vc, &seq)) {
-			vd = __arch_get_vdso_u_timens_data(vd);
-			vc = &vd->aux_clock_data[idx];
-			/* Re-read from the real time data page */
-			continue;
-		}
-
-		/* Auxclock disabled? */
-		if (vc->clock_mode == VDSO_CLOCKMODE_NONE)
-			return false;
-
-		if (!vdso_get_timestamp(vd, vc, VDSO_BASE_AUX, &sec, &ns))
-			return false;
-	} while (vdso_read_retry(vc, seq));
-
-	vdso_set_timespec(ts, sec, ns);
-
-	return true;
+	return false;
 }
 
 static __always_inline bool

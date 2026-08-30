@@ -30,14 +30,8 @@ struct property {
 	int	length;
 	void	*value;
 	struct property *next;
-#if defined(CONFIG_SPARC)
-	unsigned long _flags;
-#endif
 };
 
-#if defined(CONFIG_SPARC)
-struct of_irq_controller;
-#endif
 
 struct device_node {
 	const char *name;
@@ -52,10 +46,6 @@ struct device_node {
 	struct	device_node *sibling;
 	unsigned long _flags;
 	void	*data;
-#if defined(CONFIG_SPARC)
-	unsigned int unique_id;
-	struct of_irq_controller *irq_trans;
-#endif
 };
 
 #define MAX_PHANDLE_ARGS NR_FWNODE_REFERENCE_ARGS
@@ -174,22 +164,6 @@ static inline void of_node_clear_flag(struct device_node *n, unsigned long flag)
 	clear_bit(flag, &n->_flags);
 }
 
-#if defined(CONFIG_SPARC)
-static inline int of_property_check_flag(const struct property *p, unsigned long flag)
-{
-	return test_bit(flag, &p->_flags);
-}
-
-static inline void of_property_set_flag(struct property *p, unsigned long flag)
-{
-	set_bit(flag, &p->_flags);
-}
-
-static inline void of_property_clear_flag(struct property *p, unsigned long flag)
-{
-	clear_bit(flag, &p->_flags);
-}
-#endif
 
 extern struct device_node *__of_find_all_nodes(struct device_node *prev);
 extern struct device_node *of_find_all_nodes(struct device_node *prev);
@@ -214,9 +188,6 @@ static inline unsigned long of_read_ulong(const __be32 *cell, int size)
 	return of_read_number(cell, size);
 }
 
-#if defined(CONFIG_SPARC)
-#include <asm/prom.h>
-#endif
 
 extern bool of_node_name_eq(const struct device_node *np, const char *name);
 extern bool of_node_name_prefix(const struct device_node *np, const char *prefix);

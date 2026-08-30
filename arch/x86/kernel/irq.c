@@ -25,7 +25,7 @@
 #include <asm/posted_intr.h>
 #include <asm/irq_remapping.h>
 
-#if defined(CONFIG_X86_LOCAL_APIC) || defined(CONFIG_X86_THERMAL_VECTOR)
+#if defined(CONFIG_X86_LOCAL_APIC)
 #endif
 
 DEFINE_PER_CPU_SHARED_ALIGNED(irq_cpustat_t, irq_stat);
@@ -114,12 +114,6 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 		seq_printf(p, "%10u ", irq_stats(j)->irq_tlb_count);
 	seq_puts(p, "  TLB shootdowns\n");
 #endif
-#ifdef CONFIG_X86_THERMAL_VECTOR
-	seq_printf(p, "%*s: ", prec, "TRM");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ", irq_stats(j)->irq_thermal_count);
-	seq_puts(p, "  Thermal event interrupts\n");
-#endif
 #ifdef CONFIG_X86_MCE_THRESHOLD
 	seq_printf(p, "%*s: ", prec, "THR");
 	for_each_online_cpu(j)
@@ -142,59 +136,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 		seq_printf(p, "%10u ", per_cpu(mce_poll_count, j));
 	seq_puts(p, "  Machine check polls\n");
 #endif
-#ifdef CONFIG_X86_HV_CALLBACK_VECTOR
-	if (test_bit(HYPERVISOR_CALLBACK_VECTOR, system_vectors)) {
-		seq_printf(p, "%*s: ", prec, "HYP");
-		for_each_online_cpu(j)
-			seq_printf(p, "%10u ",
-				   irq_stats(j)->irq_hv_callback_count);
-		seq_puts(p, "  Hypervisor callback interrupts\n");
-	}
-#endif
-#if IS_ENABLED(CONFIG_HYPERV)
-	if (test_bit(HYPERV_REENLIGHTENMENT_VECTOR, system_vectors)) {
-		seq_printf(p, "%*s: ", prec, "HRE");
-		for_each_online_cpu(j)
-			seq_printf(p, "%10u ",
-				   irq_stats(j)->irq_hv_reenlightenment_count);
-		seq_puts(p, "  Hyper-V reenlightenment interrupts\n");
-	}
-	if (test_bit(HYPERV_STIMER0_VECTOR, system_vectors)) {
-		seq_printf(p, "%*s: ", prec, "HVS");
-		for_each_online_cpu(j)
-			seq_printf(p, "%10u ",
-				   irq_stats(j)->hyperv_stimer0_count);
-		seq_puts(p, "  Hyper-V stimer0 interrupts\n");
-	}
-#endif
 	seq_printf(p, "%*s: %10u\n", prec, "ERR", atomic_read(&irq_err_count));
 #if defined(CONFIG_X86_IO_APIC)
 	seq_printf(p, "%*s: %10u\n", prec, "MIS", atomic_read(&irq_mis_count));
-#endif
-#if IS_ENABLED(CONFIG_KVM)
-	seq_printf(p, "%*s: ", prec, "PIN");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ", irq_stats(j)->kvm_posted_intr_ipis);
-	seq_puts(p, "  Posted-interrupt notification event\n");
-
-	seq_printf(p, "%*s: ", prec, "NPI");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ",
-			   irq_stats(j)->kvm_posted_intr_nested_ipis);
-	seq_puts(p, "  Nested posted-interrupt event\n");
-
-	seq_printf(p, "%*s: ", prec, "PIW");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ",
-			   irq_stats(j)->kvm_posted_intr_wakeup_ipis);
-	seq_puts(p, "  Posted-interrupt wakeup event\n");
-#endif
-#if 0
-	seq_printf(p, "%*s: ", prec, "VPMI");
-	for_each_online_cpu(j)
-		seq_printf(p, "%10u ",
-			   irq_stats(j)->perf_guest_mediated_pmis);
-	seq_puts(p, " Perf Guest Mediated PMI\n");
 #endif
 	return 0;
 }
@@ -219,18 +163,8 @@ u64 arch_irq_stat_cpu(unsigned int cpu)
 	sum += irq_stats(cpu)->irq_resched_count;
 	sum += irq_stats(cpu)->irq_call_count;
 #endif
-#ifdef CONFIG_X86_THERMAL_VECTOR
-	sum += irq_stats(cpu)->irq_thermal_count;
-#endif
 #ifdef CONFIG_X86_MCE_THRESHOLD
 	sum += irq_stats(cpu)->irq_threshold_count;
-#endif
-#ifdef CONFIG_X86_HV_CALLBACK_VECTOR
-	sum += irq_stats(cpu)->irq_hv_callback_count;
-#endif
-#if IS_ENABLED(CONFIG_HYPERV)
-	sum += irq_stats(cpu)->irq_hv_reenlightenment_count;
-	sum += irq_stats(cpu)->hyperv_stimer0_count;
 #endif
 #ifdef CONFIG_X86_MCE
 	sum += per_cpu(mce_exception_count, cpu);
@@ -344,60 +278,7 @@ DEFINE_IDTENTRY_SYSVEC(sysvec_x86_platform_ipi)
 }
 #endif
 
-#if 0
-/*
- * Handler for PERF_GUEST_MEDIATED_PMI_VECTOR.
- */
-DEFINE_IDTENTRY_SYSVEC(sysvec_perf_guest_mediated_pmi_handler)
-{
-	 apic_eoi();
-	 inc_irq_stat(perf_guest_mediated_pmis);
-	 perf_guest_handle_mediated_pmi();
-}
-#endif
 
-#if IS_ENABLED(CONFIG_KVM)
-static void dummy_handler(void) {}
-static void (*kvm_posted_intr_wakeup_handler)(void) = dummy_handler;
-
-void kvm_set_posted_intr_wakeup_handler(void (*handler)(void))
-{
-	if (handler)
-		kvm_posted_intr_wakeup_handler = handler;
-	else {
-		kvm_posted_intr_wakeup_handler = dummy_handler;
-		synchronize_rcu();
-	}
-}
-
-/*
- * Handler for POSTED_INTERRUPT_VECTOR.
- */
-DEFINE_IDTENTRY_SYSVEC_SIMPLE(sysvec_kvm_posted_intr_ipi)
-{
-	apic_eoi();
-	inc_irq_stat(kvm_posted_intr_ipis);
-}
-
-/*
- * Handler for POSTED_INTERRUPT_WAKEUP_VECTOR.
- */
-DEFINE_IDTENTRY_SYSVEC(sysvec_kvm_posted_intr_wakeup_ipi)
-{
-	apic_eoi();
-	inc_irq_stat(kvm_posted_intr_wakeup_ipis);
-	kvm_posted_intr_wakeup_handler();
-}
-
-/*
- * Handler for POSTED_INTERRUPT_NESTED_VECTOR.
- */
-DEFINE_IDTENTRY_SYSVEC_SIMPLE(sysvec_kvm_posted_intr_nested_ipi)
-{
-	apic_eoi();
-	inc_irq_stat(kvm_posted_intr_nested_ipis);
-}
-#endif
 
 
 #ifdef CONFIG_HOTPLUG_CPU
@@ -446,23 +327,5 @@ void fixup_irqs(void)
 		if (__this_cpu_read(vector_irq[vector]) != VECTOR_RETRIGGERED)
 			__this_cpu_write(vector_irq[vector], VECTOR_UNUSED);
 	}
-}
-#endif
-
-#ifdef CONFIG_X86_THERMAL_VECTOR
-static void smp_thermal_vector(void)
-{
-	if (x86_thermal_enabled())
-		intel_thermal_interrupt();
-	else
-		pr_err("CPU%d: Unexpected LVT thermal interrupt!\n",
-		       smp_processor_id());
-}
-
-DEFINE_IDTENTRY_SYSVEC(sysvec_thermal)
-{
-	inc_irq_stat(irq_thermal_count);
-	smp_thermal_vector();
-	apic_eoi();
 }
 #endif

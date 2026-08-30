@@ -1002,71 +1002,6 @@ void tsc_restore_sched_clock_state(void)
 	local_irq_restore(flags);
 }
 
-#ifdef CONFIG_CPU_FREQ
-/*
- * Frequency scaling support. Adjust the TSC based timer when the CPU frequency
- * changes.
- *
- * NOTE: On SMP the situation is not fixable in general, so simply mark the TSC
- * as unstable and give up in those cases.
- *
- * Should fix up last_tsc too. Currently gettimeofday in the
- * first tick after the change will be slightly wrong.
- */
-
-static unsigned int  ref_freq;
-static unsigned long loops_per_jiffy_ref;
-static unsigned long tsc_khz_ref;
-
-static int time_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
-				void *data)
-{
-	struct cpufreq_freqs *freq = data;
-
-	if (num_online_cpus() > 1) {
-		mark_tsc_unstable("cpufreq changes on SMP");
-		return 0;
-	}
-
-	if (!ref_freq) {
-		ref_freq = freq->old;
-		loops_per_jiffy_ref = boot_cpu_data.loops_per_jiffy;
-		tsc_khz_ref = tsc_khz;
-	}
-
-	if ((val == CPUFREQ_PRECHANGE  && freq->old < freq->new) ||
-	    (val == CPUFREQ_POSTCHANGE && freq->old > freq->new)) {
-		boot_cpu_data.loops_per_jiffy =
-			cpufreq_scale(loops_per_jiffy_ref, ref_freq, freq->new);
-
-		tsc_khz = cpufreq_scale(tsc_khz_ref, ref_freq, freq->new);
-		if (!(freq->flags & CPUFREQ_CONST_LOOPS))
-			mark_tsc_unstable("cpufreq changes");
-
-		set_cyc2ns_scale(tsc_khz, freq->policy->cpu, rdtsc());
-	}
-
-	return 0;
-}
-
-static struct notifier_block time_cpufreq_notifier_block = {
-	.notifier_call  = time_cpufreq_notifier
-};
-
-static int __init cpufreq_register_tsc_scaling(void)
-{
-	if (!boot_cpu_has(X86_FEATURE_TSC))
-		return 0;
-	if (boot_cpu_has(X86_FEATURE_CONSTANT_TSC))
-		return 0;
-	cpufreq_register_notifier(&time_cpufreq_notifier_block,
-				CPUFREQ_TRANSITION_NOTIFIER);
-	return 0;
-}
-
-core_initcall(cpufreq_register_tsc_scaling);
-
-#endif /* CONFIG_CPU_FREQ */
 
 #define ART_MIN_DENOMINATOR (1)
 
@@ -1226,18 +1161,6 @@ static void __init tsc_disable_clocksource_watchdog(void)
 
 static void __init check_system_tsc_reliable(void)
 {
-#if 0 || 0 || 0
-	if (is_geode_lx()) {
-		/* RTSC counts during suspend */
-#define RTSC_SUSP 0x100
-		unsigned long res_low, res_high;
-
-		rdmsr_safe(MSR_GEODE_BUSCONT_CONF0, &res_low, &res_high);
-		/* Geode_LX - the OLPC CPU has a very reliable TSC */
-		if (res_low & RTSC_SUSP)
-			tsc_clocksource_reliable = 1;
-	}
-#endif
 	if (boot_cpu_has(X86_FEATURE_TSC_RELIABLE))
 		tsc_clocksource_reliable = 1;
 

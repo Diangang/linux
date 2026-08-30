@@ -32,12 +32,6 @@ static inline bool should_fail(struct fault_attr *attr, ssize_t size)
 }
 
 
-#if 0
-
-struct dentry *fault_create_debugfs_attr(const char *name,
-			struct dentry *parent, struct fault_attr *attr);
-
-#else /* CONFIG_FAULT_INJECTION_DEBUG_FS */
 
 static inline struct dentry *fault_create_debugfs_attr(const char *name,
 			struct dentry *parent, struct fault_attr *attr)
@@ -45,18 +39,7 @@ static inline struct dentry *fault_create_debugfs_attr(const char *name,
 	return ERR_PTR(-ENODEV);
 }
 
-#endif /* CONFIG_FAULT_INJECTION_DEBUG_FS */
 
-#ifdef CONFIG_FAULT_INJECTION_CONFIGFS
-
-struct fault_config {
-	struct fault_attr attr;
-	struct config_group group;
-};
-
-void fault_config_init(struct fault_config *config, const char *name);
-
-#else /* CONFIG_FAULT_INJECTION_CONFIGFS */
 
 struct fault_config {
 };
@@ -66,20 +49,15 @@ static inline void fault_config_init(struct fault_config *config,
 {
 }
 
-#endif /* CONFIG_FAULT_INJECTION_CONFIGFS */
 
 static inline bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
 {
 	return false;
 }
 
-#ifdef CONFIG_FAILSLAB
-int should_failslab(struct kmem_cache *s, gfp_t gfpflags);
-#else
 static inline int should_failslab(struct kmem_cache *s, gfp_t gfpflags)
 {
 	return false;
 }
-#endif /* CONFIG_FAILSLAB */
 
 #endif /* _LINUX_FAULT_INJECT_H */

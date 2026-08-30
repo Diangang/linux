@@ -18,7 +18,6 @@ static inline bool uffd_supports_wp_marker(void)
 	return pgtable_supports_uffd_wp() && 0;
 }
 
-#if 1
 static __always_inline int pte_uffd_wp(pte_t pte)
 {
 	return 0;
@@ -78,6 +77,5 @@ static inline pmd_t pmd_swp_clear_uffd_wp(pmd_t pmd)
 {
 	return pmd;
 }
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 #endif /* _ASM_GENERIC_PGTABLE_UFFD_H */

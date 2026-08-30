@@ -474,58 +474,6 @@ static inline bool move_normal_pud(struct pagetable_move_control *pmc,
 }
 #endif
 
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-static bool move_huge_pud(struct pagetable_move_control *pmc,
-		pud_t *old_pud, pud_t *new_pud)
-{
-	spinlock_t *old_ptl, *new_ptl;
-	struct vm_area_struct *vma = pmc->old;
-	struct mm_struct *mm = vma->vm_mm;
-	pud_t pud;
-
-	/*
-	 * The destination pud shouldn't be established, free_pgtables()
-	 * should have released it.
-	 */
-	if (WARN_ON_ONCE(!pud_none(*new_pud)))
-		return false;
-
-	/*
-	 * We don't have to worry about the ordering of src and dst
-	 * ptlocks because exclusive mmap_lock prevents deadlock.
-	 */
-	old_ptl = pud_lock(mm, old_pud);
-	new_ptl = pud_lockptr(mm, new_pud);
-	if (new_ptl != old_ptl)
-		spin_lock_nested(new_ptl, SINGLE_DEPTH_NESTING);
-
-	/* Clear the pud */
-	pud = *old_pud;
-	pud_clear(old_pud);
-
-	VM_BUG_ON(!pud_none(*new_pud));
-
-	/* Set the new pud */
-	/* mark soft_ditry when we add pud level soft dirty support */
-	set_pud_at(mm, pmc->new_addr, new_pud, pud);
-	flush_pud_tlb_range(vma, pmc->old_addr, pmc->old_addr + HPAGE_PUD_SIZE);
-	if (new_ptl != old_ptl)
-		spin_unlock(new_ptl);
-	spin_unlock(old_ptl);
-
-	return true;
-}
-#else
-static bool move_huge_pud(struct pagetable_move_control *pmc,
-		pud_t *old_pud, pud_t *new_pud)
-
-{
-	WARN_ON_ONCE(1);
-	return false;
-
-}
-#endif
-
 enum pgt_entry {
 	NORMAL_PMD,
 	HPAGE_PMD,
@@ -611,13 +559,7 @@ static bool move_pgt_entry(struct pagetable_move_control *pmc,
 		moved = move_normal_pud(pmc, old_entry, new_entry);
 		break;
 	case HPAGE_PMD:
-		moved = IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE) &&
-			move_huge_pmd(pmc->old, pmc->old_addr, pmc->new_addr, old_entry,
-				      new_entry);
-		break;
 	case HPAGE_PUD:
-		moved = IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE) &&
-			move_huge_pud(pmc, old_entry, new_entry);
 		break;
 
 	default:

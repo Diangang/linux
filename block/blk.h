@@ -532,15 +532,11 @@ int disk_register_independent_access_ranges(struct gendisk *disk);
 void disk_unregister_independent_access_ranges(struct gendisk *disk);
 
 int should_fail_bio(struct bio *bio);
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-bool should_fail_request(struct block_device *part, unsigned int bytes);
-#else /* CONFIG_FAIL_MAKE_REQUEST */
 static inline bool should_fail_request(struct block_device *part,
 					unsigned int bytes)
 {
 	return false;
 }
-#endif /* CONFIG_FAIL_MAKE_REQUEST */
 
 /*
  * Optimized request reference counting. Ideally we'd make timeouts be more
@@ -609,30 +605,12 @@ blk_status_t bio_integrity_verify(struct bio *bio,
 void blk_integrity_prepare(struct request *rq);
 void blk_integrity_complete(struct request *rq, unsigned int nr_bytes);
 
-#if 0
-static inline void blk_freeze_acquire_lock(struct request_queue *q)
-{
-	if (!q->mq_freeze_disk_dead)
-		rwsem_acquire(&q->io_lockdep_map, 0, 1, _RET_IP_);
-	if (!q->mq_freeze_queue_dying)
-		rwsem_acquire(&q->q_lockdep_map, 0, 1, _RET_IP_);
-}
-
-static inline void blk_unfreeze_release_lock(struct request_queue *q)
-{
-	if (!q->mq_freeze_queue_dying)
-		rwsem_release(&q->q_lockdep_map, _RET_IP_);
-	if (!q->mq_freeze_disk_dead)
-		rwsem_release(&q->io_lockdep_map, _RET_IP_);
-}
-#else
 static inline void blk_freeze_acquire_lock(struct request_queue *q)
 {
 }
 static inline void blk_unfreeze_release_lock(struct request_queue *q)
 {
 }
-#endif
 
 /*
  * debugfs directory and file creation can trigger fs reclaim, which can enter

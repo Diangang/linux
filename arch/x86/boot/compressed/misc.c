@@ -64,29 +64,11 @@ static int cols __section(".data");
 #include "../../../../lib/decompress_inflate.c"
 #endif
 
-#if 0
-#include "../../../../lib/decompress_bunzip2.c"
-#endif
 
-#if 0
-#include "../../../../lib/decompress_unlzma.c"
-#endif
 
-#if 0
-#include "../../../../lib/decompress_unxz.c"
-#endif
 
-#if 0
-#include "../../../../lib/decompress_unlzo.c"
-#endif
 
-#if 0
-#include "../../../../lib/decompress_unlz4.c"
-#endif
 
-#if 0
-#include "../../../../lib/decompress_unzstd.c"
-#endif
 /*
  * NOTE: When adding a new decompressor, please update the analysis in
  * ../header.S.

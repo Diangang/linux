@@ -18,22 +18,8 @@
 
 #endif	/* CONFIG_ARCH_HAS_MEM_ENCRYPT */
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-/*
- * The __sme_set() and __sme_clr() macros are useful for adding or removing
- * the encryption mask from a value (e.g. when dealing with pagetable
- * entries).
- */
-#define __sme_set(x)		((x) | sme_me_mask)
-#define __sme_clr(x)		((x) & ~sme_me_mask)
-
-#define dma_addr_encrypted(x)	__sme_set(x)
-#define dma_addr_canonical(x)	__sme_clr(x)
-
-#else
 #define __sme_set(x)		(x)
 #define __sme_clr(x)		(x)
-#endif
 
 /*
  * dma_addr_encrypted() and dma_addr_unencrypted() are for converting a given DMA

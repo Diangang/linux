@@ -114,13 +114,8 @@ static inline void vm_events_fold_cpu(int cpu)
 #define count_vm_numa_events(x, y) do { (void)(y); } while (0)
 #endif /* CONFIG_NUMA_BALANCING */
 
-#if 0
-#define count_vm_tlb_event(x)	   count_vm_event(x)
-#define count_vm_tlb_events(x, y)  count_vm_events(x, y)
-#else
 #define count_vm_tlb_event(x)     do {} while (0)
 #define count_vm_tlb_events(x, y) do { (void)(y); } while (0)
-#endif
 
 #define count_vm_vma_lock_event(x) do {} while (0)
 
@@ -510,21 +505,6 @@ static inline const char *vm_event_name(enum vm_event_item item)
 }
 #endif /* CONFIG_VM_EVENT_COUNTERS */
 
-#ifdef CONFIG_MEMCG
-
-void mod_lruvec_state(struct lruvec *lruvec, enum node_stat_item idx,
-			int val);
-
-void lruvec_stat_mod_folio(struct folio *folio,
-			     enum node_stat_item idx, int val);
-
-static inline void mod_lruvec_page_state(struct page *page,
-					 enum node_stat_item idx, int val)
-{
-	lruvec_stat_mod_folio(page_folio(page), idx, val);
-}
-
-#else
 
 static inline void mod_lruvec_state(struct lruvec *lruvec,
 				    enum node_stat_item idx, int val)
@@ -544,7 +524,6 @@ static inline void mod_lruvec_page_state(struct page *page,
 	mod_node_page_state(page_pgdat(page), idx, val);
 }
 
-#endif /* CONFIG_MEMCG */
 
 static inline void lruvec_stat_add_folio(struct folio *folio,
 					 enum node_stat_item idx)

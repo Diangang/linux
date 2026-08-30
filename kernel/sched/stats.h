@@ -20,20 +20,10 @@ static inline void rq_sched_info_depart  (struct rq *rq, unsigned long long delt
 # define __update_stats_enqueue_sleeper(rq, p, stats)  do { } while (0)
 # define check_schedstat_required()                    do { } while (0)
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
-struct sched_entity_stats {
-	struct sched_entity     se;
-	struct sched_statistics stats;
-} __no_randomize_layout;
-#endif
 
 static inline struct sched_statistics *
 __schedstats_from_se(struct sched_entity *se)
 {
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	if (!entity_is_task(se))
-		return &container_of(se, struct sched_entity_stats, se)->stats;
-#endif
 	return &task_of(se)->stats;
 }
 

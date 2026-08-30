@@ -18,9 +18,6 @@
 
 #include "internals.h"
 
-#ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER
-void (*handle_arch_irq)(struct pt_regs *) __ro_after_init;
-#endif
 
 /**
  * handle_bad_irq - handle spurious and unhandled irqs
@@ -262,30 +259,3 @@ irqreturn_t handle_irq_event(struct irq_desc *desc)
 	irqd_clear(&desc->irq_data, IRQD_IRQ_INPROGRESS);
 	return ret;
 }
-
-#ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER
-int __init set_handle_irq(void (*handle_irq)(struct pt_regs *))
-{
-	if (handle_arch_irq)
-		return -EBUSY;
-
-	handle_arch_irq = handle_irq;
-	return 0;
-}
-
-/**
- * generic_handle_arch_irq - root irq handler for architectures which do no
- *                           entry accounting themselves
- * @regs:	Register file coming from the low-level handling code
- */
-asmlinkage void noinstr generic_handle_arch_irq(struct pt_regs *regs)
-{
-	struct pt_regs *old_regs;
-
-	irq_enter();
-	old_regs = set_irq_regs(regs);
-	handle_arch_irq(regs);
-	set_irq_regs(old_regs);
-	irq_exit();
-}
-#endif

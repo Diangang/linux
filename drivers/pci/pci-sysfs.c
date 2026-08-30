@@ -574,33 +574,6 @@ static ssize_t reset_subordinate_store(struct device *dev,
 }
 static DEVICE_ATTR_WO(reset_subordinate);
 
-#if defined(CONFIG_PM) && defined(CONFIG_ACPI)
-static ssize_t d3cold_allowed_store(struct device *dev,
-				    struct device_attribute *attr,
-				    const char *buf, size_t count)
-{
-	struct pci_dev *pdev = to_pci_dev(dev);
-	unsigned long val;
-
-	if (kstrtoul(buf, 0, &val) < 0)
-		return -EINVAL;
-
-	pdev->d3cold_allowed = !!val;
-	pci_bridge_d3_update(pdev);
-
-	pm_runtime_resume(dev);
-
-	return count;
-}
-
-static ssize_t d3cold_allowed_show(struct device *dev,
-				   struct device_attribute *attr, char *buf)
-{
-	struct pci_dev *pdev = to_pci_dev(dev);
-	return sysfs_emit(buf, "%u\n", pdev->d3cold_allowed);
-}
-static DEVICE_ATTR_RW(d3cold_allowed);
-#endif
 
 #ifdef CONFIG_OF
 static ssize_t devspec_show(struct device *dev,
@@ -637,9 +610,6 @@ static struct attribute *pci_dev_attrs[] = {
 	&dev_attr_enable.attr,
 	&dev_attr_broken_parity_status.attr,
 	&dev_attr_msi_bus.attr,
-#if defined(CONFIG_PM) && defined(CONFIG_ACPI)
-	&dev_attr_d3cold_allowed.attr,
-#endif
 #ifdef CONFIG_OF
 	&dev_attr_devspec.attr,
 #endif

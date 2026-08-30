@@ -127,86 +127,6 @@ static inline int fsnotify_file(struct file *file, __u32 mask)
 	return fsnotify_path(&file->f_path, mask);
 }
 
-#ifdef CONFIG_FANOTIFY_ACCESS_PERMISSIONS
-
-int fsnotify_open_perm_and_set_mode(struct file *file);
-
-/*
- * fsnotify_file_area_perm - permission hook before access to file range
- */
-static inline int fsnotify_file_area_perm(struct file *file, int perm_mask,
-					  const loff_t *ppos, size_t count)
-{
-	/*
-	 * filesystem may be modified in the context of permission events
-	 * (e.g. by HSM filling a file on access), so sb freeze protection
-	 * must not be held.
-	 */
-	lockdep_assert_once(file_write_not_started(file));
-
-	if (!(perm_mask & (MAY_READ | MAY_WRITE | MAY_ACCESS)))
-		return 0;
-
-	/*
-	 * read()/write() and other types of access generate pre-content events.
-	 */
-	if (unlikely(FMODE_FSNOTIFY_HSM(file->f_mode))) {
-		int ret = fsnotify_pre_content(&file->f_path, ppos, count);
-
-		if (ret)
-			return ret;
-	}
-
-	if (!(perm_mask & MAY_READ) ||
-	    likely(!FMODE_FSNOTIFY_ACCESS_PERM(file->f_mode)))
-		return 0;
-
-	/*
-	 * read() also generates the legacy FS_ACCESS_PERM event, so content
-	 * scanners can inspect the content filled by pre-content event.
-	 */
-	return fsnotify_path(&file->f_path, FS_ACCESS_PERM);
-}
-
-/*
- * fsnotify_mmap_perm - permission hook before mmap of file range
- */
-static inline int fsnotify_mmap_perm(struct file *file, int prot,
-				     const loff_t off, size_t len)
-{
-	/*
-	 * mmap() generates only pre-content events.
-	 */
-	if (!file || likely(!FMODE_FSNOTIFY_HSM(file->f_mode)))
-		return 0;
-
-	return fsnotify_pre_content(&file->f_path, &off, len);
-}
-
-/*
- * fsnotify_truncate_perm - permission hook before file truncate
- */
-static inline int fsnotify_truncate_perm(const struct path *path, loff_t length)
-{
-	struct inode *inode = d_inode(path->dentry);
-
-	if (!(inode->i_sb->s_iflags & SB_I_ALLOW_HSM) ||
-	    !fsnotify_sb_has_priority_watchers(inode->i_sb,
-					       FSNOTIFY_PRIO_PRE_CONTENT))
-		return 0;
-
-	return fsnotify_pre_content(path, &length, 0);
-}
-
-/*
- * fsnotify_file_perm - permission hook before file access (unknown range)
- */
-static inline int fsnotify_file_perm(struct file *file, int perm_mask)
-{
-	return fsnotify_file_area_perm(file, perm_mask, NULL, 0);
-}
-
-#else
 static inline int fsnotify_open_perm_and_set_mode(struct file *file)
 {
 	return 0;
@@ -233,7 +153,6 @@ static inline int fsnotify_file_perm(struct file *file, int perm_mask)
 {
 	return 0;
 }
-#endif
 
 /*
  * fsnotify_link_count - inode's link count changed

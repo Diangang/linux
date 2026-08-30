@@ -724,20 +724,6 @@ static int msi_domain_translate(struct irq_domain *domain, struct irq_fwspec *fw
 	return info->ops->msi_translate(domain, fwspec, hwirq, type);
 }
 
-#if 0
-static void msi_domain_debug_show(struct seq_file *m, struct irq_domain *d,
-				  struct irq_data *irqd, int ind)
-{
-	struct msi_desc *desc = irqd ? irq_data_get_msi_desc(irqd) : NULL;
-
-	if (!desc)
-		return;
-
-	seq_printf(m, "\n%*saddress_hi: 0x%08x", ind + 1, "", desc->msg.address_hi);
-	seq_printf(m, "\n%*saddress_lo: 0x%08x", ind + 1, "", desc->msg.address_lo);
-	seq_printf(m, "\n%*smsg_data:   0x%08x\n", ind + 1, "", desc->msg.data);
-}
-#endif
 
 static const struct irq_domain_ops msi_domain_ops = {
 	.alloc		= msi_domain_alloc,
@@ -745,9 +731,6 @@ static const struct irq_domain_ops msi_domain_ops = {
 	.activate	= msi_domain_activate,
 	.deactivate	= msi_domain_deactivate,
 	.translate	= msi_domain_translate,
-#if 0
-	.debug_show     = msi_domain_debug_show,
-#endif
 };
 
 static irq_hw_number_t msi_domain_ops_get_hwirq(struct msi_domain_info *info,

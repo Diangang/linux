@@ -289,11 +289,7 @@ struct kparam_array
    read-only sections (which is part of respective UNIX ABI on these
    platforms). So 'const' makes no sense and even causes compile failures
    with some compilers. */
-#if defined(CONFIG_ALPHA) || defined(CONFIG_PPC64)
-#define __moduleparam_const
-#else
 #define __moduleparam_const const
-#endif
 
 /* This is the fundamental function for registering boot/module parameters. */
 #define __module_param_call(prefix, name, ops, arg, perm, level, flags)	\

@@ -921,11 +921,6 @@ static bool do_int3(struct pt_regs *regs)
 {
 	int res;
 
-#ifdef CONFIG_KGDB_LOW_LEVEL_TRAP
-	if (kgdb_ll_trap(DIE_INT3, "int3", regs, 0, X86_TRAP_BP,
-			 SIGTRAP) == NOTIFY_STOP)
-		return true;
-#endif /* CONFIG_KGDB_LOW_LEVEL_TRAP */
 
 	res = notify_die(DIE_INT3, "int3", regs, 0, X86_TRAP_BP, SIGTRAP);
 
@@ -991,48 +986,6 @@ asmlinkage __visible noinstr struct pt_regs *sync_regs(struct pt_regs *eregs)
 	return regs;
 }
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-asmlinkage __visible noinstr struct pt_regs *vc_switch_off_ist(struct pt_regs *regs)
-{
-	unsigned long sp, *stack;
-	struct stack_info info;
-	struct pt_regs *regs_ret;
-
-	/*
-	 * In the SYSCALL entry path the RSP value comes from user-space - don't
-	 * trust it and switch to the current kernel stack
-	 */
-	if (ip_within_syscall_gap(regs)) {
-		sp = current_top_of_stack();
-		goto sync;
-	}
-
-	/*
-	 * From here on the RSP value is trusted. Now check whether entry
-	 * happened from a safe stack. Not safe are the entry or unknown stacks,
-	 * use the fall-back stack instead in this case.
-	 */
-	sp    = regs->sp;
-	stack = (unsigned long *)sp;
-
-	if (!get_stack_info_noinstr(stack, current, &info) || info.type == STACK_TYPE_ENTRY ||
-	    info.type > STACK_TYPE_EXCEPTION_LAST)
-		sp = __this_cpu_ist_top_va(VC2);
-
-sync:
-	/*
-	 * Found a safe stack - switch to it as if the entry didn't happen via
-	 * IST stack. The code below only copies pt_regs, the real switch happens
-	 * in assembly code.
-	 */
-	sp = ALIGN_DOWN(sp, 8) - sizeof(*regs_ret);
-
-	regs_ret = (struct pt_regs *)sp;
-	*regs_ret = *regs;
-
-	return regs_ret;
-}
-#endif
 
 asmlinkage __visible noinstr struct pt_regs *fixup_bad_iret(struct pt_regs *bad_regs)
 {
@@ -1072,13 +1025,7 @@ static bool is_sysenter_singlestep(struct pt_regs *regs)
 	 * which instructions will be hit because BTF could plausibly
 	 * be set.)
 	 */
-#if   defined(CONFIG_IA32_EMULATION)
-	return (regs->ip - (unsigned long)entry_SYSENTER_compat) <
-		(unsigned long)__end_entry_SYSENTER_compat -
-		(unsigned long)entry_SYSENTER_compat;
-#else
 	return false;
-#endif
 }
 
 static __always_inline unsigned long debug_read_reset_dr6(void)
@@ -1460,19 +1407,6 @@ DEFINE_IDTENTRY(exc_device_not_available)
 	if (handle_xfd_event(regs))
 		return;
 
-#ifdef CONFIG_MATH_EMULATION
-	if (!boot_cpu_has(X86_FEATURE_FPU) && (cr0 & X86_CR0_EM)) {
-		struct math_emu_info info = { };
-
-		cond_local_irq_enable(regs);
-
-		info.regs = regs;
-		math_emulate(&info);
-
-		cond_local_irq_disable(regs);
-		return;
-	}
-#endif
 
 	/* This should not happen. */
 	if (WARN(cr0 & X86_CR0_TS, "CR0.TS was set")) {
@@ -1488,93 +1422,6 @@ DEFINE_IDTENTRY(exc_device_not_available)
 	}
 }
 
-#if 0
-
-#define VE_FAULT_STR "VE fault"
-
-static void ve_raise_fault(struct pt_regs *regs, long error_code,
-			   unsigned long address)
-{
-	if (user_mode(regs)) {
-		gp_user_force_sig_segv(regs, X86_TRAP_VE, error_code, VE_FAULT_STR);
-		return;
-	}
-
-	if (gp_try_fixup_and_notify(regs, X86_TRAP_VE, error_code,
-				    VE_FAULT_STR, address)) {
-		return;
-	}
-
-	die_addr(VE_FAULT_STR, regs, error_code, address);
-}
-
-/*
- * Virtualization Exceptions (#VE) are delivered to TDX guests due to
- * specific guest actions which may happen in either user space or the
- * kernel:
- *
- *  * Specific instructions (WBINVD, for example)
- *  * Specific MSR accesses
- *  * Specific CPUID leaf accesses
- *  * Access to specific guest physical addresses
- *
- * In the settings that Linux will run in, virtualization exceptions are
- * never generated on accesses to normal, TD-private memory that has been
- * accepted (by BIOS or with tdx_enc_status_changed()).
- *
- * Syscall entry code has a critical window where the kernel stack is not
- * yet set up. Any exception in this window leads to hard to debug issues
- * and can be exploited for privilege escalation. Exceptions in the NMI
- * entry code also cause issues. Returning from the exception handler with
- * IRET will re-enable NMIs and nested NMI will corrupt the NMI stack.
- *
- * For these reasons, the kernel avoids #VEs during the syscall gap and
- * the NMI entry code. Entry code paths do not access TD-shared memory,
- * MMIO regions, use #VE triggering MSRs, instructions, or CPUID leaves
- * that might generate #VE. VMM can remove memory from TD at any point,
- * but access to unaccepted (or missing) private memory leads to VM
- * termination, not to #VE.
- *
- * Similarly to page faults and breakpoints, #VEs are allowed in NMI
- * handlers once the kernel is ready to deal with nested NMIs.
- *
- * During #VE delivery, all interrupts, including NMIs, are blocked until
- * TDGETVEINFO is called. It prevents #VE nesting until the kernel reads
- * the VE info.
- *
- * If a guest kernel action which would normally cause a #VE occurs in
- * the interrupt-disabled region before TDGETVEINFO, a #DF (fault
- * exception) is delivered to the guest which will result in an oops.
- *
- * The entry code has been audited carefully for following these expectations.
- * Changes in the entry code have to be audited for correctness vs. this
- * aspect. Similarly to #PF, #VE in these places will expose kernel to
- * privilege escalation or may lead to random crashes.
- */
-DEFINE_IDTENTRY(exc_virtualization_exception)
-{
-	struct ve_info ve;
-
-	/*
-	 * NMIs/Machine-checks/Interrupts will be in a disabled state
-	 * till TDGETVEINFO TDCALL is executed. This ensures that VE
-	 * info cannot be overwritten by a nested #VE.
-	 */
-	tdx_get_ve_info(&ve);
-
-	cond_local_irq_enable(regs);
-
-	/*
-	 * If tdx_handle_virt_exception() could not process
-	 * it successfully, treat it as #GP(0) and handle it.
-	 */
-	if (!tdx_handle_virt_exception(regs, &ve))
-		ve_raise_fault(regs, 0, ve.gla);
-
-	cond_local_irq_disable(regs);
-}
-
-#endif
 
 
 void __init trap_init(void)

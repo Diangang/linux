@@ -66,14 +66,10 @@ static inline bool try_to_freeze(void)
 extern bool freeze_task(struct task_struct *p);
 extern bool set_freezable(void);
 
-#ifdef CONFIG_CGROUP_FREEZER
-extern bool cgroup1_freezing(struct task_struct *task);
-#else /* !CONFIG_CGROUP_FREEZER */
 static inline bool cgroup1_freezing(struct task_struct *task)
 {
 	return false;
 }
-#endif /* !CONFIG_CGROUP_FREEZER */
 
 #else /* !CONFIG_FREEZER */
 static inline bool frozen(struct task_struct *p) { return false; }

@@ -2064,7 +2064,7 @@ static void uart_port_spin_lock_init(struct uart_port *port)
 	lockdep_set_class(&port->lock, &port_lock_key);
 }
 
-#if defined(CONFIG_SERIAL_CORE_CONSOLE) || defined(CONFIG_CONSOLE_POLL)
+#if defined(CONFIG_SERIAL_CORE_CONSOLE)
 /**
  * uart_console_write - write a console message to a serial port
  * @port: the port to write the message
@@ -2568,87 +2568,6 @@ uart_configure_port(struct uart_driver *drv, struct uart_state *state,
 	}
 }
 
-#ifdef CONFIG_CONSOLE_POLL
-
-static int uart_poll_init(struct tty_driver *driver, int line, char *options)
-{
-	struct uart_driver *drv = driver->driver_state;
-	struct uart_state *state = drv->state + line;
-	enum uart_pm_state pm_state;
-	struct tty_port *tport;
-	struct uart_port *port;
-	int baud = 9600;
-	int bits = 8;
-	int parity = 'n';
-	int flow = 'n';
-	int ret = 0;
-
-	tport = &state->port;
-
-	guard(mutex)(&tport->mutex);
-
-	port = uart_port_check(state);
-	if (!port || port->type == PORT_UNKNOWN ||
-	    !(port->ops->poll_get_char && port->ops->poll_put_char))
-		return -1;
-
-	pm_state = state->pm_state;
-	uart_change_pm(state, UART_PM_STATE_ON);
-
-	if (port->ops->poll_init) {
-		/*
-		 * We don't set initialized as we only initialized the hw,
-		 * e.g. state->xmit is still uninitialized.
-		 */
-		if (!tty_port_initialized(tport))
-			ret = port->ops->poll_init(port);
-	}
-
-	if (!ret && options) {
-		uart_parse_options(options, &baud, &parity, &bits, &flow);
-		console_list_lock();
-		ret = uart_set_options(port, NULL, baud, parity, bits, flow);
-		console_list_unlock();
-	}
-
-	if (ret)
-		uart_change_pm(state, pm_state);
-
-	return ret;
-}
-
-static int uart_poll_get_char(struct tty_driver *driver, int line)
-{
-	struct uart_driver *drv = driver->driver_state;
-	struct uart_state *state = drv->state + line;
-	struct uart_port *port;
-	int ret = -1;
-
-	port = uart_port_ref(state);
-	if (port) {
-		ret = port->ops->poll_get_char(port);
-		uart_port_deref(port);
-	}
-
-	return ret;
-}
-
-static void uart_poll_put_char(struct tty_driver *driver, int line, char ch)
-{
-	struct uart_driver *drv = driver->driver_state;
-	struct uart_state *state = drv->state + line;
-	struct uart_port *port;
-
-	port = uart_port_ref(state);
-	if (!port)
-		return;
-
-	if (ch == '\n')
-		port->ops->poll_put_char(port, '\r');
-	port->ops->poll_put_char(port, ch);
-	uart_port_deref(port);
-}
-#endif
 
 static const struct tty_operations uart_ops = {
 	.install	= uart_install,
@@ -2679,11 +2598,6 @@ static const struct tty_operations uart_ops = {
 	.set_serial	= uart_set_info_user,
 	.get_serial	= uart_get_info_user,
 	.get_icount	= uart_get_icount,
-#ifdef CONFIG_CONSOLE_POLL
-	.poll_init	= uart_poll_init,
-	.poll_get_char	= uart_poll_get_char,
-	.poll_put_char	= uart_poll_put_char,
-#endif
 };
 
 static const struct tty_port_operations uart_port_ops = {

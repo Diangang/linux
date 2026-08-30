@@ -34,12 +34,7 @@
  * Skipped when running bindgen due to a libclang issue;
  * see https://github.com/rust-lang/rust-bindgen/issues/2244.
  */
-#if defined(CONFIG_DEBUG_INFO_BTF) && defined(CONFIG_PAHOLE_HAS_BTF_TAG) && \
-	__has_attribute(btf_type_tag) && !defined(__BINDGEN__)
-# define BTF_TYPE_TAG(value) __attribute__((btf_type_tag(#value)))
-#else
 # define BTF_TYPE_TAG(value) /* nothing */
-#endif
 
 #include <linux/compiler-context-analysis.h>
 
@@ -446,17 +441,9 @@ struct ftrace_likely_data {
 # define __noscs
 #endif
 
-#if 0
-# define __nocfi		__attribute__((__no_sanitize__("kcfi")))
-#else
 # define __nocfi
-#endif
 
-#if defined(CONFIG_ARCH_USES_CFI_GENERIC_LLVM_PASS)
-# define __nocfi_generic	__nocfi
-#else
 # define __nocfi_generic
-#endif
 
 /*
  * Any place that could be marked with the "alloc_size" attribute is also

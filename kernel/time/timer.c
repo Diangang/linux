@@ -636,191 +636,10 @@ static void internal_add_timer(struct timer_base *base, struct timer_list *timer
 	enqueue_timer(base, timer, idx, bucket_expiry);
 }
 
-#if 0
-
-static const struct debug_obj_descr timer_debug_descr;
-
-struct timer_hint {
-	void	(*function)(struct timer_list *t);
-	long	offset;
-};
-
-#define TIMER_HINT(fn, container, timr, hintfn)			\
-	{							\
-		.function = fn,					\
-		.offset	  = offsetof(container, hintfn) -	\
-			    offsetof(container, timr)		\
-	}
-
-static const struct timer_hint timer_hints[] = {
-	TIMER_HINT(delayed_work_timer_fn,
-		   struct delayed_work, timer, work.func),
-	TIMER_HINT(kthread_delayed_work_timer_fn,
-		   struct kthread_delayed_work, timer, work.func),
-};
-
-static void *timer_debug_hint(void *addr)
-{
-	struct timer_list *timer = addr;
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(timer_hints); i++) {
-		if (timer_hints[i].function == timer->function) {
-			void (**fn)(void) = addr + timer_hints[i].offset;
-
-			return *fn;
-		}
-	}
-
-	return timer->function;
-}
-
-static bool timer_is_static_object(void *addr)
-{
-	struct timer_list *timer = addr;
-
-	return (timer->entry.pprev == NULL &&
-		timer->entry.next == TIMER_ENTRY_STATIC);
-}
-
-/*
- * timer_fixup_init is called when:
- * - an active object is initialized
- */
-static bool timer_fixup_init(void *addr, enum debug_obj_state state)
-{
-	struct timer_list *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		timer_delete_sync(timer);
-		debug_object_init(timer, &timer_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-/* Stub timer callback for improperly used timers. */
-static void stub_timer(struct timer_list *unused)
-{
-	WARN_ON(1);
-}
-
-/*
- * timer_fixup_activate is called when:
- * - an active object is activated
- * - an unknown non-static object is activated
- */
-static bool timer_fixup_activate(void *addr, enum debug_obj_state state)
-{
-	struct timer_list *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_NOTAVAILABLE:
-		timer_setup(timer, stub_timer, 0);
-		return true;
-
-	case ODEBUG_STATE_ACTIVE:
-		WARN_ON(1);
-		fallthrough;
-	default:
-		return false;
-	}
-}
-
-/*
- * timer_fixup_free is called when:
- * - an active object is freed
- */
-static bool timer_fixup_free(void *addr, enum debug_obj_state state)
-{
-	struct timer_list *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		timer_delete_sync(timer);
-		debug_object_free(timer, &timer_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-/*
- * timer_fixup_assert_init is called when:
- * - an untracked/uninit-ed object is found
- */
-static bool timer_fixup_assert_init(void *addr, enum debug_obj_state state)
-{
-	struct timer_list *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_NOTAVAILABLE:
-		timer_setup(timer, stub_timer, 0);
-		return true;
-	default:
-		return false;
-	}
-}
-
-static const struct debug_obj_descr timer_debug_descr = {
-	.name			= "timer_list",
-	.debug_hint		= timer_debug_hint,
-	.is_static_object	= timer_is_static_object,
-	.fixup_init		= timer_fixup_init,
-	.fixup_activate		= timer_fixup_activate,
-	.fixup_free		= timer_fixup_free,
-	.fixup_assert_init	= timer_fixup_assert_init,
-};
-
-static inline void debug_timer_init(struct timer_list *timer)
-{
-	debug_object_init(timer, &timer_debug_descr);
-}
-
-static inline void debug_timer_activate(struct timer_list *timer)
-{
-	debug_object_activate(timer, &timer_debug_descr);
-}
-
-static inline void debug_timer_deactivate(struct timer_list *timer)
-{
-	debug_object_deactivate(timer, &timer_debug_descr);
-}
-
-static inline void debug_timer_assert_init(struct timer_list *timer)
-{
-	debug_object_assert_init(timer, &timer_debug_descr);
-}
-
-static void do_init_timer(struct timer_list *timer,
-			  void (*func)(struct timer_list *),
-			  unsigned int flags,
-			  const char *name, struct lock_class_key *key);
-
-void timer_init_key_on_stack(struct timer_list *timer,
-			     void (*func)(struct timer_list *),
-			     unsigned int flags,
-			     const char *name, struct lock_class_key *key)
-{
-	debug_object_init_on_stack(timer, &timer_debug_descr);
-	do_init_timer(timer, func, flags, name, key);
-}
-EXPORT_SYMBOL_GPL(timer_init_key_on_stack);
-
-void timer_destroy_on_stack(struct timer_list *timer)
-{
-	debug_object_free(timer, &timer_debug_descr);
-}
-EXPORT_SYMBOL_GPL(timer_destroy_on_stack);
-
-#else
 static inline void debug_timer_init(struct timer_list *timer) { }
 static inline void debug_timer_activate(struct timer_list *timer) { }
 static inline void debug_timer_deactivate(struct timer_list *timer) { }
 static inline void debug_timer_assert_init(struct timer_list *timer) { }
-#endif
 
 static inline void debug_init(struct timer_list *timer)
 {
@@ -1512,18 +1331,6 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
 {
 	int ret;
 
-#if 0
-	unsigned long flags;
-
-	/*
-	 * If lockdep gives a backtrace here, please reference
-	 * the synchronization rules above.
-	 */
-	local_irq_save(flags);
-	lock_map_acquire(&timer->lockdep_map);
-	lock_map_release(&timer->lockdep_map);
-	local_irq_restore(flags);
-#endif
 	/*
 	 * don't use it in hardirq context, because it
 	 * could lead to deadlock.
@@ -1645,18 +1452,6 @@ static void call_timer_fn(struct timer_list *timer,
 {
 	int count = preempt_count();
 
-#if 0
-	/*
-	 * It is permissible to free the timer from inside the
-	 * function that is called from it, this we need to take into
-	 * account for lockdep too. To avoid bogus "held lock freed"
-	 * warnings as well as problems when looking into
-	 * timer->lockdep_map, make a copy and use that here.
-	 */
-	struct lockdep_map lockdep_map;
-
-	lockdep_copy_map(&lockdep_map, &timer->lockdep_map);
-#endif
 	/*
 	 * Couple the lock chain with the lock chain at
 	 * timer_delete_sync() by acquiring the lock_map around the fn()

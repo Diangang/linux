@@ -84,34 +84,6 @@ static inline void shm_destroy_orphaned(struct ipc_namespace *ns) {}
 
 static inline int mq_init_ns(struct ipc_namespace *ns) { return 0; }
 
-#if 0
-static inline struct ipc_namespace *to_ipc_ns(struct ns_common *ns)
-{
-	return container_of(ns, struct ipc_namespace, ns);
-}
-
-extern struct ipc_namespace *copy_ipcs(u64 flags,
-	struct user_namespace *user_ns, struct ipc_namespace *ns);
-
-static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
-{
-	if (ns)
-		ns_ref_inc(ns);
-	return ns;
-}
-
-static inline struct ipc_namespace *get_ipc_ns_not_zero(struct ipc_namespace *ns)
-{
-	if (ns) {
-		if (ns_ref_get(ns))
-			return ns;
-	}
-
-	return NULL;
-}
-
-extern void put_ipc_ns(struct ipc_namespace *ns);
-#else
 static inline struct ipc_namespace *copy_ipcs(u64 flags,
 	struct user_namespace *user_ns, struct ipc_namespace *ns)
 {
@@ -134,7 +106,6 @@ static inline struct ipc_namespace *get_ipc_ns_not_zero(struct ipc_namespace *ns
 static inline void put_ipc_ns(struct ipc_namespace *ns)
 {
 }
-#endif
 
 
 static inline void retire_mq_sysctls(struct ipc_namespace *ns)

@@ -77,9 +77,6 @@ struct pid_namespace init_pid_ns = {
 	.child_reaper = &init_task,
 	.user_ns = &init_user_ns,
 	.pid_max = PID_MAX_DEFAULT,
-#if defined(CONFIG_SYSCTL) && defined(CONFIG_MEMFD_CREATE)
-	.memfd_noexec_scope = MEMFD_NOEXEC_SCOPE_EXEC,
-#endif
 };
 EXPORT_SYMBOL_GPL(init_pid_ns);
 

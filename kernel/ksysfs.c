@@ -61,56 +61,7 @@ static ssize_t address_bits_show(struct kobject *kobj,
 KERNEL_ATTR_RO(address_bits);
 
 
-#ifdef CONFIG_PROFILING
-static ssize_t profiling_show(struct kobject *kobj,
-				  struct kobj_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", prof_on);
-}
-static ssize_t profiling_store(struct kobject *kobj,
-				   struct kobj_attribute *attr,
-				   const char *buf, size_t count)
-{
-	int ret;
-	static DEFINE_MUTEX(lock);
 
-	/*
-	 * We need serialization, for profile_setup() initializes prof_on
-	 * value and profile_init() must not reallocate prof_buffer after
-	 * once allocated.
-	 */
-	guard(mutex)(&lock);
-	if (prof_on)
-		return -EEXIST;
-	/*
-	 * This eventually calls into get_option() which
-	 * has a ton of callers and is not const.  It is
-	 * easiest to cast it away here.
-	 */
-	profile_setup((char *)buf);
-	ret = profile_init();
-	if (ret)
-		return ret;
-	ret = create_proc_profile();
-	if (ret)
-		return ret;
-	return count;
-}
-KERNEL_ATTR_RW(profiling);
-#endif
-
-#ifdef CONFIG_VMCORE_INFO
-
-static ssize_t vmcoreinfo_show(struct kobject *kobj,
-			       struct kobj_attribute *attr, char *buf)
-{
-	phys_addr_t vmcore_base = paddr_vmcoreinfo_note();
-	return sysfs_emit(buf, "%pa %x\n", &vmcore_base,
-			  (unsigned int)VMCOREINFO_NOTE_SIZE);
-}
-KERNEL_ATTR_RO(vmcoreinfo);
-
-#endif /* CONFIG_VMCORE_INFO */
 
 /* whether file capabilities are enabled */
 static ssize_t fscaps_show(struct kobject *kobj,
@@ -171,12 +122,6 @@ static struct attribute * kernel_attrs[] = {
 	&uevent_seqnum_attr.attr,
 	&cpu_byteorder_attr.attr,
 	&address_bits_attr.attr,
-#ifdef CONFIG_PROFILING
-	&profiling_attr.attr,
-#endif
-#ifdef CONFIG_VMCORE_INFO
-	&vmcoreinfo_attr.attr,
-#endif
 	&rcu_expedited_attr.attr,
 	&rcu_normal_attr.attr,
 	NULL

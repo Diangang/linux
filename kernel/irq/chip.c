@@ -1065,131 +1065,9 @@ void irq_modify_status(unsigned int irq, unsigned long clr, unsigned long set)
 }
 EXPORT_SYMBOL_GPL(irq_modify_status);
 
-#ifdef CONFIG_DEPRECATED_IRQ_CPU_ONOFFLINE
-/**
- *	irq_cpu_online - Invoke all irq_cpu_online functions.
- *
- *	Iterate through all irqs and invoke the chip.irq_cpu_online()
- *	for each.
- */
-void irq_cpu_online(void)
-{
-	unsigned int irq;
-
-	for_each_active_irq(irq) {
-		struct irq_desc *desc = irq_to_desc(irq);
-		struct irq_chip *chip;
-
-		if (!desc)
-			continue;
-
-		guard(raw_spinlock_irqsave)(&desc->lock);
-		chip = irq_data_get_irq_chip(&desc->irq_data);
-		if (chip && chip->irq_cpu_online &&
-		    (!(chip->flags & IRQCHIP_ONOFFLINE_ENABLED) ||
-		     !irqd_irq_disabled(&desc->irq_data)))
-			chip->irq_cpu_online(&desc->irq_data);
-	}
-}
-
-/**
- *	irq_cpu_offline - Invoke all irq_cpu_offline functions.
- *
- *	Iterate through all irqs and invoke the chip.irq_cpu_offline()
- *	for each.
- */
-void irq_cpu_offline(void)
-{
-	unsigned int irq;
-
-	for_each_active_irq(irq) {
-		struct irq_desc *desc = irq_to_desc(irq);
-		struct irq_chip *chip;
-
-		if (!desc)
-			continue;
-
-		guard(raw_spinlock_irqsave)(&desc->lock);
-		chip = irq_data_get_irq_chip(&desc->irq_data);
-		if (chip && chip->irq_cpu_offline &&
-		    (!(chip->flags & IRQCHIP_ONOFFLINE_ENABLED) ||
-		     !irqd_irq_disabled(&desc->irq_data)))
-			chip->irq_cpu_offline(&desc->irq_data);
-	}
-}
-#endif
 
 #ifdef CONFIG_IRQ_DOMAIN_HIERARCHY
 
-#ifdef CONFIG_IRQ_FASTEOI_HIERARCHY_HANDLERS
-/**
- * handle_fasteoi_ack_irq - irq handler for edge hierarchy stacked on
- *			    transparent controllers
- *
- * @desc:	the interrupt description structure for this irq
- *
- * Like handle_fasteoi_irq(), but for use with hierarchy where the irq_chip
- * also needs to have its ->irq_ack() function called.
- */
-void handle_fasteoi_ack_irq(struct irq_desc *desc)
-{
-	struct irq_chip *chip = desc->irq_data.chip;
-
-	guard(raw_spinlock)(&desc->lock);
-
-	if (!irq_can_handle_pm(desc)) {
-		cond_eoi_irq(chip, &desc->irq_data);
-		return;
-	}
-
-	if (unlikely(!irq_can_handle_actions(desc))) {
-		mask_irq(desc);
-		cond_eoi_irq(chip, &desc->irq_data);
-		return;
-	}
-
-	kstat_incr_irqs_this_cpu(desc);
-	if (desc->istate & IRQS_ONESHOT)
-		mask_irq(desc);
-
-	desc->irq_data.chip->irq_ack(&desc->irq_data);
-
-	handle_irq_event(desc);
-
-	cond_unmask_eoi_irq(desc, chip);
-}
-EXPORT_SYMBOL_GPL(handle_fasteoi_ack_irq);
-
-/**
- * handle_fasteoi_mask_irq - irq handler for level hierarchy stacked on
- *			     transparent controllers
- *
- * @desc:	the interrupt description structure for this irq
- *
- * Like handle_fasteoi_irq(), but for use with hierarchy where the irq_chip
- * also needs to have its ->irq_mask_ack() function called.
- */
-void handle_fasteoi_mask_irq(struct irq_desc *desc)
-{
-	struct irq_chip *chip = desc->irq_data.chip;
-
-	guard(raw_spinlock)(&desc->lock);
-	mask_ack_irq(desc);
-
-	if (!irq_can_handle(desc)) {
-		cond_eoi_irq(chip, &desc->irq_data);
-		return;
-	}
-
-	kstat_incr_irqs_this_cpu(desc);
-
-	handle_irq_event(desc);
-
-	cond_unmask_eoi_irq(desc, chip);
-}
-EXPORT_SYMBOL_GPL(handle_fasteoi_mask_irq);
-
-#endif /* CONFIG_IRQ_FASTEOI_HIERARCHY_HANDLERS */
 
 #ifdef CONFIG_SMP
 void irq_chip_pre_redirect_parent(struct irq_data *data)
@@ -1539,13 +1417,7 @@ static struct device *irq_get_pm_device(struct irq_data *data)
  */
 int irq_chip_pm_get(struct irq_data *data)
 {
-	struct device *dev = irq_get_pm_device(data);
-	int retval = 0;
-
-	if (IS_ENABLED(CONFIG_PM) && dev)
-		retval = pm_runtime_resume_and_get(dev);
-
-	return retval;
+	return 0;
 }
 
 /**

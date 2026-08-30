@@ -108,10 +108,6 @@ struct elevator_type
 	const char *elevator_name;
 	const char *elevator_alias;
 	struct module *elevator_owner;
-#ifdef CONFIG_BLK_DEBUG_FS
-	const struct blk_mq_debugfs_attr *queue_debugfs_attrs;
-	const struct blk_mq_debugfs_attr *hctx_debugfs_attrs;
-#endif
 
 	/* managed by elevator core */
 	char icq_cache_name[ELV_NAME_MAX + 6];	/* elvname + "_io_cq" */

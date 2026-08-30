@@ -1592,7 +1592,7 @@ EXPORT_SYMBOL(do_settimeofday64);
 
 static inline bool timekeeper_is_core_tk(struct timekeeper *tk)
 {
-	return !IS_ENABLED(CONFIG_POSIX_AUX_CLOCKS) || tk->id == TIMEKEEPER_CORE;
+	return true;
 }
 
 /**
@@ -1822,8 +1822,6 @@ void ktime_get_clock_ts64(clockid_t id, struct timespec64 *ts)
 		ktime_get_raw_ts64(ts);
 		return;
 	case CLOCK_AUX ... CLOCK_AUX_LAST:
-		if (IS_ENABLED(CONFIG_POSIX_AUX_CLOCKS))
-			ktime_get_aux_ts64(id, ts);
 		return;
 	default:
 		WARN_ON_ONCE(1);
@@ -2005,68 +2003,6 @@ static void __timekeeping_inject_sleeptime(struct timekeeper *tk,
 	tk_debug_account_sleep_time(delta);
 }
 
-#if defined(CONFIG_PM_SLEEP) && defined(CONFIG_RTC_HCTOSYS_DEVICE)
-/*
- * We have three kinds of time sources to use for sleep time
- * injection, the preference order is:
- * 1) non-stop clocksource
- * 2) persistent clock (ie: RTC accessible when irqs are off)
- * 3) RTC
- *
- * 1) and 2) are used by timekeeping, 3) by RTC subsystem.
- * If system has neither 1) nor 2), 3) will be used finally.
- *
- *
- * If timekeeping has injected sleeptime via either 1) or 2),
- * 3) becomes needless, so in this case we don't need to call
- * rtc_resume(), and this is what timekeeping_rtc_skipresume()
- * means.
- */
-bool timekeeping_rtc_skipresume(void)
-{
-	return !suspend_timing_needed;
-}
-
-/*
- * 1) can be determined whether to use or not only when doing
- * timekeeping_resume() which is invoked after rtc_suspend(),
- * so we can't skip rtc_suspend() surely if system has 1).
- *
- * But if system has 2), 2) will definitely be used, so in this
- * case we don't need to call rtc_suspend(), and this is what
- * timekeeping_rtc_skipsuspend() means.
- */
-bool timekeeping_rtc_skipsuspend(void)
-{
-	return persistent_clock_exists;
-}
-
-/**
- * timekeeping_inject_sleeptime64 - Adds suspend interval to timeekeeping values
- * @delta: pointer to a timespec64 delta value
- *
- * This hook is for architectures that cannot support read_persistent_clock64
- * because their RTC/persistent clock is only accessible when irqs are enabled.
- * and also don't have an effective nonstop clocksource.
- *
- * This function should only be called by rtc_resume(), and allows
- * a suspend offset to be injected into the timekeeping values.
- */
-void timekeeping_inject_sleeptime64(const struct timespec64 *delta)
-{
-	scoped_guard(raw_spinlock_irqsave, &tk_core.lock) {
-		struct timekeeper *tks = &tk_core.shadow_timekeeper;
-
-		suspend_timing_needed = false;
-		timekeeping_forward_now(tks);
-		__timekeeping_inject_sleeptime(tks, delta);
-		timekeeping_update_from_shadow(&tk_core, TK_UPDATE_ALL);
-	}
-
-	/* Signal hrtimers about time change */
-	clock_was_set(CLOCK_SET_WALL | CLOCK_SET_BOOT);
-}
-#endif
 
 /**
  * timekeeping_resume - Resumes the generic timekeeping subsystem.
@@ -2918,18 +2854,3 @@ long ktime_get_ntp_seconds(unsigned int id)
 {
 	return timekeeper_data[id].timekeeper.xtime_sec;
 }
-
-#ifdef CONFIG_NTP_PPS
-/**
- * hardpps() - Accessor function to NTP __hardpps function
- * @phase_ts:	Pointer to timespec64 structure representing phase timestamp
- * @raw_ts:	Pointer to timespec64 structure representing raw timestamp
- */
-void hardpps(const struct timespec64 *phase_ts, const struct timespec64 *raw_ts)
-{
-	guard(raw_spinlock_irqsave)(&tk_core.lock);
-	__hardpps(phase_ts, raw_ts);
-}
-EXPORT_SYMBOL(hardpps);
-#endif /* CONFIG_NTP_PPS */
-

@@ -10,11 +10,7 @@
 
 #ifdef CONFIG_X86_64
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-#define VC_EXCEPTION_STKSZ	EXCEPTION_STKSZ
-#else
 #define VC_EXCEPTION_STKSZ	0
-#endif
 
 /* Macro to enforce the same ordering and stack sizes */
 #define ESTACKS_MEMBERS(guardsize, optional_stack_size)		\

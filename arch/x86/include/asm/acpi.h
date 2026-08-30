@@ -16,9 +16,6 @@
 #include <asm/x86_init.h>
 #include <asm/cpufeature.h>
 #include <asm/irq_vectors.h>
-#ifdef CONFIG_ACPI_APEI
-# include <asm/pgtable_types.h>
-#endif
 
 #ifdef CONFIG_ACPI
 extern int acpi_lapic;
@@ -158,13 +155,6 @@ void acpi_generic_reduced_hw_init(void);
 void x86_default_set_root_pointer(u64 addr);
 u64 x86_default_get_root_pointer(void);
 
-#ifdef CONFIG_XEN_PV
-/* A Xen PV domain needs a special acpi_os_ioremap() handling. */
-extern void __iomem * (*acpi_os_ioremap)(acpi_physical_address phys,
-					 acpi_size size);
-void __iomem *x86_acpi_os_ioremap(acpi_physical_address phys, acpi_size size);
-#define acpi_os_ioremap acpi_os_ioremap
-#endif
 
 #else /* !CONFIG_ACPI */
 
@@ -188,39 +178,13 @@ static inline u64 x86_default_get_root_pointer(void)
 
 #define ARCH_HAS_POWER_INIT	1
 
-#ifdef CONFIG_ACPI_NUMA
-extern int x86_acpi_numa_init(void);
-#endif /* CONFIG_ACPI_NUMA */
 
 struct cper_ia_proc_ctx;
 
-#ifdef CONFIG_ACPI_APEI
-static inline pgprot_t arch_apei_get_mem_attribute(phys_addr_t addr)
-{
-	/*
-	 * We currently have no way to look up the EFI memory map
-	 * attributes for a region in a consistent way, because the
-	 * memmap is discarded after efi_free_boot_services(). So if
-	 * you call efi_mem_attributes() during boot and at runtime,
-	 * you could theoretically see different attributes.
-	 *
-	 * We are yet to see any x86 platforms that require anything
-	 * other than PAGE_KERNEL (some ARM64 platforms require the
-	 * equivalent of PAGE_KERNEL_NOCACHE). Additionally, if SME
-	 * is active, the ACPI information will not be encrypted,
-	 * so return PAGE_KERNEL_NOENC until we know differently.
-	 */
-	return PAGE_KERNEL_NOENC;
-}
-
-int arch_apei_report_x86_error(struct cper_ia_proc_ctx *ctx_info,
-			       u64 lapic_id);
-#else
 static inline int arch_apei_report_x86_error(struct cper_ia_proc_ctx *ctx_info,
 					     u64 lapic_id)
 {
 	return -EINVAL;
 }
-#endif
 
 #endif /* _ASM_X86_ACPI_H */

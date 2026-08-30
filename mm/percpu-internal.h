@@ -33,14 +33,8 @@ struct pcpu_block_md {
 };
 
 struct pcpuobj_ext {
-#ifdef CONFIG_MEMCG
-	struct obj_cgroup	*cgroup;
-#endif
 };
 
-#if defined(CONFIG_MEMCG) || defined(CONFIG_MEM_ALLOC_PROFILING)
-#define NEED_PCPUOBJ_EXT
-#endif
 
 struct pcpu_chunk {
 
@@ -82,11 +76,7 @@ struct pcpu_chunk {
 
 static inline bool need_pcpuobj_ext(void)
 {
-	if (IS_ENABLED(CONFIG_MEM_ALLOC_PROFILING))
-		return true;
-	if (!mem_cgroup_kmem_disabled())
-		return true;
-	return false;
+	return !mem_cgroup_kmem_disabled();
 }
 
 extern spinlock_t pcpu_lock;
@@ -147,10 +137,6 @@ static inline size_t pcpu_obj_full_size(size_t size)
 {
 	size_t extra_size = 0;
 
-#ifdef CONFIG_MEMCG
-	if (!mem_cgroup_kmem_disabled())
-		extra_size += size / PCPU_MIN_ALLOC_SIZE * sizeof(struct obj_cgroup *);
-#endif
 
 	return size * num_possible_cpus() + extra_size;
 }

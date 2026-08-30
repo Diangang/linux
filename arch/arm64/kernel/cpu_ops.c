@@ -15,9 +15,6 @@
 #include <asm/smp_plat.h>
 
 extern const struct cpu_operations smp_spin_table_ops;
-#ifdef CONFIG_ARM64_ACPI_PARKING_PROTOCOL
-extern const struct cpu_operations acpi_parking_protocol_ops;
-#endif
 extern const struct cpu_operations cpu_psci_ops;
 
 static const struct cpu_operations *cpu_ops[NR_CPUS] __ro_after_init;
@@ -29,9 +26,6 @@ static const struct cpu_operations *const dt_supported_cpu_ops[] __initconst = {
 };
 
 static const struct cpu_operations *const acpi_supported_cpu_ops[] __initconst = {
-#ifdef CONFIG_ARM64_ACPI_PARKING_PROTOCOL
-	&acpi_parking_protocol_ops,
-#endif
 	&cpu_psci_ops,
 	NULL,
 };

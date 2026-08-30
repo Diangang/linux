@@ -156,11 +156,6 @@ struct pinctrl_desc {
 	const struct pinmux_ops *pmxops;
 	const struct pinconf_ops *confops;
 	struct module *owner;
-#ifdef CONFIG_GENERIC_PINCONF
-	unsigned int num_custom_params;
-	const struct pinconf_generic_params *custom_params;
-	const struct pin_config_item *custom_conf_items;
-#endif
 	bool link_consumers;
 };
 
@@ -237,15 +232,11 @@ struct pinfunction {
 		.flags = PINFUNCTION_FLAG_GPIO,			\
 	}
 
-#if IS_ENABLED(CONFIG_OF) && IS_ENABLED(CONFIG_PINCTRL)
-extern struct pinctrl_dev *of_pinctrl_get(struct device_node *np);
-#else
 static inline
 struct pinctrl_dev *of_pinctrl_get(struct device_node *np)
 {
 	return NULL;
 }
-#endif /* CONFIG_OF */
 
 extern const char *pinctrl_dev_get_name(struct pinctrl_dev *pctldev);
 extern const char *pinctrl_dev_get_devname(struct pinctrl_dev *pctldev);

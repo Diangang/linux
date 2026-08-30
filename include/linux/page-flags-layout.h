@@ -72,13 +72,7 @@
 #define NODE_NOT_IN_PAGE_FLAGS	1
 #endif
 
-#if 0
-#define KASAN_TAG_WIDTH 8
-#elif 0
-#define KASAN_TAG_WIDTH 4
-#else
 #define KASAN_TAG_WIDTH 0
-#endif
 
 #ifdef CONFIG_NUMA_BALANCING
 #define LAST__PID_SHIFT 8

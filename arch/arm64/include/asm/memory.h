@@ -94,17 +94,8 @@
  * As KASAN inserts redzones between stack variables, this increases the stack
  * memory usage significantly. Thus, we double the (minimum) stack size.
  */
-#if 0 || 0
-#define KASAN_SHADOW_OFFSET	_AC(0, UL)
-#define KASAN_SHADOW_END	((UL(1) << (64 - KASAN_SHADOW_SCALE_SHIFT)) + KASAN_SHADOW_OFFSET)
-#define _KASAN_SHADOW_START(va)	(KASAN_SHADOW_END - (UL(1) << ((va) - KASAN_SHADOW_SCALE_SHIFT)))
-#define KASAN_SHADOW_START	_KASAN_SHADOW_START(vabits_actual)
-#define PAGE_END		KASAN_SHADOW_START
-#define KASAN_THREAD_SHIFT	1
-#else
 #define KASAN_THREAD_SHIFT	0
 #define PAGE_END		(_PAGE_END(VA_BITS_MIN))
-#endif
 
 #define DIRECT_MAP_PHYSMEM_END	__pa(PAGE_END - 1)
 
@@ -289,15 +280,9 @@ static inline bool kaslr_enabled(void) { return false; }
 	(__force __typeof__(addr))__addr;				\
 })
 
-#if 0 || 0
-#define __tag_shifted(tag)	((u64)(tag) << 56)
-#define __tag_reset(addr)	__untagged_addr(addr)
-#define __tag_get(addr)		(__u8)((u64)(addr) >> 56)
-#else
 #define __tag_shifted(tag)	0UL
 #define __tag_reset(addr)	(addr)
 #define __tag_get(addr)		0
-#endif /* CONFIG_KASAN_SW_TAGS || CONFIG_KASAN_HW_TAGS */
 
 static inline const void *__tag_set(const void *addr, u8 tag)
 {
@@ -305,19 +290,6 @@ static inline const void *__tag_set(const void *addr, u8 tag)
 	return (const void *)(__addr | __tag_shifted(tag));
 }
 
-#if 0
-#define arch_enable_tag_checks_sync()		mte_enable_kernel_sync()
-#define arch_enable_tag_checks_async()		mte_enable_kernel_async()
-#define arch_enable_tag_checks_asymm()		mte_enable_kernel_asymm()
-#define arch_enable_tag_checks_write_only()	mte_enable_kernel_store_only()
-#define arch_suppress_tag_checks_start()	mte_enable_tco()
-#define arch_suppress_tag_checks_stop()		mte_disable_tco()
-#define arch_force_async_tag_fault()		mte_check_tfsr_exit()
-#define arch_get_random_tag()			mte_get_random_tag()
-#define arch_get_mem_tag(addr)			mte_get_mem_tag(addr)
-#define arch_set_mem_tag_range(addr, size, tag, init)	\
-			mte_set_mem_tag_range((addr), (size), (tag), (init))
-#endif /* CONFIG_KASAN_HW_TAGS */
 
 /*
  * Physical vs virtual RAM address space conversion.  These are
@@ -417,18 +389,12 @@ void dump_mem_limit(void);
  * tables (one per CPU), as we are forced to reuse the same memory after kexec
  * (and thus reserve it persistently with EFI beforehand)
  */
-#if defined(CONFIG_EFI) && defined(CONFIG_ARM_GIC_V3_ITS)
-# define INIT_MEMBLOCK_RESERVED_REGIONS	(INIT_MEMBLOCK_REGIONS + NR_CPUS + 1)
-#endif
 
 /*
  * memory regions which marked with flag MEMBLOCK_NOMAP(for example, the memory
  * of the EFI_UNUSABLE_MEMORY type) may divide a continuous memory block into
  * multiple parts. As a result, the number of memory regions is large.
  */
-#ifdef CONFIG_EFI
-#define INIT_MEMBLOCK_MEMORY_REGIONS	(INIT_MEMBLOCK_REGIONS * 8)
-#endif
 
 
 #endif /* __ASM_MEMORY_H */

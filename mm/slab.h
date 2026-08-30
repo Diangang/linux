@@ -96,9 +96,7 @@ struct slab {
 SLAB_MATCH(flags, flags);
 SLAB_MATCH(compound_info, slab_cache);	/* Ensure bit 0 is clear */
 SLAB_MATCH(_refcount, __page_refcount);
-#ifdef CONFIG_MEMCG
-SLAB_MATCH(memcg_data, obj_exts);
-#elif defined(CONFIG_SLAB_OBJ_EXT)
+#if   defined(CONFIG_SLAB_OBJ_EXT)
 SLAB_MATCH(_unused_slab_obj_exts, obj_exts);
 #endif
 #undef SLAB_MATCH
@@ -229,14 +227,7 @@ struct kmem_cache {
 #endif
 
 
-#if 0
-	struct kasan_cache kasan_info;
-#endif
 
-#ifdef CONFIG_HARDENED_USERCOPY
-	unsigned int useroffset;	/* Usercopy region offset */
-	unsigned int usersize;		/* Usercopy region size */
-#endif
 
 
 	struct kmem_cache_per_node_ptrs per_node[MAX_NUMNODES];
@@ -254,7 +245,7 @@ static inline bool cache_has_sheaves(struct kmem_cache *s)
 	return !0 && s->sheaf_capacity;
 }
 
-#if defined(CONFIG_SYSFS) && !0
+#if defined(CONFIG_SYSFS)
 #define SLAB_SUPPORTS_SYSFS 1
 void sysfs_slab_unlink(struct kmem_cache *s);
 void sysfs_slab_release(struct kmem_cache *s);
@@ -518,15 +509,6 @@ static inline unsigned long slab_obj_exts(struct slab *slab)
 {
 	unsigned long obj_exts = READ_ONCE(slab->obj_exts);
 
-#ifdef CONFIG_MEMCG
-	/*
-	 * obj_exts should be either NULL, a valid pointer with
-	 * MEMCG_DATA_OBJEXTS bit set or be equal to OBJEXTS_ALLOC_FAIL.
-	 */
-	VM_BUG_ON_PAGE(obj_exts && !(obj_exts & MEMCG_DATA_OBJEXTS) &&
-		       obj_exts != OBJEXTS_ALLOC_FAIL, slab_page(slab));
-	VM_BUG_ON_PAGE(obj_exts & MEMCG_DATA_KMEM, slab_page(slab));
-#endif
 
 	return obj_exts & ~OBJEXTS_FLAGS_MASK;
 }
@@ -614,12 +596,6 @@ static inline enum node_stat_item cache_vmstat_idx(struct kmem_cache *s)
 		NR_SLAB_RECLAIMABLE_B : NR_SLAB_UNRECLAIMABLE_B;
 }
 
-#ifdef CONFIG_MEMCG
-bool __memcg_slab_post_alloc_hook(struct kmem_cache *s, struct list_lru *lru,
-				  gfp_t flags, size_t size, void **p);
-void __memcg_slab_free_hook(struct kmem_cache *s, struct slab *slab,
-			    void **p, int objects, unsigned long obj_exts);
-#endif
 
 void kvfree_rcu_cb(struct rcu_head *head);
 

@@ -24,9 +24,6 @@
 #include <linux/security.h>
 #include "internal.h"
 
-#ifdef CONFIG_ACPI_CUSTOM_DSDT
-#include CONFIG_ACPI_CUSTOM_DSDT_FILE
-#endif
 
 #define ACPI_MAX_TABLES		128
 
@@ -403,10 +400,6 @@ acpi_os_physical_table_override(struct acpi_table_header *existing_table,
 					  table_length);
 }
 
-#ifdef CONFIG_ACPI_CUSTOM_DSDT
-static void *amlcode __attribute__ ((weakref("AmlCode")));
-static void *dsdt_amlcode __attribute__ ((weakref("dsdt_aml_code")));
-#endif
 
 acpi_status acpi_os_table_override(struct acpi_table_header *existing_table,
 		       struct acpi_table_header **new_table)
@@ -416,13 +409,6 @@ acpi_status acpi_os_table_override(struct acpi_table_header *existing_table,
 
 	*new_table = NULL;
 
-#ifdef CONFIG_ACPI_CUSTOM_DSDT
-	if (!strncmp(existing_table->signature, "DSDT", 4)) {
-		*new_table = (struct acpi_table_header *)&amlcode;
-		if (!(*new_table))
-			*new_table = (struct acpi_table_header *)&dsdt_amlcode;
-	}
-#endif
 	if (*new_table != NULL)
 		acpi_table_taint(existing_table);
 	return AE_OK;

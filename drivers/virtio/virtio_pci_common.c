@@ -591,70 +591,6 @@ const struct cpumask *vp_get_vq_affinity(struct virtio_device *vdev, int index)
 				    vp_dev->vqs[index]->msix_vector);
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int virtio_pci_freeze(struct device *dev)
-{
-	struct pci_dev *pci_dev = to_pci_dev(dev);
-	struct virtio_pci_device *vp_dev = pci_get_drvdata(pci_dev);
-	int ret;
-
-	ret = virtio_device_freeze(&vp_dev->vdev);
-
-	if (!ret)
-		pci_disable_device(pci_dev);
-	return ret;
-}
-
-static int virtio_pci_restore(struct device *dev)
-{
-	struct pci_dev *pci_dev = to_pci_dev(dev);
-	struct virtio_pci_device *vp_dev = pci_get_drvdata(pci_dev);
-	int ret;
-
-	ret = pci_enable_device(pci_dev);
-	if (ret)
-		return ret;
-
-	pci_set_master(pci_dev);
-	return virtio_device_restore(&vp_dev->vdev);
-}
-
-static bool vp_supports_pm_no_reset(struct device *dev)
-{
-	struct pci_dev *pci_dev = to_pci_dev(dev);
-	u16 pmcsr;
-
-	if (!pci_dev->pm_cap)
-		return false;
-
-	pci_read_config_word(pci_dev, pci_dev->pm_cap + PCI_PM_CTRL, &pmcsr);
-	if (PCI_POSSIBLE_ERROR(pmcsr)) {
-		dev_err(dev, "Unable to query pmcsr");
-		return false;
-	}
-
-	return pmcsr & PCI_PM_CTRL_NO_SOFT_RESET;
-}
-
-static int virtio_pci_suspend(struct device *dev)
-{
-	return vp_supports_pm_no_reset(dev) ? 0 : virtio_pci_freeze(dev);
-}
-
-static int virtio_pci_resume(struct device *dev)
-{
-	return vp_supports_pm_no_reset(dev) ? 0 : virtio_pci_restore(dev);
-}
-
-static const struct dev_pm_ops virtio_pci_pm_ops = {
-	.suspend = virtio_pci_suspend,
-	.resume = virtio_pci_resume,
-	.freeze = virtio_pci_freeze,
-	.thaw = virtio_pci_restore,
-	.poweroff = virtio_pci_freeze,
-	.restore = virtio_pci_restore,
-};
-#endif
 
 
 /* Qumranet donated their vendor ID for devices 0x1000 thru 0x10FF. */
@@ -836,9 +772,6 @@ static struct pci_driver virtio_pci_driver = {
 	.id_table	= virtio_pci_id_table,
 	.probe		= virtio_pci_probe,
 	.remove		= virtio_pci_remove,
-#ifdef CONFIG_PM_SLEEP
-	.driver.pm	= &virtio_pci_pm_ops,
-#endif
 	.sriov_configure = virtio_pci_sriov_configure,
 	.err_handler	= &virtio_pci_err_handler,
 };

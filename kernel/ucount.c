@@ -80,14 +80,6 @@ static const struct ctl_table user_table[] = {
 	UCOUNT_ENTRY("max_mnt_namespaces"),
 	UCOUNT_ENTRY("max_cgroup_namespaces"),
 	UCOUNT_ENTRY("max_time_namespaces"),
-#ifdef CONFIG_INOTIFY_USER
-	UCOUNT_ENTRY("max_inotify_instances"),
-	UCOUNT_ENTRY("max_inotify_watches"),
-#endif
-#ifdef CONFIG_FANOTIFY
-	UCOUNT_ENTRY("max_fanotify_groups"),
-	UCOUNT_ENTRY("max_fanotify_marks"),
-#endif
 };
 #endif /* CONFIG_SYSCTL */
 

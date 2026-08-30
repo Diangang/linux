@@ -4,7 +4,6 @@
 #
 
 ccflags-y			:= -D_LINUX -DBUILDING_ACPICA
-ccflags-$(CONFIG_ACPI_DEBUG)	+= -DACPI_DEBUG_OUTPUT
 CFLAGS_tbfind.o 		+= $(call cc-disable-warning, stringop-truncation)
 
 # use acpi.o to put all files here into acpi.o modparam namespace
@@ -184,4 +183,3 @@ acpi-y +=		\
 	utxfinit.o	\
 	utxferror.o	\
 	utxfmutex.o
-

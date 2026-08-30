@@ -980,10 +980,6 @@ static bool folio_referenced_one(struct folio *folio,
 		} else if (pvmw.pte) {
 			if (clear_flush_young_ptes_notify(vma, address, pvmw.pte, nr))
 				referenced++;
-		} else if (IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE)) {
-			if (pmdp_clear_flush_young_notify(vma, address,
-						pvmw.pmd))
-				referenced++;
 		} else {
 			/* unexpected pmd-mapped folio? */
 			WARN_ON_ONCE(1);
@@ -1137,31 +1133,8 @@ static int page_vma_mkclean_one(struct page_vma_mapped_walk *pvmw)
 			set_pte_at(vma->vm_mm, address, pte, entry);
 			ret = 1;
 		} else {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-			pmd_t *pmd = pvmw->pmd;
-			pmd_t entry = pmdp_get(pmd);
-
-			/*
-			 * Please see the comment above (!pte_present).
-			 * A non present PMD is not writable from a CPU
-			 * perspective.
-			 */
-			if (!pmd_present(entry))
-				continue;
-			if (!pmd_dirty(entry) && !pmd_write(entry))
-				continue;
-
-			flush_cache_range(vma, address,
-					  address + HPAGE_PMD_SIZE);
-			entry = pmdp_invalidate(vma, address, pmd);
-			entry = pmd_wrprotect(entry);
-			entry = pmd_mkclean(entry);
-			set_pmd_at(vma->vm_mm, address, pmd, entry);
-			ret = 1;
-#else
 			/* unexpected pmd-mapped folio? */
 			WARN_ON_ONCE(1);
-#endif
 		}
 
 		if (ret)
@@ -1612,12 +1585,7 @@ void folio_add_anon_rmap_ptes(struct folio *folio, struct page *page,
 void folio_add_anon_rmap_pmd(struct folio *folio, struct page *page,
 		struct vm_area_struct *vma, unsigned long address, rmap_t flags)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	__folio_add_anon_rmap(folio, page, HPAGE_PMD_NR, vma, address, flags,
-			      PGTABLE_LEVEL_PMD);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 /**
@@ -1741,11 +1709,7 @@ void folio_add_file_rmap_ptes(struct folio *folio, struct page *page,
 void folio_add_file_rmap_pmd(struct folio *folio, struct page *page,
 		struct vm_area_struct *vma)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	__folio_add_file_rmap(folio, page, HPAGE_PMD_NR, vma, PGTABLE_LEVEL_PMD);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 /**
@@ -1761,12 +1725,7 @@ void folio_add_file_rmap_pmd(struct folio *folio, struct page *page,
 void folio_add_file_rmap_pud(struct folio *folio, struct page *page,
 		struct vm_area_struct *vma)
 {
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && \
-	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-	__folio_add_file_rmap(folio, page, HPAGE_PUD_NR, vma, PGTABLE_LEVEL_PUD);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 static __always_inline void __folio_remove_rmap(struct folio *folio,
@@ -1909,11 +1868,7 @@ void folio_remove_rmap_ptes(struct folio *folio, struct page *page,
 void folio_remove_rmap_pmd(struct folio *folio, struct page *page,
 		struct vm_area_struct *vma)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	__folio_remove_rmap(folio, page, HPAGE_PMD_NR, vma, PGTABLE_LEVEL_PMD);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 /**
@@ -1929,12 +1884,7 @@ void folio_remove_rmap_pmd(struct folio *folio, struct page *page,
 void folio_remove_rmap_pud(struct folio *folio, struct page *page,
 		struct vm_area_struct *vma)
 {
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && \
-	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-	__folio_remove_rmap(folio, page, HPAGE_PUD_NR, vma, PGTABLE_LEVEL_PUD);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 static inline unsigned int folio_unmap_pte_batch(struct folio *folio,
@@ -2766,141 +2716,6 @@ void try_to_migrate(struct folio *folio, enum ttu_flags flags)
 		rmap_walk(folio, &rwc);
 }
 
-#if 0
-/**
- * make_device_exclusive() - Mark a page for exclusive use by a device
- * @mm: mm_struct of associated target process
- * @addr: the virtual address to mark for exclusive device access
- * @owner: passed to MMU_NOTIFY_EXCLUSIVE range notifier to allow filtering
- * @foliop: folio pointer will be stored here on success.
- *
- * This function looks up the page mapped at the given address, grabs a
- * folio reference, locks the folio and replaces the PTE with special
- * device-exclusive PFN swap entry, preventing access through the process
- * page tables. The function will return with the folio locked and referenced.
- *
- * On fault, the device-exclusive entries are replaced with the original PTE
- * under folio lock, after calling MMU notifiers.
- *
- * Only anonymous non-hugetlb folios are supported and the VMA must have
- * write permissions such that we can fault in the anonymous page writable
- * in order to mark it exclusive. The caller must hold the mmap_lock in read
- * mode.
- *
- * A driver using this to program access from a device must use a mmu notifier
- * critical section to hold a device specific lock during programming. Once
- * programming is complete it should drop the folio lock and reference after
- * which point CPU access to the page will revoke the exclusive access.
- *
- * Notes:
- *   #. This function always operates on individual PTEs mapping individual
- *      pages. PMD-sized THPs are first remapped to be mapped by PTEs before
- *      the conversion happens on a single PTE corresponding to @addr.
- *   #. While concurrent access through the process page tables is prevented,
- *      concurrent access through other page references (e.g., earlier GUP
- *      invocation) is not handled and not supported.
- *   #. device-exclusive entries are considered "clean" and "old" by core-mm.
- *      Device drivers must update the folio state when informed by MMU
- *      notifiers.
- *
- * Returns: pointer to mapped page on success, otherwise a negative error.
- */
-struct page *make_device_exclusive(struct mm_struct *mm, unsigned long addr,
-		void *owner, struct folio **foliop)
-{
-	struct mmu_notifier_range range;
-	struct folio *folio, *fw_folio;
-	struct vm_area_struct *vma;
-	struct folio_walk fw;
-	struct page *page;
-	swp_entry_t entry;
-	pte_t swp_pte;
-	int ret;
-
-	mmap_assert_locked(mm);
-	addr = PAGE_ALIGN_DOWN(addr);
-
-	/*
-	 * Fault in the page writable and try to lock it; note that if the
-	 * address would already be marked for exclusive use by a device,
-	 * the GUP call would undo that first by triggering a fault.
-	 *
-	 * If any other device would already map this page exclusively, the
-	 * fault will trigger a conversion to an ordinary
-	 * (non-device-exclusive) PTE and issue a MMU_NOTIFY_EXCLUSIVE.
-	 */
-retry:
-	page = get_user_page_vma_remote(mm, addr,
-					FOLL_GET | FOLL_WRITE | FOLL_SPLIT_PMD,
-					&vma);
-	if (IS_ERR(page))
-		return page;
-	folio = page_folio(page);
-
-	if (!folio_test_anon(folio) || folio_test_hugetlb(folio)) {
-		folio_put(folio);
-		return ERR_PTR(-EOPNOTSUPP);
-	}
-
-	ret = folio_lock_killable(folio);
-	if (ret) {
-		folio_put(folio);
-		return ERR_PTR(ret);
-	}
-
-	/*
-	 * Inform secondary MMUs that we are going to convert this PTE to
-	 * device-exclusive, such that they unmap it now. Note that the
-	 * caller must filter this event out to prevent livelocks.
-	 */
-	mmu_notifier_range_init_owner(&range, MMU_NOTIFY_EXCLUSIVE, 0,
-				      mm, addr, addr + PAGE_SIZE, owner);
-	mmu_notifier_invalidate_range_start(&range);
-
-	/*
-	 * Let's do a second walk and make sure we still find the same page
-	 * mapped writable. Note that any page of an anonymous folio can
-	 * only be mapped writable using exactly one PTE ("exclusive"), so
-	 * there cannot be other mappings.
-	 */
-	fw_folio = folio_walk_start(&fw, vma, addr, 0);
-	if (fw_folio != folio || fw.page != page ||
-	    fw.level != FW_LEVEL_PTE || !pte_write(fw.pte)) {
-		if (fw_folio)
-			folio_walk_end(&fw, vma);
-		mmu_notifier_invalidate_range_end(&range);
-		folio_unlock(folio);
-		folio_put(folio);
-		goto retry;
-	}
-
-	/* Nuke the page table entry so we get the uptodate dirty bit. */
-	flush_cache_page(vma, addr, page_to_pfn(page));
-	fw.pte = ptep_clear_flush(vma, addr, fw.ptep);
-
-	/* Set the dirty flag on the folio now the PTE is gone. */
-	if (pte_dirty(fw.pte))
-		folio_mark_dirty(folio);
-
-	/*
-	 * Store the pfn of the page in a special device-exclusive PFN swap PTE.
-	 * do_swap_page() will trigger the conversion back while holding the
-	 * folio lock.
-	 */
-	entry = make_device_exclusive_entry(page_to_pfn(page));
-	swp_pte = swp_entry_to_pte(entry);
-	if (pte_soft_dirty(fw.pte))
-		swp_pte = pte_swp_mksoft_dirty(swp_pte);
-	/* The pte is writable, uffd-wp does not apply. */
-	set_pte_at(mm, addr, fw.ptep, swp_pte);
-
-	folio_walk_end(&fw, vma);
-	mmu_notifier_invalidate_range_end(&range);
-	*foliop = folio;
-	return page;
-}
-EXPORT_SYMBOL_GPL(make_device_exclusive);
-#endif
 
 void __put_anon_vma(struct anon_vma *anon_vma)
 {
@@ -3110,38 +2925,3 @@ void rmap_walk_locked(struct folio *folio, struct rmap_walk_control *rwc)
 	else
 		rmap_walk_file(folio, rwc, true);
 }
-
-#ifdef CONFIG_HUGETLB_PAGE
-/*
- * The following two functions are for anonymous (private mapped) hugepages.
- * Unlike common anonymous pages, anonymous hugepages have no accounting code
- * and no lru code, because we handle hugepages differently from common pages.
- */
-void hugetlb_add_anon_rmap(struct folio *folio, struct vm_area_struct *vma,
-		unsigned long address, rmap_t flags)
-{
-	VM_WARN_ON_FOLIO(!folio_test_hugetlb(folio), folio);
-	VM_WARN_ON_FOLIO(!folio_test_anon(folio), folio);
-
-	atomic_inc(&folio->_entire_mapcount);
-	atomic_inc(&folio->_large_mapcount);
-	if (flags & RMAP_EXCLUSIVE)
-		SetPageAnonExclusive(&folio->page);
-	VM_WARN_ON_FOLIO(folio_entire_mapcount(folio) > 1 &&
-			 PageAnonExclusive(&folio->page), folio);
-}
-
-void hugetlb_add_new_anon_rmap(struct folio *folio,
-		struct vm_area_struct *vma, unsigned long address)
-{
-	VM_WARN_ON_FOLIO(!folio_test_hugetlb(folio), folio);
-
-	BUG_ON(address < vma->vm_start || address >= vma->vm_end);
-	/* increment count (starts at -1) */
-	atomic_set(&folio->_entire_mapcount, 0);
-	atomic_set(&folio->_large_mapcount, 0);
-	folio_clear_hugetlb_restore_reserve(folio);
-	__folio_set_anon(folio, vma, address, true);
-	SetPageAnonExclusive(&folio->page);
-}
-#endif /* CONFIG_HUGETLB_PAGE */

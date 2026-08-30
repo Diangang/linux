@@ -32,18 +32,8 @@ static struct kmem_cache *nsproxy_cachep;
 struct nsproxy init_nsproxy = {
 	.count			= REFCOUNT_INIT(1),
 	.uts_ns			= &init_uts_ns,
-#if 0 || 0
-	.ipc_ns			= &init_ipc_ns,
-#endif
 	.mnt_ns			= NULL,
 	.pid_ns_for_children	= &init_pid_ns,
-#ifdef CONFIG_CGROUPS
-	.cgroup_ns		= &init_cgroup_ns,
-#endif
-#ifdef CONFIG_TIME_NS
-	.time_ns		= &init_time_ns,
-	.time_ns_for_children	= &init_time_ns,
-#endif
 };
 
 static inline struct nsproxy *create_nsproxy(void)
@@ -289,30 +279,18 @@ static int check_setns_flags(unsigned long flags)
 	if (!flags || (flags & ~CLONE_NS_ALL))
 		return -EINVAL;
 
-#ifndef CONFIG_USER_NS
 	if (flags & CLONE_NEWUSER)
 		return -EINVAL;
-#endif
-#ifndef CONFIG_PID_NS
 	if (flags & CLONE_NEWPID)
 		return -EINVAL;
-#endif
-#ifndef CONFIG_UTS_NS
 	if (flags & CLONE_NEWUTS)
 		return -EINVAL;
-#endif
-#if 1
 	if (flags & CLONE_NEWIPC)
 		return -EINVAL;
-#endif
-#ifndef CONFIG_CGROUPS
 	if (flags & CLONE_NEWCGROUP)
 		return -EINVAL;
-#endif
-#ifndef CONFIG_TIME_NS
 	if (flags & CLONE_NEWTIME)
 		return -EINVAL;
-#endif
 
 	return 0;
 }
@@ -409,22 +387,7 @@ static int validate_nsset(struct nsset *nsset, struct pid *pid)
 		return -ESRCH;
 	}
 
-#ifdef CONFIG_PID_NS
-	if (flags & CLONE_NEWPID) {
-		pid_ns = task_active_pid_ns(tsk);
-		if (unlikely(!pid_ns)) {
-			rcu_read_unlock();
-			ret = -ESRCH;
-			goto out;
-		}
-		get_pid_ns(pid_ns);
-	}
-#endif
 
-#ifdef CONFIG_USER_NS
-	if (flags & CLONE_NEWUSER)
-		user_ns = get_user_ns(__task_cred(tsk)->user_ns);
-#endif
 	rcu_read_unlock();
 
 	/*
@@ -433,13 +396,6 @@ static int validate_nsset(struct nsset *nsset, struct pid *pid)
 	 * supported on this kernel. We don't report errors here
 	 * if a namespace is requested that isn't supported.
 	 */
-#ifdef CONFIG_USER_NS
-	if (flags & CLONE_NEWUSER) {
-		ret = validate_ns(nsset, &user_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
 
 	if (flags & CLONE_NEWNS) {
 		ret = validate_ns(nsset, from_mnt_ns(nsp->mnt_ns));
@@ -447,46 +403,11 @@ static int validate_nsset(struct nsset *nsset, struct pid *pid)
 			goto out;
 	}
 
-#ifdef CONFIG_UTS_NS
-	if (flags & CLONE_NEWUTS) {
-		ret = validate_ns(nsset, &nsp->uts_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
-
-#if 0
-	if (flags & CLONE_NEWIPC) {
-		ret = validate_ns(nsset, &nsp->ipc_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
-
-#ifdef CONFIG_PID_NS
-	if (flags & CLONE_NEWPID) {
-		ret = validate_ns(nsset, &pid_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
-
-#ifdef CONFIG_CGROUPS
-	if (flags & CLONE_NEWCGROUP) {
-		ret = validate_ns(nsset, &nsp->cgroup_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
 
 
-#ifdef CONFIG_TIME_NS
-	if (flags & CLONE_NEWTIME) {
-		ret = validate_ns(nsset, &nsp->time_ns->ns);
-		if (ret)
-			goto out;
-	}
-#endif
+
+
+
 
 out:
 	if (pid_ns)
@@ -512,13 +433,6 @@ static void commit_nsset(struct nsset *nsset)
 	unsigned flags = nsset->flags;
 	struct task_struct *me = current;
 
-#ifdef CONFIG_USER_NS
-	if (flags & CLONE_NEWUSER) {
-		/* transfer ownership */
-		commit_creds(nsset_cred(nsset));
-		nsset->cred = NULL;
-	}
-#endif
 
 	/* We only need to commit if we have used a temporary fs_struct. */
 	if ((flags & CLONE_NEWNS) && (flags & ~CLONE_NEWNS)) {
@@ -526,15 +440,7 @@ static void commit_nsset(struct nsset *nsset)
 		set_fs_pwd(me->fs, &nsset->fs->pwd);
 	}
 
-#if 0
-	if (flags & CLONE_NEWIPC)
-		exit_sem(me);
-#endif
 
-#ifdef CONFIG_TIME_NS
-	if (flags & CLONE_NEWTIME)
-		timens_commit(me, nsset->nsproxy->time_ns);
-#endif
 
 	/* transfer ownership */
 	switch_task_namespaces(me, nsset->nsproxy);

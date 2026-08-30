@@ -44,8 +44,7 @@
 
 static inline int is_ia32_compat_frame(struct ksignal *ksig)
 {
-	return IS_ENABLED(CONFIG_IA32_EMULATION) &&
-		ksig->ka.sa.sa_flags & SA_IA32_ABI;
+	return 0;
 }
 
 static inline int is_ia32_frame(struct ksignal *ksig)
@@ -177,11 +176,7 @@ get_sigframe(struct ksignal *ksig, struct pt_regs *regs, size_t frame_size,
  * -- the largest size. It means the size for 64-bit apps is a bit more
  * than needed, but this keeps the code simple.
  */
-#if 0 || defined(CONFIG_IA32_EMULATION)
-# define MAX_FRAME_SIGINFO_UCTXT_SIZE	sizeof(struct sigframe_ia32)
-#else
 # define MAX_FRAME_SIGINFO_UCTXT_SIZE	sizeof(struct rt_sigframe)
-#endif
 
 /*
  * The FP state frame contains an XSAVE buffer which must be 64-byte aligned.
@@ -313,10 +308,6 @@ handle_signal(struct ksignal *ksig, struct pt_regs *regs)
 
 static inline unsigned long get_nr_restart_syscall(const struct pt_regs *regs)
 {
-#ifdef CONFIG_IA32_EMULATION
-	if (current->restart_block.arch_data & TS_COMPAT)
-		return __NR_ia32_restart_syscall;
-#endif
 	return __NR_restart_syscall;
 }
 

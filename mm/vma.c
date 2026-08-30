@@ -641,61 +641,6 @@ static int dup_anon_vma(struct vm_area_struct *dst,
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_VM_MAPLE_TREE
-void validate_mm(struct mm_struct *mm)
-{
-	int bug = 0;
-	int i = 0;
-	struct vm_area_struct *vma;
-	VMA_ITERATOR(vmi, mm, 0);
-
-	mt_validate(&mm->mm_mt);
-	for_each_vma(vmi, vma) {
-#ifdef CONFIG_DEBUG_VM_RB
-		struct anon_vma *anon_vma = vma->anon_vma;
-		struct anon_vma_chain *avc;
-#endif
-		unsigned long vmi_start, vmi_end;
-		bool warn = 0;
-
-		vmi_start = vma_iter_addr(&vmi);
-		vmi_end = vma_iter_end(&vmi);
-		if (VM_WARN_ON_ONCE_MM(vma->vm_end != vmi_end, mm))
-			warn = 1;
-
-		if (VM_WARN_ON_ONCE_MM(vma->vm_start != vmi_start, mm))
-			warn = 1;
-
-		if (warn) {
-			pr_emerg("issue in %s\n", current->comm);
-			dump_stack();
-			dump_vma(vma);
-			pr_emerg("tree range: %px start %lx end %lx\n", vma,
-				 vmi_start, vmi_end - 1);
-			vma_iter_dump_tree(&vmi);
-		}
-
-#ifdef CONFIG_DEBUG_VM_RB
-		if (anon_vma) {
-			anon_vma_lock_read(anon_vma);
-			list_for_each_entry(avc, &vma->anon_vma_chain, same_vma)
-				anon_vma_interval_tree_verify(avc);
-			anon_vma_unlock_read(anon_vma);
-		}
-#endif
-		/* Check for a infinite loop */
-		if (++i > mm->map_count + 10) {
-			i = -1;
-			break;
-		}
-	}
-	if (i != mm->map_count) {
-		pr_emerg("map_count %d vma iterator %d\n", mm->map_count, i);
-		bug = 1;
-	}
-	VM_BUG_ON_MM(bug, mm);
-}
-#endif /* CONFIG_DEBUG_VM_MAPLE_TREE */
 
 /*
  * Based on the vmg flag indicating whether we need to adjust the vm_start field
@@ -1487,35 +1432,12 @@ static int vms_gather_munmap_vmas(struct vma_munmap_struct *vms,
 			if (error)
 				goto userfaultfd_error;
 		}
-#ifdef CONFIG_DEBUG_VM_MAPLE_TREE
-		BUG_ON(next->vm_start < vms->start);
-		BUG_ON(next->vm_start > vms->end);
-#endif
 	}
 
 	vms->next = vma_next(vms->vmi);
 	if (vms->next)
 		vms->unmap_end = vms->next->vm_start;
 
-#if defined(CONFIG_DEBUG_VM_MAPLE_TREE)
-	/* Make sure no VMAs are about to be lost. */
-	{
-		MA_STATE(test, mas_detach->tree, 0, 0);
-		struct vm_area_struct *vma_mas, *vma_test;
-		int test_count = 0;
-
-		vma_iter_set(vms->vmi, vms->start);
-		rcu_read_lock();
-		vma_test = mas_find(&test, vms->vma_count - 1);
-		for_each_vma_range(*(vms->vmi), vma_mas, vms->end) {
-			BUG_ON(vma_mas != vma_test);
-			test_count++;
-			vma_test = mas_next(&test, vms->vma_count - 1);
-		}
-		rcu_read_unlock();
-		BUG_ON(vms->vma_count != test_count);
-	}
-#endif
 
 	while (vma_iter_addr(vms->vmi) > vms->start)
 		vma_iter_prev_range(vms->vmi);
@@ -2573,10 +2495,6 @@ static int __mmap_new_vma(struct mmap_state *map, struct vm_area_struct **vmap,
 		vma->flags = map->vma_flags;
 	}
 
-#ifdef CONFIG_SPARC64
-	/* TODO: Fix SPARC ADI! */
-	WARN_ON_ONCE(!arch_validate_flags(map->vm_flags));
-#endif
 
 	/* Lock the VMA since it is modified after insertion into VMA tree */
 	vma_start_write(vma);
@@ -3085,10 +3003,6 @@ static int acct_stack_growth(struct vm_area_struct *vma,
 
 	/* Check to ensure the stack will not grow into a hugetlb-only region */
 	new_start = vma->vm_end - size;
-#ifdef CONFIG_STACK_GROWSUP
-	if (vma_test(vma, VMA_GROWSUP_BIT))
-		new_start = vma->vm_start;
-#endif
 	if (is_hugepage_only_range(vma->vm_mm, new_start, size))
 		return -EFAULT;
 
@@ -3102,90 +3016,6 @@ static int acct_stack_growth(struct vm_area_struct *vma,
 	return 0;
 }
 
-#ifdef CONFIG_STACK_GROWSUP
-/*
- * PA-RISC uses this for its stack.
- * vma is the last one with address > vma->vm_end.  Have to extend vma.
- */
-int expand_upwards(struct vm_area_struct *vma, unsigned long address)
-{
-	struct mm_struct *mm = vma->vm_mm;
-	struct vm_area_struct *next;
-	unsigned long gap_addr;
-	int error = 0;
-	VMA_ITERATOR(vmi, mm, vma->vm_start);
-
-	if (!vma_test(vma, VMA_GROWSUP_BIT))
-		return -EFAULT;
-
-	mmap_assert_write_locked(mm);
-
-	/* Guard against exceeding limits of the address space. */
-	address &= PAGE_MASK;
-	if (address >= (TASK_SIZE & PAGE_MASK))
-		return -ENOMEM;
-	address += PAGE_SIZE;
-
-	/* Enforce stack_guard_gap */
-	gap_addr = address + stack_guard_gap;
-
-	/* Guard against overflow */
-	if (gap_addr < address || gap_addr > TASK_SIZE)
-		gap_addr = TASK_SIZE;
-
-	next = find_vma_intersection(mm, vma->vm_end, gap_addr);
-	if (next && vma_is_accessible(next)) {
-		if (!vma_test(next, VMA_GROWSUP_BIT))
-			return -ENOMEM;
-		/* Check that both stack segments have the same anon_vma? */
-	}
-
-	if (next)
-		vma_iter_prev_range_limit(&vmi, address);
-
-	vma_iter_config(&vmi, vma->vm_start, address);
-	if (vma_iter_prealloc(&vmi, vma))
-		return -ENOMEM;
-
-	/* We must make sure the anon_vma is allocated. */
-	if (unlikely(anon_vma_prepare(vma))) {
-		vma_iter_free(&vmi);
-		return -ENOMEM;
-	}
-
-	/* Lock the VMA before expanding to prevent concurrent page faults */
-	vma_start_write(vma);
-	/* We update the anon VMA tree. */
-	anon_vma_lock_write(vma->anon_vma);
-
-	/* Somebody else might have raced and expanded it already */
-	if (address > vma->vm_end) {
-		unsigned long size, grow;
-
-		size = address - vma->vm_start;
-		grow = (address - vma->vm_end) >> PAGE_SHIFT;
-
-		error = -ENOMEM;
-		if (vma->vm_pgoff + (size >> PAGE_SHIFT) >= vma->vm_pgoff) {
-			error = acct_stack_growth(vma, size, grow);
-			if (!error) {
-				if (vma_test(vma, VMA_LOCKED_BIT))
-					mm->locked_vm += grow;
-				vm_stat_account(mm, vma->vm_flags, grow);
-				anon_vma_interval_tree_pre_update_vma(vma);
-				vma->vm_end = address;
-				/* Overwrite old entry in mtree. */
-				vma_iter_store_overwrite(&vmi, vma);
-				anon_vma_interval_tree_post_update_vma(vma);
-			}
-		}
-	}
-	anon_vma_unlock_write(vma->anon_vma);
-	vma_iter_free(&vmi);
-	validate_mm(mm);
-	return error;
-}
-#endif /* CONFIG_STACK_GROWSUP */
 
 /*
  * vma is the first one with address < vma->vm_start.  Have to extend vma.

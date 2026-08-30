@@ -603,12 +603,6 @@ nmi_restart:
 		goto nmi_restart;
 }
 
-#if IS_ENABLED(CONFIG_KVM_INTEL)
-DEFINE_IDTENTRY_RAW(exc_nmi_kvm_vmx)
-{
-	exc_nmi(regs);
-}
-#endif
 
 
 

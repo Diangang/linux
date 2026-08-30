@@ -109,26 +109,6 @@ static const struct attribute_group *node_access_node_groups[] = {
 	NULL,
 };
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-static BLOCKING_NOTIFIER_HEAD(node_chain);
-
-int register_node_notifier(struct notifier_block *nb)
-{
-	return blocking_notifier_chain_register(&node_chain, nb);
-}
-EXPORT_SYMBOL(register_node_notifier);
-
-void unregister_node_notifier(struct notifier_block *nb)
-{
-	blocking_notifier_chain_unregister(&node_chain, nb);
-}
-EXPORT_SYMBOL(unregister_node_notifier);
-
-int node_notify(unsigned long val, void *v)
-{
-	return blocking_notifier_call_chain(&node_chain, val, v);
-}
-#endif
 
 static void node_remove_accesses(struct node *node)
 {
@@ -197,9 +177,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 	si_meminfo_node(&i, nid);
 	sreclaimable = node_page_state_pages(pgdat, NR_SLAB_RECLAIMABLE_B);
 	sunreclaimable = node_page_state_pages(pgdat, NR_SLAB_UNRECLAIMABLE_B);
-#ifdef CONFIG_SWAP
-	swapcached = node_page_state_pages(pgdat, NR_SWAPCACHE);
-#endif
 	len = sysfs_emit_at(buf, len,
 			    "Node %d MemTotal:       %8lu kB\n"
 			    "Node %d MemFree:        %8lu kB\n"
@@ -245,16 +222,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 			     "Node %d Slab:           %8lu kB\n"
 			     "Node %d SReclaimable:   %8lu kB\n"
 			     "Node %d SUnreclaim:     %8lu kB\n"
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-			     "Node %d AnonHugePages:  %8lu kB\n"
-			     "Node %d ShmemHugePages: %8lu kB\n"
-			     "Node %d ShmemPmdMapped: %8lu kB\n"
-			     "Node %d FileHugePages:  %8lu kB\n"
-			     "Node %d FilePmdMapped:  %8lu kB\n"
-#endif
-#ifdef CONFIG_UNACCEPTED_MEMORY
-			     "Node %d Unaccepted:     %8lu kB\n"
-#endif
 			     "Node %d GPUActive:      %8lu kB\n"
 			     "Node %d GPUReclaim:     %8lu kB\n"
 			     ,
@@ -275,18 +242,6 @@ static ssize_t node_read_meminfo(struct device *dev,
 			     nid, K(sreclaimable + sunreclaimable),
 			     nid, K(sreclaimable),
 			     nid, K(sunreclaimable)
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-			     ,
-			     nid, K(node_page_state(pgdat, NR_ANON_THPS)),
-			     nid, K(node_page_state(pgdat, NR_SHMEM_THPS)),
-			     nid, K(node_page_state(pgdat, NR_SHMEM_PMDMAPPED)),
-			     nid, K(node_page_state(pgdat, NR_FILE_THPS)),
-			     nid, K(node_page_state(pgdat, NR_FILE_PMDMAPPED))
-#endif
-#ifdef CONFIG_UNACCEPTED_MEMORY
-			     ,
-			     nid, K(sum_zone_node_page_state(nid, NR_UNACCEPTED))
-#endif
 			     ,
 			     nid, K(node_page_state(pgdat, NR_GPU_ACTIVE)),
 			     nid, K(node_page_state(pgdat, NR_GPU_RECLAIM))
@@ -396,9 +351,6 @@ static const struct attribute_group node_dev_group = {
 
 static const struct attribute_group *node_dev_groups[] = {
 	&node_dev_group,
-#if 0
-	&arch_node_dev_group,
-#endif
 #ifdef CONFIG_MEMORY_FAILURE
 	&memory_failure_attr_group,
 #endif
@@ -507,95 +459,6 @@ int unregister_cpu_under_node(unsigned int cpu, unsigned int nid)
 	return 0;
 }
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-static void do_register_memory_block_under_node(int nid,
-						struct memory_block *mem_blk)
-{
-	int ret;
-
-	ret = sysfs_create_link_nowarn(&node_devices[nid]->dev.kobj,
-				       &mem_blk->dev.kobj,
-				       kobject_name(&mem_blk->dev.kobj));
-	if (ret && ret != -EEXIST)
-		dev_err_ratelimited(&node_devices[nid]->dev,
-				    "can't create link to %s in sysfs (%d)\n",
-				    kobject_name(&mem_blk->dev.kobj), ret);
-
-	ret = sysfs_create_link_nowarn(&mem_blk->dev.kobj,
-				&node_devices[nid]->dev.kobj,
-				kobject_name(&node_devices[nid]->dev.kobj));
-	if (ret && ret != -EEXIST)
-		dev_err_ratelimited(&mem_blk->dev,
-				    "can't create link to %s in sysfs (%d)\n",
-				    kobject_name(&node_devices[nid]->dev.kobj),
-				    ret);
-}
-
-/*
- * During hotplug we know that all pages in the memory block belong to the same
- * node.
- */
-static int register_mem_block_under_node_hotplug(struct memory_block *mem_blk,
-						 void *arg)
-{
-	int nid = *(int *)arg;
-
-	do_register_memory_block_under_node(nid, mem_blk);
-	return 0;
-}
-
-/*
- * Unregister a memory block device under the node it spans. Memory blocks
- * with multiple nodes cannot be offlined and therefore also never be removed.
- */
-void unregister_memory_block_under_nodes(struct memory_block *mem_blk)
-{
-	if (mem_blk->nid == NUMA_NO_NODE)
-		return;
-
-	sysfs_remove_link(&node_devices[mem_blk->nid]->dev.kobj,
-			  kobject_name(&mem_blk->dev.kobj));
-	sysfs_remove_link(&mem_blk->dev.kobj,
-			  kobject_name(&node_devices[mem_blk->nid]->dev.kobj));
-}
-
-/* register all memory blocks under the corresponding nodes */
-static void register_memory_blocks_under_nodes(void)
-{
-	struct memblock_region *r;
-
-	for_each_mem_region(r) {
-		const unsigned long start_block_id = phys_to_block_id(r->base);
-		const unsigned long end_block_id = phys_to_block_id(r->base + r->size - 1);
-		const int nid = memblock_get_region_node(r);
-		unsigned long block_id;
-
-		if (!node_online(nid))
-			continue;
-
-		for (block_id = start_block_id; block_id <= end_block_id; block_id++) {
-			struct memory_block *mem;
-
-			mem = find_memory_block_by_id(block_id);
-			if (!mem)
-				continue;
-
-			memory_block_add_nid_early(mem, nid);
-			do_register_memory_block_under_node(nid, mem);
-			put_device(&mem->dev);
-		}
-
-	}
-}
-
-void register_memory_blocks_under_node_hotplug(int nid, unsigned long start_pfn,
-					       unsigned long end_pfn)
-{
-	walk_memory_blocks(PFN_PHYS(start_pfn), PFN_PHYS(end_pfn - start_pfn),
-			   (void *)&nid, register_mem_block_under_node_hotplug);
-	return;
-}
-#endif /* CONFIG_MEMORY_HOTPLUG */
 
 /**
  * register_node - Initialize and register the node device.

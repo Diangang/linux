@@ -1453,7 +1453,7 @@ static struct device_node *parse_interrupts(struct device_node *np,
 {
 	struct of_phandle_args sup_args;
 
-	if (!IS_ENABLED(CONFIG_OF_IRQ) || IS_ENABLED(CONFIG_PPC))
+	if (!IS_ENABLED(CONFIG_OF_IRQ))
 		return NULL;
 
 	if (strcmp(prop_name, "interrupts") &&

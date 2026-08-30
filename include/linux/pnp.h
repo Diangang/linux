@@ -23,16 +23,11 @@ struct pnp_dev;
 /*
  * Resource Management
  */
-#ifdef CONFIG_PNP
-struct resource *pnp_get_resource(struct pnp_dev *dev, unsigned long type,
-				unsigned int num);
-#else
 static inline struct resource *pnp_get_resource(struct pnp_dev *dev,
 			unsigned long type, unsigned int num)
 {
 	return NULL;
 }
-#endif
 
 static inline int pnp_resource_valid(struct resource *res)
 {
@@ -321,35 +316,13 @@ struct pnp_fixup {
 				  console_suspend_enabled))
 
 
-#ifdef CONFIG_ISAPNP
-extern struct pnp_protocol isapnp_protocol;
-#define pnp_device_is_isapnp(dev) ((dev)->protocol == (&isapnp_protocol))
-#else
 #define pnp_device_is_isapnp(dev) 0
-#endif
 extern struct mutex pnp_res_mutex;
 
-#ifdef CONFIG_PNPBIOS
-extern struct pnp_protocol pnpbios_protocol;
-extern bool arch_pnpbios_disabled(void);
-#define pnp_device_is_pnpbios(dev) ((dev)->protocol == (&pnpbios_protocol))
-#else
 #define pnp_device_is_pnpbios(dev) 0
 #define arch_pnpbios_disabled()	false
-#endif
 
-#ifdef CONFIG_PNPACPI
-extern struct pnp_protocol pnpacpi_protocol;
-
-static inline struct acpi_device *pnp_acpi_device(struct pnp_dev *dev)
-{
-	if (dev->protocol == &pnpacpi_protocol)
-		return dev->data;
-	return NULL;
-}
-#else
 #define pnp_acpi_device(dev) 0
-#endif
 
 /* status */
 #define PNP_READY		0x0000
@@ -435,41 +408,6 @@ struct pnp_protocol {
 #define protocol_for_each_dev(protocol, dev)	\
 	list_for_each_entry(dev, &(protocol)->devices, protocol_list)
 
-#if defined(CONFIG_PNP)
-
-/* device management */
-int pnp_device_attach(struct pnp_dev *pnp_dev);
-void pnp_device_detach(struct pnp_dev *pnp_dev);
-extern struct list_head pnp_global;
-extern int pnp_platform_devices;
-
-/* multidevice card support */
-struct pnp_dev *pnp_request_card_device(struct pnp_card_link *clink,
-					const char *id, struct pnp_dev *from);
-void pnp_release_card_device(struct pnp_dev *dev);
-int pnp_register_card_driver(struct pnp_card_driver *drv);
-void pnp_unregister_card_driver(struct pnp_card_driver *drv);
-extern struct list_head pnp_cards;
-
-/* resource management */
-int pnp_possible_config(struct pnp_dev *dev, int type, resource_size_t base,
-			resource_size_t size);
-int pnp_auto_config_dev(struct pnp_dev *dev);
-int pnp_start_dev(struct pnp_dev *dev);
-int pnp_stop_dev(struct pnp_dev *dev);
-int pnp_activate_dev(struct pnp_dev *dev);
-int pnp_disable_dev(struct pnp_dev *dev);
-int pnp_range_reserved(resource_size_t start, resource_size_t end);
-
-/* protocol helpers */
-int pnp_is_active(struct pnp_dev *dev);
-int compare_pnp_id(struct pnp_id *pos, const char *id);
-int pnp_register_driver(struct pnp_driver *drv);
-void pnp_unregister_driver(struct pnp_driver *drv);
-
-bool dev_is_pnp(const struct device *dev);
-
-#else
 
 /* device management */
 static inline int pnp_device_attach(struct pnp_dev *pnp_dev) { return -ENODEV; }
@@ -502,7 +440,6 @@ static inline void pnp_unregister_driver(struct pnp_driver *drv) { }
 
 static inline bool dev_is_pnp(const struct device *dev) { return false; }
 
-#endif /* CONFIG_PNP */
 
 /**
  * module_pnp_driver() - Helper macro for registering a PnP driver

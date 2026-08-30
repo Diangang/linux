@@ -150,11 +150,7 @@ extern struct paravirt_patch_template pv_ops;
  * The ZERO_CALL_USED REGS feature may end up zeroing out callee-saved
  * registers. Make sure we model this with the appropriate clobbers.
  */
-#ifdef CONFIG_ZERO_CALL_USED_REGS
-#define PVOP_VCALLEE_CLOBBERS	"=a" (__eax), PVOP_VCALL_CLOBBERS
-#else
 #define PVOP_VCALLEE_CLOBBERS	"=a" (__eax)
-#endif
 #define PVOP_CALLEE_CLOBBERS	PVOP_VCALLEE_CLOBBERS
 
 #define EXTRA_CLOBBERS	 , "r8", "r9", "r10", "r11"

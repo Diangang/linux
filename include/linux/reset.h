@@ -70,47 +70,6 @@ enum reset_control_flags {
 							  RESET_CONTROL_FLAGS_BIT_DEASSERTED,
 };
 
-#ifdef CONFIG_RESET_CONTROLLER
-
-int reset_control_reset(struct reset_control *rstc);
-int reset_control_rearm(struct reset_control *rstc);
-int reset_control_assert(struct reset_control *rstc);
-int reset_control_deassert(struct reset_control *rstc);
-int reset_control_status(struct reset_control *rstc);
-int reset_control_acquire(struct reset_control *rstc);
-void reset_control_release(struct reset_control *rstc);
-
-int reset_control_bulk_reset(int num_rstcs, struct reset_control_bulk_data *rstcs);
-int reset_control_bulk_assert(int num_rstcs, struct reset_control_bulk_data *rstcs);
-int reset_control_bulk_deassert(int num_rstcs, struct reset_control_bulk_data *rstcs);
-int reset_control_bulk_acquire(int num_rstcs, struct reset_control_bulk_data *rstcs);
-void reset_control_bulk_release(int num_rstcs, struct reset_control_bulk_data *rstcs);
-
-struct reset_control *__fwnode_reset_control_get(struct fwnode_handle *fwnode,
-				     const char *id, int index, enum reset_control_flags flags);
-struct reset_control *__reset_control_get(struct device *dev, const char *id,
-					  int index, enum reset_control_flags flags);
-void reset_control_put(struct reset_control *rstc);
-int __reset_control_bulk_get(struct device *dev, int num_rstcs,
-			     struct reset_control_bulk_data *rstcs,
-			     enum reset_control_flags flags);
-void reset_control_bulk_put(int num_rstcs, struct reset_control_bulk_data *rstcs);
-
-int __device_reset(struct device *dev, bool optional);
-struct reset_control *__devm_reset_control_get(struct device *dev,
-				     const char *id, int index, enum reset_control_flags flags);
-int __devm_reset_control_bulk_get(struct device *dev, int num_rstcs,
-				  struct reset_control_bulk_data *rstcs,
-				  enum reset_control_flags flags);
-
-struct reset_control *devm_reset_control_array_get(struct device *dev,
-						   enum reset_control_flags flags);
-struct reset_control *fwnode_reset_control_array_get(struct fwnode_handle *fwnode,
-						     enum reset_control_flags);
-
-int reset_control_get_count(struct device *dev);
-
-#else
 
 static inline int reset_control_reset(struct reset_control *rstc)
 {
@@ -257,7 +216,6 @@ static inline int reset_control_get_count(struct device *dev)
 	return -ENOENT;
 }
 
-#endif /* CONFIG_RESET_CONTROLLER */
 
 static inline int __must_check device_reset(struct device *dev)
 {

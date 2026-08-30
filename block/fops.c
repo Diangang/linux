@@ -957,9 +957,6 @@ const struct file_operations def_blk_fops = {
 	.mmap_prepare	= blkdev_mmap_prepare,
 	.fsync		= blkdev_fsync,
 	.unlocked_ioctl	= blkdev_ioctl,
-#ifdef CONFIG_COMPAT
-	.compat_ioctl	= compat_blkdev_ioctl,
-#endif
 	.splice_read	= filemap_splice_read,
 	.splice_write	= iter_file_splice_write,
 	.fallocate	= blkdev_fallocate,

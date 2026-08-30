@@ -114,17 +114,6 @@ static int vmap_pte_range(pmd_t *pmd, unsigned long addr, unsigned long end,
 			BUG();
 		}
 
-#ifdef CONFIG_HUGETLB_PAGE
-		size = arch_vmap_pte_range_map_size(addr, end, pfn, max_page_shift);
-		if (size != PAGE_SIZE) {
-			pte_t entry = pfn_pte(pfn, prot);
-
-			entry = arch_make_huge_pte(entry, ilog2(size), 0);
-			set_huge_pte_at(&init_mm, addr, pte, entry, size);
-			pfn += PFN_DOWN(size);
-			continue;
-		}
-#endif
 		set_pte_at(&init_mm, addr, pte, pfn_pte(pfn, prot));
 		pfn++;
 	} while (pte += PFN_DOWN(size), addr += size, addr != end);
@@ -369,18 +358,6 @@ static void vunmap_pte_range(pmd_t *pmd, unsigned long addr, unsigned long end,
 	lazy_mmu_mode_enable();
 
 	do {
-#ifdef CONFIG_HUGETLB_PAGE
-		size = arch_vmap_pte_range_unmap_size(addr, pte);
-		if (size != PAGE_SIZE) {
-			if (WARN_ON(!IS_ALIGNED(addr, size))) {
-				addr = ALIGN_DOWN(addr, size);
-				pte = PTR_ALIGN_DOWN(pte, sizeof(*pte) * (size >> PAGE_SHIFT));
-			}
-			ptent = huge_ptep_get_and_clear(&init_mm, addr, pte, size);
-			if (WARN_ON(end - addr < size))
-				size = end - addr;
-		} else
-#endif
 			ptent = ptep_get_and_clear(&init_mm, addr, pte);
 		WARN_ON(!pte_none(ptent) && !pte_present(ptent));
 	} while (pte += (size >> PAGE_SHIFT), addr += size, addr != end);
@@ -4048,9 +4025,6 @@ void *__vmalloc_node_noprof(unsigned long size, unsigned long align,
  * It is required by vmalloc test module, therefore do not use it other
  * than that.
  */
-#ifdef CONFIG_TEST_VMALLOC_MODULE
-EXPORT_SYMBOL_GPL(__vmalloc_node_noprof);
-#endif
 
 void *__vmalloc_noprof(unsigned long size, gfp_t gfp_mask)
 {

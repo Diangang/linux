@@ -458,65 +458,7 @@ struct gpio_chip {
 	const char		*const *names;
 	bool			can_sleep;
 
-#ifdef CONFIG_GPIOLIB_IRQCHIP
-	/*
-	 * With CONFIG_GPIOLIB_IRQCHIP we get an irqchip inside the gpiolib
-	 * to handle IRQs for most practical cases.
-	 */
 
-	/**
-	 * @irq:
-	 *
-	 * Integrates interrupt chip functionality with the GPIO chip. Can be
-	 * used to handle IRQs for most practical cases.
-	 */
-	struct gpio_irq_chip irq;
-#endif /* CONFIG_GPIOLIB_IRQCHIP */
-
-#if defined(CONFIG_OF_GPIO)
-	/*
-	 * If CONFIG_OF_GPIO is enabled, then all GPIO controllers described in
-	 * the device tree automatically may have an OF translation
-	 */
-
-	/**
-	 * @of_gpio_n_cells:
-	 *
-	 * Number of cells used to form the GPIO specifier. The standard is 2
-	 * cells:
-	 *
-	 * gpios = <&gpio offset flags>;
-	 *
-	 * some complex GPIO controllers instantiate more than one chip per
-	 * device tree node and have 3 cells:
-	 *
-	 * gpios = <&gpio instance offset flags>;
-	 *
-	 * Legacy GPIO controllers may even have 1 cell:
-	 *
-	 * gpios = <&gpio offset>;
-	 */
-	unsigned int of_gpio_n_cells;
-
-	/**
-	 * @of_node_instance_match:
-	 *
-	 * Determine if a chip is the right instance. Must be implemented by
-	 * any driver using more than one gpio_chip per device tree node.
-	 * Returns true if gc is the instance indicated by i (which is the
-	 * first cell in the phandles for GPIO lines and gpio-ranges).
-	 */
-	bool (*of_node_instance_match)(struct gpio_chip *gc, unsigned int i);
-
-	/**
-	 * @of_xlate:
-	 *
-	 * Callback to translate a device tree GPIO specifier into a chip-
-	 * relative GPIO number and flags.
-	 */
-	int (*of_xlate)(struct gpio_chip *gc,
-			const struct of_phandle_args *gpiospec, u32 *flags);
-#endif /* CONFIG_OF_GPIO */
 };
 
 char *gpiochip_dup_line_label(struct gpio_chip *gc, unsigned int offset);
@@ -606,24 +548,9 @@ int gpiochip_add_data_with_key(struct gpio_chip *gc, void *data,
  * gc->base is invalid or already associated with a different chip.
  * Otherwise it returns zero as a success code.
  */
-#if 0
-#define gpiochip_add_data(gc, data) ({		\
-		static struct lock_class_key lock_key;	\
-		static struct lock_class_key request_key;	  \
-		gpiochip_add_data_with_key(gc, data, &lock_key, \
-					   &request_key);	  \
-	})
-#define devm_gpiochip_add_data(dev, gc, data) ({ \
-		static struct lock_class_key lock_key;	\
-		static struct lock_class_key request_key;	  \
-		devm_gpiochip_add_data_with_key(dev, gc, data, &lock_key, \
-					   &request_key);	  \
-	})
-#else
 #define gpiochip_add_data(gc, data) gpiochip_add_data_with_key(gc, data, NULL, NULL)
 #define devm_gpiochip_add_data(dev, gc, data) \
 	devm_gpiochip_add_data_with_key(dev, gc, data, NULL, NULL)
-#endif /* CONFIG_LOCKDEP */
 
 void gpiochip_remove(struct gpio_chip *gc);
 int devm_gpiochip_add_data_with_key(struct device *dev, struct gpio_chip *gc,
@@ -689,10 +616,6 @@ int gpiochip_populate_parent_fwspec_fourcell(struct gpio_chip *gc,
 
 #endif /* CONFIG_IRQ_DOMAIN_HIERARCHY */
 
-#ifdef CONFIG_GPIOLIB_IRQCHIP
-int gpiochip_irqchip_add_domain(struct gpio_chip *gc,
-				struct irq_domain *domain);
-#else
 
 #include <asm/bug.h>
 
@@ -702,7 +625,6 @@ static inline int gpiochip_irqchip_add_domain(struct gpio_chip *gc,
 	WARN_ON(1);
 	return -EINVAL;
 }
-#endif
 
 int gpiochip_generic_request(struct gpio_chip *gc, unsigned int offset);
 void gpiochip_generic_free(struct gpio_chip *gc, unsigned int offset);
@@ -721,41 +643,6 @@ struct gpio_pin_range {
 	struct pinctrl_gpio_range range;
 };
 
-#ifdef CONFIG_PINCTRL
-
-int gpiochip_add_pin_range_with_pins(struct gpio_chip *gc,
-				     const char *pinctl_name,
-				     unsigned int gpio_offset,
-				     unsigned int pin_offset,
-				     unsigned int const *pins,
-				     unsigned int npins);
-int gpiochip_add_pingroup_range(struct gpio_chip *gc,
-			struct pinctrl_dev *pctldev,
-			unsigned int gpio_offset, const char *pin_group);
-void gpiochip_remove_pin_ranges(struct gpio_chip *gc);
-
-static inline int
-gpiochip_add_pin_range(struct gpio_chip *gc,
-		       const char *pinctl_name,
-		       unsigned int gpio_offset,
-		       unsigned int pin_offset,
-		       unsigned int npins)
-{
-	return gpiochip_add_pin_range_with_pins(gc, pinctl_name, gpio_offset,
-						pin_offset, NULL, npins);
-}
-
-static inline int
-gpiochip_add_sparse_pin_range(struct gpio_chip *gc,
-			      const char *pinctl_name,
-			      unsigned int gpio_offset,
-			      unsigned int const *pins,
-			      unsigned int npins)
-{
-	return gpiochip_add_pin_range_with_pins(gc, pinctl_name, gpio_offset, 0,
-						pins, npins);
-}
-#else /* ! CONFIG_PINCTRL */
 
 static inline int
 gpiochip_add_pin_range_with_pins(struct gpio_chip *gc,
@@ -798,7 +685,6 @@ gpiochip_remove_pin_ranges(struct gpio_chip *gc)
 {
 }
 
-#endif /* CONFIG_PINCTRL */
 
 struct gpio_desc *gpiochip_request_own_desc(struct gpio_chip *gc,
 					    unsigned int hwnum,

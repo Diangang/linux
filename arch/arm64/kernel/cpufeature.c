@@ -99,16 +99,6 @@
 /* Kernel representation of AT_HWCAP and AT_HWCAP2 */
 static DECLARE_BITMAP(elf_hwcap, MAX_CPU_FEATURES) __read_mostly;
 
-#ifdef CONFIG_COMPAT
-#define COMPAT_ELF_HWCAP_DEFAULT	\
-				(COMPAT_HWCAP_HALF|COMPAT_HWCAP_THUMB|\
-				 COMPAT_HWCAP_FAST_MULT|COMPAT_HWCAP_EDSP|\
-				 COMPAT_HWCAP_TLS|COMPAT_HWCAP_IDIV|\
-				 COMPAT_HWCAP_LPAE)
-unsigned int compat_elf_hwcap __read_mostly = COMPAT_ELF_HWCAP_DEFAULT;
-unsigned int compat_elf_hwcap2 __read_mostly;
-unsigned int compat_elf_hwcap3 __read_mostly;
-#endif
 
 DECLARE_BITMAP(system_cpucaps, ARM64_NCAPS);
 EXPORT_SYMBOL(system_cpucaps);
@@ -1131,36 +1121,7 @@ static void init_32bit_cpu_features(struct cpuinfo_32bit *info)
 	init_cpu_ftr_reg(SYS_MVFR2_EL1, info->reg_mvfr2);
 }
 
-#if 0
-static bool enable_pseudo_nmi;
-
-static int __init early_enable_pseudo_nmi(char *p)
-{
-	return kstrtobool(p, &enable_pseudo_nmi);
-}
-early_param("irqchip.gicv3_pseudo_nmi", early_enable_pseudo_nmi);
-
-static __init void detect_system_supports_pseudo_nmi(void)
-{
-	struct device_node *np;
-
-	if (!enable_pseudo_nmi)
-		return;
-
-	/*
-	 * Detect broken MediaTek firmware that doesn't properly save and
-	 * restore GIC priorities.
-	 */
-	np = of_find_compatible_node(NULL, NULL, "arm,gic-v3");
-	if (np && of_property_read_bool(np, "mediatek,broken-save-restore-fw")) {
-		pr_info("Pseudo-NMI disabled due to MediaTek Chromebook GICR save problem\n");
-		enable_pseudo_nmi = false;
-	}
-	of_node_put(np);
-}
-#else /* CONFIG_ARM64_PSEUDO_NMI */
 static inline void detect_system_supports_pseudo_nmi(void) { }
-#endif
 
 void __init init_cpu_features(struct cpuinfo_arm64 *info)
 {
@@ -2208,49 +2169,6 @@ static void cpu_enable_ls64_v(struct arm64_cpu_capabilities const *cap)
 	sysreg_clear_set(sctlr_el1, SCTLR_EL1_EnASR, 0);
 }
 
-#if 0
-static bool can_use_gic_priorities(const struct arm64_cpu_capabilities *entry,
-				   int scope)
-{
-	/*
-	 * ARM64_HAS_GICV3_CPUIF has a lower index, and is a boot CPU
-	 * feature, so will be detected earlier.
-	 */
-	BUILD_BUG_ON(ARM64_HAS_GIC_PRIO_MASKING <= ARM64_HAS_GICV3_CPUIF);
-	if (!cpus_have_cap(ARM64_HAS_GICV3_CPUIF))
-		return false;
-
-	return enable_pseudo_nmi;
-}
-
-static bool has_gic_prio_relaxed_sync(const struct arm64_cpu_capabilities *entry,
-				      int scope)
-{
-	/*
-	 * If we're not using priority masking then we won't be poking PMR_EL1,
-	 * and there's no need to relax synchronization of writes to it, and
-	 * ICC_CTLR_EL1 might not be accessible and we must avoid reads from
-	 * that.
-	 *
-	 * ARM64_HAS_GIC_PRIO_MASKING has a lower index, and is a boot CPU
-	 * feature, so will be detected earlier.
-	 */
-	BUILD_BUG_ON(ARM64_HAS_GIC_PRIO_RELAXED_SYNC <= ARM64_HAS_GIC_PRIO_MASKING);
-	if (!cpus_have_cap(ARM64_HAS_GIC_PRIO_MASKING))
-		return false;
-
-	/*
-	 * When Priority Mask Hint Enable (PMHE) == 0b0, PMR is not used as a
-	 * hint for interrupt distribution, a DSB is not necessary when
-	 * unmasking IRQs via PMR, and we can relax the barrier to a NOP.
-	 *
-	 * Linux itself doesn't use 1:N distribution, so has no need to
-	 * set PMHE. The only reason to have it set is if EL3 requires it
-	 * (and we can't change it).
-	 */
-	return (gic_read_ctlr() & ICC_CTLR_EL1_PMHE_MASK) == 0;
-}
-#endif
 
 static bool can_trap_icv_dir_el1(const struct arm64_cpu_capabilities *entry,
 				 int scope)
@@ -2495,28 +2413,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_32bit_el0,
 		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, EL0, AARCH32)
 	},
-#ifdef CONFIG_KVM
-	{
-		.desc = "32-bit EL1 Support",
-		.capability = ARM64_HAS_32BIT_EL1,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, EL1, AARCH32)
-	},
-	{
-		.desc = "Protected KVM",
-		.capability = ARM64_KVM_PROTECTED_MODE,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = is_kvm_protected_mode,
-	},
-	{
-		.desc = "HCRX_EL2 register",
-		.capability = ARM64_HAS_HCX,
-		.type = ARM64_CPUCAP_STRICT_BOOT_CPU_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR1_EL1, HCX, IMP)
-	},
-#endif
 	{
 		.desc = "Kernel page table isolation (KPTI)",
 		.capability = ARM64_UNMAP_KERNEL_AT_EL0,
@@ -2537,22 +2433,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.cpu_enable = cpu_enable_fpsimd,
 		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, FP, IMP)
 	},
-#ifdef CONFIG_ARM64_PMEM
-	{
-		.desc = "Data cache clean to Point of Persistence",
-		.capability = ARM64_HAS_DCPOP,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, DPB, IMP)
-	},
-	{
-		.desc = "Data cache clean to Point of Deep Persistence",
-		.capability = ARM64_HAS_DCPODP,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, DPB, DPB2)
-	},
-#endif
 #ifdef CONFIG_ARM64_SVE
 	{
 		.desc = "Scalable Vector Extension",
@@ -2735,25 +2615,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_generic_auth,
 	},
 #endif /* CONFIG_ARM64_PTR_AUTH */
-#if 0
-	{
-		/*
-		 * Depends on having GICv3
-		 */
-		.desc = "IRQ priority masking",
-		.capability = ARM64_HAS_GIC_PRIO_MASKING,
-		.type = ARM64_CPUCAP_STRICT_BOOT_CPU_FEATURE,
-		.matches = can_use_gic_priorities,
-	},
-	{
-		/*
-		 * Depends on ARM64_HAS_GIC_PRIO_MASKING
-		 */
-		.capability = ARM64_HAS_GIC_PRIO_RELAXED_SYNC,
-		.type = ARM64_CPUCAP_STRICT_BOOT_CPU_FEATURE,
-		.matches = has_gic_prio_relaxed_sync,
-	},
-#endif
 	{
 		/*
 		 * Depends on having GICv3
@@ -2784,11 +2645,7 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 	{
 		.desc = "Branch Target Identification",
 		.capability = ARM64_BTI,
-#ifdef CONFIG_ARM64_BTI_KERNEL
-		.type = ARM64_CPUCAP_STRICT_BOOT_CPU_FEATURE,
-#else
 		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-#endif
 		.matches = has_cpuid_feature,
 		.cpu_enable = bti_enable,
 		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, BT, IMP)
@@ -3016,15 +2873,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.cpu_enable = cpu_enable_ls64_v,
 		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, LS64, LS64_V)
 	},
-#ifdef CONFIG_ARM64_LSUI
-	{
-		.desc = "Unprivileged Load Store Instructions (LSUI)",
-		.capability = ARM64_HAS_LSUI,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR3_EL1, LSUI, IMP)
-	},
-#endif
 	{},
 };
 
@@ -3232,49 +3080,8 @@ static const struct arm64_cpu_capabilities arm64_elf_hwcaps[] = {
 	{},
 };
 
-#ifdef CONFIG_COMPAT
-static bool compat_has_neon(const struct arm64_cpu_capabilities *cap, int scope)
-{
-	/*
-	 * Check that all of MVFR1_EL1.{SIMDSP, SIMDInt, SIMDLS} are available,
-	 * in line with that of arm32 as in vfp_init(). We make sure that the
-	 * check is future proof, by making sure value is non-zero.
-	 */
-	u32 mvfr1;
-
-	WARN_ON(scope == SCOPE_LOCAL_CPU && preemptible());
-	if (scope == SCOPE_SYSTEM)
-		mvfr1 = read_sanitised_ftr_reg(SYS_MVFR1_EL1);
-	else
-		mvfr1 = read_sysreg_s(SYS_MVFR1_EL1);
-
-	return cpuid_feature_extract_unsigned_field(mvfr1, MVFR1_EL1_SIMDSP_SHIFT) &&
-		cpuid_feature_extract_unsigned_field(mvfr1, MVFR1_EL1_SIMDInt_SHIFT) &&
-		cpuid_feature_extract_unsigned_field(mvfr1, MVFR1_EL1_SIMDLS_SHIFT);
-}
-#endif
 
 static const struct arm64_cpu_capabilities compat_elf_hwcaps[] = {
-#ifdef CONFIG_COMPAT
-	HWCAP_CAP_MATCH(compat_has_neon, CAP_COMPAT_HWCAP, COMPAT_HWCAP_NEON),
-	HWCAP_CAP(MVFR1_EL1, SIMDFMAC, IMP, CAP_COMPAT_HWCAP, COMPAT_HWCAP_VFPv4),
-	/* Arm v8 mandates MVFR0.FPDP == {0, 2}. So, piggy back on this for the presence of VFP support */
-	HWCAP_CAP(MVFR0_EL1, FPDP, VFPv3, CAP_COMPAT_HWCAP, COMPAT_HWCAP_VFP),
-	HWCAP_CAP(MVFR0_EL1, FPDP, VFPv3, CAP_COMPAT_HWCAP, COMPAT_HWCAP_VFPv3),
-	HWCAP_CAP(MVFR1_EL1, FPHP, FP16, CAP_COMPAT_HWCAP, COMPAT_HWCAP_FPHP),
-	HWCAP_CAP(MVFR1_EL1, SIMDHP, SIMDHP_FLOAT, CAP_COMPAT_HWCAP, COMPAT_HWCAP_ASIMDHP),
-	HWCAP_CAP(ID_ISAR5_EL1, AES, VMULL, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_PMULL),
-	HWCAP_CAP(ID_ISAR5_EL1, AES, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_AES),
-	HWCAP_CAP(ID_ISAR5_EL1, SHA1, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_SHA1),
-	HWCAP_CAP(ID_ISAR5_EL1, SHA2, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_SHA2),
-	HWCAP_CAP(ID_ISAR5_EL1, CRC32, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_CRC32),
-	HWCAP_CAP(ID_ISAR6_EL1, DP, IMP, CAP_COMPAT_HWCAP, COMPAT_HWCAP_ASIMDDP),
-	HWCAP_CAP(ID_ISAR6_EL1, FHM, IMP, CAP_COMPAT_HWCAP, COMPAT_HWCAP_ASIMDFHM),
-	HWCAP_CAP(ID_ISAR6_EL1, SB, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_SB),
-	HWCAP_CAP(ID_ISAR6_EL1, BF16, IMP, CAP_COMPAT_HWCAP, COMPAT_HWCAP_ASIMDBF16),
-	HWCAP_CAP(ID_ISAR6_EL1, I8MM, IMP, CAP_COMPAT_HWCAP, COMPAT_HWCAP_I8MM),
-	HWCAP_CAP(ID_PFR2_EL1, SSBS, IMP, CAP_COMPAT_HWCAP2, COMPAT_HWCAP2_SSBS),
-#endif
 	{},
 };
 
@@ -3284,14 +3091,6 @@ static void cap_set_elf_hwcap(const struct arm64_cpu_capabilities *cap)
 	case CAP_HWCAP:
 		cpu_set_feature(cap->hwcap);
 		break;
-#ifdef CONFIG_COMPAT
-	case CAP_COMPAT_HWCAP:
-		compat_elf_hwcap |= (u32)cap->hwcap;
-		break;
-	case CAP_COMPAT_HWCAP2:
-		compat_elf_hwcap2 |= (u32)cap->hwcap;
-		break;
-#endif
 	default:
 		WARN_ON(1);
 		break;
@@ -3307,14 +3106,6 @@ static bool cpus_have_elf_hwcap(const struct arm64_cpu_capabilities *cap)
 	case CAP_HWCAP:
 		rc = cpu_have_feature(cap->hwcap);
 		break;
-#ifdef CONFIG_COMPAT
-	case CAP_COMPAT_HWCAP:
-		rc = (compat_elf_hwcap & (u32)cap->hwcap) != 0;
-		break;
-	case CAP_COMPAT_HWCAP2:
-		rc = (compat_elf_hwcap2 & (u32)cap->hwcap) != 0;
-		break;
-#endif
 	default:
 		WARN_ON(1);
 		rc = false;

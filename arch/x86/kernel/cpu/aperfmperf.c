@@ -288,22 +288,7 @@ out:
 	return true;
 }
 
-#ifdef CONFIG_PM_SLEEP
-static const struct syscore_ops freq_invariance_syscore_ops = {
-	.resume = init_counter_refs,
-};
-
-static struct syscore freq_invariance_syscore = {
-	.ops = &freq_invariance_syscore_ops,
-};
-
-static void register_freq_invariance_syscore(void)
-{
-	register_syscore(&freq_invariance_syscore);
-}
-#else
 static inline void register_freq_invariance_syscore(void) {}
-#endif
 
 static void freq_invariance_enable(void)
 {

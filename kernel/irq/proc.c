@@ -110,7 +110,6 @@ static int irq_affinity_list_proc_show(struct seq_file *m, void *v)
 	return show_irq_affinity(AFFINITY_LIST, m);
 }
 
-#ifndef CONFIG_AUTO_IRQ_AFFINITY
 static inline int irq_select_affinity_usr(unsigned int irq)
 {
 	/*
@@ -125,13 +124,6 @@ static inline int irq_select_affinity_usr(unsigned int irq)
 	 */
 	return -EINVAL;
 }
-#else
-/* ALPHA magic affinity auto selector. Keep it for historical reasons. */
-static inline int irq_select_affinity_usr(unsigned int irq)
-{
-	return irq_select_affinity(irq);
-}
-#endif
 
 static ssize_t write_irq_affinity(int type, struct file *file,
 		const char __user *buffer, size_t count, loff_t *pos)

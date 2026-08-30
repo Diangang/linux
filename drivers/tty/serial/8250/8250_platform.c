@@ -19,9 +19,6 @@
 
 #include <linux/serial_8250.h>
 
-#ifdef CONFIG_SPARC
-#include <linux/sunserialcore.h>
-#endif
 
 #include "8250.h"
 
@@ -305,12 +302,8 @@ static int __init serial8250_init(void)
 	pr_info("Serial: 8250/16550 driver, %d ports, IRQ sharing %s\n",
 		nr_uarts, str_enabled_disabled(share_irqs));
 
-#ifdef CONFIG_SPARC
-	ret = sunserial_register_minors(&serial8250_reg, UART_NR);
-#else
 	serial8250_reg.nr = UART_NR;
 	ret = uart_register_driver(&serial8250_reg);
-#endif
 	if (ret)
 		goto out;
 
@@ -340,11 +333,7 @@ put_dev:
 unreg_pnp:
 	serial8250_pnp_exit();
 unreg_uart_drv:
-#ifdef CONFIG_SPARC
-	sunserial_unregister_minors(&serial8250_reg, UART_NR);
-#else
 	uart_unregister_driver(&serial8250_reg);
-#endif
 out:
 	return ret;
 }
@@ -366,11 +355,7 @@ static void __exit serial8250_exit(void)
 
 	serial8250_pnp_exit();
 
-#ifdef CONFIG_SPARC
-	sunserial_unregister_minors(&serial8250_reg, UART_NR);
-#else
 	uart_unregister_driver(&serial8250_reg);
-#endif
 }
 module_exit(serial8250_exit);
 

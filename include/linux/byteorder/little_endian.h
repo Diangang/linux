@@ -4,9 +4,6 @@
 
 #include <uapi/linux/byteorder/little_endian.h>
 
-#if 0
-#warning inconsistent configuration, CONFIG_CPU_BIG_ENDIAN is set
-#endif
 
 #include <linux/byteorder/generic.h>
 #endif /* _LINUX_BYTEORDER_LITTLE_ENDIAN_H */

@@ -267,11 +267,7 @@ static inline pgoff_t vma_pgoff_offset(struct vm_area_struct *vma,
 		.state = VMA_MERGE_START,			\
 	}
 
-#ifdef CONFIG_DEBUG_VM_MAPLE_TREE
-void validate_mm(struct mm_struct *mm);
-#else
 #define validate_mm(mm) do { } while (0)
-#endif
 
 __must_check int vma_expand(struct vma_merge_struct *vmg);
 __must_check int vma_shrink(struct vma_iterator *vmi,
@@ -593,20 +589,6 @@ static inline void vma_iter_store_overwrite(struct vma_iterator *vmi,
 {
 	vma_assert_attached(vma);
 
-#if defined(CONFIG_DEBUG_VM_MAPLE_TREE)
-	if (MAS_WARN_ON(&vmi->mas, vmi->mas.status != ma_start &&
-			vmi->mas.index > vma->vm_start)) {
-		pr_warn("%lx > %lx\n store vma %lx-%lx\n into slot %lx-%lx\n",
-			vmi->mas.index, vma->vm_start, vma->vm_start,
-			vma->vm_end, vmi->mas.index, vmi->mas.last);
-	}
-	if (MAS_WARN_ON(&vmi->mas, vmi->mas.status != ma_start &&
-			vmi->mas.last <  vma->vm_start)) {
-		pr_warn("%lx < %lx\nstore vma %lx-%lx\ninto slot %lx-%lx\n",
-		       vmi->mas.last, vma->vm_start, vma->vm_start, vma->vm_end,
-		       vmi->mas.index, vmi->mas.last);
-	}
-#endif
 
 	if (vmi->mas.status != ma_start &&
 	    ((vmi->mas.index > vma->vm_start) || (vmi->mas.last < vma->vm_start)))
@@ -679,9 +661,6 @@ static inline bool vma_is_sealed(struct vm_area_struct *vma)
 }
 #endif
 
-#if defined(CONFIG_STACK_GROWSUP)
-int expand_upwards(struct vm_area_struct *vma, unsigned long address);
-#endif
 
 int expand_downwards(struct vm_area_struct *vma, unsigned long address);
 

@@ -15,9 +15,6 @@ struct timer_list {
 	void			(*function)(struct timer_list *);
 	u32			flags;
 
-#if 0
-	struct lockdep_map	lockdep_map;
-#endif
 };
 
 #endif /* _LINUX_TIMER_TYPES_H */

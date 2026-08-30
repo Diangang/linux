@@ -468,37 +468,3 @@ unsigned int irq_matrix_allocated(struct irq_matrix *m)
 
 	return cm->allocated - cm->managed_allocated;
 }
-
-#if 0
-/**
- * irq_matrix_debug_show - Show detailed allocation information
- * @sf:		Pointer to the seq_file to print to
- * @m:		Pointer to the matrix allocator
- * @ind:	Indentation for the print format
- *
- * Note, this is a lockless snapshot.
- */
-void irq_matrix_debug_show(struct seq_file *sf, struct irq_matrix *m, int ind)
-{
-	unsigned int nsys = bitmap_weight(m->system_map, m->matrix_bits);
-	int cpu;
-
-	seq_printf(sf, "Online bitmaps:   %6u\n", m->online_maps);
-	seq_printf(sf, "Global available: %6u\n", m->global_available);
-	seq_printf(sf, "Global reserved:  %6u\n", m->global_reserved);
-	seq_printf(sf, "Total allocated:  %6u\n", m->total_allocated);
-	seq_printf(sf, "System: %u: %*pbl\n", nsys, m->matrix_bits,
-		   m->system_map);
-	seq_printf(sf, "%*s| CPU | avl | man | mac | act | vectors\n", ind, " ");
-	cpus_read_lock();
-	for_each_online_cpu(cpu) {
-		struct cpumap *cm = per_cpu_ptr(m->maps, cpu);
-
-		seq_printf(sf, "%*s %4d  %4u  %4u  %4u %4u  %*pbl\n", ind, " ",
-			   cpu, cm->available, cm->managed,
-			   cm->managed_allocated, cm->allocated,
-			   m->matrix_bits, cm->alloc_map);
-	}
-	cpus_read_unlock();
-}
-#endif

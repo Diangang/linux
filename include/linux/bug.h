@@ -98,11 +98,7 @@ static inline __must_check bool check_data_corruption(bool v) { return v; }
 		if (corruption) {					 \
 			if (addr)					 \
 				mem_dump_obj(addr);			 \
-			if (IS_ENABLED(CONFIG_BUG_ON_DATA_CORRUPTION)) { \
-				pr_err(fmt, ##__VA_ARGS__);		 \
-				BUG();					 \
-			} else						 \
-				WARN(1, fmt, ##__VA_ARGS__);		 \
+			WARN(1, fmt, ##__VA_ARGS__);			 \
 		}							 \
 		corruption;						 \
 	}))

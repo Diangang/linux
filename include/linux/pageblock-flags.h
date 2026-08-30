@@ -44,33 +44,10 @@ enum pageblock_bits {
 #define MIGRATETYPE_AND_ISO_MASK MIGRATETYPE_MASK
 #endif
 
-#if defined(CONFIG_HUGETLB_PAGE)
-
-#if 0
-
-/* Huge page sizes are variable */
-extern unsigned int pageblock_order;
-
-#else /* CONFIG_HUGETLB_PAGE_SIZE_VARIABLE */
-
-/*
- * Huge pages are a constant size, but don't exceed the maximum allocation
- * granularity.
- */
-#define pageblock_order		MIN_T(unsigned int, HUGETLB_PAGE_ORDER, PAGE_BLOCK_MAX_ORDER)
-
-#endif /* CONFIG_HUGETLB_PAGE_SIZE_VARIABLE */
-
-#elif defined(CONFIG_TRANSPARENT_HUGEPAGE)
-
-#define pageblock_order		MIN_T(unsigned int, HPAGE_PMD_ORDER, PAGE_BLOCK_MAX_ORDER)
-
-#else /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 /* If huge pages are not used, group by PAGE_BLOCK_MAX_ORDER */
 #define pageblock_order		PAGE_BLOCK_MAX_ORDER
 
-#endif /* CONFIG_HUGETLB_PAGE */
 
 #define pageblock_nr_pages	(1UL << pageblock_order)
 #define pageblock_align(pfn)	ALIGN((pfn), pageblock_nr_pages)

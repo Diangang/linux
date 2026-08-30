@@ -12,10 +12,6 @@ extern int ntp_adjtimex(unsigned int tkid, struct __kernel_timex *txc, const str
 			s32 *time_tai, struct audit_ntp_data *ad);
 extern void __hardpps(const struct timespec64 *phase_ts, const struct timespec64 *raw_ts);
 
-#if defined(CONFIG_GENERIC_CMOS_UPDATE) || defined(CONFIG_RTC_SYSTOHC)
-extern void ntp_notify_cmos_timer(bool offset_set);
-#else
 static inline void ntp_notify_cmos_timer(bool offset_set) { }
-#endif
 
 #endif /* _LINUX_NTP_INTERNAL_H */

@@ -41,10 +41,6 @@
 #define GOLDEN_RATIO_32 0x61C88647
 #define GOLDEN_RATIO_64 0x61C8864680B583EBull
 
-#ifdef CONFIG_HAVE_ARCH_HASH
-/* This header may use the GOLDEN_RATIO_xx constants */
-#include <asm/hash.h>
-#endif
 
 /*
  * The _generic versions exist only so lib/test_hash.c can compare

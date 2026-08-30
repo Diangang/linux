@@ -6,77 +6,12 @@
  */
 
 #include <asm/hyp_image.h>
-#ifdef CONFIG_KVM
-#define HYPERVISOR_EXTABLE					\
-	. = ALIGN(SZ_8);					\
-	__start___kvm_ex_table = .;				\
-	*(__kvm_ex_table)					\
-	__stop___kvm_ex_table = .;
-
-#ifdef CONFIG_NVHE_EL2_TRACING
-#define HYPERVISOR_EVENT_IDS 					\
-	. = ALIGN(PAGE_SIZE);					\
-	__hyp_event_ids_start = .;				\
-	*(HYP_SECTION_NAME(.event_ids))				\
-	__hyp_event_ids_end = .;
-#else
-#define HYPERVISOR_EVENT_IDS
-#endif
-
-#define HYPERVISOR_RODATA_SECTIONS				\
-	HYP_SECTION_NAME(.rodata) : {				\
-		. = ALIGN(PAGE_SIZE);				\
-		__hyp_rodata_start = .;				\
-		*(HYP_SECTION_NAME(.data..ro_after_init))	\
-		*(HYP_SECTION_NAME(.rodata))			\
-		HYPERVISOR_EVENT_IDS				\
-		. = ALIGN(PAGE_SIZE);				\
-		__hyp_rodata_end = .;				\
-	}
-
-#define HYPERVISOR_DATA_SECTION					\
-	HYP_SECTION_NAME(.data) : {				\
-		. = ALIGN(PAGE_SIZE);				\
-		__hyp_data_start = .;				\
-		*(HYP_SECTION_NAME(.data))			\
-		. = ALIGN(PAGE_SIZE);				\
-		__hyp_data_end = .;				\
-	}
-
-#define HYPERVISOR_PERCPU_SECTION				\
-	. = ALIGN(PAGE_SIZE);					\
-	HYP_SECTION_NAME(.data..percpu) : {			\
-		*(HYP_SECTION_NAME(.data..percpu))		\
-	}
-
-#define HYPERVISOR_RELOC_SECTION				\
-	.hyp.reloc : ALIGN(4) {					\
-		__hyp_reloc_begin = .;				\
-		*(.hyp.reloc)					\
-		__hyp_reloc_end = .;				\
-	}
-
-#define BSS_FIRST_SECTIONS					\
-	__hyp_bss_start = .;					\
-	*(HYP_SECTION_NAME(.bss))				\
-	. = ALIGN(PAGE_SIZE);					\
-	__hyp_bss_end = .;
-
-/*
- * We require that __hyp_bss_start and __bss_start are aligned, and enforce it
- * with an assertion. But the BSS_SECTION macro places an empty .sbss section
- * between them, which can in some cases cause the linker to misalign them. To
- * work around the issue, force a page alignment for __bss_start.
- */
-#define SBSS_ALIGN			PAGE_SIZE
-#else /* CONFIG_KVM */
 #define HYPERVISOR_EXTABLE
 #define HYPERVISOR_RODATA_SECTIONS
 #define HYPERVISOR_DATA_SECTION
 #define HYPERVISOR_PERCPU_SECTION
 #define HYPERVISOR_RELOC_SECTION
 #define SBSS_ALIGN			0
-#endif
 
 #define RO_EXCEPTION_TABLE_ALIGN	4
 #define RUNTIME_DISCARD_EXIT
@@ -136,12 +71,7 @@ jiffies = jiffies_64;
  */
 PECOFF_FILE_ALIGNMENT = 0x200;
 
-#ifdef CONFIG_EFI
-#define PECOFF_EDATA_PADDING	\
-	.pecoff_edata_padding : { BYTE(0); . = ALIGN(PECOFF_FILE_ALIGNMENT); }
-#else
 #define PECOFF_EDATA_PADDING
-#endif
 
 SECTIONS
 {
@@ -289,13 +219,6 @@ SECTIONS
 
 	HYPERVISOR_DATA_SECTION
 
-#ifdef CONFIG_NVHE_EL2_TRACING
-	.data.hyp_events : {
-		__hyp_events_start = .;
-		*(SORT(_hyp_events.*))
-		__hyp_events_end = .;
-	}
-#endif
 	/*
 	 * Data written with the MMU off but read with the MMU on requires
 	 * cache lines to be invalidated, discarding up to a Cache Writeback
@@ -367,9 +290,6 @@ ASSERT(__idmap_text_end - (__idmap_text_start & ~(SZ_4K - 1)) <= SZ_4K,
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 ASSERT((__entry_tramp_text_end - __entry_tramp_text_start) <= 3*PAGE_SIZE,
 	"Entry trampoline text too big")
-#endif
-#ifdef CONFIG_KVM
-ASSERT(__hyp_bss_start == __bss_start, "HYP and Host BSS are misaligned")
 #endif
 /*
  * If padding is applied before .head.text, virt<->phys conversions will fail.

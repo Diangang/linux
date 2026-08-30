@@ -657,87 +657,7 @@ void dirty_sched_domain_sysctl(int cpu)
 		__cpumask_set_cpu(cpu, sd_sysctl_cpus);
 }
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
-static void print_cfs_group_stats(struct seq_file *m, int cpu, struct task_group *tg)
-{
-	struct sched_entity *se = tg->se[cpu];
 
-#define P(F)		SEQ_printf(m, "  .%-30s: %lld\n",	#F, (long long)F)
-#define P_SCHEDSTAT(F)	SEQ_printf(m, "  .%-30s: %lld\n",	\
-		#F, (long long)schedstat_val(stats->F))
-#define PN(F)		SEQ_printf(m, "  .%-30s: %lld.%06ld\n", #F, SPLIT_NS((long long)F))
-#define PN_SCHEDSTAT(F)	SEQ_printf(m, "  .%-30s: %lld.%06ld\n", \
-		#F, SPLIT_NS((long long)schedstat_val(stats->F)))
-
-	if (!se)
-		return;
-
-	PN(se->exec_start);
-	PN(se->vruntime);
-	PN(se->sum_exec_runtime);
-
-	if (schedstat_enabled()) {
-		struct sched_statistics *stats;
-		stats = __schedstats_from_se(se);
-
-		PN_SCHEDSTAT(wait_start);
-		PN_SCHEDSTAT(sleep_start);
-		PN_SCHEDSTAT(block_start);
-		PN_SCHEDSTAT(sleep_max);
-		PN_SCHEDSTAT(block_max);
-		PN_SCHEDSTAT(exec_max);
-		PN_SCHEDSTAT(slice_max);
-		PN_SCHEDSTAT(wait_max);
-		PN_SCHEDSTAT(wait_sum);
-		P_SCHEDSTAT(wait_count);
-	}
-
-	P(se->load.weight);
-	P(se->avg.load_avg);
-	P(se->avg.util_avg);
-	P(se->avg.runnable_avg);
-
-#undef PN_SCHEDSTAT
-#undef PN
-#undef P_SCHEDSTAT
-#undef P
-}
-#endif /* CONFIG_FAIR_GROUP_SCHED */
-
-#ifdef CONFIG_CGROUP_SCHED
-static DEFINE_SPINLOCK(sched_debug_lock);
-static char group_path[PATH_MAX];
-
-static void task_group_path(struct task_group *tg, char *path, int plen)
-{
-	if (autogroup_path(tg, path, plen))
-		return;
-
-	cgroup_path(tg->css.cgroup, path, plen);
-}
-
-/*
- * Only 1 SEQ_printf_task_group_path() caller can use the full length
- * group_path[] for cgroup path. Other simultaneous callers will have
- * to use a shorter stack buffer. A "..." suffix is appended at the end
- * of the stack buffer so that it will show up in case the output length
- * matches the given buffer size to indicate possible path name truncation.
- */
-#define SEQ_printf_task_group_path(m, tg, fmt...)			\
-{									\
-	if (spin_trylock(&sched_debug_lock)) {				\
-		task_group_path(tg, group_path, sizeof(group_path));	\
-		SEQ_printf(m, fmt, group_path);				\
-		spin_unlock(&sched_debug_lock);				\
-	} else {							\
-		char buf[128];						\
-		char *bufend = buf + sizeof(buf) - 3;			\
-		task_group_path(tg, buf, bufend - buf);			\
-		strcpy(bufend - 1, "...");				\
-		SEQ_printf(m, fmt, buf);				\
-	}								\
-}
-#endif
 
 static void
 print_task(struct seq_file *m, struct rq *rq, struct task_struct *p)
@@ -766,9 +686,6 @@ print_task(struct seq_file *m, struct rq *rq, struct task_struct *p)
 #ifdef CONFIG_NUMA_BALANCING
 	SEQ_printf(m, "   %d      %d", task_node(p), task_numa_group_id(p));
 #endif
-#ifdef CONFIG_CGROUP_SCHED
-	SEQ_printf_task_group_path(m, task_group(p), "        %s")
-#endif
 
 	SEQ_printf(m, "\n");
 }
@@ -785,17 +702,11 @@ static void print_rq(struct seq_file *m, struct rq *rq, int rq_cpu)
 #ifdef CONFIG_NUMA_BALANCING
 		   "  node   group-id"
 #endif
-#ifdef CONFIG_CGROUP_SCHED
-		   "  group-path"
-#endif
 		   "\n");
 	SEQ_printf(m, "-------------------------------------------------------"
 		   "------------------------------------------------------"
 		   "------------------------------------------------------"
 #ifdef CONFIG_NUMA_BALANCING
-		   "--------------"
-#endif
-#ifdef CONFIG_CGROUP_SCHED
 		   "--------------"
 #endif
 		   "\n");
@@ -821,13 +732,8 @@ void print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
 	unsigned long flags;
 	u64 sum_weight;
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	SEQ_printf(m, "\n");
-	SEQ_printf_task_group_path(m, cfs_rq->tg, "cfs_rq[%d]:%s\n", cpu);
-#else
 	SEQ_printf(m, "\n");
 	SEQ_printf(m, "cfs_rq[%d]:\n", cpu);
-#endif
 
 	raw_spin_rq_lock_irqsave(rq, flags);
 	root = __pick_root_entity(cfs_rq);
@@ -882,16 +788,7 @@ void print_cfs_rq(struct seq_file *m, int cpu, struct cfs_rq *cfs_rq)
 			cfs_rq->removed.util_avg);
 	SEQ_printf(m, "  .%-30s: %ld\n", "removed.runnable_avg",
 			cfs_rq->removed.runnable_avg);
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	SEQ_printf(m, "  .%-30s: %lu\n", "tg_load_avg_contrib",
-			cfs_rq->tg_load_avg_contrib);
-	SEQ_printf(m, "  .%-30s: %ld\n", "tg_load_avg",
-			atomic_long_read(&cfs_rq->tg->load_avg));
-#endif /* CONFIG_FAIR_GROUP_SCHED */
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	print_cfs_group_stats(m, cpu, cfs_rq->tg);
-#endif
 }
 
 void print_rt_rq(struct seq_file *m, int cpu, struct rt_rq *rt_rq)

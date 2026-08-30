@@ -11,24 +11,7 @@
 
 
 static const struct proc_ns_operations *const ns_entries[] = {
-#ifdef CONFIG_UTS_NS
-	&utsns_operations,
-#endif
-#ifdef CONFIG_PID_NS
-	&pidns_operations,
-	&pidns_for_children_operations,
-#endif
-#ifdef CONFIG_USER_NS
-	&userns_operations,
-#endif
 	&mntns_operations,
-#ifdef CONFIG_CGROUPS
-	&cgroupns_operations,
-#endif
-#ifdef CONFIG_TIME_NS
-	&timens_operations,
-	&timens_for_children_operations,
-#endif
 };
 
 static const char *proc_ns_get_link(struct dentry *dentry,

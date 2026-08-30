@@ -449,9 +449,6 @@ set_register:
 			  bits_changed);
 	}
 }
-#if 0
-EXPORT_SYMBOL_GPL(native_write_cr4);
-#endif
 
 void cr4_update_irqsoff(unsigned long set, unsigned long clear)
 {

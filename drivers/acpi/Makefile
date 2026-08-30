@@ -6,11 +6,6 @@
 #
 # ACPI Boot-Time Table Parsing
 #
-ifeq ($(CONFIG_ACPI_CUSTOM_DSDT),y)
-tables.o: $(src)/../../include/$(CONFIG_ACPI_CUSTOM_DSDT_FILE) ;
-
-endif
-
 obj-$(CONFIG_ACPI)		+= tables.o
 
 #

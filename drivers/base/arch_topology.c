@@ -316,149 +316,10 @@ void __weak freq_inv_set_max_ratio(int cpu, u64 max_rate)
 {
 }
 
-#ifdef CONFIG_ACPI_CPPC_LIB
-#include <acpi/cppc_acpi.h>
 
-static inline void topology_init_cpu_capacity_cppc(void)
-{
-	u64 capacity, capacity_scale = 0;
-	struct cppc_perf_caps perf_caps;
-	int cpu;
-
-	if (likely(!acpi_cpc_valid()))
-		return;
-
-	raw_capacity = kcalloc(num_possible_cpus(), sizeof(*raw_capacity),
-			       GFP_KERNEL);
-	if (!raw_capacity)
-		return;
-
-	for_each_possible_cpu(cpu) {
-		if (!cppc_get_perf_caps(cpu, &perf_caps) &&
-		    (perf_caps.highest_perf >= perf_caps.nominal_perf) &&
-		    (perf_caps.highest_perf >= perf_caps.lowest_perf)) {
-			raw_capacity[cpu] = perf_caps.highest_perf;
-			capacity_scale = max_t(u64, capacity_scale, raw_capacity[cpu]);
-
-			per_cpu(capacity_freq_ref, cpu) = cppc_perf_to_khz(&perf_caps, raw_capacity[cpu]);
-
-			pr_debug("cpu_capacity: CPU%d cpu_capacity=%u (raw).\n",
-				 cpu, raw_capacity[cpu]);
-			continue;
-		}
-
-		pr_err("cpu_capacity: CPU%d missing/invalid highest performance.\n", cpu);
-		pr_err("cpu_capacity: partial information: fallback to 1024 for all CPUs\n");
-		goto exit;
-	}
-
-	for_each_possible_cpu(cpu) {
-		freq_inv_set_max_ratio(cpu,
-				       per_cpu(capacity_freq_ref, cpu) * HZ_PER_KHZ);
-
-		capacity = raw_capacity[cpu];
-		capacity = div64_u64(capacity << SCHED_CAPACITY_SHIFT,
-				     capacity_scale);
-		topology_set_cpu_scale(cpu, capacity);
-		pr_debug("cpu_capacity: CPU%d cpu_capacity=%lu\n",
-			cpu, topology_get_cpu_scale(cpu));
-	}
-
-	schedule_work(&update_topology_flags_work);
-	pr_debug("cpu_capacity: cpu_capacity initialization done\n");
-
-exit:
-	free_raw_capacity();
-}
-void acpi_processor_init_invariance_cppc(void)
-{
-	topology_init_cpu_capacity_cppc();
-}
-#endif
-
-#ifdef CONFIG_CPU_FREQ
-static cpumask_var_t cpus_to_visit;
-static void parsing_done_workfn(struct work_struct *work);
-static DECLARE_WORK(parsing_done_work, parsing_done_workfn);
-
-static int
-init_cpu_capacity_callback(struct notifier_block *nb,
-			   unsigned long val,
-			   void *data)
-{
-	struct cpufreq_policy *policy = data;
-	int cpu;
-
-	if (val != CPUFREQ_CREATE_POLICY)
-		return 0;
-
-	pr_debug("cpu_capacity: init cpu capacity for CPUs [%*pbl] (to_visit=%*pbl)\n",
-		 cpumask_pr_args(policy->related_cpus),
-		 cpumask_pr_args(cpus_to_visit));
-
-	cpumask_andnot(cpus_to_visit, cpus_to_visit, policy->related_cpus);
-
-	for_each_cpu(cpu, policy->related_cpus) {
-		per_cpu(capacity_freq_ref, cpu) = policy->cpuinfo.max_freq;
-		freq_inv_set_max_ratio(cpu,
-				       per_cpu(capacity_freq_ref, cpu) * HZ_PER_KHZ);
-	}
-
-	if (cpumask_empty(cpus_to_visit)) {
-		if (raw_capacity) {
-			topology_normalize_cpu_scale();
-			schedule_work(&update_topology_flags_work);
-			free_raw_capacity();
-		}
-		pr_debug("cpu_capacity: parsing done\n");
-		schedule_work(&parsing_done_work);
-	}
-
-	return 0;
-}
-
-static struct notifier_block init_cpu_capacity_notifier = {
-	.notifier_call = init_cpu_capacity_callback,
-};
-
-static int __init register_cpufreq_notifier(void)
-{
-	int ret;
-
-	/*
-	 * On ACPI-based systems skip registering cpufreq notifier as cpufreq
-	 * information is not needed for cpu capacity initialization.
-	 */
-	if (!acpi_disabled)
-		return -EINVAL;
-
-	if (!alloc_cpumask_var(&cpus_to_visit, GFP_KERNEL))
-		return -ENOMEM;
-
-	cpumask_copy(cpus_to_visit, cpu_possible_mask);
-
-	ret = cpufreq_register_notifier(&init_cpu_capacity_notifier,
-					CPUFREQ_POLICY_NOTIFIER);
-
-	if (ret)
-		free_cpumask_var(cpus_to_visit);
-
-	return ret;
-}
-core_initcall(register_cpufreq_notifier);
-
-static void parsing_done_workfn(struct work_struct *work)
-{
-	cpufreq_unregister_notifier(&init_cpu_capacity_notifier,
-					 CPUFREQ_POLICY_NOTIFIER);
-	free_cpumask_var(cpus_to_visit);
-}
-
-#else
 core_initcall(free_raw_capacity);
-#endif
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM64)
 
 /* Used to enable the SMT control */
 static unsigned int max_smt_thread_num = 1;
@@ -825,7 +686,7 @@ void remove_cpu_topology(unsigned int cpu)
 	clear_cpu_topology(cpu);
 }
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM64)
 struct cpu_smt_info {
 	unsigned int thread_num;
 	int core_id;

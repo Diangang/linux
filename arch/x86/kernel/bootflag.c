@@ -79,9 +79,6 @@ static int __init sbf_init(void)
 	v &= ~SBF_RESERVED;
 	v &= ~SBF_BOOTING;
 	v &= ~SBF_DIAG;
-#if defined(CONFIG_ISAPNP)
-	v |= SBF_PNPOS;
-#endif
 	sbf_write(v);
 
 	return 0;

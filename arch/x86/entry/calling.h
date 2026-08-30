@@ -368,11 +368,6 @@ For 32-bit we have the following conventions - kernel is built with
 .endm
 
 .macro STACKLEAK_ERASE_NOCLOBBER
-#ifdef CONFIG_KSTACK_ERASE
-	PUSH_AND_CLEAR_REGS
-	call stackleak_erase
-	POP_REGS
-#endif
 .endm
 
 .macro SAVE_AND_SET_GSBASE scratch_reg:req save_reg:req
@@ -387,9 +382,6 @@ For 32-bit we have the following conventions - kernel is built with
 #endif /* !CONFIG_X86_64 */
 
 .macro STACKLEAK_ERASE
-#ifdef CONFIG_KSTACK_ERASE
-	call stackleak_erase
-#endif
 .endm
 
 #ifdef CONFIG_SMP

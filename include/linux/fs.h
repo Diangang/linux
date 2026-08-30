@@ -203,16 +203,8 @@ typedef int (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
 
 #define FMODE_FSNOTIFY_NONE(mode) \
 	((mode & FMODE_FSNOTIFY_MASK) == FMODE_NONOTIFY)
-#ifdef CONFIG_FANOTIFY_ACCESS_PERMISSIONS
-#define FMODE_FSNOTIFY_HSM(mode) \
-	((mode & FMODE_FSNOTIFY_MASK) == 0 || \
-	 (mode & FMODE_FSNOTIFY_MASK) == (FMODE_NONOTIFY | FMODE_NONOTIFY_PERM))
-#define FMODE_FSNOTIFY_ACCESS_PERM(mode) \
-	((mode & FMODE_FSNOTIFY_MASK) == 0)
-#else
 #define FMODE_FSNOTIFY_ACCESS_PERM(mode) 0
 #define FMODE_FSNOTIFY_HSM(mode)	0
-#endif
 
 /*
  * Attribute flags.  These should be or-ed together to figure out what
@@ -764,10 +756,6 @@ struct inode {
 	umode_t			i_mode;
 	unsigned short		i_opflags;
 	unsigned int		i_flags;
-#if 0
-	struct posix_acl	*i_acl;
-	struct posix_acl	*i_default_acl;
-#endif
 	kuid_t			i_uid;
 	kgid_t			i_gid;
 
@@ -775,9 +763,6 @@ struct inode {
 	struct super_block	*i_sb;
 	struct address_space	*i_mapping;
 
-#ifdef CONFIG_SECURITY
-	void			*i_security;
-#endif
 
 	/* Stat data, not accessed from path walking */
 	u64			i_ino;
@@ -821,14 +806,6 @@ struct inode {
 
 	struct hlist_node	i_hash;
 	struct list_head	i_io_list;	/* backing dev IO list */
-#ifdef CONFIG_CGROUP_WRITEBACK
-	struct bdi_writeback	*i_wb;		/* the associated cgroup wb */
-
-	/* foreign inode detection, see wbc_detach_inode() */
-	int			i_wb_frn_winner;
-	u16			i_wb_frn_avg_time;
-	u16			i_wb_frn_history;
-#endif
 	struct list_head	i_lru;		/* inode LRU list */
 	struct list_head	i_sb_list;
 	struct list_head	i_wb_list;	/* backing dev writeback list */
@@ -841,7 +818,7 @@ struct inode {
 	atomic_t		i_count;
 	atomic_t		i_dio_count;
 	atomic_t		i_writecount;
-#if defined(CONFIG_IMA) || defined(CONFIG_FILE_LOCKING)
+#if defined(CONFIG_FILE_LOCKING)
 	atomic_t		i_readcount; /* struct files open RO */
 #endif
 	union {
@@ -862,11 +839,6 @@ struct inode {
 	};
 
 
-#ifdef CONFIG_FSNOTIFY
-	__u32			i_fsnotify_mask; /* all events this inode cares about */
-	/* 32-bit hole reserved for expanding i_fsnotify_mask */
-	struct fsnotify_mark_connector __rcu	*i_fsnotify_marks;
-#endif
 
 	void			*i_private; /* fs or device private pointer */
 } __randomize_layout;
@@ -1276,15 +1248,9 @@ struct file {
 		u64			f_pipe;
 	};
 	loff_t				f_pos;
-#ifdef CONFIG_SECURITY
-	void				*f_security;
-#endif
 	/* --- cacheline 2 boundary (128 bytes) --- */
 	errseq_t			f_wb_err;
 	errseq_t			f_sb_err;
-#ifdef CONFIG_EPOLL
-	struct hlist_head		*f_ep;
-#endif
 	union {
 		struct callback_head	f_task_work;
 		struct llist_node	f_llist;
@@ -1821,12 +1787,7 @@ int vfs_fchown(struct file *file, uid_t user, gid_t group);
 int vfs_fchmod(struct file *file, umode_t mode);
 int vfs_utimes(const struct path *path, struct timespec64 *times);
 
-#ifdef CONFIG_COMPAT
-extern long compat_ptr_ioctl(struct file *file, unsigned int cmd,
-					unsigned long arg);
-#else
 #define compat_ptr_ioctl NULL
-#endif
 
 /*
  * VFS file helper functions.
@@ -2105,11 +2066,7 @@ extern loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 #define S_IMA		(1 << 10) /* Inode has an associated IMA struct */
 #define S_AUTOMOUNT	(1 << 11) /* Automount/referral quasi-directory */
 #define S_NOSEC		(1 << 12) /* no suid or xattr security attributes */
-#if 0
-#define S_DAX		(1 << 13) /* Direct Access, avoiding the page cache */
-#else
 #define S_DAX		0	  /* Make all the DAX code disappear */
-#endif
 #define S_ENCRYPTED	(1 << 14) /* Encrypted file (using fs/crypto/) */
 #define S_CASEFOLD	(1 << 15) /* Casefolded file */
 #define S_VERITY	(1 << 16) /* Verity file (using fs/verity/) */
@@ -2144,20 +2101,12 @@ extern loff_t vfs_dedupe_file_range_one(struct file *src_file, loff_t src_pos,
 #define IS_APPEND(inode)	((inode)->i_flags & S_APPEND)
 #define IS_IMMUTABLE(inode)	((inode)->i_flags & S_IMMUTABLE)
 
-#if 0
-#define IS_POSIXACL(inode)	__IS_FLG(inode, SB_POSIXACL)
-#else
 #define IS_POSIXACL(inode)	0
-#endif
 
 #define IS_DEADDIR(inode)	((inode)->i_flags & S_DEAD)
 #define IS_NOCMTIME(inode)	((inode)->i_flags & S_NOCMTIME)
 
-#ifdef CONFIG_SWAP
-#define IS_SWAPFILE(inode)	((inode)->i_flags & S_SWAPFILE)
-#else
 #define IS_SWAPFILE(inode)	((void)(inode), 0U)
-#endif
 
 #define IS_PRIVATE(inode)	((inode)->i_flags & S_PRIVATE)
 #define IS_IMA(inode)		((inode)->i_flags & S_IMA)
@@ -2468,10 +2417,6 @@ struct file *dentry_create(struct path *path, int flags, umode_t mode,
 			   const struct cred *cred);
 const struct path *backing_file_user_path(const struct file *f);
 
-#ifdef CONFIG_SECURITY
-void *backing_file_security(const struct file *f);
-void backing_file_set_security(struct file *f, void *security);
-#else
 static inline void *backing_file_security(const struct file *f)
 {
 	return NULL;
@@ -2479,7 +2424,6 @@ static inline void *backing_file_security(const struct file *f)
 static inline void backing_file_set_security(struct file *f, void *security)
 {
 }
-#endif /* CONFIG_SECURITY */
 
 /*
  * When mmapping a file on a stackable filesystem (e.g., overlayfs), the file
@@ -2844,7 +2788,7 @@ static inline bool inode_is_open_for_write(const struct inode *inode)
 	return atomic_read(&inode->i_writecount) > 0;
 }
 
-#if defined(CONFIG_IMA) || defined(CONFIG_FILE_LOCKING)
+#if defined(CONFIG_FILE_LOCKING)
 static inline void i_readcount_dec(struct inode *inode)
 {
 	BUG_ON(atomic_dec_return(&inode->i_readcount) < 0);
@@ -3306,55 +3250,11 @@ extern int generic_ci_match(const struct inode *parent,
 			    const struct qstr *folded_name,
 			    const u8 *de_name, u32 de_name_len);
 
-#if IS_ENABLED(CONFIG_UNICODE)
-int generic_ci_d_hash(const struct dentry *dentry, struct qstr *str);
-int generic_ci_d_compare(const struct dentry *dentry, unsigned int len,
-			 const char *str, const struct qstr *name);
-
-/**
- * generic_ci_validate_strict_name - Check if a given name is suitable
- * for a directory
- *
- * This functions checks if the proposed filename is valid for the
- * parent directory. That means that only valid UTF-8 filenames will be
- * accepted for casefold directories from filesystems created with the
- * strict encoding flag.  That also means that any name will be
- * accepted for directories that doesn't have casefold enabled, or
- * aren't being strict with the encoding.
- *
- * @dir: inode of the directory where the new file will be created
- * @name: name of the new file
- *
- * Return:
- * * True: if the filename is suitable for this directory. It can be
- *   true if a given name is not suitable for a strict encoding
- *   directory, but the directory being used isn't strict
- * * False if the filename isn't suitable for this directory. This only
- *   happens when a directory is casefolded and the filesystem is strict
- *   about its encoding.
- */
-static inline bool generic_ci_validate_strict_name(struct inode *dir,
-						   const struct qstr *name)
-{
-	if (!IS_CASEFOLDED(dir) || !sb_has_strict_encoding(dir->i_sb))
-		return true;
-
-	/*
-	 * A casefold dir must have a encoding set, unless the filesystem
-	 * is corrupted
-	 */
-	if (WARN_ON_ONCE(!dir->i_sb->s_encoding))
-		return true;
-
-	return !utf8_validate(dir->i_sb->s_encoding, name);
-}
-#else
 static inline bool generic_ci_validate_strict_name(struct inode *dir,
 						   const struct qstr *name)
 {
 	return true;
 }
-#endif
 
 int may_setattr(struct mnt_idmap *idmap, struct inode *inode,
 		unsigned int ia_valid);

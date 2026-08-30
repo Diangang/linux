@@ -8,8 +8,6 @@
 #include <linux/acpi.h>
 #include <linux/console.h>
 #include <linux/cpu.h>
-#include <linux/crash_dump.h>
-#include <linux/crash_reserve.h>
 #include <linux/dma-map-ops.h>
 #include <linux/efi.h>
 #include <linux/hugetlb.h>
@@ -163,15 +161,6 @@ static const struct ctl_table x86_sysctl_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
 	},
-#if defined(CONFIG_ACPI_SLEEP)
-	{
-		.procname	= "acpi_video_flags",
-		.data		= &acpi_realmode_flags,
-		.maxlen		= sizeof(unsigned long),
-		.mode		= 0644,
-		.proc_handler	= proc_doulongvec_minmax,
-	},
-#endif
 };
 
 static int __init init_x86_sysctl(void)
@@ -197,34 +186,10 @@ unsigned long saved_video_mode;
 #define RAMDISK_LOAD_FLAG		0x4000
 
 static char __initdata command_line[COMMAND_LINE_SIZE];
-#if 0
-char builtin_cmdline[COMMAND_LINE_SIZE] = CONFIG_CMDLINE;
-bool builtin_cmdline_added __ro_after_init;
-#endif
 
-#if defined(CONFIG_EDD) || defined(CONFIG_EDD_MODULE)
-struct edd edd;
-#ifdef CONFIG_EDD_MODULE
-EXPORT_SYMBOL(edd);
-#endif
-/**
- * copy_edd() - Copy the BIOS EDD information
- *              from boot_params into a safe place.
- *
- */
-static inline void __init copy_edd(void)
-{
-     memcpy(edd.mbr_signature, boot_params.edd_mbr_sig_buffer,
-	    sizeof(edd.mbr_signature));
-     memcpy(edd.edd_info, boot_params.eddbuf, sizeof(edd.edd_info));
-     edd.mbr_signature_nr = boot_params.edd_mbr_sig_buf_entries;
-     edd.edd_info_nr = boot_params.eddbuf_entries;
-}
-#else
 static inline void __init copy_edd(void)
 {
 }
-#endif
 
 void * __init extend_brk(size_t size, size_t align)
 {
@@ -422,16 +387,6 @@ static void __init parse_boot_params(void)
 	bootloader_version  = bootloader_type & 0xf;
 	bootloader_version |= boot_params.hdr.ext_loader_ver << 4;
 
-#ifdef CONFIG_EFI
-	if (!strncmp((char *)&boot_params.efi_info.efi_loader_signature,
-		     EFI32_LOADER_SIGNATURE, 4)) {
-		set_bit(EFI_BOOT, &efi.flags);
-	} else if (!strncmp((char *)&boot_params.efi_info.efi_loader_signature,
-		     EFI64_LOADER_SIGNATURE, 4)) {
-		set_bit(EFI_BOOT, &efi.flags);
-		set_bit(EFI_64BIT, &efi.flags);
-	}
-#endif
 
 	if (!boot_params.hdr.root_flags)
 		root_mountflags &= ~MS_RDONLY;
@@ -475,25 +430,6 @@ static void __init memblock_x86_reserve_range_setup_data(void)
 		pa_data = pa_next;
 		early_memunmap(data, len);
 	}
-}
-
-static void __init arch_reserve_crashkernel(void)
-{
-	unsigned long long crash_base, crash_size, low_size = 0, cma_size = 0;
-	bool high = false;
-	int ret;
-
-	if (!IS_ENABLED(CONFIG_CRASH_RESERVE))
-		return;
-
-	ret = parse_crashkernel(boot_command_line, memblock_phys_mem_size(),
-				&crash_size, &crash_base,
-				&low_size, &cma_size, &high);
-	if (ret)
-		return;
-
-	reserve_crashkernel_generic(crash_size, crash_base, low_size, high);
-	reserve_crashkernel_cma(cma_size);
 }
 
 static struct resource standard_io_resources[] = {
@@ -725,7 +661,7 @@ static void __init x86_report_nx(void)
 		printk(KERN_NOTICE "Notice: NX (Execute Disable) protection "
 		       "missing in CPU!\n");
 	} else {
-#if defined(CONFIG_X86_64) || 0
+#if defined(CONFIG_X86_64)
 		printk(KERN_INFO "NX (Execute Disable) protection: active\n");
 #else
 		/* 32bit non-PAE kernel, NX cannot be used */
@@ -753,19 +689,6 @@ void __init setup_arch(char **cmdline_p)
 	printk(KERN_INFO "Command line: %s\n", boot_command_line);
 	boot_cpu_data.x86_phys_bits = MAX_PHYSMEM_BITS;
 
-#if 0
-#ifdef CONFIG_CMDLINE_OVERRIDE
-	strscpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
-#else
-	if (builtin_cmdline[0]) {
-		/* append boot loader cmdline to builtin */
-		strlcat(builtin_cmdline, " ", COMMAND_LINE_SIZE);
-		strlcat(builtin_cmdline, boot_command_line, COMMAND_LINE_SIZE);
-		strscpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
-	}
-#endif
-	builtin_cmdline_added = true;
-#endif
 
 	strscpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
 	*cmdline_p = command_line;
@@ -1006,12 +929,6 @@ void __init setup_arch(char **cmdline_p)
 	initmem_init();
 	dma_contiguous_reserve(max_pfn_mapped << PAGE_SHIFT);
 
-	/*
-	 * Reserve memory for crash kernel after SRAT is parsed so that it
-	 * won't consume hotpluggable memory.
-	 */
-	arch_reserve_crashkernel();
-
 	if (!early_xdbc_setup_hardware())
 		early_xdbc_register_console();
 
@@ -1077,10 +994,6 @@ void __init setup_arch(char **cmdline_p)
 
 	register_refined_jiffies(CLOCK_TICK_RATE);
 
-#ifdef CONFIG_EFI
-	if (efi_enabled(EFI_BOOT))
-		efi_apply_memmap_quirks();
-#endif
 
 	unwind_init();
 }

@@ -183,9 +183,7 @@ struct page {
 	/* Usage count. *DO NOT USE DIRECTLY*. See page_ref.h */
 	atomic_t _refcount;
 
-#ifdef CONFIG_MEMCG
-	unsigned long memcg_data;
-#elif defined(CONFIG_SLAB_OBJ_EXT)
+#if   defined(CONFIG_SLAB_OBJ_EXT)
 	unsigned long _unused_slab_obj_exts;
 #endif
 
@@ -208,17 +206,6 @@ struct page {
 	int _last_cpupid;
 #endif
 
-#if 0
-	/*
-	 * KMSAN metadata for this page:
-	 *  - shadow page: every bit indicates whether the corresponding
-	 *    bit of the original page is initialized (0) or not (1);
-	 *  - origin page: every 4 bytes contain an id of the stack trace
-	 *    where the uninitialized value was created.
-	 */
-	struct page *kmsan_shadow;
-	struct page *kmsan_origin;
-#endif
 } _struct_page_alignment;
 
 /*
@@ -311,7 +298,7 @@ typedef struct {
  */
 typedef swp_entry_t softleaf_t;
 
-#if defined(CONFIG_MEMCG) || defined(CONFIG_SLAB_OBJ_EXT)
+#if defined(CONFIG_SLAB_OBJ_EXT)
 /* We have some extra room after the refcount in tail pages. */
 #define NR_PAGES_IN_LARGE_FOLIO
 #endif
@@ -429,9 +416,7 @@ struct folio {
 			};
 			atomic_t _mapcount;
 			atomic_t _refcount;
-#ifdef CONFIG_MEMCG
-			unsigned long memcg_data;
-#elif defined(CONFIG_SLAB_OBJ_EXT)
+#if   defined(CONFIG_SLAB_OBJ_EXT)
 			unsigned long _unused_slab_obj_exts;
 #endif
 #if defined(WANT_PAGE_VIRTUAL)
@@ -515,9 +500,6 @@ FOLIO_MATCH(__folio_index, index);
 FOLIO_MATCH(private, private);
 FOLIO_MATCH(_mapcount, _mapcount);
 FOLIO_MATCH(_refcount, _refcount);
-#ifdef CONFIG_MEMCG
-FOLIO_MATCH(memcg_data, memcg_data);
-#endif
 #if defined(WANT_PAGE_VIRTUAL)
 FOLIO_MATCH(virtual, virtual);
 #endif
@@ -586,9 +568,6 @@ struct ptdesc {
 		pgoff_t pt_index;
 		struct mm_struct *pt_mm;
 		atomic_t pt_frag_refcount;
-#ifdef CONFIG_HUGETLB_PMD_PAGE_TABLE_SHARING
-		atomic_t pt_share_count;
-#endif
 	};
 
 	union {
@@ -601,9 +580,6 @@ struct ptdesc {
 	};
 	unsigned int __page_type;
 	atomic_t __page_refcount;
-#ifdef CONFIG_MEMCG
-	unsigned long pt_memcg_data;
-#endif
 };
 
 #define TABLE_MATCH(pg, pt)						\
@@ -616,9 +592,6 @@ TABLE_MATCH(__folio_index, pt_index);
 TABLE_MATCH(rcu_head, pt_rcu_head);
 TABLE_MATCH(page_type, __page_type);
 TABLE_MATCH(_refcount, __page_refcount);
-#ifdef CONFIG_MEMCG
-TABLE_MATCH(memcg_data, pt_memcg_data);
-#endif
 #undef TABLE_MATCH
 static_assert(sizeof(struct ptdesc) <= sizeof(struct page));
 
@@ -634,36 +607,9 @@ static_assert(sizeof(struct ptdesc) <= sizeof(struct page));
 	const struct page *:		(const struct ptdesc *)(p),	\
 	struct page *:			(struct ptdesc *)(p)))
 
-#ifdef CONFIG_HUGETLB_PMD_PAGE_TABLE_SHARING
-static inline void ptdesc_pmd_pts_init(struct ptdesc *ptdesc)
-{
-	atomic_set(&ptdesc->pt_share_count, 0);
-}
-
-static inline void ptdesc_pmd_pts_inc(struct ptdesc *ptdesc)
-{
-	atomic_inc(&ptdesc->pt_share_count);
-}
-
-static inline void ptdesc_pmd_pts_dec(struct ptdesc *ptdesc)
-{
-	atomic_dec(&ptdesc->pt_share_count);
-}
-
-static inline int ptdesc_pmd_pts_count(const struct ptdesc *ptdesc)
-{
-	return atomic_read(&ptdesc->pt_share_count);
-}
-
-static inline bool ptdesc_pmd_is_shared(struct ptdesc *ptdesc)
-{
-	return !!ptdesc_pmd_pts_count(ptdesc);
-}
-#else
 static inline void ptdesc_pmd_pts_init(struct ptdesc *ptdesc)
 {
 }
-#endif
 
 /*
  * Used for sizing the vmemmap region on some architectures
@@ -977,9 +923,6 @@ struct vm_area_struct {
 	struct file * vm_file;		/* File we map to (can be NULL). */
 	void * vm_private_data;		/* was vm_pte (shared mem) */
 
-#ifdef CONFIG_SWAP
-	atomic_long_t swap_readahead_info;
-#endif
 #ifndef CONFIG_MMU
 	struct vm_region *vm_region;	/* NOMMU mapping region */
 #endif
@@ -1169,15 +1112,6 @@ struct mm_struct {
 		unsigned long task_size;	/* size of task vm space */
 		pgd_t * pgd;
 
-#ifdef CONFIG_MEMBARRIER
-		/**
-		 * @membarrier_state: Flags controlling membarrier behavior.
-		 *
-		 * This field is close to @pgd to hopefully fit in the same
-		 * cache-line, which needs to be touched by switch_mm().
-		 */
-		atomic_t membarrier_state;
-#endif
 
 		/**
 		 * @mm_users: The number of users including userspace.
@@ -1282,10 +1216,6 @@ struct mm_struct {
 
 		unsigned long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
 
-#ifdef CONFIG_ARCH_HAS_ELF_CORE_EFLAGS
-		/* the ABI-related flags from the ELF header. Used for core dump */
-		unsigned long saved_e_flags;
-#endif
 
 		struct percpu_counter rss_stat[NR_MM_COUNTERS];
 
@@ -1296,30 +1226,10 @@ struct mm_struct {
 
 		mm_flags_t flags; /* Must use mm_flags_* hlpers to access */
 
-#ifdef CONFIG_AIO
-		spinlock_t			ioctx_lock;
-		struct kioctx_table __rcu	*ioctx_table;
-#endif
-#ifdef CONFIG_MEMCG
-		/*
-		 * "owner" points to a task that is regarded as the canonical
-		 * user/owner of this mm. All of the following must be true in
-		 * order for it to be changed:
-		 *
-		 * current == mm->owner
-		 * current->mm != mm
-		 * new_owner->mm == mm
-		 * new_owner->alloc_lock is held
-		 */
-		struct task_struct __rcu *owner;
-#endif
 		struct user_namespace *user_ns;
 
 		/* store ref to file /proc/<pid>/exe symlink points to */
 		struct file __rcu *exe_file;
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && !defined(CONFIG_SPLIT_PMD_PTLOCKS)
-		pgtable_t pmd_huge_pte; /* protected by page_table_lock */
-#endif
 #ifdef CONFIG_NUMA_BALANCING
 		/*
 		 * numa_next_scan is the next time that PTEs will be remapped
@@ -1345,47 +1255,8 @@ struct mm_struct {
 		atomic_t tlb_flush_batched;
 #endif
 		struct uprobes_state uprobes_state;
-#ifdef CONFIG_HUGETLB_PAGE
-		atomic_long_t hugetlb_usage;
-#endif
 		struct work_struct async_put_work;
 
-#if 0
-		struct iommu_mm_data *iommu_mm;
-#endif
-#ifdef CONFIG_KSM
-		/*
-		 * Represent how many pages of this process are involved in KSM
-		 * merging (not including ksm_zero_pages).
-		 */
-		unsigned long ksm_merging_pages;
-		/*
-		 * Represent how many pages are checked for ksm merging
-		 * including merged and not merged.
-		 */
-		unsigned long ksm_rmap_items;
-		/*
-		 * Represent how many empty pages are merged with kernel zero
-		 * pages when enabling KSM use_zero_pages.
-		 */
-		atomic_long_t ksm_zero_pages;
-#endif /* CONFIG_KSM */
-#ifdef CONFIG_LRU_GEN_WALKS_MMU
-		struct {
-			/* this mm_struct is on lru_gen_mm_list */
-			struct list_head list;
-			/*
-			 * Set when switching to this mm_struct, as a hint of
-			 * whether it has been used since the last time per-node
-			 * page table walkers cleared the corresponding bits.
-			 */
-			unsigned long bitmap;
-#ifdef CONFIG_MEMCG
-			/* points to the memcg of "owner" above */
-			struct mem_cgroup *memcg;
-#endif
-		} lru_gen;
-#endif /* CONFIG_LRU_GEN_WALKS_MMU */
 #ifdef CONFIG_MM_ID
 		mm_id_t mm_id;
 #endif /* CONFIG_MM_ID */
@@ -1453,32 +1324,6 @@ static inline cpumask_t *mm_cpumask(struct mm_struct *mm)
 }
 
 
-#ifdef CONFIG_LRU_GEN_WALKS_MMU
-
-void lru_gen_add_mm(struct mm_struct *mm);
-void lru_gen_del_mm(struct mm_struct *mm);
-void lru_gen_migrate_mm(struct mm_struct *mm);
-
-static inline void lru_gen_init_mm(struct mm_struct *mm)
-{
-	INIT_LIST_HEAD(&mm->lru_gen.list);
-	mm->lru_gen.bitmap = 0;
-#ifdef CONFIG_MEMCG
-	mm->lru_gen.memcg = NULL;
-#endif
-}
-
-static inline void lru_gen_use_mm(struct mm_struct *mm)
-{
-	/*
-	 * When the bitmap is set, page reclaim knows this mm_struct has been
-	 * used since the last time it cleared the bitmap. So it might be worth
-	 * walking the page tables of this mm_struct to clear the accessed bit.
-	 */
-	WRITE_ONCE(mm->lru_gen.bitmap, -1);
-}
-
-#else /* !CONFIG_LRU_GEN_WALKS_MMU */
 
 static inline void lru_gen_add_mm(struct mm_struct *mm)
 {
@@ -1500,7 +1345,6 @@ static inline void lru_gen_use_mm(struct mm_struct *mm)
 {
 }
 
-#endif /* CONFIG_LRU_GEN_WALKS_MMU */
 
 struct vma_iterator {
 	struct ma_state mas;
@@ -1522,57 +1366,6 @@ static inline void vma_iter_init(struct vma_iterator *vmi,
 	mas_init(&vmi->mas, &mm->mm_mt, addr);
 }
 
-#ifdef CONFIG_SCHED_MM_CID
-/*
- * mm_cpus_allowed: Union of all mm's threads allowed CPUs.
- */
-static inline cpumask_t *mm_cpus_allowed(struct mm_struct *mm)
-{
-	unsigned long bitmap = (unsigned long)mm;
-
-	bitmap += offsetof(struct mm_struct, flexible_array);
-	/* Skip cpu_bitmap */
-	bitmap += cpumask_size();
-	return (struct cpumask *)bitmap;
-}
-
-/* Accessor for struct mm_struct's cidmask. */
-static inline unsigned long *mm_cidmask(struct mm_struct *mm)
-{
-	unsigned long cid_bitmap = (unsigned long)mm_cpus_allowed(mm);
-
-	/* Skip mm_cpus_allowed */
-	cid_bitmap += cpumask_size();
-	return (unsigned long *)cid_bitmap;
-}
-
-void mm_init_cid(struct mm_struct *mm, struct task_struct *p);
-
-static inline int mm_alloc_cid_noprof(struct mm_struct *mm, struct task_struct *p)
-{
-	mm->mm_cid.pcpu = alloc_percpu_noprof(struct mm_cid_pcpu);
-	if (!mm->mm_cid.pcpu)
-		return -ENOMEM;
-	mm_init_cid(mm, p);
-	return 0;
-}
-# define mm_alloc_cid(...)	alloc_hooks(mm_alloc_cid_noprof(__VA_ARGS__))
-
-static inline void mm_destroy_cid(struct mm_struct *mm)
-{
-	free_percpu(mm->mm_cid.pcpu);
-	mm->mm_cid.pcpu = NULL;
-}
-
-static inline unsigned int mm_cid_size(void)
-{
-	/* mm_cpus_allowed(), mm_cidmask(). */
-	return cpumask_size() + bitmap_size(num_possible_cpus());
-}
-
-/* Use 2 * NR_CPUS as worse case for static allocation. */
-# define MM_CID_STATIC_SIZE	(2 * sizeof(cpumask_t))
-#else /* CONFIG_SCHED_MM_CID */
 static inline void mm_init_cid(struct mm_struct *mm, struct task_struct *p) { }
 static inline int mm_alloc_cid(struct mm_struct *mm, struct task_struct *p) { return 0; }
 static inline void mm_destroy_cid(struct mm_struct *mm) { }
@@ -1581,7 +1374,6 @@ static inline unsigned int mm_cid_size(void)
 	return 0;
 }
 # define MM_CID_STATIC_SIZE	0
-#endif /* CONFIG_SCHED_MM_CID */
 
 struct mmu_gather;
 extern void tlb_gather_mmu(struct mmu_gather *tlb, struct mm_struct *mm);

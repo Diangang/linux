@@ -300,60 +300,9 @@ void arm64_notify_die(const char *str, struct pt_regs *regs,
 	}
 }
 
-#ifdef CONFIG_COMPAT
-#define PSTATE_IT_1_0_SHIFT	25
-#define PSTATE_IT_1_0_MASK	(0x3 << PSTATE_IT_1_0_SHIFT)
-#define PSTATE_IT_7_2_SHIFT	10
-#define PSTATE_IT_7_2_MASK	(0x3f << PSTATE_IT_7_2_SHIFT)
-
-static u32 compat_get_it_state(struct pt_regs *regs)
-{
-	u32 it, pstate = regs->pstate;
-
-	it  = (pstate & PSTATE_IT_1_0_MASK) >> PSTATE_IT_1_0_SHIFT;
-	it |= ((pstate & PSTATE_IT_7_2_MASK) >> PSTATE_IT_7_2_SHIFT) << 2;
-
-	return it;
-}
-
-static void compat_set_it_state(struct pt_regs *regs, u32 it)
-{
-	u32 pstate_it;
-
-	pstate_it  = (it << PSTATE_IT_1_0_SHIFT) & PSTATE_IT_1_0_MASK;
-	pstate_it |= ((it >> 2) << PSTATE_IT_7_2_SHIFT) & PSTATE_IT_7_2_MASK;
-
-	regs->pstate &= ~PSR_AA32_IT_MASK;
-	regs->pstate |= pstate_it;
-}
-
-static void advance_itstate(struct pt_regs *regs)
-{
-	u32 it;
-
-	/* ARM mode */
-	if (!(regs->pstate & PSR_AA32_T_BIT) ||
-	    !(regs->pstate & PSR_AA32_IT_MASK))
-		return;
-
-	it  = compat_get_it_state(regs);
-
-	/*
-	 * If this is the last instruction of the block, wipe the IT
-	 * state. Otherwise advance it.
-	 */
-	if (!(it & 7))
-		it = 0;
-	else
-		it = (it & 0xe0) | ((it << 1) & 0x1f);
-
-	compat_set_it_state(regs, it);
-}
-#else
 static void advance_itstate(struct pt_regs *regs)
 {
 }
-#endif
 
 void arm64_skip_faulting_instruction(struct pt_regs *regs, unsigned long size)
 {
@@ -705,108 +654,6 @@ static const struct sys64_hook sys64_hooks[] = {
 	{},
 };
 
-#ifdef CONFIG_COMPAT
-static bool cp15_cond_valid(unsigned long esr, struct pt_regs *regs)
-{
-	int cond;
-
-	/* Only a T32 instruction can trap without CV being set */
-	if (!(esr & ESR_ELx_CV)) {
-		u32 it;
-
-		it = compat_get_it_state(regs);
-		if (!it)
-			return true;
-
-		cond = it >> 4;
-	} else {
-		cond = (esr & ESR_ELx_COND_MASK) >> ESR_ELx_COND_SHIFT;
-	}
-
-	return aarch32_opcode_cond_checks[cond](regs->pstate);
-}
-
-static void compat_cntfrq_read_handler(unsigned long esr, struct pt_regs *regs)
-{
-	int reg = (esr & ESR_ELx_CP15_32_ISS_RT_MASK) >> ESR_ELx_CP15_32_ISS_RT_SHIFT;
-
-	pt_regs_write_reg(regs, reg, arch_timer_get_rate());
-	arm64_skip_faulting_instruction(regs, 4);
-}
-
-static const struct sys64_hook cp15_32_hooks[] = {
-	{
-		.esr_mask = ESR_ELx_CP15_32_ISS_SYS_MASK,
-		.esr_val = ESR_ELx_CP15_32_ISS_SYS_CNTFRQ,
-		.handler = compat_cntfrq_read_handler,
-	},
-	{},
-};
-
-static void compat_cntvct_read_handler(unsigned long esr, struct pt_regs *regs)
-{
-	int rt = (esr & ESR_ELx_CP15_64_ISS_RT_MASK) >> ESR_ELx_CP15_64_ISS_RT_SHIFT;
-	int rt2 = (esr & ESR_ELx_CP15_64_ISS_RT2_MASK) >> ESR_ELx_CP15_64_ISS_RT2_SHIFT;
-	u64 val = arch_timer_read_counter();
-
-	pt_regs_write_reg(regs, rt, lower_32_bits(val));
-	pt_regs_write_reg(regs, rt2, upper_32_bits(val));
-	arm64_skip_faulting_instruction(regs, 4);
-}
-
-static const struct sys64_hook cp15_64_hooks[] = {
-	{
-		.esr_mask = ESR_ELx_CP15_64_ISS_SYS_MASK,
-		.esr_val = ESR_ELx_CP15_64_ISS_SYS_CNTVCT,
-		.handler = compat_cntvct_read_handler,
-	},
-	{
-		.esr_mask = ESR_ELx_CP15_64_ISS_SYS_MASK,
-		.esr_val = ESR_ELx_CP15_64_ISS_SYS_CNTVCTSS,
-		.handler = compat_cntvct_read_handler,
-	},
-	{},
-};
-
-void do_el0_cp15(unsigned long esr, struct pt_regs *regs)
-{
-	const struct sys64_hook *hook, *hook_base;
-
-	if (!cp15_cond_valid(esr, regs)) {
-		/*
-		 * There is no T16 variant of a CP access, so we
-		 * always advance PC by 4 bytes.
-		 */
-		arm64_skip_faulting_instruction(regs, 4);
-		return;
-	}
-
-	switch (ESR_ELx_EC(esr)) {
-	case ESR_ELx_EC_CP15_32:
-		hook_base = cp15_32_hooks;
-		break;
-	case ESR_ELx_EC_CP15_64:
-		hook_base = cp15_64_hooks;
-		break;
-	default:
-		do_el0_undef(regs, esr);
-		return;
-	}
-
-	for (hook = hook_base; hook->handler; hook++)
-		if ((hook->esr_mask & esr) == hook->esr_val) {
-			hook->handler(esr, regs);
-			return;
-		}
-
-	/*
-	 * New cp15 instructions may previously have been undefined at
-	 * EL0. Fall back to our usual undefined instruction handler
-	 * so that we handle these consistently.
-	 */
-	do_el0_undef(regs, esr);
-}
-#endif
 
 void do_el0_sys(unsigned long esr, struct pt_regs *regs)
 {
@@ -1015,31 +862,6 @@ int bug_brk_handler(struct pt_regs *regs, unsigned long esr)
 	return DBG_HOOK_HANDLED;
 }
 
-#if 0
-int cfi_brk_handler(struct pt_regs *regs, unsigned long esr)
-{
-	unsigned long target;
-	u32 type;
-
-	target = pt_regs_read_reg(regs, FIELD_GET(CFI_BRK_IMM_TARGET, esr));
-	type = (u32)pt_regs_read_reg(regs, FIELD_GET(CFI_BRK_IMM_TYPE, esr));
-
-	switch (report_cfi_failure(regs, regs->pc, &target, type)) {
-	case BUG_TRAP_TYPE_BUG:
-		die("Oops - CFI", regs, esr);
-		break;
-
-	case BUG_TRAP_TYPE_WARN:
-		break;
-
-	default:
-		return DBG_HOOK_ERROR;
-	}
-
-	arm64_skip_faulting_instruction(regs, AARCH64_INSN_SIZE);
-	return DBG_HOOK_HANDLED;
-}
-#endif /* CONFIG_CFI */
 
 int reserved_fault_brk_handler(struct pt_regs *regs, unsigned long esr)
 {
@@ -1050,43 +872,3 @@ int reserved_fault_brk_handler(struct pt_regs *regs, unsigned long esr)
 	/* We cannot handle this */
 	return DBG_HOOK_ERROR;
 }
-
-#if 0
-
-#define KASAN_ESR_RECOVER	0x20
-#define KASAN_ESR_WRITE	0x10
-#define KASAN_ESR_SIZE_MASK	0x0f
-#define KASAN_ESR_SIZE(esr)	(1 << ((esr) & KASAN_ESR_SIZE_MASK))
-
-int kasan_brk_handler(struct pt_regs *regs, unsigned long esr)
-{
-	bool recover = esr & KASAN_ESR_RECOVER;
-	bool write = esr & KASAN_ESR_WRITE;
-	size_t size = KASAN_ESR_SIZE(esr);
-	void *addr = (void *)regs->regs[0];
-	u64 pc = regs->pc;
-
-	kasan_report(addr, size, write, pc);
-
-	/*
-	 * The instrumentation allows to control whether we can proceed after
-	 * a crash was detected. This is done by passing the -recover flag to
-	 * the compiler. Disabling recovery allows to generate more compact
-	 * code.
-	 *
-	 * Unfortunately disabling recovery doesn't work for the kernel right
-	 * now. KASAN reporting is disabled in some contexts (for example when
-	 * the allocator accesses slab object metadata; this is controlled by
-	 * current->kasan_depth). All these accesses are detected by the tool,
-	 * even though the reports for them are not printed.
-	 *
-	 * This is something that might be fixed at some point in the future.
-	 */
-	if (!recover)
-		die("Oops - KASAN", regs, esr);
-
-	/* If thread survives, skip over the brk instruction and continue: */
-	arm64_skip_faulting_instruction(regs, AARCH64_INSN_SIZE);
-	return DBG_HOOK_HANDLED;
-}
-#endif

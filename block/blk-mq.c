@@ -107,41 +107,6 @@ void blk_mq_in_driver_rw(struct block_device *part, unsigned int inflight[2])
 	inflight[WRITE] = mi.inflight[WRITE];
 }
 
-#if 0
-static bool blk_freeze_set_owner(struct request_queue *q,
-				 struct task_struct *owner)
-{
-	if (!owner)
-		return false;
-
-	if (!q->mq_freeze_depth) {
-		q->mq_freeze_owner = owner;
-		q->mq_freeze_owner_depth = 1;
-		q->mq_freeze_disk_dead = !q->disk ||
-			test_bit(GD_DEAD, &q->disk->state) ||
-			!blk_queue_registered(q);
-		q->mq_freeze_queue_dying = blk_queue_dying(q);
-		return true;
-	}
-
-	if (owner == q->mq_freeze_owner)
-		q->mq_freeze_owner_depth += 1;
-	return false;
-}
-
-/* verify the last unfreeze in owner context */
-static bool blk_unfreeze_check_owner(struct request_queue *q)
-{
-	if (q->mq_freeze_owner != current)
-		return false;
-	if (--q->mq_freeze_owner_depth == 0) {
-		q->mq_freeze_owner = NULL;
-		return true;
-	}
-	return false;
-}
-
-#else
 
 static bool blk_freeze_set_owner(struct request_queue *q,
 				 struct task_struct *owner)
@@ -153,7 +118,6 @@ static bool blk_unfreeze_check_owner(struct request_queue *q)
 {
 	return false;
 }
-#endif
 
 bool __blk_freeze_queue_start(struct request_queue *q,
 			      struct task_struct *owner)
@@ -390,10 +354,6 @@ static inline void blk_mq_rq_time_init(struct request *rq, u64 alloc_time_ns)
 static inline void blk_mq_bio_issue_init(struct request_queue *q,
 					 struct bio *bio)
 {
-#ifdef CONFIG_BLK_CGROUP
-	if (test_bit(QUEUE_FLAG_BIO_ISSUE_TIME, &q->queue_flags))
-		bio->issue_time_ns = blk_time_get_ns();
-#endif
 }
 
 static struct request *blk_mq_rq_ctx_init(struct blk_mq_alloc_data *data,
@@ -3233,158 +3193,6 @@ queue_exit:
 		blk_queue_exit(q);
 }
 
-#ifdef CONFIG_BLK_MQ_STACKING
-/**
- * blk_insert_cloned_request - Helper for stacking drivers to submit a request
- * @rq: the request being queued
- */
-blk_status_t blk_insert_cloned_request(struct request *rq)
-{
-	struct request_queue *q = rq->q;
-	unsigned int max_sectors = blk_queue_get_max_sectors(rq);
-	unsigned int max_segments = blk_rq_get_max_segments(rq);
-	blk_status_t ret;
-
-	if (blk_rq_sectors(rq) > max_sectors) {
-		/*
-		 * SCSI device does not have a good way to return if
-		 * Write Same/Zero is actually supported. If a device rejects
-		 * a non-read/write command (discard, write same,etc.) the
-		 * low-level device driver will set the relevant queue limit to
-		 * 0 to prevent blk-lib from issuing more of the offending
-		 * operations. Commands queued prior to the queue limit being
-		 * reset need to be completed with BLK_STS_NOTSUPP to avoid I/O
-		 * errors being propagated to upper layers.
-		 */
-		if (max_sectors == 0)
-			return BLK_STS_NOTSUPP;
-
-		printk(KERN_ERR "%s: over max size limit. (%u > %u)\n",
-			__func__, blk_rq_sectors(rq), max_sectors);
-		return BLK_STS_IOERR;
-	}
-
-	/*
-	 * The queue settings related to segment counting may differ from the
-	 * original queue.
-	 */
-	rq->nr_phys_segments = blk_recalc_rq_segments(rq);
-	if (rq->nr_phys_segments > max_segments) {
-		printk(KERN_ERR "%s: over max segments limit. (%u > %u)\n",
-			__func__, rq->nr_phys_segments, max_segments);
-		return BLK_STS_IOERR;
-	}
-
-	if (q->disk && should_fail_request(q->disk->part0, blk_rq_bytes(rq)))
-		return BLK_STS_IOERR;
-
-	ret = blk_crypto_rq_get_keyslot(rq);
-	if (ret != BLK_STS_OK)
-		return ret;
-
-	blk_account_io_start(rq);
-
-	/*
-	 * Since we have a scheduler attached on the top device,
-	 * bypass a potential scheduler on the bottom device for
-	 * insert.
-	 */
-	blk_mq_run_dispatch_ops(q,
-			ret = blk_mq_request_issue_directly(rq, true));
-	if (ret)
-		blk_account_io_done(rq, blk_time_get_ns());
-	return ret;
-}
-EXPORT_SYMBOL_GPL(blk_insert_cloned_request);
-
-/**
- * blk_rq_unprep_clone - Helper function to free all bios in a cloned request
- * @rq: the clone request to be cleaned up
- *
- * Description:
- *     Free all bios in @rq for a cloned request.
- */
-void blk_rq_unprep_clone(struct request *rq)
-{
-	struct bio *bio;
-
-	while ((bio = rq->bio) != NULL) {
-		rq->bio = bio->bi_next;
-
-		bio_put(bio);
-	}
-}
-EXPORT_SYMBOL_GPL(blk_rq_unprep_clone);
-
-/**
- * blk_rq_prep_clone - Helper function to setup clone request
- * @rq: the request to be setup
- * @rq_src: original request to be cloned
- * @bs: bio_set that bios for clone are allocated from
- * @gfp_mask: memory allocation mask for bio
- * @bio_ctr: setup function to be called for each clone bio.
- *           Returns %0 for success, non %0 for failure.
- * @data: private data to be passed to @bio_ctr
- *
- * Description:
- *     Clones bios in @rq_src to @rq, and copies attributes of @rq_src to @rq.
- *     Also, pages which the original bios are pointing to are not copied
- *     and the cloned bios just point same pages.
- *     So cloned bios must be completed before original bios, which means
- *     the caller must complete @rq before @rq_src.
- */
-int blk_rq_prep_clone(struct request *rq, struct request *rq_src,
-		      struct bio_set *bs, gfp_t gfp_mask,
-		      int (*bio_ctr)(struct bio *, struct bio *, void *),
-		      void *data)
-{
-	struct bio *bio_src;
-
-	if (!bs)
-		bs = &fs_bio_set;
-
-	__rq_for_each_bio(bio_src, rq_src) {
-		struct bio *bio	 = bio_alloc_clone(rq->q->disk->part0, bio_src,
-					gfp_mask, bs);
-		if (!bio)
-			goto free_and_out;
-
-		if (bio_ctr && bio_ctr(bio, bio_src, data)) {
-			bio_put(bio);
-			goto free_and_out;
-		}
-
-		if (rq->bio) {
-			rq->biotail->bi_next = bio;
-			rq->biotail = bio;
-		} else {
-			rq->bio = rq->biotail = bio;
-		}
-	}
-
-	/* Copy attributes of the original request to the clone request. */
-	rq->__sector = blk_rq_pos(rq_src);
-	rq->__data_len = blk_rq_bytes(rq_src);
-	if (rq_src->rq_flags & RQF_SPECIAL_PAYLOAD) {
-		rq->rq_flags |= RQF_SPECIAL_PAYLOAD;
-		rq->special_vec = rq_src->special_vec;
-	}
-	rq->nr_phys_segments = rq_src->nr_phys_segments;
-	rq->nr_integrity_segments = rq_src->nr_integrity_segments;
-	rq->phys_gap_bit = rq_src->phys_gap_bit;
-
-	if (rq->bio && blk_crypto_rq_bio_prep(rq, rq->bio, gfp_mask) < 0)
-		goto free_and_out;
-
-	return 0;
-
-free_and_out:
-	blk_rq_unprep_clone(rq);
-
-	return -ENOMEM;
-}
-EXPORT_SYMBOL_GPL(blk_rq_prep_clone);
-#endif /* CONFIG_BLK_MQ_STACKING */
 
 /*
  * Steal bios from a request and add them to a bio list.

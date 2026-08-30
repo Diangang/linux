@@ -66,13 +66,8 @@ void trace_event_printf(struct trace_iterator *iter, const char *fmt, ...);
 
 /* Used to find the offset and length of dynamic fields in trace events */
 struct trace_dynamic_info {
-#if 0
-	u16	len;
-	u16	offset;
-#else
 	u16	offset;
 	u16	len;
-#endif
 } __packed;
 
 /*
@@ -364,11 +359,6 @@ struct trace_event_call {
 
 };
 
-#ifdef CONFIG_DYNAMIC_EVENTS
-bool trace_event_dyn_try_get_ref(struct trace_event_call *call);
-void trace_event_dyn_put_ref(struct trace_event_call *call);
-bool trace_event_dyn_busy(struct trace_event_call *call);
-#else
 static inline bool trace_event_dyn_try_get_ref(struct trace_event_call *call)
 {
 	/* Without DYNAMIC_EVENTS configured, nothing should be calling this */
@@ -382,7 +372,6 @@ static inline bool trace_event_dyn_busy(struct trace_event_call *call)
 	/* Nothing should call this without DYNAIMIC_EVENTS configured. */
 	return true;
 }
-#endif
 
 static inline bool trace_event_try_get_ref(struct trace_event_call *call)
 {
@@ -587,24 +576,9 @@ struct trace_event_file {
 	atomic_t		tm_ref;	/* trigger-mode reference counter */
 };
 
-#ifdef CONFIG_HIST_TRIGGERS
-extern struct irq_work hist_poll_work;
-extern wait_queue_head_t hist_poll_wq;
-
-static inline void hist_poll_wakeup(void)
-{
-	if (wq_has_sleeper(&hist_poll_wq))
-		irq_work_queue(&hist_poll_work);
-}
-
-#define hist_poll_wait(file, wait)	\
-	poll_wait(file, &hist_poll_wq, wait)
-
-#else
 static inline void hist_poll_wakeup(void)
 {
 }
-#endif
 
 #define __TRACE_EVENT_FLAGS(name, value)				\
 	static int __init trace_init_flags_##name(void)			\

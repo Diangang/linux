@@ -170,10 +170,6 @@ enum pageflags {
 	/* Only valid for buddy pages. Used to track pages that are reported */
 	PG_reported = PG_uptodate,
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-	/* For self-hosted memmap pages */
-	PG_vmemmap_self_hosted = PG_owner_priv_1,
-#endif
 
 	/*
 	 * Flags only valid for compound pages.  Stored in first tail page's
@@ -200,18 +196,7 @@ enum pageflags {
  */
 static __always_inline bool compound_info_has_mask(void)
 {
-	/*
-	 * Limit mask usage to HugeTLB vmemmap optimization (HVO) where it
-	 * makes a difference.
-	 *
-	 * The approach with mask would work in the wider set of conditions,
-	 * but it requires validating that struct pages are naturally aligned
-	 * for all orders up to the MAX_FOLIO_ORDER, which can be tricky.
-	 */
-	if (!IS_ENABLED(CONFIG_HUGETLB_PAGE_OPTIMIZE_VMEMMAP))
-		return false;
-
-	return is_power_of_2(sizeof(struct page));
+	return false;
 }
 
 static __always_inline unsigned long _compound_head(const struct page *page)
@@ -575,37 +560,13 @@ FOLIO_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 	FOLIO_TEST_CLEAR_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 	__FOLIO_SET_FLAG(dropbehind, FOLIO_HEAD_PAGE)
 
-#if 0
-/*
- * Must use a macro here due to header dependency issues. page_zone() is not
- * available at this point.
- */
-#define PageHighMem(__p) is_highmem_idx(page_zonenum(__p))
-#define folio_test_highmem(__f)	is_highmem_idx(folio_zonenum(__f))
-#else
 PAGEFLAG_FALSE(HighMem, highmem)
-#endif
 #define PhysHighMem(__p) (PageHighMem(phys_to_page(__p)))
 
 /* Does kmap_local_folio() only allow access to one page of the folio? */
-#if 0
-#define folio_test_partial_kmap(f)	true
-#else
 #define folio_test_partial_kmap(f)	folio_test_highmem(f)
-#endif
 
-#ifdef CONFIG_SWAP
-static __always_inline bool folio_test_swapcache(const struct folio *folio)
-{
-	return folio_test_swapbacked(folio) &&
-			test_bit(PG_swapcache, const_folio_flags(folio, 0));
-}
-
-FOLIO_SET_FLAG(swapcache, FOLIO_HEAD_PAGE)
-FOLIO_CLEAR_FLAG(swapcache, FOLIO_HEAD_PAGE)
-#else
 FOLIO_FLAG_FALSE(swapcache)
-#endif
 
 FOLIO_FLAG(unevictable, FOLIO_HEAD_PAGE)
 	__FOLIO_CLEAR_FLAG(unevictable, FOLIO_HEAD_PAGE)
@@ -644,11 +605,7 @@ FOLIO_FLAG_FALSE(idle)
  */
 __PAGEFLAG(Reported, reported, PF_NO_COMPOUND)
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-PAGEFLAG(VmemmapSelfHosted, vmemmap_self_hosted, PF_ANY)
-#else
 PAGEFLAG_FALSE(VmemmapSelfHosted, vmemmap_self_hosted)
-#endif
 
 /*
  * On an anonymous folio mapped into a user virtual memory area,
@@ -697,21 +654,7 @@ static __always_inline bool PageAnon(const struct page *page)
 {
 	return folio_test_anon(page_folio(page));
 }
-#ifdef CONFIG_KSM
-/*
- * A KSM page is one of those write-protected "shared pages" or "merged pages"
- * which KSM maps into multiple mms, wherever identical anonymous page content
- * is found in VM_MERGEABLE vmas.  It's a PageAnon page, pointing not to any
- * anon_vma, but to that page's node of the stable tree.
- */
-static __always_inline bool folio_test_ksm(const struct folio *folio)
-{
-	return ((unsigned long)folio->mapping & FOLIO_MAPPING_FLAGS) ==
-				FOLIO_MAPPING_KSM;
-}
-#else
 FOLIO_TEST_FLAG_FALSE(ksm)
-#endif
 
 u64 stable_page_flags(const struct page *page);
 
@@ -826,46 +769,14 @@ static inline bool folio_test_large(const struct folio *folio)
 	return folio_test_head(folio);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline void ClearPageCompound(struct page *page)
-{
-	BUG_ON(!PageHead(page));
-	ClearPageHead(page);
-}
-FOLIO_FLAG(large_rmappable, FOLIO_SECOND_PAGE)
-FOLIO_FLAG(partially_mapped, FOLIO_SECOND_PAGE)
-#else
 FOLIO_FLAG_FALSE(large_rmappable)
 FOLIO_FLAG_FALSE(partially_mapped)
-#endif
 
 #define PG_head_mask ((1UL << PG_head))
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-/*
- * PageTransCompound returns true for both transparent huge pages
- * and hugetlbfs pages, so it should only be called when it's known
- * that hugetlbfs pages aren't involved.
- */
-static inline int PageTransCompound(const struct page *page)
-{
-	return PageCompound(page);
-}
-#else
 TESTPAGEFLAG_FALSE(TransCompound, transcompound)
-#endif
 
-#if defined(CONFIG_MEMORY_FAILURE) && defined(CONFIG_TRANSPARENT_HUGEPAGE)
-/*
- * PageHasHWPoisoned indicates that at least one subpage is hwpoisoned in the
- * compound page.
- *
- * This flag is set by hwpoison handler.  Cleared by THP split or free page.
- */
-FOLIO_FLAG(has_hwpoisoned, FOLIO_SECOND_PAGE)
-#else
 FOLIO_FLAG_FALSE(has_hwpoisoned)
-#endif
 
 /*
  * For pages that do not use mapcount, page_type may be used.
@@ -1002,11 +913,7 @@ PAGE_TYPE_OPS(Guard, guard, guard)
 
 PAGE_TYPE_OPS(Slab, slab, slab)
 
-#ifdef CONFIG_HUGETLB_PAGE
-FOLIO_TYPE_OPS(hugetlb, hugetlb)
-#else
 FOLIO_TEST_FLAG_FALSE(hugetlb)
-#endif
 
 PAGE_TYPE_OPS(Zsmalloc, zsmalloc, zsmalloc)
 

@@ -864,10 +864,5 @@ for (bool done = false; !done; done = true)					\
 	_ret;							\
 })
 
-#ifdef CONFIG_HARDENED_USERCOPY
-void __noreturn usercopy_abort(const char *name, const char *detail,
-			       bool to_user, unsigned long offset,
-			       unsigned long len);
-#endif
 
 #endif		/* __LINUX_UACCESS_H__ */

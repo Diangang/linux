@@ -104,15 +104,6 @@ struct shrinker {
 
 	/* These are for internal use */
 	struct list_head list;
-#ifdef CONFIG_MEMCG
-	/* ID in shrinker_idr */
-	int id;
-#endif
-#ifdef CONFIG_SHRINKER_DEBUG
-	int debugfs_id;
-	const char *name;
-	struct dentry *debugfs_entry;
-#endif
 	/* objs pending delete, per node */
 	atomic_long_t *nr_deferred;
 };
@@ -147,14 +138,9 @@ static inline void shrinker_put(struct shrinker *shrinker)
 		complete(&shrinker->done);
 }
 
-#ifdef CONFIG_SHRINKER_DEBUG
-extern int __printf(2, 3) shrinker_debugfs_rename(struct shrinker *shrinker,
-						  const char *fmt, ...);
-#else /* CONFIG_SHRINKER_DEBUG */
 static inline __printf(2, 3)
 int shrinker_debugfs_rename(struct shrinker *shrinker, const char *fmt, ...)
 {
 	return 0;
 }
-#endif /* CONFIG_SHRINKER_DEBUG */
 #endif /* _LINUX_SHRINKER_H */

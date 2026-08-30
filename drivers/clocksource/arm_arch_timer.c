@@ -768,39 +768,6 @@ static int arch_timer_dying_cpu(unsigned int cpu)
 	return 0;
 }
 
-#ifdef CONFIG_CPU_PM
-static DEFINE_PER_CPU(unsigned long, saved_cntkctl);
-static int arch_timer_cpu_pm_notify(struct notifier_block *self,
-				    unsigned long action, void *hcpu)
-{
-	if (action == CPU_PM_ENTER) {
-		__this_cpu_write(saved_cntkctl, arch_timer_get_cntkctl());
-
-		cpumask_clear_cpu(smp_processor_id(), &evtstrm_available);
-	} else if (action == CPU_PM_ENTER_FAILED || action == CPU_PM_EXIT) {
-		arch_timer_set_cntkctl(__this_cpu_read(saved_cntkctl));
-
-		if (arch_timer_have_evtstrm_feature())
-			cpumask_set_cpu(smp_processor_id(), &evtstrm_available);
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block arch_timer_cpu_pm_notifier = {
-	.notifier_call = arch_timer_cpu_pm_notify,
-};
-
-static int __init arch_timer_cpu_pm_init(void)
-{
-	return cpu_pm_register_notifier(&arch_timer_cpu_pm_notifier);
-}
-
-static void __init arch_timer_cpu_pm_deinit(void)
-{
-	WARN_ON(cpu_pm_unregister_notifier(&arch_timer_cpu_pm_notifier));
-}
-
-#else
 static int __init arch_timer_cpu_pm_init(void)
 {
 	return 0;
@@ -809,7 +776,6 @@ static int __init arch_timer_cpu_pm_init(void)
 static void __init arch_timer_cpu_pm_deinit(void)
 {
 }
-#endif
 
 static int __init arch_timer_register(void)
 {
@@ -964,11 +930,7 @@ static int __init arch_timer_of_init(struct device_node *np)
 	 * If we cannot rely on firmware initializing the timer registers then
 	 * we should use the physical timers instead.
 	 */
-	if (IS_ENABLED(CONFIG_ARM) &&
-	    of_property_read_bool(np, "arm,cpu-registers-not-fw-configured"))
-		arch_timer_uses_ppi = ARCH_TIMER_PHYS_SECURE_PPI;
-	else
-		arch_timer_uses_ppi = arch_timer_select_ppi();
+	arch_timer_uses_ppi = arch_timer_select_ppi();
 
 	if (!arch_timer_ppi[arch_timer_uses_ppi]) {
 		pr_err("No interrupt available, giving up\n");
@@ -988,62 +950,6 @@ static int __init arch_timer_of_init(struct device_node *np)
 TIMER_OF_DECLARE(armv7_arch_timer, "arm,armv7-timer", arch_timer_of_init);
 TIMER_OF_DECLARE(armv8_arch_timer, "arm,armv8-timer", arch_timer_of_init);
 
-#ifdef CONFIG_ACPI_GTDT
-static int __init arch_timer_acpi_init(struct acpi_table_header *table)
-{
-	int ret;
-
-	if (arch_timer_evt) {
-		pr_warn("already initialized, skipping\n");
-		return -EINVAL;
-	}
-
-	ret = acpi_gtdt_init(table, NULL);
-	if (ret)
-		return ret;
-
-	arch_timer_ppi[ARCH_TIMER_PHYS_NONSECURE_PPI] =
-		acpi_gtdt_map_ppi(ARCH_TIMER_PHYS_NONSECURE_PPI);
-
-	arch_timer_ppi[ARCH_TIMER_VIRT_PPI] =
-		acpi_gtdt_map_ppi(ARCH_TIMER_VIRT_PPI);
-
-	arch_timer_ppi[ARCH_TIMER_HYP_PPI] =
-		acpi_gtdt_map_ppi(ARCH_TIMER_HYP_PPI);
-
-	arch_timer_populate_kvm_info();
-
-	/*
-	 * When probing via ACPI, we have no mechanism to override the sysreg
-	 * CNTFRQ value. This *must* be correct.
-	 */
-	arch_timer_rate = arch_timer_get_cntfrq();
-	ret = validate_timer_rate();
-	if (ret) {
-		pr_err(FW_BUG "frequency not available.\n");
-		return ret;
-	}
-
-	arch_timer_uses_ppi = arch_timer_select_ppi();
-	if (!arch_timer_ppi[arch_timer_uses_ppi]) {
-		pr_err("No interrupt available, giving up\n");
-		return -EINVAL;
-	}
-
-	/* Always-on capability */
-	arch_timer_c3stop = acpi_gtdt_c3stop(arch_timer_uses_ppi);
-
-	/* Check for globally applicable workarounds */
-	arch_timer_check_ool_workaround(ate_match_acpi_oem_info, table);
-
-	ret = arch_timer_register();
-	if (ret)
-		return ret;
-
-	return arch_timer_common_init();
-}
-TIMER_ACPI_DECLARE(arch_timer, ACPI_SIG_GTDT, arch_timer_acpi_init);
-#endif
 
 int kvm_arch_ptp_get_crosststamp(u64 *cycle, struct timespec64 *ts,
 				 enum clocksource_ids *cs_id)

@@ -73,23 +73,6 @@ static inline void set_dma_ops(struct device *dev,
 {
 }
 
-#if 0
-struct cma *dev_get_cma_area(struct device *dev);
-struct cma *dma_contiguous_get_area_by_idx(unsigned int idx);
-
-void dma_contiguous_reserve(phys_addr_t addr_limit);
-int __init dma_contiguous_reserve_area(phys_addr_t size, phys_addr_t base,
-		phys_addr_t limit, struct cma **res_cma, bool fixed);
-
-struct page *dma_alloc_from_contiguous(struct device *dev, size_t count,
-				       unsigned int order, bool no_warn);
-bool dma_release_from_contiguous(struct device *dev, struct page *pages,
-				 int count);
-struct page *dma_alloc_contiguous(struct device *dev, size_t size, gfp_t gfp);
-void dma_free_contiguous(struct device *dev, struct page *page, size_t size);
-
-void dma_contiguous_early_fixup(phys_addr_t base, unsigned long size);
-#else /* CONFIG_DMA_CMA */
 static inline struct cma *dev_get_cma_area(struct device *dev)
 {
 	return NULL;
@@ -128,7 +111,6 @@ static inline void dma_free_contiguous(struct device *dev, struct page *page,
 {
 	__free_pages(page, get_order(size));
 }
-#endif /* CONFIG_DMA_CMA*/
 
 #ifdef CONFIG_DMA_DECLARE_COHERENT
 int dma_declare_coherent_memory(struct device *dev, phys_addr_t phys_addr,
@@ -152,14 +134,6 @@ static inline int dma_declare_coherent_memory(struct device *dev,
 static inline void dma_release_coherent_memory(struct device *dev) { }
 #endif /* CONFIG_DMA_DECLARE_COHERENT */
 
-#ifdef CONFIG_DMA_GLOBAL_POOL
-void *dma_alloc_from_global_coherent(struct device *dev, ssize_t size,
-		dma_addr_t *dma_handle);
-int dma_release_from_global_coherent(int order, void *vaddr);
-int dma_mmap_from_global_coherent(struct vm_area_struct *vma, void *cpu_addr,
-		size_t size, int *ret);
-int dma_init_global_coherent(phys_addr_t phys_addr, size_t size);
-#else
 static inline void *dma_alloc_from_global_coherent(struct device *dev,
 		ssize_t size, dma_addr_t *dma_handle)
 {
@@ -174,7 +148,6 @@ static inline int dma_mmap_from_global_coherent(struct vm_area_struct *vma,
 {
 	return 0;
 }
-#endif /* CONFIG_DMA_GLOBAL_POOL */
 
 int dma_common_get_sgtable(struct device *dev, struct sg_table *sgt,
 		void *cpu_addr, dma_addr_t dma_addr, size_t size,
@@ -292,11 +265,7 @@ void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
 void arch_dma_free(struct device *dev, size_t size, void *cpu_addr,
 		dma_addr_t dma_addr, unsigned long attrs);
 
-#ifdef CONFIG_ARCH_HAS_DMA_SET_MASK
-void arch_dma_set_mask(struct device *dev, u64 mask);
-#else
 #define arch_dma_set_mask(dev, mask)	do { } while (0)
-#endif
 
 #ifdef CONFIG_MMU
 /*
@@ -359,23 +328,12 @@ static inline void arch_dma_prep_coherent(struct page *page, size_t size)
 void *arch_dma_set_uncached(void *addr, size_t size);
 void arch_dma_clear_uncached(void *addr, size_t size);
 
-#ifdef CONFIG_ARCH_HAS_DMA_MAP_DIRECT
-bool arch_dma_map_phys_direct(struct device *dev, phys_addr_t addr);
-bool arch_dma_unmap_phys_direct(struct device *dev, dma_addr_t dma_handle);
-bool arch_dma_map_sg_direct(struct device *dev, struct scatterlist *sg,
-		int nents);
-bool arch_dma_unmap_sg_direct(struct device *dev, struct scatterlist *sg,
-		int nents);
-bool arch_dma_alloc_direct(struct device *dev);
-bool arch_dma_free_direct(struct device *dev, dma_addr_t dma_handle);
-#else
 #define arch_dma_map_phys_direct(d, a)		(false)
 #define arch_dma_unmap_phys_direct(d, a)	(false)
 #define arch_dma_map_sg_direct(d, s, n)		(false)
 #define arch_dma_unmap_sg_direct(d, s, n)	(false)
 #define arch_dma_alloc_direct(d)            (false)
 #define arch_dma_free_direct(d, a)          (false)
-#endif
 
 #ifdef CONFIG_ARCH_HAS_SETUP_DMA_OPS
 void arch_setup_dma_ops(struct device *dev, bool coherent);

@@ -49,34 +49,6 @@ struct dax_holder_operations {
 			u64 len, int mf_flags);
 };
 
-#if IS_ENABLED(CONFIG_DAX)
-struct dax_device *alloc_dax(void *private, const struct dax_operations *ops);
-void *dax_holder(struct dax_device *dax_dev);
-void put_dax(struct dax_device *dax_dev);
-void kill_dax(struct dax_device *dax_dev);
-struct dax_device *dax_dev_get(dev_t devt);
-void dax_write_cache(struct dax_device *dax_dev, bool wc);
-bool dax_write_cache_enabled(struct dax_device *dax_dev);
-bool dax_synchronous(struct dax_device *dax_dev);
-void set_dax_nocache(struct dax_device *dax_dev);
-void set_dax_nomc(struct dax_device *dax_dev);
-void set_dax_synchronous(struct dax_device *dax_dev);
-size_t dax_recovery_write(struct dax_device *dax_dev, pgoff_t pgoff,
-		void *addr, size_t bytes, struct iov_iter *i);
-/*
- * Check if given mapping is supported by the file / underlying device.
- */
-static inline bool daxdev_mapping_supported(const struct vm_area_desc *desc,
-					    const struct inode *inode,
-					    struct dax_device *dax_dev)
-{
-	if (!vma_desc_test(desc, VMA_SYNC_BIT))
-		return true;
-	if (!IS_DAX(inode))
-		return false;
-	return dax_synchronous(dax_dev);
-}
-#else
 static inline void *dax_holder(struct dax_device *dax_dev)
 {
 	return NULL;
@@ -123,15 +95,8 @@ static inline size_t dax_recovery_write(struct dax_device *dax_dev,
 {
 	return 0;
 }
-#endif
 
 struct writeback_control;
-#if defined(CONFIG_BLOCK) && 0
-int dax_add_host(struct dax_device *dax_dev, struct gendisk *disk);
-void dax_remove_host(struct gendisk *disk);
-struct dax_device *fs_dax_get_by_bdev(struct block_device *bdev, u64 *start_off,
-		void *holder, const struct dax_holder_operations *ops);
-#else
 static inline int dax_add_host(struct dax_device *dax_dev, struct gendisk *disk)
 {
 	return 0;
@@ -145,25 +110,7 @@ static inline struct dax_device *fs_dax_get_by_bdev(struct block_device *bdev,
 {
 	return NULL;
 }
-#endif /* CONFIG_BLOCK && CONFIG_FS_DAX */
 
-#if 0
-void fs_put_dax(struct dax_device *dax_dev, void *holder);
-int fs_dax_get(struct dax_device *dax_dev, void *holder,
-	       const struct dax_holder_operations *hops);
-int dax_writeback_mapping_range(struct address_space *mapping,
-		struct dax_device *dax_dev, struct writeback_control *wbc);
-int dax_folio_reset_order(struct folio *folio);
-
-struct page *dax_layout_busy_page(struct address_space *mapping);
-struct page *dax_layout_busy_page_range(struct address_space *mapping, loff_t start, loff_t end);
-dax_entry_t dax_lock_folio(struct folio *folio);
-void dax_unlock_folio(struct folio *folio, dax_entry_t cookie);
-dax_entry_t dax_lock_mapping_entry(struct address_space *mapping,
-		unsigned long index, struct page **page);
-void dax_unlock_mapping_entry(struct address_space *mapping,
-		unsigned long index, dax_entry_t cookie);
-#else
 static inline void fs_put_dax(struct dax_device *dax_dev, void *holder)
 {
 }
@@ -210,7 +157,6 @@ static inline void dax_unlock_mapping_entry(struct address_space *mapping,
 		unsigned long index, dax_entry_t cookie)
 {
 }
-#endif
 
 int dax_file_unshare(struct inode *inode, loff_t pos, loff_t len,
 		const struct iomap_ops *ops);
@@ -224,10 +170,6 @@ static inline bool dax_page_is_idle(struct page *page)
 	return page && page_ref_count(page) == 0;
 }
 
-#if IS_ENABLED(CONFIG_DAX)
-int dax_read_lock(void);
-void dax_read_unlock(int id);
-#else
 static inline int dax_read_lock(void)
 {
 	return 0;
@@ -236,9 +178,7 @@ static inline int dax_read_lock(void)
 static inline void dax_read_unlock(int id)
 {
 }
-#endif /* CONFIG_DAX */
 
-#if !0
 static inline int __must_check dax_break_layout(struct inode *inode,
 			    loff_t start, loff_t end, void (cb)(struct inode *))
 {
@@ -248,7 +188,6 @@ static inline int __must_check dax_break_layout(struct inode *inode,
 static inline void dax_break_layout_final(struct inode *inode)
 {
 }
-#endif
 
 bool dax_alive(struct dax_device *dax_dev);
 void *dax_get_private(struct dax_device *dax_dev);

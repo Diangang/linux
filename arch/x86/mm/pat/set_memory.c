@@ -122,7 +122,7 @@ void arch_report_meminfo(struct seq_file *m)
 {
 	seq_printf(m, "DirectMap4k:    %8lu kB\n",
 			direct_pages_count[PG_LEVEL_4K] << 2);
-#if defined(CONFIG_X86_64) || 0
+#if defined(CONFIG_X86_64)
 	seq_printf(m, "DirectMap2M:    %8lu kB\n",
 			direct_pages_count[PG_LEVEL_2M] << 11);
 #else

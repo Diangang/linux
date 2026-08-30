@@ -466,17 +466,6 @@ static void driver_bound(struct device *dev)
 	kobject_uevent(&dev->kobj, KOBJ_BIND);
 }
 
-static ssize_t coredump_store(struct device *dev, struct device_attribute *attr,
-			    const char *buf, size_t count)
-{
-	device_lock(dev);
-	dev->driver->coredump(dev);
-	device_unlock(dev);
-
-	return count;
-}
-static DEVICE_ATTR_WO(coredump);
-
 static int driver_sysfs_add(struct device *dev)
 {
 	int ret;
@@ -492,15 +481,7 @@ static int driver_sysfs_add(struct device *dev)
 				"driver");
 	if (ret)
 		goto rm_dev;
-
-	if (!IS_ENABLED(CONFIG_DEV_COREDUMP) || !dev->driver->coredump)
-		return 0;
-
-	ret = device_create_file(dev, &dev_attr_coredump);
-	if (!ret)
-		return 0;
-
-	sysfs_remove_link(&dev->kobj, "driver");
+	return 0;
 
 rm_dev:
 	sysfs_remove_link(&dev->driver->p->kobj,
@@ -515,8 +496,6 @@ static void driver_sysfs_remove(struct device *dev)
 	struct device_driver *drv = dev->driver;
 
 	if (drv) {
-		if (drv->coredump)
-			device_remove_file(dev, &dev_attr_coredump);
 		sysfs_remove_link(&drv->p->kobj, kobject_name(&dev->kobj));
 		sysfs_remove_link(&dev->kobj, "driver");
 	}
@@ -649,8 +628,6 @@ static int call_driver_probe(struct device *dev, const struct device_driver *drv
 
 static int really_probe(struct device *dev, const struct device_driver *drv)
 {
-	bool test_remove = IS_ENABLED(CONFIG_DEBUG_TEST_DRIVER_REMOVE) &&
-			   !drv->suppress_bind_attrs;
 	int ret, link_ret;
 
 	if (defer_all_probes) {
@@ -675,7 +652,6 @@ static int really_probe(struct device *dev, const struct device_driver *drv)
 		goto done;
 	}
 
-re_probe:
 	device_set_driver(dev, drv);
 
 	/* If using pinctrl, bind pins now before probing */
@@ -732,18 +708,6 @@ re_probe:
 			dev_err(dev, "state_synced sysfs add failed\n");
 			goto dev_sysfs_state_synced_failed;
 		}
-	}
-
-	if (test_remove) {
-		test_remove = false;
-
-		device_remove(dev);
-		driver_sysfs_remove(dev);
-		if (dev->bus && dev->bus->dma_cleanup)
-			dev->bus->dma_cleanup(dev);
-		device_unbind_cleanup(dev);
-
-		goto re_probe;
 	}
 
 	pinctrl_init_done(dev);

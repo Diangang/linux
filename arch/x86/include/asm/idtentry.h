@@ -617,9 +617,6 @@ DECLARE_IDTENTRY_RAW(X86_TRAP_UD,		exc_invalid_op);
 DECLARE_IDTENTRY_RAW(X86_TRAP_BP,		exc_int3);
 DECLARE_IDTENTRY_RAW_ERRORCODE(X86_TRAP_PF,	exc_page_fault);
 
-#if defined(CONFIG_IA32_EMULATION)
-DECLARE_IDTENTRY_RAW(IA32_SYSCALL_VECTOR,	int80_emulation);
-#endif
 
 #ifdef CONFIG_X86_MCE
 #ifdef CONFIG_X86_64
@@ -627,27 +624,12 @@ DECLARE_IDTENTRY_MCE(X86_TRAP_MC,	exc_machine_check);
 #else
 DECLARE_IDTENTRY_RAW(X86_TRAP_MC,	exc_machine_check);
 #endif
-#ifdef CONFIG_XEN_PV
-DECLARE_IDTENTRY_RAW(X86_TRAP_MC,	xenpv_exc_machine_check);
-#endif
 #endif
 
 /* NMI */
 
-#if IS_ENABLED(CONFIG_KVM_INTEL)
-/*
- * Special entry point for VMX which invokes this on the kernel stack, even for
- * 64-bit, i.e. without using an IST.  asm_exc_nmi() requires an IST to work
- * correctly vs. the NMI 'executing' marker.  Used for 32-bit kernels as well
- * to avoid more ifdeffery.
- */
-DECLARE_IDTENTRY(X86_TRAP_NMI,		exc_nmi_kvm_vmx);
-#endif
 
 DECLARE_IDTENTRY_NMI(X86_TRAP_NMI,	exc_nmi);
-#ifdef CONFIG_XEN_PV
-DECLARE_IDTENTRY_RAW(X86_TRAP_NMI,	xenpv_exc_nmi);
-#endif
 
 /* #DB */
 #ifdef CONFIG_X86_64
@@ -655,15 +637,9 @@ DECLARE_IDTENTRY_DEBUG(X86_TRAP_DB,	exc_debug);
 #else
 DECLARE_IDTENTRY_RAW(X86_TRAP_DB,	exc_debug);
 #endif
-#ifdef CONFIG_XEN_PV
-DECLARE_IDTENTRY_RAW(X86_TRAP_DB,	xenpv_exc_debug);
-#endif
 
 /* #DF */
 DECLARE_IDTENTRY_DF(X86_TRAP_DF,	exc_double_fault);
-#ifdef CONFIG_XEN_PV
-DECLARE_IDTENTRY_RAW_ERRORCODE(X86_TRAP_DF,	xenpv_exc_double_fault);
-#endif
 
 /* #CP */
 #ifdef CONFIG_X86_CET
@@ -671,18 +647,8 @@ DECLARE_IDTENTRY_ERRORCODE(X86_TRAP_CP,	exc_control_protection);
 #endif
 
 /* #VC */
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-DECLARE_IDTENTRY_VC(X86_TRAP_VC,	exc_vmm_communication);
-#endif
 
-#ifdef CONFIG_XEN_PV
-DECLARE_IDTENTRY_XENCB(X86_TRAP_OTHER,	exc_xen_hypervisor_callback);
-DECLARE_IDTENTRY_RAW(X86_TRAP_OTHER,	exc_xen_unknown_trap);
-#endif
 
-#if 0
-DECLARE_IDTENTRY(X86_TRAP_VE,		exc_virtualization_exception);
-#endif
 
 /* Device interrupts common/spurious */
 DECLARE_IDTENTRY_IRQ(X86_TRAP_OTHER,	common_interrupt);
@@ -723,11 +689,7 @@ DECLARE_IDTENTRY_SYSVEC(DEFERRED_ERROR_VECTOR,		sysvec_deferred_error);
 # define fred_sysvec_deferred_error			NULL
 # endif
 
-# ifdef CONFIG_X86_THERMAL_VECTOR
-DECLARE_IDTENTRY_SYSVEC(THERMAL_APIC_VECTOR,		sysvec_thermal);
-# else
 # define fred_sysvec_thermal				NULL
-# endif
 
 # ifdef CONFIG_IRQ_WORK
 DECLARE_IDTENTRY_SYSVEC(IRQ_WORK_VECTOR,		sysvec_irq_work);
@@ -736,37 +698,16 @@ DECLARE_IDTENTRY_SYSVEC(IRQ_WORK_VECTOR,		sysvec_irq_work);
 # endif
 #endif
 
-#if IS_ENABLED(CONFIG_KVM)
-DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_VECTOR,		sysvec_kvm_posted_intr_ipi);
-DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_WAKEUP_VECTOR,	sysvec_kvm_posted_intr_wakeup_ipi);
-DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_NESTED_VECTOR,	sysvec_kvm_posted_intr_nested_ipi);
-#else
 # define fred_sysvec_kvm_posted_intr_ipi		NULL
 # define fred_sysvec_kvm_posted_intr_wakeup_ipi		NULL
 # define fred_sysvec_kvm_posted_intr_nested_ipi		NULL
-#endif
 
-# if 0
-DECLARE_IDTENTRY_SYSVEC(PERF_GUEST_MEDIATED_PMI_VECTOR,	sysvec_perf_guest_mediated_pmi_handler);
-#else
 # define fred_sysvec_perf_guest_mediated_pmi_handler	NULL
-#endif
 
 # define fred_sysvec_posted_msi_notification		NULL
 
-#if IS_ENABLED(CONFIG_HYPERV)
-DECLARE_IDTENTRY_SYSVEC(HYPERVISOR_CALLBACK_VECTOR,	sysvec_hyperv_callback);
-DECLARE_IDTENTRY_SYSVEC(HYPERV_REENLIGHTENMENT_VECTOR,	sysvec_hyperv_reenlightenment);
-DECLARE_IDTENTRY_SYSVEC(HYPERV_STIMER0_VECTOR,		sysvec_hyperv_stimer0);
-#endif
 
-#if IS_ENABLED(CONFIG_ACRN_GUEST)
-DECLARE_IDTENTRY_SYSVEC(HYPERVISOR_CALLBACK_VECTOR,	sysvec_acrn_hv_callback);
-#endif
 
-#ifdef CONFIG_XEN_PVHVM
-DECLARE_IDTENTRY_SYSVEC(HYPERVISOR_CALLBACK_VECTOR,	sysvec_xen_hvm_callback);
-#endif
 
 
 #undef X86_TRAP_OTHER

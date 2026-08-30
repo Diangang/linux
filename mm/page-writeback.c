@@ -119,67 +119,6 @@ struct wb_domain global_wb_domain;
  */
 #define VM_COMPLETIONS_PERIOD_LEN (3*HZ)
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-
-#define GDTC_INIT(__wb)		.wb = (__wb),				\
-				.dom = &global_wb_domain,		\
-				.wb_completions = &(__wb)->completions
-
-#define GDTC_INIT_NO_WB		.dom = &global_wb_domain
-
-#define MDTC_INIT(__wb, __gdtc)	.wb = (__wb),				\
-				.dom = mem_cgroup_wb_domain(__wb),	\
-				.wb_completions = &(__wb)->memcg_completions, \
-				.gdtc = __gdtc
-
-static bool mdtc_valid(struct dirty_throttle_control *dtc)
-{
-	return dtc->dom;
-}
-
-static struct wb_domain *dtc_dom(struct dirty_throttle_control *dtc)
-{
-	return dtc->dom;
-}
-
-static struct dirty_throttle_control *mdtc_gdtc(struct dirty_throttle_control *mdtc)
-{
-	return mdtc->gdtc;
-}
-
-static struct fprop_local_percpu *wb_memcg_completions(struct bdi_writeback *wb)
-{
-	return &wb->memcg_completions;
-}
-
-static void wb_min_max_ratio(struct bdi_writeback *wb,
-			     unsigned long *minp, unsigned long *maxp)
-{
-	unsigned long this_bw = READ_ONCE(wb->avg_write_bandwidth);
-	unsigned long tot_bw = atomic_long_read(&wb->bdi->tot_write_bandwidth);
-	unsigned long long min = wb->bdi->min_ratio;
-	unsigned long long max = wb->bdi->max_ratio;
-
-	/*
-	 * @wb may already be clean by the time control reaches here and
-	 * the total may not include its bw.
-	 */
-	if (this_bw < tot_bw) {
-		if (min) {
-			min *= this_bw;
-			min = div64_ul(min, tot_bw);
-		}
-		if (max < 100 * BDI_RATIO_SCALE) {
-			max *= this_bw;
-			max = div64_ul(max, tot_bw);
-		}
-	}
-
-	*minp = min;
-	*maxp = max;
-}
-
-#else	/* CONFIG_CGROUP_WRITEBACK */
 
 #define GDTC_INIT(__wb)		.wb = (__wb),                           \
 				.wb_completions = &(__wb)->completions
@@ -213,7 +152,6 @@ static void wb_min_max_ratio(struct bdi_writeback *wb,
 	*maxp = wb->bdi->max_ratio;
 }
 
-#endif	/* CONFIG_CGROUP_WRITEBACK */
 
 /*
  * In a memory zone, there is a certain amount of pages we consider
@@ -269,42 +207,7 @@ static unsigned long node_dirtyable_memory(struct pglist_data *pgdat)
 
 static unsigned long highmem_dirtyable_memory(unsigned long total)
 {
-#if 0
-	int node;
-	unsigned long x = 0;
-	int i;
-
-	for_each_node_state(node, N_HIGH_MEMORY) {
-		for (i = ZONE_NORMAL + 1; i < MAX_NR_ZONES; i++) {
-			struct zone *z;
-			unsigned long nr_pages;
-
-			if (!is_highmem_idx(i))
-				continue;
-
-			z = &NODE_DATA(node)->node_zones[i];
-			if (!populated_zone(z))
-				continue;
-
-			nr_pages = zone_page_state(z, NR_FREE_PAGES);
-			/* watch for underflows */
-			nr_pages -= min(nr_pages, high_wmark_pages(z));
-			nr_pages += zone_page_state(z, NR_ZONE_INACTIVE_FILE);
-			nr_pages += zone_page_state(z, NR_ZONE_ACTIVE_FILE);
-			x += nr_pages;
-		}
-	}
-
-	/*
-	 * Make sure that the number of highmem pages is never larger
-	 * than the number of the total dirtyable memory. This can only
-	 * occur in very strange VM situations but we want to make sure
-	 * that this does not occur.
-	 */
-	return min(x, total);
-#else
 	return 0;
-#endif
 }
 
 /**
@@ -626,13 +529,6 @@ int wb_domain_init(struct wb_domain *dom, gfp_t gfp)
 	return fprop_global_init(&dom->completions, gfp);
 }
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-void wb_domain_exit(struct wb_domain *dom)
-{
-	timer_delete_sync(&dom->period_timer);
-	fprop_global_destroy(&dom->completions);
-}
-#endif
 
 /*
  * bdi_min_ratio keeps the sum of the minimum dirty shares of all
@@ -1474,7 +1370,6 @@ static void wb_update_dirty_ratelimit(struct dirty_throttle_control *dtc,
 }
 
 static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
-				  struct dirty_throttle_control *mdtc,
 				  bool update_ratelimit)
 {
 	struct bdi_writeback *wb = gdtc->wb;
@@ -1498,15 +1393,6 @@ static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
 	if (update_ratelimit) {
 		domain_update_dirty_limit(gdtc, now);
 		wb_update_dirty_ratelimit(gdtc, dirtied, elapsed);
-
-		/*
-		 * @mdtc is always NULL if !CGROUP_WRITEBACK but the
-		 * compiler has no way to figure that out.  Help it.
-		 */
-		if (IS_ENABLED(CONFIG_CGROUP_WRITEBACK) && mdtc) {
-			domain_update_dirty_limit(mdtc, now);
-			wb_update_dirty_ratelimit(mdtc, dirtied, elapsed);
-		}
 	}
 	wb_update_write_bandwidth(wb, elapsed, written);
 
@@ -1520,7 +1406,7 @@ void wb_update_bandwidth(struct bdi_writeback *wb)
 {
 	struct dirty_throttle_control gdtc = { GDTC_INIT(wb) };
 
-	__wb_update_bandwidth(&gdtc, NULL, false);
+	__wb_update_bandwidth(&gdtc, false);
 }
 
 /* Interval after which we consider wb idle and don't estimate bandwidth */
@@ -1902,7 +1788,7 @@ free_running:
 				     (mdtc && mdtc->dirty_exceeded);
 		if (time_is_before_jiffies(READ_ONCE(wb->bw_time_stamp) +
 					   BANDWIDTH_INTERVAL))
-			__wb_update_bandwidth(gdtc, mdtc, true);
+			__wb_update_bandwidth(gdtc, true);
 
 		/* throttle according to the chosen dtc */
 		dirty_ratelimit = READ_ONCE(wb->dirty_ratelimit);
@@ -2271,17 +2157,6 @@ static const struct ctl_table vm_page_writeback_sysctls[] = {
 		.proc_handler   = proc_dointvec_minmax,
 		.extra1     = SYSCTL_ZERO,
 	},
-#if 0
-	{
-		.procname	= "highmem_is_dirtyable",
-		.data		= &vm_highmem_is_dirtyable,
-		.maxlen		= sizeof(vm_highmem_is_dirtyable),
-		.mode		= 0644,
-		.proc_handler	= proc_dointvec_minmax,
-		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_ONE,
-	},
-#endif
 	{
 		.procname	= "laptop_mode",
 		.data		= &laptop_mode,

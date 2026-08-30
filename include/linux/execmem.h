@@ -5,8 +5,8 @@
 #include <linux/types.h>
 #include <linux/cleanup.h>
 
-#if (0 || 0) && \
-		!0
+#if (0) && \
+		1
 #include <linux/kasan.h>
 #define MODULE_ALIGN (PAGE_SIZE << KASAN_SHADOW_SCALE_SHIFT)
 #else

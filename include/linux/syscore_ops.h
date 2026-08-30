@@ -24,10 +24,6 @@ struct syscore {
 
 extern void register_syscore(struct syscore *syscore);
 extern void unregister_syscore(struct syscore *syscore);
-#ifdef CONFIG_PM_SLEEP
-extern int syscore_suspend(void);
-extern void syscore_resume(void);
-#endif
 extern void syscore_shutdown(void);
 
 #endif

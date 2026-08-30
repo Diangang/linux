@@ -123,9 +123,6 @@ void __noreturn machine_real_restart(unsigned int type)
 		     "D" (type));
 	unreachable();
 }
-#ifdef CONFIG_APM_MODULE
-EXPORT_SYMBOL(machine_real_restart);
-#endif
 STACK_FRAME_NON_STANDARD(machine_real_restart);
 
 /*
@@ -524,27 +521,7 @@ static inline void kb_wait(void)
 
 static inline void nmi_shootdown_cpus_on_restart(void);
 
-#if IS_ENABLED(CONFIG_KVM_X86)
-static void emergency_reboot_disable_virtualization(void)
-{
-	local_irq_disable();
-
-	/*
-	 * Disable virtualization on all CPUs before rebooting to avoid hanging
-	 * the system, as VMX and SVM block INIT when running in the host.
-	 *
-	 * We can't take any locks and we may be on an inconsistent state, so
-	 * use NMIs as IPIs to tell the other CPUs to disable VMX/SVM and halt.
-	 *
-	 * Safely force _this_ CPU out of VMX/SVM operation, and if necessary,
-	 * blast NMIs to force other CPUs out of VMX/SVM as well.k
-	 */
-	if (!x86_virt_emergency_disable_virtualization_cpu())
-		nmi_shootdown_cpus_on_restart();
-}
-#else
 static void emergency_reboot_disable_virtualization(void) { }
-#endif /* CONFIG_KVM_X86 */
 
 void __attribute__((weak)) mach_reboot_fixups(void)
 {

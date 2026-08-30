@@ -15,14 +15,6 @@ static inline int
 get_user_word(unsigned long *word, unsigned long base, int off, unsigned int ws)
 {
 	unsigned long __user *addr = (void __user *)base + off;
-#ifdef CONFIG_COMPAT
-	if (ws == sizeof(int)) {
-		unsigned int data;
-		int ret = get_user(data, (unsigned int __user *)addr);
-		*word = data;
-		return ret;
-	}
-#endif
 	return get_user(*word, addr);
 }
 

@@ -195,11 +195,6 @@ int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp
 	inode->i_rdev = 0;
 	inode->dirtied_when = 0;
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-	inode->i_wb_frn_winner = 0;
-	inode->i_wb_frn_avg_time = 0;
-	inode->i_wb_frn_history = 0;
-#endif
 
 	spin_lock_init(&inode->i_lock);
 	lockdep_set_class(&inode->i_lock, &sb->s_type->i_lock_key);
@@ -225,9 +220,6 @@ int inode_init_always_gfp(struct super_block *sb, struct inode *inode, gfp_t gfp
 	inode->i_private = NULL;
 	inode->i_mapping = mapping;
 	INIT_HLIST_HEAD(&inode->i_dentry);	/* buggered by rcu freeing */
-#ifdef CONFIG_FSNOTIFY
-	inode->i_fsnotify_mask = 0;
-#endif
 	inode->i_flctx = NULL;
 
 	if (unlikely(security_inode_alloc(inode, gfp)))
@@ -692,14 +684,6 @@ void dump_mapping(const struct address_space *mapping)
 
 void clear_inode(struct inode *inode)
 {
-	/*
-	 * Only IS_VERITY() inodes can have verity info, so start by checking
-	 * for IS_VERITY() (which is faster than retrieving the pointer to the
-	 * verity info).  This minimizes overhead for non-verity inodes.
-	 */
-	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
-		fsverity_cleanup_inode(inode);
-
 	/*
 	 * We have to cycle the i_pages lock here because reclaim can be in the
 	 * process of removing the last page (in __filemap_remove_folio())

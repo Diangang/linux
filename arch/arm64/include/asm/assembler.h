@@ -136,31 +136,19 @@ lr	.req	x30		// link register
 /*
  * Select code when configured for BE.
  */
-#if 0
-#define CPU_BE(code...) code
-#else
 #define CPU_BE(code...)
-#endif
 
 /*
  * Select code when configured for LE.
  */
-#if 0
-#define CPU_LE(code...)
-#else
 #define CPU_LE(code...) code
-#endif
 
 /*
  * Define a macro that constructs a 64-bit value by concatenating two
  * 32-bit registers. Note that on big endian systems the order of the
  * registers is swapped.
  */
-#if 1
 	.macro	regs_to_64, rd, lbits, hbits
-#else
-	.macro	regs_to_64, rd, hbits, lbits
-#endif
 	orr	\rd, \lbits, \hbits, lsl #32
 	.endm
 
@@ -526,11 +514,7 @@ alternative_else_nop_endif
 
 #define NOKPROBE(x)
 
-#if 0 || 0
-#define EXPORT_SYMBOL_NOKASAN(name)
-#else
 #define EXPORT_SYMBOL_NOKASAN(name)	EXPORT_SYMBOL(name)
-#endif
 
 	/*
 	 * Emit a 64-bit absolute little endian symbol reference in a way that
@@ -743,11 +727,6 @@ alternative_else_nop_endif
 #define GNU_PROPERTY_AARCH64_FEATURE_1_BTI      (1U << 0)
 #define GNU_PROPERTY_AARCH64_FEATURE_1_PAC      (1U << 1)
 
-#ifdef CONFIG_ARM64_BTI_KERNEL
-#define GNU_PROPERTY_AARCH64_FEATURE_1_DEFAULT		\
-		((GNU_PROPERTY_AARCH64_FEATURE_1_BTI |	\
-		  GNU_PROPERTY_AARCH64_FEATURE_1_PAC))
-#endif
 
 #ifdef GNU_PROPERTY_AARCH64_FEATURE_1_DEFAULT
 .macro emit_aarch64_feature_1_and, feat=GNU_PROPERTY_AARCH64_FEATURE_1_DEFAULT

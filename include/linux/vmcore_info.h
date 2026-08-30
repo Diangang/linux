@@ -76,10 +76,6 @@ Elf_Word *append_elf_note(Elf_Word *buf, char *name, unsigned int type,
 			  void *data, size_t data_len);
 void final_note(Elf_Word *buf);
 
-#ifdef CONFIG_VMCORE_INFO
-void hwerr_log_error_type(enum hwerr_error_type src);
-#else
 static inline void hwerr_log_error_type(enum hwerr_error_type src) {};
-#endif
 
 #endif /* LINUX_VMCORE_INFO_H */

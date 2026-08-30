@@ -15,47 +15,10 @@ static LIST_HEAD(percpu_counters);
 static DEFINE_SPINLOCK(percpu_counters_lock);
 #endif
 
-#ifdef CONFIG_DEBUG_OBJECTS_PERCPU_COUNTER
-
-static const struct debug_obj_descr percpu_counter_debug_descr;
-
-static bool percpu_counter_fixup_free(void *addr, enum debug_obj_state state)
-{
-	struct percpu_counter *fbc = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		percpu_counter_destroy(fbc);
-		debug_object_free(fbc, &percpu_counter_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-static const struct debug_obj_descr percpu_counter_debug_descr = {
-	.name		= "percpu_counter",
-	.fixup_free	= percpu_counter_fixup_free,
-};
-
-static inline void debug_percpu_counter_activate(struct percpu_counter *fbc)
-{
-	debug_object_init(fbc, &percpu_counter_debug_descr);
-	debug_object_activate(fbc, &percpu_counter_debug_descr);
-}
-
-static inline void debug_percpu_counter_deactivate(struct percpu_counter *fbc)
-{
-	debug_object_deactivate(fbc, &percpu_counter_debug_descr);
-	debug_object_free(fbc, &percpu_counter_debug_descr);
-}
-
-#else	/* CONFIG_DEBUG_OBJECTS_PERCPU_COUNTER */
 static inline void debug_percpu_counter_activate(struct percpu_counter *fbc)
 { }
 static inline void debug_percpu_counter_deactivate(struct percpu_counter *fbc)
 { }
-#endif	/* CONFIG_DEBUG_OBJECTS_PERCPU_COUNTER */
 
 void percpu_counter_set(struct percpu_counter *fbc, s64 amount)
 {

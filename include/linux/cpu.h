@@ -141,29 +141,9 @@ static inline int arch_cpu_rescan_dead_smt_siblings(void) { return 0; }
 #endif /* CONFIG_SMP */
 extern const struct bus_type cpu_subsys;
 
-#ifdef CONFIG_PM_SLEEP_SMP
-extern int freeze_secondary_cpus(int primary);
-extern void thaw_secondary_cpus(void);
-
-static inline int suspend_disable_secondary_cpus(void)
-{
-	int cpu = 0;
-
-	if (0)
-		cpu = -1;
-
-	return freeze_secondary_cpus(cpu);
-}
-static inline void suspend_enable_secondary_cpus(void)
-{
-	thaw_secondary_cpus();
-}
-
-#else /* !CONFIG_PM_SLEEP_SMP */
 static inline void thaw_secondary_cpus(void) {}
 static inline int suspend_disable_secondary_cpus(void) { return 0; }
 static inline void suspend_enable_secondary_cpus(void) { }
-#endif /* !CONFIG_PM_SLEEP_SMP */
 
 void __noreturn cpu_startup_entry(enum cpuhp_state state);
 

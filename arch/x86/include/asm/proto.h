@@ -18,17 +18,8 @@ void entry_SYSRETQ_end(void);
 #endif
 
 
-#ifdef CONFIG_IA32_EMULATION
-void entry_SYSENTER_compat(void);
-void __end_entry_SYSENTER_compat(void);
-void entry_SYSCALL_compat(void);
-void entry_SYSCALL_compat_safe_stack(void);
-void entry_SYSRETL_compat_unsafe_stack(void);
-void entry_SYSRETL_compat_end(void);
-#else /* !CONFIG_IA32_EMULATION */
 #define entry_SYSCALL_compat NULL
 #define entry_SYSENTER_compat NULL
-#endif
 
 void x86_configure_nx(void);
 

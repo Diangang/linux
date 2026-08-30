@@ -16,14 +16,10 @@
 #include "infutil.h"
 
 /* architecture-specific bits */
-#ifdef CONFIG_ZLIB_DFLTCC
-#  include "../zlib_dfltcc/dfltcc_inflate.h"
-#else
 #define INFLATE_RESET_HOOK(strm) do {} while (0)
 #define INFLATE_TYPEDO_HOOK(strm, flush) do {} while (0)
 #define INFLATE_NEED_UPDATEWINDOW(strm) 1
 #define INFLATE_NEED_CHECKSUM(strm) 1
-#endif
 
 int zlib_inflate_workspacesize(void)
 {
@@ -77,15 +73,7 @@ int zlib_inflateInit2(z_streamp strm, int windowBits)
         return Z_STREAM_ERROR;
     }
     state->wbits = (unsigned)windowBits;
-#ifdef CONFIG_ZLIB_DFLTCC
-    /*
-     * DFLTCC requires the window to be page aligned.
-     * Thus, we overallocate and take the aligned portion of the buffer.
-     */
-    state->window = PTR_ALIGN(&WS(strm)->working_window[0], PAGE_SIZE);
-#else
     state->window = &WS(strm)->working_window[0];
-#endif
 
     return zlib_inflateReset(strm);
 }

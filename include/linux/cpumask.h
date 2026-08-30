@@ -26,7 +26,7 @@
  */
 #define cpumask_pr_args(maskp)		nr_cpu_ids, cpumask_bits(maskp)
 
-#if (NR_CPUS == 1) || defined(CONFIG_FORCE_NR_CPUS)
+#if (NR_CPUS == 1)
 #define nr_cpu_ids ((unsigned int)NR_CPUS)
 #else
 extern unsigned int nr_cpu_ids;
@@ -34,7 +34,7 @@ extern unsigned int nr_cpu_ids;
 
 static __always_inline void set_nr_cpu_ids(unsigned int nr)
 {
-#if (NR_CPUS == 1) || defined(CONFIG_FORCE_NR_CPUS)
+#if (NR_CPUS == 1)
 	WARN_ON(nr != nr_cpu_ids);
 #else
 	nr_cpu_ids = nr;

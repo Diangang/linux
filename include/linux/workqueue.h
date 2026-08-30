@@ -28,9 +28,6 @@ enum work_bits {
 	WORK_STRUCT_INACTIVE_BIT,	/* work item is inactive */
 	WORK_STRUCT_PWQ_BIT,		/* data points to pwq */
 	WORK_STRUCT_LINKED_BIT,		/* next work is linked to this one */
-#if 0
-	WORK_STRUCT_STATIC_BIT,		/* static initializer (debugobjects) */
-#endif
 	WORK_STRUCT_FLAG_BITS,
 
 	/* color for workqueue flushing */
@@ -78,11 +75,7 @@ enum work_flags {
 	WORK_STRUCT_INACTIVE	= 1 << WORK_STRUCT_INACTIVE_BIT,
 	WORK_STRUCT_PWQ		= 1 << WORK_STRUCT_PWQ_BIT,
 	WORK_STRUCT_LINKED	= 1 << WORK_STRUCT_LINKED_BIT,
-#if 0
-	WORK_STRUCT_STATIC	= 1 << WORK_STRUCT_STATIC_BIT,
-#else
 	WORK_STRUCT_STATIC	= 0,
-#endif
 };
 
 enum wq_misc_consts {
@@ -224,17 +217,7 @@ struct execute_work {
 	struct work_struct work;
 };
 
-#if 0
-/*
- * NB: because we have to copy the lockdep_map, setting _key
- * here is required, otherwise it could get initialised to the
- * copy of the lockdep_map!
- */
-#define __WORK_INIT_LOCKDEP_MAP(n, k) \
-	.lockdep_map = STATIC_LOCKDEP_MAP_INIT(n, k),
-#else
 #define __WORK_INIT_LOCKDEP_MAP(n, k)
-#endif
 
 #define __WORK_INITIALIZER(n, f) {					\
 	.data = WORK_DATA_STATIC_INIT(),				\
@@ -258,20 +241,10 @@ struct execute_work {
 #define DECLARE_DEFERRABLE_WORK(n, f)					\
 	struct delayed_work n = __DELAYED_WORK_INITIALIZER(n, f, TIMER_DEFERRABLE)
 
-#if 0
-extern void __init_work(struct work_struct *work, int onstack);
-extern void destroy_work_on_stack(struct work_struct *work);
-extern void destroy_delayed_work_on_stack(struct delayed_work *work);
-static inline unsigned int work_static(struct work_struct *work)
-{
-	return *work_data_bits(work) & WORK_STRUCT_STATIC;
-}
-#else
 static inline void __init_work(struct work_struct *work, int onstack) { }
 static inline void destroy_work_on_stack(struct work_struct *work) { }
 static inline void destroy_delayed_work_on_stack(struct delayed_work *work) { }
 static inline unsigned int work_static(struct work_struct *work) { return 0; }
-#endif
 
 /*
  * initialize all of a work item in one go
@@ -280,16 +253,6 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
  * assignment of the work data initializer allows the compiler
  * to generate better code.
  */
-#if 0
-#define __INIT_WORK_KEY(_work, _func, _onstack, _key)			\
-	do {								\
-		__init_work((_work), _onstack);				\
-		(_work)->data = (atomic_long_t) WORK_DATA_INIT();	\
-		lockdep_init_map(&(_work)->lockdep_map, "(work_completion)"#_work, (_key), 0); \
-		INIT_LIST_HEAD(&(_work)->entry);			\
-		(_work)->func = (_func);				\
-	} while (0)
-#else
 #define __INIT_WORK_KEY(_work, _func, _onstack, _key)			\
 	do {								\
 		__init_work((_work), _onstack);				\
@@ -297,7 +260,6 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 		INIT_LIST_HEAD(&(_work)->entry);			\
 		(_work)->func = (_func);				\
 	} while (0)
-#endif
 
 #define __INIT_WORK(_work, _func, _onstack)				\
 	do {								\
@@ -537,46 +499,6 @@ __printf(2, 5) struct workqueue_struct *
 devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 		     int max_active, ...);
 
-#if 0
-/**
- * alloc_workqueue_lockdep_map - allocate a workqueue with user-defined lockdep_map
- * @fmt: printf format for the name of the workqueue
- * @flags: WQ_* flags
- * @max_active: max in-flight work items, 0 for default
- * @lockdep_map: user-defined lockdep_map
- * @...: args for @fmt
- *
- * Same as alloc_workqueue but with the a user-define lockdep_map. Useful for
- * workqueues created with the same purpose and to avoid leaking a lockdep_map
- * on each workqueue creation.
- *
- * RETURNS:
- * Pointer to the allocated workqueue on success, %NULL on failure.
- */
-__printf(1, 5) struct workqueue_struct *
-alloc_workqueue_lockdep_map(const char *fmt, unsigned int flags, int max_active,
-			    struct lockdep_map *lockdep_map, ...);
-
-/**
- * alloc_ordered_workqueue_lockdep_map - allocate an ordered workqueue with
- * user-defined lockdep_map
- *
- * @fmt: printf format for the name of the workqueue
- * @flags: WQ_* flags (only WQ_FREEZABLE and WQ_MEM_RECLAIM are meaningful)
- * @lockdep_map: user-defined lockdep_map
- * @args: args for @fmt
- *
- * Same as alloc_ordered_workqueue but with the a user-define lockdep_map.
- * Useful for workqueues created with the same purpose and to avoid leaking a
- * lockdep_map on each workqueue creation.
- *
- * RETURNS:
- * Pointer to the allocated workqueue on success, %NULL on failure.
- */
-#define alloc_ordered_workqueue_lockdep_map(fmt, flags, lockdep_map, args...)	\
-	alloc_hooks(alloc_workqueue_lockdep_map(fmt, WQ_UNBOUND | __WQ_ORDERED | (flags),\
-						1, lockdep_map, ##args))
-#endif
 
 /**
  * alloc_ordered_workqueue - allocate an ordered workqueue

@@ -54,7 +54,7 @@ cpucap_is_possible(const unsigned int cap)
 		*/
 		return true;
 	case ARM64_HAS_LSUI:
-		return IS_ENABLED(CONFIG_ARM64_LSUI);
+		return false;
 	}
 
 	return true;

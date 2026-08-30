@@ -55,18 +55,6 @@ static inline long syscall_get_error(struct task_struct *task,
 				     struct pt_regs *regs)
 {
 	unsigned long error = regs->ax;
-#ifdef CONFIG_IA32_EMULATION
-	/*
-	 * TS_COMPAT is set for 32-bit syscall entries and then
-	 * remains set until we return to user mode.
-	 */
-	if (task->thread_info.status & (TS_COMPAT|TS_I386_REGS_POKED))
-		/*
-		 * Sign-extend the value so (int)-EFOO becomes (long)-EFOO
-		 * and will match correctly in comparisons.
-		 */
-		error = (long) (int) error;
-#endif
 	return IS_ERR_VALUE(error) ? error : 0;
 }
 
@@ -88,16 +76,6 @@ static inline void syscall_get_arguments(struct task_struct *task,
 					 struct pt_regs *regs,
 					 unsigned long *args)
 {
-# ifdef CONFIG_IA32_EMULATION
-	if (task->thread_info.status & TS_COMPAT) {
-		*args++ = regs->bx;
-		*args++ = regs->cx;
-		*args++ = regs->dx;
-		*args++ = regs->si;
-		*args++ = regs->di;
-		*args   = regs->bp;
-	} else
-# endif
 	{
 		*args++ = regs->di;
 		*args++ = regs->si;
@@ -112,16 +90,6 @@ static inline void syscall_set_arguments(struct task_struct *task,
 					 struct pt_regs *regs,
 					 const unsigned long *args)
 {
-# ifdef CONFIG_IA32_EMULATION
-	if (task->thread_info.status & TS_COMPAT) {
-		regs->bx = *args++;
-		regs->cx = *args++;
-		regs->dx = *args++;
-		regs->si = *args++;
-		regs->di = *args++;
-		regs->bp = *args;
-	} else
-# endif
 	{
 		regs->di = *args++;
 		regs->si = *args++;
@@ -134,10 +102,7 @@ static inline void syscall_set_arguments(struct task_struct *task,
 
 static inline int syscall_get_arch(struct task_struct *task)
 {
-	/* x32 tasks should be considered AUDIT_ARCH_X86_64. */
-	return (IS_ENABLED(CONFIG_IA32_EMULATION) &&
-		task->thread_info.status & TS_COMPAT)
-		? AUDIT_ARCH_I386 : AUDIT_ARCH_X86_64;
+	return AUDIT_ARCH_X86_64;
 }
 
 bool do_syscall_64(struct pt_regs *regs, int nr);

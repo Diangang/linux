@@ -25,9 +25,6 @@ struct pt_regs;
  */
 struct irqstat {
 	unsigned int	cnt;
-#if 0
-	unsigned int	ref;
-#endif
 };
 
 /**
@@ -106,18 +103,8 @@ struct irq_desc {
 	unsigned long		threads_oneshot;
 	atomic_t		threads_active;
 	wait_queue_head_t       wait_for_threads;
-#ifdef CONFIG_PM_SLEEP
-	unsigned int		nr_actions;
-	unsigned int		no_suspend_depth;
-	unsigned int		cond_suspend_depth;
-	unsigned int		force_resume_depth;
-#endif
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry	*dir;
-#endif
-#if 0
-	struct dentry		*debugfs_file;
-	const char		*dev_name;
 #endif
 #ifdef CONFIG_SPARSE_IRQ
 	struct rcu_head		rcu;

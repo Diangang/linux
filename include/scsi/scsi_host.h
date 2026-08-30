@@ -125,16 +125,6 @@ struct scsi_host_template {
 		     void __user *arg);
 
 
-#ifdef CONFIG_COMPAT
-	/*
-	 * Compat handler. Handle 32bit ABI.
-	 * When unknown ioctl is passed return -ENOIOCTLCMD.
-	 *
-	 * Status: OPTIONAL
-	 */
-	int (*compat_ioctl)(struct scsi_device *dev, unsigned int cmd,
-			    void __user *arg);
-#endif
 
 	int (*init_cmd_priv)(struct Scsi_Host *shost, struct scsi_cmnd *cmd);
 	int (*exit_cmd_priv)(struct Scsi_Host *shost, struct scsi_cmnd *cmd);

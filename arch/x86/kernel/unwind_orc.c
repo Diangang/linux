@@ -114,50 +114,10 @@ static struct orc_entry *orc_module_find(unsigned long ip)
 	return NULL;
 }
 
-#ifdef CONFIG_DYNAMIC_FTRACE
-static struct orc_entry *orc_find(unsigned long ip);
-
-/*
- * Ftrace dynamic trampolines do not have orc entries of their own.
- * But they are copies of the ftrace entries that are static and
- * defined in ftrace_*.S, which do have orc entries.
- *
- * If the unwinder comes across a ftrace trampoline, then find the
- * ftrace function that was used to create it, and use that ftrace
- * function's orc entry, as the placement of the return code in
- * the stack will be identical.
- */
-static struct orc_entry *orc_ftrace_find(unsigned long ip)
-{
-	struct ftrace_ops *ops;
-	unsigned long tramp_addr, offset;
-
-	ops = ftrace_ops_trampoline(ip);
-	if (!ops)
-		return NULL;
-
-	/* Set tramp_addr to the start of the code copied by the trampoline */
-	if (ops->flags & FTRACE_OPS_FL_SAVE_REGS)
-		tramp_addr = (unsigned long)ftrace_regs_caller;
-	else
-		tramp_addr = (unsigned long)ftrace_caller;
-
-	/* Now place tramp_addr to the location within the trampoline ip is at */
-	offset = ip - ops->trampoline;
-	tramp_addr += offset;
-
-	/* Prevent unlikely recursion */
-	if (ip == tramp_addr)
-		return NULL;
-
-	return orc_find(tramp_addr);
-}
-#else
 static struct orc_entry *orc_ftrace_find(unsigned long ip)
 {
 	return NULL;
 }
-#endif
 
 /* Fake frame pointer entry -- used as a fallback for generated code */
 static struct orc_entry orc_fp_entry = {

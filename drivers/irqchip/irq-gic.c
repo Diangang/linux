@@ -73,32 +73,10 @@ struct gic_chip_data {
 	void __iomem *raw_dist_base;
 	void __iomem *raw_cpu_base;
 	u32 percpu_offset;
-#if defined(CONFIG_CPU_PM) || defined(CONFIG_ARM_GIC_PM)
-	u32 saved_spi_enable[DIV_ROUND_UP(1020, 32)];
-	u32 saved_spi_active[DIV_ROUND_UP(1020, 32)];
-	u32 saved_spi_conf[DIV_ROUND_UP(1020, 16)];
-	u32 saved_spi_target[DIV_ROUND_UP(1020, 4)];
-	u32 __percpu *saved_ppi_enable;
-	u32 __percpu *saved_ppi_active;
-	u32 __percpu *saved_ppi_conf;
-#endif
 	struct irq_domain *domain;
 	unsigned int gic_irqs;
 };
 
-#ifdef CONFIG_BL_SWITCHER
-
-static DEFINE_RAW_SPINLOCK(cpu_map_lock);
-
-#define gic_lock_irqsave(f)		\
-	raw_spin_lock_irqsave(&cpu_map_lock, (f))
-#define gic_unlock_irqrestore(f)	\
-	raw_spin_unlock_irqrestore(&cpu_map_lock, (f))
-
-#define gic_lock()			raw_spin_lock(&cpu_map_lock)
-#define gic_unlock()			raw_spin_unlock(&cpu_map_lock)
-
-#else
 
 #define gic_lock_irqsave(f)		do { (void)(f); } while(0)
 #define gic_unlock_irqrestore(f)	do { (void)(f); } while(0)
@@ -106,7 +84,6 @@ static DEFINE_RAW_SPINLOCK(cpu_map_lock);
 #define gic_lock()			do { } while(0)
 #define gic_unlock()			do { } while(0)
 
-#endif
 
 static DEFINE_STATIC_KEY_FALSE(needs_rmw_access);
 
@@ -126,29 +103,9 @@ static struct gic_kvm_info gic_v2_kvm_info __initdata;
 
 static DEFINE_PER_CPU(u32, sgi_intid);
 
-#ifdef CONFIG_GIC_NON_BANKED
-static DEFINE_STATIC_KEY_FALSE(frankengic_key);
-
-static void enable_frankengic(void)
-{
-	static_branch_enable(&frankengic_key);
-}
-
-static inline void __iomem *__get_base(union gic_base *base)
-{
-	if (static_branch_unlikely(&frankengic_key))
-		return raw_cpu_read(*base->percpu_base);
-
-	return base->common_base;
-}
-
-#define gic_data_dist_base(d)	__get_base(&(d)->dist_base)
-#define gic_data_cpu_base(d)	__get_base(&(d)->cpu_base)
-#else
 #define gic_data_dist_base(d)	((d)->dist_base.common_base)
 #define gic_data_cpu_base(d)	((d)->cpu_base.common_base)
 #define enable_frankengic()	do { } while(0)
-#endif
 
 static inline void __iomem *gic_dist_base(struct irq_data *d)
 {
@@ -540,235 +497,10 @@ int gic_cpu_if_down(unsigned int gic_nr)
 	return 0;
 }
 
-#if defined(CONFIG_CPU_PM) || defined(CONFIG_ARM_GIC_PM)
-/*
- * Saves the GIC distributor registers during suspend or idle.  Must be called
- * with interrupts disabled but before powering down the GIC.  After calling
- * this function, no interrupts will be delivered by the GIC, and another
- * platform-specific wakeup source must be enabled.
- */
-void gic_dist_save(struct gic_chip_data *gic)
-{
-	unsigned int gic_irqs;
-	void __iomem *dist_base;
-	int i;
-
-	if (WARN_ON(!gic))
-		return;
-
-	gic_irqs = gic->gic_irqs;
-	dist_base = gic_data_dist_base(gic);
-
-	if (!dist_base)
-		return;
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 16); i++)
-		gic->saved_spi_conf[i] =
-			readl_relaxed(dist_base + GIC_DIST_CONFIG + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 4); i++)
-		gic->saved_spi_target[i] =
-			readl_relaxed(dist_base + GIC_DIST_TARGET + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 32); i++)
-		gic->saved_spi_enable[i] =
-			readl_relaxed(dist_base + GIC_DIST_ENABLE_SET + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 32); i++)
-		gic->saved_spi_active[i] =
-			readl_relaxed(dist_base + GIC_DIST_ACTIVE_SET + i * 4);
-}
-
-/*
- * Restores the GIC distributor registers during resume or when coming out of
- * idle.  Must be called before enabling interrupts.  If a level interrupt
- * that occurred while the GIC was suspended is still present, it will be
- * handled normally, but any edge interrupts that occurred will not be seen by
- * the GIC and need to be handled by the platform-specific wakeup source.
- */
-void gic_dist_restore(struct gic_chip_data *gic)
-{
-	unsigned int gic_irqs;
-	unsigned int i;
-	void __iomem *dist_base;
-
-	if (WARN_ON(!gic))
-		return;
-
-	gic_irqs = gic->gic_irqs;
-	dist_base = gic_data_dist_base(gic);
-
-	if (!dist_base)
-		return;
-
-	writel_relaxed(GICD_DISABLE, dist_base + GIC_DIST_CTRL);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 16); i++)
-		writel_relaxed(gic->saved_spi_conf[i],
-			dist_base + GIC_DIST_CONFIG + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 4); i++)
-		writel_relaxed(REPEAT_BYTE_U32(GICD_INT_DEF_PRI),
-			dist_base + GIC_DIST_PRI + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 4); i++)
-		writel_relaxed(gic->saved_spi_target[i],
-			dist_base + GIC_DIST_TARGET + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 32); i++) {
-		writel_relaxed(GICD_INT_EN_CLR_X32,
-			dist_base + GIC_DIST_ENABLE_CLEAR + i * 4);
-		writel_relaxed(gic->saved_spi_enable[i],
-			dist_base + GIC_DIST_ENABLE_SET + i * 4);
-	}
-
-	for (i = 0; i < DIV_ROUND_UP(gic_irqs, 32); i++) {
-		writel_relaxed(GICD_INT_EN_CLR_X32,
-			dist_base + GIC_DIST_ACTIVE_CLEAR + i * 4);
-		writel_relaxed(gic->saved_spi_active[i],
-			dist_base + GIC_DIST_ACTIVE_SET + i * 4);
-	}
-
-	writel_relaxed(GICD_ENABLE, dist_base + GIC_DIST_CTRL);
-}
-
-void gic_cpu_save(struct gic_chip_data *gic)
-{
-	int i;
-	u32 *ptr;
-	void __iomem *dist_base;
-	void __iomem *cpu_base;
-
-	if (WARN_ON(!gic))
-		return;
-
-	dist_base = gic_data_dist_base(gic);
-	cpu_base = gic_data_cpu_base(gic);
-
-	if (!dist_base || !cpu_base)
-		return;
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_enable);
-	for (i = 0; i < DIV_ROUND_UP(32, 32); i++)
-		ptr[i] = readl_relaxed(dist_base + GIC_DIST_ENABLE_SET + i * 4);
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_active);
-	for (i = 0; i < DIV_ROUND_UP(32, 32); i++)
-		ptr[i] = readl_relaxed(dist_base + GIC_DIST_ACTIVE_SET + i * 4);
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_conf);
-	for (i = 0; i < DIV_ROUND_UP(32, 16); i++)
-		ptr[i] = readl_relaxed(dist_base + GIC_DIST_CONFIG + i * 4);
-
-}
-
-void gic_cpu_restore(struct gic_chip_data *gic)
-{
-	int i;
-	u32 *ptr;
-	void __iomem *dist_base;
-	void __iomem *cpu_base;
-
-	if (WARN_ON(!gic))
-		return;
-
-	dist_base = gic_data_dist_base(gic);
-	cpu_base = gic_data_cpu_base(gic);
-
-	if (!dist_base || !cpu_base)
-		return;
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_enable);
-	for (i = 0; i < DIV_ROUND_UP(32, 32); i++) {
-		writel_relaxed(GICD_INT_EN_CLR_X32,
-			       dist_base + GIC_DIST_ENABLE_CLEAR + i * 4);
-		writel_relaxed(ptr[i], dist_base + GIC_DIST_ENABLE_SET + i * 4);
-	}
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_active);
-	for (i = 0; i < DIV_ROUND_UP(32, 32); i++) {
-		writel_relaxed(GICD_INT_EN_CLR_X32,
-			       dist_base + GIC_DIST_ACTIVE_CLEAR + i * 4);
-		writel_relaxed(ptr[i], dist_base + GIC_DIST_ACTIVE_SET + i * 4);
-	}
-
-	ptr = raw_cpu_ptr(gic->saved_ppi_conf);
-	for (i = 0; i < DIV_ROUND_UP(32, 16); i++)
-		writel_relaxed(ptr[i], dist_base + GIC_DIST_CONFIG + i * 4);
-
-	for (i = 0; i < DIV_ROUND_UP(32, 4); i++)
-		writel_relaxed(REPEAT_BYTE_U32(GICD_INT_DEF_PRI),
-					dist_base + GIC_DIST_PRI + i * 4);
-
-	writel_relaxed(GICC_INT_PRI_THRESHOLD, cpu_base + GIC_CPU_PRIMASK);
-	gic_cpu_if_up(gic);
-}
-
-static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_ARM_GIC_MAX_NR; i++) {
-		switch (cmd) {
-		case CPU_PM_ENTER:
-			gic_cpu_save(&gic_data[i]);
-			break;
-		case CPU_PM_ENTER_FAILED:
-		case CPU_PM_EXIT:
-			gic_cpu_restore(&gic_data[i]);
-			break;
-		case CPU_CLUSTER_PM_ENTER:
-			gic_dist_save(&gic_data[i]);
-			break;
-		case CPU_CLUSTER_PM_ENTER_FAILED:
-		case CPU_CLUSTER_PM_EXIT:
-			gic_dist_restore(&gic_data[i]);
-			break;
-		}
-	}
-
-	return NOTIFY_OK;
-}
-
-static struct notifier_block gic_notifier_block = {
-	.notifier_call = gic_notifier,
-};
-
-static int gic_pm_init(struct gic_chip_data *gic)
-{
-	gic->saved_ppi_enable = __alloc_percpu(DIV_ROUND_UP(32, 32) * 4,
-		sizeof(u32));
-	if (WARN_ON(!gic->saved_ppi_enable))
-		return -ENOMEM;
-
-	gic->saved_ppi_active = __alloc_percpu(DIV_ROUND_UP(32, 32) * 4,
-		sizeof(u32));
-	if (WARN_ON(!gic->saved_ppi_active))
-		goto free_ppi_enable;
-
-	gic->saved_ppi_conf = __alloc_percpu(DIV_ROUND_UP(32, 16) * 4,
-		sizeof(u32));
-	if (WARN_ON(!gic->saved_ppi_conf))
-		goto free_ppi_active;
-
-	if (gic == &gic_data[0])
-		cpu_pm_register_notifier(&gic_notifier_block);
-
-	return 0;
-
-free_ppi_active:
-	free_percpu(gic->saved_ppi_active);
-free_ppi_enable:
-	free_percpu(gic->saved_ppi_enable);
-
-	return -ENOMEM;
-}
-#else
 static int gic_pm_init(struct gic_chip_data *gic)
 {
 	return 0;
 }
-#endif
 
 #ifdef CONFIG_SMP
 static void rmw_writeb(u8 bval, void __iomem *addr)
@@ -910,144 +642,7 @@ static const struct irq_chip gic_chip_mode1 = {
 				  IRQCHIP_MASK_ON_SUSPEND,
 };
 
-#ifdef CONFIG_BL_SWITCHER
-/*
- * gic_send_sgi - send a SGI directly to given CPU interface number
- *
- * cpu_id: the ID for the destination CPU interface
- * irq: the IPI number to send a SGI for
- */
-void gic_send_sgi(unsigned int cpu_id, unsigned int irq)
-{
-	BUG_ON(cpu_id >= NR_GIC_CPU_IF);
-	cpu_id = 1 << cpu_id;
-	/* this always happens on GIC0 */
-	writel_relaxed((cpu_id << 16) | irq, gic_data_dist_base(&gic_data[0]) + GIC_DIST_SOFTINT);
-}
-
-/*
- * gic_get_cpu_id - get the CPU interface ID for the specified CPU
- *
- * @cpu: the logical CPU number to get the GIC ID for.
- *
- * Return the CPU interface ID for the given logical CPU number,
- * or -1 if the CPU number is too large or the interface ID is
- * unknown (more than one bit set).
- */
-int gic_get_cpu_id(unsigned int cpu)
-{
-	unsigned int cpu_bit;
-
-	if (cpu >= NR_GIC_CPU_IF)
-		return -1;
-	cpu_bit = gic_cpu_map[cpu];
-	if (cpu_bit & (cpu_bit - 1))
-		return -1;
-	return __ffs(cpu_bit);
-}
-
-/*
- * gic_migrate_target - migrate IRQs to another CPU interface
- *
- * @new_cpu_id: the CPU target ID to migrate IRQs to
- *
- * Migrate all peripheral interrupts with a target matching the current CPU
- * to the interface corresponding to @new_cpu_id.  The CPU interface mapping
- * is also updated.  Targets to other CPU interfaces are unchanged.
- * This must be called with IRQs locally disabled.
- */
-void gic_migrate_target(unsigned int new_cpu_id)
-{
-	unsigned int cur_cpu_id, gic_irqs, gic_nr = 0;
-	void __iomem *dist_base;
-	int i, ror_val, cpu = smp_processor_id();
-	u32 val, cur_target_mask, active_mask;
-
-	BUG_ON(gic_nr >= CONFIG_ARM_GIC_MAX_NR);
-
-	dist_base = gic_data_dist_base(&gic_data[gic_nr]);
-	if (!dist_base)
-		return;
-	gic_irqs = gic_data[gic_nr].gic_irqs;
-
-	cur_cpu_id = __ffs(gic_cpu_map[cpu]);
-	cur_target_mask = 0x01010101 << cur_cpu_id;
-	ror_val = (cur_cpu_id - new_cpu_id) & 31;
-
-	gic_lock();
-
-	/* Update the target interface for this logical CPU */
-	gic_cpu_map[cpu] = 1 << new_cpu_id;
-
-	/*
-	 * Find all the peripheral interrupts targeting the current
-	 * CPU interface and migrate them to the new CPU interface.
-	 * We skip DIST_TARGET 0 to 7 as they are read-only.
-	 */
-	for (i = 8; i < DIV_ROUND_UP(gic_irqs, 4); i++) {
-		val = readl_relaxed(dist_base + GIC_DIST_TARGET + i * 4);
-		active_mask = val & cur_target_mask;
-		if (active_mask) {
-			val &= ~active_mask;
-			val |= ror32(active_mask, ror_val);
-			writel_relaxed(val, dist_base + GIC_DIST_TARGET + i*4);
-		}
-	}
-
-	gic_unlock();
-
-	/*
-	 * Now let's migrate and clear any potential SGIs that might be
-	 * pending for us (cur_cpu_id).  Since GIC_DIST_SGI_PENDING_SET
-	 * is a banked register, we can only forward the SGI using
-	 * GIC_DIST_SOFTINT.  The original SGI source is lost but Linux
-	 * doesn't use that information anyway.
-	 *
-	 * For the same reason we do not adjust SGI source information
-	 * for previously sent SGIs by us to other CPUs either.
-	 */
-	for (i = 0; i < 16; i += 4) {
-		int j;
-		val = readl_relaxed(dist_base + GIC_DIST_SGI_PENDING_SET + i);
-		if (!val)
-			continue;
-		writel_relaxed(val, dist_base + GIC_DIST_SGI_PENDING_CLEAR + i);
-		for (j = i; j < i + 4; j++) {
-			if (val & 0xff)
-				writel_relaxed((1 << (new_cpu_id + 16)) | j,
-						dist_base + GIC_DIST_SOFTINT);
-			val >>= 8;
-		}
-	}
-}
-
-/*
- * gic_get_sgir_physaddr - get the physical address for the SGI register
- *
- * Return the physical address of the SGI register to be used
- * by some early assembly code when the kernel is not yet available.
- */
-static unsigned long gic_dist_physaddr;
-
-unsigned long gic_get_sgir_physaddr(void)
-{
-	if (!gic_dist_physaddr)
-		return 0;
-	return gic_dist_physaddr + GIC_DIST_SOFTINT;
-}
-
-static void __init gic_init_physaddr(struct device_node *node)
-{
-	struct resource res;
-	if (of_address_to_resource(node, 0, &res) == 0) {
-		gic_dist_physaddr = res.start;
-		pr_info("GIC physical location is %#lx\n", gic_dist_physaddr);
-	}
-}
-
-#else
 #define gic_init_physaddr(node)  do { } while (0)
-#endif
 
 static int gic_irq_domain_map(struct irq_domain *d, unsigned int irq,
 				irq_hw_number_t hw)
@@ -1165,37 +760,11 @@ static int gic_init_bases(struct gic_chip_data *gic,
 {
 	int gic_irqs, ret;
 
-	if (IS_ENABLED(CONFIG_GIC_NON_BANKED) && gic->percpu_offset) {
-		/* Frankein-GIC without banked registers... */
-		unsigned int cpu;
-
-		gic->dist_base.percpu_base = alloc_percpu(void __iomem *);
-		gic->cpu_base.percpu_base = alloc_percpu(void __iomem *);
-		if (WARN_ON(!gic->dist_base.percpu_base ||
-			    !gic->cpu_base.percpu_base)) {
-			ret = -ENOMEM;
-			goto error;
-		}
-
-		for_each_possible_cpu(cpu) {
-			u32 mpidr = cpu_logical_map(cpu);
-			u32 core_id = MPIDR_AFFINITY_LEVEL(mpidr, 0);
-			unsigned long offset = gic->percpu_offset * core_id;
-			*per_cpu_ptr(gic->dist_base.percpu_base, cpu) =
-				gic->raw_dist_base + offset;
-			*per_cpu_ptr(gic->cpu_base.percpu_base, cpu) =
-				gic->raw_cpu_base + offset;
-		}
-
-		enable_frankengic();
-	} else {
-		/* Normal, sane GIC... */
-		WARN(gic->percpu_offset,
-		     "GIC_NON_BANKED not enabled, ignoring %08x offset!",
-		     gic->percpu_offset);
-		gic->dist_base.common_base = gic->raw_dist_base;
-		gic->cpu_base.common_base = gic->raw_cpu_base;
-	}
+	WARN(gic->percpu_offset,
+	     "GIC_NON_BANKED not enabled, ignoring %08x offset!",
+	     gic->percpu_offset);
+	gic->dist_base.common_base = gic->raw_dist_base;
+	gic->cpu_base.common_base = gic->raw_cpu_base;
 
 	/*
 	 * Find out how many interrupts are supported.
@@ -1227,11 +796,6 @@ static int gic_init_bases(struct gic_chip_data *gic,
 	return 0;
 
 error:
-	if (IS_ENABLED(CONFIG_GIC_NON_BANKED) && gic->percpu_offset) {
-		free_percpu(gic->dist_base.percpu_base);
-		free_percpu(gic->cpu_base.percpu_base);
-	}
-
 	return ret;
 }
 

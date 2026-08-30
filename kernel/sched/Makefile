@@ -18,12 +18,6 @@ ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)
 CFLAGS_core.o := $(PROFILING) -fno-omit-frame-pointer
 endif
 
-# Branch profiling isn't noinstr-safe
-ifdef CONFIG_TRACE_BRANCH_PROFILING
-CFLAGS_build_policy.o += -DDISABLE_BRANCH_PROFILING
-CFLAGS_build_utility.o += -DDISABLE_BRANCH_PROFILING
-endif
-#
 # Build efficiency:
 #
 # These compilation units have roughly the same size and complexity - so their

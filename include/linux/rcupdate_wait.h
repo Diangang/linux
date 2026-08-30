@@ -61,7 +61,7 @@ do {												\
 
 static inline void cond_resched_rcu(void)
 {
-#if defined(CONFIG_DEBUG_ATOMIC_SLEEP) || !defined(CONFIG_PREEMPT_RCU)
+#if !defined(CONFIG_PREEMPT_RCU)
 	rcu_read_unlock();
 	cond_resched();
 	rcu_read_lock();

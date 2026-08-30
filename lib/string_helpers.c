@@ -1010,36 +1010,3 @@ void memcpy_and_pad(void *dest, size_t dest_len, const void *src, size_t count,
 	}
 }
 EXPORT_SYMBOL(memcpy_and_pad);
-
-#ifdef CONFIG_FORTIFY_SOURCE
-/* These are placeholders for fortify compile-time warnings. */
-void __read_overflow2_field(size_t avail, size_t wanted) { }
-EXPORT_SYMBOL(__read_overflow2_field);
-void __write_overflow_field(size_t avail, size_t wanted) { }
-EXPORT_SYMBOL(__write_overflow_field);
-
-static const char * const fortify_func_name[] = {
-#define MAKE_FORTIFY_FUNC_NAME(func)	[MAKE_FORTIFY_FUNC(func)] = #func
-	EACH_FORTIFY_FUNC(MAKE_FORTIFY_FUNC_NAME)
-#undef  MAKE_FORTIFY_FUNC_NAME
-};
-
-void __fortify_report(const u8 reason, const size_t avail, const size_t size)
-{
-	const u8 func = FORTIFY_REASON_FUNC(reason);
-	const bool write = FORTIFY_REASON_DIR(reason);
-	const char *name;
-
-	name = fortify_func_name[umin(func, FORTIFY_FUNC_UNKNOWN)];
-	WARN(1, "%s: detected buffer overflow: %zu byte %s of buffer size %zu\n",
-		 name, size, str_read_write(!write), avail);
-}
-EXPORT_SYMBOL(__fortify_report);
-
-void __fortify_panic(const u8 reason, const size_t avail, const size_t size)
-{
-	__fortify_report(reason, avail, size);
-	BUG();
-}
-EXPORT_SYMBOL(__fortify_panic);
-#endif /* CONFIG_FORTIFY_SOURCE */

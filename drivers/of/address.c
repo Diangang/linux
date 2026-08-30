@@ -393,21 +393,6 @@ static const struct of_bus *of_match_bus(struct device_node *np)
 
 static int of_empty_ranges_quirk(const struct device_node *np)
 {
-	if (IS_ENABLED(CONFIG_PPC)) {
-		/* To save cycles, we cache the result for global "Mac" setting */
-		static int quirk_state = -1;
-
-		/* PA-SEMI sdc DT bug */
-		if (of_device_is_compatible(np, "1682m-sdc"))
-			return true;
-
-		/* Make quirk cached */
-		if (quirk_state < 0)
-			quirk_state =
-				of_machine_is_compatible("Power Macintosh") ||
-				of_machine_is_compatible("MacRISC");
-		return quirk_state;
-	}
 	return false;
 }
 

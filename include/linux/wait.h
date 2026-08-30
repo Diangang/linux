@@ -68,14 +68,7 @@ extern void __init_waitqueue_head(struct wait_queue_head *wq_head, const char *n
 		__init_waitqueue_head((wq_head), #wq_head, &__key);		\
 	} while (0)
 
-#if 0
-# define __WAIT_QUEUE_HEAD_INIT_ONSTACK(name) \
-	({ init_waitqueue_head(&name); name; })
-# define DECLARE_WAIT_QUEUE_HEAD_ONSTACK(name) \
-	struct wait_queue_head name = __WAIT_QUEUE_HEAD_INIT_ONSTACK(name)
-#else
 # define DECLARE_WAIT_QUEUE_HEAD_ONSTACK(name) DECLARE_WAIT_QUEUE_HEAD(name)
-#endif
 
 static inline void init_waitqueue_entry(struct wait_queue_entry *wq_entry, struct task_struct *p)
 {

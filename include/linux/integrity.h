@@ -20,14 +20,9 @@ enum integrity_status {
 	INTEGRITY_UNKNOWN,
 };
 
-#ifdef CONFIG_INTEGRITY
-extern void __init integrity_load_keys(void);
-
-#else
 static inline void integrity_load_keys(void)
 {
 }
-#endif /* CONFIG_INTEGRITY */
 
 /* An inode's attributes for detection of changes */
 struct integrity_inode_attributes {

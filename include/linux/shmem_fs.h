@@ -16,9 +16,6 @@ struct swap_iocb;
 
 /* inode in-kernel data */
 
-#ifdef CONFIG_TMPFS_QUOTA
-#define SHMEM_MAXQUOTAS 2
-#endif
 
 /* Suppress pre-accounting of the entire object size. */
 #define SHMEM_F_NORESERVE	BIT(0)
@@ -52,9 +49,6 @@ struct shmem_inode_info {
 	pgoff_t			fallocend;	/* highest fallocate endindex */
 	unsigned int		fsflags;	/* for FS_IOC_[SG]ETFLAGS */
 	atomic_t		stop_eviction;	/* hold when working on inode */
-#ifdef CONFIG_TMPFS_QUOTA
-	struct dquot __rcu	*i_dquot[MAXQUOTAS];
-#endif
 	struct inode		vfs_inode;
 };
 
@@ -127,12 +121,6 @@ int shmem_writeout(struct folio *folio, struct swap_iocb **plug,
 void shmem_truncate_range(struct inode *inode, loff_t start, uoff_t end);
 int shmem_unuse(unsigned int type);
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-unsigned long shmem_allowable_huge_orders(struct inode *inode,
-				struct vm_area_struct *vma, pgoff_t index,
-				loff_t write_end, bool shmem_huge_force);
-bool shmem_hpage_pmd_enabled(void);
-#else
 static inline unsigned long shmem_allowable_huge_orders(struct inode *inode,
 				struct vm_area_struct *vma, pgoff_t index,
 				loff_t write_end, bool shmem_huge_force)
@@ -144,7 +132,6 @@ static inline bool shmem_hpage_pmd_enabled(void)
 {
 	return false;
 }
-#endif
 
 #ifdef CONFIG_SHMEM
 extern unsigned long shmem_swap_usage(struct vm_area_struct *vma);
@@ -229,9 +216,5 @@ extern bool shmem_charge(struct inode *inode, long pages);
 #define SHMEM_QUOTA_MAX_SPC_LIMIT 0x7fffffffffffffffLL /* 2^63-1 */
 #define SHMEM_QUOTA_MAX_INO_LIMIT 0x7fffffffffffffffLL
 
-#ifdef CONFIG_TMPFS_QUOTA
-extern const struct dquot_operations shmem_quota_operations;
-extern struct quota_format_type shmem_quota_format;
-#endif /* CONFIG_TMPFS_QUOTA */
 
 #endif

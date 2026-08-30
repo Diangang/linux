@@ -144,25 +144,6 @@ struct bdi_writeback {
 
 	struct list_head bdi_node;	/* anchored at bdi->wb_list */
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-	struct percpu_ref refcnt;	/* used only for !root wb's */
-	struct fprop_local_percpu memcg_completions;
-	struct cgroup_subsys_state *memcg_css; /* the associated memcg */
-	struct cgroup_subsys_state *blkcg_css; /* and blkcg */
-	struct list_head memcg_node;	/* anchored at memcg->cgwb_list */
-	struct list_head blkcg_node;	/* anchored at blkcg->cgwb_list */
-	struct list_head b_attached;	/* attached inodes, protected by list_lock */
-	struct list_head offline_node;	/* anchored at offline_cgwbs */
-	struct work_struct switch_work;	/* work used to perform inode switching
-					 * to this wb */
-	struct llist_head switch_wbs_ctxs;	/* queued contexts for
-						 * writeback switching */
-
-	union {
-		struct work_struct release_work;
-		struct rcu_head rcu;
-	};
-#endif
 };
 
 struct backing_dev_info {
@@ -192,11 +173,6 @@ struct backing_dev_info {
 
 	struct bdi_writeback wb;  /* the root writeback info for this bdi */
 	struct list_head wb_list; /* list of all wbs */
-#ifdef CONFIG_CGROUP_WRITEBACK
-	struct radix_tree_root cgwb_tree; /* radix tree of active cgroup wbs */
-	struct mutex cgwb_release_mutex;  /* protect shutdown of wb structs */
-	struct rw_semaphore wb_switch_rwsem; /* no cgwb switch while syncing */
-#endif
 	wait_queue_head_t wb_waitq;
 
 	struct device *dev;
@@ -210,69 +186,6 @@ struct wb_lock_cookie {
 	unsigned long flags;
 };
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-
-/**
- * wb_tryget - try to increment a wb's refcount
- * @wb: bdi_writeback to get
- */
-static inline bool wb_tryget(struct bdi_writeback *wb)
-{
-	if (wb != &wb->bdi->wb)
-		return percpu_ref_tryget(&wb->refcnt);
-	return true;
-}
-
-/**
- * wb_get - increment a wb's refcount
- * @wb: bdi_writeback to get
- */
-static inline void wb_get(struct bdi_writeback *wb)
-{
-	if (wb != &wb->bdi->wb)
-		percpu_ref_get(&wb->refcnt);
-}
-
-/**
- * wb_put_many - decrement a wb's refcount
- * @wb: bdi_writeback to put
- * @nr: number of references to put
- */
-static inline void wb_put_many(struct bdi_writeback *wb, unsigned long nr)
-{
-	if (WARN_ON_ONCE(!wb->bdi)) {
-		/*
-		 * A driver bug might cause a file to be removed before bdi was
-		 * initialized.
-		 */
-		return;
-	}
-
-	if (wb != &wb->bdi->wb)
-		percpu_ref_put_many(&wb->refcnt, nr);
-}
-
-/**
- * wb_put - decrement a wb's refcount
- * @wb: bdi_writeback to put
- */
-static inline void wb_put(struct bdi_writeback *wb)
-{
-	wb_put_many(wb, 1);
-}
-
-/**
- * wb_dying - is a wb dying?
- * @wb: bdi_writeback of interest
- *
- * Returns whether @wb is unlinked and being drained.
- */
-static inline bool wb_dying(struct bdi_writeback *wb)
-{
-	return percpu_ref_is_dying(&wb->refcnt);
-}
-
-#else	/* CONFIG_CGROUP_WRITEBACK */
 
 static inline bool wb_tryget(struct bdi_writeback *wb)
 {
@@ -296,6 +209,5 @@ static inline bool wb_dying(struct bdi_writeback *wb)
 	return false;
 }
 
-#endif	/* CONFIG_CGROUP_WRITEBACK */
 
 #endif	/* __LINUX_BACKING_DEV_DEFS_H */

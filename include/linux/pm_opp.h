@@ -117,111 +117,6 @@ struct dev_pm_opp_key {
 	u32 bw;
 };
 
-#if defined(CONFIG_PM_OPP)
-
-struct opp_table *dev_pm_opp_get_opp_table(struct device *dev);
-struct opp_table *dev_pm_opp_get_opp_table_ref(struct opp_table *opp_table);
-void dev_pm_opp_put_opp_table(struct opp_table *opp_table);
-
-unsigned long dev_pm_opp_get_bw(struct dev_pm_opp *opp, bool peak, int index);
-
-unsigned long dev_pm_opp_get_voltage(struct dev_pm_opp *opp);
-
-int dev_pm_opp_get_supplies(struct dev_pm_opp *opp, struct dev_pm_opp_supply *supplies);
-
-unsigned long dev_pm_opp_get_power(struct dev_pm_opp *opp);
-
-unsigned long dev_pm_opp_get_freq_indexed(struct dev_pm_opp *opp, u32 index);
-
-unsigned int dev_pm_opp_get_level(struct dev_pm_opp *opp);
-
-unsigned int dev_pm_opp_get_required_pstate(struct dev_pm_opp *opp,
-					    unsigned int index);
-
-bool dev_pm_opp_is_turbo(struct dev_pm_opp *opp);
-
-int dev_pm_opp_get_opp_count(struct device *dev);
-unsigned long dev_pm_opp_get_max_clock_latency(struct device *dev);
-unsigned long dev_pm_opp_get_max_volt_latency(struct device *dev);
-unsigned long dev_pm_opp_get_max_transition_latency(struct device *dev);
-unsigned long dev_pm_opp_get_suspend_opp_freq(struct device *dev);
-
-struct dev_pm_opp *dev_pm_opp_find_freq_exact(struct device *dev,
-					      unsigned long freq,
-					      bool available);
-
-struct dev_pm_opp *dev_pm_opp_find_key_exact(struct device *dev,
-					     struct dev_pm_opp_key *key,
-					     bool available);
-
-struct dev_pm_opp *
-dev_pm_opp_find_freq_exact_indexed(struct device *dev, unsigned long freq,
-				   u32 index, bool available);
-
-struct dev_pm_opp *dev_pm_opp_find_freq_floor(struct device *dev,
-					      unsigned long *freq);
-
-struct dev_pm_opp *dev_pm_opp_find_freq_floor_indexed(struct device *dev,
-						      unsigned long *freq, u32 index);
-
-struct dev_pm_opp *dev_pm_opp_find_freq_ceil(struct device *dev,
-					     unsigned long *freq);
-
-struct dev_pm_opp *dev_pm_opp_find_freq_ceil_indexed(struct device *dev,
-						     unsigned long *freq, u32 index);
-
-struct dev_pm_opp *dev_pm_opp_find_level_exact(struct device *dev,
-					       unsigned int level);
-
-struct dev_pm_opp *dev_pm_opp_find_level_ceil(struct device *dev,
-					      unsigned int *level);
-
-struct dev_pm_opp *dev_pm_opp_find_level_floor(struct device *dev,
-					       unsigned int *level);
-
-struct dev_pm_opp *dev_pm_opp_find_bw_ceil(struct device *dev,
-					   unsigned int *bw, int index);
-
-struct dev_pm_opp *dev_pm_opp_find_bw_floor(struct device *dev,
-					   unsigned int *bw, int index);
-
-struct dev_pm_opp *dev_pm_opp_get(struct dev_pm_opp *opp);
-void dev_pm_opp_put(struct dev_pm_opp *opp);
-
-int dev_pm_opp_add_dynamic(struct device *dev, struct dev_pm_opp_data *opp);
-
-void dev_pm_opp_remove(struct device *dev, unsigned long freq);
-void dev_pm_opp_remove_all_dynamic(struct device *dev);
-
-int dev_pm_opp_adjust_voltage(struct device *dev, unsigned long freq,
-			      unsigned long u_volt, unsigned long u_volt_min,
-			      unsigned long u_volt_max);
-
-int dev_pm_opp_enable(struct device *dev, unsigned long freq);
-
-int dev_pm_opp_disable(struct device *dev, unsigned long freq);
-
-int dev_pm_opp_register_notifier(struct device *dev, struct notifier_block *nb);
-int dev_pm_opp_unregister_notifier(struct device *dev, struct notifier_block *nb);
-
-int dev_pm_opp_set_config(struct device *dev, struct dev_pm_opp_config *config);
-int devm_pm_opp_set_config(struct device *dev, struct dev_pm_opp_config *config);
-void dev_pm_opp_clear_config(int token);
-int dev_pm_opp_config_clks_simple(struct device *dev,
-		struct opp_table *opp_table, struct dev_pm_opp *opp, void *data,
-		bool scaling_down);
-
-struct dev_pm_opp *dev_pm_opp_xlate_required_opp(struct opp_table *src_table, struct opp_table *dst_table, struct dev_pm_opp *src_opp);
-int dev_pm_opp_xlate_performance_state(struct opp_table *src_table, struct opp_table *dst_table, unsigned int pstate);
-int dev_pm_opp_set_rate(struct device *dev, unsigned long target_freq);
-int dev_pm_opp_set_opp(struct device *dev, struct dev_pm_opp *opp);
-int dev_pm_opp_set_sharing_cpus(struct device *cpu_dev, const struct cpumask *cpumask);
-int dev_pm_opp_get_sharing_cpus(struct device *cpu_dev, struct cpumask *cpumask);
-void dev_pm_opp_remove_table(struct device *dev);
-void dev_pm_opp_cpumask_remove_table(const struct cpumask *cpumask);
-int dev_pm_opp_sync_regulators(struct device *dev);
-
-#else
 static inline struct opp_table *dev_pm_opp_get_opp_table(struct device *dev)
 {
 	return ERR_PTR(-EOPNOTSUPP);
@@ -492,12 +387,7 @@ static inline int dev_pm_opp_sync_regulators(struct device *dev)
 	return -EOPNOTSUPP;
 }
 
-#endif		/* CONFIG_PM_OPP */
 
-#if defined(CONFIG_CPU_FREQ) && defined(CONFIG_PM_OPP)
-int dev_pm_opp_init_cpufreq_table(struct device *dev, struct cpufreq_frequency_table **table);
-void dev_pm_opp_free_cpufreq_table(struct device *dev, struct cpufreq_frequency_table **table);
-#else
 static inline int dev_pm_opp_init_cpufreq_table(struct device *dev, struct cpufreq_frequency_table **table)
 {
 	return -EINVAL;
@@ -506,31 +396,8 @@ static inline int dev_pm_opp_init_cpufreq_table(struct device *dev, struct cpufr
 static inline void dev_pm_opp_free_cpufreq_table(struct device *dev, struct cpufreq_frequency_table **table)
 {
 }
-#endif
 
 
-#if defined(CONFIG_PM_OPP) && defined(CONFIG_OF)
-int dev_pm_opp_of_add_table(struct device *dev);
-int dev_pm_opp_of_add_table_indexed(struct device *dev, int index);
-int devm_pm_opp_of_add_table_indexed(struct device *dev, int index);
-void dev_pm_opp_of_remove_table(struct device *dev);
-int devm_pm_opp_of_add_table(struct device *dev);
-int dev_pm_opp_of_cpumask_add_table(const struct cpumask *cpumask);
-void dev_pm_opp_of_cpumask_remove_table(const struct cpumask *cpumask);
-int dev_pm_opp_of_get_sharing_cpus(struct device *cpu_dev, struct cpumask *cpumask);
-struct device_node *dev_pm_opp_of_get_opp_desc_node(struct device *dev);
-struct device_node *dev_pm_opp_get_of_node(struct dev_pm_opp *opp);
-int of_get_required_opp_performance_state(struct device_node *np, int index);
-bool dev_pm_opp_of_has_required_opp(struct device *dev);
-int dev_pm_opp_of_find_icc_paths(struct device *dev, struct opp_table *opp_table);
-int dev_pm_opp_of_register_em(struct device *dev, struct cpumask *cpus);
-int dev_pm_opp_calc_power(struct device *dev, unsigned long *uW,
-			  unsigned long *kHz);
-static inline void dev_pm_opp_of_unregister_em(struct device *dev)
-{
-	em_dev_unregister_perf_domain(dev);
-}
-#else
 static inline int dev_pm_opp_of_add_table(struct device *dev)
 {
 	return -EOPNOTSUPP;
@@ -609,7 +476,6 @@ static inline int dev_pm_opp_of_find_icc_paths(struct device *dev, struct opp_ta
 {
 	return -EOPNOTSUPP;
 }
-#endif
 
 /* Scope based cleanup macro for OPP reference counting */
 DEFINE_FREE(put_opp, struct dev_pm_opp *, if (!IS_ERR_OR_NULL(_T)) dev_pm_opp_put(_T))

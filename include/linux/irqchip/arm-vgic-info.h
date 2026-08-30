@@ -40,10 +40,6 @@ struct gic_kvm_info {
 	bool		no_hw_deactivation;
 };
 
-#ifdef CONFIG_KVM
-void vgic_set_kvm_info(const struct gic_kvm_info *info);
-#else
 static inline void vgic_set_kvm_info(const struct gic_kvm_info *info) {}
-#endif
 
 #endif

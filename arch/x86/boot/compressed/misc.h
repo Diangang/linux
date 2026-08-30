@@ -111,23 +111,6 @@ static const int early_serial_base;
 static inline void console_init(void)
 { }
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-struct es_em_ctxt;
-struct insn;
-
-void sev_enable(struct boot_params *bp);
-void snp_check_features(void);
-void sev_es_shutdown_ghcb(void);
-extern bool sev_es_check_ghcb_fault(unsigned long address);
-void snp_set_page_private(unsigned long paddr);
-void snp_set_page_shared(unsigned long paddr);
-void sev_prep_identity_maps(unsigned long top_level_pgt);
-
-enum es_result vc_decode_insn(struct es_em_ctxt *ctxt);
-bool insn_has_rep_prefix(struct insn *insn);
-void sev_insn_decode_init(void);
-bool early_setup_ghcb(void);
-#else
 static inline void snp_check_features(void) { }
 static inline void sev_es_shutdown_ghcb(void) { }
 static inline bool sev_es_check_ghcb_fault(unsigned long address)
@@ -137,7 +120,6 @@ static inline bool sev_es_check_ghcb_fault(unsigned long address)
 static inline void snp_set_page_private(unsigned long paddr) { }
 static inline void snp_set_page_shared(unsigned long paddr) { }
 static inline void sev_prep_identity_maps(unsigned long top_level_pgt) { }
-#endif
 
 /* acpi.c */
 #ifdef CONFIG_ACPI
@@ -146,12 +128,7 @@ acpi_physical_address get_rsdp_addr(void);
 static inline acpi_physical_address get_rsdp_addr(void) { return 0; }
 #endif
 
-#if defined(CONFIG_RANDOMIZE_BASE) && defined(CONFIG_MEMORY_HOTREMOVE) && defined(CONFIG_ACPI)
-extern struct mem_vector immovable_mem[MAX_NUMNODES*2];
-int count_immovable_mem_regions(void);
-#else
 static inline int count_immovable_mem_regions(void) { return 0; }
-#endif
 
 /* ident_map_64.c */
 extern unsigned int __pgtable_l5_enabled, pgdir_shift, ptrs_per_p4d;

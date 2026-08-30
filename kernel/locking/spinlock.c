@@ -22,117 +22,17 @@
 #include <linux/debug_locks.h>
 #include <linux/export.h>
 
-#ifdef CONFIG_MMIOWB
-#ifndef arch_mmiowb_state
-DEFINE_PER_CPU(struct mmiowb_state, __mmiowb_state);
-EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
-#endif
-#endif
 
 /*
  * If lockdep is enabled then we use the non-preemption spin-ops
  * even on CONFIG_PREEMPT, because lockdep assumes that interrupts are
  * not re-enabled during lock-acquire (which the preempt-spin-ops do):
  */
-#if !defined(CONFIG_GENERIC_LOCKBREAK) || defined(CONFIG_DEBUG_LOCK_ALLOC)
 /*
  * The __lock_function inlines are taken from
  * spinlock : include/linux/spinlock_api_smp.h
  * rwlock   : include/linux/rwlock_api_smp.h
  */
-#else
-
-/*
- * Some architectures can relax in favour of the CPU owning the lock.
- */
-#ifndef arch_read_relax
-# define arch_read_relax(l)	cpu_relax()
-#endif
-#ifndef arch_write_relax
-# define arch_write_relax(l)	cpu_relax()
-#endif
-#ifndef arch_spin_relax
-# define arch_spin_relax(l)	cpu_relax()
-#endif
-
-/*
- * We build the __lock_function inlines here. They are too large for
- * inlining all over the place, but here is only one user per function
- * which embeds them into the calling _lock_function below.
- *
- * This could be a long-held lock. We both prepare to spin for a long
- * time (making _this_ CPU preemptible if possible), and we also signal
- * towards that other CPU that it should break the lock ASAP.
- */
-#define BUILD_LOCK_OPS(op, locktype, lock_ctx_op)			\
-static void __lockfunc __raw_##op##_lock(locktype##_t *lock)		\
-	lock_ctx_op(lock)						\
-{									\
-	for (;;) {							\
-		preempt_disable();					\
-		if (likely(do_raw_##op##_trylock(lock)))		\
-			break;						\
-		preempt_enable();					\
-									\
-		arch_##op##_relax(&lock->raw_lock);			\
-	}								\
-}									\
-									\
-static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock) \
-	lock_ctx_op(lock)						\
-{									\
-	unsigned long flags;						\
-									\
-	for (;;) {							\
-		preempt_disable();					\
-		local_irq_save(flags);					\
-		if (likely(do_raw_##op##_trylock(lock)))		\
-			break;						\
-		local_irq_restore(flags);				\
-		preempt_enable();					\
-									\
-		arch_##op##_relax(&lock->raw_lock);			\
-	}								\
-									\
-	return flags;							\
-}									\
-									\
-static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)	\
-	lock_ctx_op(lock)						\
-{									\
-	_raw_##op##_lock_irqsave(lock);					\
-}									\
-									\
-static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
-	lock_ctx_op(lock)						\
-{									\
-	unsigned long flags;						\
-									\
-	/*							*/	\
-	/* Careful: we must exclude softirqs too, hence the	*/	\
-	/* irq-disabling. We use the generic preemption-aware	*/	\
-	/* function:						*/	\
-	/**/								\
-	flags = _raw_##op##_lock_irqsave(lock);				\
-	local_bh_disable();						\
-	local_irq_restore(flags);					\
-}									\
-
-/*
- * Build preemption-friendly versions of the following
- * lock-spinning functions:
- *
- *         __[spin|read|write]_lock()
- *         __[spin|read|write]_lock_irq()
- *         __[spin|read|write]_lock_irqsave()
- *         __[spin|read|write]_lock_bh()
- */
-BUILD_LOCK_OPS(spin, raw_spinlock, __acquires);
-
-BUILD_LOCK_OPS(read, rwlock, __acquires_shared);
-BUILD_LOCK_OPS(write, rwlock, __acquires);
-
-#endif
 
 noinline int __lockfunc _raw_spin_trylock(raw_spinlock_t *lock)
 {

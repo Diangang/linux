@@ -126,11 +126,7 @@ extern const struct consw vga_con;	/* VGA text console */
 extern const struct consw newport_con;	/* SGI Newport console  */
 
 struct screen_info;
-#ifdef CONFIG_VGA_CONSOLE
-void vgacon_register_screen(struct screen_info *si);
-#else
 static inline void vgacon_register_screen(struct screen_info *si) { }
-#endif
 
 int con_is_bound(const struct consw *csw);
 int do_unregister_con_driver(const struct consw *csw);
@@ -462,13 +458,9 @@ struct console {
 	struct irq_work		irq_work;
 };
 
-#if 0
-extern void lockdep_assert_console_list_lock_held(void);
-#else
 static inline void lockdep_assert_console_list_lock_held(void)
 {
 }
-#endif
 
 static inline bool console_srcu_read_lock_is_held(void)
 {

@@ -41,12 +41,6 @@ struct of_imap_item {
 #define OF_IMAP_OLDWORLD_MAC	0x00000001
 #define OF_IMAP_NO_PHANDLE	0x00000002
 
-#if defined(CONFIG_PPC32) && defined(CONFIG_PPC_PMAC)
-extern unsigned int of_irq_workarounds;
-extern struct device_node *of_irq_dflt_pic;
-int of_irq_parse_oldworld(const struct device_node *device, int index,
-			  struct of_phandle_args *out_irq);
-#else /* CONFIG_PPC32 && CONFIG_PPC_PMAC */
 #define of_irq_workarounds (0)
 #define of_irq_dflt_pic (NULL)
 static inline int of_irq_parse_oldworld(const struct device_node *device, int index,
@@ -54,7 +48,6 @@ static inline int of_irq_parse_oldworld(const struct device_node *device, int in
 {
 	return -EINVAL;
 }
-#endif /* CONFIG_PPC32 && CONFIG_PPC_PMAC */
 
 extern int of_irq_parse_raw(const __be32 *addr, struct of_phandle_args *out_irq);
 extern unsigned int irq_create_of_mapping(struct of_phandle_args *irq_data);
@@ -152,7 +145,7 @@ static inline u32 of_msi_xlate(struct device *dev, struct device_node **msi_np, 
 }
 #endif
 
-#if defined(CONFIG_OF_IRQ) || defined(CONFIG_SPARC)
+#if defined(CONFIG_OF_IRQ)
 /*
  * irq_of_parse_and_map() is used by all OF enabled platforms; but SPARC
  * implements it differently.  However, the prototype is the same for all,

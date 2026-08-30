@@ -19,18 +19,7 @@
 # error "Invalid value for CONFIG_PHYSICAL_ALIGN"
 #endif
 
-#if 0
-# define BOOT_HEAP_SIZE		0x400000
-#elif 0
-/*
- * Zstd needs to allocate the ZSTD_DCtx in order to decompress the kernel.
- * The ZSTD_DCtx is ~160KB, so set the heap size to 192KB because it is a
- * round number and to allow some slack.
- */
-# define BOOT_HEAP_SIZE		 0x30000
-#else
 # define BOOT_HEAP_SIZE		 0x10000
-#endif
 
 #ifdef CONFIG_X86_64
 # define BOOT_STACK_SIZE	0x4000

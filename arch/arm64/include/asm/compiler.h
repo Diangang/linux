@@ -32,9 +32,7 @@
 #define ptrauth_strip_user_insn_pac(ptr)	(ptr)
 #endif
 
-#if !defined(CONFIG_BUILTIN_RETURN_ADDRESS_STRIPS_PAC)
 #define __builtin_return_address(val)					\
 	(void *)(ptrauth_strip_kernel_insn_pac((unsigned long)__builtin_return_address(val)))
-#endif
 
 #endif /* __ASM_COMPILER_H */

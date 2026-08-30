@@ -1011,7 +1011,7 @@ static inline void sparse_init_subsection_map(unsigned long pfn,
 }
 #endif /* CONFIG_SPARSEMEM_VMEMMAP */
 
-#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+#if defined CONFIG_COMPACTION
 
 /*
  * in mm/compaction.c
@@ -1712,27 +1712,6 @@ int shmem_add_to_page_cache(struct folio *folio,
 int shmem_inode_acct_blocks(struct inode *inode, long pages);
 bool shmem_recalc_inode(struct inode *inode, long alloced, long swapped);
 
-#ifdef CONFIG_SHRINKER_DEBUG
-static inline __printf(2, 0) int shrinker_debugfs_name_alloc(
-			struct shrinker *shrinker, const char *fmt, va_list ap)
-{
-	shrinker->name = kvasprintf_const(GFP_KERNEL, fmt, ap);
-
-	return shrinker->name ? 0 : -ENOMEM;
-}
-
-static inline void shrinker_debugfs_name_free(struct shrinker *shrinker)
-{
-	kfree_const(shrinker->name);
-	shrinker->name = NULL;
-}
-
-extern int shrinker_debugfs_add(struct shrinker *shrinker);
-extern struct dentry *shrinker_debugfs_detach(struct shrinker *shrinker,
-					      int *debugfs_id);
-extern void shrinker_debugfs_remove(struct dentry *debugfs_entry,
-				    int debugfs_id);
-#else /* CONFIG_SHRINKER_DEBUG */
 static inline int shrinker_debugfs_add(struct shrinker *shrinker)
 {
 	return 0;
@@ -1755,7 +1734,6 @@ static inline void shrinker_debugfs_remove(struct dentry *debugfs_entry,
 					   int debugfs_id)
 {
 }
-#endif /* CONFIG_SHRINKER_DEBUG */
 
 /* Only track the nodes of mappings with shadow entries */
 void workingset_update_node(struct xa_node *node);
@@ -1770,13 +1748,9 @@ extern struct list_lru shadow_nodes;
 /* mremap.c */
 unsigned long move_page_tables(struct pagetable_move_control *pmc);
 
-#ifdef CONFIG_UNACCEPTED_MEMORY
-void accept_page(struct page *page);
-#else /* CONFIG_UNACCEPTED_MEMORY */
 static inline void accept_page(struct page *page)
 {
 }
-#endif /* CONFIG_UNACCEPTED_MEMORY */
 
 /* pagewalk.c */
 int walk_page_range_mm_unsafe(struct mm_struct *mm, unsigned long start,

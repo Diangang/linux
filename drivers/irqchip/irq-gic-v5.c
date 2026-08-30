@@ -1114,38 +1114,9 @@ static void gicv5_set_cpuif_idbits(void)
 	}
 }
 
-#ifdef CONFIG_KVM
-static struct gic_kvm_info gic_v5_kvm_info __initdata;
-
-static void __init gic_of_setup_kvm_info(struct device_node *node)
-{
-	/*
-	 * If we don't have native GICv5 virtualisation support, then
-	 * we also don't have FEAT_GCIE_LEGACY - the architecture
-	 * forbids this combination.
-	 */
-	if (!gicv5_global_data.virt_capable) {
-		pr_info("GIC implementation is not virtualization capable\n");
-		return;
-	}
-
-	gic_v5_kvm_info.type = GIC_V5;
-
-	/* GIC Virtual CPU interface maintenance interrupt */
-	gic_v5_kvm_info.no_maint_irq_mask = false;
-	gic_v5_kvm_info.maint_irq = irq_of_parse_and_map(node, 0);
-	if (!gic_v5_kvm_info.maint_irq) {
-		pr_warn("cannot find GICv5 virtual CPU interface maintenance interrupt\n");
-		return;
-	}
-
-	vgic_set_kvm_info(&gic_v5_kvm_info);
-}
-#else
 static inline void __init gic_of_setup_kvm_info(struct device_node *node)
 {
 }
-#endif // CONFIG_KVM
 
 static int __init gicv5_init_common(struct fwnode_handle *parent_domain)
 {

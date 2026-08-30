@@ -478,28 +478,8 @@ static int nsfs_encode_fh(struct inode *inode, u32 *fh, int *max_len,
 bool is_current_namespace(struct ns_common *ns)
 {
 	switch (ns->ns_type) {
-#ifdef CONFIG_CGROUPS
-	case CLONE_NEWCGROUP:
-		return current_in_namespace(to_cg_ns(ns));
-#endif
 	case CLONE_NEWNS:
 		return current_in_namespace(to_mnt_ns(ns));
-#ifdef CONFIG_PID_NS
-	case CLONE_NEWPID:
-		return current_in_namespace(to_pid_ns(ns));
-#endif
-#ifdef CONFIG_TIME_NS
-	case CLONE_NEWTIME:
-		return current_in_namespace(to_time_ns(ns));
-#endif
-#ifdef CONFIG_USER_NS
-	case CLONE_NEWUSER:
-		return current_in_namespace(to_user_ns(ns));
-#endif
-#ifdef CONFIG_UTS_NS
-	case CLONE_NEWUTS:
-		return current_in_namespace(to_uts_ns(ns));
-#endif
 	default:
 		VFS_WARN_ON_ONCE(true);
 		return false;
@@ -564,44 +544,10 @@ static struct dentry *nsfs_fh_to_dentry(struct super_block *sb, struct fid *fh,
 	}
 
 	switch (ns->ns_type) {
-#ifdef CONFIG_CGROUPS
-	case CLONE_NEWCGROUP:
-		if (!current_in_namespace(to_cg_ns(ns)))
-			owning_ns = to_cg_ns(ns)->user_ns;
-		break;
-#endif
 	case CLONE_NEWNS:
 		if (!current_in_namespace(to_mnt_ns(ns)))
 			owning_ns = to_mnt_ns(ns)->user_ns;
 		break;
-#ifdef CONFIG_PID_NS
-	case CLONE_NEWPID:
-		if (!current_in_namespace(to_pid_ns(ns))) {
-			owning_ns = to_pid_ns(ns)->user_ns;
-		} else if (!READ_ONCE(to_pid_ns(ns)->child_reaper)) {
-			ns->ops->put(ns);
-			return ERR_PTR(-EPERM);
-		}
-		break;
-#endif
-#ifdef CONFIG_TIME_NS
-	case CLONE_NEWTIME:
-		if (!current_in_namespace(to_time_ns(ns)))
-			owning_ns = to_time_ns(ns)->user_ns;
-		break;
-#endif
-#ifdef CONFIG_USER_NS
-	case CLONE_NEWUSER:
-		if (!current_in_namespace(to_user_ns(ns)))
-			owning_ns = to_user_ns(ns);
-		break;
-#endif
-#ifdef CONFIG_UTS_NS
-	case CLONE_NEWUTS:
-		if (!current_in_namespace(to_uts_ns(ns)))
-			owning_ns = to_uts_ns(ns)->user_ns;
-		break;
-#endif
 	default:
 		return ERR_PTR(-EOPNOTSUPP);
 	}

@@ -84,34 +84,6 @@ const char *scsi_host_state_name(enum scsi_host_state state)
 	return name;
 }
 
-#ifdef CONFIG_SCSI_DH
-static const struct {
-	unsigned char	value;
-	char		*name;
-} sdev_access_states[] = {
-	{ SCSI_ACCESS_STATE_OPTIMAL, "active/optimized" },
-	{ SCSI_ACCESS_STATE_ACTIVE, "active/non-optimized" },
-	{ SCSI_ACCESS_STATE_STANDBY, "standby" },
-	{ SCSI_ACCESS_STATE_UNAVAILABLE, "unavailable" },
-	{ SCSI_ACCESS_STATE_LBA, "lba-dependent" },
-	{ SCSI_ACCESS_STATE_OFFLINE, "offline" },
-	{ SCSI_ACCESS_STATE_TRANSITIONING, "transitioning" },
-};
-
-static const char *scsi_access_state_name(unsigned char state)
-{
-	int i;
-	char *name = NULL;
-
-	for (i = 0; i < ARRAY_SIZE(sdev_access_states); i++) {
-		if (sdev_access_states[i].value == state) {
-			name = sdev_access_states[i].name;
-			break;
-		}
-	}
-	return name;
-}
-#endif
 
 static int check_set(unsigned long long *val, char *src)
 {
@@ -596,9 +568,6 @@ const struct bus_type scsi_bus_type = {
 	.probe		= scsi_bus_probe,
 	.remove		= scsi_bus_remove,
 	.shutdown	= scsi_bus_shutdown,
-#ifdef CONFIG_PM
-	.pm		= &scsi_bus_pm_ops,
-#endif
 };
 
 int scsi_sysfs_register(void)
@@ -1102,96 +1071,6 @@ sdev_show_blacklist(struct device *dev, struct device_attribute *attr,
 }
 static DEVICE_ATTR(blacklist, S_IRUGO, sdev_show_blacklist, NULL);
 
-#ifdef CONFIG_SCSI_DH
-static ssize_t
-sdev_show_dh_state(struct device *dev, struct device_attribute *attr,
-		   char *buf)
-{
-	struct scsi_device *sdev = to_scsi_device(dev);
-
-	if (!sdev->handler)
-		return snprintf(buf, 20, "detached\n");
-
-	return snprintf(buf, 20, "%s\n", sdev->handler->name);
-}
-
-static ssize_t
-sdev_store_dh_state(struct device *dev, struct device_attribute *attr,
-		    const char *buf, size_t count)
-{
-	struct scsi_device *sdev = to_scsi_device(dev);
-	int err = -EINVAL;
-
-	if (sdev->sdev_state == SDEV_CANCEL ||
-	    sdev->sdev_state == SDEV_DEL)
-		return -ENODEV;
-
-	if (!sdev->handler) {
-		/*
-		 * Attach to a device handler
-		 */
-		err = scsi_dh_attach(sdev->request_queue, buf);
-	} else if (!strncmp(buf, "activate", 8)) {
-		/*
-		 * Activate a device handler
-		 */
-		if (sdev->handler->activate)
-			err = sdev->handler->activate(sdev, NULL, NULL);
-		else
-			err = 0;
-	} else if (!strncmp(buf, "detach", 6)) {
-		/*
-		 * Detach from a device handler
-		 */
-		sdev_printk(KERN_WARNING, sdev,
-			    "can't detach handler %s.\n",
-			    sdev->handler->name);
-		err = -EINVAL;
-	}
-
-	return err < 0 ? err : count;
-}
-
-static DEVICE_ATTR(dh_state, S_IRUGO | S_IWUSR, sdev_show_dh_state,
-		   sdev_store_dh_state);
-
-static ssize_t
-sdev_show_access_state(struct device *dev,
-		       struct device_attribute *attr,
-		       char *buf)
-{
-	struct scsi_device *sdev = to_scsi_device(dev);
-	unsigned char access_state;
-	const char *access_state_name;
-
-	if (!sdev->handler)
-		return -EINVAL;
-
-	access_state = (sdev->access_state & SCSI_ACCESS_STATE_MASK);
-	access_state_name = scsi_access_state_name(access_state);
-
-	return sprintf(buf, "%s\n",
-		       access_state_name ? access_state_name : "unknown");
-}
-static DEVICE_ATTR(access_state, S_IRUGO, sdev_show_access_state, NULL);
-
-static ssize_t
-sdev_show_preferred_path(struct device *dev,
-			 struct device_attribute *attr,
-			 char *buf)
-{
-	struct scsi_device *sdev = to_scsi_device(dev);
-
-	if (!sdev->handler)
-		return -EINVAL;
-
-	if (sdev->access_state & SCSI_ACCESS_STATE_PREFERRED)
-		return sprintf(buf, "1\n");
-	else
-		return sprintf(buf, "0\n");
-}
-static DEVICE_ATTR(preferred_path, S_IRUGO, sdev_show_preferred_path, NULL);
-#endif
 
 static ssize_t
 sdev_show_queue_ramp_up_period(struct device *dev,
@@ -1327,11 +1206,6 @@ static struct attribute *scsi_sdev_attrs[] = {
 	&dev_attr_queue_type.attr,
 	&dev_attr_wwid.attr,
 	&dev_attr_blacklist.attr,
-#ifdef CONFIG_SCSI_DH
-	&dev_attr_dh_state.attr,
-	&dev_attr_access_state.attr,
-	&dev_attr_preferred_path.attr,
-#endif
 	&dev_attr_queue_ramp_up_period.attr,
 	&dev_attr_cdl_supported.attr,
 	&dev_attr_cdl_enable.attr,

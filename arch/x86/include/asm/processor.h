@@ -633,11 +633,7 @@ void free_init_pages(const char *what, unsigned long begin, unsigned long end);
 extern void free_kernel_image_pages(const char *what, void *begin, void *end);
 
 void default_idle(void);
-#ifdef	CONFIG_XEN
-bool xen_set_default_idle(void);
-#else
 #define xen_set_default_idle 0
-#endif
 
 void __noreturn stop_this_cpu(void *dummy);
 void microcode_check(struct cpuinfo_x86 *prev_info);

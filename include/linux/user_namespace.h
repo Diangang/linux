@@ -50,14 +50,6 @@ enum ucount_type {
 	UCOUNT_MNT_NAMESPACES,
 	UCOUNT_CGROUP_NAMESPACES,
 	UCOUNT_TIME_NAMESPACES,
-#ifdef CONFIG_INOTIFY_USER
-	UCOUNT_INOTIFY_INSTANCES,
-	UCOUNT_INOTIFY_WATCHES,
-#endif
-#ifdef CONFIG_FANOTIFY
-	UCOUNT_FANOTIFY_GROUPS,
-	UCOUNT_FANOTIFY_MARKS,
-#endif
 	UCOUNT_COUNTS,
 };
 
@@ -83,21 +75,8 @@ struct user_namespace {
 	 * in its effective capability set at the child ns creation time. */
 	bool			parent_could_setfcap;
 
-#ifdef CONFIG_KEYS
-	/* List of joinable keyrings in this namespace.  Modification access of
-	 * these pointers is controlled by keyring_sem.  Once
-	 * user_keyring_register is set, it won't be changed, so it can be
-	 * accessed directly with READ_ONCE().
-	 */
-	struct list_head	keyring_name_list;
-	struct key		*user_keyring_register;
-	struct rw_semaphore	keyring_sem;
-#endif
 
 	/* Register of per-UID persistent keyrings for this namespace */
-#ifdef CONFIG_PERSISTENT_KEYRINGS
-	struct key		*persistent_keyring_register;
-#endif
 	struct work_struct	work;
 #ifdef CONFIG_SYSCTL
 	struct ctl_table_set	set;
@@ -164,40 +143,6 @@ static inline struct user_namespace *to_user_ns(struct ns_common *ns)
 	return container_of(ns, struct user_namespace, ns);
 }
 
-#ifdef CONFIG_USER_NS
-
-static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
-{
-	if (ns)
-		ns_ref_inc(ns);
-	return ns;
-}
-
-extern int create_user_ns(struct cred *new);
-extern int unshare_userns(unsigned long unshare_flags, struct cred **new_cred);
-extern void __put_user_ns(struct user_namespace *ns);
-
-static inline void put_user_ns(struct user_namespace *ns)
-{
-	if (ns && ns_ref_put(ns))
-		__put_user_ns(ns);
-}
-
-struct seq_operations;
-extern const struct seq_operations proc_uid_seq_operations;
-extern const struct seq_operations proc_gid_seq_operations;
-extern const struct seq_operations proc_projid_seq_operations;
-extern ssize_t proc_uid_map_write(struct file *, const char __user *, size_t, loff_t *);
-extern ssize_t proc_gid_map_write(struct file *, const char __user *, size_t, loff_t *);
-extern ssize_t proc_projid_map_write(struct file *, const char __user *, size_t, loff_t *);
-extern ssize_t proc_setgroups_write(struct file *, const char __user *, size_t, loff_t *);
-extern int proc_setgroups_show(struct seq_file *m, void *v);
-extern bool userns_may_setgroups(const struct user_namespace *ns);
-extern bool in_userns(const struct user_namespace *ancestor,
-		       const struct user_namespace *child);
-extern bool current_in_userns(const struct user_namespace *target_ns);
-struct ns_common *ns_get_owner(struct ns_common *ns);
-#else
 
 static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
 {
@@ -241,6 +186,5 @@ static inline struct ns_common *ns_get_owner(struct ns_common *ns)
 {
 	return ERR_PTR(-EPERM);
 }
-#endif
 
 #endif /* _LINUX_USER_H */

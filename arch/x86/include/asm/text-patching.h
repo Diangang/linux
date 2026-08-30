@@ -131,7 +131,6 @@ extern int after_bootmem;
 extern __ro_after_init struct mm_struct *text_poke_mm;
 extern __ro_after_init unsigned long text_poke_mm_addr;
 
-#ifndef CONFIG_UML_X86
 static __always_inline
 void int3_emulate_jmp(struct pt_regs *regs, unsigned long ip)
 {
@@ -213,6 +212,5 @@ void int3_emulate_jcc(struct pt_regs *regs, u8 cc, unsigned long ip, unsigned lo
 	int3_emulate_jmp(regs, ip);
 }
 
-#endif /* !CONFIG_UML_X86 */
 
 #endif /* _ASM_X86_TEXT_PATCHING_H */

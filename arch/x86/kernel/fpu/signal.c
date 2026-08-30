@@ -174,11 +174,7 @@ bool copy_fpstate_to_sigframe(void __user *buf, void __user *buf_fx, int size, u
 {
 	struct task_struct *tsk = current;
 	struct fpstate *fpstate = x86_task_fpu(tsk)->fpstate;
-	bool ia32_fxstate = (buf != buf_fx);
 	int ret;
-
-	ia32_fxstate &= (0 ||
-			 IS_ENABLED(CONFIG_IA32_EMULATION));
 
 	if (!static_cpu_has(X86_FEATURE_FPU)) {
 		struct user_i387_ia32_struct fp;
@@ -224,10 +220,10 @@ retry:
 	}
 
 	/* Save the fsave header for the 32-bit frames. */
-	if ((ia32_fxstate || !use_fxsr()) && !save_fsave_header(tsk, buf))
+	if (!use_fxsr() && !save_fsave_header(tsk, buf))
 		return false;
 
-	if (use_fxsr() && !save_xstate_epilog(buf_fx, ia32_fxstate, fpstate))
+	if (use_fxsr() && !save_xstate_epilog(buf_fx, false, fpstate))
 		return false;
 
 	return true;
@@ -442,8 +438,6 @@ static inline unsigned int xstate_sigframe_size(struct fpstate *fpstate)
 bool fpu__restore_sig(void __user *buf, int ia32_frame)
 {
 	struct fpu *fpu = x86_task_fpu(current);
-	void __user *buf_fx = buf;
-	bool ia32_fxstate = false;
 	bool success = false;
 	unsigned int size;
 
@@ -454,19 +448,6 @@ bool fpu__restore_sig(void __user *buf, int ia32_frame)
 
 	size = xstate_sigframe_size(fpu->fpstate);
 
-	ia32_frame &= (0 ||
-		       IS_ENABLED(CONFIG_IA32_EMULATION));
-
-	/*
-	 * Only FXSR enabled systems need the FX state quirk.
-	 * FRSTOR does not need it and can use the fast path.
-	 */
-	if (ia32_frame && use_fxsr()) {
-		buf_fx = buf + sizeof(struct fregs_state);
-		size += sizeof(struct fregs_state);
-		ia32_fxstate = true;
-	}
-
 	if (!access_ok(buf, size))
 		goto out;
 
@@ -475,7 +456,7 @@ bool fpu__restore_sig(void __user *buf, int ia32_frame)
 					   sizeof(struct user_i387_ia32_struct),
 					   NULL, buf);
 	} else {
-		success = __fpu_restore_sig(buf, buf_fx, ia32_fxstate);
+		success = __fpu_restore_sig(buf, buf, false);
 	}
 
 out:
@@ -508,17 +489,5 @@ unsigned long __init fpu__get_fpstate_size(void)
 	if (use_xsave())
 		ret += FP_XSTATE_MAGIC2_SIZE;
 
-	/*
-	 * This space is needed on (most) 32-bit kernels, or when a 32-bit
-	 * app is running on a 64-bit kernel. To keep things simple, just
-	 * assume the worst case and always include space for 'freg_state',
-	 * even for 64-bit apps on 64-bit kernels. This wastes a bit of
-	 * space, but keeps the code simple.
-	 */
-	if ((IS_ENABLED(CONFIG_IA32_EMULATION) ||
-	     0) && use_fxsr())
-		ret += sizeof(struct fregs_state);
-
 	return ret;
 }
-

@@ -5,28 +5,9 @@
 
 #include <linux/bug.h>
 
-#ifdef CONFIG_HARDENED_USERCOPY
-#include <linux/jump_label.h>
-extern void __check_object_size(const void *ptr, unsigned long n,
-					bool to_user);
-
-DECLARE_STATIC_KEY_MAYBE(CONFIG_HARDENED_USERCOPY_DEFAULT_ON,
-			   validate_usercopy_range);
-
-static __always_inline void check_object_size(const void *ptr, unsigned long n,
-					      bool to_user)
-{
-	if (!__builtin_constant_p(n) &&
-	    static_branch_maybe(CONFIG_HARDENED_USERCOPY_DEFAULT_ON,
-				&validate_usercopy_range)) {
-		__check_object_size(ptr, n, to_user);
-	}
-}
-#else
 static inline void check_object_size(const void *ptr, unsigned long n,
 				     bool to_user)
 { }
-#endif /* CONFIG_HARDENED_USERCOPY */
 
 extern void __compiletime_error("copy source size is too small")
 __bad_copy_from(void);

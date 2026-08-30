@@ -18,7 +18,7 @@
  * some fast and compact auxiliary data.
  */
 
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 #define LIST_BL_LOCKMASK	1UL
 #else
 #define LIST_BL_LOCKMASK	0UL

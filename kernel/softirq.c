@@ -608,7 +608,7 @@ void tasklet_init(struct tasklet_struct *t,
 }
 EXPORT_SYMBOL(tasklet_init);
 
-#if defined(CONFIG_SMP) || 0
+#if defined(CONFIG_SMP)
 /*
  * Do not use in new code. Waiting for tasklets from atomic contexts is
  * error prone and should be avoided.
@@ -643,7 +643,7 @@ void tasklet_kill(struct tasklet_struct *t)
 }
 EXPORT_SYMBOL(tasklet_kill);
 
-#if defined(CONFIG_SMP) || 0
+#if defined(CONFIG_SMP)
 void tasklet_unlock(struct tasklet_struct *t)
 {
 	clear_and_wake_up_bit(TASKLET_STATE_RUN, &t->state);

@@ -187,9 +187,6 @@ struct gendisk {
 	struct disk_events *ev;
 
 
-#if IS_ENABLED(CONFIG_CDROM)
-	struct cdrom_device_info *cdi;
-#endif
 	int node_id;
 	struct badblocks *bb;
 	struct lockdep_map lockdep_map;
@@ -242,26 +239,14 @@ static inline bool disk_has_partscan(struct gendisk *disk)
 #define disk_to_dev(disk) \
 	(&((disk)->part0->bd_device))
 
-#if IS_REACHABLE(CONFIG_CDROM)
-#define disk_to_cdi(disk)	((disk)->cdi)
-#else
 #define disk_to_cdi(disk)	NULL
-#endif
 
 static inline dev_t disk_devt(struct gendisk *disk)
 {
 	return MKDEV(disk->major, disk->first_minor);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-/*
- * We should strive for 1 << (PAGE_SHIFT + MAX_PAGECACHE_ORDER)
- * however we constrain this to what we can validate and test.
- */
-#define BLK_MAX_BLOCK_SIZE      SZ_64K
-#else
 #define BLK_MAX_BLOCK_SIZE      PAGE_SIZE
-#endif
 
 
 /* blk_validate_limits() validates bsize, so drivers don't usually need to */
@@ -507,10 +492,6 @@ struct request_queue {
 
 	struct queue_limits	limits;
 
-#ifdef CONFIG_PM
-	struct device		*dev;
-	enum rpm_status		rpm_status;
-#endif
 
 	/*
 	 * Number of contexts that have called blk_set_pm_only(). If this
@@ -542,12 +523,6 @@ struct request_queue {
 	struct blk_mq_tags	*sched_shared_tags;
 
 	struct list_head	icq_list;
-#ifdef CONFIG_BLK_CGROUP
-	DECLARE_BITMAP		(blkcg_pols, BLKCG_MAX_POLS);
-	struct blkcg_gq		*root_blkg;
-	struct list_head	blkg_list;
-	struct mutex		blkcg_mutex;
-#endif
 
 	int			node;
 
@@ -555,9 +530,6 @@ struct request_queue {
 	struct list_head	requeue_list;
 	struct delayed_work	requeue_work;
 
-#ifdef CONFIG_BLK_DEV_IO_TRACE
-	struct blk_trace __rcu	*blk_trace;
-#endif
 	/*
 	 * for flush operations
 	 */
@@ -592,16 +564,6 @@ struct request_queue {
 	int			mq_freeze_depth;
 
 	struct rcu_head		rcu_head;
-#if 0
-	struct task_struct	*mq_freeze_owner;
-	int			mq_freeze_owner_depth;
-	/*
-	 * Records disk & queue state in current context, used in unfreeze
-	 * queue
-	 */
-	bool			mq_freeze_disk_dead;
-	bool			mq_freeze_queue_dying;
-#endif
 	wait_queue_head_t	mq_freeze_wq;
 	/*
 	 * Protect concurrent access to q_usage_counter by
@@ -692,22 +654,14 @@ static inline bool queue_is_mq(struct request_queue *q)
 	return q->mq_ops;
 }
 
-#ifdef CONFIG_PM
-static inline enum rpm_status queue_rpm_status(struct request_queue *q)
-{
-	return q->rpm_status;
-}
-#else
 static inline enum rpm_status queue_rpm_status(struct request_queue *q)
 {
 	return RPM_ACTIVE;
 }
-#endif
 
 static inline bool blk_queue_is_zoned(struct request_queue *q)
 {
-	return IS_ENABLED(CONFIG_BLK_DEV_ZONED) &&
-		(q->limits.features & BLK_FEAT_ZONED);
+	return false;
 }
 
 static inline unsigned int disk_zone_no(struct gendisk *disk, sector_t sector)
@@ -1353,10 +1307,7 @@ static inline bool bdev_synchronous(struct block_device *bdev)
 
 static inline bool bdev_has_integrity_csum(struct block_device *bdev)
 {
-	struct queue_limits *lim = bdev_limits(bdev);
-
-	return IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY) &&
-		lim->integrity.csum_type != BLK_INTEGRITY_CSUM_NONE;
+	return false;
 }
 
 static inline bool bdev_stable_writes(struct block_device *bdev)
@@ -1550,12 +1501,7 @@ struct block_device_operations {
 	int (*alternative_gpt_sector)(struct gendisk *disk, sector_t *sector);
 };
 
-#ifdef CONFIG_COMPAT
-extern int blkdev_compat_ptr_ioctl(struct block_device *, blk_mode_t,
-				      unsigned int, unsigned long);
-#else
 #define blkdev_compat_ptr_ioctl NULL
-#endif
 
 static inline void blk_wake_io_task(struct task_struct *waiter)
 {

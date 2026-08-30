@@ -136,13 +136,9 @@ extern void exit_mm_release(struct task_struct *, struct mm_struct *);
 /* Remove the current tasks stale references to the old mm_struct on exec() */
 extern void exec_mm_release(struct task_struct *, struct mm_struct *);
 
-#ifdef CONFIG_MEMCG
-extern void mm_update_next_owner(struct mm_struct *mm);
-#else
 static inline void mm_update_next_owner(struct mm_struct *mm)
 {
 }
-#endif /* CONFIG_MEMCG */
 
 #ifdef CONFIG_MMU
 #ifndef arch_get_mmap_end
@@ -242,17 +238,10 @@ static inline gfp_t current_gfp_context(gfp_t flags)
 	return flags;
 }
 
-#if 0
-extern void __fs_reclaim_acquire(unsigned long ip);
-extern void __fs_reclaim_release(unsigned long ip);
-extern void fs_reclaim_acquire(gfp_t gfp_mask);
-extern void fs_reclaim_release(gfp_t gfp_mask);
-#else
 static inline void __fs_reclaim_acquire(unsigned long ip) { }
 static inline void __fs_reclaim_release(unsigned long ip) { }
 static inline void fs_reclaim_acquire(gfp_t gfp_mask) { }
 static inline void fs_reclaim_release(gfp_t gfp_mask) { }
-#endif
 
 /* Any memory-allocation retry loop should use
  * memalloc_retry_wait(), and pass the flags for the most
@@ -447,96 +436,12 @@ static inline void memalloc_pin_restore(unsigned int flags)
 	memalloc_flags_restore(flags);
 }
 
-#ifdef CONFIG_MEMCG
-DECLARE_PER_CPU(struct mem_cgroup *, int_active_memcg);
-/**
- * set_active_memcg - Starts the remote memcg charging scope.
- * @memcg: memcg to charge.
- *
- * This function marks the beginning of the remote memcg charging scope. All the
- * __GFP_ACCOUNT allocations till the end of the scope will be charged to the
- * given memcg.
- *
- * Please, make sure that caller has a reference to the passed memcg structure,
- * so its lifetime is guaranteed to exceed the scope between two
- * set_active_memcg() calls.
- *
- * NOTE: This function can nest. Users must save the return value and
- * reset the previous value after their own charging scope is over.
- */
-static inline struct mem_cgroup *
-set_active_memcg(struct mem_cgroup *memcg)
-{
-	struct mem_cgroup *old;
-
-	if (!in_task()) {
-		old = this_cpu_read(int_active_memcg);
-		this_cpu_write(int_active_memcg, memcg);
-	} else {
-		old = current->active_memcg;
-		current->active_memcg = memcg;
-	}
-
-	return old;
-}
-#else
 static inline struct mem_cgroup *
 set_active_memcg(struct mem_cgroup *memcg)
 {
 	return NULL;
 }
-#endif
 
-#ifdef CONFIG_MEMBARRIER
-enum {
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED_READY		= (1U << 0),
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED			= (1U << 1),
-	MEMBARRIER_STATE_GLOBAL_EXPEDITED_READY			= (1U << 2),
-	MEMBARRIER_STATE_GLOBAL_EXPEDITED			= (1U << 3),
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED_SYNC_CORE_READY	= (1U << 4),
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED_SYNC_CORE		= (1U << 5),
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED_RSEQ_READY		= (1U << 6),
-	MEMBARRIER_STATE_PRIVATE_EXPEDITED_RSEQ			= (1U << 7),
-};
-
-enum {
-	MEMBARRIER_FLAG_SYNC_CORE	= (1U << 0),
-	MEMBARRIER_FLAG_RSEQ		= (1U << 1),
-};
-
-#ifdef CONFIG_ARCH_HAS_MEMBARRIER_CALLBACKS
-#include <asm/membarrier.h>
-#endif
-
-static inline void membarrier_mm_sync_core_before_usermode(struct mm_struct *mm)
-{
-	/*
-	 * The atomic_read() below prevents CSE. The following should
-	 * help the compiler generate more efficient code on architectures
-	 * where sync_core_before_usermode() is a no-op.
-	 */
-	if (!IS_ENABLED(CONFIG_ARCH_HAS_SYNC_CORE_BEFORE_USERMODE))
-		return;
-	if (current->mm != mm)
-		return;
-	if (likely(!(atomic_read(&mm->membarrier_state) &
-		     MEMBARRIER_STATE_PRIVATE_EXPEDITED_SYNC_CORE)))
-		return;
-	sync_core_before_usermode();
-}
-
-extern void membarrier_exec_mmap(struct mm_struct *mm);
-
-extern void membarrier_update_current_mm(struct mm_struct *next_mm);
-
-#else
-#ifdef CONFIG_ARCH_HAS_MEMBARRIER_CALLBACKS
-static inline void membarrier_arch_switch_mm(struct mm_struct *prev,
-					     struct mm_struct *next,
-					     struct task_struct *tsk)
-{
-}
-#endif
 static inline void membarrier_exec_mmap(struct mm_struct *mm)
 {
 }
@@ -546,6 +451,5 @@ static inline void membarrier_mm_sync_core_before_usermode(struct mm_struct *mm)
 static inline void membarrier_update_current_mm(struct mm_struct *next_mm)
 {
 }
-#endif
 
 #endif /* _LINUX_SCHED_MM_H */

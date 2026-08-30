@@ -1788,13 +1788,8 @@ static inline int pci_enable_link_state_locked(struct pci_dev *pdev, int state)
 { return 0; }
 static inline void pcie_no_aspm(void) { }
 
-#ifdef CONFIG_HOTPLUG_PCI
-void pci_hp_ignore_link_change(struct pci_dev *pdev);
-void pci_hp_unignore_link_change(struct pci_dev *pdev);
-#else
 static inline void pci_hp_ignore_link_change(struct pci_dev *pdev) { }
 static inline void pci_hp_unignore_link_change(struct pci_dev *pdev) { }
-#endif
 
 static inline bool pci_aer_available(void) { return false; }
 
@@ -2207,22 +2202,10 @@ enum pci_fixup_pass {
  * handle such renamings when referenced from inline asm. To work
  * around this, create global C stubs for these cases.
  */
-#if 0
-#define __DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
-				  class_shift, hook, stub)		\
-	void stub(struct pci_dev *dev);					\
-	void stub(struct pci_dev *dev)					\
-	{ 								\
-		hook(dev); 						\
-	}								\
-	___DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
-				  class_shift, stub)
-#else
 #define __DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
 				  class_shift, hook, stub)		\
 	___DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
 				  class_shift, hook)
-#endif
 
 #define DECLARE_PCI_FIXUP_SECTION(sec, name, vendor, device, class,	\
 				  class_shift, hook)			\
@@ -2592,12 +2575,6 @@ bool arch_pci_dev_is_removable(struct pci_dev *pdev);
 static inline bool arch_pci_dev_is_removable(struct pci_dev *pdev) { return false; }
 #endif
 
-#ifdef CONFIG_EEH
-static inline struct eeh_dev *pci_dev_to_eeh_dev(struct pci_dev *pdev)
-{
-	return pdev->dev.archdata.edev;
-}
-#endif
 
 void pci_add_dma_alias(struct pci_dev *dev, u8 devfn_from, unsigned nr_devfns);
 bool pci_devs_are_dma_aliases(struct pci_dev *dev1, struct pci_dev *dev2);
@@ -2652,9 +2629,6 @@ static inline bool pci_is_thunderbolt_attached(struct pci_dev *pdev)
 	return false;
 }
 
-#if defined(CONFIG_EEH) || defined(CONFIG_S390)
-void pci_uevent_ers(struct pci_dev *pdev, enum  pci_ers_result err_type);
-#endif
 
 #include <linux/dma-mapping.h>
 

@@ -57,10 +57,6 @@ extern char __noinstr_text_start[], __noinstr_text_end[];
 extern __visible const void __nosave_begin, __nosave_end;
 
 /* Function descriptor handling (if any).  Override in asm/sections.h */
-#ifdef CONFIG_HAVE_FUNCTION_DESCRIPTORS
-void *dereference_function_descriptor(void *ptr);
-void *dereference_kernel_function_descriptor(void *ptr);
-#else
 #define dereference_function_descriptor(p) ((void *)(p))
 #define dereference_kernel_function_descriptor(p) ((void *)(p))
 
@@ -68,11 +64,10 @@ void *dereference_kernel_function_descriptor(void *ptr);
 typedef struct {
 	unsigned long addr;
 } func_desc_t;
-#endif
 
 static inline bool have_function_descriptors(void)
 {
-	return IS_ENABLED(CONFIG_HAVE_FUNCTION_DESCRIPTORS);
+	return false;
 }
 
 /**

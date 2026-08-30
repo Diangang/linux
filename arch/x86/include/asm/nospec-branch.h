@@ -56,21 +56,10 @@
 #define RET_DEPTH_INIT_FROM_CALL	0xfc00000000000000ULL
 #define RET_DEPTH_CREDIT		0xffffffffffffffffULL
 
-#if 0
-# define CALL_THUNKS_DEBUG_INC_CALLS				\
-	incq	PER_CPU_VAR(__x86_call_count);
-# define CALL_THUNKS_DEBUG_INC_RETS				\
-	incq	PER_CPU_VAR(__x86_ret_count);
-# define CALL_THUNKS_DEBUG_INC_STUFFS				\
-	incq	PER_CPU_VAR(__x86_stuffs_count);
-# define CALL_THUNKS_DEBUG_INC_CTXSW				\
-	incq	PER_CPU_VAR(__x86_ctxsw_count);
-#else
 # define CALL_THUNKS_DEBUG_INC_CALLS
 # define CALL_THUNKS_DEBUG_INC_RETS
 # define CALL_THUNKS_DEBUG_INC_STUFFS
 # define CALL_THUNKS_DEBUG_INC_CTXSW
-#endif
 
 #if defined(CONFIG_MITIGATION_CALL_DEPTH_TRACKING) && !defined(COMPILE_OFFSETS)
 
@@ -406,12 +395,6 @@ extern void call_depth_return_thunk(void);
 
 DECLARE_PER_CPU_CACHE_HOT(u64, __x86_call_depth);
 
-#if 0
-DECLARE_PER_CPU(u64, __x86_call_count);
-DECLARE_PER_CPU(u64, __x86_ret_count);
-DECLARE_PER_CPU(u64, __x86_stuffs_count);
-DECLARE_PER_CPU(u64, __x86_ctxsw_count);
-#endif
 #else /* !CONFIG_MITIGATION_CALL_DEPTH_TRACKING */
 
 static inline void call_depth_return_thunk(void) {}

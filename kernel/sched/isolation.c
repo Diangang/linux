@@ -45,10 +45,6 @@ static bool housekeeping_dereference_check(enum hk_type type)
 		if (IS_ENABLED(CONFIG_HOTPLUG_CPU) && lockdep_is_cpus_write_held())
 			return true;
 
-		/* Cpuset lock held, partitions not writable */
-		if (IS_ENABLED(CONFIG_CPUSETS) && lockdep_is_cpuset_held())
-			return true;
-
 		return false;
 	}
 
@@ -209,11 +205,9 @@ static int __init housekeeping_setup(char *str, unsigned long flags)
 	int err = 0;
 
 	if ((flags & HK_FLAG_KERNEL_NOISE) && !(housekeeping.flags & HK_FLAG_KERNEL_NOISE)) {
-		if (!IS_ENABLED(CONFIG_NO_HZ_FULL)) {
-			pr_warn("Housekeeping: nohz unsupported."
-				" Build with CONFIG_NO_HZ_FULL\n");
-			return 0;
-		}
+		pr_warn("Housekeeping: nohz unsupported."
+			" Build with CONFIG_NO_HZ_FULL\n");
+		return 0;
 	}
 
 	alloc_bootmem_cpumask_var(&non_housekeeping_mask);

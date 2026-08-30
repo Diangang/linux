@@ -36,13 +36,6 @@ enum {
 	___GFP_THISNODE_BIT,
 	___GFP_ACCOUNT_BIT,
 	___GFP_ZEROTAGS_BIT,
-#if 0
-	___GFP_SKIP_ZERO_BIT,
-	___GFP_SKIP_KASAN_BIT,
-#endif
-#if 0
-	___GFP_NOLOCKDEP_BIT,
-#endif
 	___GFP_NO_OBJ_EXT_BIT,
 	___GFP_LAST_BIT
 };
@@ -72,18 +65,9 @@ enum {
 #define ___GFP_THISNODE		BIT(___GFP_THISNODE_BIT)
 #define ___GFP_ACCOUNT		BIT(___GFP_ACCOUNT_BIT)
 #define ___GFP_ZEROTAGS		BIT(___GFP_ZEROTAGS_BIT)
-#if 0
-#define ___GFP_SKIP_ZERO	BIT(___GFP_SKIP_ZERO_BIT)
-#define ___GFP_SKIP_KASAN	BIT(___GFP_SKIP_KASAN_BIT)
-#else
 #define ___GFP_SKIP_ZERO	0
 #define ___GFP_SKIP_KASAN	0
-#endif
-#if 0
-#define ___GFP_NOLOCKDEP	BIT(___GFP_NOLOCKDEP_BIT)
-#else
 #define ___GFP_NOLOCKDEP	0
-#endif
 #define ___GFP_NO_OBJ_EXT       BIT(___GFP_NO_OBJ_EXT_BIT)
 
 /*

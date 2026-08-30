@@ -9,11 +9,7 @@
 
 #include <linux/args.h>
 
-#if 0
-#define __pick_unrolled(x, y)		_Pragma(#x)
-#else
 #define __pick_unrolled(x, y)		_Pragma(#y)
-#endif
 
 /**
  * unrolled - loop attributes to ask the compiler to unroll it

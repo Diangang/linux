@@ -15,8 +15,6 @@
 #   |
 #   +--< $(KBUILD_VMLINUX_LIBS)
 #   |    +--< lib/lib.a + more
-#   |
-#   +-< ${kallsymso} (see description in KALLSYMS section)
 #
 # vmlinux version (uname -v) cannot be updated during normal
 # descending-into-subdirs phase since we do not yet know if we need to
@@ -86,51 +84,10 @@ vmlinux_link()
 
 	ldflags="${ldflags} ${wl}--script=${objtree}/${KBUILD_LDS}"
 
-	# The kallsyms linking does not need debug symbols included.
-	if [ -n "${strip_debug}" ] ; then
-		ldflags="${ldflags} ${wl}--strip-debug"
-	fi
-
-	if [ -n "${generate_map}" ];  then
-		ldflags="${ldflags} ${wl}-Map=vmlinux.map"
-	fi
-
 	${ld} ${ldflags} -o ${output}					\
 		${wl}--whole-archive ${objs} ${wl}--no-whole-archive	\
 		${wl}--start-group ${libs} ${wl}--end-group		\
-		${kallsymso} ${arch_vmlinux_o} ${ldlibs}
-}
-
-# Create ${2}.o file with all symbols from the ${1} object file
-kallsyms()
-{
-	local kallsymopt;
-
-	if is_enabled CONFIG_KALLSYMS_ALL; then
-		kallsymopt="${kallsymopt} --all-symbols"
-	fi
-
-	if is_enabled CONFIG_64BIT || is_enabled CONFIG_RELOCATABLE; then
-		kallsymopt="${kallsymopt} --pc-relative"
-	fi
-
-	info KSYMS "${2}.S"
-	scripts/kallsyms ${kallsymopt} "${1}" > "${2}.S"
-
-	info AS "${2}.o"
-	${CC} ${NOSTDINC_FLAGS} ${LINUXINCLUDE} ${KBUILD_CPPFLAGS} \
-	      ${KBUILD_AFLAGS} ${KBUILD_AFLAGS_KERNEL} -c -o "${2}.o" "${2}.S"
-
-	kallsymso=${2}.o
-}
-
-# Perform kallsyms for the given temporary vmlinux.
-sysmap_and_kallsyms()
-{
-	mksysmap "${1}" "${1}.syms"
-	kallsyms "${1}.syms" "${1}.kallsyms"
-
-	kallsyms_sysmap=${1}.syms
+		${arch_vmlinux_o} ${ldlibs}
 }
 
 # Create map file with all symbols from ${1}
@@ -172,65 +129,6 @@ ${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init init/version-timestamp.o
 
 arch_vmlinux_o=
 
-kallsymso=
-strip_debug=
-generate_map=
-
-if is_enabled CONFIG_KALLSYMS; then
-	true > .tmp_vmlinux0.syms
-	kallsyms .tmp_vmlinux0.syms .tmp_vmlinux0.kallsyms
-fi
-
-if is_enabled CONFIG_KALLSYMS; then
-	# The kallsyms linking does not need debug symbols.
-	strip_debug=1
-	vmlinux_link .tmp_vmlinux1
-fi
-
-if is_enabled CONFIG_KALLSYMS; then
-
-	# kallsyms support
-	# Generate section listing all symbols and add it into vmlinux
-	# It's a four step process:
-	# 0)  Generate a dummy __kallsyms with empty symbol list.
-	# 1)  Link .tmp_vmlinux1.kallsyms so it has all symbols and sections,
-	#     with a dummy __kallsyms.
-	#     Running kallsyms on that gives us .tmp_vmlinux1.kallsyms.o with
-	#     the right size
-	# 2)  Link .tmp_vmlinux2.kallsyms so it now has a __kallsyms section of
-	#     the right size, but due to the added section, some
-	#     addresses have shifted.
-	#     From here, we generate a correct .tmp_vmlinux2.kallsyms.o
-	# 3)  That link may have expanded the kernel image enough that
-	#     more linker branch stubs / trampolines had to be added, which
-	#     introduces new names, which further expands kallsyms. Do another
-	#     pass if that is the case. In theory it's possible this results
-	#     in even more stubs, but unlikely.
-	#     KALLSYMS_EXTRA_PASS=1 may also used to debug or work around
-	#     other bugs.
-	# 4)  The correct ${kallsymso} is linked into the final vmlinux.
-	#
-	# a)  Verify that the System.map from vmlinux matches the map from
-	#     ${kallsymso}.
-
-	# The kallsyms linking does not need debug symbols included.
-	strip_debug=1
-
-	sysmap_and_kallsyms .tmp_vmlinux1
-	size1=$(${CONFIG_SHELL} "${srctree}/scripts/file-size.sh" ${kallsymso})
-
-	vmlinux_link .tmp_vmlinux2
-	sysmap_and_kallsyms .tmp_vmlinux2
-	size2=$(${CONFIG_SHELL} "${srctree}/scripts/file-size.sh" ${kallsymso})
-
-	if [ $size1 -ne $size2 ] || [ -n "${KALLSYMS_EXTRA_PASS}" ]; then
-		vmlinux_link .tmp_vmlinux3
-		sysmap_and_kallsyms .tmp_vmlinux3
-	fi
-fi
-
-strip_debug=
-
 vmlinux_link "${VMLINUX}"
 
 mksysmap "${VMLINUX}" System.map
@@ -239,15 +137,6 @@ if is_enabled CONFIG_BUILDTIME_TABLE_SORT; then
 	info SORTTAB "${VMLINUX}"
 	if ! sorttable "${VMLINUX}"; then
 		echo >&2 Failed to sort kernel tables
-		exit 1
-	fi
-fi
-
-# step a (see comment above)
-if is_enabled CONFIG_KALLSYMS; then
-	if ! cmp -s System.map "${kallsyms_sysmap}"; then
-		echo >&2 Inconsistent kallsyms data
-		echo >&2 'Try "make KALLSYMS_EXTRA_PASS=1" as a workaround'
 		exit 1
 	fi
 fi

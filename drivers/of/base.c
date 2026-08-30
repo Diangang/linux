@@ -85,7 +85,6 @@ static bool __of_node_is_type(const struct device_node *np, const char *type)
 }
 
 #define EXCLUDED_DEFAULT_CELLS_PLATFORMS ( \
-	IS_ENABLED(CONFIG_SPARC) || \
 	of_find_compatible_node(NULL, NULL, "coreboot") \
 )
 
@@ -1731,8 +1730,6 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		if (of_property_read_string(of_chosen, "stdout-path", &name))
 			of_property_read_string(of_chosen, "linux,stdout-path",
 						&name);
-		if (IS_ENABLED(CONFIG_PPC) && !name)
-			of_property_read_string(of_aliases, "stdout", &name);
 		if (name)
 			of_stdout = of_find_node_opts_by_path(name, &of_stdout_options);
 		if (of_stdout)
@@ -1871,7 +1868,7 @@ EXPORT_SYMBOL_GPL(of_console_check);
  */
 struct device_node *of_find_next_cache_node(const struct device_node *np)
 {
-	struct device_node *child, *cache_node;
+	struct device_node *cache_node;
 
 	cache_node = of_parse_phandle(np, "l2-cache", 0);
 	if (!cache_node)
@@ -1879,14 +1876,6 @@ struct device_node *of_find_next_cache_node(const struct device_node *np)
 
 	if (cache_node)
 		return cache_node;
-
-	/* OF on pmac has nodes instead of properties named "l2-cache"
-	 * beneath CPU nodes.
-	 */
-	if (IS_ENABLED(CONFIG_PPC_PMAC) && of_node_is_type(np, "cpu"))
-		for_each_child_of_node(np, child)
-			if (of_node_is_type(child, "cache"))
-				return child;
 
 	return NULL;
 }

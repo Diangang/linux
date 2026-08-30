@@ -5,9 +5,6 @@
 UBSAN_SANITIZE := n
 KCOV_INSTRUMENT := n
 
-# Branch profiling isn't noinstr-safe
-ccflags-$(CONFIG_TRACE_BRANCH_PROFILING) += -DDISABLE_BRANCH_PROFILING
-
 CFLAGS_REMOVE_common.o	 = -fstack-protector -fstack-protector-strong
 CFLAGS_common.o		+= -fno-stack-protector
 

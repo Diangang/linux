@@ -240,50 +240,14 @@ has_neoverse_n1_erratum_1542419(const struct arm64_cpu_capabilities *entry,
 	return is_midr_in_range(&range) && has_dic;
 }
 
-#if 0
-static const struct midr_range trbe_overwrite_fill_mode_cpus[] = {
-#ifdef CONFIG_ARM64_ERRATUM_2139208
-	MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N2),
-	MIDR_ALL_VERSIONS(MIDR_MICROSOFT_AZURE_COBALT_100),
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_2119858
-	MIDR_ALL_VERSIONS(MIDR_CORTEX_A710),
-	MIDR_RANGE(MIDR_CORTEX_X2, 0, 0, 2, 0),
-#endif
-	{},
-};
-#endif	/* CONFIG_ARM64_WORKAROUND_TRBE_OVERWRITE_FILL_MODE */
 
 
-#if 0
-static struct midr_range trbe_write_out_of_range_cpus[] = {
-#ifdef CONFIG_ARM64_ERRATUM_2253138
-	MIDR_ALL_VERSIONS(MIDR_NEOVERSE_N2),
-	MIDR_ALL_VERSIONS(MIDR_MICROSOFT_AZURE_COBALT_100),
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_2224489
-	MIDR_ALL_VERSIONS(MIDR_CORTEX_A710),
-	MIDR_RANGE(MIDR_CORTEX_X2, 0, 0, 2, 0),
-#endif
-	{},
-};
-#endif /* CONFIG_ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE */
 
 
 
 
 
 const struct arm64_cpu_capabilities arm64_errata[] = {
-#ifdef CONFIG_ARM64_ERRATUM_834220
-	{
-	/* Cortex-A57 r0p0 - r1p2 */
-		.desc = "ARM erratum 834220",
-		.capability = ARM64_WORKAROUND_834220,
-		ERRATA_MIDR_RANGE(MIDR_CORTEX_A57,
-				  0, 0,
-				  1, 2),
-	},
-#endif
 	{
 		.desc = "Mismatched cache type (CTR_EL0)",
 		.capability = ARM64_MISMATCHED_CACHE_TYPE,
@@ -322,64 +286,6 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 		.matches = is_spectre_bhb_affected,
 		.cpu_enable = spectre_bhb_enable_mitigation,
 	},
-#ifdef CONFIG_ARM64_ERRATUM_1542419
-	{
-		/* we depend on the firmware portion for correctness */
-		.desc = "ARM erratum 1542419 (kernel portion)",
-		.capability = ARM64_WORKAROUND_1542419,
-		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
-		.matches = has_neoverse_n1_erratum_1542419,
-		.cpu_enable = cpu_enable_trap_ctr_access,
-	},
-#endif
-#if 0
-	{
-		/*
-		 * The erratum work around is handled within the TRBE
-		 * driver and can be applied per-cpu. So, we can allow
-		 * a late CPU to come online with this erratum.
-		 */
-		.desc = "ARM erratum 2119858 or 2139208",
-		.capability = ARM64_WORKAROUND_TRBE_OVERWRITE_FILL_MODE,
-		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,
-		CAP_MIDR_RANGE_LIST(trbe_overwrite_fill_mode_cpus),
-	},
-#endif
-#if 0
-	{
-		.desc = "ARM erratum 2253138 or 2224489",
-		.capability = ARM64_WORKAROUND_TRBE_WRITE_OUT_OF_RANGE,
-		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,
-		CAP_MIDR_RANGE_LIST(trbe_write_out_of_range_cpus),
-	},
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_2064142
-	{
-		.desc = "ARM erratum 2064142",
-		.capability = ARM64_WORKAROUND_2064142,
-
-		/* Cortex-A510 r0p0 - r0p2 */
-		ERRATA_MIDR_REV_RANGE(MIDR_CORTEX_A510, 0, 0, 2)
-	},
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_2038923
-	{
-		.desc = "ARM erratum 2038923",
-		.capability = ARM64_WORKAROUND_2038923,
-
-		/* Cortex-A510 r0p0 - r0p2 */
-		ERRATA_MIDR_REV_RANGE(MIDR_CORTEX_A510, 0, 0, 2)
-	},
-#endif
-#ifdef CONFIG_ARM64_ERRATUM_1902691
-	{
-		.desc = "ARM erratum 1902691",
-		.capability = ARM64_WORKAROUND_1902691,
-
-		/* Cortex-A510 r0p0 - r0p1 */
-		ERRATA_MIDR_REV_RANGE(MIDR_CORTEX_A510, 0, 0, 1)
-	},
-#endif
 	{
 		.desc = "Broken CNTVOFF_EL2",
 		.capability = ARM64_WORKAROUND_QCOM_ORYON_CNTVOFF,

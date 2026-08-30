@@ -134,75 +134,6 @@ struct fsverity_operations {
 				       u64 pos, unsigned int size);
 };
 
-#ifdef CONFIG_FS_VERITY
-/**
- * fsverity_active() - do reads from the inode need to go through fs-verity?
- * @inode: inode to check
- *
- * This checks whether the inode's verity info has been set, and reads need
- * to verify the file data.
- *
- * Return: true if reads need to go through fs-verity, otherwise false
- */
-static inline bool fsverity_active(const struct inode *inode)
-{
-	if (IS_VERITY(inode)) {
-		/*
-		 * This pairs with the try_cmpxchg in set_mask_bits()
-		 * used to set the S_VERITY bit in i_flags.
-		 */
-		smp_mb();
-		return true;
-	}
-
-	return false;
-}
-
-struct fsverity_info *__fsverity_get_info(const struct inode *inode);
-/**
- * fsverity_get_info - get fsverity information for an inode
- * @inode: inode to operate on.
- *
- * This gets the fsverity_info for @inode if it exists.  Safe to call without
- * knowin that a fsverity_info exist for @inode, including on file systems that
- * do not support fsverity.
- */
-static inline struct fsverity_info *fsverity_get_info(const struct inode *inode)
-{
-	if (!fsverity_active(inode))
-		return NULL;
-	return __fsverity_get_info(inode);
-}
-
-/* enable.c */
-
-int fsverity_ioctl_enable(struct file *filp, const void __user *arg);
-
-/* measure.c */
-
-int fsverity_ioctl_measure(struct file *filp, void __user *arg);
-int fsverity_get_digest(struct inode *inode,
-			u8 raw_digest[FS_VERITY_MAX_DIGEST_SIZE],
-			u8 *alg, enum hash_algo *halg);
-
-/* open.c */
-
-int __fsverity_file_open(struct inode *inode, struct file *filp);
-
-/* read_metadata.c */
-
-int fsverity_ioctl_read_metadata(struct file *filp, const void __user *uarg);
-
-/* verify.c */
-
-void fsverity_readahead(struct fsverity_info *vi, pgoff_t index,
-			unsigned long nr_pages);
-bool fsverity_verify_blocks(struct fsverity_info *vi, struct folio *folio,
-			    size_t len, size_t offset);
-void fsverity_verify_bio(struct fsverity_info *vi, struct bio *bio);
-void fsverity_enqueue_verify_work(struct work_struct *work);
-
-#else /* !CONFIG_FS_VERITY */
 
 static inline bool fsverity_active(const struct inode *inode)
 {
@@ -281,7 +212,6 @@ static inline void fsverity_enqueue_verify_work(struct work_struct *work)
 	WARN_ON_ONCE(1);
 }
 
-#endif	/* !CONFIG_FS_VERITY */
 
 static inline bool fsverity_verify_folio(struct fsverity_info *vi,
 					 struct folio *folio)

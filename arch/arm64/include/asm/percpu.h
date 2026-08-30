@@ -266,13 +266,5 @@ extern unsigned long __hyp_per_cpu_offset(unsigned int cpu);
 #include <asm-generic/percpu.h>
 
 /* Redefine macros for nVHE hyp under DEBUG_PREEMPT to avoid its dependencies. */
-#if defined(__KVM_NVHE_HYPERVISOR__) && defined(CONFIG_DEBUG_PREEMPT)
-#undef	this_cpu_ptr
-#define	this_cpu_ptr		raw_cpu_ptr
-#undef	__this_cpu_read
-#define	__this_cpu_read		raw_cpu_read
-#undef	__this_cpu_write
-#define	__this_cpu_write	raw_cpu_write
-#endif
 
 #endif /* __ASM_PERCPU_H */

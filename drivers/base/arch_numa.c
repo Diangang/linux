@@ -265,25 +265,10 @@ static int __init dummy_numa_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_ACPI_NUMA
-static int __init arch_acpi_numa_init(void)
-{
-	int ret;
-
-	ret = acpi_numa_init();
-	if (ret) {
-		pr_debug("Failed to initialise from firmware\n");
-		return ret;
-	}
-
-	return srat_disabled() ? -EINVAL : 0;
-}
-#else
 static int __init arch_acpi_numa_init(void)
 {
 	return -EOPNOTSUPP;
 }
-#endif
 
 /**
  * arch_numa_init() - Initialize NUMA

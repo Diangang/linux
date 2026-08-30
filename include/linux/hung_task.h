@@ -37,51 +37,6 @@
 
 #define BLOCKER_TYPE_MASK		0x03UL
 
-#ifdef CONFIG_DETECT_HUNG_TASK_BLOCKER
-static inline void hung_task_set_blocker(void *lock, unsigned long type)
-{
-	unsigned long lock_ptr = (unsigned long)lock;
-
-	WARN_ON_ONCE(!lock_ptr);
-	WARN_ON_ONCE(READ_ONCE(current->blocker));
-
-	/*
-	 * If the lock pointer matches the BLOCKER_TYPE_MASK, return
-	 * without writing anything.
-	 */
-	if (lock_ptr & BLOCKER_TYPE_MASK)
-		return;
-
-	WRITE_ONCE(current->blocker, lock_ptr | type);
-}
-
-static inline void hung_task_clear_blocker(void)
-{
-	WRITE_ONCE(current->blocker, 0UL);
-}
-
-/*
- * hung_task_get_blocker_type - Extracts blocker type from encoded blocker
- * address.
- *
- * @blocker: Blocker pointer with encoded type (via LSB bits)
- *
- * Returns: BLOCKER_TYPE_MUTEX, BLOCKER_TYPE_SEM, etc.
- */
-static inline unsigned long hung_task_get_blocker_type(unsigned long blocker)
-{
-	WARN_ON_ONCE(!blocker);
-
-	return blocker & BLOCKER_TYPE_MASK;
-}
-
-static inline void *hung_task_blocker_to_lock(unsigned long blocker)
-{
-	WARN_ON_ONCE(!blocker);
-
-	return (void *)(blocker & ~BLOCKER_TYPE_MASK);
-}
-#else
 static inline void hung_task_set_blocker(void *lock, unsigned long type)
 {
 }
@@ -96,6 +51,5 @@ static inline void *hung_task_blocker_to_lock(unsigned long blocker)
 {
 	return NULL;
 }
-#endif
 
 #endif /* __LINUX_HUNG_TASK_H */

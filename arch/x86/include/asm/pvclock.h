@@ -95,14 +95,9 @@ struct pvclock_vsyscall_time_info {
 
 #define PVTI_SIZE sizeof(struct pvclock_vsyscall_time_info)
 
-#ifdef CONFIG_PARAVIRT_CLOCK
-void pvclock_set_pvti_cpu0_va(struct pvclock_vsyscall_time_info *pvti);
-struct pvclock_vsyscall_time_info *pvclock_get_pvti_cpu0_va(void);
-#else
 static inline struct pvclock_vsyscall_time_info *pvclock_get_pvti_cpu0_va(void)
 {
 	return NULL;
 }
-#endif
 
 #endif /* _ASM_X86_PVCLOCK_H */

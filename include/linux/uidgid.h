@@ -110,31 +110,6 @@ static inline bool gid_valid(kgid_t gid)
 	return __kgid_val(gid) != (gid_t) -1;
 }
 
-#ifdef CONFIG_USER_NS
-
-extern kuid_t make_kuid(struct user_namespace *from, uid_t uid);
-extern kgid_t make_kgid(struct user_namespace *from, gid_t gid);
-
-extern uid_t from_kuid(struct user_namespace *to, kuid_t uid);
-extern gid_t from_kgid(struct user_namespace *to, kgid_t gid);
-extern uid_t from_kuid_munged(struct user_namespace *to, kuid_t uid);
-extern gid_t from_kgid_munged(struct user_namespace *to, kgid_t gid);
-
-static inline bool kuid_has_mapping(struct user_namespace *ns, kuid_t uid)
-{
-	return from_kuid(ns, uid) != (uid_t) -1;
-}
-
-static inline bool kgid_has_mapping(struct user_namespace *ns, kgid_t gid)
-{
-	return from_kgid(ns, gid) != (gid_t) -1;
-}
-
-u32 map_id_down(struct uid_gid_map *map, u32 id);
-u32 map_id_up(struct uid_gid_map *map, u32 id);
-u32 map_id_range_up(struct uid_gid_map *map, u32 id, u32 count);
-
-#else
 
 static inline kuid_t make_kuid(struct user_namespace *from, uid_t uid)
 {
@@ -196,6 +171,5 @@ static inline u32 map_id_up(struct uid_gid_map *map, u32 id)
 {
 	return id;
 }
-#endif /* CONFIG_USER_NS */
 
 #endif /* _LINUX_UIDGID_H */

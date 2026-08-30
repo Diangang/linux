@@ -124,11 +124,7 @@ asmlinkage void __init __noreturn x86_64_start_reservations(char *real_mode_data
 #endif /* __i386__ */
 #endif /* _SETUP */
 
-#if 0
-extern bool builtin_cmdline_added __ro_after_init;
-#else
 #define builtin_cmdline_added 0
-#endif
 
 #else  /* __ASSEMBLER__ */
 

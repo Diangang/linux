@@ -45,22 +45,6 @@ struct alloc_tag_module_section {
 	unsigned long size;
 };
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING_DEBUG
-
-#define CODETAG_EMPTY	((void *)1)
-
-static inline bool is_codetag_empty(union codetag_ref *ref)
-{
-	return ref->ct == CODETAG_EMPTY;
-}
-
-static inline void set_codetag_empty(union codetag_ref *ref)
-{
-	if (ref)
-		ref->ct = CODETAG_EMPTY;
-}
-
-#else /* CONFIG_MEM_ALLOC_PROFILING_DEBUG */
 
 static inline bool is_codetag_empty(union codetag_ref *ref) { return false; }
 
@@ -70,7 +54,6 @@ static inline void set_codetag_empty(union codetag_ref *ref)
 		ref->ct = NULL;
 }
 
-#endif /* CONFIG_MEM_ALLOC_PROFILING_DEBUG */
 
 
 #define DEFINE_ALLOC_TAG(_alloc_tag)

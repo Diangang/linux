@@ -118,10 +118,6 @@ struct irq_domain_ops {
 			     unsigned long *out_hwirq, unsigned int *out_type);
 	int	(*get_fwspec_info)(struct irq_fwspec *fwspec, struct irq_fwspec_info *info);
 #endif
-#if 0
-	void	(*debug_show)(struct seq_file *m, struct irq_domain *d,
-			      struct irq_data *irqd, int ind);
-#endif
 };
 
 extern const struct irq_domain_ops irq_generic_chip_ops;
@@ -410,26 +406,6 @@ static inline struct irq_domain *irq_find_host(struct device_node *node)
 	return d;
 }
 
-#ifdef CONFIG_IRQ_DOMAIN_NOMAP
-static inline struct irq_domain *irq_domain_create_nomap(struct fwnode_handle *fwnode,
-							 unsigned int max_irq,
-							 const struct irq_domain_ops *ops,
-							 void *host_data)
-{
-	const struct irq_domain_info info = {
-		.fwnode		= fwnode,
-		.hwirq_max	= max_irq,
-		.direct_max	= max_irq,
-		.ops		= ops,
-		.host_data	= host_data,
-	};
-	struct irq_domain *d = irq_domain_instantiate(&info);
-
-	return IS_ERR(d) ? NULL : d;
-}
-
-unsigned int irq_create_direct_mapping(struct irq_domain *domain);
-#endif
 
 /**
  * irq_domain_create_linear - Allocate and register a linear revmap irq_domain.

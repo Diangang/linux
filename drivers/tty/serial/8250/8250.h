@@ -306,13 +306,8 @@ static inline int serial8250_in_MCR(struct uart_8250_port *up)
 	return mctrl;
 }
 
-#ifdef CONFIG_SERIAL_8250_PNP
-int serial8250_pnp_init(void);
-void serial8250_pnp_exit(void);
-#else
 static inline int serial8250_pnp_init(void) { return 0; }
 static inline void serial8250_pnp_exit(void) { }
-#endif
 
 static inline void univ8250_rsa_support(struct uart_ops *ops, const struct uart_ops *core_ops) { }
 static inline void rsa_enable(struct uart_8250_port *up) {}
@@ -331,57 +326,6 @@ static inline int is_omap1510_8250(struct uart_8250_port *pt)
 	return 0;
 }
 
-#ifdef CONFIG_SERIAL_8250_DMA
-extern int serial8250_tx_dma(struct uart_8250_port *);
-extern void serial8250_tx_dma_flush(struct uart_8250_port *);
-extern int serial8250_rx_dma(struct uart_8250_port *);
-extern void serial8250_rx_dma_flush(struct uart_8250_port *);
-extern int serial8250_request_dma(struct uart_8250_port *);
-extern void serial8250_release_dma(struct uart_8250_port *);
-
-static inline void serial8250_do_prepare_tx_dma(struct uart_8250_port *p)
-{
-	struct uart_8250_dma *dma = p->dma;
-
-	if (dma->prepare_tx_dma)
-		dma->prepare_tx_dma(p);
-}
-
-static inline void serial8250_do_prepare_rx_dma(struct uart_8250_port *p)
-{
-	struct uart_8250_dma *dma = p->dma;
-
-	if (dma->prepare_rx_dma)
-		dma->prepare_rx_dma(p);
-}
-
-static inline bool serial8250_tx_dma_running(struct uart_8250_port *p)
-{
-	struct uart_8250_dma *dma = p->dma;
-
-	return dma && dma->tx_running;
-}
-
-static inline void serial8250_tx_dma_pause(struct uart_8250_port *p)
-{
-	struct uart_8250_dma *dma = p->dma;
-
-	if (!dma->tx_running)
-		return;
-
-	dmaengine_pause(dma->txchan);
-}
-
-static inline void serial8250_tx_dma_resume(struct uart_8250_port *p)
-{
-	struct uart_8250_dma *dma = p->dma;
-
-	if (!dma->tx_running)
-		return;
-
-	dmaengine_resume(dma->txchan);
-}
-#else
 static inline int serial8250_tx_dma(struct uart_8250_port *p)
 {
 	return -1;
@@ -405,7 +349,6 @@ static inline bool serial8250_tx_dma_running(struct uart_8250_port *p)
 
 static inline void serial8250_tx_dma_pause(struct uart_8250_port *p) { }
 static inline void serial8250_tx_dma_resume(struct uart_8250_port *p) { }
-#endif
 
 static inline int ns16550a_goto_highspeed(struct uart_8250_port *up)
 {

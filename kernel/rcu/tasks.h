@@ -687,7 +687,7 @@ static void __init rcu_spawn_tasks_kthread_generic(struct rcu_tasks *rtp)
  */
 static void __init rcu_tasks_bootup_oddness(void)
 {
-#if defined(CONFIG_TASKS_RCU) || 0
+#if defined(CONFIG_TASKS_RCU)
 	int rtsimc;
 
 	if (rcu_task_stall_timeout != RCU_TASK_STALL_TIMEOUT)
@@ -1079,9 +1079,7 @@ static void check_holdout_task(struct task_struct *t,
 
 	if (!READ_ONCE(t->rcu_tasks_holdout) ||
 	    t->rcu_tasks_nvcsw != READ_ONCE(t->nvcsw) ||
-	    !rcu_tasks_is_holdout(t) ||
-	    (IS_ENABLED(CONFIG_NO_HZ_FULL) &&
-	     !is_idle_task(t) && READ_ONCE(t->rcu_tasks_idle_cpu) >= 0)) {
+	    !rcu_tasks_is_holdout(t)) {
 		WRITE_ONCE(t->rcu_tasks_holdout, false);
 		list_del_init(&t->rcu_tasks_holdout_list);
 		put_task_struct(t);
@@ -1232,7 +1230,6 @@ static int __init rcu_spawn_tasks_kthread(void)
 	return 0;
 }
 
-#if !0
 void show_rcu_tasks_classic_gp_kthread(void)
 {
 	show_rcu_tasks_generic_gp_kthread(&rcu_tasks, "");
@@ -1244,7 +1241,6 @@ void rcu_tasks_torture_stats_print(char *tt, char *tf)
 	rcu_tasks_torture_stats_print_generic(&rcu_tasks, tt, tf, "");
 }
 EXPORT_SYMBOL_GPL(rcu_tasks_torture_stats_print);
-#endif // !0
 
 struct task_struct *get_rcu_tasks_gp_kthread(void)
 {

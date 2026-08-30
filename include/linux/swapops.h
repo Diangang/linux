@@ -8,9 +8,6 @@
 
 #ifdef CONFIG_MMU
 
-#ifdef CONFIG_SWAP
-#include <linux/swapfile.h>
-#endif	/* CONFIG_SWAP */
 
 /*
  * swapcache pages are stored in the swapper_space radix tree.  We want to
@@ -132,23 +129,6 @@ static inline void *swp_to_radix_entry(swp_entry_t entry)
 	return xa_mk_value(entry.val);
 }
 
-#if 0
-static inline swp_entry_t make_readable_device_private_entry(pgoff_t offset)
-{
-	return swp_entry(SWP_DEVICE_READ, offset);
-}
-
-static inline swp_entry_t make_writable_device_private_entry(pgoff_t offset)
-{
-	return swp_entry(SWP_DEVICE_WRITE, offset);
-}
-
-static inline swp_entry_t make_device_exclusive_entry(pgoff_t offset)
-{
-	return swp_entry(SWP_DEVICE_EXCLUSIVE, offset);
-}
-
-#else /* CONFIG_DEVICE_PRIVATE */
 static inline swp_entry_t make_readable_device_private_entry(pgoff_t offset)
 {
 	return swp_entry(0, 0);
@@ -164,7 +144,6 @@ static inline swp_entry_t make_device_exclusive_entry(pgoff_t offset)
 	return swp_entry(0, 0);
 }
 
-#endif /* CONFIG_DEVICE_PRIVATE */
 
 #ifdef CONFIG_MIGRATION
 
@@ -190,11 +169,7 @@ static inline swp_entry_t make_writable_migration_entry(pgoff_t offset)
  */
 static inline bool migration_entry_supports_ad(void)
 {
-#ifdef CONFIG_SWAP
-	return swap_migration_ad_supported;
-#else  /* CONFIG_SWAP */
 	return false;
-#endif	/* CONFIG_SWAP */
 }
 
 static inline swp_entry_t make_migration_entry_young(swp_entry_t entry)

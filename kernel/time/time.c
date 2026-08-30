@@ -220,50 +220,6 @@ SYSCALL_DEFINE2(settimeofday, struct __kernel_old_timeval __user *, tv,
 	return do_sys_settimeofday64(tv ? &new_ts : NULL, tz ? &new_tz : NULL);
 }
 
-#ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE2(gettimeofday, struct old_timeval32 __user *, tv,
-		       struct timezone __user *, tz)
-{
-	if (tv) {
-		struct timespec64 ts;
-
-		ktime_get_real_ts64(&ts);
-		if (put_user(ts.tv_sec, &tv->tv_sec) ||
-		    put_user(ts.tv_nsec / 1000, &tv->tv_usec))
-			return -EFAULT;
-	}
-	if (tz) {
-		if (copy_to_user(tz, &sys_tz, sizeof(sys_tz)))
-			return -EFAULT;
-	}
-
-	return 0;
-}
-
-COMPAT_SYSCALL_DEFINE2(settimeofday, struct old_timeval32 __user *, tv,
-		       struct timezone __user *, tz)
-{
-	struct timespec64 new_ts;
-	struct timezone new_tz;
-
-	if (tv) {
-		if (get_user(new_ts.tv_sec, &tv->tv_sec) ||
-		    get_user(new_ts.tv_nsec, &tv->tv_usec))
-			return -EFAULT;
-
-		if (new_ts.tv_nsec > USEC_PER_SEC || new_ts.tv_nsec < 0)
-			return -EINVAL;
-
-		new_ts.tv_nsec *= NSEC_PER_USEC;
-	}
-	if (tz) {
-		if (copy_from_user(&new_tz, tz, sizeof(*tz)))
-			return -EFAULT;
-	}
-
-	return do_sys_settimeofday64(tv ? &new_ts : NULL, tz ? &new_tz : NULL);
-}
-#endif
 
 #ifdef CONFIG_64BIT
 SYSCALL_DEFINE1(adjtimex, struct __kernel_timex __user *, txc_p)

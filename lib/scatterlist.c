@@ -287,10 +287,6 @@ int __sg_alloc_table(struct sg_table *table, unsigned int nents,
 
 	if (nents == 0)
 		return -EINVAL;
-#ifdef CONFIG_ARCH_NO_SG_CHAIN
-	if (WARN_ON_ONCE(nents > max_ents))
-		return -EINVAL;
-#endif
 
 	left = nents;
 	prv = NULL;
@@ -459,9 +455,6 @@ int sg_alloc_append_table_from_pages(struct sg_append_table *sgt_append,
 	max_segment = ALIGN_DOWN(max_segment, PAGE_SIZE);
 	if (WARN_ON(max_segment < PAGE_SIZE))
 		return -EINVAL;
-
-	if (IS_ENABLED(CONFIG_ARCH_NO_SG_CHAIN) && sgt_append->prv)
-		return -EOPNOTSUPP;
 
 	if (sgt_append->prv) {
 		unsigned long next_pfn;

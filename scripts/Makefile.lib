@@ -37,26 +37,6 @@ _a_flags       = $(filter-out $(AFLAGS_REMOVE_$(target-stem).o), \
                      $(AFLAGS_$(target-stem).o))
 _cpp_flags     = $(KBUILD_CPPFLAGS) $(cppflags-y) $(CPPFLAGS_$(target-stem).lds)
 
-#
-# Enable gcov profiling flags for a file or directory depending on variables
-# GCOV_PROFILE_obj.o and GCOV_PROFILE
-# (in this order)
-#
-ifeq ($(CONFIG_GCOV_KERNEL),y)
-_c_flags += $(if $(patsubst n%,, \
-		$(GCOV_PROFILE_$(target-stem).o)$(GCOV_PROFILE)), \
-		$(CFLAGS_GCOV))
-endif
-
-ifeq ($(CONFIG_UBSAN),y)
-_c_flags += $(if $(patsubst n%,, \
-		$(UBSAN_SANITIZE_$(target-stem).o)$(UBSAN_SANITIZE)$(is-kernel-object)), \
-		$(CFLAGS_UBSAN))
-_c_flags += $(if $(patsubst n%,, \
-		$(UBSAN_INTEGER_WRAP_$(target-stem).o)$(UBSAN_SANITIZE_$(target-stem).o)$(UBSAN_INTEGER_WRAP)$(UBSAN_SANITIZE)$(is-kernel-object)), \
-		$(CFLAGS_UBSAN_INTEGER_WRAP))
-endif
-
 # $(src) for including checkin headers from generated source files
 # $(obj) for including generated headers from checkin source files
 ifdef building_out_of_srctree
@@ -114,7 +94,6 @@ objtool-args-$(CONFIG_MITIGATION_RETPOLINE)		+= --retpoline
 objtool-args-$(CONFIG_MITIGATION_RETHUNK)		+= --rethunk
 objtool-args-$(CONFIG_HAVE_STATIC_CALL_INLINE)		+= --static-call
 objtool-args-$(CONFIG_HAVE_UACCESS_VALIDATION)		+= --uaccess
-objtool-args-$(CONFIG_GCOV_KERNEL)			+= --no-unreachable
 objtool-args-$(CONFIG_PREFIX_SYMBOLS)			+= --prefix=$(CONFIG_FUNCTION_PADDING_BYTES)
 
 objtool-args = $(objtool-args-y)					\

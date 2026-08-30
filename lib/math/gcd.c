@@ -13,7 +13,6 @@
 
 DEFINE_STATIC_KEY_TRUE(efficient_ffs_key);
 
-#if !defined(CONFIG_CPU_NO_EFFICIENT_FFS)
 
 /* If __ffs is available, the even/odd algorithm benchmarks slower. */
 
@@ -38,7 +37,6 @@ static unsigned long binary_gcd(unsigned long a, unsigned long b)
 	}
 }
 
-#endif
 
 /* If normalization is done by loops, the even/odd algorithm is a win. */
 
@@ -54,10 +52,8 @@ unsigned long gcd(unsigned long a, unsigned long b)
 	if (!a || !b)
 		return r;
 
-#if !defined(CONFIG_CPU_NO_EFFICIENT_FFS)
 	if (static_branch_likely(&efficient_ffs_key))
 		return binary_gcd(a, b);
-#endif
 
 	/* Isolate lsbit of r */
 	r &= -r;

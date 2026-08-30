@@ -632,39 +632,6 @@ error_free_buffer:
 
 int put_sg_io_hdr(const struct sg_io_hdr *hdr, void __user *argp)
 {
-#ifdef CONFIG_COMPAT
-	if (in_compat_syscall()) {
-		struct compat_sg_io_hdr hdr32 =  {
-			.interface_id	 = hdr->interface_id,
-			.dxfer_direction = hdr->dxfer_direction,
-			.cmd_len	 = hdr->cmd_len,
-			.mx_sb_len	 = hdr->mx_sb_len,
-			.iovec_count	 = hdr->iovec_count,
-			.dxfer_len	 = hdr->dxfer_len,
-			.dxferp		 = (uintptr_t)hdr->dxferp,
-			.cmdp		 = (uintptr_t)hdr->cmdp,
-			.sbp		 = (uintptr_t)hdr->sbp,
-			.timeout	 = hdr->timeout,
-			.flags		 = hdr->flags,
-			.pack_id	 = hdr->pack_id,
-			.usr_ptr	 = (uintptr_t)hdr->usr_ptr,
-			.status		 = hdr->status,
-			.masked_status	 = hdr->masked_status,
-			.msg_status	 = hdr->msg_status,
-			.sb_len_wr	 = hdr->sb_len_wr,
-			.host_status	 = hdr->host_status,
-			.driver_status	 = hdr->driver_status,
-			.resid		 = hdr->resid,
-			.duration	 = hdr->duration,
-			.info		 = hdr->info,
-		};
-
-		if (copy_to_user(argp, &hdr32, sizeof(hdr32)))
-			return -EFAULT;
-
-		return 0;
-	}
-#endif
 
 	if (copy_to_user(argp, hdr, sizeof(*hdr)))
 		return -EFAULT;
@@ -675,41 +642,6 @@ EXPORT_SYMBOL(put_sg_io_hdr);
 
 int get_sg_io_hdr(struct sg_io_hdr *hdr, const void __user *argp)
 {
-#ifdef CONFIG_COMPAT
-	struct compat_sg_io_hdr hdr32;
-
-	if (in_compat_syscall()) {
-		if (copy_from_user(&hdr32, argp, sizeof(hdr32)))
-			return -EFAULT;
-
-		*hdr = (struct sg_io_hdr) {
-			.interface_id	 = hdr32.interface_id,
-			.dxfer_direction = hdr32.dxfer_direction,
-			.cmd_len	 = hdr32.cmd_len,
-			.mx_sb_len	 = hdr32.mx_sb_len,
-			.iovec_count	 = hdr32.iovec_count,
-			.dxfer_len	 = hdr32.dxfer_len,
-			.dxferp		 = compat_ptr(hdr32.dxferp),
-			.cmdp		 = compat_ptr(hdr32.cmdp),
-			.sbp		 = compat_ptr(hdr32.sbp),
-			.timeout	 = hdr32.timeout,
-			.flags		 = hdr32.flags,
-			.pack_id	 = hdr32.pack_id,
-			.usr_ptr	 = compat_ptr(hdr32.usr_ptr),
-			.status		 = hdr32.status,
-			.masked_status	 = hdr32.masked_status,
-			.msg_status	 = hdr32.msg_status,
-			.sb_len_wr	 = hdr32.sb_len_wr,
-			.host_status	 = hdr32.host_status,
-			.driver_status	 = hdr32.driver_status,
-			.resid		 = hdr32.resid,
-			.duration	 = hdr32.duration,
-			.info		 = hdr32.info,
-		};
-
-		return 0;
-	}
-#endif
 
 	if (copy_from_user(hdr, argp, sizeof(*hdr)))
 		return -EFAULT;
@@ -718,45 +650,10 @@ int get_sg_io_hdr(struct sg_io_hdr *hdr, const void __user *argp)
 }
 EXPORT_SYMBOL(get_sg_io_hdr);
 
-#ifdef CONFIG_COMPAT
-struct compat_cdrom_generic_command {
-	unsigned char	cmd[CDROM_PACKET_SIZE];
-	compat_caddr_t	buffer;
-	compat_uint_t	buflen;
-	compat_int_t	stat;
-	compat_caddr_t	sense;
-	unsigned char	data_direction;
-	unsigned char	pad[3];
-	compat_int_t	quiet;
-	compat_int_t	timeout;
-	compat_caddr_t	unused;
-};
-#endif
 
 static int scsi_get_cdrom_generic_arg(struct cdrom_generic_command *cgc,
 				      const void __user *arg)
 {
-#ifdef CONFIG_COMPAT
-	if (in_compat_syscall()) {
-		struct compat_cdrom_generic_command cgc32;
-
-		if (copy_from_user(&cgc32, arg, sizeof(cgc32)))
-			return -EFAULT;
-
-		*cgc = (struct cdrom_generic_command) {
-			.buffer		= compat_ptr(cgc32.buffer),
-			.buflen		= cgc32.buflen,
-			.stat		= cgc32.stat,
-			.sense		= compat_ptr(cgc32.sense),
-			.data_direction	= cgc32.data_direction,
-			.quiet		= cgc32.quiet,
-			.timeout	= cgc32.timeout,
-			.unused		= compat_ptr(cgc32.unused),
-		};
-		memcpy(&cgc->cmd, &cgc32.cmd, CDROM_PACKET_SIZE);
-		return 0;
-	}
-#endif
 	if (copy_from_user(cgc, arg, sizeof(*cgc)))
 		return -EFAULT;
 
@@ -766,26 +663,6 @@ static int scsi_get_cdrom_generic_arg(struct cdrom_generic_command *cgc,
 static int scsi_put_cdrom_generic_arg(const struct cdrom_generic_command *cgc,
 				      void __user *arg)
 {
-#ifdef CONFIG_COMPAT
-	if (in_compat_syscall()) {
-		struct compat_cdrom_generic_command cgc32 = {
-			.buffer		= (uintptr_t)(cgc->buffer),
-			.buflen		= cgc->buflen,
-			.stat		= cgc->stat,
-			.sense		= (uintptr_t)(cgc->sense),
-			.data_direction	= cgc->data_direction,
-			.quiet		= cgc->quiet,
-			.timeout	= cgc->timeout,
-			.unused		= (uintptr_t)(cgc->unused),
-		};
-		memcpy(&cgc32.cmd, &cgc->cmd, CDROM_PACKET_SIZE);
-
-		if (copy_to_user(arg, &cgc32, sizeof(cgc32)))
-			return -EFAULT;
-
-		return 0;
-	}
-#endif
 	if (copy_to_user(arg, cgc, sizeof(*cgc)))
 		return -EFAULT;
 
@@ -946,13 +823,6 @@ int scsi_ioctl(struct scsi_device *sdev, bool open_for_write, int cmd,
 		return scsi_ioctl_reset(sdev, arg);
 	}
 
-#ifdef CONFIG_COMPAT
-	if (in_compat_syscall()) {
-		if (!sdev->host->hostt->compat_ioctl)
-			return -EINVAL;
-		return sdev->host->hostt->compat_ioctl(sdev, cmd, arg);
-	}
-#endif
 	if (!sdev->host->hostt->ioctl)
 		return -EINVAL;
 	return sdev->host->hostt->ioctl(sdev, cmd, arg);

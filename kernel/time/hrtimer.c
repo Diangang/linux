@@ -374,139 +374,12 @@ ktime_t ktime_add_safe(const ktime_t lhs, const ktime_t rhs)
 
 EXPORT_SYMBOL_GPL(ktime_add_safe);
 
-#if 0
-
-static const struct debug_obj_descr hrtimer_debug_descr;
-
-static void *hrtimer_debug_hint(void *addr)
-{
-	return ACCESS_PRIVATE((struct hrtimer *)addr, function);
-}
-
-/*
- * fixup_init is called when:
- * - an active object is initialized
- */
-static bool hrtimer_fixup_init(void *addr, enum debug_obj_state state)
-{
-	struct hrtimer *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		hrtimer_cancel(timer);
-		debug_object_init(timer, &hrtimer_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-/*
- * fixup_activate is called when:
- * - an active object is activated
- * - an unknown non-static object is activated
- */
-static bool hrtimer_fixup_activate(void *addr, enum debug_obj_state state)
-{
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		WARN_ON(1);
-		fallthrough;
-	default:
-		return false;
-	}
-}
-
-/*
- * fixup_free is called when:
- * - an active object is freed
- */
-static bool hrtimer_fixup_free(void *addr, enum debug_obj_state state)
-{
-	struct hrtimer *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		hrtimer_cancel(timer);
-		debug_object_free(timer, &hrtimer_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-/* Stub timer callback for improperly used timers. */
-static enum hrtimer_restart stub_timer(struct hrtimer *unused)
-{
-	WARN_ON_ONCE(1);
-	return HRTIMER_NORESTART;
-}
-
-/*
- * hrtimer_fixup_assert_init is called when:
- * - an untracked/uninit-ed object is found
- */
-static bool hrtimer_fixup_assert_init(void *addr, enum debug_obj_state state)
-{
-	struct hrtimer *timer = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_NOTAVAILABLE:
-		hrtimer_setup(timer, stub_timer, CLOCK_MONOTONIC, 0);
-		return true;
-	default:
-		return false;
-	}
-}
-
-static const struct debug_obj_descr hrtimer_debug_descr = {
-	.name			= "hrtimer",
-	.debug_hint		= hrtimer_debug_hint,
-	.fixup_init		= hrtimer_fixup_init,
-	.fixup_activate		= hrtimer_fixup_activate,
-	.fixup_free		= hrtimer_fixup_free,
-	.fixup_assert_init	= hrtimer_fixup_assert_init,
-};
-
-static inline void debug_hrtimer_init(struct hrtimer *timer)
-{
-	debug_object_init(timer, &hrtimer_debug_descr);
-}
-
-static inline void debug_hrtimer_init_on_stack(struct hrtimer *timer)
-{
-	debug_object_init_on_stack(timer, &hrtimer_debug_descr);
-}
-
-static inline void debug_hrtimer_activate(struct hrtimer *timer, enum hrtimer_mode mode)
-{
-	debug_object_activate(timer, &hrtimer_debug_descr);
-}
-
-static inline void debug_hrtimer_deactivate(struct hrtimer *timer)
-{
-	debug_object_deactivate(timer, &hrtimer_debug_descr);
-}
-
-static inline void debug_hrtimer_assert_init(struct hrtimer *timer)
-{
-	debug_object_assert_init(timer, &hrtimer_debug_descr);
-}
-
-void destroy_hrtimer_on_stack(struct hrtimer *timer)
-{
-	debug_object_free(timer, &hrtimer_debug_descr);
-}
-EXPORT_SYMBOL_GPL(destroy_hrtimer_on_stack);
-
-#else
 
 static inline void debug_hrtimer_init(struct hrtimer *timer) { }
 static inline void debug_hrtimer_init_on_stack(struct hrtimer *timer) { }
 static inline void debug_hrtimer_activate(struct hrtimer *timer, enum hrtimer_mode mode) { }
 static inline void debug_hrtimer_deactivate(struct hrtimer *timer) { }
 static inline void debug_hrtimer_assert_init(struct hrtimer *timer) { }
-#endif
 
 static inline void debug_setup(struct hrtimer *timer, clockid_t clockid, enum hrtimer_mode mode)
 {
@@ -1270,16 +1143,6 @@ remove_and_enqueue_same_base(struct hrtimer *timer, struct hrtimer_clock_base *b
 static inline ktime_t hrtimer_update_lowres(struct hrtimer *timer, ktime_t tim,
 					    const enum hrtimer_mode mode)
 {
-#ifdef CONFIG_TIME_LOW_RES
-	/*
-	 * CONFIG_TIME_LOW_RES indicates that the system has no way to return
-	 * granular time values. For relative timers we add hrtimer_resolution
-	 * (i.e. one jiffy) to prevent short timeouts.
-	 */
-	timer->is_rel = mode & HRTIMER_MODE_REL;
-	if (timer->is_rel)
-		tim = ktime_add_safe(tim, hrtimer_resolution);
-#endif
 	return tim;
 }
 
@@ -1565,10 +1428,7 @@ ktime_t __hrtimer_get_remaining(const struct hrtimer *timer, bool adjust)
 	ktime_t rem;
 
 	lock_hrtimer_base(timer, &flags);
-	if (IS_ENABLED(CONFIG_TIME_LOW_RES) && adjust)
-		rem = hrtimer_expires_remaining_adjusted(timer);
-	else
-		rem = hrtimer_expires_remaining(timer);
+	rem = hrtimer_expires_remaining(timer);
 	unlock_hrtimer_base(timer, &flags);
 
 	return rem;
@@ -1815,9 +1675,6 @@ static void __run_hrtimer(struct hrtimer_cpu_base *cpu_base, struct hrtimer_cloc
 	 * timer is restarted with a period then it becomes an absolute
 	 * timer. If its not restarted it does not matter.
 	 */
-	if (IS_ENABLED(CONFIG_TIME_LOW_RES))
-		timer->is_rel = false;
-
 	/*
 	 * The timer is marked as running in the CPU base, so it is
 	 * protected against migration to a different CPU even if the lock

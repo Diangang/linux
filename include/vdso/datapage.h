@@ -15,20 +15,12 @@
 #include <vdso/page.h>
 #include <vdso/time.h>
 
-#ifdef CONFIG_ARCH_HAS_VDSO_TIME_DATA
-#include <asm/vdso/time_data.h>
-#else
 struct arch_vdso_time_data {};
-#endif
 
-#if defined(CONFIG_ARCH_HAS_VDSO_ARCH_DATA)
-#include <asm/vdso/arch_data.h>
-#else
 struct vdso_arch_data {
 	/* Needed for the generic code, never actually used at runtime */
 	char __unused;
 };
-#endif
 
 #define VDSO_BASES	(CLOCK_TAI + 1)
 #define VDSO_BASE_AUX	0
@@ -184,11 +176,7 @@ enum vdso_pages {
 #define __vdso_u_rng_data
 #endif
 
-#ifdef CONFIG_ARCH_HAS_VDSO_ARCH_DATA
-#define __vdso_u_arch_data	PROVIDE(vdso_u_arch_data = vdso_u_data + 3 * PAGE_SIZE);
-#else
 #define __vdso_u_arch_data
-#endif
 
 #define VDSO_VVAR_SYMS						\
 	PROVIDE(vdso_u_data = . - __VDSO_PAGES * PAGE_SIZE);	\

@@ -582,43 +582,9 @@ struct bcma_chipcommon_pmu {
 	u32 crystalfreq;	/* The active crystal frequency (in kHz) */
 };
 
-#ifdef CONFIG_BCMA_PFLASH
-struct bcma_pflash {
-	bool present;
-};
-#endif
 
-#ifdef CONFIG_BCMA_SFLASH
-struct mtd_info;
 
-struct bcma_sflash {
-	bool present;
-	u32 blocksize;
-	u16 numblocks;
-	u32 size;
-};
-#endif
 
-#ifdef CONFIG_BCMA_NFLASH
-struct bcma_nflash {
-	/* Must be the fist member for the brcmnand driver to
-	 * de-reference that structure.
-	 */
-	struct brcmnand_platform_data brcmnand_info;
-	bool present;
-	bool boot;		/* This is the flash the SoC boots from */
-};
-#endif
-
-#ifdef CONFIG_BCMA_DRIVER_MIPS
-struct bcma_serial_port {
-	void *regs;
-	unsigned long clockspeed;
-	unsigned int irq;
-	unsigned int baud_base;
-	unsigned int reg_shift;
-};
-#endif /* CONFIG_BCMA_DRIVER_MIPS */
 
 struct bcma_drv_cc {
 	struct bcma_device *core;
@@ -630,28 +596,12 @@ struct bcma_drv_cc {
 	/* Fast Powerup Delay constant */
 	u16 fast_pwrup_delay;
 	struct bcma_chipcommon_pmu pmu;
-#ifdef CONFIG_BCMA_PFLASH
-	struct bcma_pflash pflash;
-#endif
-#ifdef CONFIG_BCMA_SFLASH
-	struct bcma_sflash sflash;
-#endif
-#ifdef CONFIG_BCMA_NFLASH
-	struct bcma_nflash nflash;
-#endif
 
-#ifdef CONFIG_BCMA_DRIVER_MIPS
-	int nr_serial_ports;
-	struct bcma_serial_port serial_ports[4];
-#endif /* CONFIG_BCMA_DRIVER_MIPS */
 	u32 ticks_per_ms;
 	struct platform_device *watchdog;
 
 	/* Lock for GPIO register access. */
 	spinlock_t gpio_lock;
-#ifdef CONFIG_BCMA_DRIVER_GPIO
-	struct gpio_chip gpio;
-#endif
 };
 
 struct bcma_drv_cc_b {

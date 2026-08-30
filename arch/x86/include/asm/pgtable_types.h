@@ -82,17 +82,13 @@
 			 _PAGE_PKEY_BIT2 | \
 			 _PAGE_PKEY_BIT3)
 
-#if defined(CONFIG_X86_64) || 0
+#if defined(CONFIG_X86_64)
 #define _PAGE_KNL_ERRATUM_MASK (_PAGE_DIRTY | _PAGE_ACCESSED)
 #else
 #define _PAGE_KNL_ERRATUM_MASK 0
 #endif
 
-#ifdef CONFIG_MEM_SOFT_DIRTY
-#define _PAGE_SOFT_DIRTY	(_AT(pteval_t, 1) << _PAGE_BIT_SOFT_DIRTY)
-#else
 #define _PAGE_SOFT_DIRTY	(_AT(pteval_t, 0))
-#endif
 
 /*
  * Tracking soft dirty bit when a page goes to a swap is tricky.
@@ -104,21 +100,12 @@
  * Please note that this bit must be treated as swap dirty page
  * mark if and only if the PTE/PMD has present bit clear!
  */
-#ifdef CONFIG_MEM_SOFT_DIRTY
-#define _PAGE_SWP_SOFT_DIRTY	_PAGE_RW
-#else
 #define _PAGE_SWP_SOFT_DIRTY	(_AT(pteval_t, 0))
-#endif
 
-#if 0
-#define _PAGE_UFFD_WP		(_AT(pteval_t, 1) << _PAGE_BIT_UFFD_WP)
-#define _PAGE_SWP_UFFD_WP	_PAGE_USER
-#else
 #define _PAGE_UFFD_WP		(_AT(pteval_t, 0))
 #define _PAGE_SWP_UFFD_WP	(_AT(pteval_t, 0))
-#endif
 
-#if defined(CONFIG_X86_64) || 0
+#if defined(CONFIG_X86_64)
 #define _PAGE_NX	(_AT(pteval_t, 1) << _PAGE_BIT_NX)
 #define _PAGE_SOFTW4	(_AT(pteval_t, 1) << _PAGE_BIT_SOFTW4)
 #else
@@ -271,11 +258,7 @@ enum page_cache_mode {
 #define PGD_IDENT_ATTR	 0x001		/* PRESENT (no other attributes) */
 #endif
 
-#ifdef CONFIG_X86_32
-# include <asm/pgtable_32_types.h>
-#else
 # include <asm/pgtable_64_types.h>
-#endif
 
 #ifndef __ASSEMBLER__
 

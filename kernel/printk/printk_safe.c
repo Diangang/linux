@@ -74,11 +74,6 @@ bool is_printk_legacy_deferred(void)
 
 asmlinkage int vprintk(const char *fmt, va_list args)
 {
-#if 0
-	/* Allow to pass printk() to kdb but avoid a recursion. */
-	if (unlikely(kdb_trap_printk && kdb_printf_cpu < 0))
-		return vkdb_printf(KDB_MSGSRC_PRINTK, fmt, args);
-#endif
 	return vprintk_default(fmt, args);
 }
 EXPORT_SYMBOL(vprintk);

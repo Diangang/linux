@@ -8,9 +8,6 @@
 #include <linux/types.h>
 
 struct lsm_prop_selinux {
-#ifdef CONFIG_SECURITY_SELINUX
-	u32 secid;
-#endif
 };
 
 #endif /* ! __LINUX_LSM_SELINUX_H */

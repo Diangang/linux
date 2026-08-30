@@ -41,11 +41,6 @@ typedef __kernel_gid16_t        gid16_t;
 typedef unsigned long		uintptr_t;
 typedef long			intptr_t;
 
-#ifdef CONFIG_HAVE_UID16
-/* This is defined by arch/{arch}/include/asm/posix_types.h */
-typedef __kernel_old_uid_t	old_uid_t;
-typedef __kernel_old_gid_t	old_gid_t;
-#endif /* CONFIG_UID16 */
 
 #if defined(__GNUC__)
 typedef __kernel_loff_t		loff_t;
@@ -215,11 +210,7 @@ struct hlist_node {
 
 struct ustat {
 	__kernel_daddr_t	f_tfree;
-#ifdef CONFIG_ARCH_32BIT_USTAT_F_TINODE
-	unsigned int		f_tinode;
-#else
 	unsigned long		f_tinode;
-#endif
 	char			f_fname[6];
 	char			f_fpack[6];
 };

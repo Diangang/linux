@@ -46,34 +46,6 @@ struct intel_iommu_pi_data {
 	u32 vector;		/* Guest vector of the interrupt */
 };
 
-#ifdef CONFIG_IRQ_REMAP
-
-extern raw_spinlock_t irq_2_ir_lock;
-
-extern bool irq_remapping_cap(enum irq_remap_cap cap);
-extern void set_irq_remapping_broken(void);
-extern int irq_remapping_prepare(void);
-extern int irq_remapping_enable(void);
-extern void irq_remapping_disable(void);
-extern int irq_remapping_reenable(int);
-extern int irq_remap_enable_fault_handling(void);
-extern void panic_if_irq_remap(const char *msg);
-
-/* Get parent irqdomain for interrupt remapping irqdomain */
-static inline struct irq_domain *arch_get_ir_parent_domain(void)
-{
-	return x86_vector_domain;
-}
-
-extern bool enable_posted_msi;
-
-static inline bool posted_msi_enabled(void)
-{
-	return 0 &&
-		enable_posted_msi && irq_remapping_cap(IRQ_POSTING_CAP);
-}
-
-#else  /* CONFIG_IRQ_REMAP */
 
 static inline bool irq_remapping_cap(enum irq_remap_cap cap) { return 0; }
 static inline void set_irq_remapping_broken(void) { }
@@ -87,7 +59,6 @@ static inline void panic_if_irq_remap(const char *msg)
 {
 }
 
-#endif /* CONFIG_IRQ_REMAP */
 
 #define intel_ack_posted_msi_irq	NULL
 

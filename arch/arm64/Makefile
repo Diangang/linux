@@ -51,10 +51,7 @@ KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
 KBUILD_AFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
 KBUILD_RUSTFLAGS += -Cforce-unwind-tables=n
 
-ifeq ($(CONFIG_ARM64_BTI_KERNEL),y)
-  KBUILD_CFLAGS += -mbranch-protection=pac-ret+bti
-  KBUILD_RUSTFLAGS += -Zbranch-protection=bti,pac-ret
-else ifeq ($(CONFIG_ARM64_PTR_AUTH_KERNEL),y)
+ifeq ($(CONFIG_ARM64_PTR_AUTH_KERNEL),y)
   KBUILD_RUSTFLAGS += -Zbranch-protection=pac-ret
   KBUILD_CFLAGS += -msign-return-address=non-leaf
 else

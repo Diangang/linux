@@ -59,13 +59,6 @@ static __always_inline void instrument_read_write(const volatile void *v, size_t
 static __always_inline void instrument_atomic_check_alignment(const volatile void *v, size_t size)
 {
 #ifndef __DISABLE_EXPORTS
-	if (IS_ENABLED(CONFIG_DEBUG_ATOMIC)) {
-		unsigned int mask = size - 1;
-
-		if (IS_ENABLED(CONFIG_DEBUG_ATOMIC_LARGEST_ALIGN))
-			mask &= sizeof(struct { long x; } __aligned_largest) - 1;
-		WARN_ON_ONCE((unsigned long)v & mask);
-	}
 #endif
 }
 

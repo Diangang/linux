@@ -209,13 +209,7 @@ struct signal_struct {
 	 */
 	struct rlimit rlim[RLIM_NLIMITS];
 
-#ifdef CONFIG_BSD_PROCESS_ACCT
-	struct pacct_struct pacct;	/* per-process accounting information */
-#endif
 
-#ifdef CONFIG_CGROUPS
-	struct rw_semaphore cgroup_threadgroup_rwsem;
-#endif
 
 	/*
 	 * Thread is the potential origin of an oom condition; kill first on
@@ -559,13 +553,8 @@ static inline int kill_cad_pid(int sig, int priv)
 
 static inline int __on_sig_stack(unsigned long sp)
 {
-#ifdef CONFIG_STACK_GROWSUP
-	return sp >= current->sas_ss_sp &&
-		sp - current->sas_ss_sp < current->sas_ss_size;
-#else
 	return sp > current->sas_ss_sp &&
 		sp - current->sas_ss_sp <= current->sas_ss_size;
-#endif
 }
 
 /*
@@ -606,11 +595,7 @@ static inline void sas_ss_reset(struct task_struct *p)
 static inline unsigned long sigsp(unsigned long sp, struct ksignal *ksig)
 {
 	if (unlikely((ksig->ka.sa.sa_flags & SA_ONSTACK)) && ! sas_ss_flags(sp))
-#ifdef CONFIG_STACK_GROWSUP
-		return current->sas_ss_sp;
-#else
 		return current->sas_ss_sp + current->sas_ss_size;
-#endif
 	return sp;
 }
 
@@ -735,11 +720,7 @@ static inline void unlock_task_sighand(struct task_struct *task,
 	spin_unlock_irqrestore(&task->sighand->siglock, *flags);
 }
 
-#if 0
-extern void lockdep_assert_task_sighand_held(struct task_struct *task);
-#else
 static inline void lockdep_assert_task_sighand_held(struct task_struct *task) { }
-#endif
 
 static inline unsigned long task_rlimit(const struct task_struct *task,
 		unsigned int limit)

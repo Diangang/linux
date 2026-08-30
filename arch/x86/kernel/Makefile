@@ -87,7 +87,6 @@ obj-$(CONFIG_AMD_NODE)		+= amd_node.o
 
 obj-$(CONFIG_PARAVIRT)		+= paravirt.o
 obj-$(CONFIG_PARAVIRT)		+= paravirt-spinlocks.o
-obj-$(CONFIG_PARAVIRT_CLOCK)	+= pvclock.o
 
 
 

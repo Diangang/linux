@@ -62,12 +62,6 @@ struct scsi_device_handler {
 	void (*rescan)(struct scsi_device *);
 };
 
-#ifdef CONFIG_SCSI_DH
-extern int scsi_dh_activate(struct request_queue *, activate_complete, void *);
-extern int scsi_dh_attach(struct request_queue *, const char *);
-extern const char *scsi_dh_attached_handler_name(struct request_queue *, gfp_t);
-extern int scsi_dh_set_params(struct request_queue *, const char *);
-#else
 static inline int scsi_dh_activate(struct request_queue *req,
 					activate_complete fn, void *data)
 {
@@ -87,4 +81,3 @@ static inline int scsi_dh_set_params(struct request_queue *req, const char *para
 {
 	return -SCSI_DH_NOSYS;
 }
-#endif

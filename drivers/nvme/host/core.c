@@ -416,17 +416,6 @@ static inline enum nvme_disposition nvme_decide_disposition(struct request *req)
 	return RETRY;
 }
 
-static inline void nvme_end_req_zoned(struct request *req)
-{
-	if (IS_ENABLED(CONFIG_BLK_DEV_ZONED) &&
-	    req_op(req) == REQ_OP_ZONE_APPEND) {
-		struct nvme_ns *ns = req->q->queuedata;
-
-		req->__sector = nvme_lba_to_sect(ns->head,
-			le64_to_cpu(nvme_req(req)->result.u64));
-	}
-}
-
 static inline void __nvme_end_req(struct request *req)
 {
 	if (unlikely(nvme_req(req)->status && !(req->rq_flags & RQF_QUIET))) {
@@ -435,7 +424,6 @@ static inline void __nvme_end_req(struct request *req)
 		else
 			nvme_log_error(req);
 	}
-	nvme_end_req_zoned(req);
 	if (req->cmd_flags & REQ_NVME_MPATH)
 		nvme_mpath_end_request(req);
 }
@@ -1804,7 +1792,7 @@ int nvme_getgeo(struct gendisk *disk, struct hd_geometry *geo)
 }
 
 static bool nvme_init_integrity(struct nvme_ns_head *head,
-		struct queue_limits *lim, struct nvme_ns_info *info)
+		struct queue_limits *lim)
 {
 	struct blk_integrity *bi = &lim->integrity;
 
@@ -1813,61 +1801,7 @@ static bool nvme_init_integrity(struct nvme_ns_head *head,
 	if (!head->ms)
 		return true;
 
-	/*
-	 * PI can always be supported as we can ask the controller to simply
-	 * insert/strip it, which is not possible for other kinds of metadata.
-	 */
-	if (!IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY) ||
-	    !(head->features & NVME_NS_METADATA_SUPPORTED))
-		return nvme_ns_has_pi(head);
-
-	switch (head->pi_type) {
-	case NVME_NS_DPS_PI_TYPE3:
-		switch (head->guard_type) {
-		case NVME_NVM_NS_16B_GUARD:
-			bi->csum_type = BLK_INTEGRITY_CSUM_CRC;
-			bi->tag_size = sizeof(u16) + sizeof(u32);
-			bi->flags |= BLK_INTEGRITY_DEVICE_CAPABLE;
-			break;
-		case NVME_NVM_NS_64B_GUARD:
-			bi->csum_type = BLK_INTEGRITY_CSUM_CRC64;
-			bi->tag_size = sizeof(u16) + 6;
-			bi->flags |= BLK_INTEGRITY_DEVICE_CAPABLE;
-			break;
-		default:
-			break;
-		}
-		break;
-	case NVME_NS_DPS_PI_TYPE1:
-	case NVME_NS_DPS_PI_TYPE2:
-		switch (head->guard_type) {
-		case NVME_NVM_NS_16B_GUARD:
-			bi->csum_type = BLK_INTEGRITY_CSUM_CRC;
-			bi->tag_size = sizeof(u16);
-			bi->flags |= BLK_INTEGRITY_DEVICE_CAPABLE |
-				     BLK_INTEGRITY_REF_TAG;
-			break;
-		case NVME_NVM_NS_64B_GUARD:
-			bi->csum_type = BLK_INTEGRITY_CSUM_CRC64;
-			bi->tag_size = sizeof(u16);
-			bi->flags |= BLK_INTEGRITY_DEVICE_CAPABLE |
-				     BLK_INTEGRITY_REF_TAG;
-			break;
-		default:
-			break;
-		}
-		break;
-	default:
-		break;
-	}
-
-	bi->flags |= BLK_SPLIT_INTERVAL_CAPABLE;
-	bi->metadata_size = head->ms;
-	if (bi->csum_type) {
-		bi->pi_tuple_size = head->pi_size;
-		bi->pi_offset = info->pi_offset;
-	}
-	return true;
+	return nvme_ns_has_pi(head);
 }
 
 static bool nvme_ns_ids_equal(struct nvme_ns_ids *a, struct nvme_ns_ids *b)
@@ -2352,7 +2286,6 @@ static int nvme_update_ns_info_block(struct nvme_ns *ns,
 {
 	struct queue_limits lim;
 	struct nvme_id_ns_nvm *nvm = NULL;
-	struct nvme_zone_info zi = {};
 	struct nvme_id_ns *id;
 	unsigned int memflags;
 	sector_t capacity;
@@ -2377,13 +2310,6 @@ static int nvme_update_ns_info_block(struct nvme_ns *ns,
 			goto out;
 	}
 
-	if (IS_ENABLED(CONFIG_BLK_DEV_ZONED) &&
-	    ns->head->ids.csi == NVME_CSI_ZNS) {
-		ret = nvme_query_zone_info(ns, lbaf, &zi);
-		if (ret < 0)
-			goto out;
-	}
-
 	if (ns->ctrl->ctratt & NVME_CTRL_ATTR_FDPS) {
 		ret = nvme_query_fdp_info(ns, info);
 		if (ret < 0)
@@ -2402,10 +2328,6 @@ static int nvme_update_ns_info_block(struct nvme_ns *ns,
 	if (!nvme_update_disk_info(ns, id, nvm, &lim))
 		capacity = 0;
 
-	if (IS_ENABLED(CONFIG_BLK_DEV_ZONED) &&
-	    ns->head->ids.csi == NVME_CSI_ZNS)
-		nvme_update_zone_info(ns, &lim, &zi);
-
 	if ((ns->ctrl->vwc & NVME_CTRL_VWC_PRESENT) && !info->no_vwc)
 		lim.features |= BLK_FEAT_WRITE_CACHE | BLK_FEAT_FUA;
 	else
@@ -2420,7 +2342,7 @@ static int nvme_update_ns_info_block(struct nvme_ns *ns,
 	 * I/O to namespaces with metadata except when the namespace supports
 	 * PI, as it can strip/insert in that case.
 	 */
-	if (!nvme_init_integrity(ns->head, &lim, info))
+	if (!nvme_init_integrity(ns->head, &lim))
 		capacity = 0;
 
 	lim.max_write_streams = ns->head->nr_plids;
@@ -2471,14 +2393,10 @@ static int nvme_update_ns_info(struct nvme_ns *ns, struct nvme_ns_info *info)
 
 	switch (info->ids.csi) {
 	case NVME_CSI_ZNS:
-		if (!IS_ENABLED(CONFIG_BLK_DEV_ZONED)) {
-			dev_info(ns->ctrl->device,
-	"block device for nsid %u not supported without CONFIG_BLK_DEV_ZONED\n",
-				info->nsid);
-			ret = nvme_update_ns_info_generic(ns, info);
-			break;
-		}
-		ret = nvme_update_ns_info_block(ns, info);
+		dev_info(ns->ctrl->device,
+		"block device for nsid %u not supported without CONFIG_BLK_DEV_ZONED\n",
+			info->nsid);
+		ret = nvme_update_ns_info_generic(ns, info);
 		break;
 	case NVME_CSI_NVM:
 		ret = nvme_update_ns_info_block(ns, info);
@@ -2533,7 +2451,7 @@ static int nvme_update_ns_info(struct nvme_ns *ns, struct nvme_ns_info *info)
 		if (unsupported)
 			ns->head->disk->flags |= GENHD_FL_HIDDEN;
 		else
-			nvme_init_integrity(ns->head, &lim, info);
+			nvme_init_integrity(ns->head, &lim);
 		lim.max_write_streams = ns_lim->max_write_streams;
 		lim.write_stream_granularity = ns_lim->write_stream_granularity;
 		ret = queue_limits_commit_update(ns->head->disk->queue, &lim);
@@ -2574,42 +2492,9 @@ static int nvme_get_unique_id(struct gendisk *disk, u8 id[16],
 	return nvme_ns_get_unique_id(disk->private_data, id, type);
 }
 
-#ifdef CONFIG_BLK_SED_OPAL
-static int nvme_sec_submit(void *data, u16 spsp, u8 secp, void *buffer, size_t len,
-		bool send)
-{
-	struct nvme_ctrl *ctrl = data;
-	struct nvme_command cmd = { };
-
-	if (send)
-		cmd.common.opcode = nvme_admin_security_send;
-	else
-		cmd.common.opcode = nvme_admin_security_recv;
-	cmd.common.nsid = 0;
-	cmd.common.cdw10 = cpu_to_le32(((u32)secp) << 24 | ((u32)spsp) << 8);
-	cmd.common.cdw11 = cpu_to_le32(len);
-
-	return __nvme_submit_sync_cmd(ctrl->admin_q, &cmd, NULL, buffer, len,
-			NVME_QID_ANY, NVME_SUBMIT_AT_HEAD);
-}
-
-static void nvme_configure_opal(struct nvme_ctrl *ctrl, bool was_suspended)
-{
-	if (ctrl->oacs & NVME_CTRL_OACS_SEC_SUPP) {
-		if (!ctrl->opal_dev)
-			ctrl->opal_dev = init_opal_dev(ctrl, &nvme_sec_submit);
-		else if (was_suspended)
-			opal_unlock_from_suspend(ctrl->opal_dev);
-	} else {
-		free_opal_dev(ctrl->opal_dev);
-		ctrl->opal_dev = NULL;
-	}
-}
-#else
 static void nvme_configure_opal(struct nvme_ctrl *ctrl, bool was_suspended)
 {
 }
-#endif /* CONFIG_BLK_SED_OPAL */
 
 #define nvme_report_zones	NULL
 

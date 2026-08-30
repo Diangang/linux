@@ -434,36 +434,9 @@ void __init mmap_init(void)
  * validate the region tree
  * - the caller must hold the region lock
  */
-#ifdef CONFIG_DEBUG_NOMMU_REGIONS
-static noinline void validate_nommu_regions(void)
-{
-	struct vm_region *region, *last;
-	struct rb_node *p, *lastp;
-
-	lastp = rb_first(&nommu_region_tree);
-	if (!lastp)
-		return;
-
-	last = rb_entry(lastp, struct vm_region, vm_rb);
-	BUG_ON(last->vm_end <= last->vm_start);
-	BUG_ON(last->vm_top < last->vm_end);
-
-	while ((p = rb_next(lastp))) {
-		region = rb_entry(p, struct vm_region, vm_rb);
-		last = rb_entry(lastp, struct vm_region, vm_rb);
-
-		BUG_ON(region->vm_end <= region->vm_start);
-		BUG_ON(region->vm_top < region->vm_end);
-		BUG_ON(region->vm_start < last->vm_top);
-
-		lastp = p;
-	}
-}
-#else
 static void validate_nommu_regions(void)
 {
 }
-#endif
 
 /*
  * add a region into the global tree
@@ -1181,9 +1154,7 @@ unsigned long do_mmap(struct file *file,
 	add_nommu_region(region);
 
 	/* clear anonymous mappings that don't ask for uninitialized data */
-	if (!vma->vm_file &&
-	    (!IS_ENABLED(CONFIG_MMAP_ALLOW_UNINITIALIZED) ||
-	     !(flags & MAP_UNINITIALIZED)))
+	if (!vma->vm_file)
 		memset((void *)region->vm_start, 0,
 		       region->vm_end - region->vm_start);
 

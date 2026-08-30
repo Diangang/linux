@@ -196,16 +196,8 @@ static inline int arch_within_stack_frames(const void * const stack,
 #define TS_COMPAT		0x0002	/* 32bit syscall active (64BIT)*/
 
 #ifndef __ASSEMBLER__
-#ifdef CONFIG_COMPAT
-#define TS_I386_REGS_POKED	0x0004	/* regs poked by 32-bit ptracer */
 
-#define arch_set_restart_data(restart)	\
-	do { restart->arch_data = current_thread_info()->status; } while (0)
-
-#endif
-
-#define in_ia32_syscall() (IS_ENABLED(CONFIG_IA32_EMULATION) && \
-			   current_thread_info()->status & TS_COMPAT)
+#define in_ia32_syscall() 0
 
 extern void arch_setup_new_exec(void);
 #define arch_setup_new_exec arch_setup_new_exec

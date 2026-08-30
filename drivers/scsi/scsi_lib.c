@@ -44,13 +44,8 @@
  * Size of integrity metadata is usually small, 1 inline sg should
  * cover normal cases.
  */
-#ifdef CONFIG_ARCH_NO_SG_CHAIN
-#define  SCSI_INLINE_PROT_SG_CNT  0
-#define  SCSI_INLINE_SG_CNT  0
-#else
 #define  SCSI_INLINE_PROT_SG_CNT  1
 #define  SCSI_INLINE_SG_CNT  2
-#endif
 
 static struct kmem_cache *scsi_sense_cache;
 static DEFINE_MUTEX(scsi_sense_cache_mutex);
@@ -2053,9 +2048,6 @@ static const struct blk_mq_ops scsi_mq_ops_no_commit = {
 	.queue_rq	= scsi_queue_rq,
 	.complete	= scsi_complete,
 	.timeout	= scsi_timeout,
-#ifdef CONFIG_BLK_DEBUG_FS
-	.show_rq	= scsi_show_rq,
-#endif
 	.init_request	= scsi_mq_init_request,
 	.exit_request	= scsi_mq_exit_request,
 	.cleanup_rq	= scsi_cleanup_rq,
@@ -2082,9 +2074,6 @@ static const struct blk_mq_ops scsi_mq_ops = {
 	.commit_rqs	= scsi_commit_rqs,
 	.complete	= scsi_complete,
 	.timeout	= scsi_timeout,
-#ifdef CONFIG_BLK_DEBUG_FS
-	.show_rq	= scsi_show_rq,
-#endif
 	.init_request	= scsi_mq_init_request,
 	.exit_request	= scsi_mq_exit_request,
 	.cleanup_rq	= scsi_cleanup_rq,
@@ -2201,9 +2190,6 @@ struct scsi_device *scsi_device_from_queue(struct request_queue *q)
  * reasons like the old IDE driver it isn't.  This export allows it to safely
  * probe if a given device is a SCSI one and only attach to that.
  */
-#ifdef CONFIG_CDROM_PKTCDVD_MODULE
-EXPORT_SYMBOL_GPL(scsi_device_from_queue);
-#endif
 
 /**
  * scsi_block_requests - Utility function used by low-level drivers to prevent

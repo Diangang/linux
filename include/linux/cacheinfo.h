@@ -91,7 +91,6 @@ bool last_level_cache_is_valid(unsigned int cpu);
 bool last_level_cache_is_shared(unsigned int cpu_x, unsigned int cpu_y);
 int fetch_cache_info(unsigned int cpu);
 int detect_cache_attributes(unsigned int cpu);
-#ifndef CONFIG_ACPI_PPTT
 /*
  * acpi_get_cache_info() is only called on ACPI enabled
  * platforms using the PPTT for topology. This means that if
@@ -106,10 +105,6 @@ int acpi_get_cache_info(unsigned int cpu,
 {
 	return -ENOENT;
 }
-#else
-int acpi_get_cache_info(unsigned int cpu,
-			unsigned int *levels, unsigned int *split_levels);
-#endif
 
 const struct attribute_group *cache_get_priv_group(struct cacheinfo *this_leaf);
 
@@ -147,22 +142,13 @@ static inline int get_cpu_cacheinfo_id(int cpu, int level)
 	return ci ? ci->id : -1;
 }
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM)
+#if defined(CONFIG_ARM64)
 #define use_arch_cache_info()	(true)
 #else
 #define use_arch_cache_info()	(false)
 #endif
 
-#ifndef CONFIG_ARCH_HAS_CPU_CACHE_ALIASING
 #define cpu_dcache_is_aliasing()	false
 #define cpu_icache_is_aliasing()	cpu_dcache_is_aliasing()
-#else
-#include <asm/cachetype.h>
-
-#ifndef cpu_icache_is_aliasing
-#define cpu_icache_is_aliasing()	cpu_dcache_is_aliasing()
-#endif
-
-#endif
 
 #endif /* _LINUX_CACHEINFO_H */

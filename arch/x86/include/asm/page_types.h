@@ -43,12 +43,7 @@
 
 #ifndef __ASSEMBLER__
 
-#if 0
-extern phys_addr_t physical_mask;
-#define __PHYSICAL_MASK		physical_mask
-#else
 #define __PHYSICAL_MASK		((phys_addr_t)((1ULL << __PHYSICAL_MASK_SHIFT) - 1))
-#endif
 
 extern int devmem_is_allowed(unsigned long pagenr);
 

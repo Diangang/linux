@@ -827,12 +827,6 @@ __get_unmapped_area(struct file *file, unsigned long addr, unsigned long len,
 
 	if (get_area) {
 		addr = get_area(file, addr, len, pgoff, flags);
-	} else if (IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE) && !file
-		   && !addr /* no hint */
-		   && IS_ALIGNED(len, PMD_SIZE)) {
-		/* Ensures that larger anonymous mappings are THP aligned. */
-		addr = thp_get_unmapped_area_vmflags(file, addr, len,
-						     pgoff, flags, vm_flags);
 	} else {
 		addr = mm_get_unmapped_area_vmflags(file, addr, len,
 						    pgoff, flags, vm_flags);
@@ -937,29 +931,6 @@ static int __init cmdline_parse_stack_guard_gap(char *p)
 }
 __setup("stack_guard_gap=", cmdline_parse_stack_guard_gap);
 
-#ifdef CONFIG_STACK_GROWSUP
-int expand_stack_locked(struct vm_area_struct *vma, unsigned long address)
-{
-	return expand_upwards(vma, address);
-}
-
-struct vm_area_struct *find_extend_vma_locked(struct mm_struct *mm, unsigned long addr)
-{
-	struct vm_area_struct *vma, *prev;
-
-	addr &= PAGE_MASK;
-	vma = find_vma_prev(mm, addr, &prev);
-	if (vma && (vma->vm_start <= addr))
-		return vma;
-	if (!prev)
-		return NULL;
-	if (expand_stack_locked(prev, addr))
-		return NULL;
-	if (prev->vm_flags & VM_LOCKED)
-		populate_vma_page_range(prev, addr, prev->vm_end, NULL);
-	return prev;
-}
-#else
 int expand_stack_locked(struct vm_area_struct *vma, unsigned long address)
 {
 	return expand_downwards(vma, address);
@@ -983,19 +954,11 @@ struct vm_area_struct *find_extend_vma_locked(struct mm_struct *mm, unsigned lon
 		populate_vma_page_range(vma, addr, start, NULL);
 	return vma;
 }
-#endif
 
-#if defined(CONFIG_STACK_GROWSUP)
-
-#define vma_expand_up(vma,addr) expand_upwards(vma, addr)
-#define vma_expand_down(vma, addr) (-EFAULT)
-
-#else
 
 #define vma_expand_up(vma,addr) (-EFAULT)
 #define vma_expand_down(vma, addr) expand_downwards(vma, addr)
 
-#endif
 
 /*
  * expand_stack(): legacy interface for page faulting. Don't use unless

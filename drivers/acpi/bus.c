@@ -36,19 +36,12 @@ struct proc_dir_entry *acpi_root_dir;
 EXPORT_SYMBOL(acpi_root_dir);
 
 #ifdef CONFIG_X86
-#ifdef CONFIG_ACPI_CUSTOM_DSDT
-static inline int set_copy_dsdt(const struct dmi_system_id *id)
-{
-	return 0;
-}
-#else
 static int set_copy_dsdt(const struct dmi_system_id *id)
 {
 	pr_notice("%s detected - force copy of DSDT to local memory\n", id->ident);
 	acpi_gbl_copy_dsdt_locally = 1;
 	return 0;
 }
-#endif
 
 static const struct dmi_system_id dsdt_dmi_table[] __initconst = {
 	/*
@@ -446,16 +439,6 @@ static void acpi_bus_osc_negotiate_platform_control(void)
 
 	if (IS_ENABLED(CONFIG_ARM64) || IS_ENABLED(CONFIG_X86))
 		feature_mask |= OSC_SB_GENERIC_INITIATOR_SUPPORT;
-
-	if (IS_ENABLED(CONFIG_ACPI_CPPC_LIB)) {
-		feature_mask |= OSC_SB_CPC_SUPPORT | OSC_SB_CPCV2_SUPPORT |
-				OSC_SB_CPC_FLEXIBLE_ADR_SPACE;
-		if (IS_ENABLED(CONFIG_SCHED_MC_PRIO))
-			feature_mask |= OSC_SB_CPC_DIVERSE_HIGH_SUPPORT;
-	}
-
-	if (IS_ENABLED(CONFIG_USB4))
-		feature_mask |= OSC_SB_NATIVE_USB4_SUPPORT;
 
 	if (ACPI_FAILURE(acpi_get_handle(NULL, "\\_SB", &handle)))
 		return;

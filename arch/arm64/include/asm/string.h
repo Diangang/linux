@@ -5,7 +5,6 @@
 #ifndef __ASM_STRING_H
 #define __ASM_STRING_H
 
-#if !(0 || 0)
 #define __HAVE_ARCH_STRRCHR
 extern char *strrchr(const char *, int c);
 
@@ -29,7 +28,6 @@ extern int memcmp(const void *, const void *, size_t);
 
 #define __HAVE_ARCH_MEMCHR
 extern void *memchr(const void *, int, __kernel_size_t);
-#endif
 
 #define __HAVE_ARCH_MEMCPY
 extern void *memcpy(void *, const void *, __kernel_size_t);
@@ -48,7 +46,7 @@ extern void *__memset(void *, int, __kernel_size_t);
 void memcpy_flushcache(void *dst, const void *src, size_t cnt);
 #endif
 
-#if (0 || 0) && \
+#if (0) && \
 	!defined(__SANITIZE_ADDRESS__)
 
 /*

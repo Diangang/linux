@@ -4409,36 +4409,6 @@ static void pciserial_remove_one(struct pci_dev *dev)
 	pciserial_remove_ports(priv);
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int pciserial_suspend_one(struct device *dev)
-{
-	struct serial_private *priv = dev_get_drvdata(dev);
-
-	if (priv)
-		pciserial_suspend_ports(priv);
-
-	return 0;
-}
-
-static int pciserial_resume_one(struct device *dev)
-{
-	struct pci_dev *pdev = to_pci_dev(dev);
-	struct serial_private *priv = pci_get_drvdata(pdev);
-	int err;
-
-	if (priv) {
-		/*
-		 * The device may have been disabled.  Re-enable it.
-		 */
-		err = pci_enable_device(pdev);
-		/* FIXME: We cannot simply error out here */
-		if (err)
-			pci_err(pdev, "Unable to re-enable ports, trying to continue.\n");
-		pciserial_resume_ports(priv);
-	}
-	return 0;
-}
-#endif
 
 static SIMPLE_DEV_PM_OPS(pciserial_pm_ops, pciserial_suspend_one,
 			 pciserial_resume_one);

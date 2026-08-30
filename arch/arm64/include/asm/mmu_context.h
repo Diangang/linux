@@ -198,29 +198,10 @@ static inline void arch_unmap(struct mm_struct *mm,
 {
 }
 
-#if 0
-static inline void update_saved_ttbr0(struct task_struct *tsk,
-				      struct mm_struct *mm)
-{
-	u64 ttbr;
-
-	if (!system_uses_ttbr0_pan())
-		return;
-
-	if (mm == &init_mm)
-		ttbr = phys_to_ttbr(__pa_symbol(reserved_pg_dir));
-	else
-		ttbr = phys_to_ttbr(virt_to_phys(mm->pgd)) |
-		       FIELD_PREP(TTBRx_EL1_ASID_MASK, ASID(mm));
-
-	WRITE_ONCE(task_thread_info(tsk)->ttbr0, ttbr);
-}
-#else
 static inline void update_saved_ttbr0(struct task_struct *tsk,
 				      struct mm_struct *mm)
 {
 }
-#endif
 
 #define enter_lazy_tlb enter_lazy_tlb
 static inline void

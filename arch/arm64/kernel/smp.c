@@ -495,20 +495,7 @@ static unsigned int cpu_count = 1;
 
 int arch_register_cpu(int cpu)
 {
-	acpi_handle acpi_handle = acpi_get_processor_handle(cpu);
 	struct cpu *c = &per_cpu(cpu_devices, cpu);
-
-	if (!acpi_disabled && !acpi_handle &&
-	    IS_ENABLED(CONFIG_ACPI_HOTPLUG_CPU))
-		return -EPROBE_DEFER;
-
-#ifdef CONFIG_ACPI_HOTPLUG_CPU
-	/* For now block anything that looks like physical CPU Hotplug */
-	if (invalid_logical_cpuid(cpu) || !cpu_present(cpu)) {
-		pr_err_once("Changing CPU present bit is not supported\n");
-		return -ENODEV;
-	}
-#endif
 
 	/*
 	 * Availability of the acpi handle is sufficient to establish
@@ -519,32 +506,6 @@ int arch_register_cpu(int cpu)
 	return register_cpu(c, cpu);
 }
 
-#ifdef CONFIG_ACPI_HOTPLUG_CPU
-void arch_unregister_cpu(int cpu)
-{
-	acpi_handle acpi_handle = acpi_get_processor_handle(cpu);
-	struct cpu *c = &per_cpu(cpu_devices, cpu);
-	acpi_status status;
-	unsigned long long sta;
-
-	if (!acpi_handle) {
-		pr_err_once("Removing a CPU without associated ACPI handle\n");
-		return;
-	}
-
-	status = acpi_evaluate_integer(acpi_handle, "_STA", NULL, &sta);
-	if (ACPI_FAILURE(status))
-		return;
-
-	/* For now do not allow anything that looks like physical CPU HP */
-	if (cpu_present(cpu) && !(sta & ACPI_STA_DEVICE_PRESENT)) {
-		pr_err_once("Changing CPU present bit is not supported\n");
-		return;
-	}
-
-	unregister_cpu(c);
-}
-#endif /* CONFIG_ACPI_HOTPLUG_CPU */
 
 #ifdef CONFIG_ACPI
 static struct acpi_madt_generic_interrupt cpu_madt_gicc[NR_CPUS];
@@ -1086,16 +1047,6 @@ void arch_smp_send_reschedule(int cpu)
 	smp_cross_call(cpumask_of(cpu), IPI_RESCHEDULE);
 }
 
-#ifdef CONFIG_ARM64_ACPI_PARKING_PROTOCOL
-void arch_send_wakeup_ipi(unsigned int cpu)
-{
-	/*
-	 * We use a scheduler IPI to wake the CPU as this avoids the need for a
-	 * dedicated IPI and we can safely handle spurious scheduler IPIs.
-	 */
-	smp_send_reschedule(cpu);
-}
-#endif
 
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_BROADCAST
 void tick_broadcast(const struct cpumask *mask)

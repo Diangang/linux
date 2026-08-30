@@ -47,7 +47,7 @@ static inline int do_raw_write_trylock(rwlock_t *rwlock)
 
 #define write_lock_nested(lock, subclass)	_raw_write_lock(lock)
 
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 
 #define read_lock_irqsave(lock, flags)			\
 	do {						\

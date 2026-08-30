@@ -497,16 +497,6 @@ struct sched_entity {
 
 	u64				nr_migrations;
 
-#ifdef CONFIG_FAIR_GROUP_SCHED
-	int				depth;
-	struct sched_entity		*parent;
-	/* rq on which this entity is (to be) queued: */
-	struct cfs_rq			*cfs_rq;
-	/* rq "owned" by this entity/group: */
-	struct cfs_rq			*my_q;
-	/* cached value of my_q->h_nr_running */
-	unsigned long			runnable_weight;
-#endif
 
 	/*
 	 * Per entity load average tracking.
@@ -654,10 +644,6 @@ struct wake_q_node {
 };
 
 struct kmap_ctrl {
-#if 0
-	int				idx;
-	pte_t				pteval[KM_MAX_IDX];
-#endif
 };
 
 struct task_struct {
@@ -715,18 +701,12 @@ struct task_struct {
 	const struct sched_class	*sched_class;
 
 
-#ifdef CONFIG_CGROUP_SCHED
-	struct task_group		*sched_task_group;
-#endif
 
 
 
 	struct sched_statistics         stats;
 
 
-#ifdef CONFIG_BLK_DEV_IO_TRACE
-	unsigned int			btrace_seq;
-#endif
 
 	unsigned int			policy;
 	unsigned long			max_allowed_capacity;
@@ -812,22 +792,6 @@ struct task_struct {
 #ifndef TIF_RESTORE_SIGMASK
 	unsigned			restore_sigmask:1;
 #endif
-#if 0
-	unsigned			in_user_fault:1;
-#endif
-#ifdef CONFIG_CGROUPS
-	/* disallow userland-initiated cgroup migration */
-	unsigned			no_cgroup_migration:1;
-	/* task is frozen/stopped (used by the cgroup freezer) */
-	unsigned			frozen:1;
-#endif
-#ifdef CONFIG_BLK_CGROUP
-	unsigned			use_memdelay:1;
-#endif
-#ifdef CONFIG_EVENTFD
-	/* Recursion prevention for eventfd_signal() */
-	unsigned			in_eventfd:1;
-#endif
 #ifdef CONFIG_X86_BUS_LOCK_DETECT
 	unsigned			reported_split_lock:1;
 #endif
@@ -889,10 +853,6 @@ struct task_struct {
 
 	u64				utime;
 	u64				stime;
-#ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
-	u64				utimescaled;
-	u64				stimescaled;
-#endif
 	u64				gtime;
 	struct prev_cputime		prev_cputime;
 
@@ -928,10 +888,6 @@ struct task_struct {
 	/* Effective (overridable) subjective task credentials (COW): */
 	const struct cred __rcu		*cred;
 
-#ifdef CONFIG_KEYS
-	/* Cached requested key. */
-	struct key			*cached_requested_key;
-#endif
 
 	/*
 	 * executable name, excluding path.
@@ -993,27 +949,10 @@ struct task_struct {
 	struct mutex			*blocked_on;	/* lock we're blocked on */
 	raw_spinlock_t			blocked_lock;
 
-#ifdef CONFIG_DETECT_HUNG_TASK_BLOCKER
-	/*
-	 * Encoded lock address causing task block (lower 2 bits = type from
-	 * <linux/hung_task.h>). Accessed via hung_task_*() helpers.
-	 */
-	unsigned long			blocker;
-#endif
 
 
 
-#if 0
-# define MAX_LOCK_DEPTH			48UL
-	u64				curr_chain_key;
-	int				lockdep_depth;
-	unsigned int			lockdep_recursion;
-	struct held_lock		held_locks[MAX_LOCK_DEPTH];
-#endif
 
-#if defined(CONFIG_UBSAN) && !0
-	unsigned int			in_ubsan;
-#endif
 
 	/* Journalling filesystem info: */
 	void				*journal_info;
@@ -1037,24 +976,8 @@ struct task_struct {
 	kernel_siginfo_t		*last_siginfo;
 
 	struct task_io_accounting	ioac;
-#ifdef CONFIG_CPUSETS
-	/* Protected by ->alloc_lock: */
-	nodemask_t			mems_allowed;
-	/* Sequence number to catch updates: */
-	seqcount_spinlock_t		mems_allowed_seq;
-	int				cpuset_mem_spread_rotor;
-#endif
-#ifdef CONFIG_CGROUPS
-	/* Control Group info protected by css_set_lock: */
-	struct css_set __rcu		*cgroups;
-	/* cg_list protected by css_set_lock and tsk->alloc_lock: */
-	struct list_head		cg_list;
-#endif	/* CONFIG_CGROUPS */
 #ifdef CONFIG_FUTEX
 	struct robust_list_head __user	*robust_list;
-#ifdef CONFIG_COMPAT
-	struct compat_robust_list_head __user *compat_robust_list;
-#endif
 	struct list_head		pi_state_list;
 	struct futex_pi_state		*pi_state_cache;
 	struct mutex			futex_exit_mutex;
@@ -1146,84 +1069,13 @@ struct task_struct {
 	u64				timer_slack_ns;
 	u64				default_timer_slack_ns;
 
-#if 0 || 0
-	unsigned int			kasan_depth;
-#endif
 
-#if 0
-	struct kmsan_ctx		kmsan_ctx;
-#endif
 
-#ifdef CONFIG_FUNCTION_GRAPH_TRACER
-	/* Index of current stored address in ret_stack: */
-	int				curr_ret_stack;
-	int				curr_ret_depth;
 
-	/* Stack of return addresses for return function tracing: */
-	unsigned long			*ret_stack;
 
-	/* Timestamp for last schedule: */
-	unsigned long long		ftrace_timestamp;
-	unsigned long long		ftrace_sleeptime;
 
-	/*
-	 * Number of functions that haven't been traced
-	 * because of depth overrun:
-	 */
-	atomic_t			trace_overrun;
 
-	/* Pause tracing: */
-	atomic_t			tracing_graph_pause;
-#endif
 
-#if 0
-	/* See kernel/kcov.c for more details. */
-
-	/* Coverage collection mode enabled for this task (0 if disabled): */
-	unsigned int			kcov_mode;
-
-	/* Size of the kcov_area: */
-	unsigned int			kcov_size;
-
-	/* Buffer for coverage collection: */
-	void				*kcov_area;
-
-	/* KCOV descriptor wired with this task or NULL: */
-	struct kcov			*kcov;
-
-	/* KCOV common handle for remote coverage collection: */
-	u64				kcov_handle;
-
-	/* KCOV sequence number: */
-	int				kcov_sequence;
-
-	/* Collect coverage from softirq context: */
-	unsigned int			kcov_softirq;
-#endif
-
-#if 0
-	struct mem_cgroup		*memcg_in_oom;
-#endif
-
-#ifdef CONFIG_MEMCG
-	/* Number of pages to reclaim on returning to userland: */
-	unsigned int			memcg_nr_pages_over_high;
-
-	/* Used by memcontrol for targeted memcg charge: */
-	struct mem_cgroup		*active_memcg;
-
-	/* Cache for current->cgroups->memcg->nodeinfo[nid]->objcg lookups: */
-	struct obj_cgroup		*objcg;
-#endif
-
-#ifdef CONFIG_BLK_CGROUP
-	struct gendisk			*throttle_disk;
-#endif
-
-#if defined(CONFIG_BCACHE) || defined(CONFIG_BCACHE_MODULE)
-	unsigned int			sequential_io;
-	unsigned int			sequential_io_avg;
-#endif
 	struct kmap_ctrl		kmap_ctrl;
 	struct rcu_head			rcu;
 	refcount_t			rcu_users;
@@ -1238,16 +1090,6 @@ struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/* A live task holds one reference: */
 	refcount_t			stack_refcount;
-#endif
-#ifdef CONFIG_SECURITY
-	/* Used by LSM modules for access restriction: */
-	void				*security;
-#endif
-#ifdef CONFIG_KSTACK_ERASE
-	unsigned long			lowest_stack;
-#endif
-#ifdef CONFIG_KSTACK_ERASE_METRICS
-	unsigned long			prev_lowest_stack;
 #endif
 
 #ifdef CONFIG_X86_MCE
@@ -1271,17 +1113,7 @@ struct task_struct {
 	struct callback_head		l1d_flush_kill;
 #endif
 
-#ifdef CONFIG_RV
-	/*
-	 * Per-task RV monitor, fixed in CONFIG_RV_PER_TASK_MONITORS.
-	 * If memory becomes a concern, we can think about a dynamic method.
-	 */
-	union rv_task_monitor		rv[CONFIG_RV_PER_TASK_MONITORS];
-#endif
 
-#ifdef CONFIG_USER_EVENTS
-	struct user_event_mm		*user_event_mm;
-#endif
 
 #ifdef CONFIG_UNWIND_USER
 	struct unwind_task_info		unwind_info;
@@ -1974,15 +1806,6 @@ extern void sched_set_stop_task(int cpu, struct task_struct *stop);
 #define alloc_tag_restore(_tag, _old)		do {} while (0)
 
 /* Avoids recursive inclusion hell */
-#ifdef CONFIG_SCHED_MM_CID
-void sched_mm_cid_before_execve(struct task_struct *t);
-void sched_mm_cid_after_execve(struct task_struct *t);
-void sched_mm_cid_exit(struct task_struct *t);
-static __always_inline int task_mm_cid(struct task_struct *t)
-{
-	return t->mm_cid.cid & ~(MM_CID_ONCPU | MM_CID_TRANSIT);
-}
-#else
 static inline void sched_mm_cid_before_execve(struct task_struct *t) { }
 static inline void sched_mm_cid_after_execve(struct task_struct *t) { }
 static inline void sched_mm_cid_exit(struct task_struct *t) { }
@@ -1995,7 +1818,6 @@ static __always_inline int task_mm_cid(struct task_struct *t)
 	 */
 	return task_cpu(t);
 }
-#endif
 
 #ifndef MODULE
 #ifndef COMPILE_OFFSETS

@@ -19,7 +19,7 @@
 #include "direct.h"
 #if defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_DEVICE) || \
 	defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
-bool dma_default_coherent = IS_ENABLED(CONFIG_ARCH_DMA_DEFAULT_COHERENT);
+bool dma_default_coherent = false;
 #endif
 
 /*
@@ -121,11 +121,6 @@ static bool dma_go_direct(struct device *dev, dma_addr_t mask,
 	if (likely(!ops))
 		return true;
 
-#ifdef CONFIG_DMA_OPS_BYPASS
-	if (dev->dma_ops_bypass)
-		return min_not_zero(mask, dev->bus_dma_limit) >=
-			    dma_direct_get_required_mask(dev);
-#endif
 	return false;
 }
 
@@ -189,10 +184,6 @@ dma_addr_t dma_map_page_attrs(struct device *dev, struct page *page,
 	phys_addr_t phys = page_to_phys(page) + offset;
 
 	if (unlikely(attrs & DMA_ATTR_MMIO))
-		return DMA_MAPPING_ERROR;
-
-	if (IS_ENABLED(CONFIG_DMA_API_DEBUG) &&
-	    WARN_ON_ONCE(is_zone_device_page(page)))
 		return DMA_MAPPING_ERROR;
 
 	return dma_map_phys(dev, phys, size, dir, attrs);
@@ -355,10 +346,6 @@ EXPORT_SYMBOL(dma_unmap_sg_attrs);
 dma_addr_t dma_map_resource(struct device *dev, phys_addr_t phys_addr,
 		size_t size, enum dma_data_direction dir, unsigned long attrs)
 {
-	if (IS_ENABLED(CONFIG_DMA_API_DEBUG) &&
-	    WARN_ON_ONCE(pfn_valid(PHYS_PFN(phys_addr))))
-		return DMA_MAPPING_ERROR;
-
 	return dma_map_phys(dev, phys_addr, size, dir, attrs | DMA_ATTR_MMIO);
 }
 EXPORT_SYMBOL(dma_map_resource);
@@ -464,7 +451,7 @@ bool dma_need_unmap(struct device *dev)
 		return true;
 	if (!dev->dma_skip_sync)
 		return true;
-	return IS_ENABLED(CONFIG_DMA_API_DEBUG);
+	return false;
 }
 EXPORT_SYMBOL_GPL(dma_need_unmap);
 
@@ -531,10 +518,6 @@ pgprot_t dma_pgprot(struct device *dev, pgprot_t prot, unsigned long attrs)
 {
 	if (dev_is_dma_coherent(dev))
 		return prot;
-#ifdef CONFIG_ARCH_HAS_DMA_WRITE_COMBINE
-	if (attrs & DMA_ATTR_WRITE_COMBINE)
-		return pgprot_writecombine(prot);
-#endif
 	return pgprot_dmacoherent(prot);
 }
 #endif /* CONFIG_MMU */

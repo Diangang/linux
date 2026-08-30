@@ -86,14 +86,6 @@ static inline bool in_32bit_syscall(void)
 	return in_ia32_syscall() || in_x32_syscall();
 }
 
-#ifdef CONFIG_COMPAT
-static inline bool in_compat_syscall(void)
-{
-	return in_32bit_syscall();
-}
-#define in_compat_syscall in_compat_syscall	/* override the generic impl */
-#define compat_need_64bit_alignment_fixup in_ia32_syscall
-#endif
 
 struct compat_siginfo;
 

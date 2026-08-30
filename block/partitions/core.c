@@ -15,12 +15,6 @@
 #include "check.h"
 
 static int (*const check_part[])(struct parsed_partitions *) = {
-#ifdef CONFIG_EFI_PARTITION
-	efi_partition,		/* this must come before msdos */
-#endif
-#ifdef CONFIG_MSDOS_PARTITION
-	msdos_partition,
-#endif
 	NULL
 };
 
@@ -147,10 +141,6 @@ static DEVICE_ATTR(alignment_offset, 0444, part_alignment_offset_show, NULL);
 static DEVICE_ATTR(discard_alignment, 0444, part_discard_alignment_show, NULL);
 static DEVICE_ATTR(stat, 0444, part_stat_show, NULL);
 static DEVICE_ATTR(inflight, 0444, part_inflight_show, NULL);
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-static struct device_attribute dev_attr_fail =
-	__ATTR(make-it-fail, 0644, part_fail_show, part_fail_store);
-#endif
 
 static struct attribute *part_attrs[] = {
 	&dev_attr_partition.attr,
@@ -161,9 +151,6 @@ static struct attribute *part_attrs[] = {
 	&dev_attr_discard_alignment.attr,
 	&dev_attr_stat.attr,
 	&dev_attr_inflight.attr,
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-	&dev_attr_fail.attr,
-#endif
 	NULL
 };
 
@@ -173,9 +160,6 @@ static const struct attribute_group part_attr_group = {
 
 static const struct attribute_group *part_attr_groups[] = {
 	&part_attr_group,
-#ifdef CONFIG_BLK_DEV_IO_TRACE
-	&blk_trace_attr_group,
-#endif
 	NULL
 };
 

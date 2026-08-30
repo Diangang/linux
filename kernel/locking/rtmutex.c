@@ -498,8 +498,6 @@ static __always_inline void rt_mutex_wake_q_add_task(struct rt_wake_q_head *wqh,
 						     unsigned int wake_state)
 {
 	if (0 && wake_state == TASK_RTLOCK_WAIT) {
-		if (IS_ENABLED(CONFIG_PROVE_LOCKING))
-			WARN_ON_ONCE(wqh->rtlock_task);
 		get_task_struct(task);
 		wqh->rtlock_task = task;
 	} else {
@@ -545,8 +543,6 @@ static __always_inline bool
 rt_mutex_cond_detect_deadlock(struct rt_mutex_waiter *waiter,
 			      enum rtmutex_chainwalk chwalk)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES))
-		return waiter != NULL;
 	return chwalk == RT_MUTEX_FULL_CHAINWALK;
 }
 

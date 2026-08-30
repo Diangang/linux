@@ -11,7 +11,7 @@
 
 static __always_inline bool vdso_is_timens_clock(const struct vdso_clock *vc)
 {
-	return IS_ENABLED(CONFIG_TIME_NS) && vc->clock_mode == VDSO_CLOCKMODE_TIMENS;
+	return false;
 }
 
 static __always_inline u32 vdso_read_begin(const struct vdso_clock *vc)

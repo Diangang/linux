@@ -52,8 +52,6 @@ typedef void *efi_handle_t;
 
 #if defined(CONFIG_X86_64)
 #define __efiapi __attribute__((ms_abi))
-#elif 0
-#define __efiapi __attribute__((regparm(0)))
 #else
 #define __efiapi
 #endif
@@ -665,7 +663,7 @@ extern struct mm_struct efi_mm;
 
 static inline bool mm_is_efi(struct mm_struct *mm)
 {
-	return IS_ENABLED(CONFIG_EFI) && mm == &efi_mm;
+	return false;
 }
 
 static inline int
@@ -682,11 +680,7 @@ efi_guid_to_str(efi_guid_t *guid, char *out)
 }
 
 extern void efi_init (void);
-#ifdef CONFIG_EFI
-extern void efi_enter_virtual_mode (void);	/* switch EFI to virtual mode, if possible */
-#else
 static inline void efi_enter_virtual_mode (void) {}
-#endif
 #ifdef CONFIG_X86
 extern efi_status_t efi_query_variable_store(u32 attributes,
 					     unsigned long size,
@@ -812,30 +806,6 @@ extern int __init parse_efi_signature_list(
 #define EFI_MEM_NO_SOFT_RESERVE	10	/* Is the kernel configured to ignore soft reservations? */
 #define EFI_PRESERVE_BS_REGIONS	11	/* Are EFI boot-services memory segments available? */
 
-#ifdef CONFIG_EFI
-/*
- * Test whether the above EFI_* bits are enabled.
- */
-static inline bool efi_enabled(int feature)
-{
-	return test_bit(feature, &efi.flags) != 0;
-}
-extern void efi_reboot(enum reboot_mode reboot_mode, const char *__unused);
-
-bool __pure __efi_soft_reserve_enabled(void);
-
-static inline bool __pure efi_soft_reserve_enabled(void)
-{
-	return IS_ENABLED(CONFIG_EFI_SOFT_RESERVE)
-		&& __efi_soft_reserve_enabled();
-}
-
-static inline bool efi_rt_services_supported(unsigned int mask)
-{
-	return (efi.runtime_supported_mask & mask) == mask;
-}
-extern void efi_find_mirror(void);
-#else
 static inline bool efi_enabled(int feature)
 {
 	return false;
@@ -854,7 +824,6 @@ static inline bool efi_rt_services_supported(unsigned int mask)
 }
 
 static inline void efi_find_mirror(void) {}
-#endif
 
 extern int efi_status_to_err(efi_status_t status);
 
@@ -1022,11 +991,7 @@ int efivars_register(struct efivars *efivars,
 		     const struct efivar_operations *ops);
 int efivars_unregister(struct efivars *efivars);
 
-#ifdef CONFIG_EFI
-bool efivar_is_available(void);
-#else
 static inline bool efivar_is_available(void) { return false; }
-#endif
 
 bool efivar_supports_writes(void);
 
@@ -1053,11 +1018,7 @@ efi_status_t efivar_query_variable_info(u32 attr, u64 *storage_space,
 
 static inline bool efi_capsule_pending(int *reset_type) { return false; }
 
-#ifdef CONFIG_EFI
-extern bool efi_runtime_disabled(void);
-#else
 static inline bool efi_runtime_disabled(void) { return true; }
-#endif
 
 extern void efi_call_virt_check_flags(unsigned long flags, const void *caller);
 extern unsigned long efi_call_virt_save_flags(void);
@@ -1224,12 +1185,6 @@ struct efi_mokvar_table_entry {
 	u8 data[];
 } __attribute((packed));
 
-#ifdef CONFIG_LOAD_UEFI_KEYS
-extern void __init efi_mokvar_table_init(void);
-extern struct efi_mokvar_table_entry *efi_mokvar_entry_next(
-			struct efi_mokvar_table_entry **mokvar_entry);
-extern struct efi_mokvar_table_entry *efi_mokvar_entry_find(const char *name);
-#else
 static inline void efi_mokvar_table_init(void) { }
 static inline struct efi_mokvar_table_entry *efi_mokvar_entry_next(
 			struct efi_mokvar_table_entry **mokvar_entry)
@@ -1241,7 +1196,6 @@ static inline struct efi_mokvar_table_entry *efi_mokvar_entry_find(
 {
 	return NULL;
 }
-#endif
 
 struct linux_efi_coco_secret_area {
 	u64	base_pa;
@@ -1261,9 +1215,7 @@ bool xen_efi_config_table_is_usable(const efi_guid_t *guid, unsigned long table)
 static __always_inline
 bool efi_config_table_is_usable(const efi_guid_t *guid, unsigned long table)
 {
-	if (!IS_ENABLED(CONFIG_XEN_EFI))
-		return true;
-	return xen_efi_config_table_is_usable(guid, table);
+	return true;
 }
 
 umode_t efi_attr_is_visible(struct kobject *kobj, struct attribute *attr, int n);

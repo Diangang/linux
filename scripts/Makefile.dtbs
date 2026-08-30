@@ -2,8 +2,6 @@
 
 all-dtb := $(dtb-y) $(dtb-)
 
-# If CONFIG_OF_ALL_DTBS is enabled, all DT blobs are built
-
 # Composite DTB (i.e. DTB constructed by overlay)
 multi-dtb-y := $(call multi-search, $(dtb-y), .dtb, -dtbs)
 # Primitive DTB compiled from *.dts

@@ -194,11 +194,7 @@ static inline int audit_signal_info(int sig, struct task_struct *t)
 static inline void audit_cfg_lsm(const struct lsm_id *lsmid, int flags)
 { }
 
-#ifdef CONFIG_AUDIT_COMPAT_GENERIC
-#define audit_is_compat(arch)  (!((arch) & __AUDIT_ARCH_64BIT))
-#else
 #define audit_is_compat(arch)  false
-#endif
 
 #define AUDIT_INODE_PARENT	1	/* dentry represents the parent */
 #define AUDIT_INODE_HIDDEN	2	/* audit record should be hidden */

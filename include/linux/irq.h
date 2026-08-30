@@ -513,10 +513,6 @@ struct irq_chip {
 	void		(*irq_bus_lock)(struct irq_data *data);
 	void		(*irq_bus_sync_unlock)(struct irq_data *data);
 
-#ifdef CONFIG_DEPRECATED_IRQ_CPU_ONOFFLINE
-	void		(*irq_cpu_online)(struct irq_data *data);
-	void		(*irq_cpu_offline)(struct irq_data *data);
-#endif
 	void		(*irq_suspend)(struct irq_data *data);
 	void		(*irq_resume)(struct irq_data *data);
 	void		(*irq_pm_shutdown)(struct irq_data *data);
@@ -600,10 +596,6 @@ enum {
 
 #define IRQ_DEFAULT_INIT_FLAGS	ARCH_IRQ_INIT_FLAGS
 
-#ifdef CONFIG_DEPRECATED_IRQ_CPU_ONOFFLINE
-extern void irq_cpu_online(void);
-extern void irq_cpu_offline(void);
-#endif
 extern int irq_set_affinity_locked(struct irq_data *data,
 				   const struct cpumask *cpumask, bool force);
 extern int irq_set_vcpu_affinity(unsigned int irq, void *vcpu_info);
@@ -1172,11 +1164,6 @@ int devm_irq_setup_generic_chip(struct device *dev, struct irq_chip_generic *gc,
 
 struct irq_chip_generic *irq_get_domain_generic_chip(struct irq_domain *d, unsigned int hw_irq);
 
-#if 0
-int irq_domain_alloc_generic_chips(struct irq_domain *d,
-				   const struct irq_domain_chip_generic_info *info);
-void irq_domain_remove_generic_chips(struct irq_domain *d);
-#else
 static inline int
 irq_domain_alloc_generic_chips(struct irq_domain *d,
 			       const struct irq_domain_chip_generic_info *info)
@@ -1184,7 +1171,6 @@ irq_domain_alloc_generic_chips(struct irq_domain *d,
 	return -EINVAL;
 }
 static inline void irq_domain_remove_generic_chips(struct irq_domain *d) { }
-#endif /* CONFIG_GENERIC_IRQ_CHIP */
 
 int __irq_alloc_domain_generic_chips(struct irq_domain *d, int irqs_per_chip,
 				     int num_ct, const char *name,
@@ -1272,31 +1258,12 @@ int ipi_send_mask(unsigned int virq, const struct cpumask *dest);
 void ipi_mux_process(void);
 int ipi_mux_create(unsigned int nr_ipi, void (*mux_send)(unsigned int cpu));
 
-#ifdef CONFIG_GENERIC_IRQ_MULTI_HANDLER
-/*
- * Registers a generic IRQ handling function as the top-level IRQ handler in
- * the system, which is generally the first C code called from an assembly
- * architecture-specific interrupt handler.
- *
- * Returns 0 on success, or -EBUSY if an IRQ handler has already been
- * registered.
- */
-int __init set_handle_irq(void (*handle_irq)(struct pt_regs *));
-
-/*
- * Allows interrupt handlers to find the irqchip that's been registered as the
- * top-level IRQ handler.
- */
-extern void (*handle_arch_irq)(struct pt_regs *) __ro_after_init;
-asmlinkage void generic_handle_arch_irq(struct pt_regs *regs);
-#else
 #ifndef set_handle_irq
 #define set_handle_irq(handle_irq)		\
 	do {					\
 		(void)handle_irq;		\
 		WARN_ON(1);			\
 	} while (0)
-#endif
 #endif
 
 #endif /* _LINUX_IRQ_H */

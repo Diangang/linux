@@ -497,17 +497,6 @@ void lockdep_assert_cpus_held(void)
 }
 EXPORT_SYMBOL_GPL(lockdep_assert_cpus_held);
 
-#if 0
-int lockdep_is_cpus_held(void)
-{
-	return percpu_rwsem_is_held(&cpu_hotplug_lock);
-}
-
-int lockdep_is_cpus_write_held(void)
-{
-	return percpu_rwsem_is_write_held(&cpu_hotplug_lock);
-}
-#endif
 
 static void lockdep_acquire_cpus_lock(void)
 {
@@ -1817,157 +1806,6 @@ void __init bringup_nonboot_cpus(unsigned int max_cpus)
 	cpuhp_bringup_mask(cpu_present_mask, max_cpus, CPUHP_ONLINE);
 }
 
-#ifdef CONFIG_PM_SLEEP_SMP
-static cpumask_var_t frozen_cpus;
-
-int freeze_secondary_cpus(int primary)
-{
-	int cpu, error = 0;
-
-	cpu_maps_update_begin();
-	if (primary == -1) {
-		primary = cpumask_first(cpu_online_mask);
-		if (!housekeeping_cpu(primary, HK_TYPE_TIMER))
-			primary = housekeeping_any_cpu(HK_TYPE_TIMER);
-	} else {
-		if (!cpu_online(primary))
-			primary = cpumask_first(cpu_online_mask);
-	}
-
-	/*
-	 * We take down all of the non-boot CPUs in one shot to avoid races
-	 * with the userspace trying to use the CPU hotplug at the same time
-	 */
-	cpumask_clear(frozen_cpus);
-
-	pr_info("Disabling non-boot CPUs ...\n");
-	for (cpu = nr_cpu_ids - 1; cpu >= 0; cpu--) {
-		if (!cpu_online(cpu) || cpu == primary)
-			continue;
-
-		if (pm_wakeup_pending()) {
-			pr_info("Wakeup pending. Abort CPU freeze\n");
-			error = -EBUSY;
-			break;
-		}
-
-		error = _cpu_down(cpu, 1, CPUHP_OFFLINE);
-		if (!error)
-			cpumask_set_cpu(cpu, frozen_cpus);
-		else {
-			pr_err("Error taking CPU%d down: %d\n", cpu, error);
-			break;
-		}
-	}
-
-	if (!error)
-		BUG_ON(num_online_cpus() > 1);
-	else
-		pr_err("Non-boot CPUs are not disabled\n");
-
-	/*
-	 * Make sure the CPUs won't be enabled by someone else. We need to do
-	 * this even in case of failure as all freeze_secondary_cpus() users are
-	 * supposed to do thaw_secondary_cpus() on the failure path.
-	 */
-	cpu_hotplug_disabled++;
-
-	cpu_maps_update_done();
-	return error;
-}
-
-void __weak arch_thaw_secondary_cpus_begin(void)
-{
-}
-
-void __weak arch_thaw_secondary_cpus_end(void)
-{
-}
-
-void thaw_secondary_cpus(void)
-{
-	int cpu, error;
-
-	/* Allow everyone to use the CPU hotplug again */
-	cpu_maps_update_begin();
-	__cpu_hotplug_enable();
-	if (cpumask_empty(frozen_cpus))
-		goto out;
-
-	pr_info("Enabling non-boot CPUs ...\n");
-
-	arch_thaw_secondary_cpus_begin();
-
-	for_each_cpu(cpu, frozen_cpus) {
-		error = _cpu_up(cpu, 1, CPUHP_ONLINE);
-		if (!error) {
-			pr_info("CPU%d is up\n", cpu);
-			continue;
-		}
-		pr_warn("Error taking CPU%d up: %d\n", cpu, error);
-	}
-
-	arch_thaw_secondary_cpus_end();
-
-	cpumask_clear(frozen_cpus);
-out:
-	cpu_maps_update_done();
-}
-
-static int __init alloc_frozen_cpus(void)
-{
-	if (!alloc_cpumask_var(&frozen_cpus, GFP_KERNEL|__GFP_ZERO))
-		return -ENOMEM;
-	return 0;
-}
-core_initcall(alloc_frozen_cpus);
-
-/*
- * When callbacks for CPU hotplug notifications are being executed, we must
- * ensure that the state of the system with respect to the tasks being frozen
- * or not, as reported by the notification, remains unchanged *throughout the
- * duration* of the execution of the callbacks.
- * Hence we need to prevent the freezer from racing with regular CPU hotplug.
- *
- * This synchronization is implemented by mutually excluding regular CPU
- * hotplug and Suspend/Hibernate call paths by hooking onto the Suspend/
- * Hibernate notifications.
- */
-static int
-cpu_hotplug_pm_callback(struct notifier_block *nb,
-			unsigned long action, void *ptr)
-{
-	switch (action) {
-
-	case PM_SUSPEND_PREPARE:
-		cpu_hotplug_disable();
-		break;
-
-	case PM_POST_SUSPEND:
-		cpu_hotplug_enable();
-		break;
-
-	default:
-		return NOTIFY_DONE;
-	}
-
-	return NOTIFY_OK;
-}
-
-
-static int __init cpu_hotplug_pm_sync_init(void)
-{
-	/*
-	 * cpu_hotplug_pm_callback has higher priority than x86
-	 * bsp_pm_callback which depends on cpu_hotplug_pm_callback
-	 * to disable cpu hotplug to avoid cpu hotplug race.
-	 */
-	pm_notifier(cpu_hotplug_pm_callback, 0);
-	return 0;
-}
-core_initcall(cpu_hotplug_pm_sync_init);
-
-#endif /* CONFIG_PM_SLEEP_SMP */
 
 int __boot_cpu_id;
 
@@ -2994,14 +2832,8 @@ EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
 const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
 EXPORT_SYMBOL(cpu_all_bits);
 
-#ifdef CONFIG_INIT_ALL_POSSIBLE
-struct cpumask __cpu_possible_mask __ro_after_init
-	= {CPU_BITS_ALL};
-unsigned int __num_possible_cpus __ro_after_init = NR_CPUS;
-#else
 struct cpumask __cpu_possible_mask __ro_after_init;
 unsigned int __num_possible_cpus __ro_after_init;
-#endif
 EXPORT_SYMBOL(__cpu_possible_mask);
 EXPORT_SYMBOL(__num_possible_cpus);
 
@@ -3113,8 +2945,8 @@ void __init boot_cpu_hotplug_init(void)
 static bool attack_vectors[NR_CPU_ATTACK_VECTORS] __ro_after_init = {
 	[CPU_MITIGATE_USER_KERNEL] = true,
 	[CPU_MITIGATE_USER_USER] = true,
-	[CPU_MITIGATE_GUEST_HOST] = IS_ENABLED(CONFIG_KVM),
-	[CPU_MITIGATE_GUEST_GUEST] = IS_ENABLED(CONFIG_KVM),
+	[CPU_MITIGATE_GUEST_HOST] = false,
+	[CPU_MITIGATE_GUEST_GUEST] = false,
 };
 
 bool cpu_attack_vector_mitigated(enum cpu_attack_vectors v)

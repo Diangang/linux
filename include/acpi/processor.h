@@ -271,15 +271,6 @@ extern int acpi_processor_get_performance_info(struct acpi_processor *pr);
 DECLARE_PER_CPU(struct acpi_processor *, processors);
 extern struct acpi_processor_errata errata;
 
-#if defined(ARCH_HAS_POWER_INIT) && defined(CONFIG_ACPI_PROCESSOR_CSTATE)
-void acpi_processor_power_init_bm_check(struct acpi_processor_flags *flags,
-					unsigned int cpu);
-int acpi_processor_ffh_cstate_probe(unsigned int cpu,
-				    struct acpi_processor_cx *cx,
-				    struct acpi_power_register *reg);
-void acpi_processor_ffh_cstate_enter(struct acpi_processor_cx *cstate);
-void __noreturn acpi_processor_ffh_play_dead(struct acpi_processor_cx *cx);
-#else
 static inline void acpi_processor_power_init_bm_check(struct
 						      acpi_processor_flags
 						      *flags, unsigned int cpu)
@@ -303,7 +294,6 @@ static inline void __noreturn acpi_processor_ffh_play_dead(struct acpi_processor
 {
 	BUG();
 }
-#endif
 
 static inline int call_on_cpu(int cpu, long (*fn)(void *), void *arg,
 			      bool direct)
@@ -315,14 +305,6 @@ static inline int call_on_cpu(int cpu, long (*fn)(void *), void *arg,
 
 /* in processor_perflib.c */
 
-#ifdef CONFIG_CPU_FREQ
-extern bool acpi_processor_cpufreq_init;
-void acpi_processor_ignore_ppc_init(void);
-void acpi_processor_ppc_init(struct cpufreq_policy *policy);
-void acpi_processor_ppc_exit(struct cpufreq_policy *policy);
-void acpi_processor_ppc_has_changed(struct acpi_processor *pr, int event_flag);
-extern int acpi_processor_get_bios_limit(int cpu, unsigned int *limit);
-#else
 static inline void acpi_processor_ignore_ppc_init(void)
 {
 	return;
@@ -352,7 +334,6 @@ static inline int acpi_processor_get_bios_limit(int cpu, unsigned int *limit)
 	return -ENODEV;
 }
 
-#endif				/* CONFIG_CPU_FREQ */
 
 /* in processor_core.c */
 phys_cpuid_t acpi_get_phys_id(acpi_handle, int type, u32 acpi_id);
@@ -360,10 +341,6 @@ phys_cpuid_t acpi_map_madt_entry(u32 acpi_id);
 int acpi_map_cpuid(phys_cpuid_t phys_id, u32 acpi_id);
 int acpi_get_cpuid(acpi_handle, int type, u32 acpi_id);
 
-#ifdef CONFIG_ACPI_CPPC_LIB
-extern int acpi_cppc_processor_probe(struct acpi_processor *pr);
-extern void acpi_cppc_processor_exit(struct acpi_processor *pr);
-#else
 static inline int acpi_cppc_processor_probe(struct acpi_processor *pr)
 {
 	return 0;
@@ -372,26 +349,11 @@ static inline void acpi_cppc_processor_exit(struct acpi_processor *pr)
 {
 	return;
 }
-#endif	/* CONFIG_ACPI_CPPC_LIB */
 
 /* in processor_pdc.c */
 void acpi_processor_set_pdc(acpi_handle handle);
 
 /* in processor_throttling.c */
-#ifdef CONFIG_ACPI_CPU_FREQ_PSS
-int acpi_processor_tstate_has_changed(struct acpi_processor *pr);
-int acpi_processor_get_throttling_info(struct acpi_processor *pr);
-extern int acpi_processor_set_throttling(struct acpi_processor *pr,
-					 int state, bool force);
-/*
- * Reevaluate whether the T-state is invalid after one cpu is
- * onlined/offlined. In such case the flags.throttling will be updated.
- */
-extern void acpi_processor_reevaluate_tstate(struct acpi_processor *pr,
-			bool is_dead);
-extern const struct file_operations acpi_processor_throttling_fops;
-extern void acpi_processor_throttling_init(void);
-#else
 static inline int acpi_processor_tstate_has_changed(struct acpi_processor *pr)
 {
 	return 0;
@@ -412,19 +374,8 @@ static inline void acpi_processor_reevaluate_tstate(struct acpi_processor *pr,
 			bool is_dead) {}
 
 static inline void acpi_processor_throttling_init(void) {}
-#endif	/* CONFIG_ACPI_CPU_FREQ_PSS */
 
 /* in processor_idle.c */
-#ifdef CONFIG_ACPI_PROCESSOR_IDLE
-void acpi_processor_power_init(struct acpi_processor *pr);
-void acpi_processor_power_exit(struct acpi_processor *pr);
-int acpi_processor_power_state_has_changed(struct acpi_processor *pr);
-int acpi_processor_hotplug(struct acpi_processor *pr);
-void acpi_processor_register_idle_driver(void);
-void acpi_processor_unregister_idle_driver(void);
-int acpi_processor_ffh_lpi_probe(unsigned int cpu);
-int acpi_processor_ffh_lpi_enter(struct acpi_lpi_state *lpi);
-#endif /* CONFIG_ACPI_PROCESSOR_IDLE */
 
 /* in processor_thermal.c */
 int acpi_processor_thermal_init(struct acpi_processor *pr,
@@ -432,10 +383,6 @@ int acpi_processor_thermal_init(struct acpi_processor *pr,
 void acpi_processor_thermal_exit(struct acpi_processor *pr,
 				 struct acpi_device *device);
 extern const struct thermal_cooling_device_ops processor_cooling_ops;
-#ifdef CONFIG_CPU_FREQ
-void acpi_thermal_cpufreq_init(struct cpufreq_policy *policy);
-void acpi_thermal_cpufreq_exit(struct cpufreq_policy *policy);
-#else
 static inline void acpi_thermal_cpufreq_init(struct cpufreq_policy *policy)
 {
 	return;
@@ -444,7 +391,6 @@ static inline void acpi_thermal_cpufreq_exit(struct cpufreq_policy *policy)
 {
 	return;
 }
-#endif	/* CONFIG_CPU_FREQ */
 
 void acpi_processor_init_invariance_cppc(void);
 

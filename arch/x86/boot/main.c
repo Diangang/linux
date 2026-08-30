@@ -164,9 +164,6 @@ void main(void)
 	query_ist();
 
 	/* Query EDD information */
-#if defined(CONFIG_EDD) || defined(CONFIG_EDD_MODULE)
-	query_edd();
-#endif
 
 	/* Set the video mode */
 	set_video();

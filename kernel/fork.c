@@ -510,9 +510,6 @@ void put_task_stack(struct task_struct *tsk)
 
 void free_task(struct task_struct *tsk)
 {
-#ifdef CONFIG_SECCOMP
-	WARN_ON_ONCE(tsk->seccomp.filter);
-#endif
 	release_user_cpus_ptr(tsk);
 	scs_release(tsk);
 
@@ -622,20 +619,10 @@ static void check_mm(struct mm_struct *mm)
 		pr_alert("BUG: non-zero pgtables_bytes on freeing mm: %ld\n",
 				mm_pgtables_bytes(mm));
 
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && !defined(CONFIG_SPLIT_PMD_PTLOCKS)
-	VM_BUG_ON_MM(mm->pmd_huge_pte, mm);
-#endif
 }
 
 #define allocate_mm()	(kmem_cache_alloc(mm_cachep, GFP_KERNEL))
 #define free_mm(mm)	(kmem_cache_free(mm_cachep, (mm)))
-
-static void do_check_lazy_tlb(void *arg)
-{
-	struct mm_struct *mm = arg;
-
-	WARN_ON_ONCE(current->active_mm == mm);
-}
 
 static void do_shoot_lazy_tlb(void *arg)
 {
@@ -687,8 +674,6 @@ static void cleanup_lazy_tlbs(struct mm_struct *mm)
 	 *   switching to avoid IPIs completely.
 	 */
 	on_each_cpu_mask(mm_cpumask(mm), do_shoot_lazy_tlb, (void *)mm, 1);
-	if (IS_ENABLED(CONFIG_DEBUG_VM_SHOOT_LAZIES))
-		on_each_cpu(do_check_lazy_tlb, (void *)mm, 1);
 }
 
 /*
@@ -914,15 +899,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	if (err)
 		goto free_stack;
 
-#ifdef CONFIG_SECCOMP
-	/*
-	 * We must handle setting up seccomp filters once we're under
-	 * the sighand lock in case orig has changed between now and
-	 * then. Until then, filter must be NULL to avoid messing up
-	 * the usage counts on the error path calling free_task.
-	 */
-	tsk->seccomp.filter = NULL;
-#endif
 
 	setup_thread_stack(tsk, orig);
 	clear_tsk_need_resched(tsk);
@@ -943,9 +919,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	refcount_set(&tsk->rcu_users, 2);
 	/* One for the rcu users */
 	refcount_set(&tsk->usage, 1);
-#ifdef CONFIG_BLK_DEV_IO_TRACE
-	tsk->btrace_seq = 0;
-#endif
 	tsk->splice_pipe = NULL;
 	tsk->wake_q.next = NULL;
 	tsk->worker_private = NULL;
@@ -955,24 +928,12 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	kmap_local_fork(tsk);
 
 
-#ifdef CONFIG_BLK_CGROUP
-	tsk->throttle_disk = NULL;
-	tsk->use_memdelay = 0;
-#endif
 
-#ifdef CONFIG_MEMCG
-	tsk->active_memcg = NULL;
-#endif
 
 #ifdef CONFIG_X86_BUS_LOCK_DETECT
 	tsk->reported_split_lock = 0;
 #endif
 
-#ifdef CONFIG_SCHED_MM_CID
-	tsk->mm_cid.cid = MM_CID_UNSET;
-	tsk->mm_cid.active = 0;
-	INIT_HLIST_NODE(&tsk->mm_cid.node);
-#endif
 	return tsk;
 
 free_stack:
@@ -1002,26 +963,15 @@ __setup("coredump_filter=", coredump_filter_setup);
 
 static void mm_init_aio(struct mm_struct *mm)
 {
-#ifdef CONFIG_AIO
-	spin_lock_init(&mm->ioctx_lock);
-	mm->ioctx_table = NULL;
-#endif
 }
 
 static __always_inline void mm_clear_owner(struct mm_struct *mm,
 					   struct task_struct *p)
 {
-#ifdef CONFIG_MEMCG
-	if (mm->owner == p)
-		WRITE_ONCE(mm->owner, NULL);
-#endif
 }
 
 static void mm_init_owner(struct mm_struct *mm, struct task_struct *p)
 {
-#ifdef CONFIG_MEMCG
-	mm->owner = p;
-#endif
 }
 
 static void mm_init_uprobes_state(struct mm_struct *mm)
@@ -1061,9 +1011,6 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 	RCU_INIT_POINTER(mm->exe_file, NULL);
 	mmu_notifier_subscriptions_init(mm);
 	init_tlb_flush_pending(mm);
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && !defined(CONFIG_SPLIT_PMD_PTLOCKS)
-	mm->pmd_huge_pte = NULL;
-#endif
 	mm_init_uprobes_state(mm);
 	hugetlb_count_init(mm);
 
@@ -1696,9 +1643,6 @@ static int copy_signal(u64 clone_flags, struct task_struct *tsk)
 	tty_audit_fork(sig);
 	sched_autogroup_fork(sig);
 
-#ifdef CONFIG_CGROUPS
-	init_rwsem(&sig->cgroup_threadgroup_rwsem);
-#endif
 
 	sig->oom_score_adj = current->signal->oom_score_adj;
 	sig->oom_score_adj_min = current->signal->oom_score_adj_min;
@@ -1711,35 +1655,6 @@ static int copy_signal(u64 clone_flags, struct task_struct *tsk)
 
 static void copy_seccomp(struct task_struct *p)
 {
-#ifdef CONFIG_SECCOMP
-	/*
-	 * Must be called with sighand->lock held, which is common to
-	 * all threads in the group. Holding cred_guard_mutex is not
-	 * needed because this new task is not yet running and cannot
-	 * be racing exec.
-	 */
-	assert_spin_locked(&current->sighand->siglock);
-
-	/* Ref-count the new filter user, and assign it. */
-	get_seccomp_filter(current);
-	p->seccomp = current->seccomp;
-
-	/*
-	 * Explicitly enable no_new_privs here in case it got set
-	 * between the task_struct being duplicated and holding the
-	 * sighand lock. The seccomp state and nnp must be in sync.
-	 */
-	if (task_no_new_privs(current))
-		task_set_no_new_privs(p);
-
-	/*
-	 * If the parent gained a seccomp mode after copying thread
-	 * flags and between before we held the sighand lock, we have
-	 * to manually enable the seccomp thread flag here.
-	 */
-	if (p->seccomp.mode != SECCOMP_MODE_DISABLED)
-		set_task_syscall_work(p, SECCOMP);
-#endif
 }
 
 SYSCALL_DEFINE1(set_tid_address, int __user *, tidptr)
@@ -1863,19 +1778,9 @@ int pidfd_prepare(struct pid *pid, unsigned int flags, struct file **ret_file)
 	return take_fd(pidfd);
 }
 
-static void __delayed_free_task(struct rcu_head *rhp)
-{
-	struct task_struct *tsk = container_of(rhp, struct task_struct, rcu);
-
-	free_task(tsk);
-}
-
 static __always_inline void delayed_free_task(struct task_struct *tsk)
 {
-	if (IS_ENABLED(CONFIG_MEMCG))
-		call_rcu(&tsk->rcu, __delayed_free_task);
-	else
-		free_task(tsk);
+	free_task(tsk);
 }
 
 static void copy_oom_score_adj(u64 clone_flags, struct task_struct *tsk)
@@ -1897,14 +1802,7 @@ static void copy_oom_score_adj(u64 clone_flags, struct task_struct *tsk)
 	mutex_unlock(&oom_adj_mutex);
 }
 
-#ifdef CONFIG_RV
-static void rv_task_fork(struct task_struct *p)
-{
-	memset(&p->rv, 0, sizeof(p->rv));
-}
-#else
 #define rv_task_fork(p) do {} while (0)
-#endif
 
 static bool need_futex_hash_allocate_default(u64 clone_flags)
 {
@@ -2107,9 +2005,6 @@ struct task_struct *copy_process(
 	init_sigpending(&p->pending);
 
 	p->utime = p->stime = p->gtime = 0;
-#ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
-	p->utimescaled = p->stimescaled = 0;
-#endif
 	prev_cputime_init(&p->prev_cputime);
 
 
@@ -2137,10 +2032,6 @@ struct task_struct *copy_process(
 		goto bad_fork_cleanup_delayacct;
 	}
 #endif
-#ifdef CONFIG_CPUSETS
-	p->cpuset_mem_spread_rotor = NUMA_NO_NODE;
-	seqcount_spinlock_init(&p->mems_allowed_seq, &p->alloc_lock);
-#endif
 
 	p->pagefault_disabled = 0;
 
@@ -2148,10 +2039,6 @@ struct task_struct *copy_process(
 
 	p->blocked_on = NULL; /* not blocked yet */
 
-#ifdef CONFIG_BCACHE
-	p->sequential_io	= 0;
-	p->sequential_io_avg	= 0;
-#endif
 
 	unwind_task_init(p);
 
@@ -2653,13 +2540,6 @@ pid_t kernel_clone(struct kernel_clone_args *args)
 		get_task_struct(p);
 	}
 
-	if (IS_ENABLED(CONFIG_LRU_GEN_WALKS_MMU) && !(clone_flags & CLONE_VM)) {
-		/* lock the task to synchronize with memcg migration */
-		task_lock(p);
-		lru_gen_add_mm(p->mm);
-		task_unlock(p);
-	}
-
 	wake_up_new_task(p);
 
 	/* forking complete and child started to run, tell ptracer */
@@ -2742,17 +2622,6 @@ SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
 		 int __user *, parent_tidptr,
 		 unsigned long, tls,
 		 int __user *, child_tidptr)
-#elif defined(CONFIG_CLONE_BACKWARDS2)
-SYSCALL_DEFINE5(clone, unsigned long, newsp, unsigned long, clone_flags,
-		 int __user *, parent_tidptr,
-		 int __user *, child_tidptr,
-		 unsigned long, tls)
-#elif defined(CONFIG_CLONE_BACKWARDS3)
-SYSCALL_DEFINE6(clone, unsigned long, clone_flags, unsigned long, newsp,
-		int, stack_size,
-		int __user *, parent_tidptr,
-		int __user *, child_tidptr,
-		unsigned long, tls)
 #else
 SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
 		 int __user *, parent_tidptr,
@@ -2863,9 +2732,7 @@ static inline bool clone3_stack_valid(struct kernel_clone_args *kargs)
 		if (!access_ok((void __user *)kargs->stack, kargs->stack_size))
 			return false;
 
-#if !defined(CONFIG_STACK_GROWSUP)
 		kargs->stack += kargs->stack_size;
-#endif
 	}
 
 	return true;

@@ -243,9 +243,7 @@ do {									\
  */
 static inline int mmap_is_ia32(void)
 {
-	return 0 ||
-	       (IS_ENABLED(CONFIG_COMPAT) &&
-		test_thread_flag(TIF_ADDR32));
+	return 0;
 }
 
 extern unsigned long task_size_32bit(void);

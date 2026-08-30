@@ -119,35 +119,6 @@ SYSCALL_DEFINE2(getitimer, int, which, struct __kernel_old_itimerval __user *, v
 	return error;
 }
 
-#if defined(CONFIG_COMPAT) || defined(CONFIG_ALPHA)
-struct old_itimerval32 {
-	struct old_timeval32	it_interval;
-	struct old_timeval32	it_value;
-};
-
-static int put_old_itimerval32(struct old_itimerval32 __user *o,
-			       const struct itimerspec64 *i)
-{
-	struct old_itimerval32 v32;
-
-	v32.it_interval.tv_sec = i->it_interval.tv_sec;
-	v32.it_interval.tv_usec = i->it_interval.tv_nsec / NSEC_PER_USEC;
-	v32.it_value.tv_sec = i->it_value.tv_sec;
-	v32.it_value.tv_usec = i->it_value.tv_nsec / NSEC_PER_USEC;
-	return copy_to_user(o, &v32, sizeof(struct old_itimerval32)) ? -EFAULT : 0;
-}
-
-COMPAT_SYSCALL_DEFINE2(getitimer, int, which,
-		       struct old_itimerval32 __user *, value)
-{
-	struct itimerspec64 get_buffer;
-	int error = do_getitimer(which, &get_buffer);
-
-	if (!error && put_old_itimerval32(value, &get_buffer))
-		error = -EFAULT;
-	return error;
-}
-#endif
 
 /*
  * Invoked from dequeue_signal() when SIG_ALRM is delivered.
@@ -263,16 +234,6 @@ again:
 	return 0;
 }
 
-#ifdef CONFIG_SECURITY_SELINUX
-void clear_itimer(void)
-{
-	struct itimerspec64 v = {};
-	int i;
-
-	for (i = 0; i < 3; i++)
-		do_setitimer(i, &v, NULL);
-}
-#endif
 
 #ifdef __ARCH_WANT_SYS_ALARM
 
@@ -368,50 +329,3 @@ SYSCALL_DEFINE3(setitimer, int, which, struct __kernel_old_itimerval __user *, v
 		return -EFAULT;
 	return 0;
 }
-
-#if defined(CONFIG_COMPAT) || defined(CONFIG_ALPHA)
-static int get_old_itimerval32(struct itimerspec64 *o, const struct old_itimerval32 __user *i)
-{
-	struct old_itimerval32 v32;
-
-	if (copy_from_user(&v32, i, sizeof(struct old_itimerval32)))
-		return -EFAULT;
-
-	/* Validate the timevals in value.  */
-	if (!timeval_valid(&v32.it_value) ||
-	    !timeval_valid(&v32.it_interval))
-		return -EINVAL;
-
-	o->it_interval.tv_sec = v32.it_interval.tv_sec;
-	o->it_interval.tv_nsec = v32.it_interval.tv_usec * NSEC_PER_USEC;
-	o->it_value.tv_sec = v32.it_value.tv_sec;
-	o->it_value.tv_nsec = v32.it_value.tv_usec * NSEC_PER_USEC;
-	return 0;
-}
-
-COMPAT_SYSCALL_DEFINE3(setitimer, int, which,
-		       struct old_itimerval32 __user *, value,
-		       struct old_itimerval32 __user *, ovalue)
-{
-	struct itimerspec64 set_buffer, get_buffer;
-	int error;
-
-	if (value) {
-		error = get_old_itimerval32(&set_buffer, value);
-		if (error)
-			return error;
-	} else {
-		memset(&set_buffer, 0, sizeof(set_buffer));
-		printk_once(KERN_WARNING "%s calls setitimer() with new_value NULL pointer."
-			    " Misfeature support will be removed\n",
-			    current->comm);
-	}
-
-	error = do_setitimer(which, &set_buffer, ovalue ? &get_buffer : NULL);
-	if (error || !ovalue)
-		return error;
-	if (put_old_itimerval32(ovalue, &get_buffer))
-		return -EFAULT;
-	return 0;
-}
-#endif

@@ -353,22 +353,9 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 	make_task_dead(SIGKILL);
 }
 
-#if 0
-static void report_tag_fault(unsigned long addr, unsigned long esr,
-			     struct pt_regs *regs)
-{
-	/*
-	 * SAS bits aren't set for all faults reported in EL1, so we can't
-	 * find out access size.
-	 */
-	bool is_write = !!(esr & ESR_ELx_WNR);
-	kasan_report((void *)addr, 0, is_write, regs->pc);
-}
-#else
 /* Tag faults aren't enabled without CONFIG_KASAN_HW_TAGS. */
 static inline void report_tag_fault(unsigned long addr, unsigned long esr,
 				    struct pt_regs *regs) { }
-#endif
 
 static void do_tag_recovery(unsigned long addr, unsigned long esr,
 			   struct pt_regs *regs)

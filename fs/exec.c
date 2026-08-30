@@ -281,14 +281,8 @@ err:
 }
 
 struct user_arg_ptr {
-#ifdef CONFIG_COMPAT
-	bool is_compat;
-#endif
 	union {
 		const char __user *const __user *native;
-#ifdef CONFIG_COMPAT
-		const compat_uptr_t __user *compat;
-#endif
 	} ptr;
 };
 
@@ -296,16 +290,6 @@ static const char __user *get_user_arg_ptr(struct user_arg_ptr argv, int nr)
 {
 	const char __user *native;
 
-#ifdef CONFIG_COMPAT
-	if (unlikely(argv.is_compat)) {
-		compat_uptr_t compat;
-
-		if (get_user(compat, argv.ptr.compat + nr))
-			return ERR_PTR(-EFAULT);
-
-		return compat_ptr(compat);
-	}
-#endif
 
 	if (get_user(native, argv.ptr.native + nr))
 		return ERR_PTR(-EFAULT);
@@ -605,26 +589,6 @@ int setup_arg_pages(struct linux_binprm *bprm,
 	struct mmu_gather tlb;
 	struct vma_iterator vmi;
 
-#ifdef CONFIG_STACK_GROWSUP
-	/* Limit stack size */
-	stack_base = bprm->rlim_stack.rlim_max;
-
-	stack_base = calc_max_stack_size(stack_base);
-
-	/* Add space for stack randomization. */
-	if (current->flags & PF_RANDOMIZE)
-		stack_base += (STACK_RND_MASK << PAGE_SHIFT);
-
-	/* Make sure we didn't let the argument array grow too large. */
-	if (vma->vm_end - vma->vm_start > stack_base)
-		return -ENOMEM;
-
-	stack_base = PAGE_ALIGN(stack_top - stack_base);
-
-	stack_shift = vma->vm_start - stack_base;
-	mm->arg_start = bprm->p - stack_shift;
-	bprm->p = vma->vm_end - stack_shift;
-#else
 	stack_top = arch_align_stack(stack_top);
 	stack_top = PAGE_ALIGN(stack_top);
 
@@ -636,7 +600,6 @@ int setup_arg_pages(struct linux_binprm *bprm,
 
 	bprm->p -= stack_shift;
 	mm->arg_start = bprm->p;
-#endif
 
 	bprm->exec -= stack_shift;
 
@@ -698,11 +661,7 @@ int setup_arg_pages(struct linux_binprm *bprm,
 
 	stack_expand = min(rlim_stack, stack_size + stack_expand);
 
-#ifdef CONFIG_STACK_GROWSUP
-	stack_base = vma->vm_start + stack_expand;
-#else
 	stack_base = vma->vm_end - stack_expand;
-#endif
 	current->mm->start_stack = bprm->p;
 	ret = expand_stack_locked(vma, stack_base);
 	if (ret)
@@ -1905,33 +1864,6 @@ SYSCALL_DEFINE5(execveat,
 				  native_arg(argv), native_arg(envp), flags);
 }
 
-#ifdef CONFIG_COMPAT
-
-static inline struct user_arg_ptr compat_arg(const compat_uptr_t __user *p)
-{
-	return (struct user_arg_ptr){.is_compat = true, .ptr.compat = p};
-}
-
-COMPAT_SYSCALL_DEFINE3(execve, const char __user *, filename,
-	const compat_uptr_t __user *, argv,
-	const compat_uptr_t __user *, envp)
-{
-	CLASS(filename, name)(filename);
-	return do_execveat_common(AT_FDCWD, name,
-				  compat_arg(argv), compat_arg(envp), 0);
-}
-
-COMPAT_SYSCALL_DEFINE5(execveat, int, fd,
-		       const char __user *, filename,
-		       const compat_uptr_t __user *, argv,
-		       const compat_uptr_t __user *, envp,
-		       int,  flags)
-{
-	CLASS(filename_uflags, name)(filename, flags);
-	return do_execveat_common(fd, name,
-				  compat_arg(argv), compat_arg(envp), flags);
-}
-#endif
 
 #ifdef CONFIG_SYSCTL
 

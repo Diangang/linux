@@ -479,7 +479,7 @@ void hmac_sha256_usingrawkey(const u8 *raw_key, size_t raw_key_len,
 }
 EXPORT_SYMBOL_GPL(hmac_sha256_usingrawkey);
 
-#if defined(sha256_mod_init_arch) || defined(CONFIG_CRYPTO_FIPS)
+#if defined(sha256_mod_init_arch)
 static int __init sha256_mod_init(void)
 {
 #ifdef sha256_mod_init_arch

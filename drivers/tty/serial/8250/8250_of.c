@@ -278,40 +278,6 @@ static void of_platform_serial_remove(struct platform_device *ofdev)
 	kfree(info);
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int of_serial_suspend(struct device *dev)
-{
-	struct of_serial_info *info = dev_get_drvdata(dev);
-	struct uart_8250_port *port8250 = serial8250_get_port(info->line);
-	struct uart_port *port = &port8250->port;
-
-	serial8250_suspend_port(info->line);
-
-	if (!uart_console(port) || console_suspend_enabled) {
-		pm_runtime_put_sync(dev);
-		clk_disable_unprepare(info->clk);
-		clk_disable_unprepare(info->bus_clk);
-	}
-	return 0;
-}
-
-static int of_serial_resume(struct device *dev)
-{
-	struct of_serial_info *info = dev_get_drvdata(dev);
-	struct uart_8250_port *port8250 = serial8250_get_port(info->line);
-	struct uart_port *port = &port8250->port;
-
-	if (!uart_console(port) || console_suspend_enabled) {
-		pm_runtime_get_sync(dev);
-		clk_prepare_enable(info->bus_clk);
-		clk_prepare_enable(info->clk);
-	}
-
-	serial8250_resume_port(info->line);
-
-	return 0;
-}
-#endif
 static SIMPLE_DEV_PM_OPS(of_serial_pm_ops, of_serial_suspend, of_serial_resume);
 
 /*

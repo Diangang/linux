@@ -276,28 +276,16 @@ static inline bool irq_is_nmi(struct irq_desc *desc)
 	return desc->istate & IRQS_NMI;
 }
 
-#ifdef CONFIG_PM_SLEEP
-void irq_pm_handle_wakeup(struct irq_desc *desc);
-void irq_pm_install_action(struct irq_desc *desc, struct irqaction *action);
-void irq_pm_remove_action(struct irq_desc *desc, struct irqaction *action);
-#else
 static inline void irq_pm_handle_wakeup(struct irq_desc *desc) { }
 static inline void
 irq_pm_install_action(struct irq_desc *desc, struct irqaction *action) { }
 static inline void
 irq_pm_remove_action(struct irq_desc *desc, struct irqaction *action) { }
-#endif
 
-#if 0
-void irq_init_generic_chip(struct irq_chip_generic *gc, const char *name,
-			   int num_ct, unsigned int irq_base,
-			   void __iomem *reg_base, irq_flow_handler_t handler);
-#else
 static inline void
 irq_init_generic_chip(struct irq_chip_generic *gc, const char *name,
 		      int num_ct, unsigned int irq_base,
 		      void __iomem *reg_base, irq_flow_handler_t handler) { }
-#endif /* CONFIG_GENERIC_IRQ_CHIP */
 
 #ifdef CONFIG_GENERIC_PENDING_IRQ
 static inline bool irq_can_move_pcntxt(struct irq_data *data)
@@ -373,34 +361,6 @@ static inline struct irq_data *irqd_get_parent_data(struct irq_data *irqd)
 #endif
 }
 
-#if 0
-#include <linux/debugfs.h>
-
-struct irq_bit_descr {
-	unsigned int	mask;
-	char		*name;
-};
-
-#define BIT_MASK_DESCR(m)	{ .mask = m, .name = #m }
-
-void irq_debug_show_bits(struct seq_file *m, int ind, unsigned int state,
-			 const struct irq_bit_descr *sd, int size);
-
-void irq_add_debugfs_entry(unsigned int irq, struct irq_desc *desc);
-static inline void irq_remove_debugfs_entry(struct irq_desc *desc)
-{
-	debugfs_remove(desc->debugfs_file);
-	kfree(desc->dev_name);
-}
-void irq_debugfs_copy_devname(int irq, struct device *dev);
-# ifdef CONFIG_IRQ_DOMAIN
-void irq_domain_debugfs_init(struct dentry *root);
-# else
-static inline void irq_domain_debugfs_init(struct dentry *root)
-{
-}
-# endif
-#else /* CONFIG_GENERIC_IRQ_DEBUGFS */
 static inline void irq_add_debugfs_entry(unsigned int irq, struct irq_desc *d)
 {
 }
@@ -410,4 +370,3 @@ static inline void irq_remove_debugfs_entry(struct irq_desc *d)
 static inline void irq_debugfs_copy_devname(int irq, struct device *dev)
 {
 }
-#endif /* CONFIG_GENERIC_IRQ_DEBUGFS */

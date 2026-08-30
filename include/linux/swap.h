@@ -73,14 +73,7 @@ static inline int current_is_kswapd(void)
  * When a page is mapped by the device for exclusive access we set the CPU page
  * table entries to a special SWP_DEVICE_EXCLUSIVE entry.
  */
-#if 0
-#define SWP_DEVICE_NUM 3
-#define SWP_DEVICE_WRITE (MAX_SWAPFILES+SWP_HWPOISON_NUM+SWP_MIGRATION_NUM)
-#define SWP_DEVICE_READ (MAX_SWAPFILES+SWP_HWPOISON_NUM+SWP_MIGRATION_NUM+1)
-#define SWP_DEVICE_EXCLUSIVE (MAX_SWAPFILES+SWP_HWPOISON_NUM+SWP_MIGRATION_NUM+2)
-#else
 #define SWP_DEVICE_NUM 0
-#endif
 
 /*
  * Page migration support.
@@ -224,11 +217,7 @@ enum {
  */
 #define SWAP_ENTRY_INVALID	0
 
-#ifdef CONFIG_THP_SWAP
-#define SWAP_NR_ORDERS		(PMD_ORDER + 1)
-#else
 #define SWAP_NR_ORDERS		1
-#endif
 
 /*
  * We keep using same cluster for rotational device so IO will be sequential.
@@ -396,74 +385,6 @@ void check_move_unevictable_folios(struct folio_batch *fbatch);
 extern void __meminit kswapd_run(int nid);
 extern void __meminit kswapd_stop(int nid);
 
-#ifdef CONFIG_SWAP
-
-int add_swap_extent(struct swap_info_struct *sis, unsigned long start_page,
-		unsigned long nr_pages, sector_t start_block);
-int generic_swapfile_activate(struct swap_info_struct *, struct file *,
-		sector_t *);
-
-static inline unsigned long total_swapcache_pages(void)
-{
-	return global_node_page_state(NR_SWAPCACHE);
-}
-
-void free_swap_cache(struct folio *folio);
-void free_folio_and_swap_cache(struct folio *folio);
-void free_pages_and_swap_cache(struct encoded_page **, int);
-/* linux/mm/swapfile.c */
-extern atomic_long_t nr_swap_pages;
-extern long total_swap_pages;
-extern atomic_t nr_rotate_swap;
-
-/* Swap 50% full? Release swapcache more aggressively.. */
-static inline bool vm_swap_full(void)
-{
-	return atomic_long_read(&nr_swap_pages) * 2 < total_swap_pages;
-}
-
-static inline long get_nr_swap_pages(void)
-{
-	return atomic_long_read(&nr_swap_pages);
-}
-
-extern void si_swapinfo(struct sysinfo *);
-int swap_type_of(dev_t device, sector_t offset);
-int find_first_swap(dev_t *device);
-extern unsigned int count_swap_pages(int, int);
-extern sector_t swapdev_block(int, pgoff_t);
-extern int __swap_count(swp_entry_t entry);
-extern bool swap_entry_swapped(struct swap_info_struct *si, swp_entry_t entry);
-extern int swp_swapcount(swp_entry_t entry);
-struct backing_dev_info;
-extern struct swap_info_struct *get_swap_device(swp_entry_t entry);
-sector_t swap_folio_sector(struct folio *folio);
-
-/*
- * If there is an existing swap slot reference (swap entry) and the caller
- * guarantees that there is no race modification of it (e.g., PTL
- * protecting the swap entry in page table; shmem's cmpxchg protects t
- * he swap entry in shmem mapping), these two helpers below can be used
- * to put/dup the entries directly.
- *
- * All entries must be allocated by folio_alloc_swap(). And they must have
- * a swap count > 1. See comments of folio_*_swap helpers for more info.
- */
-int swap_dup_entry_direct(swp_entry_t entry);
-void swap_put_entries_direct(swp_entry_t entry, int nr);
-
-/*
- * folio_free_swap tries to free the swap entries pinned by a swap cache
- * folio, it has to be here to be called by other components.
- */
-bool folio_free_swap(struct folio *folio);
-
-static inline void put_swap_device(struct swap_info_struct *si)
-{
-	percpu_ref_put(&si->users);
-}
-
-#else /* CONFIG_SWAP */
 static inline struct swap_info_struct *get_swap_device(swp_entry_t entry)
 {
 	return NULL;
@@ -524,64 +445,15 @@ static inline int add_swap_extent(struct swap_info_struct *sis,
 {
 	return -EINVAL;
 }
-#endif /* CONFIG_SWAP */
-#ifdef CONFIG_MEMCG
-static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
-{
-	/* Cgroup2 doesn't have per-cgroup swappiness */
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return READ_ONCE(vm_swappiness);
-
-	/* root ? */
-	if (mem_cgroup_disabled() || mem_cgroup_is_root(memcg))
-		return READ_ONCE(vm_swappiness);
-
-	return READ_ONCE(memcg->swappiness);
-}
-
-void lru_reparent_memcg(struct mem_cgroup *memcg, struct mem_cgroup *parent, int nid);
-#else
 static inline int mem_cgroup_swappiness(struct mem_cgroup *mem)
 {
 	return READ_ONCE(vm_swappiness);
 }
-#endif
 
-#if defined(CONFIG_SWAP) && defined(CONFIG_MEMCG) && defined(CONFIG_BLK_CGROUP)
-void __folio_throttle_swaprate(struct folio *folio, gfp_t gfp);
-static inline void folio_throttle_swaprate(struct folio *folio, gfp_t gfp)
-{
-	if (mem_cgroup_disabled())
-		return;
-	__folio_throttle_swaprate(folio, gfp);
-}
-#else
 static inline void folio_throttle_swaprate(struct folio *folio, gfp_t gfp)
 {
 }
-#endif
 
-#if defined(CONFIG_MEMCG) && defined(CONFIG_SWAP)
-int __mem_cgroup_try_charge_swap(struct folio *folio, swp_entry_t entry);
-static inline int mem_cgroup_try_charge_swap(struct folio *folio,
-		swp_entry_t entry)
-{
-	if (mem_cgroup_disabled())
-		return 0;
-	return __mem_cgroup_try_charge_swap(folio, entry);
-}
-
-extern void __mem_cgroup_uncharge_swap(swp_entry_t entry, unsigned int nr_pages);
-static inline void mem_cgroup_uncharge_swap(swp_entry_t entry, unsigned int nr_pages)
-{
-	if (mem_cgroup_disabled())
-		return;
-	__mem_cgroup_uncharge_swap(entry, nr_pages);
-}
-
-extern long mem_cgroup_get_nr_swap_pages(struct mem_cgroup *memcg);
-extern bool mem_cgroup_swap_full(struct folio *folio);
-#else
 static inline int mem_cgroup_try_charge_swap(struct folio *folio,
 					     swp_entry_t entry)
 {
@@ -602,7 +474,6 @@ static inline bool mem_cgroup_swap_full(struct folio *folio)
 {
 	return vm_swap_full();
 }
-#endif
 
 /* for_each_managed_zone_pgdat - helper macro to iterate over all managed zones in a pgdat up to
  * and including the specified highidx

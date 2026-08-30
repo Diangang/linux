@@ -26,77 +26,14 @@
 static int mincore_hugetlb(pte_t *pte, unsigned long hmask, unsigned long addr,
 			unsigned long end, struct mm_walk *walk)
 {
-#ifdef CONFIG_HUGETLB_PAGE
-	unsigned char present;
-	unsigned char *vec = walk->private;
-	spinlock_t *ptl;
-
-	ptl = huge_pte_lock(hstate_vma(walk->vma), walk->mm, pte);
-
-	/*
-	 * Hugepages under user process are always in RAM and never
-	 * swapped out, but theoretically it needs to be checked.
-	 */
-	if (!pte) {
-		present = 0;
-	} else {
-		const pte_t ptep = huge_ptep_get(walk->mm, addr, pte);
-
-		if (huge_pte_none(ptep) || pte_is_marker(ptep))
-			present = 0;
-		else
-			present = 1;
-	}
-
-	for (; addr != end; vec++, addr += PAGE_SIZE)
-		*vec = present;
-	walk->private = vec;
-	spin_unlock(ptl);
-#else
 	BUG();
-#endif
 	return 0;
 }
 
 static unsigned char mincore_swap(swp_entry_t entry, bool shmem)
 {
-	struct swap_info_struct *si;
-	struct folio *folio = NULL;
-	unsigned char present = 0;
-
-	if (!IS_ENABLED(CONFIG_SWAP)) {
-		WARN_ON(1);
-		return 0;
-	}
-
-	/*
-	 * Shmem mapping may contain swapin error entries, which are
-	 * absent. Page table may contain migration or hwpoison
-	 * entries which are always uptodate.
-	 */
-	if (!softleaf_is_swap(entry))
-		return !shmem;
-
-	/*
-	 * Shmem mapping lookup is lockless, so we need to grab the swap
-	 * device. mincore page table walk locks the PTL, and the swap
-	 * device is stable, avoid touching the si for better performance.
-	 */
-	if (shmem) {
-		si = get_swap_device(entry);
-		if (!si)
-			return 0;
-	}
-	folio = swap_cache_get_folio(entry);
-	if (shmem)
-		put_swap_device(si);
-	/* The swap cache space contains either folio, shadow or NULL */
-	if (folio && !xa_is_value(folio)) {
-		present = folio_test_uptodate(folio);
-		folio_put(folio);
-	}
-
-	return present;
+	WARN_ON(1);
+	return 0;
 }
 
 /*

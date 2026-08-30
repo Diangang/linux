@@ -75,53 +75,6 @@ struct futex_private_hash {
 /*
  * Fault injections for futexes.
  */
-#if 0
-
-static struct {
-	struct fault_attr attr;
-
-	bool ignore_private;
-} fail_futex = {
-	.attr = FAULT_ATTR_INITIALIZER,
-	.ignore_private = false,
-};
-
-static int __init setup_fail_futex(char *str)
-{
-	return setup_fault_attr(&fail_futex.attr, str);
-}
-__setup("fail_futex=", setup_fail_futex);
-
-bool should_fail_futex(bool fshared)
-{
-	if (fail_futex.ignore_private && !fshared)
-		return false;
-
-	return should_fail(&fail_futex.attr, 1);
-}
-
-#if 0
-
-static int __init fail_futex_debugfs(void)
-{
-	umode_t mode = S_IFREG | S_IRUSR | S_IWUSR;
-	struct dentry *dir;
-
-	dir = fault_create_debugfs_attr("fail_futex", NULL,
-					&fail_futex.attr);
-	if (IS_ERR(dir))
-		return PTR_ERR(dir);
-
-	debugfs_create_bool("ignore-private", mode, dir,
-			    &fail_futex.ignore_private);
-	return 0;
-}
-
-late_initcall(fail_futex_debugfs);
-
-#endif /* CONFIG_FAULT_INJECTION_DEBUG_FS */
-
-#endif /* CONFIG_FAIL_FUTEX */
 
 static struct futex_hash_bucket *
 __futex_hash(union futex_key *key, struct futex_private_hash *fph);
@@ -1212,106 +1165,6 @@ static void exit_robust_list(struct task_struct *curr)
 	}
 }
 
-#ifdef CONFIG_COMPAT
-static void __user *futex_uaddr(struct robust_list __user *entry,
-				compat_long_t futex_offset)
-{
-	compat_uptr_t base = ptr_to_compat(entry);
-	void __user *uaddr = compat_ptr(base + futex_offset);
-
-	return uaddr;
-}
-
-/*
- * Fetch a robust-list pointer. Bit 0 signals PI futexes:
- */
-static inline int
-compat_fetch_robust_entry(compat_uptr_t *uentry, struct robust_list __user **entry,
-		   compat_uptr_t __user *head, unsigned int *pi)
-{
-	if (get_user(*uentry, head))
-		return -EFAULT;
-
-	*entry = compat_ptr((*uentry) & ~1);
-	*pi = (unsigned int)(*uentry) & 1;
-
-	return 0;
-}
-
-/*
- * Walk curr->robust_list (very carefully, it's a userspace list!)
- * and mark any locks found there dead, and notify any waiters.
- *
- * We silently return on any sign of list-walking problem.
- */
-static void compat_exit_robust_list(struct task_struct *curr)
-{
-	struct compat_robust_list_head __user *head = curr->compat_robust_list;
-	struct robust_list __user *entry, *next_entry, *pending;
-	unsigned int limit = ROBUST_LIST_LIMIT, pi, pip;
-	unsigned int next_pi;
-	compat_uptr_t uentry, next_uentry, upending;
-	compat_long_t futex_offset;
-	int rc;
-
-	/*
-	 * Fetch the list head (which was registered earlier, via
-	 * sys_set_robust_list()):
-	 */
-	if (compat_fetch_robust_entry(&uentry, &entry, &head->list.next, &pi))
-		return;
-	/*
-	 * Fetch the relative futex offset:
-	 */
-	if (get_user(futex_offset, &head->futex_offset))
-		return;
-	/*
-	 * Fetch any possibly pending lock-add first, and handle it
-	 * if it exists:
-	 */
-	if (compat_fetch_robust_entry(&upending, &pending,
-			       &head->list_op_pending, &pip))
-		return;
-
-	next_entry = NULL;	/* avoid warning with gcc */
-	while (entry != (struct robust_list __user *) &head->list) {
-		/*
-		 * Fetch the next entry in the list before calling
-		 * handle_futex_death:
-		 */
-		rc = compat_fetch_robust_entry(&next_uentry, &next_entry,
-			(compat_uptr_t __user *)&entry->next, &next_pi);
-		/*
-		 * A pending lock might already be on the list, so
-		 * dont process it twice:
-		 */
-		if (entry != pending) {
-			void __user *uaddr = futex_uaddr(entry, futex_offset);
-
-			if (handle_futex_death(uaddr, curr, pi,
-					       HANDLE_DEATH_LIST))
-				return;
-		}
-		if (rc)
-			return;
-		uentry = next_uentry;
-		entry = next_entry;
-		pi = next_pi;
-		/*
-		 * Avoid excessively long or circular lists:
-		 */
-		if (!--limit)
-			break;
-
-		cond_resched();
-	}
-	if (pending) {
-		void __user *uaddr = futex_uaddr(pending, futex_offset);
-
-		handle_futex_death(uaddr, curr, pip, HANDLE_DEATH_PENDING);
-	}
-}
-#endif
 
 #ifdef CONFIG_FUTEX_PI
 
@@ -1411,12 +1264,6 @@ static void futex_cleanup(struct task_struct *tsk)
 		tsk->robust_list = NULL;
 	}
 
-#ifdef CONFIG_COMPAT
-	if (unlikely(tsk->compat_robust_list)) {
-		compat_exit_robust_list(tsk);
-		tsk->compat_robust_list = NULL;
-	}
-#endif
 
 	if (unlikely(!list_empty(&tsk->pi_state_list)))
 		exit_pi_state_list(tsk);
@@ -1978,14 +1825,10 @@ static int __init futex_init(void)
 	unsigned int order, n;
 	unsigned long size;
 
-#if 0
-	hashsize = 16;
-#else
 	hashsize = 256 * num_possible_cpus();
 	hashsize /= num_possible_nodes();
 	hashsize = max(4, hashsize);
 	hashsize = roundup_pow_of_two(hashsize);
-#endif
 	futex_hashshift = ilog2(hashsize);
 	size = sizeof(struct futex_hash_bucket) * hashsize;
 	order = get_order(size);

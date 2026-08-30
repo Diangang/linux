@@ -338,68 +338,6 @@ static int psci_features(u32 psci_func_id)
 	return invoke_psci_fn(PSCI_1_0_FN_PSCI_FEATURES,
 			      psci_func_id, 0, 0);
 }
-
-
-#ifdef CONFIG_CPU_IDLE
-static noinstr int psci_suspend_finisher(unsigned long state)
-{
-	u32 power_state = state;
-	phys_addr_t pa_cpu_resume;
-
-	pa_cpu_resume = __pa_symbol_nodebug((unsigned long)cpu_resume);
-
-	return psci_ops.cpu_suspend(power_state, pa_cpu_resume);
-}
-
-int psci_cpu_suspend_enter(u32 state)
-{
-	int ret;
-
-	if (!psci_power_state_loses_context(state)) {
-		struct arm_cpuidle_irq_context context;
-
-		ct_cpuidle_enter();
-		arm_cpuidle_save_irq_context(&context);
-		ret = psci_ops.cpu_suspend(state, 0);
-		arm_cpuidle_restore_irq_context(&context);
-		ct_cpuidle_exit();
-	} else {
-		/*
-		 * ARM64 cpu_suspend() wants to do ct_cpuidle_*() itself.
-		 */
-		if (!IS_ENABLED(CONFIG_ARM64))
-			ct_cpuidle_enter();
-
-		ret = cpu_suspend(state, psci_suspend_finisher);
-
-		if (!IS_ENABLED(CONFIG_ARM64))
-			ct_cpuidle_exit();
-	}
-
-	return ret;
-}
-#endif
-
-static int psci_system_suspend(unsigned long unused)
-{
-	int err;
-	phys_addr_t pa_cpu_resume = __pa_symbol(cpu_resume);
-
-	err = invoke_psci_fn(PSCI_FN_NATIVE(1_0, SYSTEM_SUSPEND),
-			      pa_cpu_resume, 0, 0);
-	return psci_to_linux_errno(err);
-}
-
-static int psci_system_suspend_enter(suspend_state_t state)
-{
-	return cpu_suspend(0, psci_system_suspend);
-}
-
-static const struct platform_suspend_ops psci_suspend_ops = {
-	.valid          = suspend_valid_only_mem,
-	.enter          = psci_system_suspend_enter,
-};
-
 static void __init psci_init_system_reset2(void)
 {
 	int ret;
@@ -408,19 +346,6 @@ static void __init psci_init_system_reset2(void)
 
 	if (ret != PSCI_RET_NOT_SUPPORTED)
 		psci_system_reset2_supported = true;
-}
-
-static void __init psci_init_system_suspend(void)
-{
-	int ret;
-
-	if (!IS_ENABLED(CONFIG_SUSPEND))
-		return;
-
-	ret = psci_features(PSCI_FN_NATIVE(1_0, SYSTEM_SUSPEND));
-
-	if (ret != PSCI_RET_NOT_SUPPORTED)
-		suspend_set_ops(&psci_suspend_ops);
 }
 
 static void __init psci_init_cpu_suspend(void)
@@ -538,7 +463,6 @@ static int __init psci_probe(void)
 	if (PSCI_VERSION_MAJOR(ver) >= 1) {
 		psci_init_smccc();
 		psci_init_cpu_suspend();
-		psci_init_system_suspend();
 		psci_init_system_reset2();
 	}
 

@@ -91,11 +91,7 @@ static inline bool pde_has_proc_read_iter(const struct proc_dir_entry *pde)
 
 static inline bool pde_has_proc_compat_ioctl(const struct proc_dir_entry *pde)
 {
-#ifdef CONFIG_COMPAT
-	return pde->flags & PROC_ENTRY_proc_compat_ioctl;
-#else
 	return false;
-#endif
 }
 
 static inline bool pde_has_proc_lseek(const struct proc_dir_entry *pde)

@@ -76,18 +76,6 @@ struct writeback_control {
 	pgoff_t index;
 	int saved_err;
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-	struct bdi_writeback *wb;	/* wb this writeback is issued under */
-	struct inode *inode;		/* inode being written out */
-
-	/* foreign inode detection, see wbc_detach_inode() */
-	int wb_id;			/* current wb id */
-	int wb_lcand_id;		/* last foreign candidate wb id */
-	int wb_tcand_id;		/* this foreign candidate wb id */
-	size_t wb_bytes;		/* bytes written by current wb */
-	size_t wb_lcand_bytes;		/* bytes written by last candidate */
-	size_t wb_tcand_bytes;		/* bytes written by this candidate */
-#endif
 };
 
 static inline blk_opf_t wbc_to_write_flags(struct writeback_control *wbc)
@@ -102,12 +90,7 @@ static inline blk_opf_t wbc_to_write_flags(struct writeback_control *wbc)
 	return flags;
 }
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-#define wbc_blkcg_css(wbc) \
-	((wbc)->wb ? (wbc)->wb->blkcg_css : blkcg_root_css)
-#else
 #define wbc_blkcg_css(wbc)		(blkcg_root_css)
-#endif /* CONFIG_CGROUP_WRITEBACK */
 
 /*
  * A wb_domain represents a domain that wb's (bdi_writeback's) belong to
@@ -196,78 +179,6 @@ static inline xa_mark_t wbc_to_tag(struct writeback_control *wbc)
 	return PAGECACHE_TAG_DIRTY;
 }
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-
-#include <linux/cgroup.h>
-#include <linux/bio.h>
-
-void __inode_attach_wb(struct inode *inode, struct folio *folio);
-void wbc_detach_inode(struct writeback_control *wbc);
-void wbc_account_cgroup_owner(struct writeback_control *wbc, struct folio *folio,
-			      size_t bytes);
-int cgroup_writeback_by_id(u64 bdi_id, int memcg_id,
-			   enum wb_reason reason, struct wb_completion *done);
-void cgroup_writeback_umount(struct super_block *sb);
-bool cleanup_offline_cgwb(struct bdi_writeback *wb);
-
-/**
- * inode_attach_wb - associate an inode with its wb
- * @inode: inode of interest
- * @folio: folio being dirtied (may be NULL)
- *
- * If @inode doesn't have its wb, associate it with the wb matching the
- * memcg of @folio or, if @folio is NULL, %current.  May be called w/ or w/o
- * @inode->i_lock.
- */
-static inline void inode_attach_wb(struct inode *inode, struct folio *folio)
-{
-	if (!inode->i_wb)
-		__inode_attach_wb(inode, folio);
-}
-
-/**
- * inode_detach_wb - disassociate an inode from its wb
- * @inode: inode of interest
- *
- * @inode is being freed.  Detach from its wb.
- */
-static inline void inode_detach_wb(struct inode *inode)
-{
-	if (inode->i_wb) {
-		WARN_ON_ONCE(!(inode_state_read_once(inode) & I_CLEAR));
-		wb_put(inode->i_wb);
-		inode->i_wb = NULL;
-	}
-}
-
-void wbc_attach_fdatawrite_inode(struct writeback_control *wbc,
-		struct inode *inode);
-
-/**
- * wbc_init_bio - writeback specific initializtion of bio
- * @wbc: writeback_control for the writeback in progress
- * @bio: bio to be initialized
- *
- * @bio is a part of the writeback in progress controlled by @wbc.  Perform
- * writeback specific initialization.  This is used to apply the cgroup
- * writeback context.  Must be called after the bio has been associated with
- * a device.
- */
-static inline void wbc_init_bio(struct writeback_control *wbc, struct bio *bio)
-{
-	/*
-	 * pageout() path doesn't attach @wbc to the inode being written
-	 * out.  This is intentional as we don't want the function to block
-	 * behind a slow cgroup.  Ultimately, we want pageout() to kick off
-	 * regular writeback instead of writing things out itself.
-	 */
-	if (wbc->wb)
-		bio_associate_blkg_from_css(bio, wbc->wb->blkcg_css);
-}
-
-void inode_switch_wbs_work_fn(struct work_struct *work);
-
-#else	/* CONFIG_CGROUP_WRITEBACK */
 
 static inline void inode_attach_wb(struct inode *inode, struct folio *folio)
 {
@@ -299,17 +210,12 @@ static inline void cgroup_writeback_umount(struct super_block *sb)
 {
 }
 
-#endif	/* CONFIG_CGROUP_WRITEBACK */
 
 /*
  * mm/page-writeback.c
  */
 /* consolidated parameters for balance_dirty_pages() and its subroutines */
 struct dirty_throttle_control {
-#ifdef CONFIG_CGROUP_WRITEBACK
-	struct wb_domain	*dom;
-	struct dirty_throttle_control *gdtc;	/* only set in memcg dtc's */
-#endif
 	struct bdi_writeback	*wb;
 	struct fprop_local_percpu *wb_completions;
 
@@ -330,9 +236,6 @@ struct dirty_throttle_control {
 
 bool node_dirty_ok(struct pglist_data *pgdat);
 int wb_domain_init(struct wb_domain *dom, gfp_t gfp);
-#ifdef CONFIG_CGROUP_WRITEBACK
-void wb_domain_exit(struct wb_domain *dom);
-#endif
 
 extern struct wb_domain global_wb_domain;
 

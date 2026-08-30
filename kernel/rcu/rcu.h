@@ -222,31 +222,6 @@ static inline unsigned long rcu_seq_diff(unsigned long new, unsigned long old)
  * RCU implementations.
  */
 
-#ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
-# define STATE_RCU_HEAD_READY	0
-# define STATE_RCU_HEAD_QUEUED	1
-
-extern const struct debug_obj_descr rcuhead_debug_descr;
-
-static inline int debug_rcu_head_queue(struct rcu_head *head)
-{
-	int r1;
-
-	r1 = debug_object_activate(head, &rcuhead_debug_descr);
-	debug_object_active_state(head, &rcuhead_debug_descr,
-				  STATE_RCU_HEAD_READY,
-				  STATE_RCU_HEAD_QUEUED);
-	return r1;
-}
-
-static inline void debug_rcu_head_unqueue(struct rcu_head *head)
-{
-	debug_object_active_state(head, &rcuhead_debug_descr,
-				  STATE_RCU_HEAD_QUEUED,
-				  STATE_RCU_HEAD_READY);
-	debug_object_deactivate(head, &rcuhead_debug_descr);
-}
-#else	/* !CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 static inline int debug_rcu_head_queue(struct rcu_head *head)
 {
 	return 0;
@@ -255,7 +230,6 @@ static inline int debug_rcu_head_queue(struct rcu_head *head)
 static inline void debug_rcu_head_unqueue(struct rcu_head *head)
 {
 }
-#endif	/* #else !CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 
 static inline void debug_rcu_head_callback(struct rcu_head *rhp)
 {
@@ -347,7 +321,6 @@ void rcu_test_sync_prims(void);
  */
 extern void resched_cpu(int cpu);
 
-#if !0
 
 #include <linux/rcu_node_tree.h>
 
@@ -438,7 +411,6 @@ extern void rcu_init_geometry(void);
 	     (cpu) <= rnp->grphi; \
 	     (cpu) = rcu_find_next_bit((rnp), (cpu) + 1 - (rnp->grplo), (mask)))
 
-#endif /* !0 */
 
 
 /*
@@ -554,13 +526,8 @@ enum rcutorture_type {
 	INVALID_RCU_FLAVOR
 };
 
-#if 0
-unsigned long rcu_get_jiffies_lazy_flush(void);
-void rcu_set_jiffies_lazy_flush(unsigned long j);
-#else
 static inline unsigned long rcu_get_jiffies_lazy_flush(void) { return 0; }
 static inline void rcu_set_jiffies_lazy_flush(unsigned long j) { }
-#endif
 
 #if defined(CONFIG_TREE_RCU)
 void rcutorture_get_gp_data(int *flags, unsigned long *gp_seq);
@@ -619,16 +586,12 @@ unsigned long srcu_batches_completed(struct srcu_struct *sp);
 
 static inline void rcu_bind_current_to_nocb(void) { }
 
-#if !0 && defined(CONFIG_TASKS_RCU)
+#if defined(CONFIG_TASKS_RCU)
 void show_rcu_tasks_classic_gp_kthread(void);
 #else
 static inline void show_rcu_tasks_classic_gp_kthread(void) {}
 #endif
-#if !0 && 0
-void show_rcu_tasks_rude_gp_kthread(void);
-#else
 static inline void show_rcu_tasks_rude_gp_kthread(void) {}
-#endif
 
 bool rcu_cpu_beenfullyonline(int cpu);
 

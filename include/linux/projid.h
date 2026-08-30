@@ -48,19 +48,6 @@ static inline bool projid_valid(kprojid_t projid)
 	return !projid_eq(projid, INVALID_PROJID);
 }
 
-#ifdef CONFIG_USER_NS
-
-extern kprojid_t make_kprojid(struct user_namespace *from, projid_t projid);
-
-extern projid_t from_kprojid(struct user_namespace *to, kprojid_t projid);
-extern projid_t from_kprojid_munged(struct user_namespace *to, kprojid_t projid);
-
-static inline bool kprojid_has_mapping(struct user_namespace *ns, kprojid_t projid)
-{
-	return from_kprojid(ns, projid) != (projid_t)-1;
-}
-
-#else
 
 static inline kprojid_t make_kprojid(struct user_namespace *from, projid_t projid)
 {
@@ -85,6 +72,5 @@ static inline bool kprojid_has_mapping(struct user_namespace *ns, kprojid_t proj
 	return true;
 }
 
-#endif /* CONFIG_USER_NS */
 
 #endif /* _LINUX_PROJID_H */

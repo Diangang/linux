@@ -183,9 +183,6 @@ static inline void vdso_read_cpunode(unsigned *cpu, unsigned *node)
 extern const char early_idt_handler_array[NUM_EXCEPTION_VECTORS][EARLY_IDT_HANDLER_SIZE];
 extern void early_ignore_irq(void);
 
-#ifdef CONFIG_XEN_PV
-extern const char xen_early_idt_handler_array[NUM_EXCEPTION_VECTORS][XEN_EARLY_IDT_HANDLER_SIZE];
-#endif
 
 /*
  * Load a segment. Fall back on loading the zero segment if something goes

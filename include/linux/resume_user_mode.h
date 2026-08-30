@@ -49,12 +49,6 @@ static inline void resume_user_mode_work(struct pt_regs *regs)
 	if (unlikely(task_work_pending(current)))
 		task_work_run();
 
-#ifdef CONFIG_KEYS_REQUEST_CACHE
-	if (unlikely(current->cached_requested_key)) {
-		key_put(current->cached_requested_key);
-		current->cached_requested_key = NULL;
-	}
-#endif
 
 	mem_cgroup_handle_over_high(GFP_KERNEL);
 	blkcg_maybe_throttle_current();

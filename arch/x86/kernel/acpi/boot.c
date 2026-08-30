@@ -720,11 +720,7 @@ int (*__acpi_register_gsi)(struct device *dev, u32 gsi,
 			   int trigger, int polarity) = acpi_register_gsi_pic;
 void (*__acpi_unregister_gsi)(u32 gsi) = NULL;
 
-#ifdef CONFIG_ACPI_SLEEP
-int (*acpi_suspend_lowlevel)(void) = x86_acpi_suspend_lowlevel;
-#else
 int (*acpi_suspend_lowlevel)(void);
-#endif
 
 /*
  * success: return IRQ number (>=0)
@@ -756,80 +752,10 @@ static void __init acpi_set_irq_model_ioapic(void)
 /*
  *  ACPI based hotplug support for CPU
  */
-#ifdef CONFIG_ACPI_HOTPLUG_CPU
-#include <acpi/processor.h>
-
-static int acpi_map_cpu2node(acpi_handle handle, int cpu, int physid)
-{
-#ifdef CONFIG_ACPI_NUMA
-	int nid;
-
-	nid = acpi_get_node(handle);
-	if (nid != NUMA_NO_NODE) {
-		set_apicid_to_node(physid, nid);
-		numa_set_node(cpu, nid);
-	}
-#endif
-	return 0;
-}
-
-int acpi_map_cpu(acpi_handle handle, phys_cpuid_t physid, u32 acpi_id, int *pcpu)
-{
-	int cpu = topology_hotplug_apic(physid, acpi_id);
-
-	if (cpu < 0) {
-		pr_info("Unable to map lapic to logical cpu number\n");
-		return cpu;
-	}
-
-	acpi_processor_set_pdc(handle);
-	acpi_map_cpu2node(handle, cpu, physid);
-
-	*pcpu = cpu;
-	return 0;
-}
-EXPORT_SYMBOL(acpi_map_cpu);
-
-int acpi_unmap_cpu(int cpu)
-{
-#ifdef CONFIG_ACPI_NUMA
-	set_apicid_to_node(per_cpu(x86_cpu_to_apicid, cpu), NUMA_NO_NODE);
-#endif
-	topology_hotunplug_apic(cpu);
-	return 0;
-}
-EXPORT_SYMBOL(acpi_unmap_cpu);
-#endif	/* CONFIG_ACPI_HOTPLUG_CPU */
 
 int acpi_register_ioapic(acpi_handle handle, u64 phys_addr, u32 gsi_base)
 {
 	int ret = -ENOSYS;
-#ifdef CONFIG_ACPI_HOTPLUG_IOAPIC
-	int ioapic_id;
-	u64 addr;
-	struct ioapic_domain_cfg cfg = {
-		.type = IOAPIC_DOMAIN_DYNAMIC,
-		.ops = &mp_ioapic_irqdomain_ops,
-	};
-
-	ioapic_id = acpi_get_ioapic_id(handle, gsi_base, &addr);
-	if (ioapic_id < 0) {
-		unsigned long long uid;
-		acpi_status status;
-
-		status = acpi_evaluate_integer(handle, METHOD_NAME__UID,
-					       NULL, &uid);
-		if (ACPI_FAILURE(status)) {
-			acpi_handle_warn(handle, "failed to get IOAPIC ID.\n");
-			return -EINVAL;
-		}
-		ioapic_id = (int)uid;
-	}
-
-	mutex_lock(&acpi_ioapic_lock);
-	ret  = mp_register_ioapic(ioapic_id, phys_addr, gsi_base, &cfg);
-	mutex_unlock(&acpi_ioapic_lock);
-#endif
 
 	return ret;
 }
@@ -839,11 +765,6 @@ int acpi_unregister_ioapic(acpi_handle handle, u32 gsi_base)
 {
 	int ret = -ENOSYS;
 
-#ifdef CONFIG_ACPI_HOTPLUG_IOAPIC
-	mutex_lock(&acpi_ioapic_lock);
-	ret  = mp_unregister_ioapic(gsi_base);
-	mutex_unlock(&acpi_ioapic_lock);
-#endif
 
 	return ret;
 }
@@ -862,11 +783,6 @@ int acpi_ioapic_registered(acpi_handle handle, u32 gsi_base)
 {
 	int ret = 0;
 
-#ifdef CONFIG_ACPI_HOTPLUG_IOAPIC
-	mutex_lock(&acpi_ioapic_lock);
-	ret  = mp_ioapic_registered(gsi_base);
-	mutex_unlock(&acpi_ioapic_lock);
-#endif
 
 	return ret;
 }
@@ -1794,16 +1710,6 @@ u64 x86_default_get_root_pointer(void)
 	return boot_params.acpi_rsdp_addr;
 }
 
-#ifdef CONFIG_XEN_PV
-void __iomem *x86_acpi_os_ioremap(acpi_physical_address phys, acpi_size size)
-{
-	return ioremap_cache(phys, size);
-}
-
-void __iomem * (*acpi_os_ioremap)(acpi_physical_address phys, acpi_size size) =
-	x86_acpi_os_ioremap;
-EXPORT_SYMBOL_GPL(acpi_os_ioremap);
-#endif
 
 int acpi_get_cpu_uid(unsigned int cpu, u32 *uid)
 {

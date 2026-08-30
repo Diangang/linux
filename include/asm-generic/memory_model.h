@@ -9,38 +9,7 @@
 /*
  * supports 3 memory models.
  */
-#if 0
-
-#ifndef ARCH_PFN_OFFSET
-#define ARCH_PFN_OFFSET		(0UL)
-#endif
-
-#define __pfn_to_page(pfn)	(mem_map + ((pfn) - ARCH_PFN_OFFSET))
-#define __page_to_pfn(page)	((unsigned long)((page) - mem_map) + \
-				 ARCH_PFN_OFFSET)
-
-/* avoid <linux/mm.h> include hell */
-extern unsigned long max_mapnr;
-
-#ifndef pfn_valid
-static inline int pfn_valid(unsigned long pfn)
-{
-	unsigned long pfn_offset = ARCH_PFN_OFFSET;
-
-	return pfn >= pfn_offset && (pfn - pfn_offset) < max_mapnr;
-}
-#define pfn_valid pfn_valid
-
-#ifndef for_each_valid_pfn
-#define for_each_valid_pfn(pfn, start_pfn, end_pfn)			 \
-	for ((pfn) = max_t(unsigned long, (start_pfn), ARCH_PFN_OFFSET); \
-	     (pfn) < min_t(unsigned long, (end_pfn),			 \
-			   ARCH_PFN_OFFSET + max_mapnr);		 \
-	     (pfn)++)
-#endif /* for_each_valid_pfn */
-#endif /* valid_pfn */
-
-#elif defined(CONFIG_SPARSEMEM_VMEMMAP)
+#if   defined(CONFIG_SPARSEMEM_VMEMMAP)
 
 /* memmap is virtually contiguous.  */
 #define __pfn_to_page(pfn)	(vmemmap + (pfn))

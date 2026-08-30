@@ -24,9 +24,6 @@ struct cma_memrange {
 		unsigned long early_pfn;
 		unsigned long *bitmap;
 	};
-#ifdef CONFIG_CMA_DEBUGFS
-	struct debugfs_u32_array dfs_bitmap;
-#endif
 };
 #define CMA_MAX_RANGES 8
 
@@ -36,10 +33,6 @@ struct cma {
 	unsigned int order_per_bit; /* Order of pages represented by one bit */
 	spinlock_t	lock;
 	struct mutex alloc_mutex;
-#ifdef CONFIG_CMA_DEBUGFS
-	struct hlist_head mem_head;
-	spinlock_t mem_head_lock;
-#endif
 	char name[CMA_MAX_NAME];
 	int nranges;
 	struct cma_memrange ranges[CMA_MAX_RANGES];

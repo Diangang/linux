@@ -216,19 +216,6 @@ void *dma_direct_alloc(struct device *dev, size_t size,
 		return dma_direct_alloc_no_mapping(dev, size, dma_handle, gfp);
 
 	if (!dev_is_dma_coherent(dev)) {
-		if (IS_ENABLED(CONFIG_ARCH_HAS_DMA_ALLOC) &&
-		    !is_swiotlb_for_alloc(dev))
-			return arch_dma_alloc(dev, size, dma_handle, gfp,
-					      attrs);
-
-		/*
-		 * If there is a global pool, always allocate from it for
-		 * non-coherent devices.
-		 */
-		if (IS_ENABLED(CONFIG_DMA_GLOBAL_POOL))
-			return dma_alloc_from_global_coherent(dev, size,
-					dma_handle);
-
 		/*
 		 * Otherwise we require the architecture to either be able to
 		 * mark arbitrary parts of the kernel direct mapping uncached,
@@ -310,26 +297,10 @@ out_leak_pages:
 void dma_direct_free(struct device *dev, size_t size,
 		void *cpu_addr, dma_addr_t dma_addr, unsigned long attrs)
 {
-	unsigned int page_order = get_order(size);
-
 	if ((attrs & DMA_ATTR_NO_KERNEL_MAPPING) &&
 	    !force_dma_unencrypted(dev) && !is_swiotlb_for_alloc(dev)) {
 		/* cpu_addr is a struct page cookie, not a kernel address */
 		dma_free_contiguous(dev, cpu_addr, size);
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_ARCH_HAS_DMA_ALLOC) &&
-	    !dev_is_dma_coherent(dev) &&
-	    !is_swiotlb_for_alloc(dev)) {
-		arch_dma_free(dev, size, cpu_addr, dma_addr, attrs);
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_DMA_GLOBAL_POOL) &&
-	    !dev_is_dma_coherent(dev)) {
-		if (!dma_release_from_global_coherent(page_order, cpu_addr))
-			WARN_ON_ONCE(1);
 		return;
 	}
 
@@ -341,8 +312,6 @@ void dma_direct_free(struct device *dev, size_t size,
 	if (is_vmalloc_addr(cpu_addr)) {
 		vunmap(cpu_addr);
 	} else {
-		if (IS_ENABLED(CONFIG_ARCH_HAS_DMA_CLEAR_UNCACHED))
-			arch_dma_clear_uncached(cpu_addr, size);
 		if (dma_set_encrypted(dev, cpu_addr, size))
 			return;
 	}

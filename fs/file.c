@@ -175,15 +175,8 @@ static struct fdtable *alloc_fdtable(unsigned int slots_wanted)
 	 * already gives BITS_PER_LONG slots), the above boils down to
 	 * 1.  use the smallest power of two large enough to give us that many
 	 * slots.
-	 * 2.  on 32bit skip 64 and 128 - the minimal capacity we want there is
-	 * 256 slots (i.e. 1Kb fd array).
-	 * 3.  on 64bit don't skip anything, 1Kb fd array means 128 slots there
-	 * and we are never going to be asked for 64 or less.
 	 */
-	if (IS_ENABLED(CONFIG_32BIT) && slots_wanted < 256)
-		nr = 256;
-	else
-		nr = roundup_pow_of_two(slots_wanted);
+	nr = roundup_pow_of_two(slots_wanted);
 	/*
 	 * Note that this can drive nr *below* what we had passed if sysctl_nr_open
 	 * had been set lower between the check in expand_files() and here.

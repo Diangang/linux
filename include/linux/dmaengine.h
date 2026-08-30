@@ -555,11 +555,7 @@ typedef void (*dma_async_tx_callback_result)(void *dma_async_param,
 				const struct dmaengine_result *result);
 
 struct dmaengine_unmap_data {
-#if IS_ENABLED(CONFIG_DMA_ENGINE_RAID)
-	u16 map_cnt;
-#else
 	u8 map_cnt;
-#endif
 	u8 to_cnt;
 	u8 from_cnt;
 	u8 bidi_cnt;
@@ -621,25 +617,8 @@ struct dma_async_tx_descriptor {
 	struct dmaengine_unmap_data *unmap;
 	enum dma_desc_metadata_mode desc_metadata_mode;
 	struct dma_descriptor_metadata_ops *metadata_ops;
-#ifdef CONFIG_ASYNC_TX_ENABLE_CHANNEL_SWITCH
-	struct dma_async_tx_descriptor *next;
-	struct dma_async_tx_descriptor *parent;
-	spinlock_t lock;
-#endif
 };
 
-#ifdef CONFIG_DMA_ENGINE
-static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
-				 struct dmaengine_unmap_data *unmap)
-{
-	kref_get(&unmap->kref);
-	tx->unmap = unmap;
-}
-
-struct dmaengine_unmap_data *
-dmaengine_get_unmap_data(struct device *dev, int nr, gfp_t flags);
-void dmaengine_unmap_put(struct dmaengine_unmap_data *unmap);
-#else
 static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
 				 struct dmaengine_unmap_data *unmap)
 {
@@ -652,7 +631,6 @@ dmaengine_get_unmap_data(struct device *dev, int nr, gfp_t flags)
 static inline void dmaengine_unmap_put(struct dmaengine_unmap_data *unmap)
 {
 }
-#endif
 
 static inline void dma_descriptor_unmap(struct dma_async_tx_descriptor *tx)
 {
@@ -663,7 +641,6 @@ static inline void dma_descriptor_unmap(struct dma_async_tx_descriptor *tx)
 	tx->unmap = NULL;
 }
 
-#ifndef CONFIG_ASYNC_TX_ENABLE_CHANNEL_SWITCH
 static inline void txd_lock(struct dma_async_tx_descriptor *txd)
 {
 }
@@ -689,37 +666,6 @@ static inline struct dma_async_tx_descriptor *txd_parent(struct dma_async_tx_des
 	return NULL;
 }
 
-#else
-static inline void txd_lock(struct dma_async_tx_descriptor *txd)
-{
-	spin_lock_bh(&txd->lock);
-}
-static inline void txd_unlock(struct dma_async_tx_descriptor *txd)
-{
-	spin_unlock_bh(&txd->lock);
-}
-static inline void txd_chain(struct dma_async_tx_descriptor *txd, struct dma_async_tx_descriptor *next)
-{
-	txd->next = next;
-	next->parent = txd;
-}
-static inline void txd_clear_parent(struct dma_async_tx_descriptor *txd)
-{
-	txd->parent = NULL;
-}
-static inline void txd_clear_next(struct dma_async_tx_descriptor *txd)
-{
-	txd->next = NULL;
-}
-static inline struct dma_async_tx_descriptor *txd_parent(struct dma_async_tx_descriptor *txd)
-{
-	return txd->parent;
-}
-static inline struct dma_async_tx_descriptor *txd_next(struct dma_async_tx_descriptor *txd)
-{
-	return txd->next;
-}
-#endif
 
 /**
  * struct dma_tx_state - filled in to report the status of
@@ -1018,20 +964,6 @@ static inline struct dma_async_tx_descriptor *dmaengine_prep_slave_sg(
 						  dir, flags, NULL);
 }
 
-#ifdef CONFIG_RAPIDIO_DMA_ENGINE
-struct rio_dma_ext;
-static inline struct dma_async_tx_descriptor *dmaengine_prep_rio_sg(
-	struct dma_chan *chan, struct scatterlist *sgl,	unsigned int sg_len,
-	enum dma_transfer_direction dir, unsigned long flags,
-	struct rio_dma_ext *rio_ext)
-{
-	if (!chan || !chan->device || !chan->device->device_prep_slave_sg)
-		return NULL;
-
-	return chan->device->device_prep_slave_sg(chan, sgl, sg_len,
-						  dir, flags, rio_ext);
-}
-#endif
 
 static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_cyclic(
 		struct dma_chan *chan, dma_addr_t buf_addr, size_t buf_len,
@@ -1097,14 +1029,6 @@ static inline bool dmaengine_is_metadata_mode_supported(struct dma_chan *chan,
 	return !!(chan->device->desc_metadata_modes & mode);
 }
 
-#ifdef CONFIG_DMA_ENGINE
-int dmaengine_desc_attach_metadata(struct dma_async_tx_descriptor *desc,
-				   void *data, size_t len);
-void *dmaengine_desc_get_metadata_ptr(struct dma_async_tx_descriptor *desc,
-				      size_t *payload_len, size_t *max_len);
-int dmaengine_desc_set_metadata_len(struct dma_async_tx_descriptor *desc,
-				    size_t payload_len);
-#else /* CONFIG_DMA_ENGINE */
 static inline int dmaengine_desc_attach_metadata(
 		struct dma_async_tx_descriptor *desc, void *data, size_t len)
 {
@@ -1121,7 +1045,6 @@ static inline int dmaengine_desc_set_metadata_len(
 {
 	return -EINVAL;
 }
-#endif /* CONFIG_DMA_ENGINE */
 
 /**
  * dmaengine_terminate_all() - Terminate all active DMA transfers
@@ -1360,17 +1283,12 @@ static inline size_t dmaengine_get_src_icg(struct dma_interleaved_template *xt,
 
 /* --- public DMA engine API --- */
 
-#ifdef CONFIG_DMA_ENGINE
-void dmaengine_get(void);
-void dmaengine_put(void);
-#else
 static inline void dmaengine_get(void)
 {
 }
 static inline void dmaengine_put(void)
 {
 }
-#endif
 
 static inline void async_dmaengine_get(void)
 {
@@ -1501,22 +1419,6 @@ dma_set_tx_state(struct dma_tx_state *st, dma_cookie_t last, dma_cookie_t used, 
 	st->residue = residue;
 }
 
-#ifdef CONFIG_DMA_ENGINE
-struct dma_chan *dma_find_channel(enum dma_transaction_type tx_type);
-enum dma_status dma_sync_wait(struct dma_chan *chan, dma_cookie_t cookie);
-enum dma_status dma_wait_for_async_tx(struct dma_async_tx_descriptor *tx);
-void dma_issue_pending_all(void);
-struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
-				       dma_filter_fn fn, void *fn_param,
-				       struct device_node *np);
-
-struct dma_chan *dma_request_chan(struct device *dev, const char *name);
-struct dma_chan *dma_request_chan_by_mask(const dma_cap_mask_t *mask);
-struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name);
-
-void dma_release_channel(struct dma_chan *chan);
-int dma_get_slave_caps(struct dma_chan *chan, struct dma_slave_caps *caps);
-#else
 static inline struct dma_chan *dma_find_channel(enum dma_transaction_type tx_type)
 {
 	return NULL;
@@ -1563,7 +1465,6 @@ static inline int dma_get_slave_caps(struct dma_chan *chan,
 {
 	return -ENXIO;
 }
-#endif
 
 static inline int dmaengine_desc_set_reuse(struct dma_async_tx_descriptor *tx)
 {

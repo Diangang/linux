@@ -345,9 +345,7 @@ enum {
 	 * if KVM does not lock down the memory type.
 	 */
 	DECLARE_VMA_BIT(ALLOW_ANY_UNCACHED, 39),
-#if defined(CONFIG_PPC32)
-	DECLARE_VMA_BIT_ALIAS(DROPPABLE, ARCH_1),
-#elif defined(CONFIG_64BIT)
+#if   defined(CONFIG_64BIT)
 	DECLARE_VMA_BIT(DROPPABLE, 40),
 #endif
 	DECLARE_VMA_BIT(UFFD_MINOR, 41),
@@ -358,18 +356,7 @@ enum {
 	DECLARE_VMA_BIT_ALIAS(PKEY_BIT2, HIGH_ARCH_2),
 	DECLARE_VMA_BIT_ALIAS(PKEY_BIT3, HIGH_ARCH_3),
 	DECLARE_VMA_BIT_ALIAS(PKEY_BIT4, HIGH_ARCH_4),
-#if 0 || defined(CONFIG_RISCV_USER_CFI)
-	/*
-	 * VM_SHADOW_STACK should not be set with VM_SHARED because of lack of
-	 * support core mm.
-	 *
-	 * These VMAs will get a single end guard page. This helps userspace
-	 * protect itself from attacks. A single page is enough for current
-	 * shadow stack archs (x86). See the comments near alloc_shstk() in
-	 * arch/x86/kernel/shstk.c for more details on the guard size.
-	 */
-	DECLARE_VMA_BIT_ALIAS(SHADOW_STACK, HIGH_ARCH_5),
-#elif defined(CONFIG_ARM64_GCS)
+#if   defined(CONFIG_ARM64_GCS)
 	/*
 	 * arm64's Guarded Control Stack implements similar functionality and
 	 * has similar constraints to shadow stacks.
@@ -384,12 +371,7 @@ enum {
 	DECLARE_VMA_BIT_ALIAS(MAPPED_COPY, ARCH_1),	/* !CONFIG_MMU */
 	DECLARE_VMA_BIT_ALIAS(MTE, HIGH_ARCH_4),	/* arm64 */
 	DECLARE_VMA_BIT_ALIAS(MTE_ALLOWED, HIGH_ARCH_5),/* arm64 */
-#ifdef CONFIG_STACK_GROWSUP
-	DECLARE_VMA_BIT_ALIAS(STACK, GROWSUP),
-	DECLARE_VMA_BIT_ALIAS(STACK_EARLY, GROWSDOWN),
-#else
 	DECLARE_VMA_BIT_ALIAS(STACK, GROWSDOWN),
-#endif
 };
 #undef DECLARE_VMA_BIT
 #undef DECLARE_VMA_BIT_ALIAS
@@ -427,21 +409,13 @@ enum {
 #define VM_ARCH_1	INIT_VM_FLAG(ARCH_1)
 #define VM_WIPEONFORK	INIT_VM_FLAG(WIPEONFORK)
 #define VM_DONTDUMP	INIT_VM_FLAG(DONTDUMP)
-#ifdef CONFIG_MEM_SOFT_DIRTY
-#define VM_SOFTDIRTY	INIT_VM_FLAG(SOFTDIRTY)
-#else
 #define VM_SOFTDIRTY	VM_NONE
-#endif
 #define VM_MIXEDMAP	INIT_VM_FLAG(MIXEDMAP)
 #define VM_HUGEPAGE	INIT_VM_FLAG(HUGEPAGE)
 #define VM_NOHUGEPAGE	INIT_VM_FLAG(NOHUGEPAGE)
 #define VM_MERGEABLE	INIT_VM_FLAG(MERGEABLE)
 #define VM_STACK	INIT_VM_FLAG(STACK)
-#ifdef CONFIG_STACK_GROWSUP
-#define VM_STACK_EARLY	INIT_VM_FLAG(STACK_EARLY)
-#else
 #define VM_STACK_EARLY	VM_NONE
-#endif
 #ifdef CONFIG_ARCH_HAS_PKEYS
 #define VM_PKEY_SHIFT ((__force int)VMA_HIGH_ARCH_0_BIT)
 /* Despite the naming, these are FLAGS not bits. */
@@ -459,22 +433,15 @@ enum {
 #define VM_PKEY_BIT4  VM_NONE
 #endif /* CONFIG_ARCH_PKEY_BITS > 4 */
 #endif /* CONFIG_ARCH_HAS_PKEYS */
-#if 0 || defined(CONFIG_ARM64_GCS) || \
-	defined(CONFIG_RISCV_USER_CFI)
+#if defined(CONFIG_ARM64_GCS) || \
+	0
 #define VM_SHADOW_STACK	INIT_VM_FLAG(SHADOW_STACK)
 #define VMA_STARTGAP_FLAGS mk_vma_flags(VMA_GROWSDOWN_BIT, VMA_SHADOW_STACK_BIT)
 #else
 #define VM_SHADOW_STACK	VM_NONE
 #define VMA_STARTGAP_FLAGS mk_vma_flags(VMA_GROWSDOWN_BIT)
 #endif
-#if defined(CONFIG_PPC64)
-#define VM_SAO		INIT_VM_FLAG(SAO)
-#elif defined(CONFIG_PARISC)
-#define VM_GROWSUP	INIT_VM_FLAG(GROWSUP)
-#elif defined(CONFIG_SPARC64)
-#define VM_SPARC_ADI	INIT_VM_FLAG(SPARC_ADI)
-#define VM_ARCH_CLEAR	INIT_VM_FLAG(ARCH_CLEAR)
-#elif defined(CONFIG_ARM64)
+#if   defined(CONFIG_ARM64)
 #define VM_ARM64_BTI	INIT_VM_FLAG(ARM64_BTI)
 #define VM_ARCH_CLEAR	INIT_VM_FLAG(ARCH_CLEAR)
 #elif !defined(CONFIG_MMU)
@@ -485,11 +452,7 @@ enum {
 #endif
 #define VM_MTE		VM_NONE
 #define VM_MTE_ALLOWED	VM_NONE
-#if 0
-#define VM_UFFD_MINOR	INIT_VM_FLAG(UFFD_MINOR)
-#else
 #define VM_UFFD_MINOR	VM_NONE
-#endif
 #ifdef CONFIG_64BIT
 #define VM_ALLOW_ANY_UNCACHED	INIT_VM_FLAG(ALLOW_ANY_UNCACHED)
 #define VM_SEALED		INIT_VM_FLAG(SEALED)
@@ -497,7 +460,7 @@ enum {
 #define VM_ALLOW_ANY_UNCACHED	VM_NONE
 #define VM_SEALED		VM_NONE
 #endif
-#if defined(CONFIG_64BIT) || defined(CONFIG_PPC32)
+#if defined(CONFIG_64BIT)
 #define VM_DROPPABLE		INIT_VM_FLAG(DROPPABLE)
 #define VMA_DROPPABLE		mk_vma_flags(VMA_DROPPABLE_BIT)
 #else
@@ -535,11 +498,7 @@ enum {
 /* Temporary until VMA flags conversion complete. */
 #define VM_STACK_FLAGS vma_flags_to_legacy(VMA_STACK_FLAGS)
 
-#ifdef CONFIG_MSEAL_SYSTEM_MAPPINGS
-#define VM_SEALED_SYSMAP	VM_SEALED
-#else
 #define VM_SEALED_SYSMAP	VM_NONE
-#endif
 
 /* VMA basic access permission flags */
 #define VM_ACCESS_FLAGS (VM_READ | VM_WRITE | VM_EXEC)
@@ -605,11 +564,7 @@ enum {
  *                       contain this metadata, and thus we must make this flag
  *                       sticky.
  */
-#ifdef CONFIG_MEM_SOFT_DIRTY
-#define VMA_STICKY_FLAGS mk_vma_flags(VMA_SOFTDIRTY_BIT, VMA_MAYBE_GUARD_BIT)
-#else
 #define VMA_STICKY_FLAGS mk_vma_flags(VMA_MAYBE_GUARD_BIT)
-#endif
 
 /*
  * VMA flags we ignore for the purposes of merge, i.e. one VMA possessing one
@@ -846,21 +801,6 @@ struct vm_operations_struct {
 	struct mempolicy *(*get_policy)(struct vm_area_struct *vma,
 					unsigned long addr, pgoff_t *ilx);
 #endif
-#ifdef CONFIG_FIND_NORMAL_PAGE
-	/*
-	 * Called by vm_normal_page() for special PTEs in @vma at @addr. This
-	 * allows for returning a "normal" page from vm_normal_page() even
-	 * though the PTE indicates that the "struct page" either does not exist
-	 * or should not be touched: "special".
-	 *
-	 * Do not add new users: this really only works when a "normal" page
-	 * was mapped, but then the PTE got changed to something weird (+
-	 * marked special) that would not make pte_pfn() identify the originally
-	 * inserted page.
-	 */
-	struct page *(*find_normal_page)(struct vm_area_struct *vma,
-					 unsigned long addr);
-#endif /* CONFIG_FIND_NORMAL_PAGE */
 };
 
 #ifdef CONFIG_NUMA_BALANCING
@@ -2417,49 +2357,6 @@ static inline bool folio_use_access_time(struct folio *folio)
 }
 #endif /* CONFIG_NUMA_BALANCING */
 
-#if 0 || 0
-
-/*
- * KASAN per-page tags are stored xor'ed with 0xff. This allows to avoid
- * setting tags for all pages to native kernel tag value 0xff, as the default
- * value 0x00 maps to 0xff.
- */
-
-static inline u8 page_kasan_tag(const struct page *page)
-{
-	u8 tag = KASAN_TAG_KERNEL;
-
-	if (kasan_enabled()) {
-		tag = (page->flags.f >> KASAN_TAG_PGSHIFT) & KASAN_TAG_MASK;
-		tag ^= 0xff;
-	}
-
-	return tag;
-}
-
-static inline void page_kasan_tag_set(struct page *page, u8 tag)
-{
-	unsigned long old_flags, flags;
-
-	if (!kasan_enabled())
-		return;
-
-	tag ^= 0xff;
-	old_flags = READ_ONCE(page->flags.f);
-	do {
-		flags = old_flags;
-		flags &= ~(KASAN_TAG_MASK << KASAN_TAG_PGSHIFT);
-		flags |= (tag & KASAN_TAG_MASK) << KASAN_TAG_PGSHIFT;
-	} while (unlikely(!try_cmpxchg(&page->flags.f, &old_flags, flags)));
-}
-
-static inline void page_kasan_tag_reset(struct page *page)
-{
-	if (kasan_enabled())
-		page_kasan_tag_set(page, KASAN_TAG_KERNEL);
-}
-
-#else /* CONFIG_KASAN_SW_TAGS || CONFIG_KASAN_HW_TAGS */
 
 static inline u8 page_kasan_tag(const struct page *page)
 {
@@ -2469,7 +2366,6 @@ static inline u8 page_kasan_tag(const struct page *page)
 static inline void page_kasan_tag_set(struct page *page, u8 tag) { }
 static inline void page_kasan_tag_reset(struct page *page) { }
 
-#endif /* CONFIG_KASAN_SW_TAGS || CONFIG_KASAN_HW_TAGS */
 
 static inline struct zone *page_zone(const struct page *page)
 {
@@ -2549,39 +2445,6 @@ static inline pte_t folio_mk_pte(const struct folio *folio, pgprot_t pgprot)
 	return pfn_pte(folio_pfn(folio), pgprot);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-/**
- * folio_mk_pmd - Create a PMD for this folio
- * @folio: The folio to create a PMD for
- * @pgprot: The page protection bits to use
- *
- * Create a page table entry for the first page of this folio.
- * This is suitable for passing to set_pmd_at().
- *
- * Return: A page table entry suitable for mapping this folio.
- */
-static inline pmd_t folio_mk_pmd(const struct folio *folio, pgprot_t pgprot)
-{
-	return pmd_mkhuge(pfn_pmd(folio_pfn(folio), pgprot));
-}
-
-#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-/**
- * folio_mk_pud - Create a PUD for this folio
- * @folio: The folio to create a PUD for
- * @pgprot: The page protection bits to use
- *
- * Create a page table entry for the first page of this folio.
- * This is suitable for passing to set_pud_at().
- *
- * Return: A page table entry suitable for mapping this folio.
- */
-static inline pud_t folio_mk_pud(const struct folio *folio, pgprot_t pgprot)
-{
-	return pud_mkhuge(pfn_pud(folio_pfn(folio), pgprot));
-}
-#endif /* CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD */
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif /* CONFIG_MMU */
 
 static inline bool folio_has_pincount(const struct folio *folio)
@@ -3637,14 +3500,10 @@ static inline void __pagetable_free(struct ptdesc *pt)
 	__free_pages(page, compound_order(page));
 }
 
-#if 0
-void pagetable_free_kernel(struct ptdesc *pt);
-#else
 static inline void pagetable_free_kernel(struct ptdesc *pt)
 {
 	__pagetable_free(pt);
 }
-#endif
 /**
  * pagetable_free - Free pagetables
  * @pt:	The page table descriptor
@@ -3699,7 +3558,6 @@ static inline spinlock_t *pte_lockptr(struct mm_struct *mm, pmd_t *pmd)
 
 static inline spinlock_t *ptep_lockptr(struct mm_struct *mm, pte_t *pte)
 {
-	BUILD_BUG_ON(IS_ENABLED(CONFIG_HIGHPTE));
 	BUILD_BUG_ON(MAX_PTRS_PER_PTE * sizeof(pte_t) > PAGE_SIZE);
 	return ptlock_ptr(virt_to_ptdesc(pte));
 }
@@ -3823,9 +3681,6 @@ static inline spinlock_t *pmd_lockptr(struct mm_struct *mm, pmd_t *pmd)
 
 static inline bool pmd_ptlock_init(struct ptdesc *ptdesc)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	ptdesc->pmd_huge_pte = NULL;
-#endif
 	return ptlock_init(ptdesc);
 }
 
@@ -4030,9 +3885,6 @@ anon_vma_interval_tree_iter_first(struct rb_root_cached *root,
 				  unsigned long start, unsigned long last);
 struct anon_vma_chain *anon_vma_interval_tree_iter_next(
 	struct anon_vma_chain *node, unsigned long start, unsigned long last);
-#ifdef CONFIG_DEBUG_VM_RB
-void anon_vma_interval_tree_verify(struct anon_vma_chain *node);
-#endif
 
 #define anon_vma_interval_tree_foreach(avc, root, start, last)		 \
 	for (avc = anon_vma_interval_tree_iter_first(root, start, last); \
@@ -4743,10 +4595,6 @@ int vmemmap_populate_hvo(unsigned long start, unsigned long end,
 void vmemmap_wrprotect_hvo(unsigned long start, unsigned long end, int node,
 			  unsigned long headsize);
 void vmemmap_populate_print_last(void);
-#ifdef CONFIG_MEMORY_HOTPLUG
-void vmemmap_free(unsigned long start, unsigned long end,
-		struct vmem_altmap *altmap);
-#endif
 
 #ifdef CONFIG_SPARSEMEM_VMEMMAP
 static inline unsigned long vmem_altmap_offset(const struct vmem_altmap *altmap)
@@ -4854,10 +4702,6 @@ static inline void num_poisoned_pages_sub(unsigned long pfn, long i)
 }
 #endif
 
-#if defined(CONFIG_MEMORY_FAILURE) && defined(CONFIG_MEMORY_HOTPLUG)
-extern void memblk_nr_poison_inc(unsigned long pfn);
-extern void memblk_nr_poison_sub(unsigned long pfn, long i);
-#else
 static inline void memblk_nr_poison_inc(unsigned long pfn)
 {
 }
@@ -4865,7 +4709,6 @@ static inline void memblk_nr_poison_inc(unsigned long pfn)
 static inline void memblk_nr_poison_sub(unsigned long pfn, long i)
 {
 }
-#endif
 
 #ifndef arch_memory_failure
 static inline int arch_memory_failure(unsigned long pfn, int flags)
@@ -4916,16 +4759,6 @@ enum mf_action_page_type {
 	MF_MSG_UNKNOWN,
 };
 
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_HUGETLBFS)
-void folio_zero_user(struct folio *folio, unsigned long addr_hint);
-int copy_user_large_folio(struct folio *dst, struct folio *src,
-			  unsigned long addr_hint,
-			  struct vm_area_struct *vma);
-long copy_folio_from_user(struct folio *dst_folio,
-			   const void __user *usr_src,
-			   bool allow_pagefault);
-
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE || CONFIG_HUGETLBFS */
 
 #if MAX_NUMNODES > 1
 void __init setup_nr_node_ids(void);
@@ -4947,12 +4780,6 @@ int set_anon_vma_name(unsigned long addr, unsigned long size,
 	return -EINVAL;
 }
 
-#ifdef CONFIG_UNACCEPTED_MEMORY
-
-bool range_contains_unaccepted_memory(phys_addr_t start, unsigned long size);
-void accept_memory(phys_addr_t start, unsigned long size);
-
-#else
 
 static inline bool range_contains_unaccepted_memory(phys_addr_t start,
 						    unsigned long size)
@@ -4964,7 +4791,6 @@ static inline void accept_memory(phys_addr_t start, unsigned long size)
 {
 }
 
-#endif
 
 static inline bool pfn_is_unaccepted_memory(unsigned long pfn)
 {

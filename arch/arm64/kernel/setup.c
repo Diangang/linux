@@ -355,14 +355,6 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	smp_init_cpus();
 	smp_build_mpidr_hash();
 
-#if 0
-	/*
-	 * Make sure init_thread_info.ttbr0 always generates translation
-	 * faults in case uaccess_enable() is inadvertently called by the init
-	 * thread.
-	 */
-	init_task.thread_info.ttbr0 = phys_to_ttbr(__pa_symbol(reserved_pg_dir));
-#endif
 
 	if (boot_args[1] || boot_args[2] || boot_args[3]) {
 		pr_err("WARNING: x1-x3 nonzero in violation of boot protocol:\n"

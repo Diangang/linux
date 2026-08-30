@@ -965,30 +965,6 @@ static void virtscsi_remove(struct virtio_device *vdev)
 	scsi_host_put(shost);
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int virtscsi_freeze(struct virtio_device *vdev)
-{
-	virtscsi_remove_vqs(vdev);
-	return 0;
-}
-
-static int virtscsi_restore(struct virtio_device *vdev)
-{
-	struct Scsi_Host *sh = virtio_scsi_host(vdev);
-	struct virtio_scsi *vscsi = shost_priv(sh);
-	int err;
-
-	err = virtscsi_init(vdev, vscsi);
-	if (err)
-		return err;
-
-	virtio_device_ready(vdev);
-
-	virtscsi_kick_event_all(vscsi);
-
-	return err;
-}
-#endif
 
 static struct virtio_device_id id_table[] = {
 	{ VIRTIO_ID_SCSI, VIRTIO_DEV_ANY_ID },
@@ -1006,10 +982,6 @@ static struct virtio_driver virtio_scsi_driver = {
 	.driver.name = KBUILD_MODNAME,
 	.id_table = id_table,
 	.probe = virtscsi_probe,
-#ifdef CONFIG_PM_SLEEP
-	.freeze = virtscsi_freeze,
-	.restore = virtscsi_restore,
-#endif
 	.remove = virtscsi_remove,
 };
 

@@ -45,8 +45,6 @@
 #include <asm/sigcontext.h>
 #include <asm/sysreg.h>
 #include <asm/traps.h>
-#include <asm/virt.h>
-
 #define FPEXC_IOF	(1 << 0)
 #define FPEXC_DZF	(1 << 1)
 #define FPEXC_OFF	(1 << 2)
@@ -619,20 +617,10 @@ static int __init sme_sysctl_init(void) { return 0; }
 #define ZREG(sve_state, vq, n) ((char *)(sve_state) +		\
 	(SVE_SIG_ZREG_OFFSET(vq, n) - SVE_SIG_REGS_OFFSET))
 
-#if 0
-static __uint128_t arm64_cpu_to_le128(__uint128_t x)
-{
-	u64 a = swab64(x);
-	u64 b = swab64(x >> 64);
-
-	return ((__uint128_t)a << 64) | b;
-}
-#else
 static __uint128_t arm64_cpu_to_le128(__uint128_t x)
 {
 	return x;
 }
-#endif
 
 #define arm64_le128_to_cpu(x) arm64_cpu_to_le128(x)
 
@@ -1047,42 +1035,12 @@ int vec_verify_vq_map(enum vec_type type)
 {
 	struct vl_info *info = &vl_info[type];
 	DECLARE_BITMAP(tmp_map, SVE_VQ_MAX);
-	unsigned long b;
 
 	vec_probe_vqs(info, tmp_map);
 
 	bitmap_complement(tmp_map, tmp_map, SVE_VQ_MAX);
 	if (bitmap_intersects(tmp_map, info->vq_map, SVE_VQ_MAX)) {
 		pr_warn("%s: cpu%d: Required vector length(s) missing\n",
-			info->name, smp_processor_id());
-		return -EINVAL;
-	}
-
-	if (!IS_ENABLED(CONFIG_KVM) || !is_hyp_mode_available())
-		return 0;
-
-	/*
-	 * For KVM, it is necessary to ensure that this CPU doesn't
-	 * support any vector length that guests may have probed as
-	 * unsupported.
-	 */
-
-	/* Recover the set of supported VQs: */
-	bitmap_complement(tmp_map, tmp_map, SVE_VQ_MAX);
-	/* Find VQs supported that are not globally supported: */
-	bitmap_andnot(tmp_map, tmp_map, info->vq_map, SVE_VQ_MAX);
-
-	/* Find the lowest such VQ, if any: */
-	b = find_last_bit(tmp_map, SVE_VQ_MAX);
-	if (b >= SVE_VQ_MAX)
-		return 0; /* no mismatches */
-
-	/*
-	 * Mismatches above sve_max_virtualisable_vl are fine, since
-	 * no guest is allowed to configure ZCR_EL2.LEN to exceed this:
-	 */
-	if (sve_vl_from_vq(__bit_to_vq(b)) <= info->max_virtualisable_vl) {
-		pr_warn("%s: cpu%d: Unsupported vector length(s) present\n",
 			info->name, smp_processor_id());
 		return -EINVAL;
 	}
@@ -1908,106 +1866,10 @@ void kernel_neon_end(struct user_fpsimd_state *state)
 }
 EXPORT_SYMBOL_GPL(kernel_neon_end);
 
-#ifdef CONFIG_EFI
-
-static struct user_fpsimd_state efi_fpsimd_state;
-
-/*
- * EFI runtime services support functions
- *
- * The ABI for EFI runtime services allows EFI to use FPSIMD during the call.
- * This means that for EFI (and only for EFI), we have to assume that FPSIMD
- * is always used rather than being an optional accelerator.
- *
- * These functions provide the necessary support for ensuring FPSIMD
- * save/restore in the contexts from which EFI is used.
- *
- * Do not use them for any other purpose -- if tempted to do so, you are
- * either doing something wrong or you need to propose some refactoring.
- */
-
-/*
- * __efi_fpsimd_begin(): prepare FPSIMD for making an EFI runtime services call
- */
-void __efi_fpsimd_begin(void)
-{
-	if (!system_supports_fpsimd())
-		return;
-
-	if (may_use_simd()) {
-		kernel_neon_begin(&efi_fpsimd_state);
-	} else {
-		/*
-		 * We are running in hardirq or NMI context, and the only
-		 * legitimate case where this might happen is when EFI pstore
-		 * is attempting to record the system's dying gasps into EFI
-		 * variables. This could be due to an oops, a panic or a call
-		 * to emergency_restart(), and in none of those cases, we can
-		 * expect the current task to ever return to user space again,
-		 * or for the kernel to resume any normal execution, for that
-		 * matter (an oops in hardirq context triggers a panic too).
-		 *
-		 * Therefore, there is no point in attempting to preserve any
-		 * SVE/SME state here. On the off chance that we might have
-		 * ended up here for a different reason inadvertently, kill the
-		 * task and preserve/restore the base FP/SIMD state, which
-		 * might belong to kernel mode FP/SIMD.
-		 */
-		pr_warn_ratelimited("Calling EFI runtime from %s context\n",
-				    in_nmi() ? "NMI" : "hardirq");
-		force_signal_inject(SIGKILL, SI_KERNEL, 0, 0);
-		fpsimd_save_state(&efi_fpsimd_state);
-	}
-}
-
-/*
- * __efi_fpsimd_end(): clean up FPSIMD after an EFI runtime services call
- */
-void __efi_fpsimd_end(void)
-{
-	if (!system_supports_fpsimd())
-		return;
-
-	if (may_use_simd()) {
-		kernel_neon_end(&efi_fpsimd_state);
-	} else {
-		fpsimd_load_state(&efi_fpsimd_state);
-	}
-}
-
-#endif /* CONFIG_EFI */
 
 #endif /* CONFIG_KERNEL_MODE_NEON */
 
-#ifdef CONFIG_CPU_PM
-static int fpsimd_cpu_pm_notifier(struct notifier_block *self,
-				  unsigned long cmd, void *v)
-{
-	switch (cmd) {
-	case CPU_PM_ENTER:
-		fpsimd_save_and_flush_cpu_state();
-		break;
-	case CPU_PM_EXIT:
-		break;
-	case CPU_PM_ENTER_FAILED:
-	default:
-		return NOTIFY_DONE;
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block fpsimd_cpu_pm_notifier_block = {
-	.notifier_call = fpsimd_cpu_pm_notifier,
-};
-
-static void __init fpsimd_pm_init(void)
-{
-	cpu_pm_register_notifier(&fpsimd_cpu_pm_notifier_block);
-}
-
-#else
 static inline void fpsimd_pm_init(void) { }
-#endif /* CONFIG_CPU_PM */
 
 #ifdef CONFIG_HOTPLUG_CPU
 static int fpsimd_cpu_dead(unsigned int cpu)

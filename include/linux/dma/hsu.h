@@ -36,16 +36,6 @@ struct hsu_dma_chip {
 	struct hsu_dma			*hsu;
 };
 
-#if IS_ENABLED(CONFIG_HSU_DMA)
-/* Export to the internal users */
-int hsu_dma_get_status(struct hsu_dma_chip *chip, unsigned short nr,
-		       u32 *status);
-int hsu_dma_do_irq(struct hsu_dma_chip *chip, unsigned short nr, u32 status);
-
-/* Export to the platform drivers */
-int hsu_dma_probe(struct hsu_dma_chip *chip);
-int hsu_dma_remove(struct hsu_dma_chip *chip);
-#else
 static inline int hsu_dma_get_status(struct hsu_dma_chip *chip,
 				     unsigned short nr, u32 *status)
 {
@@ -58,6 +48,5 @@ static inline int hsu_dma_do_irq(struct hsu_dma_chip *chip, unsigned short nr,
 }
 static inline int hsu_dma_probe(struct hsu_dma_chip *chip) { return -ENODEV; }
 static inline int hsu_dma_remove(struct hsu_dma_chip *chip) { return 0; }
-#endif /* CONFIG_HSU_DMA */
 
 #endif /* _DMA_HSU_H */

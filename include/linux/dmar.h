@@ -33,144 +33,6 @@ struct dmar_dev_scope {
 	u8 devfn;
 };
 
-#ifdef CONFIG_DMAR_TABLE
-extern struct acpi_table_header *dmar_tbl;
-struct dmar_drhd_unit {
-	struct list_head list;		/* list of drhd units	*/
-	struct  acpi_dmar_header *hdr;	/* ACPI header		*/
-	u64	reg_base_addr;		/* register base address*/
-	unsigned long reg_size;		/* size of register set */
-	struct	dmar_dev_scope *devices;/* target device array	*/
-	int	devices_cnt;		/* target device count	*/
-	u16	segment;		/* PCI domain		*/
-	u8	ignored:1; 		/* ignore drhd		*/
-	u8	include_all:1;
-	u8	gfx_dedicated:1;	/* graphic dedicated	*/
-	struct intel_iommu *iommu;
-};
-
-struct dmar_pci_path {
-	u8 bus;
-	u8 device;
-	u8 function;
-};
-
-struct dmar_pci_notify_info {
-	struct pci_dev			*dev;
-	unsigned long			event;
-	int				bus;
-	u16				seg;
-	u16				level;
-	struct dmar_pci_path		path[];
-}  __attribute__((packed));
-
-extern struct rw_semaphore dmar_global_lock;
-extern struct list_head dmar_drhd_units;
-
-#define for_each_drhd_unit(drhd)					\
-	list_for_each_entry_rcu(drhd, &dmar_drhd_units, list,		\
-				dmar_rcu_check())
-
-#define for_each_active_drhd_unit(drhd)					\
-	list_for_each_entry_rcu(drhd, &dmar_drhd_units, list,		\
-				dmar_rcu_check())			\
-		if (drhd->ignored) {} else
-
-#define for_each_active_iommu(i, drhd)					\
-	list_for_each_entry_rcu(drhd, &dmar_drhd_units, list,		\
-				dmar_rcu_check())			\
-		if (i=drhd->iommu, drhd->ignored) {} else
-
-#define for_each_iommu(i, drhd)						\
-	list_for_each_entry_rcu(drhd, &dmar_drhd_units, list,		\
-				dmar_rcu_check())			\
-		if (i=drhd->iommu, 0) {} else 
-
-static inline bool dmar_rcu_check(void)
-{
-	return rwsem_is_locked(&dmar_global_lock) ||
-	       system_state == SYSTEM_BOOTING;
-}
-
-#define	dmar_rcu_dereference(p)	rcu_dereference_check((p), dmar_rcu_check())
-
-#define for_each_dev_scope(devs, cnt, i, tmp)				\
-	for ((i) = 0; ((tmp) = (i) < (cnt) ?				\
-	    dmar_rcu_dereference((devs)[(i)].dev) : NULL, (i) < (cnt)); \
-	    (i)++)
-
-#define for_each_active_dev_scope(devs, cnt, i, tmp)			\
-	for_each_dev_scope((devs), (cnt), (i), (tmp))			\
-		if (!(tmp)) { continue; } else
-
-extern int dmar_table_init(void);
-extern int dmar_dev_scope_init(void);
-extern void dmar_register_bus_notifier(void);
-extern void *dmar_alloc_dev_scope(void *start, void *end, int *cnt);
-extern void dmar_free_dev_scope(struct dmar_dev_scope **devices, int *cnt);
-extern int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
-				 void *start, void*end, u16 segment,
-				 struct dmar_dev_scope *devices,
-				 int devices_cnt);
-extern int dmar_remove_dev_scope(struct dmar_pci_notify_info *info,
-				 u16 segment, struct dmar_dev_scope *devices,
-				 int count);
-/* Intel IOMMU detection */
-void detect_intel_iommu(void);
-extern int enable_drhd_fault_handling(unsigned int cpu);
-extern int dmar_device_add(acpi_handle handle);
-extern int dmar_device_remove(acpi_handle handle);
-
-static inline int dmar_res_noop(struct acpi_dmar_header *hdr, void *arg)
-{
-	return 0;
-}
-
-static inline void dmar_fault_dump_ptes(struct intel_iommu *iommu, u16 source_id,
-					unsigned long long addr, u32 pasid) {}
-
-#ifdef CONFIG_INTEL_IOMMU
-extern int iommu_detected, no_iommu;
-extern int intel_iommu_init(void);
-extern void intel_iommu_shutdown(void);
-extern int dmar_parse_one_rmrr(struct acpi_dmar_header *header, void *arg);
-extern int dmar_parse_one_atsr(struct acpi_dmar_header *header, void *arg);
-extern int dmar_check_one_atsr(struct acpi_dmar_header *hdr, void *arg);
-extern int dmar_parse_one_satc(struct acpi_dmar_header *hdr, void *arg);
-extern int dmar_release_one_atsr(struct acpi_dmar_header *hdr, void *arg);
-extern int dmar_iommu_hotplug(struct dmar_drhd_unit *dmaru, bool insert);
-extern int dmar_iommu_notify_scope_dev(struct dmar_pci_notify_info *info);
-#else /* !CONFIG_INTEL_IOMMU: */
-static inline int intel_iommu_init(void) { return -ENODEV; }
-static inline void intel_iommu_shutdown(void) { }
-
-#define	dmar_parse_one_rmrr		dmar_res_noop
-#define	dmar_parse_one_atsr		dmar_res_noop
-#define	dmar_check_one_atsr		dmar_res_noop
-#define	dmar_release_one_atsr		dmar_res_noop
-#define	dmar_parse_one_satc		dmar_res_noop
-
-static inline int dmar_iommu_notify_scope_dev(struct dmar_pci_notify_info *info)
-{
-	return 0;
-}
-
-static inline int dmar_iommu_hotplug(struct dmar_drhd_unit *dmaru, bool insert)
-{
-	return 0;
-}
-#endif /* CONFIG_INTEL_IOMMU */
-
-#ifdef CONFIG_IRQ_REMAP
-extern int dmar_ir_hotplug(struct dmar_drhd_unit *dmaru, bool insert);
-#else  /* CONFIG_IRQ_REMAP */
-static inline int dmar_ir_hotplug(struct dmar_drhd_unit *dmaru, bool insert)
-{ return 0; }
-#endif /* CONFIG_IRQ_REMAP */
-
-extern bool dmar_platform_optin(void);
-
-#else /* CONFIG_DMAR_TABLE */
 
 static inline int dmar_device_add(void *handle)
 {
@@ -191,7 +53,6 @@ static inline void detect_intel_iommu(void)
 {
 }
 
-#endif /* CONFIG_DMAR_TABLE */
 
 struct irte {
 	union {
@@ -260,9 +121,6 @@ struct irte {
 				__u64 high;
 			};
 		};
-#ifdef CONFIG_IRQ_REMAP
-		__u128 irte;
-#endif
 	};
 };
 

@@ -6,9 +6,6 @@
 #include <linux/types.h>
 #include <linux/numa.h>
 
-#ifdef CONFIG_CMA_AREAS
-#define MAX_CMA_AREAS	CONFIG_CMA_AREAS
-#endif
 
 #define CMA_MAX_NAME 64
 

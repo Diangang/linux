@@ -59,7 +59,7 @@ static inline bool is_via_compact_memory(int order)
 static inline bool is_via_compact_memory(int order) { return false; }
 #endif
 
-#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+#if defined CONFIG_COMPACTION
 #define block_start_pfn(pfn, order)	round_down(pfn, 1UL << (order))
 #define block_end_pfn(pfn, order)	ALIGN((pfn) + 1, 1UL << (order))
 
@@ -68,13 +68,7 @@ static inline bool is_via_compact_memory(int order) { return false; }
  * calculates external fragmentation, which is used as
  * the "fragmentation score" of a node/zone.
  */
-#if defined CONFIG_TRANSPARENT_HUGEPAGE
-#define COMPACTION_HPAGE_ORDER	HPAGE_PMD_ORDER
-#elif defined CONFIG_HUGETLBFS
-#define COMPACTION_HPAGE_ORDER	HUGETLB_PAGE_ORDER
-#else
 #define COMPACTION_HPAGE_ORDER	(PMD_SHIFT - PAGE_SHIFT)
-#endif
 
 static struct page *mark_allocated_noprof(struct page *page, unsigned int order, gfp_t gfp_flags)
 {

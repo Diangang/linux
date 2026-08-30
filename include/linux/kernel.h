@@ -77,7 +77,7 @@ static inline void __might_sleep(const char *file, int line) { }
 #define might_sleep_if(cond) do { if (cond) might_sleep(); } while (0)
 
 #if defined(CONFIG_MMU) && \
-	(defined(CONFIG_PROVE_LOCKING) || defined(CONFIG_DEBUG_ATOMIC_SLEEP))
+	(0)
 #define might_fault() __might_fault(__FILE__, __LINE__)
 void __might_fault(const char *file, int line);
 #else

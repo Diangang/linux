@@ -397,86 +397,6 @@ _ASM_NOKPROBE(\asmsym)
 SYM_CODE_END(\asmsym)
 .endm
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-/**
- * idtentry_vc - Macro to generate entry stub for #VC
- * @vector:		Vector number
- * @asmsym:		ASM symbol for the entry point
- * @cfunc:		C function to be called
- *
- * The macro emits code to set up the kernel context for #VC. The #VC handler
- * runs on an IST stack and needs to be able to cause nested #VC exceptions.
- *
- * To make this work the #VC entry code tries its best to pretend it doesn't use
- * an IST stack by switching to the task stack if coming from user-space (which
- * includes early SYSCALL entry path) or back to the stack in the IRET frame if
- * entered from kernel-mode.
- *
- * If entered from kernel-mode the return stack is validated first, and if it is
- * not safe to use (e.g. because it points to the entry stack) the #VC handler
- * will switch to a fall-back stack (VC2) and call a special handler function.
- *
- * The macro is only used for one vector, but it is planned to be extended in
- * the future for the #HV exception.
- */
-.macro idtentry_vc vector asmsym cfunc
-SYM_CODE_START(\asmsym)
-	UNWIND_HINT_IRET_ENTRY
-	ENDBR
-	ASM_CLAC
-	cld
-
-	/*
-	 * If the entry is from userspace, switch stacks and treat it as
-	 * a normal entry.
-	 */
-	testb	$3, CS-ORIG_RAX(%rsp)
-	jnz	.Lfrom_usermode_switch_stack_\@
-
-	/*
-	 * paranoid_entry returns SWAPGS flag for paranoid_exit in EBX.
-	 * EBX == 0 -> SWAPGS, EBX == 1 -> no SWAPGS
-	 */
-	call	paranoid_entry
-
-	UNWIND_HINT_REGS
-
-	/*
-	 * Switch off the IST stack to make it free for nested exceptions. The
-	 * vc_switch_off_ist() function will switch back to the interrupted
-	 * stack if it is safe to do so. If not it switches to the VC fall-back
-	 * stack.
-	 */
-	movq	%rsp, %rdi		/* pt_regs pointer */
-	call	vc_switch_off_ist
-	movq	%rax, %rsp		/* Switch to new stack */
-
-	ENCODE_FRAME_POINTER
-	UNWIND_HINT_REGS
-
-	/* Update pt_regs */
-	movq	ORIG_RAX(%rsp), %rsi	/* get error code into 2nd argument*/
-	movq	$-1, ORIG_RAX(%rsp)	/* no syscall to restart */
-
-	movq	%rsp, %rdi		/* pt_regs pointer */
-
-	call	kernel_\cfunc
-
-	/*
-	 * No need to switch back to the IST stack. The current stack is either
-	 * identical to the stack in the IRET frame or the VC fall-back stack,
-	 * so it is definitely mapped even with PTI enabled.
-	 */
-	jmp	paranoid_exit
-
-	/* Switch to the regular task stack */
-.Lfrom_usermode_switch_stack_\@:
-	idtentry_body user_\cfunc, has_error_code=1
-
-_ASM_NOKPROBE(\asmsym)
-SYM_CODE_END(\asmsym)
-.endm
-#endif
 
 /*
  * Double fault entry. Straight paranoid. No checks from which context
@@ -527,9 +447,6 @@ __irqentry_text_end:
 SYM_CODE_START_LOCAL(common_interrupt_return)
 SYM_INNER_LABEL(swapgs_restore_regs_and_return_to_usermode, SYM_L_GLOBAL)
 	IBRS_EXIT
-#ifdef CONFIG_XEN_PV
-	ALTERNATIVE "", "jmp xenpv_restore_regs_and_return_to_usermode", X86_FEATURE_XENPV
-#endif
 #ifdef CONFIG_MITIGATION_PAGE_TABLE_ISOLATION
 	ALTERNATIVE "", "jmp .Lpti_restore_regs_and_return_to_usermode", X86_FEATURE_PTI
 #endif
@@ -591,12 +508,6 @@ SYM_INNER_LABEL(restore_regs_and_return_to_kernel, SYM_L_GLOBAL)
 	 * ARCH_HAS_MEMBARRIER_SYNC_CORE rely on IRET core serialization
 	 * when returning from IPI handler.
 	 */
-#ifdef CONFIG_XEN_PV
-SYM_INNER_LABEL(early_xen_iret_patch, SYM_L_GLOBAL)
-	ANNOTATE_NOENDBR
-	.byte 0xe9
-	.long .Lnative_iret - (. + 4)
-#endif
 
 .Lnative_iret:
 	UNWIND_HINT_IRET_REGS
@@ -733,85 +644,6 @@ SYM_FUNC_START(asm_load_gs_index)
 SYM_FUNC_END(asm_load_gs_index)
 EXPORT_SYMBOL(asm_load_gs_index)
 
-#ifdef CONFIG_XEN_PV
-/*
- * A note on the "critical region" in our callback handler.
- * We want to avoid stacking callback handlers due to events occurring
- * during handling of the last event. To do this, we keep events disabled
- * until we've done all processing. HOWEVER, we must enable events before
- * popping the stack frame (can't be done atomically) and so it would still
- * be possible to get enough handler activations to overflow the stack.
- * Although unlikely, bugs of that kind are hard to track down, so we'd
- * like to avoid the possibility.
- * So, on entry to the handler we detect whether we interrupted an
- * existing activation in its critical region -- if so, we pop the current
- * activation and restart the handler using the previous one.
- *
- * C calling convention: exc_xen_hypervisor_callback(struct *pt_regs)
- */
-	__FUNC_ALIGN
-SYM_CODE_START_LOCAL_NOALIGN(exc_xen_hypervisor_callback)
-
-/*
- * Since we don't modify %rdi, evtchn_do_upall(struct *pt_regs) will
- * see the correct pointer to the pt_regs
- */
-	UNWIND_HINT_FUNC
-	movq	%rdi, %rsp			/* we don't return, adjust the stack frame */
-	UNWIND_HINT_REGS
-
-	call	xen_pv_evtchn_do_upcall
-
-	jmp	error_return
-SYM_CODE_END(exc_xen_hypervisor_callback)
-
-/*
- * Hypervisor uses this for application faults while it executes.
- * We get here for two reasons:
- *  1. Fault while reloading DS, ES, FS or GS
- *  2. Fault while executing IRET
- * Category 1 we do not need to fix up as Xen has already reloaded all segment
- * registers that could be reloaded and zeroed the others.
- * Category 2 we fix up by killing the current process. We cannot use the
- * normal Linux return path in this case because if we use the IRET hypercall
- * to pop the stack frame we end up in an infinite loop of failsafe callbacks.
- * We distinguish between categories by comparing each saved segment register
- * with its current contents: any discrepancy means we in category 1.
- */
-	__FUNC_ALIGN
-SYM_CODE_START_NOALIGN(xen_failsafe_callback)
-	UNWIND_HINT_UNDEFINED
-	ENDBR
-	movl	%ds, %ecx
-	cmpw	%cx, 0x10(%rsp)
-	jne	1f
-	movl	%es, %ecx
-	cmpw	%cx, 0x18(%rsp)
-	jne	1f
-	movl	%fs, %ecx
-	cmpw	%cx, 0x20(%rsp)
-	jne	1f
-	movl	%gs, %ecx
-	cmpw	%cx, 0x28(%rsp)
-	jne	1f
-	/* All segments match their saved values => Category 2 (Bad IRET). */
-	movq	(%rsp), %rcx
-	movq	8(%rsp), %r11
-	addq	$0x30, %rsp
-	pushq	$0				/* RIP */
-	UNWIND_HINT_IRET_REGS offset=8
-	jmp	asm_exc_general_protection
-1:	/* Segment mismatch => Category 1 (Bad segment). Retry the IRET. */
-	movq	(%rsp), %rcx
-	movq	8(%rsp), %r11
-	addq	$0x30, %rsp
-	UNWIND_HINT_IRET_REGS
-	pushq	$-1 /* orig_ax = -1 => not a system call */
-	PUSH_AND_CLEAR_REGS
-	ENCODE_FRAME_POINTER
-	jmp	error_return
-SYM_CODE_END(xen_failsafe_callback)
-#endif /* CONFIG_XEN_PV */
 
 /*
  * Save all registers in pt_regs. Return GSBASE related information

@@ -106,10 +106,6 @@ struct node {
 struct memory_block;
 extern struct node *node_devices[];
 
-#if defined(CONFIG_MEMORY_HOTPLUG) && defined(CONFIG_NUMA)
-void register_memory_blocks_under_node_hotplug(int nid, unsigned long start_pfn,
-					       unsigned long end_pfn);
-#else
 static inline void register_memory_blocks_under_node_hotplug(int nid,
 							     unsigned long start_pfn,
 							     unsigned long end_pfn)
@@ -118,7 +114,6 @@ static inline void register_memory_blocks_under_node_hotplug(int nid,
 static inline void register_memory_blocks_under_nodes(void)
 {
 }
-#endif
 
 struct node_notify {
 	int nid;
@@ -131,17 +126,6 @@ struct node_notify {
 #define NODE_REMOVED_LAST_MEMORY                (1<<4)
 #define NODE_CANCEL_REMOVING_LAST_MEMORY        (1<<5)
 
-#if defined(CONFIG_MEMORY_HOTPLUG) && defined(CONFIG_NUMA)
-extern int register_node_notifier(struct notifier_block *nb);
-extern void unregister_node_notifier(struct notifier_block *nb);
-extern int node_notify(unsigned long val, void *v);
-
-#define hotplug_node_notifier(fn, pri) ({		\
-	static __meminitdata struct notifier_block fn##_node_nb =\
-		{ .notifier_call = fn, .priority = pri };\
-	register_node_notifier(&fn##_node_nb);			\
-})
-#else
 static inline int register_node_notifier(struct notifier_block *nb)
 {
 	return 0;
@@ -157,7 +141,6 @@ static inline int hotplug_node_notifier(notifier_fn_t fn, int pri)
 {
 	return 0;
 }
-#endif
 
 #ifdef CONFIG_NUMA
 extern void node_dev_init(void);

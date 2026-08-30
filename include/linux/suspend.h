@@ -133,141 +133,6 @@ struct platform_s2idle_ops {
 	void (*end)(void);
 };
 
-#ifdef CONFIG_SUSPEND
-extern suspend_state_t pm_suspend_target_state;
-extern suspend_state_t mem_sleep_current;
-extern suspend_state_t mem_sleep_default;
-
-/**
- * suspend_set_ops - set platform dependent suspend operations
- * @ops: The new suspend operations to set.
- */
-extern void suspend_set_ops(const struct platform_suspend_ops *ops);
-extern int suspend_valid_only_mem(suspend_state_t state);
-
-extern unsigned int pm_suspend_global_flags;
-
-#define PM_SUSPEND_FLAG_FW_SUSPEND	BIT(0)
-#define PM_SUSPEND_FLAG_FW_RESUME	BIT(1)
-#define PM_SUSPEND_FLAG_NO_PLATFORM	BIT(2)
-
-static inline void pm_suspend_clear_flags(void)
-{
-	pm_suspend_global_flags = 0;
-}
-
-static inline void pm_set_suspend_via_firmware(void)
-{
-	pm_suspend_global_flags |= PM_SUSPEND_FLAG_FW_SUSPEND;
-}
-
-static inline void pm_set_resume_via_firmware(void)
-{
-	pm_suspend_global_flags |= PM_SUSPEND_FLAG_FW_RESUME;
-}
-
-static inline void pm_set_suspend_no_platform(void)
-{
-	pm_suspend_global_flags |= PM_SUSPEND_FLAG_NO_PLATFORM;
-}
-
-/**
- * pm_suspend_via_firmware - Check if platform firmware will suspend the system.
- *
- * To be called during system-wide power management transitions to sleep states
- * or during the subsequent system-wide transitions back to the working state.
- *
- * Return 'true' if the platform firmware is going to be invoked at the end of
- * the system-wide power management transition (to a sleep state) in progress in
- * order to complete it, or if the platform firmware has been invoked in order
- * to complete the last (or preceding) transition of the system to a sleep
- * state.
- *
- * This matters if the caller needs or wants to carry out some special actions
- * depending on whether or not control will be passed to the platform firmware
- * subsequently (for example, the device may need to be reset before letting the
- * platform firmware manipulate it, which is not necessary when the platform
- * firmware is not going to be invoked) or when such special actions may have
- * been carried out during the preceding transition of the system to a sleep
- * state (as they may need to be taken into account).
- */
-static inline bool pm_suspend_via_firmware(void)
-{
-	return !!(pm_suspend_global_flags & PM_SUSPEND_FLAG_FW_SUSPEND);
-}
-
-/**
- * pm_resume_via_firmware - Check if platform firmware has woken up the system.
- *
- * To be called during system-wide power management transitions from sleep
- * states.
- *
- * Return 'true' if the platform firmware has passed control to the kernel at
- * the beginning of the system-wide power management transition in progress, so
- * the event that woke up the system from sleep has been handled by the platform
- * firmware.
- */
-static inline bool pm_resume_via_firmware(void)
-{
-	return !!(pm_suspend_global_flags & PM_SUSPEND_FLAG_FW_RESUME);
-}
-
-/**
- * pm_suspend_no_platform - Check if platform may change device power states.
- *
- * To be called during system-wide power management transitions to sleep states
- * or during the subsequent system-wide transitions back to the working state.
- *
- * Return 'true' if the power states of devices remain under full control of the
- * kernel throughout the system-wide suspend and resume cycle in progress (that
- * is, if a device is put into a certain power state during suspend, it can be
- * expected to remain in that state during resume).
- */
-static inline bool pm_suspend_no_platform(void)
-{
-	return !!(pm_suspend_global_flags & PM_SUSPEND_FLAG_NO_PLATFORM);
-}
-
-/* Suspend-to-idle state machnine. */
-enum s2idle_states {
-	S2IDLE_STATE_NONE,      /* Not suspended/suspending. */
-	S2IDLE_STATE_ENTER,     /* Enter suspend-to-idle. */
-	S2IDLE_STATE_WAKE,      /* Wake up from suspend-to-idle. */
-};
-
-extern enum s2idle_states __read_mostly s2idle_state;
-
-static inline bool idle_should_enter_s2idle(void)
-{
-	return unlikely(s2idle_state == S2IDLE_STATE_ENTER);
-}
-
-extern bool pm_suspend_default_s2idle(void);
-extern void __init pm_states_init(void);
-extern void s2idle_set_ops(const struct platform_s2idle_ops *ops);
-extern void s2idle_wake(void);
-
-/**
- * arch_suspend_disable_irqs - disable IRQs for suspend
- *
- * Disables IRQs (in the default case). This is a weak symbol in the common
- * code and thus allows architectures to override it if more needs to be
- * done. Not called for suspend to disk.
- */
-extern void arch_suspend_disable_irqs(void);
-
-/**
- * arch_suspend_enable_irqs - enable IRQs after suspend
- *
- * Enables IRQs (in the default case). This is a weak symbol in the common
- * code and thus allows architectures to override it if more needs to be
- * done. Not called for suspend to disk.
- */
-extern void arch_suspend_enable_irqs(void);
-
-extern int pm_suspend(suspend_state_t state);
-extern bool sync_on_suspend_enabled;
-#else /* !CONFIG_SUSPEND */
 #define suspend_valid_only_mem	NULL
 
 #define pm_suspend_target_state	(PM_SUSPEND_ON)
@@ -287,7 +152,6 @@ static inline bool idle_should_enter_s2idle(void) { return false; }
 static inline void __init pm_states_init(void) {}
 static inline void s2idle_set_ops(const struct platform_s2idle_ops *ops) {}
 static inline void s2idle_wake(void) {}
-#endif /* !CONFIG_SUSPEND */
 
 static inline bool pm_suspend_in_progress(void)
 {
@@ -300,50 +164,6 @@ static inline bool pm_suspend_in_progress(void)
 
 extern struct mutex system_transition_mutex;
 
-#ifdef CONFIG_PM_SLEEP
-void save_processor_state(void);
-void restore_processor_state(void);
-
-/* System sleep support has been removed from this trimmed tree. */
-extern int register_pm_notifier(struct notifier_block *nb);
-extern int unregister_pm_notifier(struct notifier_block *nb);
-extern void ksys_sync_helper(void);
-extern void pm_report_hw_sleep_time(u64 t);
-extern void pm_report_max_hw_sleep(u64 t);
-void pm_restrict_gfp_mask(void);
-void pm_restore_gfp_mask(void);
-
-#define pm_notifier(fn, pri) {				\
-	static struct notifier_block fn##_nb =			\
-		{ .notifier_call = fn, .priority = pri };	\
-	register_pm_notifier(&fn##_nb);			\
-}
-
-/* Wakeup event support has been removed from this trimmed tree. */
-extern bool events_check_enabled;
-
-static inline bool pm_suspended_storage(void)
-{
-	return !gfp_has_io_fs(gfp_allowed_mask);
-}
-
-extern bool pm_wakeup_pending(void);
-extern void pm_system_wakeup(void);
-extern void pm_system_cancel_wakeup(void);
-extern void pm_wakeup_clear(unsigned int irq_number);
-extern void pm_system_irq_wakeup(unsigned int irq_number);
-extern unsigned int pm_wakeup_irq(void);
-extern bool pm_get_wakeup_count(unsigned int *count, bool block);
-extern bool pm_save_wakeup_count(unsigned int count);
-extern void pm_wakep_autosleep_enabled(bool set);
-extern void pm_print_active_wakeup_sources(void);
-
-extern unsigned int lock_system_sleep(void);
-extern void unlock_system_sleep(unsigned int);
-
-extern bool pm_sleep_transition_in_progress(void);
-
-#else /* !CONFIG_PM_SLEEP */
 
 static inline int register_pm_notifier(struct notifier_block *nb)
 {
@@ -376,7 +196,6 @@ static inline void unlock_system_sleep(unsigned int flags) {}
 
 static inline bool pm_sleep_transition_in_progress(void) { return false; }
 
-#endif /* !CONFIG_PM_SLEEP */
 
 #define pm_print_times_enabled	(false)
 #define pm_debug_messages_on	(false)

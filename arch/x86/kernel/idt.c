@@ -64,9 +64,6 @@ static const __initconst struct idt_data early_idts[] = {
 	INTG(X86_TRAP_DB,		asm_exc_debug),
 	SYSG(X86_TRAP_BP,		asm_exc_int3),
 
-#if 0
-	INTG(X86_TRAP_VE,		asm_exc_virtualization_exception),
-#endif
 };
 
 /*
@@ -102,19 +99,11 @@ static const __initconst struct idt_data def_idts[] = {
 	INTG(X86_TRAP_CP,		asm_exc_control_protection),
 #endif
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	ISTG(X86_TRAP_VC,		asm_exc_vmm_communication, IST_INDEX_VC),
-#endif
 
 	SYSG(X86_TRAP_OF,		asm_exc_overflow),
 };
 
 static const struct idt_data ia32_idt[] __initconst = {
-#if defined(CONFIG_IA32_EMULATION)
-	SYSG(IA32_SYSCALL_VECTOR,	asm_int80_emulation),
-#elif 0
-	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),
-#endif
 };
 
 /*
@@ -128,9 +117,6 @@ static const __initconst struct idt_data apic_idts[] = {
 	INTG(REBOOT_VECTOR,			asm_sysvec_reboot),
 #endif
 
-#ifdef CONFIG_X86_THERMAL_VECTOR
-	INTG(THERMAL_APIC_VECTOR,		asm_sysvec_thermal),
-#endif
 
 #ifdef CONFIG_X86_MCE_THRESHOLD
 	INTG(THRESHOLD_APIC_VECTOR,		asm_sysvec_threshold),
@@ -143,14 +129,6 @@ static const __initconst struct idt_data apic_idts[] = {
 #ifdef CONFIG_X86_LOCAL_APIC
 	INTG(LOCAL_TIMER_VECTOR,		asm_sysvec_apic_timer_interrupt),
 	INTG(X86_PLATFORM_IPI_VECTOR,		asm_sysvec_x86_platform_ipi),
-# if IS_ENABLED(CONFIG_KVM)
-	INTG(POSTED_INTR_VECTOR,		asm_sysvec_kvm_posted_intr_ipi),
-	INTG(POSTED_INTR_WAKEUP_VECTOR,		asm_sysvec_kvm_posted_intr_wakeup_ipi),
-	INTG(POSTED_INTR_NESTED_VECTOR,		asm_sysvec_kvm_posted_intr_nested_ipi),
-# endif
-#if 0
-	INTG(PERF_GUEST_MEDIATED_PMI_VECTOR,	asm_sysvec_perf_guest_mediated_pmi_handler),
-#endif
 # ifdef CONFIG_IRQ_WORK
 	INTG(IRQ_WORK_VECTOR,			asm_sysvec_irq_work),
 # endif

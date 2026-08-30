@@ -4,10 +4,6 @@
 
 #include <linux/types.h>
 
-#if 0
-void early_tdx_detect(void);
-#else
 static inline void early_tdx_detect(void) { };
-#endif
 
 #endif /* BOOT_COMPRESSED_TDX_H */

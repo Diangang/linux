@@ -5,15 +5,11 @@
 #include <linux/instruction_pointer.h>
 #include <linux/preempt.h>
 
-#if 0 || 0
-extern void __local_bh_disable_ip(unsigned long ip, unsigned int cnt);
-#else
 static __always_inline void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
 {
 	preempt_count_add(cnt);
 	barrier();
 }
-#endif
 
 static inline void local_bh_disable(void)
 {

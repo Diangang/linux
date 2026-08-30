@@ -63,17 +63,6 @@ static void __init map_kernel(u64 kaslr_offset, u64 va_offset, int root_level)
 	if (IS_ENABLED(CONFIG_ARM64_PTR_AUTH_KERNEL) && cpu_has_pac())
 		enable_scs = false;
 
-	if (IS_ENABLED(CONFIG_ARM64_BTI_KERNEL) && cpu_has_bti()) {
-		enable_scs = false;
-
-		/*
-		 * If we have a CPU that supports BTI and a kernel built for
-		 * BTI then mark the kernel executable text as guarded pages
-		 * now so we don't have to rewrite the page tables later.
-		 */
-		text_prot = __pgprot_modify(text_prot, PTE_GP, PTE_GP);
-	}
-
 	/* Map all code read-write on the first pass if needed */
 	twopass |= enable_scs;
 	prot = twopass ? data_prot : text_prot;

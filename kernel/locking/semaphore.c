@@ -41,23 +41,6 @@ static noinline int __down_killable(struct semaphore *sem);
 static noinline int __down_timeout(struct semaphore *sem, long timeout);
 static noinline void __up(struct semaphore *sem, struct wake_q_head *wake_q);
 
-#ifdef CONFIG_DETECT_HUNG_TASK_BLOCKER
-static inline void hung_task_sem_set_holder(struct semaphore *sem)
-{
-	WRITE_ONCE((sem)->last_holder, (unsigned long)current);
-}
-
-static inline void hung_task_sem_clear_if_holder(struct semaphore *sem)
-{
-	if (READ_ONCE((sem)->last_holder) == (unsigned long)current)
-		WRITE_ONCE((sem)->last_holder, 0UL);
-}
-
-unsigned long sem_last_holder(struct semaphore *sem)
-{
-	return READ_ONCE(sem->last_holder);
-}
-#else
 static inline void hung_task_sem_set_holder(struct semaphore *sem)
 {
 }
@@ -68,7 +51,6 @@ unsigned long sem_last_holder(struct semaphore *sem)
 {
 	return 0UL;
 }
-#endif
 
 static inline void __sem_acquire(struct semaphore *sem)
 {

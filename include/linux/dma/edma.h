@@ -107,10 +107,6 @@ struct dw_edma_chip {
 };
 
 /* Export to the platform drivers */
-#if IS_REACHABLE(CONFIG_DW_EDMA)
-int dw_edma_probe(struct dw_edma_chip *chip);
-int dw_edma_remove(struct dw_edma_chip *chip);
-#else
 static inline int dw_edma_probe(struct dw_edma_chip *chip)
 {
 	return -ENODEV;
@@ -120,6 +116,5 @@ static inline int dw_edma_remove(struct dw_edma_chip *chip)
 {
 	return 0;
 }
-#endif /* CONFIG_DW_EDMA */
 
 #endif /* _DW_EDMA_H */

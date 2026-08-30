@@ -772,49 +772,6 @@ static int queue_folios_hugetlb(pte_t *pte, unsigned long hmask,
 			       unsigned long addr, unsigned long end,
 			       struct mm_walk *walk)
 {
-#ifdef CONFIG_HUGETLB_PAGE
-	struct queue_pages *qp = walk->private;
-	unsigned long flags = qp->flags;
-	struct folio *folio;
-	spinlock_t *ptl;
-	pte_t ptep;
-
-	ptl = huge_pte_lock(hstate_vma(walk->vma), walk->mm, pte);
-	ptep = huge_ptep_get(walk->mm, addr, pte);
-	if (!pte_present(ptep)) {
-		if (!huge_pte_none(ptep)) {
-			const softleaf_t entry = softleaf_from_pte(ptep);
-
-			if (unlikely(softleaf_is_migration(entry)))
-				qp->nr_failed++;
-		}
-
-		goto unlock;
-	}
-	folio = pfn_folio(pte_pfn(ptep));
-	if (!queue_folio_required(folio, qp))
-		goto unlock;
-	if (!(flags & (MPOL_MF_MOVE | MPOL_MF_MOVE_ALL)) ||
-	    !vma_migratable(walk->vma)) {
-		qp->nr_failed++;
-		goto unlock;
-	}
-	/*
-	 * Unless MPOL_MF_MOVE_ALL, we try to avoid migrating a shared folio.
-	 * Choosing not to migrate a shared folio is not counted as a failure.
-	 *
-	 * See folio_maybe_mapped_shared() on possible imprecision when we
-	 * cannot easily detect if a folio is shared.
-	 */
-	if ((flags & MPOL_MF_MOVE_ALL) ||
-	    (!folio_maybe_mapped_shared(folio) && !hugetlb_pmd_shared(pte)))
-		if (!folio_isolate_hugetlb(folio, qp->pagelist))
-			qp->nr_failed++;
-unlock:
-	spin_unlock(ptl);
-	if (qp->nr_failed && strictly_unmovable(flags))
-		return -EIO;
-#endif
 	return 0;
 }
 
@@ -2310,78 +2267,6 @@ static nodemask_t *policy_nodemask(gfp_t gfp, struct mempolicy *pol,
 	return nodemask;
 }
 
-#ifdef CONFIG_HUGETLBFS
-/*
- * huge_node(@vma, @addr, @gfp_flags, @mpol)
- * @vma: virtual memory area whose policy is sought
- * @addr: address in @vma for shared policy lookup and interleave policy
- * @gfp_flags: for requested zone
- * @mpol: pointer to mempolicy pointer for reference counted mempolicy
- * @nodemask: pointer to nodemask pointer for 'bind' and 'prefer-many' policy
- *
- * Returns a nid suitable for a huge page allocation and a pointer
- * to the struct mempolicy for conditional unref after allocation.
- * If the effective policy is 'bind' or 'prefer-many', returns a pointer
- * to the mempolicy's @nodemask for filtering the zonelist.
- */
-int huge_node(struct vm_area_struct *vma, unsigned long addr, gfp_t gfp_flags,
-		struct mempolicy **mpol, nodemask_t **nodemask)
-{
-	pgoff_t ilx;
-	int nid;
-
-	nid = numa_node_id();
-	*mpol = get_vma_policy(vma, addr, hstate_vma(vma)->order, &ilx);
-	*nodemask = policy_nodemask(gfp_flags, *mpol, ilx, &nid);
-	return nid;
-}
-
-/*
- * init_nodemask_of_mempolicy
- *
- * If the current task's mempolicy is "default" [NULL], return 'false'
- * to indicate default policy.  Otherwise, extract the policy nodemask
- * for 'bind' or 'interleave' policy into the argument nodemask, or
- * initialize the argument nodemask to contain the single node for
- * 'preferred' or 'local' policy and return 'true' to indicate presence
- * of non-default mempolicy.
- *
- * We don't bother with reference counting the mempolicy [mpol_get/put]
- * because the current task is examining it's own mempolicy and a task's
- * mempolicy is only ever changed by the task itself.
- *
- * N.B., it is the caller's responsibility to free a returned nodemask.
- */
-bool init_nodemask_of_mempolicy(nodemask_t *mask)
-{
-	struct mempolicy *mempolicy;
-
-	if (!(mask && current->mempolicy))
-		return false;
-
-	task_lock(current);
-	mempolicy = current->mempolicy;
-	switch (mempolicy->mode) {
-	case MPOL_PREFERRED:
-	case MPOL_PREFERRED_MANY:
-	case MPOL_BIND:
-	case MPOL_INTERLEAVE:
-	case MPOL_WEIGHTED_INTERLEAVE:
-		*mask = mempolicy->nodes;
-		break;
-
-	case MPOL_LOCAL:
-		init_nodemask_of_node(mask, numa_node_id());
-		break;
-
-	default:
-		BUG();
-	}
-	task_unlock(current);
-
-	return true;
-}
-#endif
 
 /*
  * mempolicy_in_oom_domain
@@ -2452,40 +2337,6 @@ static struct page *alloc_pages_mpol(gfp_t gfp, unsigned int order,
 
 	if (pol->mode == MPOL_PREFERRED_MANY)
 		return alloc_pages_preferred_many(gfp, order, nid, nodemask);
-
-	if (IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE) &&
-	    /* filter "hugepage" allocation, unless from alloc_pages() */
-	    is_pmd_order(order) && ilx != NO_INTERLEAVE_INDEX) {
-		/*
-		 * For hugepage allocation and non-interleave policy which
-		 * allows the current node (or other explicitly preferred
-		 * node) we only try to allocate from the current/preferred
-		 * node and don't fall back to other nodes, as the cost of
-		 * remote accesses would likely offset THP benefits.
-		 *
-		 * If the policy is interleave or does not allow the current
-		 * node in its nodemask, we allocate the standard way.
-		 */
-		if (pol->mode != MPOL_INTERLEAVE &&
-		    pol->mode != MPOL_WEIGHTED_INTERLEAVE &&
-		    (!nodemask || node_isset(nid, *nodemask))) {
-			/*
-			 * First, try to allocate THP only on local node, but
-			 * don't reclaim unnecessarily, just compact.
-			 */
-			page = __alloc_frozen_pages_noprof(
-				gfp | __GFP_THISNODE | __GFP_NORETRY, order,
-				nid, NULL);
-			if (page || !(gfp & __GFP_DIRECT_RECLAIM))
-				return page;
-			/*
-			 * If hugepage allocations are configured to always
-			 * synchronous compact or the vma has been madvised
-			 * to prefer hugepage backing, retry allowing remote
-			 * memory with both reclaim and compact as well.
-			 */
-		}
-	}
 
 	page = __alloc_frozen_pages_noprof(gfp, order, nid, nodemask);
 

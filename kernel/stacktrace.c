@@ -212,31 +212,6 @@ int stack_trace_save_tsk_reliable(struct task_struct *tsk, unsigned long *store,
 }
 #endif
 
-#ifdef CONFIG_USER_STACKTRACE_SUPPORT
-/**
- * stack_trace_save_user - Save a user space stack trace into a storage array
- * @store:	Pointer to storage array
- * @size:	Size of the storage array
- *
- * Return: Number of trace entries stored.
- */
-unsigned int stack_trace_save_user(unsigned long *store, unsigned int size)
-{
-	stack_trace_consume_fn consume_entry = stack_trace_consume_entry;
-	struct stacktrace_cookie c = {
-		.store	= store,
-		.size	= size,
-	};
-
-	/* Trace user stack if not a kernel thread */
-	if (current->flags & PF_KTHREAD)
-		return 0;
-
-	arch_stack_walk_user(consume_entry, &c, task_pt_regs(current));
-
-	return c.len;
-}
-#endif
 
 #else /* CONFIG_ARCH_STACKWALK */
 
@@ -352,25 +327,6 @@ int stack_trace_save_tsk_reliable(struct task_struct *tsk, unsigned long *store,
 }
 #endif
 
-#ifdef CONFIG_USER_STACKTRACE_SUPPORT
-/**
- * stack_trace_save_user - Save a user space stack trace into a storage array
- * @store:	Pointer to storage array
- * @size:	Size of the storage array
- *
- * Return: Number of trace entries stored
- */
-unsigned int stack_trace_save_user(unsigned long *store, unsigned int size)
-{
-	struct stack_trace trace = {
-		.entries	= store,
-		.max_entries	= size,
-	};
-
-	save_stack_trace_user(&trace);
-	return trace.nr_entries;
-}
-#endif /* CONFIG_USER_STACKTRACE_SUPPORT */
 
 #endif /* !CONFIG_ARCH_STACKWALK */
 

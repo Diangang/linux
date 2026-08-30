@@ -27,9 +27,6 @@ static struct signal_struct init_signals = {
 	},
 	.multiprocess	= HLIST_HEAD_INIT,
 	.rlim		= INIT_RLIMITS,
-#ifdef CONFIG_CGROUPS
-	.cgroup_threadgroup_rwsem	= __RWSEM_INITIALIZER(init_signals.cgroup_threadgroup_rwsem),
-#endif
 	.cred_guard_mutex = __MUTEX_INITIALIZER(init_signals.cred_guard_mutex),
 	.exec_update_lock = __RWSEM_INITIALIZER(init_signals.exec_update_lock),
 #ifdef CONFIG_POSIX_TIMERS
@@ -122,9 +119,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 #ifdef CONFIG_SMP
 	.pushable_tasks	= PLIST_NODE_INIT(init_task.pushable_tasks, MAX_PRIO),
 #endif
-#ifdef CONFIG_CGROUP_SCHED
-	.sched_task_group = &root_task_group,
-#endif
 	.ptraced	= LIST_HEAD_INIT(init_task.ptraced),
 	.ptrace_entry	= LIST_HEAD_INIT(init_task.ptrace_entry),
 	.real_parent	= &init_task,
@@ -166,10 +160,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 	.rcu_tasks_idle_cpu = -1,
 	.rcu_tasks_exit_list = LIST_HEAD_INIT(init_task.rcu_tasks_exit_list),
 #endif
-#ifdef CONFIG_CPUSETS
-	.mems_allowed_seq = SEQCNT_SPINLOCK_ZERO(init_task.mems_allowed_seq,
-						 &init_task.alloc_lock),
-#endif
 #ifdef CONFIG_RT_MUTEXES
 	.pi_waiters	= RB_ROOT_CACHED,
 	.pi_top_task	= NULL,
@@ -179,24 +169,6 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
 	.numa_preferred_nid = NUMA_NO_NODE,
 	.numa_group	= NULL,
 	.numa_faults	= NULL,
-#endif
-#if 0 || 0
-	.kasan_depth	= 1,
-#endif
-#if 0
-	.lockdep_depth = 0, /* no locks held yet */
-	.curr_chain_key = INITIAL_CHAIN_KEY,
-	.lockdep_recursion = 0,
-#endif
-#ifdef CONFIG_FUNCTION_GRAPH_TRACER
-	.ret_stack		= NULL,
-	.tracing_graph_pause	= ATOMIC_INIT(0),
-#endif
-#ifdef CONFIG_SECURITY
-	.security	= NULL,
-#endif
-#ifdef CONFIG_SCHED_MM_CID
-	.mm_cid		= { .cid = MM_CID_UNSET, },
 #endif
 };
 EXPORT_SYMBOL(init_task);

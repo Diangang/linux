@@ -236,9 +236,6 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	mov	x0, x20
 	bl	set_cpu_boot_mode_flag
 
-#if 0 || 0
-	bl	kasan_early_init
-#endif
 	mov	x0, x20
 	bl	finalise_el2			// Prefer VHE if possible
 	ldp	x29, x30, [sp], #16

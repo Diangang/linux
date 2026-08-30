@@ -4,15 +4,6 @@
 #ifndef _LINUX_PM_WAKEIRQ_H
 #define _LINUX_PM_WAKEIRQ_H
 
-#ifdef CONFIG_PM
-
-extern int dev_pm_set_wake_irq(struct device *dev, int irq);
-extern int dev_pm_set_dedicated_wake_irq(struct device *dev, int irq);
-extern int dev_pm_set_dedicated_wake_irq_reverse(struct device *dev, int irq);
-extern void dev_pm_clear_wake_irq(struct device *dev);
-extern int devm_pm_set_wake_irq(struct device *dev, int irq);
-
-#else	/* !CONFIG_PM */
 
 static inline int dev_pm_set_wake_irq(struct device *dev, int irq)
 {
@@ -38,5 +29,4 @@ static inline int devm_pm_set_wake_irq(struct device *dev, int irq)
 	return 0;
 }
 
-#endif	/* CONFIG_PM */
 #endif	/* _LINUX_PM_WAKEIRQ_H */

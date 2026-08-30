@@ -1132,37 +1132,7 @@ static DEVICE_ATTR(badblocks, 0644, disk_badblocks_show, disk_badblocks_store);
 static DEVICE_ATTR(diskseq, 0444, diskseq_show, NULL);
 static DEVICE_ATTR(partscan, 0444, partscan_show, NULL);
 
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-ssize_t part_fail_show(struct device *dev,
-		       struct device_attribute *attr, char *buf)
-{
-	return sysfs_emit(buf, "%d\n",
-		       bdev_test_flag(dev_to_bdev(dev), BD_MAKE_IT_FAIL));
-}
 
-ssize_t part_fail_store(struct device *dev,
-			struct device_attribute *attr,
-			const char *buf, size_t count)
-{
-	int i;
-
-	if (count > 0 && sscanf(buf, "%d", &i) > 0) {
-		if (i)
-			bdev_set_flag(dev_to_bdev(dev), BD_MAKE_IT_FAIL);
-		else
-			bdev_clear_flag(dev_to_bdev(dev), BD_MAKE_IT_FAIL);
-	}
-	return count;
-}
-
-static struct device_attribute dev_attr_fail =
-	__ATTR(make-it-fail, 0644, part_fail_show, part_fail_store);
-#endif /* CONFIG_FAIL_MAKE_REQUEST */
-
-#ifdef CONFIG_FAIL_IO_TIMEOUT
-static struct device_attribute dev_attr_fail_timeout =
-	__ATTR(io-timeout-fail, 0644, part_timeout_show, part_timeout_store);
-#endif
 
 static struct attribute *disk_attrs[] = {
 	&dev_attr_range.attr,
@@ -1182,12 +1152,6 @@ static struct attribute *disk_attrs[] = {
 	&dev_attr_events_poll_msecs.attr,
 	&dev_attr_diskseq.attr,
 	&dev_attr_partscan.attr,
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-	&dev_attr_fail.attr,
-#endif
-#ifdef CONFIG_FAIL_IO_TIMEOUT
-	&dev_attr_fail_timeout.attr,
-#endif
 	NULL
 };
 
@@ -1208,9 +1172,6 @@ static struct attribute_group disk_attr_group = {
 
 static const struct attribute_group *disk_attr_groups[] = {
 	&disk_attr_group,
-#ifdef CONFIG_BLK_DEV_IO_TRACE
-	&blk_trace_attr_group,
-#endif
 	NULL
 };
 

@@ -83,16 +83,6 @@ SYM_CODE_START_NOALIGN(startup_64)
 	ANNOTATE_NOENDBR
 	UNWIND_HINT_END_OF_STACK
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	/*
-	 * Activate SEV/SME memory encryption if supported/enabled. This needs to
-	 * be done now, since this also includes setup of the SEV-SNP CPUID table,
-	 * which needs to be done before any CPUID instructions are executed in
-	 * subsequent code. Pass the boot_params pointer as the first argument.
-	 */
-	movq	%r15, %rdi
-	call	__pi_sme_enable
-#endif
 
 	/* Sanitize CPU configuration */
 	call verify_cpu
@@ -117,17 +107,6 @@ SYM_CODE_START_NOALIGN(startup_64)
 	leaq	early_top_pgt(%rip), %rcx
 	addq	%rcx, %rax
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	mov	%rax, %rdi
-
-	/*
-	 * For SEV guests: Verify that the C-bit is correct. A malicious
-	 * hypervisor could lie about the C-bit position to perform a ROP
-	 * attack on the guest by writing to the unencrypted stack and wait for
-	 * the next RET instruction.
-	 */
-	call	sev_verify_cbit
-#endif
 
 	/*
 	 * Switch to early_top_pgt which still has the identity mappings
@@ -186,9 +165,6 @@ SYM_INNER_LABEL(secondary_startup_64_no_verify, SYM_L_GLOBAL)
 	 * Retrieve the modifier (SME encryption mask if SME is active) to be
 	 * added to the initial pgdir entry that will be programmed into CR3.
 	 */
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	addq	sme_me_mask(%rip), %rax
-#endif
 	/*
 	 * Switch to the init_top_pgt here, away from the trampoline_pgd and
 	 * unmap the identity mapped ranges.
@@ -294,11 +270,7 @@ SYM_INNER_LABEL(common_startup_64, SYM_L_LOCAL)
 	cmpl	(%rbx,%rcx,4), %eax
 	jz	.Lsetup_cpu
 	inc	%ecx
-#ifdef CONFIG_FORCE_NR_CPUS
-	cmpl	$NR_CPUS, %ecx
-#else
 	cmpl	nr_cpu_ids(%rip), %ecx
-#endif
 	jb	.Lfind_cpunr
 
 	/*  APIC ID not found in the table. Drop the trampoline lock and bail. */
@@ -421,64 +393,12 @@ SYM_CODE_END(secondary_startup_64)
 
 #include "verify_cpu.S"
 
-#if defined(CONFIG_HOTPLUG_CPU) && defined(CONFIG_AMD_MEM_ENCRYPT)
-/*
- * Entry point for soft restart of a CPU. Invoked from xxx_play_dead() for
- * restarting the boot CPU or for restarting SEV guest CPUs after CPU hot
- * unplug. Everything is set up already except the stack.
- */
-SYM_CODE_START(soft_restart_cpu)
-	ANNOTATE_NOENDBR
-	UNWIND_HINT_END_OF_STACK
 
-	/* Find the idle task stack */
-	movq	PER_CPU_VAR(current_task), %rcx
-	movq	TASK_threadsp(%rcx), %rsp
-
-	jmp	.Ljump_to_C_code
-SYM_CODE_END(soft_restart_cpu)
-#endif
-
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-/*
- * VC Exception handler used during early boot when running on kernel
- * addresses, but before the switch to the idt_table can be made.
- * The early_idt_handler_array can't be used here because it calls into a lot
- * of __init code and this handler is also used during CPU offlining/onlining.
- * Therefore this handler ends up in the .text section so that it stays around
- * when .init.text is freed.
- */
-SYM_CODE_START_NOALIGN(vc_boot_ghcb)
-	UNWIND_HINT_IRET_REGS offset=8
-	ENDBR
-
-	/* Build pt_regs */
-	PUSH_AND_CLEAR_REGS
-
-	/* Call C handler */
-	movq    %rsp, %rdi
-	movq	ORIG_RAX(%rsp), %rsi
-	movq	initial_vc_handler(%rip), %rax
-	ANNOTATE_RETPOLINE_SAFE
-	call	*%rax
-
-	/* Unwind pt_regs */
-	POP_REGS
-
-	/* Remove Error Code */
-	addq    $8, %rsp
-
-	iretq
-SYM_CODE_END(vc_boot_ghcb)
-#endif
 
 	/* Both SMP bootup and ACPI suspend change these variables */
 	__REFDATA
 	.balign	8
 SYM_DATA(initial_code,	.quad x86_64_start_kernel)
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-SYM_DATA(initial_vc_handler,	.quad handle_vc_boot_ghcb)
-#endif
 
 SYM_DATA(trampoline_lock, .quad 0);
 	__FINITDATA
@@ -540,40 +460,6 @@ SYM_CODE_START_LOCAL(early_idt_handler_common)
 	jmp restore_regs_and_return_to_kernel
 SYM_CODE_END(early_idt_handler_common)
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-/*
- * VC Exception handler used during very early boot. The
- * early_idt_handler_array can't be used because it returns via the
- * paravirtualized INTERRUPT_RETURN and pv-ops don't work that early.
- *
- * XXX it does, fix this.
- *
- * This handler will end up in the .init.text section and not be
- * available to boot secondary CPUs.
- */
-SYM_CODE_START_NOALIGN(vc_no_ghcb)
-	UNWIND_HINT_IRET_REGS offset=8
-	ENDBR
-
-	/* Build pt_regs */
-	PUSH_AND_CLEAR_REGS
-
-	/* Call C handler */
-	movq    %rsp, %rdi
-	movq	ORIG_RAX(%rsp), %rsi
-	call    __pi_do_vc_no_ghcb
-
-	/* Unwind pt_regs */
-	POP_REGS
-
-	/* Remove Error Code */
-	addq    $8, %rsp
-
-	/* Pure iret required here - don't use INTERRUPT_RETURN */
-	iretq
-SYM_CODE_END(vc_no_ghcb)
-SYM_PIC_ALIAS(vc_no_ghcb);
-#endif
 
 #ifdef CONFIG_MITIGATION_PAGE_TABLE_ISOLATION
 /*

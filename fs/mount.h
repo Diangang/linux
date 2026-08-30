@@ -21,10 +21,6 @@ struct mnt_namespace {
 	wait_queue_head_t	poll;
 	u64			seq_origin; /* Sequence number of origin mount namespace */
 	u64 event;
-#ifdef CONFIG_FSNOTIFY
-	__u32			n_fsnotify_mask;
-	struct fsnotify_mark_connector __rcu *n_fsnotify_marks;
-#endif
 	unsigned int		nr_mounts; /* # of mounts in the namespace */
 	unsigned int		pending_mounts;
 	refcount_t		passive; /* number references not pinning @mounts */
@@ -77,12 +73,6 @@ struct mount {
 		struct hlist_node mnt_mp_list;	/* list mounts with the same mountpoint */
 		struct hlist_node mnt_umount;
 	};
-#ifdef CONFIG_FSNOTIFY
-	struct fsnotify_mark_connector __rcu *mnt_fsnotify_marks;
-	__u32 mnt_fsnotify_mask;
-	struct list_head to_notify;	/* need to queue notification */
-	struct mnt_namespace *prev_ns;	/* previous namespace (NULL if none) */
-#endif
 	int mnt_t_flags;		/* namespace_sem-protected flags */
 	int mnt_id;			/* mount identifier, reused */
 	u64 mnt_id_unique;		/* mount ID unique until reboot */
@@ -218,21 +208,9 @@ static inline struct mnt_namespace *to_mnt_ns(struct ns_common *ns)
 	return container_of(ns, struct mnt_namespace, ns);
 }
 
-#ifdef CONFIG_FSNOTIFY
-static inline void mnt_notify_add(struct mount *m)
-{
-	/* Optimize the case where there are no watches */
-	if ((m->mnt_ns && m->mnt_ns->n_fsnotify_marks) ||
-	    (m->prev_ns && m->prev_ns->n_fsnotify_marks))
-		list_add_tail(&m->to_notify, &notify_list);
-	else
-		m->prev_ns = m->mnt_ns;
-}
-#else
 static inline void mnt_notify_add(struct mount *m)
 {
 }
-#endif
 
 static inline struct mount *topmost_overmount(struct mount *m)
 {

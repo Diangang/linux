@@ -91,9 +91,6 @@ struct memory_block {
 	struct vmem_altmap *altmap;
 	struct memory_group *group;	/* group (if any) for this block */
 	struct list_head group_next;	/* next block inside memory group */
-#if defined(CONFIG_MEMORY_FAILURE) && defined(CONFIG_MEMORY_HOTPLUG)
-	atomic_long_t nr_hwpoison;
-#endif
 };
 
 int arch_get_memory_phys_device(unsigned long start_pfn);
@@ -121,7 +118,6 @@ struct mem_section;
 #define MEMTIER_HOTPLUG_PRI	100
 #define KSM_CALLBACK_PRI	100
 
-#ifndef CONFIG_MEMORY_HOTPLUG
 static inline void memory_dev_init(void)
 {
 	return;
@@ -149,58 +145,6 @@ static inline unsigned long memory_block_advised_max_size(void)
 {
 	return 0;
 }
-#else /* CONFIG_MEMORY_HOTPLUG */
-extern int register_memory_notifier(struct notifier_block *nb);
-extern void unregister_memory_notifier(struct notifier_block *nb);
-int create_memory_block_devices(unsigned long start, unsigned long size,
-				int nid, struct vmem_altmap *altmap,
-				struct memory_group *group);
-void remove_memory_block_devices(unsigned long start, unsigned long size);
-extern void memory_dev_init(void);
-extern int memory_notify(enum memory_block_state state, void *v);
-extern struct memory_block *find_memory_block(unsigned long section_nr);
-typedef int (*walk_memory_blocks_func_t)(struct memory_block *, void *);
-extern int walk_memory_blocks(unsigned long start, unsigned long size,
-			      void *arg, walk_memory_blocks_func_t func);
-extern int for_each_memory_block(void *arg, walk_memory_blocks_func_t func);
-
-extern int memory_group_register_static(int nid, unsigned long max_pages);
-extern int memory_group_register_dynamic(int nid, unsigned long unit_pages);
-extern int memory_group_unregister(int mgid);
-struct memory_group *memory_group_find_by_id(int mgid);
-typedef int (*walk_memory_groups_func_t)(struct memory_group *, void *);
-int walk_dynamic_memory_groups(int nid, walk_memory_groups_func_t func,
-			       struct memory_group *excluded, void *arg);
-struct memory_block *find_memory_block_by_id(unsigned long block_id);
-#define hotplug_memory_notifier(fn, pri) ({		\
-	static __meminitdata struct notifier_block fn##_mem_nb =\
-		{ .notifier_call = fn, .priority = pri };\
-	register_memory_notifier(&fn##_mem_nb);			\
-})
-
-extern int sections_per_block;
-
-static inline unsigned long memory_block_id(unsigned long section_nr)
-{
-	return section_nr / sections_per_block;
-}
-
-static inline unsigned long pfn_to_block_id(unsigned long pfn)
-{
-	return memory_block_id(pfn_to_section_nr(pfn));
-}
-
-static inline unsigned long phys_to_block_id(unsigned long phys)
-{
-	return pfn_to_block_id(PFN_DOWN(phys));
-}
-
-#ifdef CONFIG_NUMA
-void memory_block_add_nid_early(struct memory_block *mem, int nid);
-#endif /* CONFIG_NUMA */
-int memory_block_advise_max_size(unsigned long size);
-unsigned long memory_block_advised_max_size(void);
-#endif	/* CONFIG_MEMORY_HOTPLUG */
 
 /*
  * Kernel text modification mutex, used for code patching. Users of this lock

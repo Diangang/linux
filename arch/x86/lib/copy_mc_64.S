@@ -4,7 +4,6 @@
 #include <linux/linkage.h>
 #include <asm/asm.h>
 
-#ifndef CONFIG_UML
 
 #ifdef CONFIG_X86_MCE
 
@@ -146,4 +145,3 @@ SYM_FUNC_START(copy_mc_enhanced_fast_string)
 	_ASM_EXTABLE_TYPE(.L_copy, .E_copy, EX_TYPE_DEFAULT_MCE_SAFE)
 
 SYM_FUNC_END(copy_mc_enhanced_fast_string)
-#endif /* !CONFIG_UML */

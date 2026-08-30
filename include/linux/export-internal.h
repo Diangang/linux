@@ -53,11 +53,7 @@
 	    "	.previous"						"\n"	\
 	)
 
-#if defined(CONFIG_PARISC) && defined(CONFIG_64BIT)
-#define KSYM_FUNC(name)		P%name
-#else
 #define KSYM_FUNC(name)		name
-#endif
 
 #define KSYMTAB_FUNC(name, ns)	__KSYMTAB(name, KSYM_FUNC(name), ns)
 #define KSYMTAB_DATA(name, ns)	__KSYMTAB(name, name, ns)

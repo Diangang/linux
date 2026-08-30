@@ -751,9 +751,6 @@ void __cpuidle default_idle(void)
 	raw_safe_halt();
 	raw_local_irq_disable();
 }
-#if defined(CONFIG_APM_MODULE) || defined(CONFIG_HALTPOLL_CPUIDLE_MODULE)
-EXPORT_SYMBOL(default_idle);
-#endif
 
 DEFINE_STATIC_CALL_NULL(x86_idle, default_idle);
 
@@ -789,16 +786,6 @@ void __cpuidle arch_cpu_idle(void)
 }
 EXPORT_SYMBOL_GPL(arch_cpu_idle);
 
-#ifdef CONFIG_XEN
-bool xen_set_default_idle(void)
-{
-	bool ret = x86_idle_set();
-
-	static_call_update(x86_idle, default_idle);
-
-	return ret;
-}
-#endif
 
 struct cpumask cpus_stop_mask;
 

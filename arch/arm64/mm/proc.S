@@ -34,11 +34,7 @@
 /* PTWs cacheable, inner/outer WBWA */
 #define TCR_CACHE_FLAGS	TCR_IRGN_WBWA | TCR_ORGN_WBWA
 
-#if 0
-#define TCR_KASAN_SW_FLAGS TCR_EL1_TBI1 | TCR_EL1_TBID1
-#else
 #define TCR_KASAN_SW_FLAGS 0
-#endif
 
 #define TCR_MTE_FLAGS 0
 
@@ -60,102 +56,6 @@
 	 MAIR_ATTRIDX(MAIR_ATTR_NORMAL, MT_NORMAL) |			\
 	 MAIR_ATTRIDX(MAIR_ATTR_NORMAL, MT_NORMAL_TAGGED))
 
-#ifdef CONFIG_CPU_PM
-/**
- * cpu_do_suspend - save CPU registers context
- *
- * x0: virtual address of context pointer
- *
- * This must be kept in sync with struct cpu_suspend_ctx in <asm/suspend.h>.
- */
-SYM_FUNC_START(cpu_do_suspend)
-	mrs	x2, tpidr_el0
-	mrs	x3, tpidrro_el0
-	mrs	x4, contextidr_el1
-	mrs	x5, osdlr_el1
-	mrs	x6, cpacr_el1
-	mrs	x7, tcr_el1
-	mrs	x8, vbar_el1
-	mrs	x9, mdscr_el1
-	mrs	x10, oslsr_el1
-	mrs	x11, sctlr_el1
-	get_this_cpu_offset x12
-	mrs	x13, sp_el0
-	stp	x2, x3, [x0]
-	stp	x4, x5, [x0, #16]
-	stp	x6, x7, [x0, #32]
-	stp	x8, x9, [x0, #48]
-	stp	x10, x11, [x0, #64]
-	stp	x12, x13, [x0, #80]
-	/*
-	 * Save x18 as it may be used as a platform register, e.g. by shadow
-	 * call stack.
-	 */
-	str	x18, [x0, #96]
-alternative_if ARM64_HAS_TCR2
-	mrs	x2, REG_TCR2_EL1
-	str	x2, [x0, #104]
-alternative_else_nop_endif
-	ret
-SYM_FUNC_END(cpu_do_suspend)
-
-/**
- * cpu_do_resume - restore CPU register context
- *
- * x0: Address of context pointer
- */
-SYM_FUNC_START(cpu_do_resume)
-	ldp	x2, x3, [x0]
-	ldp	x4, x5, [x0, #16]
-	ldp	x6, x8, [x0, #32]
-	ldp	x9, x10, [x0, #48]
-	ldp	x11, x12, [x0, #64]
-	ldp	x13, x14, [x0, #80]
-	/*
-	 * Restore x18, as it may be used as a platform register, and clear
-	 * the buffer to minimize the risk of exposure when used for shadow
-	 * call stack.
-	 */
-	ldr	x18, [x0, #96]
-	str	xzr, [x0, #96]
-	msr	tpidr_el0, x2
-	msr	tpidrro_el0, x3
-	msr	contextidr_el1, x4
-	msr	cpacr_el1, x6
-
-	/* Don't change t0sz here, mask those bits when restoring */
-	mrs	x7, tcr_el1
-	bfi	x8, x7, TCR_EL1_T0SZ_SHIFT, TCR_EL1_T0SZ_WIDTH
-
-	msr	tcr_el1, x8
-	msr	vbar_el1, x9
-	msr	mdscr_el1, x10
-alternative_if ARM64_HAS_TCR2
-	ldr	x2, [x0, #104]
-	msr	REG_TCR2_EL1, x2
-alternative_else_nop_endif
-
-	msr	sctlr_el1, x12
-	set_this_cpu_offset x13
-	msr	sp_el0, x14
-	/*
-	 * Restore oslsr_el1 by writing oslar_el1
-	 */
-	msr	osdlr_el1, x5
-	ubfx	x11, x11, #1, #1
-	msr	oslar_el1, x11
-	reset_pmuserenr_el0 x0			// Disable PMU access from EL0
-	reset_amuserenr_el0 x0			// Disable AMU access from EL0
-
-alternative_if ARM64_HAS_RAS_EXTN
-	msr_s	SYS_DISR_EL1, xzr
-alternative_else_nop_endif
-
-	ptrauth_keys_install_kernel_nosync x14, x1, x2, x3
-	isb
-	ret
-SYM_FUNC_END(cpu_do_resume)
-#endif
 
 	.pushsection ".idmap.text", "a"
 

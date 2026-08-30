@@ -57,10 +57,6 @@
 #include <asm/fsgsbase.h>
 #include <asm/fred.h>
 #include <asm/msr.h>
-#ifdef CONFIG_IA32_EMULATION
-/* Not included via unistd.h */
-#include <asm/unistd_32_ia32.h>
-#endif
 
 #include "process.h"
 
@@ -583,14 +579,6 @@ start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
 }
 EXPORT_SYMBOL_GPL(start_thread);
 
-#ifdef CONFIG_COMPAT
-void compat_start_thread(struct pt_regs *regs, u32 new_ip, u32 new_sp, bool x32)
-{
-	start_thread_common(regs, new_ip, new_sp,
-			    x32 ? __USER_CS : __USER32_CS,
-			    __USER_DS, __USER_DS);
-}
-#endif
 
 /*
  *	switch_to(x,y) should switch tasks from x to y.
@@ -732,20 +720,6 @@ static void __set_personality_x32(void)
 
 static void __set_personality_ia32(void)
 {
-#ifdef CONFIG_IA32_EMULATION
-	if (current->mm) {
-		/*
-		 * uprobes applied to this MM need to know this and
-		 * cannot use user_64bit_mode() at that time.
-		 */
-		__set_bit(MM_CONTEXT_UPROBE_IA32, &current->mm->context.flags);
-	}
-
-	current->personality |= force_personality32;
-	/* Prepare the first "return" to user space */
-	task_pt_regs(current)->orig_ax = __NR_ia32_execve;
-	current_thread_info()->status |= TS_COMPAT;
-#endif
 }
 
 void set_personality_ia32(bool x32)

@@ -93,9 +93,6 @@ DEFINE_LOCK_GUARD_0(namespace_shared, down_read(&namespace_sem),
 
 DEFINE_FREE(mntput, struct vfsmount *, if (!IS_ERR(_T)) mntput(_T))
 
-#ifdef CONFIG_FSNOTIFY
-LIST_HEAD(notify_list); /* protected by namespace_sem */
-#endif
 
 enum mount_kattr_flags_t {
 	MOUNT_KATTR_RECURSE		= (1 << 0),
@@ -1636,40 +1633,6 @@ int may_umount(struct vfsmount *mnt)
 
 EXPORT_SYMBOL(may_umount);
 
-#ifdef CONFIG_FSNOTIFY
-static void mnt_notify(struct mount *p)
-{
-	if (!p->prev_ns && p->mnt_ns) {
-		fsnotify_mnt_attach(p->mnt_ns, &p->mnt);
-	} else if (p->prev_ns && !p->mnt_ns) {
-		fsnotify_mnt_detach(p->prev_ns, &p->mnt);
-	} else if (p->prev_ns == p->mnt_ns) {
-		fsnotify_mnt_move(p->mnt_ns, &p->mnt);
-	} else {
-		fsnotify_mnt_detach(p->prev_ns, &p->mnt);
-		fsnotify_mnt_attach(p->mnt_ns, &p->mnt);
-	}
-	p->prev_ns = p->mnt_ns;
-}
-
-static void notify_mnt_list(void)
-{
-	struct mount *m, *tmp;
-	/*
-	 * Notify about mounts that were added/reparented/detached/remain
-	 * connected after unmount.
-	 */
-	list_for_each_entry_safe(m, tmp, &notify_list, to_notify) {
-		mnt_notify(m);
-		list_del_init(&m->to_notify);
-	}
-}
-
-static bool need_notify_mnt_list(void)
-{
-	return !list_empty(&notify_list);
-}
-#else
 static void notify_mnt_list(void)
 {
 }
@@ -1678,7 +1641,6 @@ static bool need_notify_mnt_list(void)
 {
 	return false;
 }
-#endif
 
 static void free_mnt_ns(struct mnt_namespace *);
 static void namespace_unlock(void)

@@ -24,30 +24,8 @@
 #include <asm/nospec-branch.h>
 #include <asm/softirq_stack.h>
 
-#ifdef CONFIG_DEBUG_STACKOVERFLOW
-
-int sysctl_panic_on_stackoverflow __read_mostly;
-
-/* Debugging check for stack overflow: is there less than 1KB free? */
-static bool check_stack_overflow(void)
-{
-	unsigned long sp = current_stack_pointer & (THREAD_SIZE - 1);
-
-	return sp < (sizeof(struct thread_info) + STACK_WARN);
-}
-
-static void print_stack_overflow(void)
-{
-	printk(KERN_WARNING "low stack detected by irq handler\n");
-	dump_stack();
-	if (sysctl_panic_on_stackoverflow)
-		panic("low stack detected by irq handler - check messages\n");
-}
-
-#else
 static inline bool check_stack_overflow(void) { return false; }
 static inline void print_stack_overflow(void) { }
-#endif
 
 DEFINE_PER_CPU_CACHE_HOT(struct irq_stack *, softirq_stack_ptr);
 

@@ -313,11 +313,7 @@ void software_node_init(void);
 void software_node_notify(struct device *dev);
 void software_node_notify_remove(struct device *dev);
 
-#ifdef CONFIG_PINCTRL
-int pinctrl_bind_pins(struct device *dev);
-#else
 static inline int pinctrl_bind_pins(struct device *dev)
 {
 	return 0;
 }
-#endif /* CONFIG_PINCTRL */

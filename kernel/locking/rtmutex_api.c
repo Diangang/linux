@@ -116,9 +116,6 @@ int __sched rt_mutex_trylock(struct rt_mutex *lock)
 {
 	int ret;
 
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES) && WARN_ON_ONCE(!in_task()))
-		return 0;
-
 	ret = __rt_mutex_trylock(&lock->rtmutex);
 	if (ret)
 		mutex_acquire(&lock->dep_map, 0, 1, _RET_IP_);

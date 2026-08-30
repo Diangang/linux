@@ -194,54 +194,6 @@ struct scan_control {
  */
 int vm_swappiness = 60;
 
-#ifdef CONFIG_MEMCG
-
-/* Returns true for reclaim through cgroup limits or cgroup interfaces. */
-static bool cgroup_reclaim(struct scan_control *sc)
-{
-	return sc->target_mem_cgroup;
-}
-
-/*
- * Returns true for reclaim on the root cgroup. This is true for direct
- * allocator reclaim and reclaim through cgroup interfaces on the root cgroup.
- */
-static bool root_reclaim(struct scan_control *sc)
-{
-	return !sc->target_mem_cgroup || mem_cgroup_is_root(sc->target_mem_cgroup);
-}
-
-/**
- * writeback_throttling_sane - is the usual dirty throttling mechanism available?
- * @sc: scan_control in question
- *
- * The normal page dirty throttling mechanism in balance_dirty_pages() is
- * completely broken with the legacy memcg and direct stalling in
- * shrink_folio_list() is used for throttling instead, which lacks all the
- * niceties such as fairness, adaptive pausing, bandwidth proportional
- * allocation and configurability.
- *
- * This function tests whether the vmscan currently in progress can assume
- * that the normal dirty throttling mechanism is operational.
- */
-static bool writeback_throttling_sane(struct scan_control *sc)
-{
-	if (!cgroup_reclaim(sc))
-		return true;
-#ifdef CONFIG_CGROUP_WRITEBACK
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return true;
-#endif
-	return false;
-}
-
-static int sc_swappiness(struct scan_control *sc, struct mem_cgroup *memcg)
-{
-	if (sc->proactive && sc->proactive_swappiness)
-		return *sc->proactive_swappiness;
-	return mem_cgroup_swappiness(memcg);
-}
-#else
 static bool cgroup_reclaim(struct scan_control *sc)
 {
 	return false;
@@ -261,7 +213,6 @@ static int sc_swappiness(struct scan_control *sc, struct mem_cgroup *memcg)
 {
 	return READ_ONCE(vm_swappiness);
 }
-#endif
 
 static void set_task_reclaim_state(struct task_struct *task,
 				   struct reclaim_state *rs)
@@ -1256,13 +1207,6 @@ retry:
 				/* Fallback to swap normal pages */
 				if (split_folio_to_list(folio, folio_list))
 					goto activate_locked;
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-				if (nr_pages >= HPAGE_PMD_NR) {
-					count_memcg_folio_events(folio,
-						THP_SWPOUT_FALLBACK, 1);
-					count_vm_event(THP_SWPOUT_FALLBACK);
-				}
-#endif
 				count_mthp_stat(order, MTHP_STAT_SWPOUT_FALLBACK);
 				if (folio_alloc_swap(folio))
 					goto activate_locked_split;
@@ -3442,84 +3386,6 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 	return nr_reclaimed;
 }
 
-#ifdef CONFIG_MEMCG
-
-/* Only used by soft limit reclaim. Do not reuse for anything else. */
-unsigned long mem_cgroup_shrink_node(struct mem_cgroup *memcg,
-						gfp_t gfp_mask, bool noswap,
-						pg_data_t *pgdat,
-						unsigned long *nr_scanned)
-{
-	struct lruvec *lruvec = mem_cgroup_lruvec(memcg, pgdat);
-	struct scan_control sc = {
-		.nr_to_reclaim = SWAP_CLUSTER_MAX,
-		.target_mem_cgroup = memcg,
-		.may_writepage = 1,
-		.may_unmap = 1,
-		.reclaim_idx = MAX_NR_ZONES - 1,
-		.may_swap = !noswap,
-	};
-
-	WARN_ON_ONCE(!current->reclaim_state);
-
-	sc.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
-			(GFP_HIGHUSER_MOVABLE & ~GFP_RECLAIM_MASK);
-
-
-	/*
-	 * NOTE: Although we can get the priority field, using it
-	 * here is not a good idea, since it limits the pages we can scan.
-	 * if we don't reclaim here, the shrink_node from balance_pgdat
-	 * will pick up pages from other mem cgroup's as well. We hack
-	 * the priority and make it zero.
-	 */
-	shrink_lruvec(lruvec, &sc);
-
-
-	*nr_scanned = sc.nr_scanned;
-
-	return sc.nr_reclaimed;
-}
-
-unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
-					   unsigned long nr_pages,
-					   gfp_t gfp_mask,
-					   unsigned int reclaim_options,
-					   int *swappiness)
-{
-	unsigned long nr_reclaimed;
-	unsigned int noreclaim_flag;
-	struct scan_control sc = {
-		.nr_to_reclaim = max(nr_pages, SWAP_CLUSTER_MAX),
-		.proactive_swappiness = swappiness,
-		.gfp_mask = (current_gfp_context(gfp_mask) & GFP_RECLAIM_MASK) |
-				(GFP_HIGHUSER_MOVABLE & ~GFP_RECLAIM_MASK),
-		.reclaim_idx = MAX_NR_ZONES - 1,
-		.target_mem_cgroup = memcg,
-		.priority = DEF_PRIORITY,
-		.may_writepage = 1,
-		.may_unmap = 1,
-		.may_swap = !!(reclaim_options & MEMCG_RECLAIM_MAY_SWAP),
-		.proactive = !!(reclaim_options & MEMCG_RECLAIM_PROACTIVE),
-	};
-	/*
-	 * Traverse the ZONELIST_FALLBACK zonelist of the current node to put
-	 * equal pressure on all the nodes. This is based on the assumption that
-	 * the reclaim does not bail out early.
-	 */
-	struct zonelist *zonelist = node_zonelist(numa_node_id(), sc.gfp_mask);
-
-	set_task_reclaim_state(current, &sc.reclaim_state);
-	noreclaim_flag = memalloc_noreclaim_save();
-
-	nr_reclaimed = do_try_to_free_pages(zonelist, &sc);
-
-	memalloc_noreclaim_restore(noreclaim_flag);
-	set_task_reclaim_state(current, NULL);
-
-	return nr_reclaimed;
-}
-#else
 unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
 					   unsigned long nr_pages,
 					   gfp_t gfp_mask,
@@ -3528,7 +3394,6 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
 {
 	return 0;
 }
-#endif
 
 static void kswapd_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 {

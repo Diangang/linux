@@ -13,9 +13,6 @@
  */
 struct user_struct {
 	refcount_t __count;	/* reference count */
-#ifdef CONFIG_EPOLL
-	struct percpu_counter epoll_watches; /* The number of file descriptors currently watched */
-#endif
 	unsigned long unix_inflight;	/* How many files in flight in unix sockets */
 	atomic_long_t pipe_bufs;  /* how many pages are allocated in pipe buffers */
 
@@ -23,10 +20,6 @@ struct user_struct {
 	struct hlist_node uidhash_node;
 	kuid_t uid;
 
-#if defined(CONFIG_NET) || defined(CONFIG_VFIO_PCI_ZDEV_KVM) || \
-	IS_ENABLED(CONFIG_IOMMUFD)
-	atomic_long_t locked_vm;
-#endif
 
 	/* Miscellaneous per-user rate limit */
 	struct ratelimit_state ratelimit;

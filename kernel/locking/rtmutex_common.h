@@ -189,26 +189,18 @@ static inline void __rt_mutex_base_init(struct rt_mutex_base *lock)
 /* Debug functions */
 static inline void debug_rt_mutex_unlock(struct rt_mutex_base *lock)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES))
-		DEBUG_LOCKS_WARN_ON(rt_mutex_owner(lock) != current);
 }
 
 static inline void debug_rt_mutex_proxy_unlock(struct rt_mutex_base *lock)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES))
-		DEBUG_LOCKS_WARN_ON(!rt_mutex_owner(lock));
 }
 
 static inline void debug_rt_mutex_init_waiter(struct rt_mutex_waiter *waiter)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES))
-		memset(waiter, 0x11, sizeof(*waiter));
 }
 
 static inline void debug_rt_mutex_free_waiter(struct rt_mutex_waiter *waiter)
 {
-	if (IS_ENABLED(CONFIG_DEBUG_RT_MUTEXES))
-		memset(waiter, 0x22, sizeof(*waiter));
 }
 
 static inline void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter)

@@ -652,13 +652,8 @@ static inline void pci_npem_create(struct pci_dev *dev) { }
 static inline void pci_npem_remove(struct pci_dev *dev) { }
 
 
-#if defined(CONFIG_PCI_DOE) && defined(CONFIG_SYSFS)
-void pci_doe_sysfs_init(struct pci_dev *pci_dev);
-void pci_doe_sysfs_teardown(struct pci_dev *pdev);
-#else
 static inline void pci_doe_sysfs_init(struct pci_dev *pdev) { }
 static inline void pci_doe_sysfs_teardown(struct pci_dev *pdev) { }
-#endif
 
 static inline void pci_ide_init(struct pci_dev *dev) { }
 static inline void pci_ide_init_host_bridge(struct pci_host_bridge *hb) { }

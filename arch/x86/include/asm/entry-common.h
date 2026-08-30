@@ -34,20 +34,6 @@ static inline void arch_exit_to_user_mode_prepare(struct pt_regs *regs,
 
 	fred_update_rsp0();
 
-#ifdef CONFIG_COMPAT
-	/*
-	 * Compat syscalls set TS_COMPAT.  Make sure we clear it before
-	 * returning to user mode.  We need to clear it *after* signal
-	 * handling, because syscall restart has a fixup for compat
-	 * syscalls.  The fixup is exercised by the ptrace_syscall_32
-	 * selftest.
-	 *
-	 * We also need to clear TS_REGS_POKED_I386: the 32-bit tracer
-	 * special case only applies after poking regs and before the
-	 * very next return to user mode.
-	 */
-	current_thread_info()->status &= ~(TS_COMPAT | TS_I386_REGS_POKED);
-#endif
 
 	/* Avoid unnecessary reads of 'x86_ibpb_exit_to_user' */
 	if (cpu_feature_enabled(X86_FEATURE_IBPB_EXIT_TO_USER) &&

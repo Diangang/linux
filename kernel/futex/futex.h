@@ -114,14 +114,10 @@ static inline bool futex_validate_input(unsigned int flags, u64 val)
 	return true;
 }
 
-#if 0
-extern bool should_fail_futex(bool fshared);
-#else
 static inline bool should_fail_futex(bool fshared)
 {
 	return false;
 }
-#endif
 
 /*
  * Hash buckets are shared by all the futex_keys that hash to the same

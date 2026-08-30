@@ -84,16 +84,6 @@ static bool __of_find_n_match_cpu_property(struct device_node *cpun,
 bool __weak arch_find_n_match_cpu_physical_id(struct device_node *cpun,
 					      int cpu, unsigned int *thread)
 {
-	/* Check for non-standard "ibm,ppc-interrupt-server#s" property
-	 * for thread ids on PowerPC. If it doesn't exist fallback to
-	 * standard "reg" property.
-	 */
-	if (IS_ENABLED(CONFIG_PPC) &&
-	    __of_find_n_match_cpu_property(cpun,
-					   "ibm,ppc-interrupt-server#s",
-					   cpu, thread))
-		return true;
-
 	return __of_find_n_match_cpu_property(cpun, "reg", cpu, thread);
 }
 

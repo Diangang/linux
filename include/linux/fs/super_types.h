@@ -103,13 +103,6 @@ struct super_operations {
 	int (*show_devname)(struct seq_file *seq, struct dentry *dentry);
 	int (*show_path)(struct seq_file *seq, struct dentry *dentry);
 	int (*show_stats)(struct seq_file *seq, struct dentry *dentry);
-#ifdef CONFIG_QUOTA
-	ssize_t (*quota_read)(struct super_block *sb, int type, char *data,
-			      size_t len, loff_t off);
-	ssize_t (*quota_write)(struct super_block *sb, int type,
-			       const char *data, size_t len, loff_t off);
-	struct dquot __rcu **(*get_dquots)(struct inode *inode);
-#endif
 	long (*nr_cached_objects)(struct super_block *sb,
 				  struct shrink_control *sc);
 	long (*free_cached_objects)(struct super_block *sb,
@@ -147,21 +140,7 @@ struct super_block {
 	struct rw_semaphore			s_umount;
 	int					s_count;
 	atomic_t				s_active;
-#ifdef CONFIG_SECURITY
-	void					*s_security;
-#endif
 	const struct xattr_handler		*const *s_xattr;
-#ifdef CONFIG_FS_ENCRYPTION
-	const struct fscrypt_operations		*s_cop;
-	struct fscrypt_keyring			*s_master_keys; /* master crypto keys in use */
-#endif
-#ifdef CONFIG_FS_VERITY
-	const struct fsverity_operations	*s_vop;
-#endif
-#if IS_ENABLED(CONFIG_UNICODE)
-	struct unicode_map			*s_encoding;
-	__u16					s_encoding_flags;
-#endif
 	struct hlist_bl_head			s_roots;	/* alternate root dentries for NFS */
 	struct mount				*s_mounts;	/* list of mounts; _not_ for fs use */
 	struct block_device			*s_bdev;	/* can go away once we use an accessor for @s_bdev_file */
@@ -186,10 +165,6 @@ struct super_block {
 	/* Time limits for c/m/atime in seconds */
 	time64_t				s_time_min;
 	time64_t		   		s_time_max;
-#ifdef CONFIG_FSNOTIFY
-	u32					s_fsnotify_mask;
-	struct fsnotify_sb_info			*s_fsnotify_info;
-#endif
 
 	/*
 	 * q: why are s_id and s_sysfs_name not the same? both are human
@@ -312,12 +287,7 @@ struct super_block {
 #define sb_has_strict_encoding(sb) \
 	(sb->s_encoding_flags & SB_ENC_STRICT_MODE_FL)
 
-#if IS_ENABLED(CONFIG_UNICODE)
-#define sb_no_casefold_compat_fallback(sb) \
-	(sb->s_encoding_flags & SB_ENC_NO_COMPAT_FALLBACK_FL)
-#else
 #define sb_no_casefold_compat_fallback(sb) (1)
-#endif
 
 /* sb->s_iflags */
 #define SB_I_CGROUPWB	0x00000001	/* cgroup-aware writeback enabled */

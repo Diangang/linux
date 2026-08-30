@@ -599,48 +599,6 @@ error:
 	return err;
 }
 
-#if 0
-static void x86_vector_debug_show(struct seq_file *m, struct irq_domain *d,
-				  struct irq_data *irqd, int ind)
-{
-	struct apic_chip_data apicd;
-	unsigned long flags;
-	int irq;
-
-	if (!irqd) {
-		irq_matrix_debug_show(m, vector_matrix, ind);
-		return;
-	}
-
-	irq = irqd->irq;
-	if (irq < nr_legacy_irqs() && !test_bit(irq, &io_apic_irqs)) {
-		seq_printf(m, "%*sVector: %5d\n", ind, "", ISA_IRQ_VECTOR(irq));
-		seq_printf(m, "%*sTarget: Legacy PIC all CPUs\n", ind, "");
-		return;
-	}
-
-	if (!irqd->chip_data) {
-		seq_printf(m, "%*sVector: Not assigned\n", ind, "");
-		return;
-	}
-
-	raw_spin_lock_irqsave(&vector_lock, flags);
-	memcpy(&apicd, irqd->chip_data, sizeof(apicd));
-	raw_spin_unlock_irqrestore(&vector_lock, flags);
-
-	seq_printf(m, "%*sVector: %5u\n", ind, "", apicd.vector);
-	seq_printf(m, "%*sTarget: %5u\n", ind, "", apicd.cpu);
-	if (apicd.prev_vector) {
-		seq_printf(m, "%*sPrevious vector: %5u\n", ind, "", apicd.prev_vector);
-		seq_printf(m, "%*sPrevious target: %5u\n", ind, "", apicd.prev_cpu);
-	}
-	seq_printf(m, "%*smove_in_progress: %u\n", ind, "", apicd.move_in_progress ? 1 : 0);
-	seq_printf(m, "%*sis_managed:       %u\n", ind, "", apicd.is_managed ? 1 : 0);
-	seq_printf(m, "%*scan_reserve:      %u\n", ind, "", apicd.can_reserve ? 1 : 0);
-	seq_printf(m, "%*shas_reserved:     %u\n", ind, "", apicd.has_reserved ? 1 : 0);
-	seq_printf(m, "%*scleanup_pending:  %u\n", ind, "", !hlist_unhashed(&apicd.clist));
-}
-#endif
 
 int x86_fwspec_is_ioapic(struct irq_fwspec *fwspec)
 {
@@ -690,9 +648,6 @@ static const struct irq_domain_ops x86_vector_domain_ops = {
 	.free		= x86_vector_free_irqs,
 	.activate	= x86_vector_activate,
 	.deactivate	= x86_vector_deactivate,
-#if 0
-	.debug_show	= x86_vector_debug_show,
-#endif
 };
 
 int __init arch_probe_nr_irqs(void)

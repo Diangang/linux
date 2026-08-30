@@ -45,7 +45,7 @@ static struct alarm_base {
 	clockid_t		base_clockid;
 } alarm_bases[ALARM_NUMTYPE];
 
-#if defined(CONFIG_POSIX_TIMERS) || defined(CONFIG_RTC_CLASS)
+#if defined(CONFIG_POSIX_TIMERS)
 /* freezer information to handle clock_nanosleep triggered wakeups */
 static enum alarmtimer_type freezer_alarmtype;
 static ktime_t freezer_expires;
@@ -53,85 +53,9 @@ static ktime_t freezer_delta;
 static DEFINE_SPINLOCK(freezer_delta_lock);
 #endif
 
-#ifdef CONFIG_RTC_CLASS
-/* rtc timer and device for setting alarm wakeups at suspend */
-static struct rtc_timer		rtctimer;
-static struct rtc_device	*rtcdev;
-static DEFINE_SPINLOCK(rtcdev_lock);
-
-/**
- * alarmtimer_get_rtcdev - Return selected rtcdevice
- *
- * This function returns the rtc device to use for wakealarms.
- */
-struct rtc_device *alarmtimer_get_rtcdev(void)
-{
-	struct rtc_device *ret;
-
-	guard(spinlock_irqsave)(&rtcdev_lock);
-	ret = rtcdev;
-
-	return ret;
-}
-EXPORT_SYMBOL_GPL(alarmtimer_get_rtcdev);
-
-static int alarmtimer_rtc_add_device(struct device *dev)
-{
-	struct rtc_device *rtc = to_rtc_device(dev);
-	struct platform_device *pdev;
-	int ret = 0;
-
-	if (rtcdev)
-		return -EBUSY;
-
-	if (!test_bit(RTC_FEATURE_ALARM, rtc->features))
-		return -1;
-	if (!device_may_wakeup(rtc->dev.parent))
-		return -1;
-
-	pdev = platform_device_register_data(dev, "alarmtimer",
-					     PLATFORM_DEVID_AUTO, NULL, 0);
-	if (!IS_ERR(pdev))
-		device_init_wakeup(&pdev->dev, true);
-
-	scoped_guard(spinlock_irqsave, &rtcdev_lock) {
-		if (!IS_ERR(pdev) && !rtcdev && try_module_get(rtc->owner)) {
-			rtcdev = rtc;
-			/* hold a reference so it doesn't go away */
-			get_device(dev);
-			pdev = NULL;
-		} else {
-			ret = -1;
-		}
-	}
-
-	platform_device_unregister(pdev);
-	return ret;
-}
-
-static inline void alarmtimer_rtc_timer_init(void)
-{
-	rtc_timer_init(&rtctimer, NULL, NULL);
-}
-
-static struct class_interface alarmtimer_rtc_interface = {
-	.add_dev = &alarmtimer_rtc_add_device,
-};
-
-static int alarmtimer_rtc_interface_setup(void)
-{
-	alarmtimer_rtc_interface.class = &rtc_class;
-	return class_interface_register(&alarmtimer_rtc_interface);
-}
-static void alarmtimer_rtc_interface_remove(void)
-{
-	class_interface_unregister(&alarmtimer_rtc_interface);
-}
-#else
 static inline int alarmtimer_rtc_interface_setup(void) { return 0; }
 static inline void alarmtimer_rtc_interface_remove(void) { }
 static inline void alarmtimer_rtc_timer_init(void) { }
-#endif
 
 /**
  * alarmtimer_enqueue - Adds an alarm timer to an alarm_base timerqueue
@@ -200,100 +124,6 @@ ktime_t alarm_expires_remaining(const struct alarm *alarm)
 }
 EXPORT_SYMBOL_GPL(alarm_expires_remaining);
 
-#ifdef CONFIG_RTC_CLASS
-/**
- * alarmtimer_suspend - Suspend time callback
- * @dev: unused
- *
- * When we are going into suspend, we look through the bases
- * to see which is the soonest timer to expire. We then
- * set an rtc timer to fire that far into the future, which
- * will wake us from suspend.
- */
-static int alarmtimer_suspend(struct device *dev)
-{
-	ktime_t min, now, expires;
-	struct rtc_device *rtc;
-	struct rtc_time tm;
-	int i, ret, type;
-
-	scoped_guard(spinlock_irqsave, &freezer_delta_lock) {
-		min = freezer_delta;
-		expires = freezer_expires;
-		type = freezer_alarmtype;
-		freezer_delta = 0;
-	}
-
-	rtc = alarmtimer_get_rtcdev();
-	/* If we have no rtcdev, just return */
-	if (!rtc)
-		return 0;
-
-	/* Find the soonest timer to expire */
-	for (i = 0; i < ALARM_NUMTYPE; i++) {
-		struct alarm_base *base = &alarm_bases[i];
-		struct timerqueue_node *next;
-		ktime_t next_expires;
-		ktime_t delta;
-
-		scoped_guard(spinlock_irqsave, &base->lock) {
-			next = timerqueue_getnext(&base->timerqueue);
-			if (next)
-				next_expires = next->expires;
-		}
-		if (!next)
-			continue;
-		delta = ktime_sub(next_expires, base->get_ktime());
-		if (!min || (delta < min)) {
-			expires = next_expires;
-			min = delta;
-			type = i;
-		}
-	}
-	if (min == 0)
-		return 0;
-
-	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
-		pm_wakeup_event(dev, 2 * MSEC_PER_SEC);
-		return -EBUSY;
-	}
-
-
-	/* Setup an rtc timer to fire that far in the future */
-	rtc_timer_cancel(rtc, &rtctimer);
-	rtc_read_time(rtc, &tm);
-	now = rtc_tm_to_ktime(tm);
-
-	/*
-	 * If the RTC alarm timer only supports a limited time offset, set the
-	 * alarm time to the maximum supported value.
-	 * The system may wake up earlier (possibly much earlier) than expected
-	 * when the alarmtimer runs. This is the best the kernel can do if
-	 * the alarmtimer exceeds the time that the rtc device can be programmed
-	 * for.
-	 */
-	min = rtc_bound_alarmtime(rtc, min);
-
-	now = ktime_add(now, min);
-
-	/* Set alarm, if in the past reject suspend briefly to handle */
-	ret = rtc_timer_start(rtc, &rtctimer, now, 0);
-	if (ret < 0)
-		pm_wakeup_event(dev, MSEC_PER_SEC);
-	return ret;
-}
-
-static int alarmtimer_resume(struct device *dev)
-{
-	struct rtc_device *rtc;
-
-	rtc = alarmtimer_get_rtcdev();
-	if (rtc)
-		rtc_timer_cancel(rtc, &rtctimer);
-	return 0;
-}
-
-#else
 static int alarmtimer_suspend(struct device *dev)
 {
 	return 0;
@@ -303,7 +133,6 @@ static int alarmtimer_resume(struct device *dev)
 {
 	return 0;
 }
-#endif
 
 static void
 __alarm_init(struct alarm *alarm, enum alarmtimer_type type,

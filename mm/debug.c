@@ -90,10 +90,6 @@ static void __dump_folio(const struct folio *folio, const struct page *page,
 				pincount);
 	}
 
-#ifdef CONFIG_MEMCG
-	if (folio->memcg_data)
-		pr_warn("memcg:%lx\n", folio->memcg_data);
-#endif
 	if (folio_test_ksm(folio))
 		type = "ksm ";
 	else if (folio_test_anon(folio))

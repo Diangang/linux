@@ -46,10 +46,6 @@ struct bug_entry {
 #ifdef HAVE_ARCH_BUG_FORMAT
 	BUG_REL(const char *, format);
 #endif
-#ifdef CONFIG_DEBUG_BUGVERBOSE
-	BUG_REL(const char *, file);
-	unsigned short	line;
-#endif
 	unsigned short	flags;
 };
 #endif	/* CONFIG_GENERIC_BUG */

@@ -24,10 +24,6 @@ struct vdso_rng_data *vdso_k_rng_data __refdata =
 static_assert(sizeof(struct vdso_rng_data) <= PAGE_SIZE);
 #endif /* CONFIG_VDSO_GETRANDOM */
 
-#ifdef CONFIG_ARCH_HAS_VDSO_ARCH_DATA
-struct vdso_arch_data *vdso_k_arch_data __refdata =
-	(void *)&vdso_initdata[VDSO_ARCH_PAGES_START * PAGE_SIZE];
-#endif /* CONFIG_ARCH_HAS_VDSO_ARCH_DATA */
 
 void __init vdso_setup_data_pages(void)
 {
@@ -58,8 +54,6 @@ void __init vdso_setup_data_pages(void)
 	if (IS_ENABLED(CONFIG_VDSO_GETRANDOM))
 		vdso_k_rng_data = page_address(pages + VDSO_RNG_PAGE_OFFSET);
 
-	if (IS_ENABLED(CONFIG_ARCH_HAS_VDSO_ARCH_DATA))
-		vdso_k_arch_data = page_address(pages + VDSO_ARCH_PAGES_START);
 }
 
 static vm_fault_t vvar_fault(const struct vm_special_mapping *sm,
@@ -97,20 +91,14 @@ static vm_fault_t vvar_fault(const struct vm_special_mapping *sm,
 		 * offset.
 		 * See also the comment near timens_setup_vdso_data().
 		 */
-		if (!IS_ENABLED(CONFIG_TIME_NS) || !timens_page)
-			return VM_FAULT_SIGBUS;
-		page = virt_to_page(vdso_k_time_data);
-		break;
+		return VM_FAULT_SIGBUS;
 	case VDSO_RNG_PAGE_OFFSET:
 		if (!IS_ENABLED(CONFIG_VDSO_GETRANDOM))
 			return VM_FAULT_SIGBUS;
 		page = virt_to_page(vdso_k_rng_data);
 		break;
 	case VDSO_ARCH_PAGES_START ... VDSO_ARCH_PAGES_END:
-		if (!IS_ENABLED(CONFIG_ARCH_HAS_VDSO_ARCH_DATA))
-			return VM_FAULT_SIGBUS;
-		page = virt_to_page(vdso_k_arch_data) + vmf->pgoff - VDSO_ARCH_PAGES_START;
-		break;
+		return VM_FAULT_SIGBUS;
 	default:
 		return VM_FAULT_SIGBUS;
 	}

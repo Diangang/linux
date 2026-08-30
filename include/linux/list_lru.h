@@ -50,15 +50,6 @@ struct list_lru_node {
 
 struct list_lru {
 	struct list_lru_node	*node;
-#ifdef CONFIG_MEMCG
-	struct list_head	list;
-	int			shrinker_id;
-	bool			memcg_aware;
-	struct xarray		xa;
-#endif
-#if 0
-	struct lock_class_key	*key;
-#endif
 };
 
 void list_lru_destroy(struct list_lru *lru);
@@ -73,9 +64,6 @@ int __list_lru_init(struct list_lru *lru, bool memcg_aware,
 static inline int list_lru_init_memcg_key(struct list_lru *lru, struct shrinker *shrinker,
 					  struct lock_class_key *key)
 {
-#if 0
-	lru->key = key;
-#endif
 	return list_lru_init_memcg(lru, shrinker);
 }
 

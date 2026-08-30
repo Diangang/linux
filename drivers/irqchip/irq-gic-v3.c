@@ -1478,34 +1478,7 @@ static int gic_retrigger(struct irq_data *data)
 	return !gic_irq_set_irqchip_state(data, IRQCHIP_STATE_PENDING, true);
 }
 
-#ifdef CONFIG_CPU_PM
-static int gic_cpu_pm_notifier(struct notifier_block *self,
-			       unsigned long cmd, void *v)
-{
-	if (cmd == CPU_PM_EXIT || cmd == CPU_PM_ENTER_FAILED) {
-		if (gic_dist_security_disabled())
-			gic_enable_redist(true);
-		gic_cpu_sys_reg_enable();
-		gic_cpu_sys_reg_init();
-	} else if (cmd == CPU_PM_ENTER && gic_dist_security_disabled()) {
-		gic_write_grpen1(0);
-		gic_enable_redist(false);
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block gic_cpu_pm_notifier_block = {
-	.notifier_call = gic_cpu_pm_notifier,
-};
-
-static void gic_cpu_pm_init(void)
-{
-	cpu_pm_register_notifier(&gic_cpu_pm_notifier_block);
-}
-
-#else
 static inline void gic_cpu_pm_init(void) { }
-#endif /* CONFIG_CPU_PM */
 
 static struct irq_chip gic_chip = {
 	.name			= "GICv3",

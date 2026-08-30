@@ -235,123 +235,6 @@ void notrace __sanitizer_cov_trace_pc(void)
 }
 EXPORT_SYMBOL(__sanitizer_cov_trace_pc);
 
-#ifdef CONFIG_KCOV_ENABLE_COMPARISONS
-static void notrace write_comp_data(u64 type, u64 arg1, u64 arg2, u64 ip)
-{
-	struct task_struct *t;
-	u64 *area;
-	u64 count, start_index, end_pos, max_pos;
-
-	t = current;
-	if (!check_kcov_mode(KCOV_MODE_TRACE_CMP, t))
-		return;
-
-	ip = canonicalize_ip(ip);
-
-	/*
-	 * We write all comparison arguments and types as u64.
-	 * The buffer was allocated for t->kcov_size unsigned longs.
-	 */
-	area = (u64 *)t->kcov_area;
-	max_pos = t->kcov_size * sizeof(unsigned long);
-
-	count = READ_ONCE(area[0]);
-
-	/* Every record is KCOV_WORDS_PER_CMP 64-bit words. */
-	start_index = 1 + count * KCOV_WORDS_PER_CMP;
-	end_pos = (start_index + KCOV_WORDS_PER_CMP) * sizeof(u64);
-	if (likely(end_pos <= max_pos)) {
-		/* See comment in __sanitizer_cov_trace_pc(). */
-		WRITE_ONCE(area[0], count + 1);
-		barrier();
-		area[start_index] = type;
-		area[start_index + 1] = arg1;
-		area[start_index + 2] = arg2;
-		area[start_index + 3] = ip;
-	}
-}
-
-void notrace __sanitizer_cov_trace_cmp1(u8 arg1, u8 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(0), arg1, arg2, _RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_cmp1);
-
-void notrace __sanitizer_cov_trace_cmp2(u16 arg1, u16 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(1), arg1, arg2, _RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_cmp2);
-
-void notrace __sanitizer_cov_trace_cmp4(u32 arg1, u32 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(2), arg1, arg2, _RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_cmp4);
-
-void notrace __sanitizer_cov_trace_cmp8(kcov_u64 arg1, kcov_u64 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(3), arg1, arg2, _RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_cmp8);
-
-void notrace __sanitizer_cov_trace_const_cmp1(u8 arg1, u8 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(0) | KCOV_CMP_CONST, arg1, arg2,
-			_RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_const_cmp1);
-
-void notrace __sanitizer_cov_trace_const_cmp2(u16 arg1, u16 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(1) | KCOV_CMP_CONST, arg1, arg2,
-			_RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_const_cmp2);
-
-void notrace __sanitizer_cov_trace_const_cmp4(u32 arg1, u32 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(2) | KCOV_CMP_CONST, arg1, arg2,
-			_RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_const_cmp4);
-
-void notrace __sanitizer_cov_trace_const_cmp8(kcov_u64 arg1, kcov_u64 arg2)
-{
-	write_comp_data(KCOV_CMP_SIZE(3) | KCOV_CMP_CONST, arg1, arg2,
-			_RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_const_cmp8);
-
-void notrace __sanitizer_cov_trace_switch(kcov_u64 val, void *arg)
-{
-	u64 i;
-	u64 *cases = arg;
-	u64 count = cases[0];
-	u64 size = cases[1];
-	u64 type = KCOV_CMP_CONST;
-
-	switch (size) {
-	case 8:
-		type |= KCOV_CMP_SIZE(0);
-		break;
-	case 16:
-		type |= KCOV_CMP_SIZE(1);
-		break;
-	case 32:
-		type |= KCOV_CMP_SIZE(2);
-		break;
-	case 64:
-		type |= KCOV_CMP_SIZE(3);
-		break;
-	default:
-		return;
-	}
-	for (i = 0; i < count; i++)
-		write_comp_data(type, cases[i + 2], val, _RET_IP_);
-}
-EXPORT_SYMBOL(__sanitizer_cov_trace_switch);
-#endif /* ifdef CONFIG_KCOV_ENABLE_COMPARISONS */
 
 static void kcov_start(struct task_struct *t, struct kcov *kcov,
 			unsigned int size, void *area, enum kcov_mode mode,
@@ -549,11 +432,7 @@ static int kcov_get_mode(unsigned long arg)
 	if (arg == KCOV_TRACE_PC)
 		return KCOV_MODE_TRACE_PC;
 	else if (arg == KCOV_TRACE_CMP)
-#ifdef CONFIG_KCOV_ENABLE_COMPARISONS
-		return KCOV_MODE_TRACE_CMP;
-#else
 		return -ENOTSUPP;
-#endif
 	else
 		return -EINVAL;
 }
@@ -1091,31 +970,6 @@ u64 kcov_common_handle(void)
 }
 EXPORT_SYMBOL(kcov_common_handle);
 
-#ifdef CONFIG_KCOV_SELFTEST
-static void __init selftest(void)
-{
-	unsigned long start;
-
-	pr_err("running self test\n");
-	/*
-	 * Test that interrupts don't produce spurious coverage.
-	 * The coverage callback filters out interrupt code, but only
-	 * after the handler updates preempt count. Some code periodically
-	 * leaks out of that section and leads to spurious coverage.
-	 * It's hard to call the actual interrupt handler directly,
-	 * so we just loop here for a bit waiting for a timer interrupt.
-	 * We set kcov_mode to enable tracing, but don't setup the area,
-	 * so any attempt to trace will crash. Note: we must not call any
-	 * potentially traced functions in this region.
-	 */
-	start = jiffies;
-	current->kcov_mode = KCOV_MODE_TRACE_PC;
-	while ((jiffies - start) * MSEC_PER_SEC / HZ < 300)
-		;
-	current->kcov_mode = 0;
-	pr_err("done running self test\n");
-}
-#endif
 
 static int __init kcov_init(void)
 {
@@ -1136,9 +990,6 @@ static int __init kcov_init(void)
 	 */
 	debugfs_create_file_unsafe("kcov", 0600, NULL, NULL, &kcov_fops);
 
-#ifdef CONFIG_KCOV_SELFTEST
-	selftest();
-#endif
 
 	return 0;
 }

@@ -345,34 +345,6 @@ static inline int dma_mmap_noncontiguous(struct device *dev,
 }
 #endif /* CONFIG_HAS_DMA */
 
-#ifdef CONFIG_IOMMU_DMA
-/**
- * dma_use_iova - check if the IOVA API is used for this state
- * @state: IOVA state
- *
- * Return %true if the DMA transfers uses the dma_iova_*() calls or %false if
- * they can't be used.
- */
-static inline bool dma_use_iova(struct dma_iova_state *state)
-{
-	return state->__size != 0;
-}
-
-bool dma_iova_try_alloc(struct device *dev, struct dma_iova_state *state,
-		phys_addr_t phys, size_t size);
-void dma_iova_free(struct device *dev, struct dma_iova_state *state);
-void dma_iova_destroy(struct device *dev, struct dma_iova_state *state,
-		size_t mapped_len, enum dma_data_direction dir,
-		unsigned long attrs);
-int dma_iova_sync(struct device *dev, struct dma_iova_state *state,
-		size_t offset, size_t size);
-int dma_iova_link(struct device *dev, struct dma_iova_state *state,
-		phys_addr_t phys, size_t offset, size_t size,
-		enum dma_data_direction dir, unsigned long attrs);
-void dma_iova_unlink(struct device *dev, struct dma_iova_state *state,
-		size_t offset, size_t size, enum dma_data_direction dir,
-		unsigned long attrs);
-#else /* CONFIG_IOMMU_DMA */
 static inline bool dma_use_iova(struct dma_iova_state *state)
 {
 	return false;
@@ -407,7 +379,6 @@ static inline void dma_iova_unlink(struct device *dev,
 		enum dma_data_direction dir, unsigned long attrs)
 {
 }
-#endif /* CONFIG_IOMMU_DMA */
 
 #if defined(CONFIG_HAS_DMA) && defined(CONFIG_DMA_NEED_SYNC)
 void __dma_sync_single_for_cpu(struct device *dev, dma_addr_t addr, size_t size,
@@ -422,8 +393,7 @@ bool __dma_need_sync(struct device *dev, dma_addr_t dma_addr);
 
 static inline bool dma_dev_need_sync(const struct device *dev)
 {
-	/* Always call DMA sync operations when debugging is enabled */
-	return !dev->dma_skip_sync || IS_ENABLED(CONFIG_DMA_API_DEBUG);
+	return !dev->dma_skip_sync;
 }
 
 static inline void dma_sync_single_for_cpu(struct device *dev, dma_addr_t addr,

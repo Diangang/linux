@@ -152,16 +152,6 @@ struct pinctrl_map {
 struct device;
 struct pinctrl_map;
 
-#ifdef CONFIG_PINCTRL
-
-int pinctrl_register_mappings(const struct pinctrl_map *map,
-			      unsigned int num_maps);
-int devm_pinctrl_register_mappings(struct device *dev,
-				   const struct pinctrl_map *map,
-				   unsigned int num_maps);
-void pinctrl_unregister_mappings(const struct pinctrl_map *map);
-void pinctrl_provide_dummies(void);
-#else
 
 static inline int pinctrl_register_mappings(const struct pinctrl_map *map,
 					    unsigned int num_maps)
@@ -183,5 +173,4 @@ static inline void pinctrl_unregister_mappings(const struct pinctrl_map *map)
 static inline void pinctrl_provide_dummies(void)
 {
 }
-#endif /* !CONFIG_PINCTRL */
 #endif

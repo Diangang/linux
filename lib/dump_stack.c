@@ -37,13 +37,8 @@ void __init dump_stack_set_arch_desc(const char *fmt, ...)
 	va_end(args);
 }
 
-#if IS_ENABLED(CONFIG_STACKTRACE_BUILD_ID)
-#define BUILD_ID_FMT " %20phN"
-#define BUILD_ID_VAL vmlinux_build_id
-#else
 #define BUILD_ID_FMT "%s"
 #define BUILD_ID_VAL ""
-#endif
 
 /**
  * dump_stack_print_info - print generic debug info for dump_stack()

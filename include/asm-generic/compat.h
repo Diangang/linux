@@ -15,13 +15,8 @@
 #endif
 
 #ifndef compat_arg_u64
-#if 1
 #define compat_arg_u64(name)		u32  name##_lo, u32  name##_hi
 #define compat_arg_u64_dual(name)	u32, name##_lo, u32, name##_hi
-#else
-#define compat_arg_u64(name)		u32  name##_hi, u32  name##_lo
-#define compat_arg_u64_dual(name)	u32, name##_hi, u32, name##_lo
-#endif
 #define compat_arg_u64_glue(name)	(((u64)name##_lo & 0xffffffffUL) | \
 					 ((u64)name##_hi << 32))
 #endif /* compat_arg_u64 */
@@ -62,13 +57,8 @@ typedef u32 __compat_gid32_t;
 typedef u32 compat_mode_t;
 #endif
 
-#ifdef CONFIG_COMPAT_FOR_U64_ALIGNMENT
-typedef s64 __attribute__((aligned(4))) compat_s64;
-typedef u64 __attribute__((aligned(4))) compat_u64;
-#else
 typedef s64 compat_s64;
 typedef u64 compat_u64;
-#endif
 
 #ifndef _COMPAT_NSIG
 typedef u32 compat_sigset_word;

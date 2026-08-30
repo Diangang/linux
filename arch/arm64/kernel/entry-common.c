@@ -813,102 +813,10 @@ asmlinkage void noinstr el0t_64_error_handler(struct pt_regs *regs)
 	__el0_error_handler_common(regs);
 }
 
-#ifdef CONFIG_COMPAT
-static void noinstr el0_cp15(struct pt_regs *regs, unsigned long esr)
-{
-	arm64_enter_from_user_mode(regs);
-	local_daif_restore(DAIF_PROCCTX);
-	do_el0_cp15(esr, regs);
-	arm64_exit_to_user_mode(regs);
-}
-
-static void noinstr el0_svc_compat(struct pt_regs *regs)
-{
-	arm64_enter_from_user_mode(regs);
-	cortex_a76_erratum_1463225_svc_handler();
-	local_daif_restore(DAIF_PROCCTX);
-	do_el0_svc_compat(regs);
-	arm64_exit_to_user_mode(regs);
-}
-
-static void noinstr el0_bkpt32(struct pt_regs *regs, unsigned long esr)
-{
-	arm64_enter_from_user_mode(regs);
-	local_daif_restore(DAIF_PROCCTX);
-	do_bkpt32(esr, regs);
-	arm64_exit_to_user_mode(regs);
-}
-
-asmlinkage void noinstr el0t_32_sync_handler(struct pt_regs *regs)
-{
-	unsigned long esr = read_sysreg(esr_el1);
-
-	switch (ESR_ELx_EC(esr)) {
-	case ESR_ELx_EC_SVC32:
-		el0_svc_compat(regs);
-		break;
-	case ESR_ELx_EC_DABT_LOW:
-		el0_da(regs, esr);
-		break;
-	case ESR_ELx_EC_IABT_LOW:
-		el0_ia(regs, esr);
-		break;
-	case ESR_ELx_EC_FP_ASIMD:
-		el0_fpsimd_acc(regs, esr);
-		break;
-	case ESR_ELx_EC_FP_EXC32:
-		el0_fpsimd_exc(regs, esr);
-		break;
-	case ESR_ELx_EC_PC_ALIGN:
-		el0_pc(regs, esr);
-		break;
-	case ESR_ELx_EC_UNKNOWN:
-	case ESR_ELx_EC_CP14_MR:
-	case ESR_ELx_EC_CP14_LS:
-	case ESR_ELx_EC_CP14_64:
-		el0_undef(regs, esr);
-		break;
-	case ESR_ELx_EC_CP15_32:
-	case ESR_ELx_EC_CP15_64:
-		el0_cp15(regs, esr);
-		break;
-	case ESR_ELx_EC_BREAKPT_LOW:
-		el0_breakpt(regs, esr);
-		break;
-	case ESR_ELx_EC_SOFTSTP_LOW:
-		el0_softstp(regs, esr);
-		break;
-	case ESR_ELx_EC_WATCHPT_LOW:
-		el0_watchpt(regs, esr);
-		break;
-	case ESR_ELx_EC_BKPT32:
-		el0_bkpt32(regs, esr);
-		break;
-	default:
-		el0_inv(regs, esr);
-	}
-}
-
-asmlinkage void noinstr el0t_32_irq_handler(struct pt_regs *regs)
-{
-	__el0_irq_handler_common(regs);
-}
-
-asmlinkage void noinstr el0t_32_fiq_handler(struct pt_regs *regs)
-{
-	__el0_fiq_handler_common(regs);
-}
-
-asmlinkage void noinstr el0t_32_error_handler(struct pt_regs *regs)
-{
-	__el0_error_handler_common(regs);
-}
-#else /* CONFIG_COMPAT */
 UNHANDLED(el0t, 32, sync)
 UNHANDLED(el0t, 32, irq)
 UNHANDLED(el0t, 32, fiq)
 UNHANDLED(el0t, 32, error)
-#endif /* CONFIG_COMPAT */
 
 asmlinkage void noinstr __noreturn handle_bad_stack(struct pt_regs *regs)
 {
@@ -918,40 +826,3 @@ asmlinkage void noinstr __noreturn handle_bad_stack(struct pt_regs *regs)
 	irqentry_nmi_enter(regs);
 	panic_bad_stack(regs, esr, far);
 }
-
-#ifdef CONFIG_ARM_SDE_INTERFACE
-asmlinkage noinstr unsigned long
-__sdei_handler(struct pt_regs *regs, struct sdei_registered_event *arg)
-{
-	irqentry_state_t state;
-	unsigned long ret;
-
-	/*
-	 * We didn't take an exception to get here, so the HW hasn't
-	 * set/cleared bits in PSTATE that we may rely on.
-	 *
-	 * The original SDEI spec (ARM DEN 0054A) can be read ambiguously as to
-	 * whether PSTATE bits are inherited unchanged or generated from
-	 * scratch, and the TF-A implementation always clears PAN and always
-	 * clears UAO. There are no other known implementations.
-	 *
-	 * Subsequent revisions (ARM DEN 0054B) follow the usual rules for how
-	 * PSTATE is modified upon architectural exceptions, and so PAN is
-	 * either inherited or set per SCTLR_ELx.SPAN, and UAO is always
-	 * cleared.
-	 *
-	 * We must explicitly reset PAN to the expected state, including
-	 * clearing it when the host isn't using it, in case a VM had it set.
-	 */
-	if (system_uses_hw_pan())
-		set_pstate_pan(1);
-	else if (cpu_has_pan())
-		set_pstate_pan(0);
-
-	state = irqentry_nmi_enter(regs);
-	ret = do_sdei_event(regs, arg);
-	irqentry_nmi_exit(regs, state);
-
-	return ret;
-}
-#endif /* CONFIG_ARM_SDE_INTERFACE */

@@ -18,14 +18,8 @@ void add_input_randomness(unsigned int type, unsigned int code,
 void add_interrupt_randomness(int irq);
 void add_hwgenerator_randomness(const void *buf, size_t len, size_t entropy, bool sleep_after);
 
-#if IS_ENABLED(CONFIG_VMGENID)
-void add_vmfork_randomness(const void *unique_vm_id, size_t len);
-int register_random_vmfork_notifier(struct notifier_block *nb);
-int unregister_random_vmfork_notifier(struct notifier_block *nb);
-#else
 static inline int register_random_vmfork_notifier(struct notifier_block *nb) { return 0; }
 static inline int unregister_random_vmfork_notifier(struct notifier_block *nb) { return 0; }
-#endif
 
 void get_random_bytes(void *buf, size_t len);
 u8 get_random_u8(void);

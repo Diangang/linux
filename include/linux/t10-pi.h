@@ -30,9 +30,6 @@ static inline u64 full_pi_ref_tag(const struct request *rq)
 {
 	unsigned int shift = ilog2(queue_logical_block_size(rq->q));
 
-	if (IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY) &&
-	    rq->q->limits.integrity.interval_exp)
-		shift = rq->q->limits.integrity.interval_exp;
 	return blk_rq_pos(rq) >> (shift - SECTOR_SHIFT);
 }
 

@@ -767,10 +767,6 @@ void switch_mm_irqs_off(struct mm_struct *unused, struct mm_struct *next,
 	u64 next_tlb_gen;
 
 
-	/* We don't want flush_tlb_func() to run concurrently with us. */
-	if (IS_ENABLED(CONFIG_PROVE_LOCKING))
-		WARN_ON_ONCE(!irqs_disabled());
-
 	/*
 	 * Verify that CR3 is what we think it is.  This will catch
 	 * hypothetical buggy code that directly switches to swapper_pg_dir
@@ -811,11 +807,6 @@ void switch_mm_irqs_off(struct mm_struct *unused, struct mm_struct *next,
 		 * mm_cpumask. The TLB shootdown code can figure out from
 		 * cpu_tlbstate_shared.is_lazy whether or not to send an IPI.
 		 */
-		if (IS_ENABLED(CONFIG_DEBUG_VM) &&
-		    WARN_ON_ONCE(prev != &init_mm && !is_notrack_mm(prev) &&
-				 !cpumask_test_cpu(cpu, mm_cpumask(next))))
-			cpumask_set_cpu(cpu, mm_cpumask(next));
-
 		/* Check if the current mm is transitioning to a global ASID */
 		if (mm_needs_global_asid(next, prev_asid)) {
 			next_tlb_gen = atomic64_read(&next->context.tlb_gen);

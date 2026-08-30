@@ -11,18 +11,9 @@
  * to devices.
  */
 
-#ifdef CONFIG_X86_32
-#define mb() asm volatile(ALTERNATIVE("lock addl $0,-4(%%esp)", "mfence", \
-				      X86_FEATURE_XMM2) ::: "memory", "cc")
-#define rmb() asm volatile(ALTERNATIVE("lock addl $0,-4(%%esp)", "lfence", \
-				       X86_FEATURE_XMM2) ::: "memory", "cc")
-#define wmb() asm volatile(ALTERNATIVE("lock addl $0,-4(%%esp)", "sfence", \
-				       X86_FEATURE_XMM2) ::: "memory", "cc")
-#else
 #define __mb()	asm volatile("mfence":::"memory")
 #define __rmb()	asm volatile("lfence":::"memory")
 #define __wmb()	asm volatile("sfence" ::: "memory")
-#endif
 
 /**
  * array_index_mask_nospec() - generate a mask that is ~0UL when the

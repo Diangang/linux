@@ -371,12 +371,6 @@ struct workqueue_struct {
 #ifdef CONFIG_SYSFS
 	struct wq_device	*wq_dev;	/* I: for sysfs interface */
 #endif
-#if 0
-	char			*lock_name;
-	struct lock_class_key	key;
-	struct lockdep_map	__lockdep_map;
-	struct lockdep_map	*lockdep_map;
-#endif
 	char			name[WQ_NAME_LEN]; /* I: workqueue name */
 
 	/*
@@ -601,102 +595,8 @@ static void show_one_worker_pool(struct worker_pool *pool);
 	list_for_each_entry_rcu((pwq), &(wq)->pwqs, pwqs_node,		\
 				 lockdep_is_held(&(wq->mutex)))
 
-#if 0
-
-static const struct debug_obj_descr work_debug_descr;
-
-static void *work_debug_hint(void *addr)
-{
-	return ((struct work_struct *) addr)->func;
-}
-
-static bool work_is_static_object(void *addr)
-{
-	struct work_struct *work = addr;
-
-	return test_bit(WORK_STRUCT_STATIC_BIT, work_data_bits(work));
-}
-
-/*
- * fixup_init is called when:
- * - an active object is initialized
- */
-static bool work_fixup_init(void *addr, enum debug_obj_state state)
-{
-	struct work_struct *work = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		cancel_work_sync(work);
-		debug_object_init(work, &work_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-/*
- * fixup_free is called when:
- * - an active object is freed
- */
-static bool work_fixup_free(void *addr, enum debug_obj_state state)
-{
-	struct work_struct *work = addr;
-
-	switch (state) {
-	case ODEBUG_STATE_ACTIVE:
-		cancel_work_sync(work);
-		debug_object_free(work, &work_debug_descr);
-		return true;
-	default:
-		return false;
-	}
-}
-
-static const struct debug_obj_descr work_debug_descr = {
-	.name		= "work_struct",
-	.debug_hint	= work_debug_hint,
-	.is_static_object = work_is_static_object,
-	.fixup_init	= work_fixup_init,
-	.fixup_free	= work_fixup_free,
-};
-
-static inline void debug_work_activate(struct work_struct *work)
-{
-	debug_object_activate(work, &work_debug_descr);
-}
-
-static inline void debug_work_deactivate(struct work_struct *work)
-{
-	debug_object_deactivate(work, &work_debug_descr);
-}
-
-void __init_work(struct work_struct *work, int onstack)
-{
-	if (onstack)
-		debug_object_init_on_stack(work, &work_debug_descr);
-	else
-		debug_object_init(work, &work_debug_descr);
-}
-EXPORT_SYMBOL_GPL(__init_work);
-
-void destroy_work_on_stack(struct work_struct *work)
-{
-	debug_object_free(work, &work_debug_descr);
-}
-EXPORT_SYMBOL_GPL(destroy_work_on_stack);
-
-void destroy_delayed_work_on_stack(struct delayed_work *work)
-{
-	timer_destroy_on_stack(&work->timer);
-	debug_object_free(&work->work, &work_debug_descr);
-}
-EXPORT_SYMBOL_GPL(destroy_delayed_work_on_stack);
-
-#else
 static inline void debug_work_activate(struct work_struct *work) { }
 static inline void debug_work_deactivate(struct work_struct *work) { }
-#endif
 
 /**
  * worker_pool_assign_id - allocate ID and assign it to @pool
@@ -3074,18 +2974,6 @@ __acquires(&pool->lock)
 	unsigned long work_data;
 	int lockdep_start_depth, rcu_start_depth;
 	bool bh_draining = pool->flags & POOL_BH_DRAINING;
-#if 0
-	/*
-	 * It is permissible to free the struct work_struct from
-	 * inside the function that is called from it, this we need to
-	 * take into account for lockdep too.  To avoid bogus "held
-	 * lock freed" warnings as well as problems when looking into
-	 * work->lockdep_map, make a copy and use that here.
-	 */
-	struct lockdep_map lockdep_map;
-
-	lockdep_copy_map(&lockdep_map, &work->lockdep_map);
-#endif
 	/* ensure we're on the correct CPU */
 	WARN_ON_ONCE(!(pool->flags & POOL_DISASSOCIATED) &&
 		     raw_smp_processor_id() != pool->cpu);
@@ -3873,34 +3761,11 @@ static bool flush_workqueue_prep_pwqs(struct workqueue_struct *wq,
 
 static void touch_wq_lockdep_map(struct workqueue_struct *wq)
 {
-#if 0
-	if (unlikely(!wq->lockdep_map))
-		return;
-
-	if (wq->flags & WQ_BH)
-		local_bh_disable();
-
-	lock_map_acquire(wq->lockdep_map);
-	lock_map_release(wq->lockdep_map);
-
-	if (wq->flags & WQ_BH)
-		local_bh_enable();
-#endif
 }
 
 static void touch_work_lockdep_map(struct work_struct *work,
 				   struct workqueue_struct *wq)
 {
-#if 0
-	if (wq->flags & WQ_BH)
-		local_bh_disable();
-
-	lock_map_acquire(&work->lockdep_map);
-	lock_map_release(&work->lockdep_map);
-
-	if (wq->flags & WQ_BH)
-		local_bh_enable();
-#endif
 }
 
 /**
@@ -4769,38 +4634,6 @@ static int init_worker_pool(struct worker_pool *pool)
 	return 0;
 }
 
-#if 0
-static void wq_init_lockdep(struct workqueue_struct *wq)
-{
-	char *lock_name;
-
-	lockdep_register_key(&wq->key);
-	lock_name = kasprintf(GFP_KERNEL, "%s%s", "(wq_completion)", wq->name);
-	if (!lock_name)
-		lock_name = wq->name;
-
-	wq->lock_name = lock_name;
-	wq->lockdep_map = &wq->__lockdep_map;
-	lockdep_init_map(wq->lockdep_map, lock_name, &wq->key, 0);
-}
-
-static void wq_unregister_lockdep(struct workqueue_struct *wq)
-{
-	if (wq->lockdep_map != &wq->__lockdep_map)
-		return;
-
-	lockdep_unregister_key(&wq->key);
-}
-
-static void wq_free_lockdep(struct workqueue_struct *wq)
-{
-	if (wq->lockdep_map != &wq->__lockdep_map)
-		return;
-
-	if (wq->lock_name != wq->name)
-		kfree(wq->lock_name);
-}
-#else
 static void wq_init_lockdep(struct workqueue_struct *wq)
 {
 }
@@ -4812,7 +4645,6 @@ static void wq_unregister_lockdep(struct workqueue_struct *wq)
 static void wq_free_lockdep(struct workqueue_struct *wq)
 {
 }
-#endif
 
 static void free_node_nr_active(struct wq_node_nr_active **nna_ar)
 {
@@ -5816,27 +5648,6 @@ devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 }
 EXPORT_SYMBOL_GPL(devm_alloc_workqueue);
 
-#if 0
-__printf(1, 5)
-struct workqueue_struct *
-alloc_workqueue_lockdep_map(const char *fmt, unsigned int flags,
-			    int max_active, struct lockdep_map *lockdep_map, ...)
-{
-	struct workqueue_struct *wq;
-	va_list args;
-
-	va_start(args, lockdep_map);
-	wq = __alloc_workqueue(fmt, flags, max_active, args);
-	va_end(args);
-	if (!wq)
-		return NULL;
-
-	wq->lockdep_map = lockdep_map;
-
-	return wq;
-}
-EXPORT_SYMBOL_GPL(alloc_workqueue_lockdep_map);
-#endif
 
 static bool pwq_busy(struct pool_workqueue *pwq)
 {

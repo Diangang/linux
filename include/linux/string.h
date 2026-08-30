@@ -335,10 +335,6 @@ int __sysfs_match_string(const char * const *array, size_t n, const char *s);
  */
 #define sysfs_match_string(_a, _s) __sysfs_match_string(_a, ARRAY_SIZE(_a), _s)
 
-#ifdef CONFIG_BINARY_PRINTF
-int vbin_printf(u32 *bin_buf, size_t size, const char *fmt, va_list args);
-int bstr_printf(char *buf, size_t size, const char *fmt, const u32 *bin_buf);
-#endif
 
 extern ssize_t memory_read_from_buffer(void *to, size_t count, loff_t *ppos,
 				       const void *from, size_t available);
@@ -382,9 +378,6 @@ static inline const char *kbasename(const char *path)
 	return tail ? tail + 1 : path;
 }
 
-#if !defined(__NO_FORTIFY) && defined(__OPTIMIZE__) && defined(CONFIG_FORTIFY_SOURCE)
-#include <linux/fortify-string.h>
-#endif
 #ifndef unsafe_memcpy
 #define unsafe_memcpy(dst, src, bytes, justification)		\
 	memcpy(dst, src, bytes)

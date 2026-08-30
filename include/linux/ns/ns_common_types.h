@@ -168,13 +168,13 @@ struct ns_common {
 
 #define to_ns_operations(__ns)                                                                         \
 	_Generic((__ns),                                                                               \
-		struct cgroup_namespace *: (IS_ENABLED(CONFIG_CGROUPS) ? &cgroupns_operations : NULL), \
+		struct cgroup_namespace *: NULL,                                                        \
 		struct ipc_namespace *:    (0  ? &ipcns_operations    : NULL), \
 		struct mnt_namespace *:    &mntns_operations,                                          \
-		struct pid_namespace *:    (IS_ENABLED(CONFIG_PID_NS)  ? &pidns_operations    : NULL), \
-		struct time_namespace *:   (IS_ENABLED(CONFIG_TIME_NS) ? &timens_operations   : NULL), \
-		struct user_namespace *:   (IS_ENABLED(CONFIG_USER_NS) ? &userns_operations   : NULL), \
-		struct uts_namespace *:    (IS_ENABLED(CONFIG_UTS_NS)  ? &utsns_operations    : NULL))
+		struct pid_namespace *:    NULL,                                                        \
+		struct time_namespace *:   NULL,                                                        \
+		struct user_namespace *:   NULL,                                                        \
+		struct uts_namespace *:    NULL)
 
 /*
  * FOR_EACH_NS_TYPE - Canonical list of namespace types

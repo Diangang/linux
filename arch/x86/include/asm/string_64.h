@@ -27,7 +27,6 @@ KCFI_REFERENCE(__memset);
  * KMSAN needs to instrument as much code as possible. Use C versions of
  * memsetXX() from lib/string.c under KMSAN.
  */
-#if !0
 #define __HAVE_ARCH_MEMSET16
 static inline void *memset16(uint16_t *s, uint16_t v, size_t n)
 {
@@ -66,7 +65,6 @@ static inline void *memset64(uint64_t *s, uint64_t v, size_t n)
 	);
 	return s0;
 }
-#endif
 
 #define __HAVE_ARCH_MEMMOVE
 void *memmove(void *dest, const void *src, size_t count);

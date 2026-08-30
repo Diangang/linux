@@ -1570,11 +1570,7 @@ static void pcpu_destroy_chunk(struct pcpu_chunk *chunk);
 static struct page *pcpu_addr_to_page(void *addr);
 static int __init pcpu_verify_alloc_info(const struct pcpu_alloc_info *ai);
 
-#ifdef CONFIG_NEED_PER_CPU_KM
-#include "percpu-km.c"
-#else
 #include "percpu-vm.c"
-#endif
 
 /**
  * pcpu_chunk_addr_search - determine chunk containing specified address
@@ -1607,69 +1603,6 @@ static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
 	return pcpu_get_page_chunk(pcpu_addr_to_page(addr));
 }
 
-#ifdef CONFIG_MEMCG
-static bool pcpu_memcg_pre_alloc_hook(size_t size, gfp_t gfp,
-				      struct obj_cgroup **objcgp)
-{
-	struct obj_cgroup *objcg;
-
-	if (!memcg_kmem_online() || !(gfp & __GFP_ACCOUNT))
-		return true;
-
-	objcg = current_obj_cgroup();
-	if (!objcg || obj_cgroup_is_root(objcg))
-		return true;
-
-	if (obj_cgroup_charge(objcg, gfp, pcpu_obj_full_size(size)))
-		return false;
-
-	*objcgp = objcg;
-	return true;
-}
-
-static void pcpu_memcg_post_alloc_hook(struct obj_cgroup *objcg,
-				       struct pcpu_chunk *chunk, int off,
-				       size_t size)
-{
-	if (!objcg)
-		return;
-
-	if (likely(chunk && chunk->obj_exts)) {
-		obj_cgroup_get(objcg);
-		chunk->obj_exts[off >> PCPU_MIN_ALLOC_SHIFT].cgroup = objcg;
-
-		rcu_read_lock();
-		mod_memcg_state(obj_cgroup_memcg(objcg), MEMCG_PERCPU_B,
-				pcpu_obj_full_size(size));
-		rcu_read_unlock();
-	} else {
-		obj_cgroup_uncharge(objcg, pcpu_obj_full_size(size));
-	}
-}
-
-static void pcpu_memcg_free_hook(struct pcpu_chunk *chunk, int off, size_t size)
-{
-	struct obj_cgroup *objcg;
-
-	if (unlikely(!chunk->obj_exts))
-		return;
-
-	objcg = chunk->obj_exts[off >> PCPU_MIN_ALLOC_SHIFT].cgroup;
-	if (!objcg)
-		return;
-	chunk->obj_exts[off >> PCPU_MIN_ALLOC_SHIFT].cgroup = NULL;
-
-	obj_cgroup_uncharge(objcg, pcpu_obj_full_size(size));
-
-	rcu_read_lock();
-	mod_memcg_state(obj_cgroup_memcg(objcg), MEMCG_PERCPU_B,
-			-pcpu_obj_full_size(size));
-	rcu_read_unlock();
-
-	obj_cgroup_put(objcg);
-}
-
-#else /* CONFIG_MEMCG */
 static bool
 pcpu_memcg_pre_alloc_hook(size_t size, gfp_t gfp, struct obj_cgroup **objcgp)
 {
@@ -1685,7 +1618,6 @@ static void pcpu_memcg_post_alloc_hook(struct obj_cgroup *objcg,
 static void pcpu_memcg_free_hook(struct pcpu_chunk *chunk, int off, size_t size)
 {
 }
-#endif /* CONFIG_MEMCG */
 
 static void pcpu_alloc_tag_alloc_hook(struct pcpu_chunk *chunk, int off,
 				      size_t size)

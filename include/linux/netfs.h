@@ -58,9 +58,6 @@ typedef void (*netfs_io_terminated_t)(void *priv, ssize_t transferred_or_error);
 struct netfs_inode {
 	struct inode		inode;		/* The VFS inode */
 	const struct netfs_request_ops *ops;
-#if IS_ENABLED(CONFIG_FSCACHE)
-	struct fscache_cookie	*cache;
-#endif
 	struct mutex		wb_lock;	/* Writeback serialisation */
 	loff_t			remote_i_size;	/* Size of the remote file */
 	loff_t			zero_point;	/* Size after which we assume there's no data
@@ -441,14 +438,10 @@ ssize_t netfs_extract_user_iter(struct iov_iter *orig, size_t orig_len,
 size_t netfs_limit_iter(const struct iov_iter *iter, size_t start_offset,
 			size_t max_size, size_t max_segs);
 void netfs_prepare_write_failed(struct netfs_io_subrequest *subreq);
-#if IS_ENABLED(CONFIG_NETFS_SUPPORT)
-void netfs_write_subrequest_terminated(void *_op, ssize_t transferred_or_error);
-#else
 static inline void netfs_write_subrequest_terminated(void *_op,
 					 ssize_t transferred_or_error)
 {
 }
-#endif
 
 int netfs_start_io_read(struct inode *inode);
 void netfs_end_io_read(struct inode *inode);
@@ -499,9 +492,6 @@ static inline void netfs_inode_init(struct netfs_inode *ctx,
 	ctx->zero_point = LLONG_MAX;
 	ctx->flags = 0;
 	atomic_set(&ctx->io_count, 0);
-#if IS_ENABLED(CONFIG_FSCACHE)
-	ctx->cache = NULL;
-#endif
 	mutex_init(&ctx->wb_lock);
 	/* ->releasepage() drives zero_point */
 	if (use_zero_point) {
@@ -535,11 +525,7 @@ static inline void netfs_resize_file(struct netfs_inode *ctx, loff_t new_i_size,
  */
 static inline struct fscache_cookie *netfs_i_cookie(struct netfs_inode *ctx)
 {
-#if IS_ENABLED(CONFIG_FSCACHE)
-	return ctx->cache;
-#else
 	return NULL;
-#endif
 }
 
 /**

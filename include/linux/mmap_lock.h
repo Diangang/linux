@@ -47,11 +47,7 @@ static inline void mmap_assert_write_locked(const struct mm_struct *mm)
 
 #ifdef CONFIG_PER_VMA_LOCK
 
-#if 0
-#define __vma_lockdep_map(vma) (&vma->vmlock_dep_map)
-#else
 #define __vma_lockdep_map(vma) NULL
-#endif
 
 /*
  * VMA locks do not behave like most ordinary locks found in the kernel, so we

@@ -280,7 +280,7 @@ static inline void clear_user_highpages(struct page *page, unsigned long vaddr,
 					unsigned int npages)
 {
 
-#if defined(clear_user_highpage) || 0
+#if defined(clear_user_highpage)
 	/*
 	 * An architecture defined clear_user_highpage() implies special
 	 * handling is needed.
@@ -359,10 +359,6 @@ static inline bool tag_clear_highpages(struct page *page, int numpages)
  * If we pass in a base or tail page, we can zero up to PAGE_SIZE.
  * If we pass in a head page, we can zero up to the size of the compound page.
  */
-#if 0
-void zero_user_segments(struct page *page, unsigned start1, unsigned end1,
-		unsigned start2, unsigned end2);
-#else
 static inline void zero_user_segments(struct page *page,
 		unsigned start1, unsigned end1,
 		unsigned start2, unsigned end2)
@@ -382,7 +378,6 @@ static inline void zero_user_segments(struct page *page,
 	for (i = 0; i < compound_nr(page); i++)
 		flush_dcache_page(page + i);
 }
-#endif
 
 static inline void zero_user_segment(struct page *page,
 	unsigned start, unsigned end)

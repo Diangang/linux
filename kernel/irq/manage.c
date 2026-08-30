@@ -24,7 +24,7 @@
 
 #include "internals.h"
 
-#if defined(CONFIG_IRQ_FORCED_THREADING) && !0
+#if defined(CONFIG_IRQ_FORCED_THREADING)
 DEFINE_STATIC_KEY_FALSE(force_irqthreads_key);
 
 static int __init setup_forced_irqthreads(char *arg)
@@ -585,7 +585,6 @@ int irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *noti
 }
 EXPORT_SYMBOL_GPL(irq_set_affinity_notifier);
 
-#ifndef CONFIG_AUTO_IRQ_AFFINITY
 /*
  * Generic version of the affinity autoselector.
  */
@@ -628,13 +627,6 @@ int irq_setup_affinity(struct irq_desc *desc)
 	}
 	return irq_do_set_affinity(&desc->irq_data, &mask, false);
 }
-#else
-/* Wrapper for ALPHA specific affinity selector magic */
-int irq_setup_affinity(struct irq_desc *desc)
-{
-	return irq_select_affinity(irq_desc_get_irq(desc));
-}
-#endif /* CONFIG_AUTO_IRQ_AFFINITY */
 #endif /* CONFIG_SMP */
 
 
@@ -2162,25 +2154,6 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 		kfree(action);
 	}
 
-#ifdef CONFIG_DEBUG_SHIRQ_FIXME
-	if (!retval && (irqflags & IRQF_SHARED)) {
-		/*
-		 * It's a shared IRQ -- the driver ought to be prepared for it
-		 * to happen immediately, so let's make sure....
-		 * We disable the irq to make sure that a 'real' IRQ doesn't
-		 * run in parallel with our fake.
-		 */
-		unsigned long flags;
-
-		disable_irq(irq);
-		local_irq_save(flags);
-
-		handler(irq, dev_id);
-
-		local_irq_restore(flags);
-		enable_irq(irq);
-	}
-#endif
 	return retval;
 }
 EXPORT_SYMBOL(request_threaded_irq);

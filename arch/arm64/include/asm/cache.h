@@ -44,16 +44,6 @@
 #include <asm/mte-def.h>
 #include <asm/sysreg.h>
 
-#if 0
-#define ARCH_SLAB_MINALIGN	(1ULL << KASAN_SHADOW_SCALE_SHIFT)
-#elif 0
-static inline unsigned int arch_slab_minalign(void)
-{
-	return kasan_hw_tags_enabled() ? MTE_GRANULE_SIZE :
-					 __alignof__(unsigned long long);
-}
-#define arch_slab_minalign() arch_slab_minalign()
-#endif
 
 #define CTR_L1IP(ctr)		SYS_FIELD_GET(CTR_EL0, L1Ip, ctr)
 

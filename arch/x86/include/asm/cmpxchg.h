@@ -139,11 +139,7 @@ extern void __add_wrong_size(void)
 #define __cmpxchg_local(ptr, old, new, size)				\
 	__raw_cmpxchg((ptr), (old), (new), (size), "")
 
-#ifdef CONFIG_X86_32
-# include <asm/cmpxchg_32.h>
-#else
 # include <asm/cmpxchg_64.h>
-#endif
 
 #define arch_cmpxchg(ptr, old, new)					\
 	__cmpxchg(ptr, old, new, sizeof(*(ptr)))

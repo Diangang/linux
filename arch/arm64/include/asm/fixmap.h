@@ -48,21 +48,7 @@ enum fixed_addresses {
 	FIX_EARLYCON_MEM_BASE,
 	FIX_TEXT_POKE0,
 
-#ifdef CONFIG_KVM
-	/* One slot per CPU, mapping the guest's VNCR page at EL2. */
-	FIX_VNCR_END,
-	FIX_VNCR = FIX_VNCR_END + NR_CPUS,
-#endif
 
-#ifdef CONFIG_ACPI_APEI_GHES
-	/* Used for GHES mapping from assorted contexts */
-	FIX_APEI_GHES_IRQ,
-	FIX_APEI_GHES_SEA,
-#ifdef CONFIG_ARM_SDE_INTERFACE
-	FIX_APEI_GHES_SDEI_NORMAL,
-	FIX_APEI_GHES_SDEI_CRITICAL,
-#endif
-#endif /* CONFIG_ACPI_APEI_GHES */
 
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 #ifdef CONFIG_RELOCATABLE

@@ -34,18 +34,10 @@ void vma_iter_dump_tree(const struct vma_iterator *vmi);
 #define VM_WARN_ONCE(cond, format...) BUILD_BUG_ON_INVALID(cond)
 #define VM_WARN(cond, format...) BUILD_BUG_ON_INVALID(cond)
 
-#ifdef CONFIG_DEBUG_VM_IRQSOFF
-#define VM_WARN_ON_IRQS_ENABLED() WARN_ON_ONCE(!irqs_disabled())
-#else
 #define VM_WARN_ON_IRQS_ENABLED() do { } while (0)
-#endif
 
 #define VIRTUAL_BUG_ON(cond) do { } while (0)
 
-#ifdef CONFIG_DEBUG_VM_PGFLAGS
-#define VM_BUG_ON_PGFLAGS(cond, page) VM_BUG_ON_PAGE(cond, page)
-#else
 #define VM_BUG_ON_PGFLAGS(cond, page) BUILD_BUG_ON_INVALID(cond)
-#endif
 
 #endif

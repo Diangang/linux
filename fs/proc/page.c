@@ -266,26 +266,11 @@ static const struct proc_ops kpageflags_proc_ops = {
 	.proc_read	= kpageflags_read,
 };
 
-#ifdef CONFIG_MEMCG
-static ssize_t kpagecgroup_read(struct file *file, char __user *buf,
-		size_t count, loff_t *ppos)
-{
-	return kpage_read(file, buf, count, ppos, KPAGE_CGROUP);
-}
-static const struct proc_ops kpagecgroup_proc_ops = {
-	.proc_flags	= PROC_ENTRY_PERMANENT,
-	.proc_lseek	= mem_lseek,
-	.proc_read	= kpagecgroup_read,
-};
-#endif /* CONFIG_MEMCG */
 
 static int __init proc_page_init(void)
 {
 	proc_create("kpagecount", S_IRUSR, NULL, &kpagecount_proc_ops);
 	proc_create("kpageflags", S_IRUSR, NULL, &kpageflags_proc_ops);
-#ifdef CONFIG_MEMCG
-	proc_create("kpagecgroup", S_IRUSR, NULL, &kpagecgroup_proc_ops);
-#endif
 	return 0;
 }
 fs_initcall(proc_page_init);

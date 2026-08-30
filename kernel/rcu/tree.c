@@ -566,45 +566,6 @@ void rcutorture_format_gp_seqs(unsigned long long seqs, char *cp, size_t len)
 }
 EXPORT_SYMBOL_GPL(rcutorture_format_gp_seqs);
 
-#if defined(CONFIG_NO_HZ_FULL) && (!defined(CONFIG_GENERIC_ENTRY) || !defined(CONFIG_VIRT_XFER_TO_GUEST_WORK))
-/*
- * An empty function that will trigger a reschedule on
- * IRQ tail once IRQs get re-enabled on userspace/guest resume.
- */
-static void late_wakeup_func(struct irq_work *work)
-{
-}
-
-static DEFINE_PER_CPU(struct irq_work, late_wakeup_work) =
-	IRQ_WORK_INIT(late_wakeup_func);
-
-/*
- * If either:
- *
- * 1) the task is about to enter in guest mode and $ARCH doesn't support KVM generic work
- * 2) the task is about to enter in user mode and $ARCH doesn't support generic entry.
- *
- * In these cases the late RCU wake ups aren't supported in the resched loops and our
- * last resort is to fire a local irq_work that will trigger a reschedule once IRQs
- * get re-enabled again.
- */
-noinstr void rcu_irq_work_resched(void)
-{
-	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
-
-	if (IS_ENABLED(CONFIG_GENERIC_ENTRY) && !(current->flags & PF_VCPU))
-		return;
-
-	if (IS_ENABLED(CONFIG_VIRT_XFER_TO_GUEST_WORK) && (current->flags & PF_VCPU))
-		return;
-
-	instrumentation_begin();
-	if (do_nocb_deferred_wakeup(rdp) && need_resched()) {
-		irq_work_queue(this_cpu_ptr(&late_wakeup_work));
-	}
-	instrumentation_end();
-}
-#endif /* #if defined(CONFIG_NO_HZ_FULL) && (!defined(CONFIG_GENERIC_ENTRY) || !defined(CONFIG_VIRT_XFER_TO_GUEST_WORK)) */
 
 
 
@@ -1253,29 +1214,15 @@ static void rcu_gp_slow(int delay)
 		schedule_timeout_idle(delay);
 }
 
-static unsigned long sleep_duration;
-
 /* Allow rcutorture to stall the grace-period kthread. */
 void rcu_gp_set_torture_wait(int duration)
 {
-	if (IS_ENABLED(CONFIG_RCU_TORTURE_TEST) && duration > 0)
-		WRITE_ONCE(sleep_duration, duration);
 }
 EXPORT_SYMBOL_GPL(rcu_gp_set_torture_wait);
 
 /* Actually implement the aforementioned wait. */
 static void rcu_gp_torture_wait(void)
 {
-	unsigned long duration;
-
-	if (!IS_ENABLED(CONFIG_RCU_TORTURE_TEST))
-		return;
-	duration = xchg(&sleep_duration, 0UL);
-	if (duration > 0) {
-		pr_alert("%s: Waiting %lu jiffies\n", __func__, duration);
-		schedule_timeout_idle(duration);
-		pr_alert("%s: Wait complete\n", __func__);
-	}
 }
 
 /*

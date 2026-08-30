@@ -68,17 +68,8 @@ static inline struct bug_entry *module_find_bug(unsigned long bugaddr)
 void bug_get_file_line(struct bug_entry *bug, const char **file,
 		       unsigned int *line)
 {
-#ifdef CONFIG_DEBUG_BUGVERBOSE
-#ifdef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
-	*file = (const char *)&bug->file_disp + bug->file_disp;
-#else
-	*file = bug->file;
-#endif
-	*line = bug->line;
-#else
 	*file = NULL;
 	*line = 0;
-#endif
 }
 
 static const char *bug_get_format(struct bug_entry *bug)

@@ -27,9 +27,6 @@ int main(void)
   DEFINE(TSK_TI_CPU,		offsetof(struct task_struct, thread_info.cpu));
   DEFINE(TSK_TI_FLAGS,		offsetof(struct task_struct, thread_info.flags));
   DEFINE(TSK_TI_PREEMPT,	offsetof(struct task_struct, thread_info.preempt_count));
-#if 0
-  DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
-#endif
   DEFINE(TSK_STACK,		offsetof(struct task_struct, stack));
 #ifdef CONFIG_STACKPROTECTOR
   DEFINE(TSK_STACK_CANARY,	offsetof(struct task_struct, stack_canary));
@@ -71,59 +68,11 @@ int main(void)
   DEFINE(S_STACKFRAME_TYPE,	offsetof(struct pt_regs, stackframe.type));
   DEFINE(PT_REGS_SIZE,		sizeof(struct pt_regs));
   BLANK();
-#ifdef CONFIG_DYNAMIC_FTRACE_WITH_ARGS
-  DEFINE(FREGS_X0,		offsetof(struct __arch_ftrace_regs, regs[0]));
-  DEFINE(FREGS_X2,		offsetof(struct __arch_ftrace_regs, regs[2]));
-  DEFINE(FREGS_X4,		offsetof(struct __arch_ftrace_regs, regs[4]));
-  DEFINE(FREGS_X6,		offsetof(struct __arch_ftrace_regs, regs[6]));
-  DEFINE(FREGS_X8,		offsetof(struct __arch_ftrace_regs, regs[8]));
-  DEFINE(FREGS_FP,		offsetof(struct __arch_ftrace_regs, fp));
-  DEFINE(FREGS_LR,		offsetof(struct __arch_ftrace_regs, lr));
-  DEFINE(FREGS_SP,		offsetof(struct __arch_ftrace_regs, sp));
-  DEFINE(FREGS_PC,		offsetof(struct __arch_ftrace_regs, pc));
-#ifdef CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS
-  DEFINE(FREGS_DIRECT_TRAMP,	offsetof(struct __arch_ftrace_regs, direct_tramp));
-#endif
-  DEFINE(FREGS_SIZE,		sizeof(struct __arch_ftrace_regs));
-  BLANK();
-#endif
   DEFINE(CPU_BOOT_TASK,		offsetof(struct secondary_data, task));
   BLANK();
   DEFINE(FTR_OVR_VAL_OFFSET,	offsetof(struct arm64_ftr_override, val));
   DEFINE(FTR_OVR_MASK_OFFSET,	offsetof(struct arm64_ftr_override, mask));
   BLANK();
-#ifdef CONFIG_KVM
-  DEFINE(VCPU_CONTEXT,		offsetof(struct kvm_vcpu, arch.ctxt));
-  DEFINE(VCPU_FAULT_DISR,	offsetof(struct kvm_vcpu, arch.fault.disr_el1));
-  DEFINE(VCPU_HCR_EL2,		offsetof(struct kvm_vcpu, arch.hcr_el2));
-  DEFINE(CPU_USER_PT_REGS,	offsetof(struct kvm_cpu_context, regs));
-  DEFINE(CPU_ELR_EL2,		offsetof(struct kvm_cpu_context, sys_regs[ELR_EL2]));
-  DEFINE(CPU_RGSR_EL1,		offsetof(struct kvm_cpu_context, sys_regs[RGSR_EL1]));
-  DEFINE(CPU_GCR_EL1,		offsetof(struct kvm_cpu_context, sys_regs[GCR_EL1]));
-  DEFINE(CPU_APIAKEYLO_EL1,	offsetof(struct kvm_cpu_context, sys_regs[APIAKEYLO_EL1]));
-  DEFINE(CPU_APIBKEYLO_EL1,	offsetof(struct kvm_cpu_context, sys_regs[APIBKEYLO_EL1]));
-  DEFINE(CPU_APDAKEYLO_EL1,	offsetof(struct kvm_cpu_context, sys_regs[APDAKEYLO_EL1]));
-  DEFINE(CPU_APDBKEYLO_EL1,	offsetof(struct kvm_cpu_context, sys_regs[APDBKEYLO_EL1]));
-  DEFINE(CPU_APGAKEYLO_EL1,	offsetof(struct kvm_cpu_context, sys_regs[APGAKEYLO_EL1]));
-  DEFINE(HOST_CONTEXT_VCPU,	offsetof(struct kvm_cpu_context, __hyp_running_vcpu));
-  DEFINE(HOST_DATA_CONTEXT,	offsetof(struct kvm_host_data, host_ctxt));
-  DEFINE(NVHE_INIT_MAIR_EL2,	offsetof(struct kvm_nvhe_init_params, mair_el2));
-  DEFINE(NVHE_INIT_TCR_EL2,	offsetof(struct kvm_nvhe_init_params, tcr_el2));
-  DEFINE(NVHE_INIT_TPIDR_EL2,	offsetof(struct kvm_nvhe_init_params, tpidr_el2));
-  DEFINE(NVHE_INIT_STACK_HYP_VA,	offsetof(struct kvm_nvhe_init_params, stack_hyp_va));
-  DEFINE(NVHE_INIT_PGD_PA,	offsetof(struct kvm_nvhe_init_params, pgd_pa));
-  DEFINE(NVHE_INIT_HCR_EL2,	offsetof(struct kvm_nvhe_init_params, hcr_el2));
-  DEFINE(NVHE_INIT_VTTBR,	offsetof(struct kvm_nvhe_init_params, vttbr));
-  DEFINE(NVHE_INIT_VTCR,	offsetof(struct kvm_nvhe_init_params, vtcr));
-  DEFINE(NVHE_INIT_TMP,		offsetof(struct kvm_nvhe_init_params, tmp));
-#endif
-#ifdef CONFIG_CPU_PM
-  DEFINE(CPU_CTX_SP,		offsetof(struct cpu_suspend_ctx, sp));
-  DEFINE(MPIDR_HASH_MASK,	offsetof(struct mpidr_hash, mask));
-  DEFINE(MPIDR_HASH_SHIFTS,	offsetof(struct mpidr_hash, shift_aff));
-  DEFINE(SLEEP_STACK_DATA_SYSTEM_REGS,	offsetof(struct sleep_stack_data, system_regs));
-  DEFINE(SLEEP_STACK_DATA_CALLEE_REGS,	offsetof(struct sleep_stack_data, callee_saved_regs));
-#endif
   DEFINE(ARM_SMCCC_RES_X0_OFFS,		offsetof(struct arm_smccc_res, a0));
   DEFINE(ARM_SMCCC_RES_X2_OFFS,		offsetof(struct arm_smccc_res, a2));
   DEFINE(ARM_SMCCC_QUIRK_ID_OFFS,	offsetof(struct arm_smccc_quirk, id));
@@ -143,10 +92,6 @@ int main(void)
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
   DEFINE(TRAMP_VALIAS,		TRAMP_VALIAS);
 #endif
-#ifdef CONFIG_ARM_SDE_INTERFACE
-  DEFINE(SDEI_EVENT_INTREGS,	offsetof(struct sdei_registered_event, interrupted_regs));
-  DEFINE(SDEI_EVENT_PRIORITY,	offsetof(struct sdei_registered_event, priority));
-#endif
 #ifdef CONFIG_ARM64_PTR_AUTH
   DEFINE(PTRAUTH_USER_KEY_APIA,		offsetof(struct ptrauth_keys_user, apia));
 #ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
@@ -154,13 +99,7 @@ int main(void)
 #endif
   BLANK();
 #endif
-#ifdef CONFIG_FUNCTION_TRACER
-  DEFINE(FTRACE_OPS_FUNC,		offsetof(struct ftrace_ops, func));
-#endif
   BLANK();
-#ifdef CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS
-  DEFINE(FTRACE_OPS_DIRECT_CALL,	offsetof(struct ftrace_ops, direct_call));
-#endif
   DEFINE(PIE_E0_ASM, PIE_E0);
   DEFINE(PIE_E1_ASM, PIE_E1);
   return 0;

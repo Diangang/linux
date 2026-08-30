@@ -47,18 +47,7 @@
 #define gsb_ack()	asm volatile(GSB_ACK_BARRIER_INSN : : : "memory")
 #define gsb_sys()	asm volatile(GSB_SYS_BARRIER_INSN : : : "memory")
 
-#if 0
-#define pmr_sync()						\
-	do {							\
-		asm volatile(					\
-		ALTERNATIVE_CB("dsb sy",			\
-			       ARM64_HAS_GIC_PRIO_RELAXED_SYNC,	\
-			       alt_cb_patch_nops)		\
-		);						\
-	} while(0)
-#else
 #define pmr_sync()	do {} while (0)
-#endif
 
 #define __mb()		dsb(sy)
 #define __rmb()		dsb(ld)

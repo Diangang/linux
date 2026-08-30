@@ -59,7 +59,6 @@
 
 #endif	/* !CONFIG_NUMA */
 
-#if !defined(CONFIG_NUMA) || !defined(CONFIG_HAVE_MEMORYLESS_NODES)
 
 #ifndef set_numa_mem
 #define set_numa_mem(node)
@@ -68,6 +67,5 @@
 #define set_cpu_numa_mem(cpu, node)
 #endif
 
-#endif	/* !CONFIG_NUMA || !CONFIG_HAVE_MEMORYLESS_NODES */
 
 #endif /* _ASM_GENERIC_TOPOLOGY_H */

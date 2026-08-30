@@ -63,11 +63,7 @@ static inline bool gfpflags_allow_spinning(const gfp_t gfp_flags)
 	return !!(gfp_flags & __GFP_RECLAIM);
 }
 
-#if 0
-#define OPT_ZONE_HIGHMEM ZONE_HIGHMEM
-#else
 #define OPT_ZONE_HIGHMEM ZONE_NORMAL
-#endif
 
 #ifdef CONFIG_ZONE_DMA
 #define OPT_ZONE_DMA ZONE_DMA
@@ -114,12 +110,7 @@ static inline bool gfpflags_allow_spinning(const gfp_t gfp_flags)
  * GFP_ZONES_SHIFT must be <= 2 on 32 bit platforms.
  */
 
-#if 0 && (MAX_NR_ZONES-1) <= 4
-/* ZONE_DEVICE is not a valid GFP zone specifier */
-#define GFP_ZONES_SHIFT 2
-#else
 #define GFP_ZONES_SHIFT ZONES_SHIFT
-#endif
 
 #if 16 * GFP_ZONES_SHIFT > BITS_PER_LONG
 #error GFP_ZONES_SHIFT too large to create GFP_ZONE_TABLE integer

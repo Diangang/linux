@@ -134,9 +134,6 @@ static __always_inline int memblock_reserve_kern(phys_addr_t base, phys_addr_t s
 	return __memblock_reserve(base, size, NUMA_NO_NODE, MEMBLOCK_RSRV_KERN);
 }
 
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-int memblock_physmem_add(phys_addr_t base, phys_addr_t size);
-#endif
 void memblock_trim_memory(phys_addr_t align);
 unsigned long memblock_addrs_overlap(phys_addr_t base1, phys_addr_t size1,
 				     phys_addr_t base2, phys_addr_t size2);
@@ -165,29 +162,6 @@ void __next_mem_range_rev(u64 *idx, int nid, enum memblock_flags flags,
 			  struct memblock_type *type_b, phys_addr_t *out_start,
 			  phys_addr_t *out_end, int *out_nid);
 
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-static inline void __next_physmem_range(u64 *idx, struct memblock_type *type,
-					phys_addr_t *out_start,
-					phys_addr_t *out_end)
-{
-	extern struct memblock_type physmem;
-
-	__next_mem_range(idx, NUMA_NO_NODE, MEMBLOCK_NONE, &physmem, type,
-			 out_start, out_end, NULL);
-}
-
-/**
- * for_each_physmem_range - iterate through physmem areas not included in type.
- * @i: u64 used as loop variable
- * @type: ptr to memblock_type which excludes from the iteration, can be %NULL
- * @p_start: ptr to phys_addr_t for start address of the range, can be %NULL
- * @p_end: ptr to phys_addr_t for end address of the range, can be %NULL
- */
-#define for_each_physmem_range(i, type, p_start, p_end)			\
-	for (i = 0, __next_physmem_range(&i, type, p_start, p_end);	\
-	     i != (u64)ULLONG_MAX;					\
-	     __next_physmem_range(&i, type, p_start, p_end))
-#endif /* CONFIG_HAVE_MEMBLOCK_PHYS_MAP */
 
 /**
  * __for_each_mem_range - iterate through memblock areas from type_a and not

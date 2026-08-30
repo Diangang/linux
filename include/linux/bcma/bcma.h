@@ -47,12 +47,6 @@ struct bcma_host_ops {
 	void (*write8)(struct bcma_device *core, u16 offset, u8 value);
 	void (*write16)(struct bcma_device *core, u16 offset, u16 value);
 	void (*write32)(struct bcma_device *core, u16 offset, u32 value);
-#ifdef CONFIG_BCMA_BLOCKIO
-	void (*block_read)(struct bcma_device *core, void *buffer,
-			   size_t count, u16 offset, u8 reg_width);
-	void (*block_write)(struct bcma_device *core, const void *buffer,
-			    size_t count, u16 offset, u8 reg_width);
-#endif
 	/* Agent ops */
 	u32 (*aread32)(struct bcma_device *core, u16 offset);
 	void (*awrite32)(struct bcma_device *core, u16 offset, u32 value);
@@ -391,19 +385,6 @@ void bcma_write32(struct bcma_device *core, u16 offset, u32 value)
 {
 	core->bus->ops->write32(core, offset, value);
 }
-#ifdef CONFIG_BCMA_BLOCKIO
-static inline void bcma_block_read(struct bcma_device *core, void *buffer,
-				   size_t count, u16 offset, u8 reg_width)
-{
-	core->bus->ops->block_read(core, buffer, count, offset, reg_width);
-}
-static inline void bcma_block_write(struct bcma_device *core,
-				    const void *buffer, size_t count,
-				    u16 offset, u8 reg_width)
-{
-	core->bus->ops->block_write(core, buffer, count, offset, reg_width);
-}
-#endif
 static inline u32 bcma_aread32(struct bcma_device *core, u16 offset)
 {
 	return core->bus->ops->aread32(core, offset);
@@ -449,12 +430,6 @@ static inline struct bcma_device *bcma_find_core(struct bcma_bus *bus,
 	return bcma_find_core_unit(bus, coreid, 0);
 }
 
-#ifdef CONFIG_BCMA_HOST_PCI
-extern void bcma_host_pci_up(struct bcma_bus *bus);
-extern void bcma_host_pci_down(struct bcma_bus *bus);
-extern int bcma_host_pci_irq_ctl(struct bcma_bus *bus,
-				 struct bcma_device *core, bool enable);
-#else
 static inline void bcma_host_pci_up(struct bcma_bus *bus)
 {
 }
@@ -468,7 +443,6 @@ static inline int bcma_host_pci_irq_ctl(struct bcma_bus *bus,
 		return -ENOTSUPP;
 	return 0;
 }
-#endif
 
 extern bool bcma_core_is_enabled(struct bcma_device *core);
 extern void bcma_core_disable(struct bcma_device *core, u32 flags);

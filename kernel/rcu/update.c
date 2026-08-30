@@ -192,7 +192,6 @@ void rcu_test_sync_prims(void)
 	synchronize_rcu_expedited();
 }
 
-#if !0
 
 /*
  * Switch to run-time mode once RCU has fully initialized.
@@ -207,7 +206,6 @@ static int __init rcu_set_runtime_mode(void)
 }
 core_initcall(rcu_set_runtime_mode);
 
-#endif /* #if !0 */
 
 
 /**
@@ -271,63 +269,6 @@ void finish_rcuwait(struct rcuwait *w)
 }
 EXPORT_SYMBOL_GPL(finish_rcuwait);
 
-#ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
-void init_rcu_head(struct rcu_head *head)
-{
-	debug_object_init(head, &rcuhead_debug_descr);
-}
-EXPORT_SYMBOL_GPL(init_rcu_head);
-
-void destroy_rcu_head(struct rcu_head *head)
-{
-	debug_object_free(head, &rcuhead_debug_descr);
-}
-EXPORT_SYMBOL_GPL(destroy_rcu_head);
-
-static bool rcuhead_is_static_object(void *addr)
-{
-	return true;
-}
-
-/**
- * init_rcu_head_on_stack() - initialize on-stack rcu_head for debugobjects
- * @head: pointer to rcu_head structure to be initialized
- *
- * This function informs debugobjects of a new rcu_head structure that
- * has been allocated as an auto variable on the stack.  This function
- * is not required for rcu_head structures that are statically defined or
- * that are dynamically allocated on the heap.  This function has no
- * effect for !CONFIG_DEBUG_OBJECTS_RCU_HEAD kernel builds.
- */
-void init_rcu_head_on_stack(struct rcu_head *head)
-{
-	debug_object_init_on_stack(head, &rcuhead_debug_descr);
-}
-EXPORT_SYMBOL_GPL(init_rcu_head_on_stack);
-
-/**
- * destroy_rcu_head_on_stack() - destroy on-stack rcu_head for debugobjects
- * @head: pointer to rcu_head structure to be initialized
- *
- * This function informs debugobjects that an on-stack rcu_head structure
- * is about to go out of scope.  As with init_rcu_head_on_stack(), this
- * function is not required for rcu_head structures that are statically
- * defined or that are dynamically allocated on the heap.  Also as with
- * init_rcu_head_on_stack(), this function has no effect for
- * !CONFIG_DEBUG_OBJECTS_RCU_HEAD kernel builds.
- */
-void destroy_rcu_head_on_stack(struct rcu_head *head)
-{
-	debug_object_free(head, &rcuhead_debug_descr);
-}
-EXPORT_SYMBOL_GPL(destroy_rcu_head_on_stack);
-
-const struct debug_obj_descr rcuhead_debug_descr = {
-	.name = "rcu_head",
-	.is_static_object = rcuhead_is_static_object,
-};
-EXPORT_SYMBOL_GPL(rcuhead_debug_descr);
-#endif /* #ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 
 #if defined(CONFIG_TREE_RCU) || defined(CONFIG_RCU_TRACE)
 void do_trace_rcu_torture_read(const char *rcutorturename, struct rcu_head *rhp,
@@ -341,40 +282,7 @@ EXPORT_SYMBOL_GPL(do_trace_rcu_torture_read);
 	do { } while (0)
 #endif
 
-#if IS_ENABLED(CONFIG_RCU_TORTURE_TEST) || IS_MODULE(CONFIG_RCU_TORTURE_TEST) || IS_ENABLED(CONFIG_LOCK_TORTURE_TEST) || IS_MODULE(CONFIG_LOCK_TORTURE_TEST)
-/* Get rcutorture access to sched_setaffinity(). */
-long torture_sched_setaffinity(pid_t pid, const struct cpumask *in_mask, bool dowarn)
-{
-	int ret;
 
-	ret = sched_setaffinity(pid, in_mask);
-	WARN_ONCE(dowarn && ret, "%s: sched_setaffinity(%d) returned %d\n", __func__, pid, ret);
-	return ret;
-}
-EXPORT_SYMBOL_GPL(torture_sched_setaffinity);
-#endif
-
-#if 0
-// Trivial and stupid grace-period wait.  Defined here so that lockdep
-// kernels can find tasklist_lock.
-void synchronize_rcu_trivial_preempt(void)
-{
-	struct task_struct *g;
-	struct task_struct *t;
-
-	smp_mb(); // Order prior accesses before grace-period start.
-	rcu_read_lock(); // Protect task list.
-	for_each_process_thread(g, t) {
-		if (t == current)
-			continue;  // Don't deadlock on ourselves!
-		// Order later rcu_read_lock() on other tasks after QS.
-		while (smp_load_acquire(&t->rcu_trivial_preempt_nesting))
-			continue;
-	}
-	rcu_read_unlock();
-}
-EXPORT_SYMBOL_GPL(synchronize_rcu_trivial_preempt);
-#endif // #if 0
 
 int rcu_cpu_stall_notifiers __read_mostly; // !0 = provide stall notifiers (rarely useful)
 EXPORT_SYMBOL_GPL(rcu_cpu_stall_notifiers);
@@ -389,7 +297,7 @@ int rcu_cpu_stall_timeout __read_mostly = CONFIG_RCU_CPU_STALL_TIMEOUT;
 module_param(rcu_cpu_stall_timeout, int, 0644);
 int rcu_exp_cpu_stall_timeout __read_mostly = CONFIG_RCU_EXP_CPU_STALL_TIMEOUT;
 module_param(rcu_exp_cpu_stall_timeout, int, 0644);
-int rcu_cpu_stall_cputime __read_mostly = IS_ENABLED(CONFIG_RCU_CPU_STALL_CPUTIME);
+int rcu_cpu_stall_cputime __read_mostly = false;
 module_param(rcu_cpu_stall_cputime, int, 0644);
 bool rcu_exp_stall_task_details __read_mostly;
 module_param(rcu_exp_stall_task_details, bool, 0644);

@@ -260,13 +260,6 @@ int serdev_device_set_parity(struct serdev_device *serdev,
 struct tty_port;
 struct tty_driver;
 
-#ifdef CONFIG_SERIAL_DEV_CTRL_TTYPORT
-struct device *serdev_tty_port_register(struct tty_port *port,
-					struct device *host,
-					struct device *parent,
-					struct tty_driver *drv, int idx);
-int serdev_tty_port_unregister(struct tty_port *port);
-#else
 static inline struct device *serdev_tty_port_register(struct tty_port *port,
 					   struct device *host,
 					   struct device *parent,
@@ -278,7 +271,6 @@ static inline int serdev_tty_port_unregister(struct tty_port *port)
 {
 	return -ENODEV;
 }
-#endif /* CONFIG_SERIAL_DEV_CTRL_TTYPORT */
 
 struct acpi_resource;
 struct acpi_resource_uart_serialbus;

@@ -125,9 +125,6 @@ SYM_FUNC_START(startup_32)
 1:
 
 	/* Setup Exception handling for SEV-ES */
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	call	startup32_load_idt
-#endif
 
 	/* Make sure cpu supports long mode. */
 	call	verify_cpu
@@ -178,23 +175,6 @@ SYM_FUNC_START(startup_32)
 	 * it will be done so encrypted.
 	 */
 	xorl	%edx, %edx
-#ifdef	CONFIG_AMD_MEM_ENCRYPT
-	call	get_sev_encryption_bit
-	xorl	%edx, %edx
-	testl	%eax, %eax
-	jz	1f
-	subl	$32, %eax	/* Encryption bit is always above bit 31 */
-	bts	%eax, %edx	/* Set encryption mask for page tables */
-	/*
-	 * Set MSR_AMD64_SEV_ENABLED_BIT in sev_status so that
-	 * startup32_check_sev_cbit() will do a check. sev_enable() will
-	 * initialize sev_status with all the bits reported by
-	 * MSR_AMD_SEV_STATUS later, but only MSR_AMD64_SEV_ENABLED_BIT
-	 * needs to be set for now.
-	 */
-	movl	$1, rva(sev_status)(%ebp)
-1:
-#endif
 
 	/* Initialize Page tables to 0 */
 	leal	rva(pgtable)(%ebx), %edi
@@ -246,10 +226,6 @@ SYM_FUNC_START(startup_32)
 	movl    $__BOOT_TSS, %eax
 	ltr	%ax
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	/* Check if the C-bit position is correct when SEV is active */
-	call	startup32_check_sev_cbit
-#endif
 
 	/*
 	 * Setup for the jump to 64bit mode
@@ -375,20 +351,6 @@ SYM_CODE_START(startup_64)
 
 	call	load_stage1_idt
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	/*
-	 * Now that the stage1 interrupt handlers are set up, #VC exceptions from
-	 * CPUID instructions can be properly handled for SEV-ES guests.
-	 *
-	 * For SEV-SNP, the CPUID table also needs to be set up in advance of any
-	 * CPUID instructions being issued, so go ahead and do that now via
-	 * sev_enable(), which will also handle the rest of the SEV-related
-	 * detection/setup to ensure that has been done in advance of any dependent
-	 * code. Pass the boot_params pointer as the first argument.
-	 */
-	movq	%r15, %rdi
-	call	sev_enable
-#endif
 
 	/* Preserve only the CR4 bits that must be preserved, and clear the rest */
 	movq	%cr4, %rax

@@ -816,8 +816,7 @@ static inline bool system_supports_mte(void)
 
 static inline bool system_has_prio_mask_debugging(void)
 {
-	return IS_ENABLED(CONFIG_ARM64_DEBUG_PRIORITY_MASKING) &&
-	       system_uses_irq_prio_masking();
+	return false;
 }
 
 static inline bool system_supports_bti(void)
@@ -827,8 +826,7 @@ static inline bool system_supports_bti(void)
 
 static inline bool system_supports_bti_kernel(void)
 {
-	return IS_ENABLED(CONFIG_ARM64_BTI_KERNEL) &&
-		cpus_have_final_boot_cap(ARM64_BTI);
+	return false;
 }
 
 static inline bool system_supports_tlb_range(void)

@@ -36,7 +36,7 @@ static __always_inline void bit_spin_lock(int bitnum, unsigned long *addr)
 	 * attempt to acquire the lock bit.
 	 */
 	preempt_disable();
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 	while (unlikely(test_and_set_bit_lock(bitnum, addr))) {
 		preempt_enable();
 		do {
@@ -55,7 +55,7 @@ static __always_inline int bit_spin_trylock(int bitnum, unsigned long *addr)
 	__cond_acquires(true, __bitlock(bitnum, addr))
 {
 	preempt_disable();
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 	if (unlikely(test_and_set_bit_lock(bitnum, addr))) {
 		preempt_enable();
 		return 0;
@@ -71,7 +71,7 @@ static __always_inline int bit_spin_trylock(int bitnum, unsigned long *addr)
 static __always_inline void bit_spin_unlock(int bitnum, unsigned long *addr)
 	__releases(__bitlock(bitnum, addr))
 {
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 	clear_bit_unlock(bitnum, addr);
 #endif
 	preempt_enable();
@@ -86,7 +86,7 @@ static __always_inline void bit_spin_unlock(int bitnum, unsigned long *addr)
 static __always_inline void __bit_spin_unlock(int bitnum, unsigned long *addr)
 	__releases(__bitlock(bitnum, addr))
 {
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 	__clear_bit_unlock(bitnum, addr);
 #endif
 	preempt_enable();
@@ -98,7 +98,7 @@ static __always_inline void __bit_spin_unlock(int bitnum, unsigned long *addr)
  */
 static inline int bit_spin_is_locked(int bitnum, unsigned long *addr)
 {
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 	return test_bit(bitnum, addr);
 #elif defined CONFIG_PREEMPT_COUNT
 	return preempt_count();

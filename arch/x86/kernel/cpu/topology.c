@@ -361,49 +361,6 @@ int topology_get_primary_thread(unsigned int cpu)
 }
 #endif
 
-#ifdef CONFIG_ACPI_HOTPLUG_CPU
-/**
- * topology_hotplug_apic - Handle a physical hotplugged APIC after boot
- * @apic_id:	The APIC ID to set up
- * @acpi_id:	The ACPI ID associated to the APIC
- */
-int topology_hotplug_apic(u32 apic_id, u32 acpi_id)
-{
-	int cpu;
-
-	if (apic_id >= MAX_LOCAL_APIC)
-		return -EINVAL;
-
-	/* Reject if the APIC ID was not registered during enumeration. */
-	if (!test_bit(apic_id, apic_maps[TOPO_SMT_DOMAIN].map))
-		return -ENODEV;
-
-	cpu = topo_lookup_cpuid(apic_id);
-	if (cpu < 0)
-		return -ENOSPC;
-
-	set_bit(apic_id, phys_cpu_present_map);
-	topo_set_cpuids(cpu, apic_id, acpi_id);
-	cpu_mark_primary_thread(cpu, apic_id);
-	return cpu;
-}
-
-/**
- * topology_hotunplug_apic - Remove a physical hotplugged APIC after boot
- * @cpu:	The CPU number for which the APIC ID is removed
- */
-void topology_hotunplug_apic(unsigned int cpu)
-{
-	u32 apic_id = cpuid_to_apicid[cpu];
-
-	if (apic_id == BAD_APICID)
-		return;
-
-	per_cpu(x86_cpu_to_apicid, cpu) = BAD_APICID;
-	clear_bit(apic_id, phys_cpu_present_map);
-	set_cpu_present(cpu, false);
-}
-#endif
 
 #ifdef CONFIG_X86_LOCAL_APIC
 static unsigned int max_possible_cpus __initdata = NR_CPUS;

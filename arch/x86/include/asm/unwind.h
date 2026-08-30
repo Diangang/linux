@@ -20,16 +20,6 @@ struct unwind_state {
 	bool signal, full_regs;
 	unsigned long sp, bp, ip;
 	struct pt_regs *regs, *prev_regs;
-#elif 0
-	bool got_irq;
-	unsigned long *bp, *orig_sp, ip;
-	/*
-	 * If non-NULL: The current frame is incomplete and doesn't contain a
-	 * valid BP. When looking for the next frame, use this instead of the
-	 * non-existent saved BP.
-	 */
-	unsigned long *next_bp;
-	struct pt_regs *regs;
 #else
 	unsigned long *sp;
 #endif
@@ -60,7 +50,7 @@ void unwind_start(struct unwind_state *state, struct task_struct *task,
 	__unwind_start(state, task, regs, first_frame);
 }
 
-#if defined(CONFIG_UNWINDER_ORC) || 0
+#if defined(CONFIG_UNWINDER_ORC)
 /*
  * If 'partial' returns true, only the iret frame registers are valid.
  */

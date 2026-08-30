@@ -29,23 +29,6 @@
 struct eventfd_ctx;
 struct file;
 
-#ifdef CONFIG_EVENTFD
-
-void eventfd_ctx_put(struct eventfd_ctx *ctx);
-struct file *eventfd_fget(int fd);
-struct eventfd_ctx *eventfd_ctx_fdget(int fd);
-struct eventfd_ctx *eventfd_ctx_fileget(struct file *file);
-void eventfd_signal_mask(struct eventfd_ctx *ctx, __poll_t mask);
-int eventfd_ctx_remove_wait_queue(struct eventfd_ctx *ctx, wait_queue_entry_t *wait,
-				  __u64 *cnt);
-void eventfd_ctx_do_read(struct eventfd_ctx *ctx, __u64 *cnt);
-
-static inline bool eventfd_signal_allowed(void)
-{
-	return !current->in_eventfd;
-}
-
-#else /* CONFIG_EVENTFD */
 
 /*
  * Ugly ugly ugly error layer to support modules that uses eventfd but
@@ -82,7 +65,6 @@ static inline void eventfd_ctx_do_read(struct eventfd_ctx *ctx, __u64 *cnt)
 
 }
 
-#endif
 
 static inline void eventfd_signal(struct eventfd_ctx *ctx)
 {

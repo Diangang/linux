@@ -48,29 +48,11 @@ struct task_struct;
 # define lockdep_irq_work_enter(__work)		do { } while (0)
 # define lockdep_irq_work_exit(__work)		do { } while (0)
 
-#if 0 && !0
-# define lockdep_softirq_enter()		\
-do {						\
-	current->softirq_context++;		\
-} while (0)
-# define lockdep_softirq_exit()			\
-do {						\
-	current->softirq_context--;		\
-} while (0)
-
-#else
 # define lockdep_softirq_enter()		do { } while (0)
 # define lockdep_softirq_exit()			do { } while (0)
-#endif
 
-#if defined(CONFIG_IRQSOFF_TRACER) || \
-	defined(CONFIG_PREEMPT_TRACER)
- extern void stop_critical_timings(void);
- extern void start_critical_timings(void);
-#else
 # define stop_critical_timings() do { } while (0)
 # define start_critical_timings() do { } while (0)
-#endif
 
 #define raw_check_bogus_irq_restore() do { } while (0)
 

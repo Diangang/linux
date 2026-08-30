@@ -86,9 +86,6 @@ struct anon_vma_chain {
 	struct list_head same_vma;   /* locked by mmap_lock & page_table_lock */
 	struct rb_node rb;			/* locked by anon_vma->rwsem */
 	unsigned long rb_subtree_last;
-#ifdef CONFIG_DEBUG_VM_RB
-	unsigned long cached_vma_start, cached_vma_last;
-#endif
 };
 
 enum ttu_flags {
@@ -557,11 +554,7 @@ static __always_inline void folio_dup_file_rmap_pte(struct folio *folio,
 static inline void folio_dup_file_rmap_pmd(struct folio *folio,
 		struct page *page, struct vm_area_struct *dst_vma)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	__folio_dup_file_rmap(folio, page, HPAGE_PMD_NR, dst_vma, PGTABLE_LEVEL_PTE);
-#else
 	WARN_ON_ONCE(true);
-#endif
 }
 
 static __always_inline int __folio_try_dup_anon_rmap(struct folio *folio,
@@ -696,13 +689,8 @@ static inline int folio_try_dup_anon_rmap_pmd(struct folio *folio,
 		struct page *page, struct vm_area_struct *dst_vma,
 		struct vm_area_struct *src_vma)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	return __folio_try_dup_anon_rmap(folio, page, HPAGE_PMD_NR, dst_vma,
-					 src_vma, PGTABLE_LEVEL_PMD);
-#else
 	WARN_ON_ONCE(true);
 	return -EBUSY;
-#endif
 }
 
 static __always_inline int __folio_try_share_anon_rmap(struct folio *folio,
@@ -830,13 +818,8 @@ static inline int folio_try_share_anon_rmap_pte(struct folio *folio,
 static inline int folio_try_share_anon_rmap_pmd(struct folio *folio,
 		struct page *page)
 {
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	return __folio_try_share_anon_rmap(folio, page, HPAGE_PMD_NR,
-					   PGTABLE_LEVEL_PMD);
-#else
 	WARN_ON_ONCE(true);
 	return -EBUSY;
-#endif
 }
 
 /*

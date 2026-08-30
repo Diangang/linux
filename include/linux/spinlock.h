@@ -207,7 +207,7 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 	_raw_spin_lock(((void)(subclass), (lock)))
 # define raw_spin_lock_nest_lock(lock, nest_lock)	_raw_spin_lock(lock)
 
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 
 #define raw_spin_lock_irqsave(lock, flags)			\
 	do {						\
@@ -258,7 +258,7 @@ static inline void do_raw_spin_unlock(raw_spinlock_t *lock) __releases(lock)
 /*
  * Pull the _spin_*()/_read_*()/_write_*() functions/declarations:
  */
-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+#if defined(CONFIG_SMP)
 # include <linux/spinlock_api_smp.h>
 #else
 # include <linux/spinlock_api_up.h>

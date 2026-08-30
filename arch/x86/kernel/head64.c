@@ -17,7 +17,6 @@
 #include <linux/start_kernel.h>
 #include <linux/io.h>
 #include <linux/memblock.h>
-#include <linux/cc_platform.h>
 #include <linux/pgtable.h>
 
 #include <asm/asm.h>
@@ -39,7 +38,6 @@
 #include <asm/realmode.h>
 #include <asm/extable.h>
 #include <asm/trapnr.h>
-#include <asm/sev.h>
 #include <asm/tdx.h>
 #include <asm/init.h>
 
@@ -160,10 +158,6 @@ void __init do_early_exception(struct pt_regs *regs, int trapnr)
 {
 	if (trapnr == X86_TRAP_PF &&
 	    early_make_pgtable(native_read_cr2()))
-		return;
-
-	if (IS_ENABLED(CONFIG_AMD_MEM_ENCRYPT) &&
-	    trapnr == X86_TRAP_VC && handle_vc_boot_ghcb(regs))
 		return;
 
 	if (trapnr == X86_TRAP_VE && tdx_early_handle_ve(regs))
@@ -304,12 +298,5 @@ void __init __noreturn x86_64_start_reservations(char *real_mode_data)
 
 void early_setup_idt(void)
 {
-	void *handler = NULL;
-
-	if (IS_ENABLED(CONFIG_AMD_MEM_ENCRYPT)) {
-		setup_ghcb();
-		handler = vc_boot_ghcb;
-	}
-
-	__pi_startup_64_load_idt(handler);
+	__pi_startup_64_load_idt(NULL);
 }

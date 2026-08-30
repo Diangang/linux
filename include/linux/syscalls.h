@@ -128,85 +128,12 @@ struct file_attr;
 #define __SC_ARGS(t, a)	a
 #define __SC_TEST(t, a) (void)BUILD_BUG_ON_ZERO(!__TYPE_IS_LL(t) && sizeof(t) > sizeof(long))
 
-#ifdef CONFIG_FTRACE_SYSCALLS
-#define __SC_STR_ADECL(t, a)	#a
-#define __SC_STR_TDECL(t, a)	#t
-
-extern struct trace_event_class event_class_syscall_enter;
-extern struct trace_event_class event_class_syscall_exit;
-extern struct trace_event_functions enter_syscall_print_funcs;
-extern struct trace_event_functions exit_syscall_print_funcs;
-
-#define SYSCALL_TRACE_ENTER_EVENT(sname)				\
-	static struct syscall_metadata __syscall_meta_##sname;		\
-	static struct trace_event_call __used				\
-	  event_enter_##sname = {					\
-		.class			= &event_class_syscall_enter,	\
-		{							\
-			.name                   = "sys_enter"#sname,	\
-		},							\
-		.event.funcs            = &enter_syscall_print_funcs,	\
-		.data			= (void *)&__syscall_meta_##sname,\
-		.flags                  = TRACE_EVENT_FL_CAP_ANY,	\
-	};								\
-	static struct trace_event_call __used				\
-	  __section("_ftrace_events")					\
-	 *__event_enter_##sname = &event_enter_##sname;
-
-#define SYSCALL_TRACE_EXIT_EVENT(sname)					\
-	static struct syscall_metadata __syscall_meta_##sname;		\
-	static struct trace_event_call __used				\
-	  event_exit_##sname = {					\
-		.class			= &event_class_syscall_exit,	\
-		{							\
-			.name                   = "sys_exit"#sname,	\
-		},							\
-		.event.funcs		= &exit_syscall_print_funcs,	\
-		.data			= (void *)&__syscall_meta_##sname,\
-		.flags                  = TRACE_EVENT_FL_CAP_ANY,	\
-	};								\
-	static struct trace_event_call __used				\
-	  __section("_ftrace_events")					\
-	*__event_exit_##sname = &event_exit_##sname;
-
-#define SYSCALL_METADATA(sname, nb, ...)			\
-	static const char *types_##sname[] = {			\
-		__MAP(nb,__SC_STR_TDECL,__VA_ARGS__)		\
-	};							\
-	static const char *args_##sname[] = {			\
-		__MAP(nb,__SC_STR_ADECL,__VA_ARGS__)		\
-	};							\
-	SYSCALL_TRACE_ENTER_EVENT(sname);			\
-	SYSCALL_TRACE_EXIT_EVENT(sname);			\
-	static struct syscall_metadata __used			\
-	  __syscall_meta_##sname = {				\
-		.name 		= "sys"#sname,			\
-		.syscall_nr	= -1,	/* Filled in at boot */	\
-		.nb_args 	= nb,				\
-		.types		= nb ? types_##sname : NULL,	\
-		.args		= nb ? args_##sname : NULL,	\
-		.enter_event	= &event_enter_##sname,		\
-		.exit_event	= &event_exit_##sname,		\
-		.enter_fields	= LIST_HEAD_INIT(__syscall_meta_##sname.enter_fields), \
-	};							\
-	static struct syscall_metadata __used			\
-	  __section("__syscalls_metadata")			\
-	 *__p_syscall_meta_##sname = &__syscall_meta_##sname;
-
-static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
-{
-	return tp_event->class == &event_class_syscall_enter ||
-	       tp_event->class == &event_class_syscall_exit;
-}
-
-#else
 #define SYSCALL_METADATA(sname, nb, ...)
 
 static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
 {
 	return 0;
 }
-#endif
 
 #ifndef SYSCALL_DEFINE0
 #define SYSCALL_DEFINE0(sname)					\
@@ -265,15 +192,6 @@ static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
 #endif
 #define SC_VAL64(type, name) ((type) name##_hi << 32 | name##_lo)
 
-#ifdef CONFIG_COMPAT
-#define SYSCALL32_DEFINE0 COMPAT_SYSCALL_DEFINE0
-#define SYSCALL32_DEFINE1 COMPAT_SYSCALL_DEFINE1
-#define SYSCALL32_DEFINE2 COMPAT_SYSCALL_DEFINE2
-#define SYSCALL32_DEFINE3 COMPAT_SYSCALL_DEFINE3
-#define SYSCALL32_DEFINE4 COMPAT_SYSCALL_DEFINE4
-#define SYSCALL32_DEFINE5 COMPAT_SYSCALL_DEFINE5
-#define SYSCALL32_DEFINE6 COMPAT_SYSCALL_DEFINE6
-#else
 #define SYSCALL32_DEFINE0 SYSCALL_DEFINE0
 #define SYSCALL32_DEFINE1 SYSCALL_DEFINE1
 #define SYSCALL32_DEFINE2 SYSCALL_DEFINE2
@@ -281,7 +199,6 @@ static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
 #define SYSCALL32_DEFINE4 SYSCALL_DEFINE4
 #define SYSCALL32_DEFINE5 SYSCALL_DEFINE5
 #define SYSCALL32_DEFINE6 SYSCALL_DEFINE6
-#endif
 
 /*
  * These syscall function prototypes are kept in the same order as
@@ -771,13 +688,8 @@ asmlinkage long sys_keyctl(int cmd, unsigned long arg2, unsigned long arg3,
 asmlinkage long sys_clone(unsigned long, unsigned long, int __user *, unsigned long,
 	       int __user *);
 #else
-#ifdef CONFIG_CLONE_BACKWARDS3
-asmlinkage long sys_clone(unsigned long, unsigned long, int, int __user *,
-			  int __user *, unsigned long);
-#else
 asmlinkage long sys_clone(unsigned long, unsigned long, int __user *,
 	       int __user *, unsigned long);
-#endif
 #endif
 
 asmlinkage long sys_clone3(struct clone_args __user *uargs, size_t size);
@@ -1084,31 +996,6 @@ asmlinkage long sys_kexec_file_load(int kernel_fd, int initrd_fd,
 asmlinkage long sys_waitpid(pid_t pid, int __user *stat_addr, int options);
 
 /* obsolete */
-#ifdef CONFIG_HAVE_UID16
-asmlinkage long sys_chown16(const char __user *filename,
-				old_uid_t user, old_gid_t group);
-asmlinkage long sys_lchown16(const char __user *filename,
-				old_uid_t user, old_gid_t group);
-asmlinkage long sys_fchown16(unsigned int fd, old_uid_t user, old_gid_t group);
-asmlinkage long sys_setregid16(old_gid_t rgid, old_gid_t egid);
-asmlinkage long sys_setgid16(old_gid_t gid);
-asmlinkage long sys_setreuid16(old_uid_t ruid, old_uid_t euid);
-asmlinkage long sys_setuid16(old_uid_t uid);
-asmlinkage long sys_setresuid16(old_uid_t ruid, old_uid_t euid, old_uid_t suid);
-asmlinkage long sys_getresuid16(old_uid_t __user *ruid,
-				old_uid_t __user *euid, old_uid_t __user *suid);
-asmlinkage long sys_setresgid16(old_gid_t rgid, old_gid_t egid, old_gid_t sgid);
-asmlinkage long sys_getresgid16(old_gid_t __user *rgid,
-				old_gid_t __user *egid, old_gid_t __user *sgid);
-asmlinkage long sys_setfsuid16(old_uid_t uid);
-asmlinkage long sys_setfsgid16(old_gid_t gid);
-asmlinkage long sys_getgroups16(int gidsetsize, old_gid_t __user *grouplist);
-asmlinkage long sys_setgroups16(int gidsetsize, old_gid_t __user *grouplist);
-asmlinkage long sys_getuid16(void);
-asmlinkage long sys_geteuid16(void);
-asmlinkage long sys_getgid16(void);
-asmlinkage long sys_getegid16(void);
-#endif
 
 /* obsolete */
 asmlinkage long sys_stat(const char __user *filename,
@@ -1173,15 +1060,11 @@ ssize_t ksys_pread64(unsigned int fd, char __user *buf, size_t count,
 ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf,
 		      size_t count, loff_t pos);
 int ksys_fallocate(int fd, int mode, loff_t offset, loff_t len);
-#ifdef CONFIG_ADVISE_SYSCALLS
-int ksys_fadvise64_64(int fd, loff_t offset, loff_t len, int advice);
-#else
 static inline int ksys_fadvise64_64(int fd, loff_t offset, loff_t len,
 				    int advice)
 {
 	return -EINVAL;
 }
-#endif
 unsigned long ksys_mmap_pgoff(unsigned long addr, unsigned long len,
 			      unsigned long prot, unsigned long flags,
 			      unsigned long fd, unsigned long pgoff);

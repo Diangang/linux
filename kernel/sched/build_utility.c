@@ -56,17 +56,8 @@
 
 #include "clock.c"
 
-#ifdef CONFIG_CGROUP_CPUACCT
-# include "cpuacct.c"
-#endif
 
-#ifdef CONFIG_CPU_FREQ
-# include "cpufreq.c"
-#endif
 
-#ifdef CONFIG_CPU_FREQ_GOV_SCHEDUTIL
-# include "cpufreq_schedutil.c"
-#endif
 
 #include "debug.c"
 
@@ -84,9 +75,6 @@
 
 
 
-#ifdef CONFIG_MEMBARRIER
-# include "membarrier.c"
-#endif
 
 #ifdef CONFIG_CPU_ISOLATION
 # include "isolation.c"

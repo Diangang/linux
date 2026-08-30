@@ -1203,11 +1203,7 @@ static void restore_bytes(struct kmem_cache *s, const char *message, u8 data,
 	memset(from, data, to - from);
 }
 
-#if 0
-#define pad_check_attributes noinline __no_kmsan_checks
-#else
 #define pad_check_attributes
-#endif
 
 static pad_check_attributes int
 check_bytes_and_report(struct kmem_cache *s, struct slab *slab,
@@ -1951,63 +1947,12 @@ static inline void dec_slabs_node(struct kmem_cache *s, int node,
 
 #ifdef CONFIG_SLAB_OBJ_EXT
 
-#ifdef CONFIG_MEM_ALLOC_PROFILING_DEBUG
-
-static inline void mark_obj_codetag_empty(const void *obj)
-{
-	struct slab *obj_slab;
-	unsigned long slab_exts;
-
-	obj_slab = virt_to_slab(obj);
-	slab_exts = slab_obj_exts(obj_slab);
-	if (slab_exts) {
-		get_slab_obj_exts(slab_exts);
-		unsigned int offs = obj_to_index(obj_slab->slab_cache,
-						 obj_slab, obj);
-		struct slabobj_ext *ext = slab_obj_ext(obj_slab,
-						       slab_exts, offs);
-
-		if (unlikely(is_codetag_empty(&ext->ref))) {
-			put_slab_obj_exts(slab_exts);
-			return;
-		}
-
-		/* codetag should be NULL here */
-		WARN_ON(ext->ref.ct);
-		set_codetag_empty(&ext->ref);
-		put_slab_obj_exts(slab_exts);
-	}
-}
-
-static inline bool mark_failed_objexts_alloc(struct slab *slab)
-{
-	return cmpxchg(&slab->obj_exts, 0, OBJEXTS_ALLOC_FAIL) == 0;
-}
-
-static inline void handle_failed_objexts_alloc(unsigned long obj_exts,
-			struct slabobj_ext *vec, unsigned int objects)
-{
-	/*
-	 * If vector previously failed to allocate then we have live
-	 * objects with no tag reference. Mark all references in this
-	 * vector as empty to avoid warnings later on.
-	 */
-	if (obj_exts == OBJEXTS_ALLOC_FAIL) {
-		unsigned int i;
-
-		for (i = 0; i < objects; i++)
-			set_codetag_empty(&vec[i].ref);
-	}
-}
-
-#else /* CONFIG_MEM_ALLOC_PROFILING_DEBUG */
 
 static inline void mark_obj_codetag_empty(const void *obj) {}
 static inline bool mark_failed_objexts_alloc(struct slab *slab) { return false; }
 static inline void handle_failed_objexts_alloc(unsigned long obj_exts,
 			struct slabobj_ext *vec, unsigned int objects) {}
 
-#endif /* CONFIG_MEM_ALLOC_PROFILING_DEBUG */
 
 static inline void init_slab_obj_exts(struct slab *slab)
 {
@@ -2095,9 +2040,6 @@ int alloc_slab_obj_exts(struct slab *slab, struct kmem_cache *s,
 			virt_to_slab(vec)->slab_cache == s);
 
 	new_exts = (unsigned long)vec;
-#ifdef CONFIG_MEMCG
-	new_exts |= MEMCG_DATA_OBJEXTS;
-#endif
 retry:
 	old_exts = READ_ONCE(slab->obj_exts);
 	handle_failed_objexts_alloc(old_exts, vec, objects);
@@ -2189,9 +2131,6 @@ static void alloc_slab_obj_exts_early(struct kmem_cache *s, struct slab *slab)
 		memset(addr, 0, obj_exts_size_in_slab(slab));
 		put_slab_obj_exts(obj_exts);
 
-#ifdef CONFIG_MEMCG
-		obj_exts |= MEMCG_DATA_OBJEXTS;
-#endif
 		slab->obj_exts = obj_exts;
 	} else if (s->flags & SLAB_OBJ_EXT_IN_OBJ) {
 		unsigned int offset = obj_exts_offset_in_object(s);
@@ -2206,9 +2145,6 @@ static void alloc_slab_obj_exts_early(struct kmem_cache *s, struct slab *slab)
 			       sizeof(struct slabobj_ext));
 		put_slab_obj_exts(obj_exts);
 
-#ifdef CONFIG_MEMCG
-		obj_exts |= MEMCG_DATA_OBJEXTS;
-#endif
 		slab->obj_exts = obj_exts;
 		slab_set_stride(slab, s->size);
 	}
@@ -2255,112 +2191,6 @@ alloc_tagging_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
 
 
 
-#ifdef CONFIG_MEMCG
-
-static void memcg_alloc_abort_single(struct kmem_cache *s, void *object);
-
-static __fastpath_inline
-bool memcg_slab_post_alloc_hook(struct kmem_cache *s, struct list_lru *lru,
-				gfp_t flags, size_t size, void **p)
-{
-	if (likely(!memcg_kmem_online()))
-		return true;
-
-	if (likely(!(flags & __GFP_ACCOUNT) && !(s->flags & SLAB_ACCOUNT)))
-		return true;
-
-	if (likely(__memcg_slab_post_alloc_hook(s, lru, flags, size, p)))
-		return true;
-
-	if (likely(size == 1)) {
-		memcg_alloc_abort_single(s, *p);
-		*p = NULL;
-	} else {
-		kmem_cache_free_bulk(s, size, p);
-	}
-
-	return false;
-}
-
-static __fastpath_inline
-void memcg_slab_free_hook(struct kmem_cache *s, struct slab *slab, void **p,
-			  int objects)
-{
-	unsigned long obj_exts;
-
-	if (!memcg_kmem_online())
-		return;
-
-	obj_exts = slab_obj_exts(slab);
-	if (likely(!obj_exts))
-		return;
-
-	get_slab_obj_exts(obj_exts);
-	__memcg_slab_free_hook(s, slab, p, objects, obj_exts);
-	put_slab_obj_exts(obj_exts);
-}
-
-static __fastpath_inline
-bool memcg_slab_post_charge(void *p, gfp_t flags)
-{
-	unsigned long obj_exts;
-	struct slabobj_ext *obj_ext;
-	struct kmem_cache *s;
-	struct page *page;
-	struct slab *slab;
-	unsigned long off;
-
-	page = virt_to_page(p);
-	if (PageLargeKmalloc(page)) {
-		unsigned int order;
-		int size;
-
-		if (PageMemcgKmem(page))
-			return true;
-
-		order = large_kmalloc_order(page);
-		if (__memcg_kmem_charge_page(page, flags, order))
-			return false;
-
-		/*
-		 * This page has already been accounted in the global stats but
-		 * not in the memcg stats. So, subtract from the global and use
-		 * the interface which adds to both global and memcg stats.
-		 */
-		size = PAGE_SIZE << order;
-		mod_node_page_state(page_pgdat(page), NR_SLAB_UNRECLAIMABLE_B, -size);
-		mod_lruvec_page_state(page, NR_SLAB_UNRECLAIMABLE_B, size);
-		return true;
-	}
-
-	slab = page_slab(page);
-	s = slab->slab_cache;
-
-	/*
-	 * Ignore KMALLOC_NORMAL cache to avoid possible circular dependency
-	 * of slab_obj_exts being allocated from the same slab and thus the slab
-	 * becoming effectively unfreeable.
-	 */
-	if (is_kmalloc_normal(s))
-		return true;
-
-	/* Ignore already charged objects. */
-	obj_exts = slab_obj_exts(slab);
-	if (obj_exts) {
-		get_slab_obj_exts(obj_exts);
-		off = obj_to_index(s, slab, p);
-		obj_ext = slab_obj_ext(slab, obj_exts, off);
-		if (unlikely(obj_ext->objcg)) {
-			put_slab_obj_exts(obj_exts);
-			return true;
-		}
-		put_slab_obj_exts(obj_exts);
-	}
-
-	return __memcg_slab_post_alloc_hook(s, NULL, flags, 1, &p);
-}
-
-#else /* CONFIG_MEMCG */
 static inline bool memcg_slab_post_alloc_hook(struct kmem_cache *s,
 					      struct list_lru *lru,
 					      gfp_t flags, size_t size,
@@ -2378,7 +2208,6 @@ static inline bool memcg_slab_post_charge(void *p, gfp_t flags)
 {
 	return true;
 }
-#endif /* CONFIG_MEMCG */
 
 
 /*
@@ -5651,16 +5480,6 @@ static __always_inline bool can_free_to_pcs(struct slab *slab)
 
 	slab_node = slab_nid(slab);
 
-#ifdef CONFIG_HAVE_MEMORYLESS_NODES
-	/*
-	 * numa_mem_id() points to the closest node with memory so only allow
-	 * objects from that node to the percpu sheaves
-	 */
-	numa_node = numa_mem_id();
-
-	if (likely(slab_node == numa_node))
-		goto check_pfmemalloc;
-#else
 
 	/*
 	 * numa_mem_id() is only a wrapper to numa_node_id() which is where this
@@ -5684,7 +5503,6 @@ static __always_inline bool can_free_to_pcs(struct slab *slab)
 	 */
 	if (unlikely(!node_state(numa_node, N_NORMAL_MEMORY)))
 		goto check_pfmemalloc;
-#endif
 
 	return false;
 
@@ -5902,19 +5720,6 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	stat(s, FREE_SLOWPATH);
 }
 
-#ifdef CONFIG_MEMCG
-/* Do not inline the rare memcg charging failed path into the allocation path */
-static noinline
-void memcg_alloc_abort_single(struct kmem_cache *s, void *object)
-{
-	struct slab *slab = virt_to_slab(object);
-
-	alloc_tagging_slab_free_hook(s, slab, &object, 1);
-
-	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false)))
-		__slab_free(s, slab, object, object, 1, _RET_IP_);
-}
-#endif
 
 static __fastpath_inline
 void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
@@ -5933,13 +5738,6 @@ void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
 }
 
 
-#if 0
-void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr)
-{
-	__slab_free(cache, virt_to_slab(x), x, x, 1, addr);
-	stat(cache, FREE_SLOWPATH);
-}
-#endif
 
 static noinline void warn_free_bad_obj(struct kmem_cache *s, void *obj)
 {
@@ -5977,8 +5775,7 @@ void kmem_cache_free(struct kmem_cache *s, void *x)
 
 	slab = virt_to_slab(x);
 
-	if (IS_ENABLED(CONFIG_SLAB_FREELIST_HARDENED) ||
-	    kmem_cache_debug_flags(s, SLAB_CONSISTENCY_CHECKS)) {
+	if (kmem_cache_debug_flags(s, SLAB_CONSISTENCY_CHECKS)) {
 
 		/*
 		 * Intentionally leak the object in these cases, because it
@@ -7714,55 +7511,6 @@ __core_param_cb(slab_strict_numa, &param_ops_slab_strict_numa, NULL, 0);
 #endif
 
 
-#ifdef CONFIG_HARDENED_USERCOPY
-/*
- * Rejects incorrectly sized objects and objects that are to be copied
- * to/from userspace but do not fall entirely within the containing slab
- * cache's usercopy region.
- *
- * Returns NULL if check passes, otherwise const char * to name of cache
- * to indicate an error.
- */
-void __check_heap_object(const void *ptr, unsigned long n,
-			 const struct slab *slab, bool to_user)
-{
-	struct kmem_cache *s;
-	unsigned int offset;
-	bool is_kfence = is_kfence_address(ptr);
-
-	ptr = kasan_reset_tag(ptr);
-
-	/* Find object and usable object size. */
-	s = slab->slab_cache;
-
-	/* Reject impossible pointers. */
-	if (ptr < slab_address(slab))
-		usercopy_abort("SLUB object not in SLUB page?!", NULL,
-			       to_user, 0, n);
-
-	/* Find offset within object. */
-	if (is_kfence)
-		offset = ptr - kfence_object_start(ptr);
-	else
-		offset = (ptr - slab_address(slab)) % s->size;
-
-	/* Adjust for redzone and reject if within the redzone. */
-	if (!is_kfence && kmem_cache_debug_flags(s, SLAB_RED_ZONE)) {
-		if (offset < s->red_left_pad)
-			usercopy_abort("SLUB object in left red zone",
-				       s->name, to_user, offset, n);
-		offset -= s->red_left_pad;
-	}
-
-	/* Allow address range falling entirely within usercopy region. */
-	if (offset >= s->useroffset &&
-	    offset - s->useroffset <= s->usersize &&
-	    n <= s->useroffset - offset + s->usersize)
-		return;
-
-	usercopy_abort("SLUB object", s->name, to_user, offset, n);
-}
-#endif /* CONFIG_HARDENED_USERCOPY */
 
 #define SHRINK_PROMOTE_MAX 32
 
@@ -8130,10 +7878,6 @@ int do_kmem_cache_create(struct kmem_cache *s, const char *name,
 	s->flags = kmem_cache_flags(flags, s->name);
 	s->align = args->align;
 	s->ctor = args->ctor;
-#ifdef CONFIG_HARDENED_USERCOPY
-	s->useroffset = args->useroffset;
-	s->usersize = args->usersize;
-#endif
 
 	if (!calculate_sizes(args, s))
 		goto out;
@@ -8544,13 +8288,6 @@ static ssize_t cache_dma_show(struct kmem_cache *s, char *buf)
 SLAB_ATTR_RO(cache_dma);
 #endif
 
-#ifdef CONFIG_HARDENED_USERCOPY
-static ssize_t usersize_show(struct kmem_cache *s, char *buf)
-{
-	return sysfs_emit(buf, "%u\n", s->usersize);
-}
-SLAB_ATTR_RO(usersize);
-#endif
 
 static ssize_t destroy_by_rcu_show(struct kmem_cache *s, char *buf)
 {
@@ -8631,27 +8368,6 @@ SLAB_ATTR(validate);
 
 #endif /* CONFIG_SLUB_DEBUG */
 
-#ifdef CONFIG_FAILSLAB
-static ssize_t failslab_show(struct kmem_cache *s, char *buf)
-{
-	return sysfs_emit(buf, "%d\n", !!(s->flags & SLAB_FAILSLAB));
-}
-
-static ssize_t failslab_store(struct kmem_cache *s, const char *buf,
-				size_t length)
-{
-	if (s->refcount > 1)
-		return -EINVAL;
-
-	if (buf[0] == '1')
-		WRITE_ONCE(s->flags, s->flags | SLAB_FAILSLAB);
-	else
-		WRITE_ONCE(s->flags, s->flags & ~SLAB_FAILSLAB);
-
-	return length;
-}
-SLAB_ATTR(failslab);
-#endif
 
 static ssize_t shrink_show(struct kmem_cache *s, char *buf)
 {
@@ -8730,12 +8446,6 @@ static const struct attribute *const slab_attrs[] = {
 #endif
 #ifdef CONFIG_NUMA
 	&remote_node_defrag_ratio_attr.attr,
-#endif
-#ifdef CONFIG_FAILSLAB
-	&failslab_attr.attr,
-#endif
-#ifdef CONFIG_HARDENED_USERCOPY
-	&usersize_attr.attr,
 #endif
 	NULL
 };

@@ -53,9 +53,6 @@ struct backing_file {
 		struct path user_path;
 		freeptr_t bf_freeptr;
 	};
-#ifdef CONFIG_SECURITY
-	void *security;
-#endif
 };
 
 #define backing_file(f) container_of(f, struct backing_file, file)
@@ -72,17 +69,6 @@ void backing_file_set_user_path(struct file *f, const struct path *path)
 }
 EXPORT_SYMBOL_GPL(backing_file_set_user_path);
 
-#ifdef CONFIG_SECURITY
-void *backing_file_security(const struct file *f)
-{
-	return backing_file(f)->security;
-}
-
-void backing_file_set_security(struct file *f, void *security)
-{
-	backing_file(f)->security = security;
-}
-#endif /* CONFIG_SECURITY */
 
 static inline void backing_file_free(struct backing_file *ff)
 {
@@ -205,9 +191,6 @@ static int init_file(struct file *f, int flags, const struct cred *cred)
 	f->private_data = NULL;
 	f->f_inode	= NULL;
 	f->f_owner	= NULL;
-#ifdef CONFIG_EPOLL
-	f->f_ep		= NULL;
-#endif
 
 	f->f_iocb_flags = 0;
 	f->f_pos	= 0;

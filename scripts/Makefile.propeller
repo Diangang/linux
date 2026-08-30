@@ -18,16 +18,4 @@ endif
 # Propeller requires debug information to embed module names in the profiles.
 CFLAGS_PROPELLER_CLANG += -gmlt
 
-ifdef CONFIG_LTO_CLANG_THIN
-  ifdef CLANG_PROPELLER_PROFILE_PREFIX
-    KBUILD_LDFLAGS += --lto-basic-block-sections=$(CLANG_PROPELLER_PROFILE_PREFIX)_cc_profile.txt
-  else
-    ifeq ($(call test-ge, $(CONFIG_LLD_VERSION), 200000),y)
-       KBUILD_LDFLAGS += --lto-basic-block-address-map
-    else
-       KBUILD_LDFLAGS += --lto-basic-block-sections=labels
-    endif
-  endif
-endif
-
 export CFLAGS_PROPELLER_CLANG

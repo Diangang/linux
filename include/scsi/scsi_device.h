@@ -572,13 +572,8 @@ extern int scsi_vpd_lun_id(struct scsi_device *, char *, size_t);
 extern int scsi_vpd_lun_serial(struct scsi_device *, char *, size_t);
 extern int scsi_vpd_tpg_id(struct scsi_device *, int *);
 
-#ifdef CONFIG_PM
-extern int scsi_autopm_get_device(struct scsi_device *);
-extern void scsi_autopm_put_device(struct scsi_device *);
-#else
 static inline int scsi_autopm_get_device(struct scsi_device *d) { return 0; }
 static inline void scsi_autopm_put_device(struct scsi_device *d) {}
-#endif /* CONFIG_PM */
 
 static inline int __must_check scsi_device_reprobe(struct scsi_device *sdev)
 {

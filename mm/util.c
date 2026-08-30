@@ -346,11 +346,7 @@ unsigned long randomize_stack_top(unsigned long stack_top)
 		random_variable &= STACK_RND_MASK;
 		random_variable <<= PAGE_SHIFT;
 	}
-#ifdef CONFIG_STACK_GROWSUP
-	return PAGE_ALIGN(stack_top) + random_variable;
-#else
 	return PAGE_ALIGN(stack_top) - random_variable;
-#endif
 }
 
 /**
@@ -416,8 +412,7 @@ static int mmap_is_legacy(const struct rlimit *rlim_stack)
 
 	/* On parisc the stack always grows up - so a unlimited stack should
 	 * not be an indicator to use the legacy memory layout. */
-	if (rlim_stack->rlim_cur == RLIM_INFINITY &&
-		!IS_ENABLED(CONFIG_STACK_GROWSUP))
+	if (rlim_stack->rlim_cur == RLIM_INFINITY)
 		return 1;
 
 	return sysctl_legacy_va_layout;
@@ -432,15 +427,6 @@ static int mmap_is_legacy(const struct rlimit *rlim_stack)
 
 static unsigned long mmap_base(const unsigned long rnd, const struct rlimit *rlim_stack)
 {
-#ifdef CONFIG_STACK_GROWSUP
-	/*
-	 * For an upwards growing stack the calculation is much simpler.
-	 * Memory for the maximum stack size is reserved at the top of the
-	 * task. mmap_base starts directly below the stack and grows
-	 * downwards.
-	 */
-	return PAGE_ALIGN_DOWN(mmap_upper_limit(rlim_stack) - rnd);
-#else
 	unsigned long gap = rlim_stack->rlim_cur;
 	unsigned long pad = stack_guard_gap;
 
@@ -458,7 +444,6 @@ static unsigned long mmap_base(const unsigned long rnd, const struct rlimit *rli
 		gap = MAX_GAP;
 
 	return PAGE_ALIGN(STACK_TOP - gap - rnd);
-#endif
 }
 
 void arch_pick_mmap_layout(struct mm_struct *mm, const struct rlimit *rlim_stack)
@@ -632,9 +617,6 @@ unsigned long vm_mmap_shadow_stack(unsigned long addr, unsigned long len,
 	flags |= MAP_ANONYMOUS | MAP_PRIVATE;
 	if (addr)
 		flags |= MAP_FIXED_NOREPLACE;
-
-	if (IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE))
-		vm_flags |= VM_NOHUGEPAGE;
 
 	mmap_write_lock(mm);
 	ret = do_mmap(NULL, addr, len, PROT_READ | PROT_WRITE, flags,

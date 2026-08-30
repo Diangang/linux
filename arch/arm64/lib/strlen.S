@@ -48,11 +48,7 @@
  * (16-byte) granularity, and we must ensure that no access straddles this
  * alignment boundary.
  */
-#if 0
-#define MIN_PAGE_SIZE MTE_GRANULE_SIZE
-#else
 #define MIN_PAGE_SIZE 4096
-#endif
 
 	/* Since strings are short on average, we check the first 16 bytes
 	   of the string for a NUL character.  In order to do an unaligned ldp

@@ -96,31 +96,8 @@ static int blk_validate_zoned_limits(struct queue_limits *lim)
 		return 0;
 	}
 
-	if (WARN_ON_ONCE(!IS_ENABLED(CONFIG_BLK_DEV_ZONED)))
-		return -EINVAL;
-
-	/*
-	 * Given that active zones include open zones, the maximum number of
-	 * open zones cannot be larger than the maximum number of active zones.
-	 */
-	if (lim->max_active_zones &&
-	    lim->max_open_zones > lim->max_active_zones)
-		return -EINVAL;
-
-	if (lim->zone_write_granularity < lim->logical_block_size)
-		lim->zone_write_granularity = lim->logical_block_size;
-
-	/*
-	 * The Zone Append size is limited by the maximum I/O size and the zone
-	 * size given that it can't span zones.
-	 *
-	 * If no max_hw_zone_append_sectors limit is provided, the block layer
-	 * will emulated it, else we're also bound by the hardware limit.
-	 */
-	lim->max_zone_append_sectors =
-		min_not_zero(lim->max_hw_zone_append_sectors,
-			min(lim->chunk_sectors, lim->max_hw_sectors));
-	return 0;
+	WARN_ON_ONCE(lim->features & BLK_FEAT_ZONED);
+	return -EINVAL;
 }
 
 static int blk_validate_integrity_limits(struct queue_limits *lim)
@@ -137,76 +114,8 @@ static int blk_validate_integrity_limits(struct queue_limits *lim)
 		return 0;
 	}
 
-	if (!IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY)) {
-		pr_warn("integrity support disabled.\n");
-		return -EINVAL;
-	}
-
-	if (bi->csum_type == BLK_INTEGRITY_CSUM_NONE &&
-	    (bi->flags & BLK_INTEGRITY_REF_TAG)) {
-		pr_warn("ref tag not support without checksum.\n");
-		return -EINVAL;
-	}
-
-	if (bi->pi_offset + bi->pi_tuple_size > bi->metadata_size) {
-		pr_warn("pi_offset (%u) + pi_tuple_size (%u) exceeds metadata_size (%u)\n",
-			bi->pi_offset, bi->pi_tuple_size, bi->metadata_size);
-		return -EINVAL;
-	}
-
-	switch (bi->csum_type) {
-	case BLK_INTEGRITY_CSUM_NONE:
-		if (bi->pi_tuple_size) {
-			pr_warn("pi_tuple_size must be 0 when checksum type is none\n");
-			return -EINVAL;
-		}
-		break;
-	case BLK_INTEGRITY_CSUM_CRC:
-	case BLK_INTEGRITY_CSUM_IP:
-		if (bi->pi_tuple_size != sizeof(struct t10_pi_tuple)) {
-			pr_warn("pi_tuple_size mismatch for T10 PI: expected %zu, got %u\n",
-				 sizeof(struct t10_pi_tuple),
-				 bi->pi_tuple_size);
-			return -EINVAL;
-		}
-		break;
-	case BLK_INTEGRITY_CSUM_CRC64:
-		if (bi->pi_tuple_size != sizeof(struct crc64_pi_tuple)) {
-			pr_warn("pi_tuple_size mismatch for CRC64 PI: expected %zu, got %u\n",
-				 sizeof(struct crc64_pi_tuple),
-				 bi->pi_tuple_size);
-			return -EINVAL;
-		}
-		break;
-	}
-
-	if (!bi->interval_exp) {
-		bi->interval_exp = ilog2(lim->logical_block_size);
-	} else if (bi->interval_exp < SECTOR_SHIFT ||
-		   bi->interval_exp > ilog2(lim->logical_block_size)) {
-		pr_warn("invalid interval_exp %u\n", bi->interval_exp);
-		return -EINVAL;
-	}
-
-	/*
-	 * Some IO controllers can not handle data intervals straddling
-	 * multiple bio_vecs.  For those, enforce alignment so that those are
-	 * never generated, and that each buffer is aligned as expected.
-	 */
-	if (!(bi->flags & BLK_SPLIT_INTERVAL_CAPABLE) && bi->csum_type) {
-		lim->dma_alignment = max(lim->dma_alignment,
-					(1U << bi->interval_exp) - 1);
-	}
-
-	/*
-	 * The block layer automatically adds integrity data for bios that don't
-	 * already have it.  Limit the I/O size so that a single maximum size
-	 * metadata segment can cover the integrity data for the entire I/O.
-	 */
-	lim->max_sectors = min(lim->max_sectors,
-		max_integrity_io_size(lim) >> SECTOR_SHIFT);
-
-	return 0;
+	pr_warn("integrity support disabled.\n");
+	return -EINVAL;
 }
 
 /*
@@ -964,46 +873,7 @@ EXPORT_SYMBOL_GPL(queue_limits_stack_bdev);
 bool queue_limits_stack_integrity(struct queue_limits *t,
 		struct queue_limits *b)
 {
-	struct blk_integrity *ti = &t->integrity;
-	struct blk_integrity *bi = &b->integrity;
-
-	if (!IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY))
-		return true;
-
-	if (ti->flags & BLK_INTEGRITY_STACKED) {
-		if (ti->metadata_size != bi->metadata_size)
-			goto incompatible;
-		if (ti->interval_exp != bi->interval_exp)
-			goto incompatible;
-		if (ti->tag_size != bi->tag_size)
-			goto incompatible;
-		if (ti->csum_type != bi->csum_type)
-			goto incompatible;
-		if (ti->pi_tuple_size != bi->pi_tuple_size)
-			goto incompatible;
-		if ((ti->flags & BLK_INTEGRITY_REF_TAG) !=
-		    (bi->flags & BLK_INTEGRITY_REF_TAG))
-			goto incompatible;
-		if ((ti->flags & BLK_SPLIT_INTERVAL_CAPABLE) &&
-		    !(bi->flags & BLK_SPLIT_INTERVAL_CAPABLE))
-			ti->flags &= ~BLK_SPLIT_INTERVAL_CAPABLE;
-	} else {
-		ti->flags = BLK_INTEGRITY_STACKED;
-		ti->flags |= (bi->flags & BLK_INTEGRITY_DEVICE_CAPABLE) |
-			     (bi->flags & BLK_INTEGRITY_REF_TAG) |
-			     (bi->flags & BLK_SPLIT_INTERVAL_CAPABLE);
-		ti->csum_type = bi->csum_type;
-		ti->pi_tuple_size = bi->pi_tuple_size;
-		ti->metadata_size = bi->metadata_size;
-		ti->pi_offset = bi->pi_offset;
-		ti->interval_exp = bi->interval_exp;
-		ti->tag_size = bi->tag_size;
-	}
 	return true;
-
-incompatible:
-	memset(ti, 0, sizeof(*ti));
-	return false;
 }
 EXPORT_SYMBOL_GPL(queue_limits_stack_integrity);
 

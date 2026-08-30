@@ -412,58 +412,6 @@ put_compat_sigset(compat_sigset_t __user *compat, const sigset_t *set,
 #endif
 }
 
-#if 0
-#define unsafe_put_compat_sigset(compat, set, label) do {		\
-	compat_sigset_t __user *__c = compat;				\
-	const sigset_t *__s = set;					\
-									\
-	switch (_NSIG_WORDS) {						\
-	case 4:								\
-		unsafe_put_user(__s->sig[3] >> 32, &__c->sig[7], label);	\
-		unsafe_put_user(__s->sig[3], &__c->sig[6], label);	\
-		fallthrough;						\
-	case 3:								\
-		unsafe_put_user(__s->sig[2] >> 32, &__c->sig[5], label);	\
-		unsafe_put_user(__s->sig[2], &__c->sig[4], label);	\
-		fallthrough;						\
-	case 2:								\
-		unsafe_put_user(__s->sig[1] >> 32, &__c->sig[3], label);	\
-		unsafe_put_user(__s->sig[1], &__c->sig[2], label);	\
-		fallthrough;						\
-	case 1:								\
-		unsafe_put_user(__s->sig[0] >> 32, &__c->sig[1], label);	\
-		unsafe_put_user(__s->sig[0], &__c->sig[0], label);	\
-	}								\
-} while (0)
-
-#define unsafe_get_compat_sigset(set, compat, label) do {		\
-	const compat_sigset_t __user *__c = compat;			\
-	compat_sigset_word hi, lo;					\
-	sigset_t *__s = set;						\
-									\
-	switch (_NSIG_WORDS) {						\
-	case 4:								\
-		unsafe_get_user(lo, &__c->sig[7], label);		\
-		unsafe_get_user(hi, &__c->sig[6], label);		\
-		__s->sig[3] = hi | (((long)lo) << 32);			\
-		fallthrough;						\
-	case 3:								\
-		unsafe_get_user(lo, &__c->sig[5], label);		\
-		unsafe_get_user(hi, &__c->sig[4], label);		\
-		__s->sig[2] = hi | (((long)lo) << 32);			\
-		fallthrough;						\
-	case 2:								\
-		unsafe_get_user(lo, &__c->sig[3], label);		\
-		unsafe_get_user(hi, &__c->sig[2], label);		\
-		__s->sig[1] = hi | (((long)lo) << 32);			\
-		fallthrough;						\
-	case 1:								\
-		unsafe_get_user(lo, &__c->sig[1], label);		\
-		unsafe_get_user(hi, &__c->sig[0], label);		\
-		__s->sig[0] = hi | (((long)lo) << 32);			\
-	}								\
-} while (0)
-#else
 #define unsafe_put_compat_sigset(compat, set, label) do {		\
 	compat_sigset_t __user *__c = compat;				\
 	const sigset_t *__s = set;					\
@@ -477,7 +425,6 @@ put_compat_sigset(compat_sigset_t __user *compat, const sigset_t *set,
 									\
 	unsafe_copy_from_user(__s, __c, sizeof(*__c), label);		\
 } while (0)
-#endif
 
 extern int compat_ptrace_request(struct task_struct *child,
 				 compat_long_t request,
@@ -855,25 +802,12 @@ int kcompat_sys_statfs64(const char __user * pathname, compat_size_t sz,
 int kcompat_sys_fstatfs64(unsigned int fd, compat_size_t sz,
 			  struct compat_statfs64 __user * buf);
 
-#ifdef CONFIG_COMPAT
-
-/*
- * For most but not all architectures, "am I in a compat syscall?" and
- * "am I a compat task?" are the same question.  For architectures on which
- * they aren't the same question, arch code can override in_compat_syscall.
- */
-#ifndef in_compat_syscall
-static inline bool in_compat_syscall(void) { return is_compat_task(); }
-#endif
-
-#else /* !CONFIG_COMPAT */
 
 #define is_compat_task() (0)
 /* Ensure no one redefines in_compat_syscall() under !CONFIG_COMPAT */
 #define in_compat_syscall in_compat_syscall
 static inline bool in_compat_syscall(void) { return false; }
 
-#endif /* CONFIG_COMPAT */
 
 #define BITS_PER_COMPAT_LONG    (8*sizeof(compat_long_t))
 

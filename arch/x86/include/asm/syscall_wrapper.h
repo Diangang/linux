@@ -120,46 +120,13 @@ extern long __ia32_sys_ni_syscall(const struct pt_regs *regs);
 #define __X64_COND_SYSCALL(name)
 #endif /* CONFIG_X86_64 */
 
-#if 0 || defined(CONFIG_IA32_EMULATION)
-#define __IA32_SYS_STUB0(name)						\
-	__SYS_STUB0(ia32, sys_##name)
-
-#define __IA32_SYS_STUBx(x, name, ...)					\
-	__SYS_STUBx(ia32, sys##name,					\
-		    SC_IA32_REGS_TO_ARGS(x, __VA_ARGS__))
-
-#define __IA32_COND_SYSCALL(name)					\
-	__COND_SYSCALL(ia32, sys_##name)
-
-#else /* CONFIG_X86_32 || CONFIG_IA32_EMULATION */
 #define __IA32_SYS_STUB0(name)
 #define __IA32_SYS_STUBx(x, name, ...)
 #define __IA32_COND_SYSCALL(name)
-#endif /* CONFIG_X86_32 || CONFIG_IA32_EMULATION */
 
-#ifdef CONFIG_IA32_EMULATION
-/*
- * For IA32 emulation, we need to handle "compat" syscalls *and* create
- * additional wrappers (aptly named __ia32_sys_xyzzy) which decode the
- * ia32 regs in the proper order for shared or "common" syscalls. As some
- * syscalls may not be implemented, we need to expand COND_SYSCALL in
- * kernel/sys_ni.c to cover this case as well.
- */
-#define __IA32_COMPAT_SYS_STUB0(name)					\
-	__SYS_STUB0(ia32, compat_sys_##name)
-
-#define __IA32_COMPAT_SYS_STUBx(x, name, ...)				\
-	__SYS_STUBx(ia32, compat_sys##name,				\
-		    SC_IA32_REGS_TO_ARGS(x, __VA_ARGS__))
-
-#define __IA32_COMPAT_COND_SYSCALL(name)				\
-	__COND_SYSCALL(ia32, compat_sys_##name)
-
-#else /* CONFIG_IA32_EMULATION */
 #define __IA32_COMPAT_SYS_STUB0(name)
 #define __IA32_COMPAT_SYS_STUBx(x, name, ...)
 #define __IA32_COMPAT_COND_SYSCALL(name)
-#endif /* CONFIG_IA32_EMULATION */
 
 
 #define __X32_COMPAT_SYS_STUB0(name)
@@ -167,40 +134,6 @@ extern long __ia32_sys_ni_syscall(const struct pt_regs *regs);
 #define __X32_COMPAT_COND_SYSCALL(name)
 
 
-#ifdef CONFIG_COMPAT
-/*
- * Compat means IA32_EMULATION and/or X86_X32. As they use a different
- * mapping of registers to parameters, we need to generate stubs for each
- * of them.
- */
-#define COMPAT_SYSCALL_DEFINE0(name)					\
-	static long							\
-	__do_compat_sys_##name(const struct pt_regs *__unused);		\
-	__IA32_COMPAT_SYS_STUB0(name)					\
-	__X32_COMPAT_SYS_STUB0(name)					\
-	static long							\
-	__do_compat_sys_##name(const struct pt_regs *__unused)
-
-#define COMPAT_SYSCALL_DEFINEx(x, name, ...)					\
-	static long __se_compat_sys##name(__MAP(x,__SC_LONG,__VA_ARGS__));	\
-	static inline long __do_compat_sys##name(__MAP(x,__SC_DECL,__VA_ARGS__));\
-	__IA32_COMPAT_SYS_STUBx(x, name, __VA_ARGS__)				\
-	__X32_COMPAT_SYS_STUBx(x, name, __VA_ARGS__)				\
-	static long __se_compat_sys##name(__MAP(x,__SC_LONG,__VA_ARGS__))	\
-	{									\
-		return __do_compat_sys##name(__MAP(x,__SC_DELOUSE,__VA_ARGS__));\
-	}									\
-	static inline long __do_compat_sys##name(__MAP(x,__SC_DECL,__VA_ARGS__))
-
-/*
- * As some compat syscalls may not be implemented, we need to expand
- * COND_SYSCALL_COMPAT in kernel/sys_ni.c to cover this case as well.
- */
-#define COND_SYSCALL_COMPAT(name) 					\
-	__IA32_COMPAT_COND_SYSCALL(name)				\
-	__X32_COMPAT_COND_SYSCALL(name)
-
-#endif /* CONFIG_COMPAT */
 
 #define __SYSCALL_DEFINEx(x, name, ...)					\
 	static long __se_sys##name(__MAP(x,__SC_LONG,__VA_ARGS__));	\

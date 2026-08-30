@@ -180,8 +180,7 @@ static inline void arch_exit_mmap(struct mm_struct *mm)
 #ifdef CONFIG_X86_64
 static inline bool is_64bit_mm(struct mm_struct *mm)
 {
-	return	!IS_ENABLED(CONFIG_IA32_EMULATION) ||
-		!test_bit(MM_CONTEXT_UPROBE_IA32, &mm->context.flags);
+	return true;
 }
 #else
 static inline bool is_64bit_mm(struct mm_struct *mm)

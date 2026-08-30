@@ -51,7 +51,6 @@ EXPORT_SYMBOL(cmpxchg8b_emu)
 
 #endif
 
-#ifndef CONFIG_UML
 
 /*
  * Emulate 'cmpxchg8b %fs:(%rsi)'
@@ -93,5 +92,3 @@ SYM_FUNC_START(this_cpu_cmpxchg8b_emu)
 	RET
 
 SYM_FUNC_END(this_cpu_cmpxchg8b_emu)
-
-#endif

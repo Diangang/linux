@@ -16,21 +16,12 @@
 
 struct fs_pin;
 
-#if defined(CONFIG_SYSCTL) && defined(CONFIG_MEMFD_CREATE)
-/* modes for vm.memfd_noexec sysctl */
-#define MEMFD_NOEXEC_SCOPE_EXEC			0 /* MFD_EXEC implied if unset */
-#define MEMFD_NOEXEC_SCOPE_NOEXEC_SEAL		1 /* MFD_NOEXEC_SEAL implied if unset */
-#define MEMFD_NOEXEC_SCOPE_NOEXEC_ENFORCED	2 /* same as 1, except MFD_EXEC rejected */
-#endif
 
 struct pid_namespace {
 	struct idr idr;
 	struct rcu_head rcu;
 	unsigned int pid_allocated;
 #ifdef CONFIG_SYSCTL
-#if defined(CONFIG_MEMFD_CREATE)
-	int memfd_noexec_scope;
-#endif
 	struct ctl_table_set	set;
 	struct ctl_table_header *sysctls;
 #endif
@@ -39,9 +30,6 @@ struct pid_namespace {
 	unsigned int level;
 	int pid_max;
 	struct pid_namespace *parent;
-#ifdef CONFIG_BSD_PROCESS_ACCT
-	struct fs_pin *bacct;
-#endif
 	struct user_namespace *user_ns;
 	struct ucounts *ucounts;
 	int reboot;	/* group exit code if this pidns was rebooted */
@@ -53,45 +41,6 @@ extern struct pid_namespace init_pid_ns;
 
 #define PIDNS_ADDING (1U << 31)
 
-#ifdef CONFIG_PID_NS
-static inline struct pid_namespace *to_pid_ns(struct ns_common *ns)
-{
-	return container_of(ns, struct pid_namespace, ns);
-}
-
-static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
-{
-	ns_ref_inc(ns);
-	return ns;
-}
-
-#if defined(CONFIG_SYSCTL) && defined(CONFIG_MEMFD_CREATE)
-static inline int pidns_memfd_noexec_scope(struct pid_namespace *ns)
-{
-	int scope = MEMFD_NOEXEC_SCOPE_EXEC;
-
-	for (; ns; ns = ns->parent)
-		scope = max(scope, READ_ONCE(ns->memfd_noexec_scope));
-
-	return scope;
-}
-#else
-static inline int pidns_memfd_noexec_scope(struct pid_namespace *ns)
-{
-	return 0;
-}
-#endif
-
-extern struct pid_namespace *copy_pid_ns(u64 flags,
-	struct user_namespace *user_ns, struct pid_namespace *ns);
-extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
-extern int reboot_pid_ns(struct pid_namespace *pid_ns, int cmd);
-extern void put_pid_ns(struct pid_namespace *ns);
-
-extern bool pidns_is_ancestor(struct pid_namespace *child,
-			      struct pid_namespace *ancestor);
-
-#else /* !CONFIG_PID_NS */
 #include <linux/err.h>
 
 static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
@@ -131,7 +80,6 @@ static inline bool pidns_is_ancestor(struct pid_namespace *child,
 {
 	return false;
 }
-#endif /* CONFIG_PID_NS */
 
 extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
 void pidhash_init(void);

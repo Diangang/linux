@@ -957,8 +957,6 @@ endif
 
 # include additional Makefiles when needed
 include-y			:= scripts/Makefile.warn
-include-$(CONFIG_RANDSTRUCT)	+= scripts/Makefile.randstruct
-include-$(CONFIG_KSTACK_ERASE)	+= scripts/Makefile.kstack_erase
 include $(addprefix $(srctree)/, $(include-y))
 
 # Add user supplied CPPFLAGS, AFLAGS, CFLAGS and RUSTFLAGS as the last assignments

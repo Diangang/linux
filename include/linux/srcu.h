@@ -93,10 +93,6 @@ static inline bool same_state_synchronize_srcu(unsigned long oldstate1, unsigned
 	return oldstate1 == oldstate2;
 }
 
-#ifdef CONFIG_NEED_SRCU_NMI_SAFE
-int __srcu_read_lock_nmisafe(struct srcu_struct *ssp) __acquires_shared(ssp);
-void __srcu_read_unlock_nmisafe(struct srcu_struct *ssp, int idx) __releases_shared(ssp);
-#else
 static inline int __srcu_read_lock_nmisafe(struct srcu_struct *ssp)
 	__acquires_shared(ssp)
 {
@@ -107,7 +103,6 @@ static inline void __srcu_read_unlock_nmisafe(struct srcu_struct *ssp, int idx)
 {
 	__srcu_read_unlock(ssp, idx);
 }
-#endif /* CONFIG_NEED_SRCU_NMI_SAFE */
 
 void srcu_init(void);
 

@@ -7,18 +7,7 @@
 
 #include <asm/brk-imm.h>
 
-#ifdef CONFIG_DEBUG_BUGVERBOSE
-#define _BUGVERBOSE_LOCATION(file, line) __BUGVERBOSE_LOCATION(file, line)
-#define __BUGVERBOSE_LOCATION(file, line)			\
-		.pushsection .rodata.str,"aMS",@progbits,1;	\
-	14472:	.string file;					\
-		.popsection;					\
-								\
-		.long 14472b - .;				\
-		.short line;
-#else
 #define _BUGVERBOSE_LOCATION(file, line)
-#endif
 
 #ifdef CONFIG_GENERIC_BUG
 #define __BUG_ENTRY_START				\
@@ -46,13 +35,7 @@ _BUGVERBOSE_LOCATION(__FILE__, __LINE__)		\
 
 #define ASM_BUG()	ASM_BUG_FLAGS(0)
 
-#ifdef CONFIG_DEBUG_BUGVERBOSE
-#define __BUG_LOCATION_STRING(file, line)		\
-		".long " file "- .;"			\
-		".short " line ";"
-#else
 #define __BUG_LOCATION_STRING(file, line)
-#endif
 
 #define __BUG_ENTRY_STRING(file, line, flags)		\
 		__stringify(__BUG_ENTRY_START)		\

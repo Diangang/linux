@@ -1472,15 +1472,6 @@ void xrstors(struct xregs_state *xstate, u64 mask)
 	WARN_ON_ONCE(err);
 }
 
-#if IS_ENABLED(CONFIG_KVM)
-void fpstate_clear_xstate_component(struct fpstate *fpstate, unsigned int xfeature)
-{
-	void *addr = get_xsave_addr(&fpstate->regs.xsave, xfeature);
-
-	if (addr)
-		memset(addr, 0, xstate_sizes[xfeature]);
-}
-#endif
 
 #ifdef CONFIG_X86_64
 
@@ -1919,89 +1910,3 @@ int proc_pid_arch_status(struct seq_file *m, struct pid_namespace *ns,
 	return 0;
 }
 #endif /* CONFIG_PROC_PID_ARCH_STATUS */
-
-#ifdef CONFIG_COREDUMP
-static const char owner_name[] = "LINUX";
-
-/*
- * Dump type, size, offset and flag values for every xfeature that is present.
- */
-static int dump_xsave_layout_desc(struct coredump_params *cprm)
-{
-	int num_records = 0;
-	int i;
-
-	for_each_extended_xfeature(i, fpu_user_cfg.max_features) {
-		struct x86_xfeat_component xc = {
-			.type   = i,
-			.size   = xstate_sizes[i],
-			.offset = xstate_offsets[i],
-			/* reserved for future use */
-			.flags  = 0,
-		};
-
-		if (!dump_emit(cprm, &xc, sizeof(xc)))
-			return -1;
-
-		num_records++;
-	}
-	return num_records;
-}
-
-static u32 get_xsave_desc_size(void)
-{
-	u32 cnt = 0;
-	u32 i;
-
-	for_each_extended_xfeature(i, fpu_user_cfg.max_features)
-		cnt++;
-
-	return cnt * (sizeof(struct x86_xfeat_component));
-}
-
-int elf_coredump_extra_notes_write(struct coredump_params *cprm)
-{
-	int num_records = 0;
-	struct elf_note en;
-
-	if (!fpu_user_cfg.max_features)
-		return 0;
-
-	en.n_namesz = sizeof(owner_name);
-	en.n_descsz = get_xsave_desc_size();
-	en.n_type = NT_X86_XSAVE_LAYOUT;
-
-	if (!dump_emit(cprm, &en, sizeof(en)))
-		return 1;
-	if (!dump_emit(cprm, owner_name, en.n_namesz))
-		return 1;
-	if (!dump_align(cprm, 4))
-		return 1;
-
-	num_records = dump_xsave_layout_desc(cprm);
-	if (num_records < 0)
-		return 1;
-
-	/* Total size should be equal to the number of records */
-	if ((sizeof(struct x86_xfeat_component) * num_records) != en.n_descsz)
-		return 1;
-
-	return 0;
-}
-
-int elf_coredump_extra_notes_size(void)
-{
-	int size;
-
-	if (!fpu_user_cfg.max_features)
-		return 0;
-
-	/* .note header */
-	size  = sizeof(struct elf_note);
-	/*  Name plus alignment to 4 bytes */
-	size += roundup(sizeof(owner_name), 4);
-	size += get_xsave_desc_size();
-
-	return size;
-}
-#endif /* CONFIG_COREDUMP */

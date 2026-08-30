@@ -284,10 +284,5 @@ void kthread_unuse_mm(struct mm_struct *mm);
 
 struct cgroup_subsys_state;
 
-#ifdef CONFIG_BLK_CGROUP
-void kthread_associate_blkcg(struct cgroup_subsys_state *css);
-struct cgroup_subsys_state *kthread_blkcg(void);
-#else
 static inline void kthread_associate_blkcg(struct cgroup_subsys_state *css) { }
-#endif
 #endif /* _LINUX_KTHREAD_H */

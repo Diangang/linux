@@ -439,30 +439,23 @@ gpiod_is_equal(const struct gpio_desc *desc, const struct gpio_desc *other)
 }
 
 
-#if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_HTE)
-int gpiod_enable_hw_timestamp_ns(struct gpio_desc *desc, unsigned long flags);
-int gpiod_disable_hw_timestamp_ns(struct gpio_desc *desc, unsigned long flags);
-#else
 
 #include <linux/bug.h>
 
 static inline int gpiod_enable_hw_timestamp_ns(struct gpio_desc *desc,
 					       unsigned long flags)
 {
-	if (!IS_ENABLED(CONFIG_GPIOLIB))
-		WARN_ON(desc);
+	WARN_ON(desc);
 
 	return -ENOSYS;
 }
 static inline int gpiod_disable_hw_timestamp_ns(struct gpio_desc *desc,
 						unsigned long flags)
 {
-	if (!IS_ENABLED(CONFIG_GPIOLIB))
-		WARN_ON(desc);
+	WARN_ON(desc);
 
 	return -ENOSYS;
 }
-#endif /* CONFIG_GPIOLIB && CONFIG_HTE */
 
 static inline
 struct gpio_desc *devm_fwnode_gpiod_get(struct device *dev,
@@ -537,16 +530,6 @@ struct acpi_gpio_mapping {
 	unsigned int quirks;
 };
 
-#if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_ACPI)
-
-int acpi_dev_add_driver_gpios(struct acpi_device *adev,
-			      const struct acpi_gpio_mapping *gpios);
-void acpi_dev_remove_driver_gpios(struct acpi_device *adev);
-
-int devm_acpi_dev_add_driver_gpios(struct device *dev,
-				   const struct acpi_gpio_mapping *gpios);
-
-#else  /* CONFIG_GPIOLIB && CONFIG_ACPI */
 
 static inline int acpi_dev_add_driver_gpios(struct acpi_device *adev,
 			      const struct acpi_gpio_mapping *gpios)
@@ -561,17 +544,8 @@ static inline int devm_acpi_dev_add_driver_gpios(struct device *dev,
 	return -ENXIO;
 }
 
-#endif /* CONFIG_GPIOLIB && CONFIG_ACPI */
 
 
-#if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
-
-int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
-int gpiod_export_link(struct device *dev, const char *name,
-		      struct gpio_desc *desc);
-void gpiod_unexport(struct gpio_desc *desc);
-
-#else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
 
 static inline int gpiod_export(struct gpio_desc *desc,
 			       bool direction_may_change)
@@ -589,7 +563,6 @@ static inline void gpiod_unexport(struct gpio_desc *desc)
 {
 }
 
-#endif /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
 
 static inline int gpiod_multi_set_value_cansleep(struct gpio_descs *descs,
 						 unsigned long *value_bitmap)

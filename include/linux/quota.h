@@ -507,16 +507,11 @@ static __always_inline unsigned dquot_state_types(unsigned flags, unsigned flag)
 	return (flags / flag) & ((1 << MAXQUOTAS) - 1);
 }
 
-#ifdef CONFIG_QUOTA_NETLINK_INTERFACE
-extern void quota_send_warning(struct kqid qid, dev_t dev,
-			       const char warntype);
-#else
 static inline void quota_send_warning(struct kqid qid, dev_t dev,
 				      const char warntype)
 {
 	return;
 }
-#endif /* CONFIG_QUOTA_NETLINK_INTERFACE */
 
 struct quota_info {
 	unsigned int flags;			/* Flags for diskquotas on this device */

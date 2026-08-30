@@ -21,18 +21,11 @@ struct real_mode_header {
 	/* SMP trampoline */
 	u32	trampoline_start;
 	u32	trampoline_header;
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	u32	sev_es_trampoline_start;
-#endif
 #ifdef CONFIG_X86_64
 	u32	trampoline_start64;
 	u32	trampoline_pgd;
 #endif
 	/* ACPI S3 wakeup */
-#ifdef CONFIG_ACPI_SLEEP
-	u32	wakeup_start;
-	u32	wakeup_header;
-#endif
 	/* APM/BIOS reboot */
 	u32	machine_real_restart_asm;
 #ifdef CONFIG_X86_64
@@ -54,9 +47,6 @@ extern unsigned char real_mode_blob_end[];
 
 extern unsigned long initial_code;
 extern unsigned long initial_stack;
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-extern unsigned long initial_vc_handler;
-#endif
 
 extern u32 *trampoline_lock;
 

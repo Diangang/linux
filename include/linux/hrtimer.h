@@ -146,12 +146,6 @@ __hrtimer_expires_remaining_adjusted(const struct hrtimer *timer, ktime_t now)
 {
 	ktime_t rem = ktime_sub(timer->node.expires, now);
 
-	/*
-	 * Adjust relative timers for the extra we added in
-	 * hrtimer_start_range_ns() to prevent short timeouts.
-	 */
-	if (IS_ENABLED(CONFIG_TIME_LOW_RES) && timer->is_rel)
-		rem -= hrtimer_resolution;
 	return rem;
 }
 
@@ -161,13 +155,8 @@ hrtimer_expires_remaining_adjusted(const struct hrtimer *timer)
 	return __hrtimer_expires_remaining_adjusted(timer, hrtimer_cb_get_time(timer));
 }
 
-#ifdef CONFIG_TIMERFD
-extern void timerfd_clock_was_set(void);
-extern void timerfd_resume(void);
-#else
 static inline void timerfd_clock_was_set(void) { }
 static inline void timerfd_resume(void) { }
-#endif
 
 DECLARE_PER_CPU(struct tick_device, tick_cpu_device);
 
@@ -192,11 +181,7 @@ extern void hrtimer_setup_on_stack(struct hrtimer *timer,
 extern void hrtimer_setup_sleeper_on_stack(struct hrtimer_sleeper *sl, clockid_t clock_id,
 					   enum hrtimer_mode mode);
 
-#if 0
-extern void destroy_hrtimer_on_stack(struct hrtimer *timer);
-#else
 static inline void destroy_hrtimer_on_stack(struct hrtimer *timer) { }
-#endif
 
 /* Basic timer operations: */
 extern void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,

@@ -227,24 +227,10 @@ struct maple_copy {
 
 #define MAPLE_RESERVED_RANGE	4096
 
-#if 0
-#define mt_lock_is_held(mt)                                             \
-	(!(mt)->ma_external_lock || lock_is_held((mt)->ma_external_lock))
-
-#define mt_write_lock_is_held(mt)					\
-	(!(mt)->ma_external_lock ||					\
-	 lock_is_held_type((mt)->ma_external_lock, 0))
-
-#define mt_set_external_lock(mt, lock)					\
-	(mt)->ma_external_lock = &(lock)->dep_map
-
-#define mt_on_stack(mt)			(mt).ma_external_lock = NULL
-#else
 #define mt_lock_is_held(mt)		1
 #define mt_write_lock_is_held(mt)	1
 #define mt_set_external_lock(mt, lock)	do { } while (0)
 #define mt_on_stack(mt)			do { } while (0)
-#endif
 
 /*
  * If the tree contains a single entry at index 0, it is usually stored in
@@ -263,9 +249,6 @@ struct maple_copy {
 struct maple_tree {
 	union {
 		spinlock_t		ma_lock;
-#if 0
-		struct lockdep_map	*ma_external_lock;
-#endif
 	};
 	unsigned int	ma_flags;
 	void __rcu      *ma_root;
@@ -289,15 +272,7 @@ struct maple_tree {
  * @__flags: The maple tree flags
  * @__lock: The external lock
  */
-#if 0
-#define MTREE_INIT_EXT(name, __flags, __lock) {				\
-	.ma_external_lock = &(__lock).dep_map,				\
-	.ma_flags = (__flags),						\
-	.ma_root = NULL,						\
-}
-#else
 #define MTREE_INIT_EXT(name, __flags, __lock)	MTREE_INIT(name, __flags)
-#endif
 
 #define DEFINE_MTREE(name)						\
 	struct maple_tree name = MTREE_INIT(name, 0)
@@ -747,9 +722,6 @@ static inline void mt_init(struct maple_tree *mt)
 
 static inline bool mt_in_rcu(struct maple_tree *mt)
 {
-#ifdef CONFIG_MAPLE_RCU_DISABLED
-	return false;
-#endif
 	return mt->ma_flags & MT_FLAGS_USE_RCU;
 }
 

@@ -7,11 +7,6 @@
 #include <asm/fixmap.h>
 #include <asm/mtrr.h>
 
-#if 0
-phys_addr_t physical_mask __ro_after_init = (1ULL << __PHYSICAL_MASK_SHIFT) - 1;
-EXPORT_SYMBOL(physical_mask);
-SYM_PIC_ALIAS(physical_mask);
-#endif
 
 pgtable_t pte_alloc_one(struct mm_struct *mm)
 {
@@ -355,48 +350,6 @@ int ptep_set_access_flags(struct vm_area_struct *vma,
 	return changed;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-int pmdp_set_access_flags(struct vm_area_struct *vma,
-			  unsigned long address, pmd_t *pmdp,
-			  pmd_t entry, int dirty)
-{
-	int changed = !pmd_same(*pmdp, entry);
-
-	VM_BUG_ON(address & ~HPAGE_PMD_MASK);
-
-	if (changed && dirty) {
-		set_pmd(pmdp, entry);
-		/*
-		 * We had a write-protection fault here and changed the pmd
-		 * to to more permissive. No need to flush the TLB for that,
-		 * #PF is architecturally guaranteed to do that and in the
-		 * worst-case we'll generate a spurious fault.
-		 */
-	}
-
-	return changed;
-}
-
-int pudp_set_access_flags(struct vm_area_struct *vma, unsigned long address,
-			  pud_t *pudp, pud_t entry, int dirty)
-{
-	int changed = !pud_same(*pudp, entry);
-
-	VM_BUG_ON(address & ~HPAGE_PUD_MASK);
-
-	if (changed && dirty) {
-		set_pud(pudp, entry);
-		/*
-		 * We had a write-protection fault here and changed the pud
-		 * to to more permissive. No need to flush the TLB for that,
-		 * #PF is architecturally guaranteed to do that and in the
-		 * worst-case we'll generate a spurious fault.
-		 */
-	}
-
-	return changed;
-}
-#endif
 
 bool ptep_test_and_clear_young(struct vm_area_struct *vma,
 		unsigned long addr, pte_t *ptep)
@@ -410,7 +363,7 @@ bool ptep_test_and_clear_young(struct vm_area_struct *vma,
 	return ret;
 }
 
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
+#if defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
 bool pmdp_test_and_clear_young(struct vm_area_struct *vma,
 		unsigned long addr, pmd_t *pmdp)
 {
@@ -424,19 +377,6 @@ bool pmdp_test_and_clear_young(struct vm_area_struct *vma,
 }
 #endif
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-bool pudp_test_and_clear_young(struct vm_area_struct *vma,
-		unsigned long addr, pud_t *pudp)
-{
-	bool ret = false;
-
-	if (pud_young(*pudp))
-		ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
-					 (unsigned long *)pudp);
-
-	return ret;
-}
-#endif
 
 bool ptep_clear_flush_young(struct vm_area_struct *vma,
 		unsigned long address, pte_t *ptep)
@@ -457,45 +397,7 @@ bool ptep_clear_flush_young(struct vm_area_struct *vma,
 	return ptep_test_and_clear_young(vma, address, ptep);
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-bool pmdp_clear_flush_young(struct vm_area_struct *vma,
-		unsigned long address, pmd_t *pmdp)
-{
-	bool young;
 
-	VM_BUG_ON(address & ~HPAGE_PMD_MASK);
-
-	young = pmdp_test_and_clear_young(vma, address, pmdp);
-	if (young)
-		flush_tlb_range(vma, address, address + HPAGE_PMD_SIZE);
-
-	return young;
-}
-
-pmd_t pmdp_invalidate_ad(struct vm_area_struct *vma, unsigned long address,
-			 pmd_t *pmdp)
-{
-	VM_WARN_ON_ONCE(!pmd_present(*pmdp));
-
-	/*
-	 * No flush is necessary. Once an invalid PTE is established, the PTE's
-	 * access and dirty bits cannot be updated.
-	 */
-	return pmdp_establish(vma, address, pmdp, pmd_mkinvalid(*pmdp));
-}
-#endif
-
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && \
-	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-pud_t pudp_invalidate(struct vm_area_struct *vma, unsigned long address,
-		     pud_t *pudp)
-{
-	VM_WARN_ON_ONCE(!pud_present(*pudp));
-	pud_t old = pudp_establish(vma, address, pudp, pud_mkinvalid(*pudp));
-	flush_pud_tlb_range(vma, address, address + HPAGE_PUD_SIZE);
-	return old;
-}
-#endif
 
 /**
  * reserve_top_address - Reserve a hole in the top of the kernel address space

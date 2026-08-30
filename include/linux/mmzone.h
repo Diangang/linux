@@ -62,50 +62,14 @@
  */
 #define PAGE_ALLOC_COSTLY_ORDER 3
 
-#if !defined(CONFIG_HAVE_GIGANTIC_FOLIOS)
 /*
  * We don't expect any folios that exceed buddy sizes (and consequently
  * memory sections).
  */
 #define MAX_FOLIO_ORDER		MAX_PAGE_ORDER
-#elif defined(CONFIG_SPARSEMEM) && !defined(CONFIG_SPARSEMEM_VMEMMAP)
-/*
- * Only pages within a single memory section are guaranteed to be
- * contiguous. By limiting folios to a single memory section, all folio
- * pages are guaranteed to be contiguous.
- */
-#define MAX_FOLIO_ORDER		PFN_SECTION_SHIFT
-#elif defined(CONFIG_HUGETLB_PAGE)
-/*
- * There is no real limit on the folio size. We limit them to the maximum we
- * currently expect (see CONFIG_HAVE_GIGANTIC_FOLIOS): with hugetlb, we expect
- * no folios larger than 16 GiB on 64bit and 1 GiB on 32bit.
- */
-#ifdef CONFIG_64BIT
-#define MAX_FOLIO_ORDER		(ilog2(SZ_16G) - PAGE_SHIFT)
-#else
-#define MAX_FOLIO_ORDER		(ilog2(SZ_1G) - PAGE_SHIFT)
-#endif
-#else
-/*
- * Without hugetlb, gigantic folios that are bigger than a single PUD are
- * currently impossible.
- */
-#define MAX_FOLIO_ORDER		(PUD_SHIFT - PAGE_SHIFT)
-#endif
 
 #define MAX_FOLIO_NR_PAGES	(1UL << MAX_FOLIO_ORDER)
-
-/*
- * HugeTLB Vmemmap Optimization (HVO) requires struct pages of the head page to
- * be naturally aligned with regard to the folio size.
- *
- * HVO which is only active if the size of struct page is a power of 2.
- */
-#define MAX_FOLIO_VMEMMAP_ALIGN \
-	(IS_ENABLED(CONFIG_HUGETLB_PAGE_OPTIMIZE_VMEMMAP) && \
-	 is_power_of_2(sizeof(struct page)) ? \
-	 MAX_FOLIO_NR_PAGES * sizeof(struct page) : 0)
+#define MAX_FOLIO_VMEMMAP_ALIGN	0
 
 /*
  * vmemmap optimization (like HVO) is only possible for page orders that fill
@@ -197,13 +161,7 @@ enum zone_stat_item {
 	NR_ZONE_WRITE_PENDING,	/* Count of dirty, writeback and unstable pages */
 	NR_MLOCK,		/* mlock()ed pages found and moved off LRU */
 	/* Second 128 byte cacheline */
-#if IS_ENABLED(CONFIG_ZSMALLOC)
-	NR_ZSPAGES,		/* allocated in zsmalloc */
-#endif
 	NR_FREE_CMA_PAGES,
-#ifdef CONFIG_UNACCEPTED_MEMORY
-	NR_UNACCEPTED,
-#endif
 	NR_VM_ZONE_STAT_ITEMS };
 
 enum node_stat_item {
@@ -250,17 +208,8 @@ enum node_stat_item {
 	NR_FOLL_PIN_RELEASED,	/* pages returned via unpin_user_page() */
 	NR_VMALLOC,
 	NR_KERNEL_STACK_KB,	/* measured in KiB */
-#if 0
-	NR_KERNEL_SCS_KB,	/* measured in KiB */
-#endif
 	NR_PAGETABLE,		/* used for pagetables */
 	NR_SECONDARY_PAGETABLE, /* secondary pagetables, KVM & IOMMU */
-#ifdef CONFIG_IOMMU_SUPPORT
-	NR_IOMMU_PAGES,		/* # of pages allocated by IOMMU */
-#endif
-#ifdef CONFIG_SWAP
-	NR_SWAPCACHE,
-#endif
 #ifdef CONFIG_NUMA_BALANCING
 	PGPROMOTE_SUCCESS,	/* promote successfully */
 	/**
@@ -297,9 +246,6 @@ enum node_stat_item {
 	PGSCAN_ANON,
 	PGSCAN_FILE,
 	PGREFILL,
-#ifdef CONFIG_HUGETLB_PAGE
-	NR_HUGETLB,
-#endif
 	NR_BALLOON_PAGES,
 	NR_KERNEL_FILE_PAGES,
 	NR_GPU_ACTIVE,	/* Pages assigned to GPU objects */
@@ -314,14 +260,7 @@ enum node_stat_item {
  */
 static __always_inline bool vmstat_item_print_in_thp(enum node_stat_item item)
 {
-	if (!IS_ENABLED(CONFIG_TRANSPARENT_HUGEPAGE))
-		return false;
-
-	return item == NR_ANON_THPS ||
-	       item == NR_FILE_THPS ||
-	       item == NR_SHMEM_THPS ||
-	       item == NR_SHMEM_PMDMAPPED ||
-	       item == NR_FILE_PMDMAPPED;
+	return false;
 }
 
 /*
@@ -566,9 +505,6 @@ struct lruvec {
 	unsigned long			refaults[ANON_AND_FILE];
 	/* Various lruvec state flags (enum lruvec_flags) */
 	unsigned long			flags;
-#ifdef CONFIG_MEMCG
-	struct pglist_data *pgdat;
-#endif
 	struct zswap_lruvec_state zswap_lruvec_state;
 };
 
@@ -593,11 +529,7 @@ enum zone_watermarks {
  * are added for THP. One PCP list is used by GPF_MOVABLE, and the other PCP list
  * is used by GFP_UNMOVABLE and GFP_RECLAIMABLE.
  */
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define NR_PCP_THP 2
-#else
 #define NR_PCP_THP 0
-#endif
 #define NR_LOWORDER_PCP_LISTS (MIGRATE_PCPTYPES * (PAGE_ALLOC_COSTLY_ORDER + 1))
 #define NR_PCP_LISTS (NR_LOWORDER_PCP_LISTS + NR_PCP_THP)
 
@@ -679,17 +611,6 @@ enum zone_type {
 	 * transfers to all addressable memory.
 	 */
 	ZONE_NORMAL,
-#if 0
-	/*
-	 * A memory area that is only addressable by the kernel through
-	 * mapping portions into its own address space. This is for example
-	 * used by i386 to allow the kernel to address the memory beyond
-	 * 900MB. The kernel will set up special mappings (page
-	 * table entries on i386) for each page that the kernel needs to
-	 * access.
-	 */
-	ZONE_HIGHMEM,
-#endif
 	/*
 	 * ZONE_MOVABLE is similar to ZONE_NORMAL, except that it contains
 	 * movable pages with few exceptional cases described below. Main use
@@ -839,9 +760,6 @@ struct zone {
 	atomic_long_t		managed_pages;
 	unsigned long		spanned_pages;
 	unsigned long		present_pages;
-#if defined(CONFIG_MEMORY_HOTPLUG)
-	unsigned long		present_early_pages;
-#endif
 
 	const char		*name;
 
@@ -854,10 +772,6 @@ struct zone {
 	unsigned long		nr_isolate_pageblock;
 #endif
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-	/* see spanned/present_pages for more description */
-	seqlock_t		span_seqlock;
-#endif
 
 	int initialized;
 
@@ -867,13 +781,6 @@ struct zone {
 	/* free areas of different sizes */
 	struct free_area	free_area[NR_PAGE_ORDERS];
 
-#ifdef CONFIG_UNACCEPTED_MEMORY
-	/* Pages to be accepted. All pages on the list are MAX_PAGE_ORDER */
-	struct list_head	unaccepted_pages;
-
-	/* To be called once the last page in the zone is accepted */
-	struct work_struct	unaccepted_cleanup;
-#endif
 
 	/* zone flags, see below */
 	unsigned long		flags;
@@ -894,7 +801,7 @@ struct zone {
 	 */
 	unsigned long percpu_drift_mark;
 
-#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+#if defined CONFIG_COMPACTION
 	/* pfn where compaction free scanner should start */
 	unsigned long		compact_cached_free_pfn;
 	/* pfn where compaction migration scanner should start */
@@ -915,7 +822,7 @@ struct zone {
 	int			compact_order_failed;
 #endif
 
-#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+#if defined CONFIG_COMPACTION
 	/* Set to true when the PG_migrate_skip bits should be cleared */
 	bool			compact_blockskip_flush;
 #endif
@@ -926,9 +833,6 @@ struct zone {
 	/* Zone statistics */
 	atomic_long_t		vm_stat[NR_VM_ZONE_STAT_ITEMS];
 	atomic_long_t		vm_numa_event[NR_VM_NUMA_EVENT_ITEMS];
-#ifdef CONFIG_HUGETLB_PAGE_OPTIMIZE_VMEMMAP
-	struct page *vmemmap_tails[NR_VMEMMAP_TAILS];
-#endif
 } ____cacheline_internodealigned_in_smp;
 
 enum pgdat_flags {
@@ -1171,13 +1075,6 @@ struct zonelist {
  */
 extern struct page *mem_map;
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-struct deferred_split {
-	spinlock_t split_queue_lock;
-	struct list_head split_queue;
-	unsigned long split_queue_len;
-};
-#endif
 
 #ifdef CONFIG_MEMORY_FAILURE
 /*
@@ -1228,24 +1125,6 @@ typedef struct pglist_data {
 	struct zonelist node_zonelists[MAX_ZONELISTS];
 
 	int nr_zones; /* number of populated zones in this node */
-#if 0	/* means !SPARSEMEM */
-	struct page *node_mem_map;
-#endif
-#if defined(CONFIG_MEMORY_HOTPLUG) || defined(CONFIG_DEFERRED_STRUCT_PAGE_INIT)
-	/*
-	 * Must be held any time you expect node_start_pfn,
-	 * node_present_pages, node_spanned_pages or nr_zones to stay constant.
-	 * Also synchronizes pgdat->first_deferred_pfn during deferred page
-	 * init.
-	 *
-	 * pgdat_resize_lock() and pgdat_resize_unlock() are provided to
-	 * manipulate node_size_lock without checking for CONFIG_MEMORY_HOTPLUG
-	 * or CONFIG_DEFERRED_STRUCT_PAGE_INIT.
-	 *
-	 * Nests above zone->lock and zone->span_seqlock
-	 */
-	spinlock_t node_size_lock;
-#endif
 	unsigned long node_start_pfn;
 	unsigned long node_present_pages; /* total number of physical pages */
 	unsigned long node_spanned_pages; /* total size of physical page
@@ -1260,9 +1139,6 @@ typedef struct pglist_data {
 	atomic_t nr_writeback_throttled;/* nr of writeback-throttled tasks */
 	unsigned long nr_reclaim_start;	/* nr pages written while throttled
 					 * when throttling started. */
-#ifdef CONFIG_MEMORY_HOTPLUG
-	struct mutex kswapd_lock;
-#endif
 	struct task_struct *kswapd;	/* Protected by kswapd_lock */
 	int kswapd_order;
 	enum zone_type kswapd_highest_zoneidx;
@@ -1294,9 +1170,6 @@ typedef struct pglist_data {
 	CACHELINE_PADDING(_pad1_);
 
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	struct deferred_split deferred_split_queue;
-#endif
 
 #ifdef CONFIG_NUMA_BALANCING
 	/* start time in ms of current promote rate limit period */
@@ -1389,18 +1262,10 @@ extern void lruvec_init(struct lruvec *lruvec);
 
 static inline struct pglist_data *lruvec_pgdat(struct lruvec *lruvec)
 {
-#ifdef CONFIG_MEMCG
-	return lruvec->pgdat;
-#else
 	return container_of(lruvec, struct pglist_data, __lruvec);
-#endif
 }
 
-#ifdef CONFIG_HAVE_MEMORYLESS_NODES
-int local_memory_node(int node_id);
-#else
 static inline int local_memory_node(int node_id) { return node_id; };
-#endif
 
 /*
  * zone_idx() returns 0 for the ZONE_DMA zone, 1 for the ZONE_NORMAL zone, etc.
@@ -1452,12 +1317,7 @@ extern int movable_zone;
 
 static inline int is_highmem_idx(enum zone_type idx)
 {
-#if 0
-	return (idx == ZONE_HIGHMEM ||
-		(idx == ZONE_MOVABLE && movable_zone == ZONE_HIGHMEM));
-#else
 	return 0;
-#endif
 }
 
 /**
@@ -1655,9 +1515,6 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
 #include <asm/sparsemem.h>
 #endif
 
-#if 0
-#define pfn_to_nid(pfn)		(0)
-#endif
 
 #ifdef CONFIG_SPARSEMEM
 
@@ -1863,10 +1720,6 @@ static inline int online_section_nr(unsigned long nr)
 	return online_section(__nr_to_section(nr));
 }
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-void online_mem_sections(unsigned long start_pfn, unsigned long end_pfn);
-void offline_mem_sections(unsigned long start_pfn, unsigned long end_pfn);
-#endif
 
 static inline struct mem_section *__pfn_to_section(unsigned long pfn)
 {
@@ -1924,7 +1777,6 @@ static inline bool pfn_section_first_valid(struct mem_section *ms, unsigned long
 void sparse_init_early_section(int nid, struct page *map, unsigned long pnum,
 			       unsigned long flags);
 
-#ifndef CONFIG_HAVE_ARCH_PFN_VALID
 /**
  * pfn_valid - check if there is a valid memory map entry for a PFN
  * @pfn: the page frame number to check
@@ -2019,7 +1871,6 @@ static inline unsigned long next_valid_pfn(unsigned long pfn, unsigned long end_
 	     (_pfn) < (_end_pfn);					\
 	     (_pfn) = next_valid_pfn((_pfn), (_end_pfn)))
 
-#endif
 
 static inline int pfn_in_present_section(unsigned long pfn)
 {

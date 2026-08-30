@@ -198,11 +198,7 @@ struct iomap_write_ops {
 #define IOMAP_NOWAIT		(1 << 5) /* do not block */
 #define IOMAP_OVERWRITE_ONLY	(1 << 6) /* only pure overwrites allowed */
 #define IOMAP_UNSHARE		(1 << 7) /* unshare_file_range */
-#if 0
-#define IOMAP_DAX		(1 << 8) /* DAX mapping */
-#else
 #define IOMAP_DAX		0
-#endif /* CONFIG_FS_DAX */
 #define IOMAP_ATOMIC		(1 << 9) /* torn-write protection */
 #define IOMAP_DONTCACHE		(1 << 10)
 
@@ -595,16 +591,7 @@ struct iomap_dio *__iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
 ssize_t iomap_dio_complete(struct iomap_dio *dio);
 void iomap_dio_bio_end_io(struct bio *bio);
 
-#ifdef CONFIG_SWAP
-struct file;
-struct swap_info_struct;
-
-int iomap_swapfile_activate(struct swap_info_struct *sis,
-		struct file *swap_file, sector_t *pagespan,
-		const struct iomap_ops *ops);
-#else
 # define iomap_swapfile_activate(sis, swapfile, pagespan, ops)	(-EIO)
-#endif /* CONFIG_SWAP */
 
 extern struct bio_set iomap_ioend_bioset;
 

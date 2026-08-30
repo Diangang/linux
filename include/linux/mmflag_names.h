@@ -42,20 +42,9 @@
 	TRACE_GFP_EM(ACCOUNT)			\
 	TRACE_GFP_EM(ZEROTAGS)
 
-#if 0
-# define TRACE_GFP_FLAGS_KASAN			\
-	TRACE_GFP_EM(SKIP_ZERO)			\
-	TRACE_GFP_EM(SKIP_KASAN)
-#else
 # define TRACE_GFP_FLAGS_KASAN
-#endif
 
-#if 0
-# define TRACE_GFP_FLAGS_LOCKDEP		\
-	TRACE_GFP_EM(NOLOCKDEP)
-#else
 # define TRACE_GFP_FLAGS_LOCKDEP
-#endif
 
 #ifdef CONFIG_SLAB_OBJ_EXT
 # define TRACE_GFP_FLAGS_SLAB			\
@@ -167,29 +156,17 @@ IF_HAVE_PG_ARCH_3(arch_3)
 	__def_pageflag_names						\
 	) : "none"
 
-#if defined(CONFIG_PPC64)
-#define __VM_ARCH_SPECIFIC_1 {VM_SAO,     "sao"           }
-#elif defined(CONFIG_PARISC)
-#define __VM_ARCH_SPECIFIC_1 {VM_GROWSUP,	"growsup"	}
-#elif !defined(CONFIG_MMU)
+#if   !defined(CONFIG_MMU)
 #define __VM_ARCH_SPECIFIC_1 {VM_MAPPED_COPY,"mappedcopy"	}
 #else
 #define __VM_ARCH_SPECIFIC_1 {VM_ARCH_1,	"arch_1"	}
 #endif
 
-#ifdef CONFIG_MEM_SOFT_DIRTY
-#define IF_HAVE_VM_SOFTDIRTY(flag,name) {flag, name },
-#else
 #define IF_HAVE_VM_SOFTDIRTY(flag,name)
-#endif
 
-#if 0
-# define IF_HAVE_UFFD_MINOR(flag, name) {flag, name},
-#else
 # define IF_HAVE_UFFD_MINOR(flag, name)
-#endif
 
-#if defined(CONFIG_64BIT) || defined(CONFIG_PPC32)
+#if defined(CONFIG_64BIT)
 # define IF_HAVE_VM_DROPPABLE(flag, name) {flag, name},
 #else
 # define IF_HAVE_VM_DROPPABLE(flag, name)
@@ -287,11 +264,7 @@ IF_HAVE_VM_DROPPABLE(VM_DROPPABLE,	"droppable"	)		\
 #define IFDEF_ZONE_DMA32(X)
 #endif
 
-#if 0
-#define IFDEF_ZONE_HIGHMEM(X) X
-#else
 #define IFDEF_ZONE_HIGHMEM(X)
-#endif
 
 #define ZONE_TYPE						\
 	IFDEF_ZONE_DMA(		EM (ZONE_DMA,	 "DMA"))	\

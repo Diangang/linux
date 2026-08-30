@@ -116,39 +116,6 @@ static inline void mte_disable_tco_entry(struct task_struct *task)
 		asm volatile(SET_PSTATE_TCO(0));
 }
 
-#if 0
-void mte_check_tfsr_el1(void);
-
-static inline void mte_check_tfsr_entry(void)
-{
-	if (!kasan_hw_tags_enabled())
-		return;
-
-	if (!system_uses_mte_async_or_asymm_mode())
-		return;
-
-	mte_check_tfsr_el1();
-}
-
-static inline void mte_check_tfsr_exit(void)
-{
-	if (!kasan_hw_tags_enabled())
-		return;
-
-	if (!system_uses_mte_async_or_asymm_mode())
-		return;
-
-	/*
-	 * The asynchronous faults are sync'ed automatically with
-	 * TFSR_EL1 on kernel entry but for exit an explicit dsb()
-	 * is required.
-	 */
-	dsb(nsh);
-	isb();
-
-	mte_check_tfsr_el1();
-}
-#else
 static inline void mte_check_tfsr_el1(void)
 {
 }
@@ -158,7 +125,6 @@ static inline void mte_check_tfsr_entry(void)
 static inline void mte_check_tfsr_exit(void)
 {
 }
-#endif /* CONFIG_KASAN_HW_TAGS */
 
 #endif /* __ASSEMBLER__ */
 #endif /* __ASM_MTE_H  */

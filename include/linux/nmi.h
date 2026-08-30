@@ -9,9 +9,6 @@
 #include <asm/irq.h>
 
 /* Arch specific watchdogs might need to share extra watchdog-related APIs. */
-#if defined(CONFIG_HARDLOCKUP_DETECTOR_ARCH) || defined(CONFIG_HARDLOCKUP_DETECTOR_SPARC64)
-#include <asm/nmi.h>
-#endif
 
 static inline void lockup_detector_init(void) { }
 
@@ -25,16 +22,8 @@ static inline void reset_hung_task_detector(void) { }
 static inline void hardlockup_detector_disable(void) {}
 
 /* Sparc64 has special implemetantion that is always enabled. */
-#if defined(CONFIG_HARDLOCKUP_DETECTOR) || defined(CONFIG_HARDLOCKUP_DETECTOR_SPARC64)
-void arch_touch_nmi_watchdog(void);
-#else
 static inline void arch_touch_nmi_watchdog(void) { }
-#endif
 
-#if 0
-void watchdog_hardlockup_touch_cpu(unsigned int cpu);
-void watchdog_hardlockup_check(unsigned int cpu, struct pt_regs *regs);
-#endif
 
 static inline void hardlockup_detector_perf_stop(void) { }
 static inline void hardlockup_detector_perf_restart(void) { }
@@ -118,9 +107,6 @@ static inline bool trigger_single_cpu_backtrace(int cpu)
 }
 #endif
 
-#ifdef CONFIG_HAVE_ACPI_APEI_NMI
-#include <asm/nmi.h>
-#endif
 
 static inline void nmi_backtrace_stall_snap(const struct cpumask *btp) {}
 static inline void nmi_backtrace_stall_check(const struct cpumask *btp) {}

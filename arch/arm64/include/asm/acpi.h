@@ -124,16 +124,10 @@ static inline void acpi_init_cpus(void) { }
 static inline int apei_claim_sea(struct pt_regs *regs) { return -ENOENT; }
 #endif /* CONFIG_ACPI */
 
-#ifdef CONFIG_ARM64_ACPI_PARKING_PROTOCOL
-bool acpi_parking_protocol_valid(int cpu);
-void __init
-acpi_set_mailbox_entry(int cpu, struct acpi_madt_generic_interrupt *processor);
-#else
 static inline bool acpi_parking_protocol_valid(int cpu) { return false; }
 static inline void
 acpi_set_mailbox_entry(int cpu, struct acpi_madt_generic_interrupt *processor)
 {}
-#endif
 
 static __always_inline const char *acpi_get_enable_method(int cpu)
 {
@@ -146,14 +140,8 @@ static __always_inline const char *acpi_get_enable_method(int cpu)
 	return NULL;
 }
 
-#ifdef CONFIG_ACPI_NUMA
-int arm64_acpi_numa_init(void);
-int acpi_numa_get_nid(unsigned int cpu);
-void acpi_map_cpus_to_nodes(void);
-#else
 static inline int arm64_acpi_numa_init(void) { return -ENOSYS; }
 static inline int acpi_numa_get_nid(unsigned int cpu) { return NUMA_NO_NODE; }
 static inline void acpi_map_cpus_to_nodes(void) { }
-#endif /* CONFIG_ACPI_NUMA */
 
 #endif /*_ASM_ACPI_H*/

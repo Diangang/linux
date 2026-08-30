@@ -97,17 +97,6 @@ DEFINE_STATIC_SRCU(console_srcu);
  */
 int __read_mostly suppress_printk;
 
-#if 0
-static struct lockdep_map console_lock_dep_map = {
-	.name = "console_lock"
-};
-
-void lockdep_assert_console_list_lock_held(void)
-{
-	lockdep_assert_held(&console_mutex);
-}
-EXPORT_SYMBOL(lockdep_assert_console_list_lock_held);
-#endif
 
 
 enum devkmsg_log_bits {
@@ -586,7 +575,7 @@ static void truncate_msg(u16 *text_len, u16 *trunc_msg_len)
 		*trunc_msg_len = 0;
 }
 
-int dmesg_restrict = IS_ENABLED(CONFIG_SECURITY_DMESG_RESTRICT);
+int dmesg_restrict = false;
 
 static int syslog_action_restricted(int type)
 {
@@ -947,74 +936,6 @@ const struct file_operations kmsg_fops = {
 	.release = devkmsg_release,
 };
 
-#ifdef CONFIG_VMCORE_INFO
-/*
- * This appends the listed symbols to /proc/vmcore
- *
- * /proc/vmcore is used by various utilities, like crash and makedumpfile to
- * obtain access to symbols that are otherwise very difficult to locate.  These
- * symbols are specifically used so that utilities can access and extract the
- * dmesg log from a vmcore file after a crash.
- */
-void log_buf_vmcoreinfo_setup(void)
-{
-	struct dev_printk_info *dev_info = NULL;
-
-	VMCOREINFO_SYMBOL(prb);
-	VMCOREINFO_SYMBOL(printk_rb_static);
-	VMCOREINFO_SYMBOL(clear_seq);
-
-	/*
-	 * Export struct size and field offsets. User space tools can
-	 * parse it and detect any changes to structure down the line.
-	 */
-
-	VMCOREINFO_STRUCT_SIZE(printk_ringbuffer);
-	VMCOREINFO_OFFSET(printk_ringbuffer, desc_ring);
-	VMCOREINFO_OFFSET(printk_ringbuffer, text_data_ring);
-	VMCOREINFO_OFFSET(printk_ringbuffer, fail);
-
-	VMCOREINFO_STRUCT_SIZE(prb_desc_ring);
-	VMCOREINFO_OFFSET(prb_desc_ring, count_bits);
-	VMCOREINFO_OFFSET(prb_desc_ring, descs);
-	VMCOREINFO_OFFSET(prb_desc_ring, infos);
-	VMCOREINFO_OFFSET(prb_desc_ring, head_id);
-	VMCOREINFO_OFFSET(prb_desc_ring, tail_id);
-
-	VMCOREINFO_STRUCT_SIZE(prb_desc);
-	VMCOREINFO_OFFSET(prb_desc, state_var);
-	VMCOREINFO_OFFSET(prb_desc, text_blk_lpos);
-
-	VMCOREINFO_STRUCT_SIZE(prb_data_blk_lpos);
-	VMCOREINFO_OFFSET(prb_data_blk_lpos, begin);
-	VMCOREINFO_OFFSET(prb_data_blk_lpos, next);
-
-	VMCOREINFO_STRUCT_SIZE(printk_info);
-	VMCOREINFO_OFFSET(printk_info, seq);
-	VMCOREINFO_OFFSET(printk_info, ts_nsec);
-	VMCOREINFO_OFFSET(printk_info, text_len);
-	VMCOREINFO_OFFSET(printk_info, caller_id);
-	VMCOREINFO_OFFSET(printk_info, dev_info);
-
-	VMCOREINFO_STRUCT_SIZE(dev_printk_info);
-	VMCOREINFO_OFFSET(dev_printk_info, subsystem);
-	VMCOREINFO_LENGTH(printk_info_subsystem, sizeof(dev_info->subsystem));
-	VMCOREINFO_OFFSET(dev_printk_info, device);
-	VMCOREINFO_LENGTH(printk_info_device, sizeof(dev_info->device));
-
-	VMCOREINFO_STRUCT_SIZE(prb_data_ring);
-	VMCOREINFO_OFFSET(prb_data_ring, size_bits);
-	VMCOREINFO_OFFSET(prb_data_ring, data);
-	VMCOREINFO_OFFSET(prb_data_ring, head_lpos);
-	VMCOREINFO_OFFSET(prb_data_ring, tail_lpos);
-
-	VMCOREINFO_SIZE(atomic_long_t);
-	VMCOREINFO_TYPE_OFFSET(atomic_long_t, counter);
-
-	VMCOREINFO_STRUCT_SIZE(latched_seq);
-	VMCOREINFO_OFFSET(latched_seq, val);
-}
-#endif
 
 /* requested log_buf_len from kernel cmdline */
 static unsigned long __initdata new_log_buf_len;
@@ -1272,7 +1193,7 @@ static inline void boot_delay_msec(int level)
 {
 }
 
-static bool printk_time = IS_ENABLED(CONFIG_PRINTK_TIME);
+static bool printk_time = false;
 module_param_named(time, printk_time, bool, S_IRUGO | S_IWUSR);
 
 static size_t print_syslog(unsigned int level, char *buf)
@@ -1303,7 +1224,7 @@ static size_t info_print_prefix(const struct printk_info  *info, bool syslog,
 
 	len += print_caller(info->caller_id, buf + len);
 
-	if (IS_ENABLED(CONFIG_PRINTK_CALLER) || time) {
+	if (time) {
 		buf[len++] = ' ';
 		buf[len] = '\0';
 	}
@@ -1777,11 +1698,6 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
  * They allow to pass console_lock to another printk() call using a busy wait.
  */
 
-#if 0
-static struct lockdep_map console_owner_dep_map = {
-	.name = "console_owner"
-};
-#endif
 
 static DEFINE_RAW_SPINLOCK(console_owner_lock);
 static struct task_struct *console_owner;

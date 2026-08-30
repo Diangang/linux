@@ -38,10 +38,3 @@ bool __init x86_pnpbios_disabled(void)
 {
 	return x86_platform.legacy.devices.pnpbios == 0;
 }
-
-#if defined(CONFIG_PNPBIOS)
-bool __init arch_pnpbios_disabled(void)
-{
-	return x86_pnpbios_disabled();
-}
-#endif

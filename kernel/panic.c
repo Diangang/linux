@@ -52,9 +52,8 @@ static unsigned int __read_mostly sysctl_oops_all_cpu_backtrace;
 #define sysctl_oops_all_cpu_backtrace 0
 #endif /* CONFIG_SMP */
 
-int panic_on_oops = IS_ENABLED(CONFIG_PANIC_ON_OOPS);
-static unsigned long tainted_mask =
-	IS_ENABLED(CONFIG_RANDSTRUCT) ? (1 << TAINT_RANDSTRUCT) : 0;
+int panic_on_oops = false;
+static unsigned long tainted_mask;
 static int pause_on_oops;
 static int pause_on_oops_flag;
 static DEFINE_SPINLOCK(pause_on_oops_lock);
@@ -191,8 +190,8 @@ static const struct ctl_table kern_panic_table[] = {
 		.mode           = 0644,
 		.proc_handler   = proc_douintvec,
 	},
-#if (0 || defined(CONFIG_PARISC)) && \
-	defined(CONFIG_DEBUG_STACKOVERFLOW)
+#if (0) && \
+	0
 	{
 		.procname	= "panic_on_stackoverflow",
 		.data		= &sysctl_panic_on_stackoverflow,
@@ -464,9 +463,6 @@ void vpanic(const char *fmt, va_list args)
 			 atomic_read(&panic_redirect_cpu));
 	} else if (test_taint(TAINT_DIE) || oops_in_progress > 1) {
 		panic_this_cpu_backtrace_printed = true;
-	} else if (IS_ENABLED(CONFIG_DEBUG_BUGVERBOSE)) {
-		dump_stack();
-		panic_this_cpu_backtrace_printed = true;
 	}
 
 	/*
@@ -544,9 +540,6 @@ void vpanic(const char *fmt, va_list args)
 		pr_emerg("Press Stop-A (L1-A) from sun keyboard or send break\n"
 			 "twice on console to return to the boot prom\n");
 	}
-#endif
-#if defined(CONFIG_S390)
-	disabled_wait();
 #endif
 	pr_emerg("---[ end Kernel panic - not syncing: %s ]---\n", buf);
 

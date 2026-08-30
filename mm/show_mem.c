@@ -238,11 +238,6 @@ static void show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_z
 			" dirty:%lukB"
 			" writeback:%lukB"
 			" shmem:%lukB"
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-			" shmem_thp:%lukB"
-			" shmem_pmdmapped:%lukB"
-			" anon_thp:%lukB"
-#endif
 			" kernel_stack:%lukB"
 			" pagetables:%lukB"
 			" sec_pagetables:%lukB"
@@ -263,11 +258,6 @@ static void show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_z
 			K(node_page_state(pgdat, NR_FILE_DIRTY)),
 			K(node_page_state(pgdat, NR_WRITEBACK)),
 			K(node_page_state(pgdat, NR_SHMEM)),
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-			K(node_page_state(pgdat, NR_SHMEM_THPS)),
-			K(node_page_state(pgdat, NR_SHMEM_PMDMAPPED)),
-			K(node_page_state(pgdat, NR_ANON_THPS)),
-#endif
 			node_page_state(pgdat, NR_KERNEL_STACK_KB),
 			K(node_page_state(pgdat, NR_PAGETABLE)),
 			K(node_page_state(pgdat, NR_SECONDARY_PAGETABLE)),
@@ -328,11 +318,7 @@ static void show_free_areas(unsigned int filter, nodemask_t *nodemask, int max_z
 			K(zone_page_state(zone, NR_ZONE_INACTIVE_FILE)),
 			K(zone_page_state(zone, NR_ZONE_UNEVICTABLE)),
 			K(zone_page_state(zone, NR_ZONE_WRITE_PENDING)),
-#if IS_ENABLED(CONFIG_ZSMALLOC)
-			K(zone_page_state(zone, NR_ZSPAGES)),
-#else
 			0UL,
-#endif
 			K(zone->present_pages),
 			K(zone_managed_pages(zone)),
 			K(zone_page_state(zone, NR_MLOCK)),

@@ -44,11 +44,7 @@ struct attribute {
  */
 #define sysfs_attr_init(attr) do {} while (0)
 
-#if 0
-#define __SYSFS_FUNCTION_ALTERNATIVE(MEMBERS...) struct { MEMBERS }
-#else
 #define __SYSFS_FUNCTION_ALTERNATIVE(MEMBERS...) union { MEMBERS }
-#endif
 
 /**
  * struct attribute_group - data structure used to declare an attribute group.

@@ -246,42 +246,9 @@ static inline void mount_nfs_root(void)
 {
 }
 
-#ifdef CONFIG_CIFS_ROOT
-
-#define CIFSROOT_TIMEOUT_MIN	5
-#define CIFSROOT_TIMEOUT_MAX	30
-#define CIFSROOT_RETRY_MAX	5
-
-static void __init mount_cifs_root(void)
-{
-	char *root_dev, *root_data;
-	unsigned int timeout;
-	int try;
-
-	if (cifs_root_data(&root_dev, &root_data))
-		goto fail;
-
-	timeout = CIFSROOT_TIMEOUT_MIN;
-	for (try = 1; ; try++) {
-		if (!do_mount_root(root_dev, "cifs", root_mountflags,
-				   root_data))
-			return;
-		if (try > CIFSROOT_RETRY_MAX)
-			break;
-
-		ssleep(timeout);
-		timeout <<= 1;
-		if (timeout > CIFSROOT_TIMEOUT_MAX)
-			timeout = CIFSROOT_TIMEOUT_MAX;
-	}
-fail:
-	pr_err("VFS: Unable to mount root fs via SMB.\n");
-}
-#else
 static inline void mount_cifs_root(void)
 {
 }
-#endif /* CONFIG_CIFS_ROOT */
 
 static bool __init fs_is_nodev(char *fstype)
 {
@@ -454,12 +421,8 @@ void __init prepare_namespace(void)
 	pr_info("VFS: Pivoted into new rootfs\n");
 }
 
-static bool is_tmpfs;
 static int rootfs_init_fs_context(struct fs_context *fc)
 {
-	if (IS_ENABLED(CONFIG_TMPFS) && is_tmpfs)
-		return shmem_init_fs_context(fc);
-
 	return ramfs_init_fs_context(fc);
 }
 
@@ -471,10 +434,4 @@ struct file_system_type rootfs_fs_type = {
 
 void __init init_rootfs(void)
 {
-	if (IS_ENABLED(CONFIG_TMPFS)) {
-		if (!saved_root_name[0] && !root_fs_names)
-			is_tmpfs = true;
-		else if (root_fs_names && !!strstr(root_fs_names, "tmpfs"))
-			is_tmpfs = true;
-	}
 }

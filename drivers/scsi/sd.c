@@ -824,29 +824,6 @@ static int sd_major(int major_idx)
 	}
 }
 
-#ifdef CONFIG_BLK_SED_OPAL
-static int sd_sec_submit(void *data, u16 spsp, u8 secp, void *buffer,
-		size_t len, bool send)
-{
-	struct scsi_disk *sdkp = data;
-	struct scsi_device *sdev = sdkp->device;
-	u8 cdb[12] = { 0, };
-	const struct scsi_exec_args exec_args = {
-		.req_flags = BLK_MQ_REQ_PM,
-	};
-	int ret;
-
-	cdb[0] = send ? SECURITY_PROTOCOL_OUT : SECURITY_PROTOCOL_IN;
-	cdb[1] = secp;
-	put_unaligned_be16(spsp, &cdb[2]);
-	put_unaligned_be32(len, &cdb[6]);
-
-	ret = scsi_execute_cmd(sdev, cdb, send ? REQ_OP_DRV_OUT : REQ_OP_DRV_IN,
-			       buffer, len, SD_TIMEOUT, sdkp->max_retries,
-			       &exec_args);
-	return ret <= 0 ? ret : -EIO;
-}
-#endif /* CONFIG_BLK_SED_OPAL */
 
 /*
  * Look up the DIX operation based on whether the command is read or
@@ -2643,13 +2620,9 @@ static int sd_read_protection_type(struct scsi_disk *sdkp, unsigned char *buffer
 	return 0;
 }
 
-static void sd_config_protection(struct scsi_disk *sdkp,
-		struct queue_limits *lim)
+static void sd_config_protection(struct scsi_disk *sdkp)
 {
 	struct scsi_device *sdp = sdkp->device;
-
-	if (IS_ENABLED(CONFIG_BLK_DEV_INTEGRITY))
-		sd_dif_config_host(sdkp, lim);
 
 	if (!sdkp->protection_type)
 		return;
@@ -3820,7 +3793,7 @@ static void sd_revalidate_disk(struct gendisk *disk)
 		sd_read_app_tag_own(sdkp, buffer);
 		sd_read_write_same(sdkp, buffer);
 		sd_read_security(sdkp, buffer);
-		sd_config_protection(sdkp, lim);
+		sd_config_protection(sdkp);
 	}
 
 	/*
@@ -3998,7 +3971,7 @@ static int sd_probe(struct scsi_device *sdp)
 	    sdp->type != TYPE_RBC)
 		goto out;
 
-	if (!IS_ENABLED(CONFIG_BLK_DEV_ZONED) && sdp->type == TYPE_ZBC) {
+	if (sdp->type == TYPE_ZBC) {
 		sdev_printk(KERN_WARNING, sdp,
 			    "Unsupported ZBC host-managed device.\n");
 		goto out;

@@ -773,8 +773,7 @@ static void __early_init_dt_declare_initrd(unsigned long start,
 	 * case, the platform uses phys_initrd_start/phys_initrd_size instead
 	 * and does the VA conversion itself.
 	 */
-	if (!IS_ENABLED(CONFIG_ARM64) &&
-	    !(IS_ENABLED(CONFIG_RISCV) && IS_ENABLED(CONFIG_64BIT))) {
+	if (!IS_ENABLED(CONFIG_ARM64)) {
 		initrd_start = (unsigned long)__va(start);
 		initrd_end = (unsigned long)__va(end);
 		initrd_below_start_ok = 1;

@@ -60,10 +60,6 @@ struct user_namespace init_user_ns = {
 	.owner = GLOBAL_ROOT_UID,
 	.group = GLOBAL_ROOT_GID,
 	.flags = USERNS_INIT_FLAGS,
-#ifdef CONFIG_KEYS
-	.keyring_name_list = LIST_HEAD_INIT(init_user_ns.keyring_name_list),
-	.keyring_sem = __RWSEM_INITIALIZER(init_user_ns.keyring_sem),
-#endif
 };
 EXPORT_SYMBOL_GPL(init_user_ns);
 
@@ -128,18 +124,11 @@ static struct user_struct *uid_hash_find(kuid_t uid, struct hlist_head *hashent)
 
 static int user_epoll_alloc(struct user_struct *up)
 {
-#ifdef CONFIG_EPOLL
-	return percpu_counter_init(&up->epoll_watches, 0, GFP_KERNEL);
-#else
 	return 0;
-#endif
 }
 
 static void user_epoll_free(struct user_struct *up)
 {
-#ifdef CONFIG_EPOLL
-	percpu_counter_destroy(&up->epoll_watches);
-#endif
 }
 
 /* IRQs are disabled and uidhash_lock is held upon function entry.

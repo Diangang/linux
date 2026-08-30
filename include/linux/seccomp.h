@@ -16,34 +16,6 @@
 #define SECCOMP_NOTIFY_ADDFD_SIZE_VER0 24
 #define SECCOMP_NOTIFY_ADDFD_SIZE_LATEST SECCOMP_NOTIFY_ADDFD_SIZE_VER0
 
-#ifdef CONFIG_SECCOMP
-
-#include <linux/thread_info.h>
-#include <linux/atomic.h>
-#include <asm/seccomp.h>
-
-extern int __secure_computing(void);
-
-#ifdef CONFIG_HAVE_ARCH_SECCOMP_FILTER
-static inline int secure_computing(void)
-{
-	if (unlikely(test_syscall_work(SECCOMP)))
-		return  __secure_computing();
-	return 0;
-}
-#else
-extern void secure_computing_strict(int this_syscall);
-#endif
-
-extern long prctl_get_seccomp(void);
-extern long prctl_set_seccomp(unsigned long, void __user *);
-
-static inline int seccomp_mode(struct seccomp *s)
-{
-	return s->mode;
-}
-
-#else /* CONFIG_SECCOMP */
 
 #include <linux/errno.h>
 
@@ -70,7 +42,6 @@ static inline int seccomp_mode(struct seccomp *s)
 {
 	return SECCOMP_MODE_DISABLED;
 }
-#endif /* CONFIG_SECCOMP */
 
 static inline void seccomp_filter_release(struct task_struct *tsk)
 {

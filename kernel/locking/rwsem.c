@@ -166,52 +166,9 @@ static inline void rwsem_set_reader_owned(struct rw_semaphore *sem)
 	__rwsem_set_reader_owned(sem, current);
 }
 
-#if defined(CONFIG_DEBUG_RWSEMS) || defined(CONFIG_DETECT_HUNG_TASK_BLOCKER)
-/*
- * Return just the real task structure pointer of the owner
- */
-struct task_struct *rwsem_owner(struct rw_semaphore *sem)
-{
-	return (struct task_struct *)
-		(atomic_long_read(&sem->owner) & ~RWSEM_OWNER_FLAGS_MASK);
-}
-
-/*
- * Return true if the rwsem is owned by a reader.
- */
-bool is_rwsem_reader_owned(struct rw_semaphore *sem)
-{
-	/*
-	 * Check the count to see if it is write-locked.
-	 */
-	long count = atomic_long_read(&sem->count);
-
-	if (count & RWSEM_WRITER_MASK)
-		return false;
-	return rwsem_test_oflags(sem, RWSEM_READER_OWNED);
-}
-
-/*
- * With CONFIG_DEBUG_RWSEMS or CONFIG_DETECT_HUNG_TASK_BLOCKER configured,
- * it will make sure that the owner field of a reader-owned rwsem either
- * points to a real reader-owner(s) or gets cleared. The only exception is
- * when the unlock is done by up_read_non_owner().
- */
-static inline void rwsem_clear_reader_owned(struct rw_semaphore *sem)
-{
-	unsigned long val = atomic_long_read(&sem->owner);
-
-	while ((val & ~RWSEM_OWNER_FLAGS_MASK) == (unsigned long)current) {
-		if (atomic_long_try_cmpxchg(&sem->owner, &val,
-					    val & RWSEM_OWNER_FLAGS_MASK))
-			return;
-	}
-}
-#else
 static inline void rwsem_clear_reader_owned(struct rw_semaphore *sem)
 {
 }
-#endif
 
 /*
  * Set the RWSEM_NONSPINNABLE bits if the RWSEM_READER_OWNED flag

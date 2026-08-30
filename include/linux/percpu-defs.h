@@ -70,29 +70,6 @@
  * restrictions, if CONFIG_DEBUG_FORCE_WEAK_PER_CPU is set weak
  * definition is used for all cases.
  */
-#if (defined(CONFIG_ARCH_MODULE_NEEDS_WEAK_PER_CPU) && defined(MODULE)) || \
-	defined(CONFIG_DEBUG_FORCE_WEAK_PER_CPU)
-/*
- * __pcpu_scope_* dummy variable is used to enforce scope.  It
- * receives the static modifier when it's used in front of
- * DEFINE_PER_CPU() and will trigger build failure if
- * DECLARE_PER_CPU() is used for the same variable.
- *
- * __pcpu_unique_* dummy variable is used to enforce symbol uniqueness
- * such that hidden weak symbol collision, which will cause unrelated
- * variables to share the same address, can be detected during build.
- */
-#define DECLARE_PER_CPU_SECTION(type, name, sec)			\
-	extern __PCPU_DUMMY_ATTRS char __pcpu_scope_##name;		\
-	extern __PCPU_ATTRS(sec) __typeof__(type) name
-
-#define DEFINE_PER_CPU_SECTION(type, name, sec)				\
-	__PCPU_DUMMY_ATTRS char __pcpu_scope_##name;			\
-	extern __PCPU_DUMMY_ATTRS char __pcpu_unique_##name;		\
-	__PCPU_DUMMY_ATTRS char __pcpu_unique_##name;			\
-	extern __PCPU_ATTRS(sec) __typeof__(type) name;			\
-	__PCPU_ATTRS(sec) __weak __typeof__(type) name
-#else
 /*
  * Normal declaration and definition macros.
  */
@@ -101,7 +78,6 @@
 
 #define DEFINE_PER_CPU_SECTION(type, name, sec)				\
 	__PCPU_ATTRS(sec) __typeof__(type) name
-#endif
 
 /*
  * Variant on the per-CPU variable declaration/definition theme used for
@@ -177,15 +153,7 @@
  * Declaration/definition used for per-CPU variables that should be accessed
  * as decrypted when memory encryption is enabled in the guest.
  */
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-#define DECLARE_PER_CPU_DECRYPTED(type, name)				\
-	DECLARE_PER_CPU_SECTION(type, name, "..decrypted")
-
-#define DEFINE_PER_CPU_DECRYPTED(type, name)				\
-	DEFINE_PER_CPU_SECTION(type, name, "..decrypted")
-#else
 #define DEFINE_PER_CPU_DECRYPTED(type, name)	DEFINE_PER_CPU(type, name)
-#endif
 
 /*
  * Intermodule exports for per-CPU variables.  sparse forgets about

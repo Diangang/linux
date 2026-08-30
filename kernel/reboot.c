@@ -27,11 +27,7 @@ static int C_A_D = 1;
 struct pid *cad_pid;
 EXPORT_SYMBOL(cad_pid);
 
-#if defined(CONFIG_ARM)
-#define DEFAULT_REBOOT_MODE		= REBOOT_HARD
-#else
 #define DEFAULT_REBOOT_MODE
-#endif
 enum reboot_mode reboot_mode DEFAULT_REBOOT_MODE;
 EXPORT_SYMBOL_GPL(reboot_mode);
 enum reboot_mode panic_reboot_mode = REBOOT_UNDEFINED;

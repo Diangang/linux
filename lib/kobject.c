@@ -698,27 +698,11 @@ static void kobject_cleanup(struct kobject *kobj)
 	kobject_put(parent);
 }
 
-#ifdef CONFIG_DEBUG_KOBJECT_RELEASE
-static void kobject_delayed_cleanup(struct work_struct *work)
-{
-	kobject_cleanup(container_of(to_delayed_work(work),
-				     struct kobject, release));
-}
-#endif
 
 static void kobject_release(struct kref *kref)
 {
 	struct kobject *kobj = container_of(kref, struct kobject, kref);
-#ifdef CONFIG_DEBUG_KOBJECT_RELEASE
-	unsigned long delay = HZ + HZ * get_random_u32_below(4);
-	pr_info("'%s' (%p): %s, parent %p (delayed %ld)\n",
-		kobject_name(kobj), kobj, __func__, kobj->parent, delay);
-	INIT_DELAYED_WORK(&kobj->release, kobject_delayed_cleanup);
-
-	schedule_delayed_work(&kobj->release, delay);
-#else
 	kobject_cleanup(kobj);
-#endif
 }
 
 /**

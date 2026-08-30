@@ -3,8 +3,6 @@
 # scripts contains sources for various helper programs used throughout
 # the kernel for the build process.
 
-hostprogs-always-$(CONFIG_KALLSYMS)			+= kallsyms
-hostprogs-always-$(BUILD_C_RECORDMCOUNT)		+= recordmcount
 hostprogs-always-$(CONFIG_BUILDTIME_TABLE_SORT)		+= sorttable
 
 sorttable-objs := sorttable.o elf-parse.o

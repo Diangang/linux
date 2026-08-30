@@ -118,24 +118,8 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
 		   atomic_long_read(&num_poisoned_pages) << (PAGE_SHIFT - 10));
 #endif
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	show_val_kb(m, "AnonHugePages:  ",
-		    global_node_page_state(NR_ANON_THPS));
-	show_val_kb(m, "ShmemHugePages: ",
-		    global_node_page_state(NR_SHMEM_THPS));
-	show_val_kb(m, "ShmemPmdMapped: ",
-		    global_node_page_state(NR_SHMEM_PMDMAPPED));
-	show_val_kb(m, "FileHugePages:  ",
-		    global_node_page_state(NR_FILE_THPS));
-	show_val_kb(m, "FilePmdMapped:  ",
-		    global_node_page_state(NR_FILE_PMDMAPPED));
-#endif
 
 
-#ifdef CONFIG_UNACCEPTED_MEMORY
-	show_val_kb(m, "Unaccepted:     ",
-		    global_zone_page_state(NR_UNACCEPTED));
-#endif
 	show_val_kb(m, "Balloon:        ",
 		    global_node_page_state(NR_BALLOON_PAGES));
 

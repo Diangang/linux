@@ -8,45 +8,8 @@
 #include <linux/compat.h>
 
 
-#ifdef CONFIG_IA32_EMULATION
-#include <asm/ia32.h>
-#endif /* CONFIG_IA32_EMULATION */
 
 
-#if 0 || defined(CONFIG_IA32_EMULATION)
-struct sigframe_ia32 {
-	u32 pretcode;
-	int sig;
-	struct sigcontext_32 sc;
-	/*
-	 * fpstate is unused. fpstate is moved/allocated after
-	 * retcode[] below. This movement allows to have the FP state and the
-	 * future state extensions (xsave) stay together.
-	 * And at the same time retaining the unused fpstate, prevents changing
-	 * the offset of extramask[] in the sigframe and thus prevent any
-	 * legacy application accessing/modifying it.
-	 */
-	struct _fpstate_32 fpstate_unused;
-	unsigned int extramask[1];
-	char retcode[8];
-	/* fp state follows here */
-};
-
-struct rt_sigframe_ia32 {
-	u32 pretcode;
-	int sig;
-	u32 pinfo;
-	u32 puc;
-#ifdef CONFIG_IA32_EMULATION
-	compat_siginfo_t info;
-#else /* !CONFIG_IA32_EMULATION */
-	struct siginfo info;
-#endif /* CONFIG_IA32_EMULATION */
-	struct ucontext_ia32 uc;
-	char retcode[8];
-	/* fp state follows here */
-};
-#endif /* 0 || defined(CONFIG_IA32_EMULATION) */
 
 #ifdef CONFIG_X86_64
 

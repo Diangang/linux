@@ -110,9 +110,6 @@ unsigned long long max_possible_pfn;
 
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS] __initdata_memblock;
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_RESERVED_REGIONS] __initdata_memblock;
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-static struct memblock_region memblock_physmem_init_regions[INIT_PHYSMEM_REGIONS];
-#endif
 
 struct memblock memblock __initdata_memblock = {
 	.memory.regions		= memblock_memory_init_regions,
@@ -127,13 +124,6 @@ struct memblock memblock __initdata_memblock = {
 	.current_limit		= MEMBLOCK_ALLOC_ANYWHERE,
 };
 
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-struct memblock_type physmem = {
-	.regions		= memblock_physmem_init_regions,
-	.max			= INIT_PHYSMEM_REGIONS,
-	.name			= "physmem",
-};
-#endif
 
 /*
  * keep a pointer to &memblock.memory in the text section to use it in
@@ -995,17 +985,6 @@ int __init_memblock __memblock_reserve(phys_addr_t base, phys_addr_t size,
 	return memblock_add_range(&memblock.reserved, base, size, nid, flags);
 }
 
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-int __init_memblock memblock_physmem_add(phys_addr_t base, phys_addr_t size)
-{
-	phys_addr_t end = base + size - 1;
-
-	memblock_dbg("%s: [%pa-%pa] %pS\n", __func__,
-		     &base, &end, (void *)_RET_IP_);
-
-	return memblock_add_range(&physmem, base, size, MAX_NUMNODES, 0);
-}
-#endif
 
 /**
  * memblock_setclr_flag - set or clear flag for a memory region
@@ -2050,9 +2029,6 @@ static void __init_memblock __memblock_dump_all(void)
 
 	memblock_dump(&memblock.memory);
 	memblock_dump(&memblock.reserved);
-#ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP
-	memblock_dump(&physmem);
-#endif
 }
 
 void __init_memblock memblock_dump_all(void)
@@ -2108,9 +2084,7 @@ static void __init free_unused_memmap(void)
 	unsigned long start, end, prev_end = 0;
 	int i;
 
-	if (!IS_ENABLED(CONFIG_HAVE_ARCH_PFN_VALID) ||
-	    IS_ENABLED(CONFIG_SPARSEMEM_VMEMMAP))
-		return;
+	return;
 
 	/*
 	 * This relies on each bank being in address order.

@@ -28,45 +28,6 @@
 #include "internal.h"
 #include "swap.h"
 
-static inline void sanity_check_pinned_pages(struct page **pages,
-					     unsigned long npages)
-{
-	if (!IS_ENABLED(CONFIG_DEBUG_VM))
-		return;
-
-	/*
-	 * We only pin anonymous pages if they are exclusive. Once pinned, we
-	 * can no longer turn them possibly shared and PageAnonExclusive() will
-	 * stick around until the page is freed.
-	 *
-	 * We'd like to verify that our pinned anonymous pages are still mapped
-	 * exclusively. The issue with anon THP is that we don't know how
-	 * they are/were mapped when pinning them. However, for anon
-	 * THP we can assume that either the given page (PTE-mapped THP) or
-	 * the head page (PMD-mapped THP) should be PageAnonExclusive(). If
-	 * neither is the case, there is certainly something wrong.
-	 */
-	for (; npages; npages--, pages++) {
-		struct page *page = *pages;
-		struct folio *folio;
-
-		if (!page)
-			continue;
-
-		folio = page_folio(page);
-
-		if (is_zero_page(page) ||
-		    !folio_test_anon(folio))
-			continue;
-		if (!folio_test_large(folio) || folio_test_hugetlb(folio))
-			VM_WARN_ON_ONCE_FOLIO(!PageAnonExclusive(&folio->page), folio);
-		else
-			/* Either a PTE-mapped or a PMD-mapped THP. */
-			VM_WARN_ON_ONCE_PAGE(!PageAnonExclusive(&folio->page) &&
-					     !PageAnonExclusive(page), page);
-	}
-}
-
 /*
  * Return the folio with ref appropriately incremented,
  * or NULL if that failed.
@@ -184,7 +145,6 @@ int __must_check try_grab_folio(struct folio *folio, int refs,
  */
 void unpin_user_page(struct page *page)
 {
-	sanity_check_pinned_pages(&page, 1);
 	gup_put_folio(page_folio(page), 1, FOLL_PIN);
 }
 EXPORT_SYMBOL(unpin_user_page);
@@ -293,7 +253,6 @@ void unpin_user_pages_dirty_lock(struct page **pages, unsigned long npages,
 		return;
 	}
 
-	sanity_check_pinned_pages(pages, npages);
 	for (i = 0; i < npages; i += nr) {
 		folio = gup_folio_next(pages, npages, i, &nr);
 		/*
@@ -412,7 +371,6 @@ void unpin_user_pages(struct page **pages, unsigned long npages)
 	if (WARN_ON(IS_ERR_VALUE(npages)))
 		return;
 
-	sanity_check_pinned_pages(pages, npages);
 	for (i = 0; i < npages; i += nr) {
 		if (!pages[i]) {
 			nr = 1;
@@ -732,10 +690,6 @@ static struct page *follow_huge_pmd(struct vm_area_struct *vma,
 	if (ret)
 		return ERR_PTR(ret);
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	if (pmd_trans_huge(pmdval) && (flags & FOLL_TOUCH))
-		touch_pmd(vma, addr, pmd, flags & FOLL_WRITE);
-#endif	/* CONFIG_TRANSPARENT_HUGEPAGE */
 
 	page += (addr & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
 	*page_mask = HPAGE_PMD_NR - 1;
@@ -1265,9 +1219,6 @@ static int check_vma_flags(struct vm_area_struct *vma, unsigned long gup_flags)
 static struct vm_area_struct *gup_vma_lookup(struct mm_struct *mm,
 	 unsigned long addr)
 {
-#ifdef CONFIG_STACK_GROWSUP
-	return vma_lookup(mm, addr);
-#else
 	static volatile unsigned long next_warn;
 	struct vm_area_struct *vma;
 	unsigned long now, next;
@@ -1294,7 +1245,6 @@ static struct vm_area_struct *gup_vma_lookup(struct mm_struct *mm,
 		vma->vm_start, vma->vm_end, addr);
 	dump_stack();
 	return NULL;
-#endif
 }
 
 /**
@@ -2183,17 +2133,6 @@ EXPORT_SYMBOL(fault_in_readable);
  *
  * Called without mmap_lock (takes and releases the mmap_lock by itself).
  */
-#ifdef CONFIG_ELF_CORE
-struct page *get_dump_page(unsigned long addr, int *locked)
-{
-	struct page *page;
-	int ret;
-
-	ret = __get_user_pages_locked(current->mm, addr, 1, &page, locked,
-				      FOLL_FORCE | FOLL_DUMP | FOLL_GET);
-	return (ret == 1) ? page : NULL;
-}
-#endif /* CONFIG_ELF_CORE */
 
 #ifdef CONFIG_MIGRATION
 
@@ -2724,8 +2663,6 @@ EXPORT_SYMBOL(get_user_pages_unlocked);
  * This call assumes the caller has pinned the folio, that the lowest page table
  * level still points to this folio, and that interrupts have been disabled.
  *
- * GUP-fast must reject all secretmem folios.
- *
  * Writing to pinned file-backed dirty tracked folios is inherently problematic
  * (see comment describing the writable_file_mapping_allowed() function). We
  * therefore try to avoid the most egregious case of a long-term mapping doing
@@ -2739,7 +2676,6 @@ static bool gup_fast_folio_allowed(struct folio *folio, unsigned int flags)
 {
 	bool reject_file_backed = false;
 	struct address_space *mapping;
-	bool check_secretmem = false;
 	unsigned long mapping_flags;
 
 	/*
@@ -2752,17 +2688,13 @@ static bool gup_fast_folio_allowed(struct folio *folio, unsigned int flags)
 
 	/* We hold a folio reference, so we can safely access folio fields. */
 
-	/* secretmem folios are always order-0 folios. */
-	if (IS_ENABLED(CONFIG_SECRETMEM) && !folio_test_large(folio))
-		check_secretmem = true;
-
-	if (!reject_file_backed && !check_secretmem)
+	if (!reject_file_backed)
 		return true;
 
 	if (WARN_ON_ONCE(folio_test_slab(folio)))
 		return false;
 
-	/* hugetlb neither requires dirty-tracking nor can be secretmem. */
+	/* hugetlb does not require dirty-tracking. */
 	if (folio_test_hugetlb(folio))
 		return true;
 
@@ -2800,8 +2732,6 @@ static bool gup_fast_folio_allowed(struct folio *folio, unsigned int flags)
 	 * At this point, we know the mapping is non-null and points to an
 	 * address_space object.
 	 */
-	if (check_secretmem && secretmem_mapping(mapping))
-		return false;
 	/* The only remaining allowed file system is shmem. */
 	return !reject_file_backed || shmem_mapping(mapping);
 }
@@ -3165,8 +3095,6 @@ static unsigned long gup_fast(unsigned long start, unsigned long end,
 		if (read_seqcount_retry(&current->mm->write_protect_seq, seq)) {
 			gup_fast_unpin_user_pages(pages, nr_pinned);
 			return 0;
-		} else {
-			sanity_check_pinned_pages(pages, nr_pinned);
 		}
 	}
 	return nr_pinned;

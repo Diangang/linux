@@ -1999,63 +1999,6 @@ static void wait_for_xmitr(struct uart_8250_port *up, int bits)
 	}
 }
 
-#ifdef CONFIG_CONSOLE_POLL
-/*
- * Console polling routines for writing and reading from the uart while
- * in an interrupt or debug context.
- */
-
-static int serial8250_get_poll_char(struct uart_port *port)
-{
-	struct uart_8250_port *up = up_to_u8250p(port);
-	u16 lsr;
-
-	guard(serial8250_rpm)(up);
-
-	lsr = serial_port_in(port, UART_LSR);
-	if (!(lsr & UART_LSR_DR))
-		return NO_POLL_CHAR;
-
-	return serial_port_in(port, UART_RX);
-}
-
-
-static void serial8250_put_poll_char(struct uart_port *port,
-			 unsigned char c)
-{
-	unsigned int ier;
-	struct uart_8250_port *up = up_to_u8250p(port);
-
-	/*
-	 * Normally the port is locked to synchronize UART_IER access
-	 * against the console. However, this function is only used by
-	 * KDB/KGDB, where it may not be possible to acquire the port
-	 * lock because all other CPUs are quiesced. The quiescence
-	 * should allow safe lockless usage here.
-	 */
-
-	guard(serial8250_rpm)(up);
-	/*
-	 *	First save the IER then disable the interrupts
-	 */
-	ier = serial_port_in(port, UART_IER);
-	serial8250_clear_IER(up);
-
-	wait_for_xmitr(up, UART_LSR_BOTH_EMPTY);
-	/*
-	 *	Send the character out.
-	 */
-	serial_port_out(port, UART_TX, c);
-
-	/*
-	 *	Finally, wait for transmitter to become empty
-	 *	and restore the IER
-	 */
-	wait_for_xmitr(up, UART_LSR_BOTH_EMPTY);
-	serial_port_out(port, UART_IER, ier);
-}
-
-#endif /* CONFIG_CONSOLE_POLL */
 
 static void serial8250_startup_special(struct uart_port *port)
 {
@@ -3151,10 +3094,6 @@ static const struct uart_ops serial8250_pops = {
 	.request_port	= serial8250_request_port,
 	.config_port	= serial8250_config_port,
 	.verify_port	= serial8250_verify_port,
-#ifdef CONFIG_CONSOLE_POLL
-	.poll_get_char = serial8250_get_poll_char,
-	.poll_put_char = serial8250_put_poll_char,
-#endif
 };
 
 void serial8250_init_port(struct uart_8250_port *up)

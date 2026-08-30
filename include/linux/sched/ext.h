@@ -18,14 +18,6 @@ static inline bool scx_rcu_cpu_stall(void) { return false; }
 
 
 struct scx_task_group {
-#ifdef CONFIG_EXT_GROUP_SCHED
-	u32			flags;		/* SCX_TG_* */
-	u32			weight;
-	u64			bw_period_us;
-	u64			bw_quota_us;
-	u64			bw_burst_us;
-	bool			idle;
-#endif
 };
 
 #endif	/* _LINUX_SCHED_EXT_H */

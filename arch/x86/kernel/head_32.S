@@ -107,11 +107,6 @@ SYM_CODE_START(startup_32)
 	rep movsl
 1:
 
-#ifdef CONFIG_OLPC
-	/* save OFW's pgdir table for later use when calling into OFW */
-	movl %cr3, %eax
-	movl %eax, pa(olpc_ofw_pgd)
-#endif
 
 	/* Create early pagetables. */
 	call  mk_early_pgtbl_32

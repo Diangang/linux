@@ -172,17 +172,12 @@ void ring_buffer_reset_cpu(struct trace_buffer *buffer, int cpu);
 void ring_buffer_reset_online_cpus(struct trace_buffer *buffer);
 void ring_buffer_reset(struct trace_buffer *buffer);
 
-#ifdef CONFIG_RING_BUFFER_ALLOW_SWAP
-int ring_buffer_swap_cpu(struct trace_buffer *buffer_a,
-			 struct trace_buffer *buffer_b, int cpu);
-#else
 static inline int
 ring_buffer_swap_cpu(struct trace_buffer *buffer_a,
 		     struct trace_buffer *buffer_b, int cpu)
 {
 	return -ENODEV;
 }
-#endif
 
 bool ring_buffer_empty(struct trace_buffer *buffer);
 bool ring_buffer_empty_cpu(struct trace_buffer *buffer, int cpu);
@@ -240,11 +235,7 @@ enum ring_buffer_flags {
 	RB_FL_OVERWRITE		= 1 << 0,
 };
 
-#ifdef CONFIG_RING_BUFFER
-int trace_rb_cpu_prepare(unsigned int cpu, struct hlist_node *node);
-#else
 #define trace_rb_cpu_prepare	NULL
-#endif
 
 int ring_buffer_map(struct trace_buffer *buffer, int cpu,
 		    struct vm_area_struct *vma);

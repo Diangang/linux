@@ -72,12 +72,6 @@ static inline dma_addr_t dma_range_map_max(const struct bus_dma_region *map)
 	return ret;
 }
 
-#ifdef CONFIG_ARCH_HAS_PHYS_TO_DMA
-#include <asm/dma-direct.h>
-#ifndef phys_to_dma_unencrypted
-#define phys_to_dma_unencrypted		phys_to_dma
-#endif
-#else
 static inline dma_addr_t __phys_to_dma(struct device *dev, phys_addr_t paddr)
 {
 	if (dev->dma_range_map)
@@ -113,7 +107,6 @@ static inline phys_addr_t dma_to_phys(struct device *dev, dma_addr_t dma_addr)
 
 	return paddr;
 }
-#endif /* !CONFIG_ARCH_HAS_PHYS_TO_DMA */
 
 #ifdef CONFIG_ARCH_HAS_FORCE_DMA_UNENCRYPTED
 bool force_dma_unencrypted(struct device *dev);

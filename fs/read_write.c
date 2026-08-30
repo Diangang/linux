@@ -414,15 +414,8 @@ SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 	return ksys_lseek(fd, offset, whence);
 }
 
-#ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE3(lseek, unsigned int, fd, compat_off_t, offset, unsigned int, whence)
-{
-	return ksys_lseek(fd, offset, whence);
-}
-#endif
 
-#if !defined(CONFIG_64BIT) || defined(CONFIG_COMPAT) || \
-	defined(__ARCH_WANT_SYS_LLSEEK)
+#if !defined(CONFIG_64BIT) || defined(__ARCH_WANT_SYS_LLSEEK)
 SYSCALL_DEFINE5(llseek, unsigned int, fd, unsigned long, offset_high,
 		unsigned long, offset_low, loff_t __user *, result,
 		unsigned int, whence)
@@ -773,13 +766,6 @@ SYSCALL_DEFINE4(pread64, unsigned int, fd, char __user *, buf,
 	return ksys_pread64(fd, buf, count, pos);
 }
 
-#if defined(CONFIG_COMPAT) && defined(__ARCH_WANT_COMPAT_PREAD64)
-COMPAT_SYSCALL_DEFINE5(pread64, unsigned int, fd, char __user *, buf,
-		       size_t, count, compat_arg_u64_dual(pos))
-{
-	return ksys_pread64(fd, buf, count, compat_arg_u64_glue(pos));
-}
-#endif
 
 ssize_t ksys_pwrite64(unsigned int fd, const char __user *buf,
 		      size_t count, loff_t pos)
@@ -803,13 +789,6 @@ SYSCALL_DEFINE4(pwrite64, unsigned int, fd, const char __user *, buf,
 	return ksys_pwrite64(fd, buf, count, pos);
 }
 
-#if defined(CONFIG_COMPAT) && defined(__ARCH_WANT_COMPAT_PWRITE64)
-COMPAT_SYSCALL_DEFINE5(pwrite64, unsigned int, fd, const char __user *, buf,
-		       size_t, count, compat_arg_u64_dual(pos))
-{
-	return ksys_pwrite64(fd, buf, count, compat_arg_u64_glue(pos));
-}
-#endif
 
 static ssize_t do_iter_readv_writev(struct file *filp, struct iov_iter *iter,
 		loff_t *ppos, int type, rwf_t flags)
@@ -1218,88 +1197,6 @@ SYSCALL_DEFINE6(pwritev2, unsigned long, fd, const struct iovec __user *, vec,
  * iovec - import_iovec will properly treat those as compat_iovecs based on
  * in_compat_syscall().
  */
-#ifdef CONFIG_COMPAT
-#ifdef __ARCH_WANT_COMPAT_SYS_PREADV64
-COMPAT_SYSCALL_DEFINE4(preadv64, unsigned long, fd,
-		const struct iovec __user *, vec,
-		unsigned long, vlen, loff_t, pos)
-{
-	return do_preadv(fd, vec, vlen, pos, 0);
-}
-#endif
-
-COMPAT_SYSCALL_DEFINE5(preadv, compat_ulong_t, fd,
-		const struct iovec __user *, vec,
-		compat_ulong_t, vlen, u32, pos_low, u32, pos_high)
-{
-	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
-
-	return do_preadv(fd, vec, vlen, pos, 0);
-}
-
-#ifdef __ARCH_WANT_COMPAT_SYS_PREADV64V2
-COMPAT_SYSCALL_DEFINE5(preadv64v2, unsigned long, fd,
-		const struct iovec __user *, vec,
-		unsigned long, vlen, loff_t, pos, rwf_t, flags)
-{
-	if (pos == -1)
-		return do_readv(fd, vec, vlen, flags);
-	return do_preadv(fd, vec, vlen, pos, flags);
-}
-#endif
-
-COMPAT_SYSCALL_DEFINE6(preadv2, compat_ulong_t, fd,
-		const struct iovec __user *, vec,
-		compat_ulong_t, vlen, u32, pos_low, u32, pos_high,
-		rwf_t, flags)
-{
-	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
-
-	if (pos == -1)
-		return do_readv(fd, vec, vlen, flags);
-	return do_preadv(fd, vec, vlen, pos, flags);
-}
-
-#ifdef __ARCH_WANT_COMPAT_SYS_PWRITEV64
-COMPAT_SYSCALL_DEFINE4(pwritev64, unsigned long, fd,
-		const struct iovec __user *, vec,
-		unsigned long, vlen, loff_t, pos)
-{
-	return do_pwritev(fd, vec, vlen, pos, 0);
-}
-#endif
-
-COMPAT_SYSCALL_DEFINE5(pwritev, compat_ulong_t, fd,
-		const struct iovec __user *,vec,
-		compat_ulong_t, vlen, u32, pos_low, u32, pos_high)
-{
-	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
-
-	return do_pwritev(fd, vec, vlen, pos, 0);
-}
-
-#ifdef __ARCH_WANT_COMPAT_SYS_PWRITEV64V2
-COMPAT_SYSCALL_DEFINE5(pwritev64v2, unsigned long, fd,
-		const struct iovec __user *, vec,
-		unsigned long, vlen, loff_t, pos, rwf_t, flags)
-{
-	if (pos == -1)
-		return do_writev(fd, vec, vlen, flags);
-	return do_pwritev(fd, vec, vlen, pos, flags);
-}
-#endif
-
-COMPAT_SYSCALL_DEFINE6(pwritev2, compat_ulong_t, fd,
-		const struct iovec __user *,vec,
-		compat_ulong_t, vlen, u32, pos_low, u32, pos_high, rwf_t, flags)
-{
-	loff_t pos = ((loff_t)pos_high << 32) | pos_low;
-
-	if (pos == -1)
-		return do_writev(fd, vec, vlen, flags);
-	return do_pwritev(fd, vec, vlen, pos, flags);
-}
-#endif /* CONFIG_COMPAT */
 
 static ssize_t do_sendfile(int out_fd, int in_fd, loff_t *ppos,
 			   size_t count, loff_t max)
@@ -1423,45 +1320,6 @@ SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd, loff_t __user *, offset, si
 	return do_sendfile(out_fd, in_fd, NULL, count, 0);
 }
 
-#ifdef CONFIG_COMPAT
-COMPAT_SYSCALL_DEFINE4(sendfile, int, out_fd, int, in_fd,
-		compat_off_t __user *, offset, compat_size_t, count)
-{
-	loff_t pos;
-	off_t off;
-	ssize_t ret;
-
-	if (offset) {
-		if (unlikely(get_user(off, offset)))
-			return -EFAULT;
-		pos = off;
-		ret = do_sendfile(out_fd, in_fd, &pos, count, MAX_NON_LFS);
-		if (unlikely(put_user(pos, offset)))
-			return -EFAULT;
-		return ret;
-	}
-
-	return do_sendfile(out_fd, in_fd, NULL, count, 0);
-}
-
-COMPAT_SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd,
-		compat_loff_t __user *, offset, compat_size_t, count)
-{
-	loff_t pos;
-	ssize_t ret;
-
-	if (offset) {
-		if (unlikely(copy_from_user(&pos, offset, sizeof(loff_t))))
-			return -EFAULT;
-		ret = do_sendfile(out_fd, in_fd, &pos, count, 0);
-		if (unlikely(put_user(pos, offset)))
-			return -EFAULT;
-		return ret;
-	}
-
-	return do_sendfile(out_fd, in_fd, NULL, count, 0);
-}
-#endif
 
 /*
  * Performs necessary checks before doing a file copy

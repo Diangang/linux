@@ -177,11 +177,7 @@ static inline struct cpumask *cpu_llc_shared_mask(int cpu)
 static inline void __noreturn mwait_play_dead(unsigned int eax_hint) { BUG(); }
 #endif /* CONFIG_SMP */
 
-#if 0
-extern void nmi_selftest(void);
-#else
 #define nmi_selftest() do { } while (0)
-#endif
 
 extern unsigned int smpboot_control;
 extern unsigned long apic_mmio_base;

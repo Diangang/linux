@@ -99,14 +99,6 @@ static inline pte_t *pte_offset_kernel(pmd_t *pmd, unsigned long address)
 #define pte_offset_kernel pte_offset_kernel
 #endif
 
-#ifdef CONFIG_HIGHPTE
-#define __pte_map(pmd, address) \
-	((pte_t *)kmap_local_page(pmd_page(*(pmd))) + pte_index((address)))
-#define pte_unmap(pte)	do {	\
-	kunmap_local((pte));	\
-	rcu_read_unlock();	\
-} while (0)
-#else
 static inline pte_t *__pte_map(pmd_t *pmd, unsigned long address)
 {
 	return pte_offset_kernel(pmd, address);
@@ -115,7 +107,6 @@ static inline void pte_unmap(pte_t *pte)
 {
 	rcu_read_unlock();
 }
-#endif
 
 void pte_free_defer(struct mm_struct *mm, pgtable_t pgtable);
 
@@ -427,14 +418,6 @@ extern int ptep_set_access_flags(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PMDP_SET_ACCESS_FLAGS
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-extern int pmdp_set_access_flags(struct vm_area_struct *vma,
-				 unsigned long address, pmd_t *pmdp,
-				 pmd_t entry, int dirty);
-extern int pudp_set_access_flags(struct vm_area_struct *vma,
-				 unsigned long address, pud_t *pudp,
-				 pud_t entry, int dirty);
-#else
 static inline int pmdp_set_access_flags(struct vm_area_struct *vma,
 					unsigned long address, pmd_t *pmdp,
 					pmd_t entry, int dirty)
@@ -449,7 +432,6 @@ static inline int pudp_set_access_flags(struct vm_area_struct *vma,
 	BUILD_BUG();
 	return 0;
 }
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif
 
 #ifndef ptep_get
@@ -503,7 +485,7 @@ static inline bool ptep_test_and_clear_young(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PMDP_TEST_AND_CLEAR_YOUNG
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
+#if defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
 static inline bool pmdp_test_and_clear_young(struct vm_area_struct *vma,
 		unsigned long address, pmd_t *pmdp)
 {
@@ -532,10 +514,6 @@ bool ptep_clear_flush_young(struct vm_area_struct *vma,
 #endif
 
 #ifndef __HAVE_ARCH_PMDP_CLEAR_YOUNG_FLUSH
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-bool pmdp_clear_flush_young(struct vm_area_struct *vma,
-		unsigned long address, pmd_t *pmdp);
-#else
 /*
  * Despite relevant to THP only, this API is called from generic rmap code
  * under PageTransHuge(), hence needs a dummy implementation for !THP
@@ -546,7 +524,6 @@ static inline bool pmdp_clear_flush_young(struct vm_area_struct *vma,
 	BUILD_BUG();
 	return false;
 }
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif
 
 #ifndef arch_has_hw_nonleaf_pmd_young
@@ -665,68 +642,6 @@ static inline void ptep_clear(struct mm_struct *mm, unsigned long addr,
 	pte_clear(mm, addr, ptep);
 }
 
-#if 0
-/*
- * For walking the pagetables without holding any locks.  Some architectures
- * (eg x86-32 PAE) cannot load the entries atomically without using expensive
- * instructions.  We are guaranteed that a PTE will only either go from not
- * present to present, or present to not present -- it will not switch to a
- * completely different present page without a TLB flush inbetween; which we
- * are blocking by holding interrupts off.
- *
- * Setting ptes from not present to present goes:
- *
- *   ptep->pte_high = h;
- *   smp_wmb();
- *   ptep->pte_low = l;
- *
- * And present to not present goes:
- *
- *   ptep->pte_low = 0;
- *   smp_wmb();
- *   ptep->pte_high = 0;
- *
- * We must ensure here that the load of pte_low sees 'l' IFF pte_high sees 'h'.
- * We load pte_high *after* loading pte_low, which ensures we don't see an older
- * value of pte_high.  *Then* we recheck pte_low, which ensures that we haven't
- * picked up a changed pte high. We might have gotten rubbish values from
- * pte_low and pte_high, but we are guaranteed that pte_low will not have the
- * present bit set *unless* it is 'l'. Because get_user_pages_fast() only
- * operates on present ptes we're safe.
- */
-static inline pte_t ptep_get_lockless(pte_t *ptep)
-{
-	pte_t pte;
-
-	do {
-		pte.pte_low = ptep->pte_low;
-		smp_rmb();
-		pte.pte_high = ptep->pte_high;
-		smp_rmb();
-	} while (unlikely(pte.pte_low != ptep->pte_low));
-
-	return pte;
-}
-#define ptep_get_lockless ptep_get_lockless
-
-#if CONFIG_PGTABLE_LEVELS > 2
-static inline pmd_t pmdp_get_lockless(pmd_t *pmdp)
-{
-	pmd_t pmd;
-
-	do {
-		pmd.pmd_low = pmdp->pmd_low;
-		smp_rmb();
-		pmd.pmd_high = pmdp->pmd_high;
-		smp_rmb();
-	} while (unlikely(pmd.pmd_low != pmdp->pmd_low));
-
-	return pmd;
-}
-#define pmdp_get_lockless pmdp_get_lockless
-#define pmdp_get_lockless_sync() tlb_remove_table_sync_one()
-#endif /* CONFIG_PGTABLE_LEVELS > 2 */
-#endif /* CONFIG_GUP_GET_PXX_LOW_HIGH */
 
 /*
  * We require that the PTE can be read atomically.
@@ -748,52 +663,7 @@ static inline void pmdp_get_lockless_sync(void)
 }
 #endif
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#ifndef __HAVE_ARCH_PMDP_HUGE_GET_AND_CLEAR
-static inline pmd_t pmdp_huge_get_and_clear(struct mm_struct *mm,
-					    unsigned long address,
-					    pmd_t *pmdp)
-{
-	pmd_t pmd = *pmdp;
 
-	pmd_clear(pmdp);
-
-	return pmd;
-}
-#endif /* __HAVE_ARCH_PMDP_HUGE_GET_AND_CLEAR */
-#ifndef __HAVE_ARCH_PUDP_HUGE_GET_AND_CLEAR
-static inline pud_t pudp_huge_get_and_clear(struct mm_struct *mm,
-					    unsigned long address,
-					    pud_t *pudp)
-{
-	pud_t pud = *pudp;
-
-	pud_clear(pudp);
-
-	return pud;
-}
-#endif /* __HAVE_ARCH_PUDP_HUGE_GET_AND_CLEAR */
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
-
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#ifndef __HAVE_ARCH_PMDP_HUGE_GET_AND_CLEAR_FULL
-static inline pmd_t pmdp_huge_get_and_clear_full(struct vm_area_struct *vma,
-					    unsigned long address, pmd_t *pmdp,
-					    int full)
-{
-	return pmdp_huge_get_and_clear(vma->vm_mm, address, pmdp);
-}
-#endif
-
-#ifndef __HAVE_ARCH_PUDP_HUGE_GET_AND_CLEAR_FULL
-static inline pud_t pudp_huge_get_and_clear_full(struct vm_area_struct *vma,
-					    unsigned long address, pud_t *pudp,
-					    int full)
-{
-	return pudp_huge_get_and_clear(vma->vm_mm, address, pudp);
-}
-#endif
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 #ifndef __HAVE_ARCH_PTEP_GET_AND_CLEAR_FULL
 static inline pte_t ptep_get_and_clear_full(struct mm_struct *mm,
@@ -1143,46 +1013,23 @@ static inline pte_t pte_sw_mkyoung(pte_t pte)
 #endif
 
 #ifndef __HAVE_ARCH_PMDP_SET_WRPROTECT
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline void pmdp_set_wrprotect(struct mm_struct *mm,
-				      unsigned long address, pmd_t *pmdp)
-{
-	pmd_t old_pmd = *pmdp;
-	set_pmd_at(mm, address, pmdp, pmd_wrprotect(old_pmd));
-}
-#else
 static inline void pmdp_set_wrprotect(struct mm_struct *mm,
 				      unsigned long address, pmd_t *pmdp)
 {
 	BUILD_BUG();
 }
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif
 #ifndef __HAVE_ARCH_PUDP_SET_WRPROTECT
 #ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline void pudp_set_wrprotect(struct mm_struct *mm,
-				      unsigned long address, pud_t *pudp)
-{
-	pud_t old_pud = *pudp;
-
-	set_pud_at(mm, address, pudp, pud_wrprotect(old_pud));
-}
-#else
 static inline void pudp_set_wrprotect(struct mm_struct *mm,
 				      unsigned long address, pud_t *pudp)
 {
 	BUILD_BUG();
 }
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif /* CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD */
 #endif
 
 #ifndef pmdp_collapse_flush
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-extern pmd_t pmdp_collapse_flush(struct vm_area_struct *vma,
-				 unsigned long address, pmd_t *pmdp);
-#else
 static inline pmd_t pmdp_collapse_flush(struct vm_area_struct *vma,
 					unsigned long address,
 					pmd_t *pmdp)
@@ -1191,7 +1038,6 @@ static inline pmd_t pmdp_collapse_flush(struct vm_area_struct *vma,
 	return *pmdp;
 }
 #define pmdp_collapse_flush pmdp_collapse_flush
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif
 
 #ifndef __HAVE_ARCH_PGTABLE_DEPOSIT
@@ -1207,20 +1053,6 @@ extern pgtable_t pgtable_trans_huge_withdraw(struct mm_struct *mm, pmd_t *pmdp);
 #define arch_needs_pgtable_deposit() (false)
 #endif
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-/*
- * This is an implementation of pmdp_establish() that is only suitable for an
- * architecture that doesn't have hardware dirty/accessed bits. In this case we
- * can't race with CPU which sets these bits and non-atomic approach is fine.
- */
-static inline pmd_t generic_pmdp_establish(struct vm_area_struct *vma,
-		unsigned long address, pmd_t *pmdp, pmd_t pmd)
-{
-	pmd_t old_pmd = *pmdp;
-	set_pmd_at(vma->vm_mm, address, pmdp, pmd);
-	return old_pmd;
-}
-#endif
 
 #ifndef __HAVE_ARCH_PMDP_INVALIDATE
 extern pmd_t pmdp_invalidate(struct vm_area_struct *vma, unsigned long address,
@@ -1760,11 +1592,9 @@ static inline pgprot_t pgprot_modify(pgprot_t oldprot, pgprot_t newprot)
  * even if the architecture provides the resource.
  * Adding this API allows architectures to add their own checks for the
  * devices on which the kernel is running.
- * Note: When overriding it, please make sure the CONFIG_MEM_SOFT_DIRTY
- * is part of this macro.
  */
 #ifndef pgtable_supports_soft_dirty
-#define pgtable_supports_soft_dirty()	IS_ENABLED(CONFIG_MEM_SOFT_DIRTY)
+#define pgtable_supports_soft_dirty()	false
 #endif
 
 #ifdef CONFIG_HAVE_ARCH_SOFT_DIRTY
@@ -1993,7 +1823,6 @@ static inline struct page *_zero_page(unsigned long addr)
 
 #ifdef CONFIG_MMU
 
-#ifndef CONFIG_TRANSPARENT_HUGEPAGE
 static inline int pmd_trans_huge(pmd_t pmd)
 {
 	return 0;
@@ -2005,7 +1834,6 @@ static inline int pmd_write(pmd_t pmd)
 	return 0;
 }
 #endif /* pmd_write */
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 #ifndef pud_write
 static inline int pud_write(pud_t pud)
@@ -2015,7 +1843,7 @@ static inline int pud_write(pud_t pud)
 }
 #endif /* pud_write */
 
-#if !defined(CONFIG_TRANSPARENT_HUGEPAGE) || \
+#if 1 || \
 	!defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
 static inline int pud_trans_huge(pud_t pud)
 {
@@ -2025,17 +1853,6 @@ static inline int pud_trans_huge(pud_t pud)
 
 static inline int pud_trans_unstable(pud_t *pud)
 {
-#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && \
-	defined(CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD)
-	pud_t pudval = pudp_get(pud);
-
-	if (pud_none(pudval) || pud_trans_huge(pudval))
-		return 1;
-	if (unlikely(pud_bad(pudval))) {
-		pud_clear_bad(pud);
-		return 1;
-	}
-#endif
 	return 0;
 }
 
@@ -2122,22 +1939,8 @@ static inline int pmd_free_pte_page(pmd_t *pmd, unsigned long addr)
 #endif	/* CONFIG_HAVE_ARCH_HUGE_VMAP */
 
 #ifndef __HAVE_ARCH_FLUSH_PMD_TLB_RANGE
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-/*
- * ARCHes with special requirements for evicting THP backing TLB entries can
- * implement this. Otherwise also, it can help optimize normal TLB flush in
- * THP regime. Stock flush_tlb_range() typically has optimization to nuke the
- * entire TLB if flush span is greater than a threshold, which will
- * likely be true for a single huge page. Thus a single THP flush will
- * invalidate the entire TLB which is not desirable.
- * e.g. see arch/arc: flush_pmd_tlb_range
- */
-#define flush_pmd_tlb_range(vma, addr, end)	flush_tlb_range(vma, addr, end)
-#define flush_pud_tlb_range(vma, addr, end)	flush_tlb_range(vma, addr, end)
-#else
 #define flush_pmd_tlb_range(vma, addr, end)	BUILD_BUG()
 #define flush_pud_tlb_range(vma, addr, end)	BUILD_BUG()
-#endif
 #endif
 
 struct file;

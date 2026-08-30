@@ -55,62 +55,6 @@ static inline int access_ok(const void __user *addr, unsigned long size)
 /*
  * User access enabling/disabling.
  */
-#if 0
-static inline void __uaccess_ttbr0_disable(void)
-{
-	unsigned long flags, ttbr;
-
-	local_irq_save(flags);
-	ttbr = read_sysreg(ttbr1_el1);
-	ttbr &= ~TTBRx_EL1_ASID_MASK;
-	/* reserved_pg_dir placed before swapper_pg_dir */
-	write_sysreg(ttbr - RESERVED_SWAPPER_OFFSET, ttbr0_el1);
-	/* Set reserved ASID */
-	write_sysreg(ttbr, ttbr1_el1);
-	isb();
-	local_irq_restore(flags);
-}
-
-static inline void __uaccess_ttbr0_enable(void)
-{
-	unsigned long flags, ttbr0, ttbr1;
-
-	/*
-	 * Disable interrupts to avoid preemption between reading the 'ttbr0'
-	 * variable and the MSR. A context switch could trigger an ASID
-	 * roll-over and an update of 'ttbr0'.
-	 */
-	local_irq_save(flags);
-	ttbr0 = READ_ONCE(current_thread_info()->ttbr0);
-
-	/* Restore active ASID */
-	ttbr1 = read_sysreg(ttbr1_el1);
-	ttbr1 &= ~TTBRx_EL1_ASID_MASK;		/* safety measure */
-	ttbr1 |= ttbr0 & TTBRx_EL1_ASID_MASK;
-	write_sysreg(ttbr1, ttbr1_el1);
-
-	/* Restore user page table */
-	write_sysreg(ttbr0, ttbr0_el1);
-	isb();
-	local_irq_restore(flags);
-}
-
-static inline bool uaccess_ttbr0_disable(void)
-{
-	if (!system_uses_ttbr0_pan())
-		return false;
-	__uaccess_ttbr0_disable();
-	return true;
-}
-
-static inline bool uaccess_ttbr0_enable(void)
-{
-	if (!system_uses_ttbr0_pan())
-		return false;
-	__uaccess_ttbr0_enable();
-	return true;
-}
-#else
 static inline bool uaccess_ttbr0_disable(void)
 {
 	return false;
@@ -120,7 +64,6 @@ static inline bool uaccess_ttbr0_enable(void)
 {
 	return false;
 }
-#endif
 
 static inline void __uaccess_disable_hw_pan(void)
 {
@@ -182,14 +125,6 @@ static inline void __user *__uaccess_mask_ptr(const void __user *ptr)
  * The "__xxx_error" versions set the third argument to -EFAULT if an error
  * occurs, and leave it unchanged on success.
  */
-#if 0
-#define __get_mem_asm(load, reg, x, addr, label, type)			\
-	asm_goto_output(						\
-	"1:	" load "	" reg "0, [%1]\n"			\
-	_ASM_EXTABLE_##type##ACCESS(1b, %l2)				\
-	: "=r" (x)							\
-	: "r" (addr) : : label)
-#else
 #define __get_mem_asm(load, reg, x, addr, label, type) do {		\
 	int __gma_err = 0;						\
 	asm volatile(							\
@@ -199,7 +134,6 @@ static inline void __user *__uaccess_mask_ptr(const void __user *ptr)
 	: "+r" (__gma_err), "=r" (x)					\
 	: "r" (addr));							\
 	if (__gma_err) goto label; } while (0)
-#endif
 
 #define __raw_get_mem(ldr, x, ptr, label, type)					\
 do {										\

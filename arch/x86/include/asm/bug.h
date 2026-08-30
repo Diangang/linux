@@ -42,15 +42,9 @@ extern void __WARN_trap(struct bug_entry *bug, ...);
 
 #ifdef CONFIG_GENERIC_BUG
 
-#ifdef CONFIG_DEBUG_BUGVERBOSE
-#define __BUG_ENTRY_VERBOSE(file, line)					\
-	"\t.long " file " - .\t# bug_entry::file\n"			\
-	"\t.word " line     "\t# bug_entry::line\n"
-#else
 #define __BUG_ENTRY_VERBOSE(file, line)
-#endif
 
-#if defined(CONFIG_X86_64) || defined(CONFIG_DEBUG_BUGVERBOSE_DETAILED)
+#if defined(CONFIG_X86_64)
 #define HAVE_ARCH_BUG_FORMAT
 #define __BUG_ENTRY_FORMAT(format)					\
 	"\t.long " format " - .\t# bug_entry::format\n"

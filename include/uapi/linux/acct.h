@@ -61,9 +61,7 @@ struct acct
 	comp_t		ac_majflt;		/* Major Pagefaults */
 	comp_t		ac_swaps;		/* Number of Swaps */
 /* m68k had no padding here. */
-#if !defined(CONFIG_M68K) || !defined(__KERNEL__)
 	__u16		ac_ahz;			/* AHZ */
-#endif
 	__u32		ac_exitcode;		/* Exitcode */
 	char		ac_comm[ACCT_COMM + 1];	/* Command Name */
 	__u8		ac_etime_hi;		/* Elapsed Time MSB */

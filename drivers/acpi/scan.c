@@ -1546,41 +1546,6 @@ int acpi_dma_get_range(struct device *dev, const struct bus_dma_region **map)
 	return ret >= 0 ? 0 : ret;
 }
 
-#ifdef CONFIG_IOMMU_API
-int acpi_iommu_fwspec_init(struct device *dev, u32 id,
-			   struct fwnode_handle *fwnode)
-{
-	int ret;
-
-	ret = iommu_fwspec_init(dev, fwnode);
-	if (ret)
-		return ret;
-
-	return iommu_fwspec_add_ids(dev, &id, 1);
-}
-
-static int acpi_iommu_configure_id(struct device *dev, const u32 *id_in)
-{
-	int err;
-
-	/* Serialise to make dev->iommu stable under our potential fwspec */
-	mutex_lock(&iommu_probe_device_lock);
-	/* If we already translated the fwspec there is nothing left to do */
-	if (dev_iommu_fwspec_get(dev)) {
-		mutex_unlock(&iommu_probe_device_lock);
-		return 0;
-	}
-
-	err = iort_iommu_configure_id(dev, id_in);
-	if (err && err != -EPROBE_DEFER)
-		err = rimt_iommu_configure_id(dev, id_in);
-
-	mutex_unlock(&iommu_probe_device_lock);
-
-	return err;
-}
-
-#else /* !CONFIG_IOMMU_API */
 
 int acpi_iommu_fwspec_init(struct device *dev, u32 id,
 			   struct fwnode_handle *fwnode)
@@ -1593,7 +1558,6 @@ static int acpi_iommu_configure_id(struct device *dev, const u32 *id_in)
 	return -ENODEV;
 }
 
-#endif /* !CONFIG_IOMMU_API */
 
 /**
  * acpi_dma_configure_id - Set-up DMA configuration for the device.

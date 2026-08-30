@@ -128,17 +128,6 @@ struct cred {
 	kernel_cap_t	cap_effective;	/* caps we can actually use */
 	kernel_cap_t	cap_bset;	/* capability bounding set */
 	kernel_cap_t	cap_ambient;	/* Ambient capability set */
-#ifdef CONFIG_KEYS
-	unsigned char	jit_keyring;	/* default keyring to attach requested
-					 * keys to */
-	struct key	*session_keyring; /* keyring inherited over fork */
-	struct key	*process_keyring; /* keyring private to this process */
-	struct key	*thread_keyring; /* keyring private to this thread */
-	struct key	*request_key_auth; /* assumed request_key authority */
-#endif
-#ifdef CONFIG_SECURITY
-	void		*security;	/* LSM security */
-#endif
 	struct user_struct *user;	/* real user ID subscription */
 	struct user_namespace *user_ns; /* user_ns the caps and keyrings are relative to. */
 	struct ucounts *ucounts;
@@ -392,14 +381,10 @@ DEFINE_FREE(put_cred, struct cred *, if (!IS_ERR_OR_NULL(_T)) put_cred(_T))
 #define current_ucounts()	(current_cred_xxx(ucounts))
 
 extern struct user_namespace init_user_ns;
-#ifdef CONFIG_USER_NS
-#define current_user_ns()	(current_cred_xxx(user_ns))
-#else
 static inline struct user_namespace *current_user_ns(void)
 {
 	return &init_user_ns;
 }
-#endif
 
 
 #define current_uid_gid(_uid, _gid)		\

@@ -231,15 +231,9 @@ static int __init param_setup_earlycon(char *buf)
 {
 	int err;
 
-	/* Just 'earlycon' is a valid param for devicetree and ACPI SPCR. */
-	if (!buf || !buf[0]) {
-		if (IS_ENABLED(CONFIG_ACPI_SPCR_TABLE)) {
-			earlycon_acpi_spcr_enable = true;
-			return 0;
-		} else if (!buf) {
-			return early_init_dt_scan_chosen_stdout();
-		}
-	}
+	/* Just 'earlycon' is a valid param for devicetree. */
+	if (!buf)
+		return early_init_dt_scan_chosen_stdout();
 
 	err = setup_earlycon(buf);
 	if (err == -ENOENT || err == -EALREADY)

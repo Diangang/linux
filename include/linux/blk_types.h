@@ -51,9 +51,6 @@ struct block_device {
 #define BD_WRITE_HOLDER		(1u<<9)
 #define BD_HAS_SUBMIT_BIO	(1u<<10)
 #define BD_RO_WARNED		(1u<<11)
-#ifdef CONFIG_FAIL_MAKE_REQUEST
-#define BD_MAKE_IT_FAIL		(1u<<12)
-#endif
 	dev_t			bd_dev;
 	struct address_space	*bd_mapping;	/* page cache */
 
@@ -71,9 +68,6 @@ struct block_device {
 
 	struct partition_meta_info *bd_meta_info;
 	int			bd_writers;
-#ifdef CONFIG_SECURITY
-	void			*bd_security;
-#endif
 	/*
 	 * keep this out-of-line as it's both big and not needed in the fast
 	 * path
@@ -244,17 +238,6 @@ struct bio {
 	};
 	bio_end_io_t		*bi_end_io;
 	void			*bi_private;
-#ifdef CONFIG_BLK_CGROUP
-	/*
-	 * Represents the association of the css and request_queue for the bio.
-	 * If a bio goes direct to device, it will not have a blkg as it will
-	 * not have a request_queue associated with it.  The reference is put
-	 * on release of the bio.
-	 */
-	struct blkcg_gq		*bi_blkg;
-	/* Time that this bio was issued. */
-	u64			issue_time_ns;
-#endif
 
 	unsigned short		bi_vcnt;	/* how many bio_vec's */
 

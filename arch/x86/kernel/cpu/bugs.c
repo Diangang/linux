@@ -1733,18 +1733,12 @@ static void __init spectre_v2_user_select_mitigation(void)
 		spectre_v2_user_stibp = SPECTRE_V2_USER_PRCTL;
 		break;
 	case SPECTRE_V2_USER_CMD_SECCOMP:
-		if (IS_ENABLED(CONFIG_SECCOMP))
-			spectre_v2_user_ibpb = SPECTRE_V2_USER_SECCOMP;
-		else
-			spectre_v2_user_ibpb = SPECTRE_V2_USER_PRCTL;
+		spectre_v2_user_ibpb = SPECTRE_V2_USER_PRCTL;
 		spectre_v2_user_stibp = spectre_v2_user_ibpb;
 		break;
 	case SPECTRE_V2_USER_CMD_SECCOMP_IBPB:
 		spectre_v2_user_ibpb = SPECTRE_V2_USER_STRICT;
-		if (IS_ENABLED(CONFIG_SECCOMP))
-			spectre_v2_user_stibp = SPECTRE_V2_USER_SECCOMP;
-		else
-			spectre_v2_user_stibp = SPECTRE_V2_USER_PRCTL;
+		spectre_v2_user_stibp = SPECTRE_V2_USER_PRCTL;
 		break;
 	}
 
@@ -2363,8 +2357,7 @@ static int __init ssb_parse_cmdline(char *str)
 	else if (!strcmp(str, "prctl"))
 		ssb_mode = SPEC_STORE_BYPASS_PRCTL;
 	else if (!strcmp(str, "seccomp"))
-		ssb_mode = IS_ENABLED(CONFIG_SECCOMP) ?
-			SPEC_STORE_BYPASS_SECCOMP : SPEC_STORE_BYPASS_PRCTL;
+		ssb_mode = SPEC_STORE_BYPASS_PRCTL;
 	else
 		pr_err("Ignoring unknown spec_store_bypass_disable option (%s).\n",
 			str);
@@ -2573,16 +2566,6 @@ int arch_prctl_spec_ctrl_set(struct task_struct *task, unsigned long which,
 	}
 }
 
-#ifdef CONFIG_SECCOMP
-void arch_seccomp_spec_mitigate(struct task_struct *task)
-{
-	if (ssb_mode == SPEC_STORE_BYPASS_SECCOMP)
-		ssb_prctl_set(task, PR_SPEC_FORCE_DISABLE);
-	if (spectre_v2_user_ibpb == SPECTRE_V2_USER_SECCOMP ||
-	    spectre_v2_user_stibp == SPECTRE_V2_USER_SECCOMP)
-		ib_prctl_set(task, PR_SPEC_FORCE_DISABLE);
-}
-#endif
 
 static int l1d_flush_prctl_get(struct task_struct *task)
 {
@@ -3007,7 +2990,7 @@ static const char * const vmscape_strings[] = {
 };
 
 static enum vmscape_mitigations vmscape_mitigation __ro_after_init =
-	IS_ENABLED(CONFIG_MITIGATION_VMSCAPE) ? VMSCAPE_MITIGATION_AUTO : VMSCAPE_MITIGATION_NONE;
+	VMSCAPE_MITIGATION_NONE;
 
 static int __init vmscape_parse_cmdline(char *str)
 {
@@ -3264,46 +3247,6 @@ void __init cpu_select_mitigations(void)
 
 #define L1TF_DEFAULT_MSG "Mitigation: PTE Inversion"
 
-#if IS_ENABLED(CONFIG_KVM_INTEL)
-static const char * const l1tf_vmx_states[] = {
-	[VMENTER_L1D_FLUSH_AUTO]		= "auto",
-	[VMENTER_L1D_FLUSH_NEVER]		= "vulnerable",
-	[VMENTER_L1D_FLUSH_COND]		= "conditional cache flushes",
-	[VMENTER_L1D_FLUSH_ALWAYS]		= "cache flushes",
-	[VMENTER_L1D_FLUSH_EPT_DISABLED]	= "EPT disabled",
-	[VMENTER_L1D_FLUSH_NOT_REQUIRED]	= "flush not necessary"
-};
-
-static ssize_t l1tf_show_state(char *buf)
-{
-	if (l1tf_vmx_mitigation == VMENTER_L1D_FLUSH_AUTO)
-		return sysfs_emit(buf, "%s\n", L1TF_DEFAULT_MSG);
-
-	if (l1tf_vmx_mitigation == VMENTER_L1D_FLUSH_EPT_DISABLED ||
-	    (l1tf_vmx_mitigation == VMENTER_L1D_FLUSH_NEVER &&
-	     sched_smt_active())) {
-		return sysfs_emit(buf, "%s; VMX: %s\n", L1TF_DEFAULT_MSG,
-				  l1tf_vmx_states[l1tf_vmx_mitigation]);
-	}
-
-	return sysfs_emit(buf, "%s; VMX: %s, SMT %s\n", L1TF_DEFAULT_MSG,
-			  l1tf_vmx_states[l1tf_vmx_mitigation],
-			  sched_smt_active() ? "vulnerable" : "disabled");
-}
-
-static ssize_t itlb_multihit_show_state(char *buf)
-{
-	if (!boot_cpu_has(X86_FEATURE_MSR_IA32_FEAT_CTL) ||
-	    !boot_cpu_has(X86_FEATURE_VMX))
-		return sysfs_emit(buf, "KVM: Mitigation: VMX unsupported\n");
-	else if (!(cr4_read_shadow() & X86_CR4_VMXE))
-		return sysfs_emit(buf, "KVM: Mitigation: VMX disabled\n");
-	else if (itlb_multihit_kvm_mitigation)
-		return sysfs_emit(buf, "KVM: Mitigation: Split huge pages\n");
-	else
-		return sysfs_emit(buf, "KVM: Vulnerable\n");
-}
-#else
 static ssize_t l1tf_show_state(char *buf)
 {
 	return sysfs_emit(buf, "%s\n", L1TF_DEFAULT_MSG);
@@ -3313,7 +3256,6 @@ static ssize_t itlb_multihit_show_state(char *buf)
 {
 	return sysfs_emit(buf, "Processor vulnerable\n");
 }
-#endif
 
 static ssize_t mds_show_state(char *buf)
 {

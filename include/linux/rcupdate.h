@@ -131,11 +131,7 @@ static inline void rcu_sysrq_start(void) { }
 static inline void rcu_sysrq_end(void) { }
 #endif /* #else #ifdef CONFIG_RCU_STALL_COMMON */
 
-#if defined(CONFIG_NO_HZ_FULL) && (!defined(CONFIG_GENERIC_ENTRY) || !defined(CONFIG_VIRT_XFER_TO_GUEST_WORK))
-void rcu_irq_work_resched(void);
-#else
 static __always_inline void rcu_irq_work_resched(void) { }
-#endif
 
 
 static inline void rcu_init_nohz(void) { }
@@ -234,8 +230,6 @@ do { \
 
 #if defined(CONFIG_TREE_RCU)
 #include <linux/rcutree.h>
-#elif 0
-#include <linux/rcutiny.h>
 #else
 #error "Unknown RCU implementation specified to kernel configuration"
 #endif
@@ -248,17 +242,10 @@ do { \
  * structures.  However, rcu_head structures allocated dynamically in the
  * heap don't need any initialization.
  */
-#ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
-void init_rcu_head(struct rcu_head *head);
-void destroy_rcu_head(struct rcu_head *head);
-void init_rcu_head_on_stack(struct rcu_head *head);
-void destroy_rcu_head_on_stack(struct rcu_head *head);
-#else /* !CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 static inline void init_rcu_head(struct rcu_head *head) { }
 static inline void destroy_rcu_head(struct rcu_head *head) { }
 static inline void init_rcu_head_on_stack(struct rcu_head *head) { }
 static inline void destroy_rcu_head_on_stack(struct rcu_head *head) { }
-#endif	/* #else !CONFIG_DEBUG_OBJECTS_RCU_HEAD */
 
 static inline bool rcu_lockdep_current_cpu_online(void) { return true; }
 
@@ -974,11 +961,7 @@ do {								\
  * if the UNLOCK and LOCK are executed by the same CPU or if the
  * UNLOCK and LOCK operate on the same lock variable.
  */
-#ifdef CONFIG_ARCH_WEAK_RELEASE_ACQUIRE
-#define smp_mb__after_unlock_lock()	smp_mb()  /* Full ordering for lock. */
-#else /* #ifdef CONFIG_ARCH_WEAK_RELEASE_ACQUIRE */
 #define smp_mb__after_unlock_lock()	do { } while (0)
-#endif /* #else #ifdef CONFIG_ARCH_WEAK_RELEASE_ACQUIRE */
 
 
 /* Has the specified rcu_head structure been handed to call_rcu()? */

@@ -1450,7 +1450,7 @@ static int __init acpi_pci_init(void)
 }
 arch_initcall(acpi_pci_init);
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM64)
 
 /*
  * Try to assign the IRQ number when probing a new device

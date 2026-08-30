@@ -12,9 +12,7 @@
 
 #include <linux/stringify.h>
 
-#ifndef CONFIG_CC_HAS_K_CONSTRAINT
 #define K
-#endif
 
 /*
  * AArch64 UP and SMP safe atomic ops.  We use load exclusive and

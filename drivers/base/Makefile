@@ -9,7 +9,6 @@ obj-y			:= component.o core.o bus.o dd.o syscore.o \
 			   swnode.o faux.o
 obj-$(CONFIG_DEVTMPFS)	+= devtmpfs.o
 obj-$(CONFIG_NUMA)	+= node.o
-obj-$(CONFIG_PINCTRL) += pinctrl.o
 obj-$(CONFIG_GENERIC_MSI_IRQ) += platform-msi.o
 obj-$(CONFIG_GENERIC_ARCH_TOPOLOGY) += arch_topology.o
 obj-$(CONFIG_GENERIC_ARCH_NUMA) += arch_numa.o

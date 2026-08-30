@@ -118,12 +118,6 @@ struct mca_storm_desc {
 
 DECLARE_PER_CPU(struct mca_storm_desc, storm_desc);
 
-#ifdef CONFIG_ACPI_APEI
-int apei_write_mce(struct mce *m);
-ssize_t apei_read_mce(struct mce *m, u64 *record_id);
-int apei_check_mce(void);
-int apei_clear_mce(u64 record_id);
-#else
 static inline int apei_write_mce(struct mce *m)
 {
 	return -EINVAL;
@@ -140,7 +134,6 @@ static inline int apei_clear_mce(u64 record_id)
 {
 	return -EINVAL;
 }
-#endif
 
 /*
  * We consider records to be equivalent if bank+status+addr+misc all match.

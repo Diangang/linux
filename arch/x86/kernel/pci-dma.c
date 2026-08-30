@@ -20,13 +20,8 @@ static bool disable_dac_quirk __read_mostly;
 const struct dma_map_ops *dma_ops;
 EXPORT_SYMBOL(dma_ops);
 
-#ifdef CONFIG_IOMMU_DEBUG
-int panic_on_overflow __read_mostly = 1;
-int force_iommu __read_mostly = 1;
-#else
 int panic_on_overflow __read_mostly = 0;
 int force_iommu __read_mostly = 0;
-#endif
 
 int iommu_merge __read_mostly = 0;
 

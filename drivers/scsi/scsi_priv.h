@@ -144,37 +144,18 @@ extern const struct bus_type scsi_bus_type;
 extern const struct attribute_group *scsi_shost_groups[];
 
 /* scsi_netlink.c */
-#ifdef CONFIG_SCSI_NETLINK
-extern void scsi_netlink_init(void);
-extern void scsi_netlink_exit(void);
-#else
 static inline void scsi_netlink_init(void) {}
 static inline void scsi_netlink_exit(void) {}
-#endif
 
 /* scsi_pm.c */
-#ifdef CONFIG_PM
-extern const struct dev_pm_ops scsi_bus_pm_ops;
-
-extern void scsi_autopm_get_target(struct scsi_target *);
-extern void scsi_autopm_put_target(struct scsi_target *);
-extern int scsi_autopm_get_host(struct Scsi_Host *);
-extern void scsi_autopm_put_host(struct Scsi_Host *);
-#else
 static inline void scsi_autopm_get_target(struct scsi_target *t) {}
 static inline void scsi_autopm_put_target(struct scsi_target *t) {}
 static inline int scsi_autopm_get_host(struct Scsi_Host *h) { return 0; }
 static inline void scsi_autopm_put_host(struct Scsi_Host *h) {}
-#endif /* CONFIG_PM */
 
 /* scsi_dh.c */
-#ifdef CONFIG_SCSI_DH
-void scsi_dh_add_device(struct scsi_device *sdev);
-void scsi_dh_release_device(struct scsi_device *sdev);
-#else
 static inline void scsi_dh_add_device(struct scsi_device *sdev) { }
 static inline void scsi_dh_release_device(struct scsi_device *sdev) { }
-#endif
 
 extern int scsi_device_max_queue_depth(struct scsi_device *sdev);
 

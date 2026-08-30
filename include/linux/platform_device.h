@@ -382,32 +382,16 @@ void platform_unregister_drivers(struct platform_driver * const *drivers,
 #define platform_register_drivers(drivers, count) \
 	__platform_register_drivers(drivers, count, THIS_MODULE)
 
-#ifdef CONFIG_SUSPEND
-extern int platform_pm_suspend(struct device *dev);
-extern int platform_pm_resume(struct device *dev);
-#else
 #define platform_pm_suspend		NULL
 #define platform_pm_resume		NULL
-#endif
 
 #define platform_pm_freeze		NULL
 #define platform_pm_thaw		NULL
 #define platform_pm_poweroff		NULL
 #define platform_pm_restore		NULL
 
-#ifdef CONFIG_PM_SLEEP
-#define USE_PLATFORM_PM_SLEEP_OPS \
-	.suspend = platform_pm_suspend, \
-	.resume = platform_pm_resume, \
-	.freeze = platform_pm_freeze, \
-	.thaw = platform_pm_thaw, \
-	.poweroff = platform_pm_poweroff, \
-	.restore = platform_pm_restore,
-#else
 #define USE_PLATFORM_PM_SLEEP_OPS
-#endif
 
-#ifndef CONFIG_SUPERH
 /*
  * REVISIT: This stub is needed for all non-SuperH users of early platform
  * drivers. It should go away once we introduce the new platform_device-based
@@ -417,7 +401,6 @@ static inline int is_sh_early_platform_device(struct platform_device *pdev)
 {
 	return 0;
 }
-#endif /* CONFIG_SUPERH */
 
 /* For now only SuperH uses it */
 void early_platform_cleanup(void);

@@ -379,45 +379,6 @@ static void amba_dma_cleanup(struct device *dev)
 		iommu_device_unuse_default_domain(dev);
 }
 
-#ifdef CONFIG_PM
-/*
- * Hooks to provide runtime PM of the pclk (bus clock).  It is safe to
- * enable/disable the bus clock at runtime PM suspend/resume as this
- * does not result in loss of context.
- */
-static int amba_pm_runtime_suspend(struct device *dev)
-{
-	struct amba_device *pcdev = to_amba_device(dev);
-	int ret = pm_generic_runtime_suspend(dev);
-
-	if (ret == 0 && dev->driver) {
-		if (pm_runtime_is_irq_safe(dev))
-			clk_disable(pcdev->pclk);
-		else
-			clk_disable_unprepare(pcdev->pclk);
-	}
-
-	return ret;
-}
-
-static int amba_pm_runtime_resume(struct device *dev)
-{
-	struct amba_device *pcdev = to_amba_device(dev);
-	int ret;
-
-	if (dev->driver) {
-		if (pm_runtime_is_irq_safe(dev))
-			ret = clk_enable(pcdev->pclk);
-		else
-			ret = clk_prepare_enable(pcdev->pclk);
-		/* Failure is probably fatal to the system, but... */
-		if (ret)
-			return ret;
-	}
-
-	return pm_generic_runtime_resume(dev);
-}
-#endif /* CONFIG_PM */
 
 static const struct dev_pm_ops amba_pm = {
 	SET_RUNTIME_PM_OPS(

@@ -834,11 +834,7 @@
 #define SCTLR_ELx_A	 (BIT(1))
 #define SCTLR_ELx_M	 (BIT(0))
 
-#if 0
-#define ENDIAN_SET_EL2		SCTLR_ELx_EE
-#else
 #define ENDIAN_SET_EL2		0
-#endif
 
 #define INIT_SCTLR_EL2_MMU_ON						\
 	(SCTLR_ELx_M  | SCTLR_ELx_C | SCTLR_ELx_SA | SCTLR_ELx_I |	\
@@ -849,11 +845,7 @@
 	(SCTLR_EL2_RES1 | ENDIAN_SET_EL2)
 
 /* SCTLR_EL1 specific flags. */
-#if 0
-#define ENDIAN_SET_EL1		(SCTLR_EL1_E0E | SCTLR_ELx_EE)
-#else
 #define ENDIAN_SET_EL1		0
-#endif
 
 #define INIT_SCTLR_EL1_MMU_OFF \
 	(ENDIAN_SET_EL1 | SCTLR_EL1_LSMAOE | SCTLR_EL1_nTLSMD | \
@@ -922,18 +914,7 @@
 #define SYS_GCR_EL1_RRND	(BIT(16))
 #define SYS_GCR_EL1_EXCL_MASK	0xffffUL
 
-#if 0
-/*
- * KASAN always uses a whole byte for its tags. With CONFIG_KASAN_HW_TAGS it
- * only uses tags in the range 0xF0-0xFF, which we map to MTE tags 0x0-0xF.
- */
-#define __MTE_TAG_MIN		(KASAN_TAG_MIN & 0xf)
-#define __MTE_TAG_MAX		(KASAN_TAG_MAX & 0xf)
-#define __MTE_TAG_INCL		GENMASK(__MTE_TAG_MAX, __MTE_TAG_MIN)
-#define KERNEL_GCR_EL1_EXCL	(SYS_GCR_EL1_EXCL_MASK & ~__MTE_TAG_INCL)
-#else
 #define KERNEL_GCR_EL1_EXCL	SYS_GCR_EL1_EXCL_MASK
-#endif
 
 #define KERNEL_GCR_EL1		(SYS_GCR_EL1_RRND | KERNEL_GCR_EL1_EXCL)
 

@@ -483,11 +483,6 @@ struct tty_operations {
 	int  (*get_serial)(struct tty_struct *tty, struct serial_struct *p);
 	int  (*set_serial)(struct tty_struct *tty, struct serial_struct *p);
 	void (*show_fdinfo)(struct tty_struct *tty, struct seq_file *m);
-#ifdef CONFIG_CONSOLE_POLL
-	int (*poll_init)(struct tty_driver *driver, int line, char *options);
-	int (*poll_get_char)(struct tty_driver *driver, int line);
-	void (*poll_put_char)(struct tty_driver *driver, int line, char ch);
-#endif
 	int (*proc_show)(struct seq_file *m, void *driver);
 } __randomize_layout;
 

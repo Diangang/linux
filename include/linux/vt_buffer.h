@@ -16,9 +16,6 @@
 
 #include <linux/string.h>
 
-#if IS_ENABLED(CONFIG_VGA_CONSOLE) || IS_ENABLED(CONFIG_MDA_CONSOLE)
-#include <asm/vga.h>
-#endif
 
 #ifndef VT_BUF_HAVE_RW
 #define scr_writew(val, addr) (*(addr) = (val))

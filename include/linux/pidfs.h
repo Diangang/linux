@@ -10,9 +10,6 @@ void pidfs_prepare_pid(struct pid *pid);
 int pidfs_add_pid(struct pid *pid);
 void pidfs_remove_pid(struct pid *pid);
 void pidfs_exit(struct task_struct *tsk);
-#ifdef CONFIG_COREDUMP
-void pidfs_coredump(const struct coredump_params *cprm);
-#endif
 extern const struct dentry_operations pidfs_dentry_operations;
 int pidfs_register_pid(struct pid *pid);
 void pidfs_free_pid(struct pid *pid);

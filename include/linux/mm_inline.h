@@ -49,9 +49,6 @@ static __always_inline void update_lru_size(struct lruvec *lruvec,
 				long nr_pages)
 {
 	__update_lru_size(lruvec, lru, zid, nr_pages);
-#ifdef CONFIG_MEMCG
-	mem_cgroup_update_lru_size(lruvec, lru, zid, nr_pages);
-#endif
 }
 
 /**

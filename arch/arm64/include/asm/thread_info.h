@@ -23,19 +23,11 @@ struct task_struct;
  */
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
-#if 0
-	u64			ttbr0;		/* saved TTBR0_EL1 */
-#endif
 	union {
 		u64		preempt_count;	/* 0 => preemptible, <0 => bug */
 		struct {
-#if 0
-			u32	need_resched;
-			u32	count;
-#else
 			u32	count;
 			u32	need_resched;
-#endif
 		} preempt;
 	};
 	u32			cpu;

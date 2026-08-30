@@ -39,7 +39,7 @@ static inline int clockid_to_fd(const clockid_t clk)
 
 static inline bool clockid_aux_valid(clockid_t id)
 {
-	return IS_ENABLED(CONFIG_POSIX_AUX_CLOCKS) && id >= CLOCK_AUX && id <= CLOCK_AUX_LAST;
+	return false;
 }
 
 #ifdef CONFIG_POSIX_TIMERS

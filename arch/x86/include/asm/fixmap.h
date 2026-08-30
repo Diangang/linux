@@ -22,12 +22,7 @@
  * checked in the actual fixmap C code to make sure that the fixmap is
  * covered fully.
  */
-#if 1
 # define FIXMAP_PMD_NUM	2
-#else
-# define KM_PMDS	(KM_MAX_IDX * ((CONFIG_NR_CPUS + 511) / 512))
-# define FIXMAP_PMD_NUM (KM_PMDS + 2)
-#endif
 /* fixmap starts downwards from the 507th entry in level2_fixmap_pgt */
 #define FIXMAP_PMD_TOP	507
 
@@ -78,19 +73,7 @@ enum fixed_addresses {
 	FIX_IO_APIC_BASE_0,
 	FIX_IO_APIC_BASE_END = FIX_IO_APIC_BASE_0 + MAX_IO_APICS - 1,
 #endif
-#if 0
-	FIX_KMAP_BEGIN,	/* reserved pte's for temporary kernel mappings */
-	FIX_KMAP_END = FIX_KMAP_BEGIN + (KM_MAX_IDX * NR_CPUS) - 1,
-#ifdef CONFIG_PCI_MMCONFIG
-	FIX_PCIE_MCFG,
-#endif
-#endif
 
-#ifdef CONFIG_ACPI_APEI_GHES
-	/* Used for GHES mapping from assorted contexts */
-	FIX_APEI_GHES_IRQ,
-	FIX_APEI_GHES_NMI,
-#endif
 
 	__end_of_permanent_fixed_addresses,
 
@@ -112,9 +95,6 @@ enum fixed_addresses {
 	   (__end_of_permanent_fixed_addresses & (TOTAL_FIX_BTMAPS - 1))
 	 : __end_of_permanent_fixed_addresses,
 	FIX_BTMAP_BEGIN = FIX_BTMAP_END + TOTAL_FIX_BTMAPS - 1,
-#ifdef CONFIG_INTEL_TXT
-	FIX_TBOOT_BASE,
-#endif
 	__end_of_fixed_addresses
 };
 

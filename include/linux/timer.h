@@ -9,18 +9,7 @@
 #include <linux/stringify.h>
 #include <linux/timer_types.h>
 
-#if 0
-/*
- * NB: because we have to copy the lockdep_map, setting the lockdep_map key
- * (second argument) here is required, otherwise it could be initialised to
- * the copy of the lockdep_map later! We use the pointer to and the string
- * "<file>:<line>" as the key resp. the name of the lockdep_map.
- */
-#define __TIMER_LOCKDEP_MAP_INITIALIZER(_kn)				\
-	.lockdep_map = STATIC_LOCKDEP_MAP_INIT(_kn, &_kn),
-#else
 #define __TIMER_LOCKDEP_MAP_INITIALIZER(_kn)
-#endif
 
 /*
  * @TIMER_DEFERRABLE: A deferrable timer will work normally when the
@@ -71,12 +60,6 @@ void timer_init_key(struct timer_list *timer,
 		    void (*func)(struct timer_list *), unsigned int flags,
 		    const char *name, struct lock_class_key *key);
 
-#if 0
-extern void timer_init_key_on_stack(struct timer_list *timer,
-				    void (*func)(struct timer_list *),
-				    unsigned int flags, const char *name,
-				    struct lock_class_key *key);
-#else
 static inline void timer_init_key_on_stack(struct timer_list *timer,
 					   void (*func)(struct timer_list *),
 					   unsigned int flags,
@@ -85,27 +68,11 @@ static inline void timer_init_key_on_stack(struct timer_list *timer,
 {
 	timer_init_key(timer, func, flags, name, key);
 }
-#endif
 
-#if 0
-#define __timer_init(_timer, _fn, _flags)				\
-	do {								\
-		static struct lock_class_key __key;			\
-		timer_init_key((_timer), (_fn), (_flags), #_timer, &__key);\
-	} while (0)
-
-#define __timer_init_on_stack(_timer, _fn, _flags)			\
-	do {								\
-		static struct lock_class_key __key;			\
-		timer_init_key_on_stack((_timer), (_fn), (_flags),	\
-					#_timer, &__key);		 \
-	} while (0)
-#else
 #define __timer_init(_timer, _fn, _flags)				\
 	timer_init_key((_timer), (_fn), (_flags), NULL, NULL)
 #define __timer_init_on_stack(_timer, _fn, _flags)			\
 	timer_init_key_on_stack((_timer), (_fn), (_flags), NULL, NULL)
-#endif
 
 /**
  * timer_setup - prepare a timer for first use
@@ -123,11 +90,7 @@ static inline void timer_init_key_on_stack(struct timer_list *timer,
 #define timer_setup_on_stack(timer, callback, flags)		\
 	__timer_init_on_stack((timer), (callback), (flags))
 
-#if 0
-extern void timer_destroy_on_stack(struct timer_list *timer);
-#else
 static inline void timer_destroy_on_stack(struct timer_list *timer) { }
-#endif
 
 #define timer_container_of(var, callback_timer, timer_fieldname)	\
 	container_of(callback_timer, typeof(*var), timer_fieldname)

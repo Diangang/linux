@@ -427,28 +427,6 @@ static void add_to_kill_anon_file(struct task_struct *tsk, const struct page *p,
 	__add_to_kill(tsk, p, vma, to_kill, addr);
 }
 
-#ifdef CONFIG_KSM
-static bool task_in_to_kill_list(struct list_head *to_kill,
-				 struct task_struct *tsk)
-{
-	struct to_kill *tk, *next;
-
-	list_for_each_entry_safe(tk, next, to_kill, nd) {
-		if (tk->tsk == tsk)
-			return true;
-	}
-
-	return false;
-}
-
-void add_to_kill_ksm(struct task_struct *tsk, const struct page *p,
-		     struct vm_area_struct *vma, struct list_head *to_kill,
-		     unsigned long addr)
-{
-	if (!task_in_to_kill_list(to_kill, tsk))
-		__add_to_kill(tsk, p, vma, to_kill, addr);
-}
-#endif
 /*
  * Kill the processes that have been collected earlier.
  *
@@ -613,48 +591,6 @@ static void collect_procs_file(const struct folio *folio,
 	i_mmap_unlock_read(mapping);
 }
 
-#if 0
-static void add_to_kill_fsdax(struct task_struct *tsk, const struct page *p,
-			      struct vm_area_struct *vma,
-			      struct list_head *to_kill, pgoff_t pgoff)
-{
-	unsigned long addr = vma_address(vma, pgoff, 1);
-	__add_to_kill(tsk, p, vma, to_kill, addr);
-}
-
-/*
- * Collect processes when the error hit a fsdax page.
- */
-static void collect_procs_fsdax(const struct page *page,
-		struct address_space *mapping, pgoff_t pgoff,
-		struct list_head *to_kill, bool pre_remove)
-{
-	struct vm_area_struct *vma;
-	struct task_struct *tsk;
-
-	i_mmap_lock_read(mapping);
-	rcu_read_lock();
-	for_each_process(tsk) {
-		struct task_struct *t = tsk;
-
-		/*
-		 * Search for all tasks while MF_MEM_PRE_REMOVE is set, because
-		 * the current may not be the one accessing the fsdax page.
-		 * Otherwise, search for the current task.
-		 */
-		if (!pre_remove)
-			t = task_early_kill(tsk, true);
-		if (!t)
-			continue;
-		vma_interval_tree_foreach(vma, &mapping->i_mmap, pgoff, pgoff) {
-			if (vma->vm_mm == t->mm)
-				add_to_kill_fsdax(t, page, vma, to_kill, pgoff);
-		}
-	}
-	rcu_read_unlock();
-	i_mmap_unlock_read(mapping);
-}
-#endif /* CONFIG_FS_DAX */
 
 /*
  * Collect the processes who have the corrupted page mapped to kill.
@@ -709,31 +645,11 @@ static int check_hwpoisoned_entry(pte_t pte, unsigned long addr, short shift,
 	return 1;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static int check_hwpoisoned_pmd_entry(pmd_t *pmdp, unsigned long addr,
-				      struct hwpoison_walk *hwp)
-{
-	pmd_t pmd = *pmdp;
-	unsigned long pfn;
-	unsigned long hwpoison_vaddr;
-
-	if (!pmd_present(pmd))
-		return 0;
-	pfn = pmd_pfn(pmd);
-	if (pfn <= hwp->pfn && hwp->pfn < pfn + HPAGE_PMD_NR) {
-		hwpoison_vaddr = addr + ((hwp->pfn - pfn) << PAGE_SHIFT);
-		set_to_kill(&hwp->tk, hwpoison_vaddr, PAGE_SHIFT);
-		return 1;
-	}
-	return 0;
-}
-#else
 static int check_hwpoisoned_pmd_entry(pmd_t *pmdp, unsigned long addr,
 				      struct hwpoison_walk *hwp)
 {
 	return 0;
 }
-#endif
 
 static int hwpoison_pte_range(pmd_t *pmdp, unsigned long addr,
 			      unsigned long end, struct mm_walk *walk)
@@ -767,27 +683,7 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_HUGETLB_PAGE
-static int hwpoison_hugetlb_range(pte_t *ptep, unsigned long hmask,
-			    unsigned long addr, unsigned long end,
-			    struct mm_walk *walk)
-{
-	struct hwpoison_walk *hwp = walk->private;
-	struct hstate *h = hstate_vma(walk->vma);
-	spinlock_t *ptl;
-	pte_t pte;
-	int ret;
-
-	ptl = huge_pte_lock(h, walk->mm, ptep);
-	pte = huge_ptep_get(walk->mm, addr, ptep);
-	ret = check_hwpoisoned_entry(pte, addr, huge_page_shift(h),
-					hwp->pfn, &hwp->tk);
-	spin_unlock(ptl);
-	return ret;
-}
-#else
 #define hwpoison_hugetlb_range	NULL
-#endif
 
 static int hwpoison_test_walk(unsigned long start, unsigned long end,
 			     struct mm_walk *walk)
@@ -1768,340 +1664,7 @@ unlock:
 	return rc;
 }
 
-#if 0
-/**
- * mf_dax_kill_procs - Collect and kill processes who are using this file range
- * @mapping:	address_space of the file in use
- * @index:	start pgoff of the range within the file
- * @count:	length of the range, in unit of PAGE_SIZE
- * @mf_flags:	memory failure flags
- */
-int mf_dax_kill_procs(struct address_space *mapping, pgoff_t index,
-		unsigned long count, int mf_flags)
-{
-	LIST_HEAD(to_kill);
-	dax_entry_t cookie;
-	struct page *page;
-	size_t end = index + count;
-	bool pre_remove = mf_flags & MF_MEM_PRE_REMOVE;
 
-	mf_flags |= MF_ACTION_REQUIRED | MF_MUST_KILL;
-
-	for (; index < end; index++) {
-		page = NULL;
-		cookie = dax_lock_mapping_entry(mapping, index, &page);
-		if (!cookie)
-			return -EBUSY;
-		if (!page)
-			goto unlock;
-
-		if (!pre_remove)
-			SetPageHWPoison(page);
-
-		/*
-		 * The pre_remove case is revoking access, the memory is still
-		 * good and could theoretically be put back into service.
-		 */
-		collect_procs_fsdax(page, mapping, index, &to_kill, pre_remove);
-		unmap_and_kill(&to_kill, page_to_pfn(page), mapping,
-				index, mf_flags);
-unlock:
-		dax_unlock_mapping_entry(mapping, index, cookie);
-	}
-	return 0;
-}
-EXPORT_SYMBOL_GPL(mf_dax_kill_procs);
-#endif /* CONFIG_FS_DAX */
-
-#ifdef CONFIG_HUGETLB_PAGE
-
-/*
- * Struct raw_hwp_page represents information about "raw error page",
- * constructing singly linked list from ->_hugetlb_hwpoison field of folio.
- */
-struct raw_hwp_page {
-	struct llist_node node;
-	struct page *page;
-};
-
-static inline struct llist_head *raw_hwp_list_head(struct folio *folio)
-{
-	return (struct llist_head *)&folio->_hugetlb_hwpoison;
-}
-
-bool is_raw_hwpoison_page_in_hugepage(struct page *page)
-{
-	struct llist_head *raw_hwp_head;
-	struct raw_hwp_page *p;
-	struct folio *folio = page_folio(page);
-	bool ret = false;
-
-	if (!folio_test_hwpoison(folio))
-		return false;
-
-	if (!folio_test_hugetlb(folio))
-		return PageHWPoison(page);
-
-	/*
-	 * When RawHwpUnreliable is set, kernel lost track of which subpages
-	 * are HWPOISON. So return as if ALL subpages are HWPOISONed.
-	 */
-	if (folio_test_hugetlb_raw_hwp_unreliable(folio))
-		return true;
-
-	mutex_lock(&mf_mutex);
-
-	raw_hwp_head = raw_hwp_list_head(folio);
-	llist_for_each_entry(p, raw_hwp_head->first, node) {
-		if (page == p->page) {
-			ret = true;
-			break;
-		}
-	}
-
-	mutex_unlock(&mf_mutex);
-
-	return ret;
-}
-
-static unsigned long __folio_free_raw_hwp(struct folio *folio, bool move_flag)
-{
-	struct llist_node *head;
-	struct raw_hwp_page *p, *next;
-	unsigned long count = 0;
-
-	head = llist_del_all(raw_hwp_list_head(folio));
-	llist_for_each_entry_safe(p, next, head, node) {
-		if (move_flag)
-			SetPageHWPoison(p->page);
-		else
-			num_poisoned_pages_sub(page_to_pfn(p->page), 1);
-		kfree(p);
-		count++;
-	}
-	return count;
-}
-
-#define	MF_HUGETLB_FREED		0	/* freed hugepage */
-#define	MF_HUGETLB_IN_USED		1	/* in-use hugepage */
-#define	MF_HUGETLB_NON_HUGEPAGE		2	/* not a hugepage */
-#define	MF_HUGETLB_FOLIO_PRE_POISONED	3	/* folio already poisoned */
-#define	MF_HUGETLB_PAGE_PRE_POISONED	4	/* exact page already poisoned */
-#define	MF_HUGETLB_RETRY		5	/* hugepage is busy, retry */
-/*
- * Set hugetlb folio as hwpoisoned, update folio private raw hwpoison list
- * to keep track of the poisoned pages.
- */
-static int hugetlb_update_hwpoison(struct folio *folio, struct page *page)
-{
-	struct llist_head *head;
-	struct raw_hwp_page *raw_hwp;
-	struct raw_hwp_page *p;
-	int ret = folio_test_set_hwpoison(folio) ? MF_HUGETLB_FOLIO_PRE_POISONED : 0;
-
-	/*
-	 * Once the hwpoison hugepage has lost reliable raw error info,
-	 * there is little meaning to keep additional error info precisely,
-	 * so skip to add additional raw error info.
-	 */
-	if (folio_test_hugetlb_raw_hwp_unreliable(folio))
-		return MF_HUGETLB_FOLIO_PRE_POISONED;
-	head = raw_hwp_list_head(folio);
-	llist_for_each_entry(p, head->first, node) {
-		if (p->page == page)
-			return MF_HUGETLB_PAGE_PRE_POISONED;
-	}
-
-	raw_hwp = kmalloc_obj(struct raw_hwp_page, GFP_ATOMIC);
-	if (raw_hwp) {
-		raw_hwp->page = page;
-		llist_add(&raw_hwp->node, head);
-	} else {
-		/*
-		 * Failed to save raw error info.  We no longer trace all
-		 * hwpoisoned subpages, and we need refuse to free/dissolve
-		 * this hwpoisoned hugepage.
-		 */
-		folio_set_hugetlb_raw_hwp_unreliable(folio);
-		/*
-		 * Once hugetlb_raw_hwp_unreliable is set, raw_hwp_page is not
-		 * used any more, so free it.
-		 */
-		__folio_free_raw_hwp(folio, false);
-	}
-	return ret;
-}
-
-static unsigned long folio_free_raw_hwp(struct folio *folio, bool move_flag)
-{
-	/*
-	 * hugetlb_vmemmap_optimized hugepages can't be freed because struct
-	 * pages for tail pages are required but they don't exist.
-	 */
-	if (move_flag && folio_test_hugetlb_vmemmap_optimized(folio))
-		return 0;
-
-	/*
-	 * hugetlb_raw_hwp_unreliable hugepages shouldn't be unpoisoned by
-	 * definition.
-	 */
-	if (folio_test_hugetlb_raw_hwp_unreliable(folio))
-		return 0;
-
-	return __folio_free_raw_hwp(folio, move_flag);
-}
-
-void folio_clear_hugetlb_hwpoison(struct folio *folio)
-{
-	if (folio_test_hugetlb_raw_hwp_unreliable(folio))
-		return;
-	if (folio_test_hugetlb_vmemmap_optimized(folio))
-		return;
-	folio_clear_hwpoison(folio);
-	folio_free_raw_hwp(folio, true);
-}
-
-/*
- * Called from hugetlb code with hugetlb_lock held.
- */
-int __get_huge_page_for_hwpoison(unsigned long pfn, int flags,
-				 bool *migratable_cleared)
-{
-	struct page *page = pfn_to_page(pfn);
-	struct folio *folio = page_folio(page);
-	bool count_increased = false;
-	int ret, rc;
-
-	if (!folio_test_hugetlb(folio)) {
-		ret = MF_HUGETLB_NON_HUGEPAGE;
-		goto out;
-	} else if (flags & MF_COUNT_INCREASED) {
-		ret = MF_HUGETLB_IN_USED;
-		count_increased = true;
-	} else if (folio_test_hugetlb_freed(folio)) {
-		ret = MF_HUGETLB_FREED;
-	} else if (folio_test_hugetlb_migratable(folio)) {
-		if (folio_try_get(folio)) {
-			ret = MF_HUGETLB_IN_USED;
-			count_increased = true;
-		} else {
-			ret = MF_HUGETLB_FREED;
-		}
-	} else {
-		ret = MF_HUGETLB_RETRY;
-		if (!(flags & MF_NO_RETRY))
-			goto out;
-	}
-
-	rc = hugetlb_update_hwpoison(folio, page);
-	if (rc >= MF_HUGETLB_FOLIO_PRE_POISONED) {
-		ret = rc;
-		goto out;
-	}
-
-	/*
-	 * Clearing hugetlb_migratable for hwpoisoned hugepages to prevent them
-	 * from being migrated by memory hotremove.
-	 */
-	if (count_increased && folio_test_hugetlb_migratable(folio)) {
-		folio_clear_hugetlb_migratable(folio);
-		*migratable_cleared = true;
-	}
-
-	return ret;
-out:
-	if (count_increased)
-		folio_put(folio);
-	return ret;
-}
-
-/*
- * Taking refcount of hugetlb pages needs extra care about race conditions
- * with basic operations like hugepage allocation/free/demotion.
- * So some of prechecks for hwpoison (pinning, and testing/setting
- * PageHWPoison) should be done in single hugetlb_lock range.
- * Returns:
- *	0		- not hugetlb, or recovered
- *	-EBUSY		- not recovered
- *	-EOPNOTSUPP	- hwpoison_filter'ed
- *	-EHWPOISON	- folio or exact page already poisoned
- *	-EFAULT		- kill_accessing_process finds current->mm null
- */
-static int try_memory_failure_hugetlb(unsigned long pfn, int flags, int *hugetlb)
-{
-	int res, rv;
-	struct page *p = pfn_to_page(pfn);
-	struct folio *folio;
-	unsigned long page_flags;
-	bool migratable_cleared = false;
-
-	*hugetlb = 1;
-retry:
-	res = get_huge_page_for_hwpoison(pfn, flags, &migratable_cleared);
-	switch (res) {
-	case MF_HUGETLB_NON_HUGEPAGE:	/* fallback to normal page handling */
-		*hugetlb = 0;
-		return 0;
-	case MF_HUGETLB_RETRY:
-		if (!(flags & MF_NO_RETRY)) {
-			flags |= MF_NO_RETRY;
-			goto retry;
-		}
-		return action_result(pfn, MF_MSG_GET_HWPOISON, MF_IGNORED);
-	case MF_HUGETLB_FOLIO_PRE_POISONED:
-	case MF_HUGETLB_PAGE_PRE_POISONED:
-		rv = -EHWPOISON;
-		if (flags & MF_ACTION_REQUIRED)
-			rv = kill_accessing_process(current, pfn, flags);
-		if (res == MF_HUGETLB_PAGE_PRE_POISONED)
-			action_result(pfn, MF_MSG_ALREADY_POISONED, MF_FAILED);
-		else
-			action_result(pfn, MF_MSG_HUGE, MF_FAILED);
-		return rv;
-	default:
-		WARN_ON((res != MF_HUGETLB_FREED) && (res != MF_HUGETLB_IN_USED));
-		break;
-	}
-
-	folio = page_folio(p);
-	folio_lock(folio);
-
-	if (hwpoison_filter(p)) {
-		folio_clear_hugetlb_hwpoison(folio);
-		if (migratable_cleared)
-			folio_set_hugetlb_migratable(folio);
-		folio_unlock(folio);
-		if (res == MF_HUGETLB_IN_USED)
-			folio_put(folio);
-		return -EOPNOTSUPP;
-	}
-
-	/*
-	 * Handling free hugepage.  The possible race with hugepage allocation
-	 * or demotion can be prevented by PageHWPoison flag.
-	 */
-	if (res == MF_HUGETLB_FREED) {
-		folio_unlock(folio);
-		if (__page_handle_poison(p) > 0) {
-			page_ref_inc(p);
-			res = MF_RECOVERED;
-		} else {
-			res = MF_FAILED;
-		}
-		return action_result(pfn, MF_MSG_FREE_HUGE, res);
-	}
-
-	page_flags = folio->flags.f;
-
-	if (!hwpoison_user_mappings(folio, p, pfn, flags)) {
-		folio_unlock(folio);
-		return action_result(pfn, MF_MSG_UNMAP_FAILED, MF_FAILED);
-	}
-
-	return identify_page_state(pfn, p, page_flags);
-}
-
-#else
 static inline int try_memory_failure_hugetlb(unsigned long pfn, int flags, int *hugetlb)
 {
 	return 0;
@@ -2111,7 +1674,6 @@ static inline unsigned long folio_free_raw_hwp(struct folio *folio, bool flag)
 {
 	return 0;
 }
-#endif	/* CONFIG_HUGETLB_PAGE */
 
 /* Drop the extra refcount in case we come from madvise() */
 static void put_ref_page(unsigned long pfn, int flags)

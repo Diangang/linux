@@ -151,16 +151,6 @@ struct rtc_device {
 	time64_t offset_secs;
 	bool set_start_time;
 
-#ifdef CONFIG_RTC_INTF_DEV_UIE_EMUL
-	struct work_struct uie_task;
-	struct timer_list uie_timer;
-	/* Those fields are protected by rtc->irq_lock */
-	unsigned int oldsecs;
-	unsigned int uie_irq_active:1;
-	unsigned int stop_uie_polling:1;
-	unsigned int uie_task_active:1;
-	unsigned int uie_timer_active:1;
-#endif
 };
 #define to_rtc_device(d) container_of(d, struct rtc_device, dev)
 
@@ -246,27 +236,14 @@ static inline ktime_t rtc_bound_alarmtime(struct rtc_device *rtc,
 #define devm_rtc_register_device(device) \
 	__devm_rtc_register_device(THIS_MODULE, device)
 
-#ifdef CONFIG_RTC_HCTOSYS_DEVICE
-extern int rtc_hctosys_ret;
-#else
 #define rtc_hctosys_ret -ENODEV
-#endif
 
-#ifdef CONFIG_RTC_NVMEM
-int devm_rtc_nvmem_register(struct rtc_device *rtc,
-			    struct nvmem_config *nvmem_config);
-#else
 static inline int devm_rtc_nvmem_register(struct rtc_device *rtc,
 					  struct nvmem_config *nvmem_config)
 {
 	return 0;
 }
-#endif
 
-#ifdef CONFIG_RTC_INTF_SYSFS
-int rtc_add_group(struct rtc_device *rtc, const struct attribute_group *grp);
-int rtc_add_groups(struct rtc_device *rtc, const struct attribute_group **grps);
-#else
 static inline
 int rtc_add_group(struct rtc_device *rtc, const struct attribute_group *grp)
 {
@@ -278,5 +255,4 @@ int rtc_add_groups(struct rtc_device *rtc, const struct attribute_group **grps)
 {
 	return 0;
 }
-#endif
 #endif /* _LINUX_RTC_H_ */

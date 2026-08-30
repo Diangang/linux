@@ -27,8 +27,6 @@
 #include <linux/swiotlb.h>
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
-#include <linux/crash_dump.h>
-#include <linux/crash_reserve.h>
 #include <linux/hugetlb.h>
 #include <linux/acpi_iort.h>
 #include <linux/execmem.h>
@@ -84,25 +82,6 @@ phys_addr_t __ro_after_init arm64_dma_phys_limit;
 #else
 #define ARM64_MEMSTART_ALIGN	(1UL << ARM64_MEMSTART_SHIFT)
 #endif
-
-static void __init arch_reserve_crashkernel(void)
-{
-	unsigned long long low_size = 0;
-	unsigned long long crash_base, crash_size;
-	bool high = false;
-	int ret;
-
-	if (!IS_ENABLED(CONFIG_CRASH_RESERVE))
-		return;
-
-	ret = parse_crashkernel(boot_command_line, memblock_phys_mem_size(),
-				&crash_size, &crash_base,
-				&low_size, NULL, &high);
-	if (ret)
-		return;
-
-	reserve_crashkernel_generic(crash_size, crash_base, low_size, high);
-}
 
 static phys_addr_t __init max_zone_phys(phys_addr_t zone_limit)
 {
@@ -295,12 +274,6 @@ void __init bootmem_init(void)
 	 */
 	dma_contiguous_reserve(arm64_dma_phys_limit);
 
-	/*
-	 * request_standard_resources() depends on crashkernel's memory being
-	 * reserved, so do it here.
-	 */
-	arch_reserve_crashkernel();
-
 	memblock_dump_all();
 }
 
@@ -336,9 +309,6 @@ void __init arch_mm_preinit(void)
 	 * Check boundaries twice: Some fundamental inconsistencies can be
 	 * detected at build time already.
 	 */
-#ifdef CONFIG_COMPAT
-	BUILD_BUG_ON(TASK_SIZE_32 > DEFAULT_MAP_WINDOW_64);
-#endif
 
 	/*
 	 * Selected page table levels should match when derived from

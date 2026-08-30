@@ -233,7 +233,7 @@ acpi_table_parse_cedt(enum acpi_cedt_type id,
 int acpi_parse_mcfg (struct acpi_table_header *header);
 void acpi_table_print_madt_entry (struct acpi_subtable_header *madt);
 
-#if defined(CONFIG_X86) || defined(CONFIG_LOONGARCH)
+#if defined(CONFIG_X86)
 void acpi_numa_processor_affinity_init (struct acpi_srat_cpu_affinity *pa);
 #else
 static inline void
@@ -242,7 +242,7 @@ acpi_numa_processor_affinity_init(struct acpi_srat_cpu_affinity *pa) { }
 
 void acpi_numa_x2apic_affinity_init(struct acpi_srat_x2apic_cpu_affinity *pa);
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_LOONGARCH)
+#if defined(CONFIG_ARM64)
 void acpi_arch_dma_setup(struct device *dev);
 #else
 static inline void acpi_arch_dma_setup(struct device *dev) { }
@@ -255,11 +255,7 @@ static inline void
 acpi_numa_gicc_affinity_init(struct acpi_srat_gicc_affinity *pa) { }
 #endif
 
-#ifdef CONFIG_RISCV
-void acpi_numa_rintc_affinity_init(struct acpi_srat_rintc_affinity *pa);
-#else
 static inline void acpi_numa_rintc_affinity_init(struct acpi_srat_rintc_affinity *pa) { }
-#endif
 
 #ifndef PHYS_CPUID_INVALID
 typedef u32 phys_cpuid_t;
@@ -367,27 +363,6 @@ extern int ec_transaction(u8 command,
                           u8 *rdata, unsigned rdata_len);
 extern acpi_handle ec_get_handle(void);
 
-#if defined(CONFIG_ACPI_WMI)
-
-typedef void (*wmi_notify_handler) (union acpi_object *data, void *context);
-
-int wmi_instance_count(const char *guid);
-
-extern acpi_status wmi_evaluate_method(const char *guid, u8 instance,
-					u32 method_id,
-					const struct acpi_buffer *in,
-					struct acpi_buffer *out);
-extern acpi_status wmi_query_block(const char *guid, u8 instance,
-					struct acpi_buffer *out);
-extern acpi_status wmi_set_block(const char *guid, u8 instance,
-					const struct acpi_buffer *in);
-extern acpi_status wmi_install_notify_handler(const char *guid,
-					wmi_notify_handler handler, void *data);
-extern acpi_status wmi_remove_notify_handler(const char *guid);
-extern bool wmi_has_guid(const char *guid);
-extern char *wmi_get_acpi_device_uid(const char *guid);
-
-#endif	/* CONFIG_ACPI_WMI */
 
 #define ACPI_VIDEO_OUTPUT_SWITCHING			0x0001
 #define ACPI_VIDEO_DEVICE_POSTING			0x0002
@@ -467,9 +442,6 @@ int acpi_check_region(resource_size_t start, resource_size_t n,
 
 int acpi_resources_are_enforced(void);
 
-#if 0
-extern int acpi_check_s4_hw_signature;
-#endif
 
 int acpi_register_wakeup_handler(
 	int wake_irq, bool (*wakeup)(void *context), void *context);
@@ -677,11 +649,6 @@ enum acpi_reconfig_event  {
 int acpi_reconfig_notifier_register(struct notifier_block *nb);
 int acpi_reconfig_notifier_unregister(struct notifier_block *nb);
 
-#ifdef CONFIG_ACPI_GTDT
-int acpi_gtdt_init(struct acpi_table_header *table, int *platform_timer_count);
-int acpi_gtdt_map_ppi(int type);
-bool acpi_gtdt_c3stop(int type);
-#endif
 
 #ifndef ACPI_HAVE_ARCH_SET_ROOT_POINTER
 static __always_inline void acpi_arch_set_root_pointer(u64 addr)
@@ -1059,10 +1026,6 @@ struct acpi_s2idle_dev_ops {
 	void (*check)(void);
 	void (*restore)(void);
 };
-#if defined(CONFIG_SUSPEND) && defined(CONFIG_X86)
-int acpi_register_lps0_dev(struct acpi_s2idle_dev_ops *arg);
-void acpi_unregister_lps0_dev(struct acpi_s2idle_dev_ops *arg);
-#else /* CONFIG_SUSPEND && CONFIG_X86 */
 static inline int acpi_register_lps0_dev(struct acpi_s2idle_dev_ops *arg)
 {
 	return -ENODEV;
@@ -1070,21 +1033,11 @@ static inline int acpi_register_lps0_dev(struct acpi_s2idle_dev_ops *arg)
 static inline void acpi_unregister_lps0_dev(struct acpi_s2idle_dev_ops *arg)
 {
 }
-#endif /* CONFIG_SUSPEND && CONFIG_X86 */
 void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
 #else
 #define acpi_os_set_prepare_sleep(func, pm1a_ctrl, pm1b_ctrl) do { } while (0)
 #endif
 
-#if defined(CONFIG_ACPI) && defined(CONFIG_PM)
-int acpi_dev_suspend(struct device *dev, bool wakeup);
-int acpi_dev_resume(struct device *dev);
-int acpi_subsys_runtime_suspend(struct device *dev);
-int acpi_subsys_runtime_resume(struct device *dev);
-int acpi_dev_pm_attach(struct device *dev, bool power_on);
-bool acpi_storage_d3(struct device *dev);
-bool acpi_dev_state_d0(struct device *dev);
-#else
 static inline int acpi_subsys_runtime_suspend(struct device *dev) { return 0; }
 static inline int acpi_subsys_runtime_resume(struct device *dev) { return 0; }
 static inline int acpi_dev_pm_attach(struct device *dev, bool power_on)
@@ -1099,18 +1052,7 @@ static inline bool acpi_dev_state_d0(struct device *dev)
 {
 	return true;
 }
-#endif
 
-#if defined(CONFIG_ACPI) && defined(CONFIG_PM_SLEEP)
-int acpi_subsys_prepare(struct device *dev);
-void acpi_subsys_complete(struct device *dev);
-int acpi_subsys_suspend_late(struct device *dev);
-int acpi_subsys_suspend_noirq(struct device *dev);
-int acpi_subsys_suspend(struct device *dev);
-int acpi_subsys_freeze(struct device *dev);
-int acpi_subsys_poweroff(struct device *dev);
-int acpi_subsys_restore_early(struct device *dev);
-#else
 static inline int acpi_subsys_prepare(struct device *dev) { return 0; }
 static inline void acpi_subsys_complete(struct device *dev) {}
 static inline int acpi_subsys_suspend_late(struct device *dev) { return 0; }
@@ -1119,7 +1061,6 @@ static inline int acpi_subsys_suspend(struct device *dev) { return 0; }
 static inline int acpi_subsys_freeze(struct device *dev) { return 0; }
 static inline int acpi_subsys_poweroff(struct device *dev) { return 0; }
 static inline int acpi_subsys_restore_early(struct device *dev) { return 0; }
-#endif
 
 static inline void acpi_ec_mark_gpe_for_wake(void) {}
 static inline void acpi_ec_set_gpe_wake_mask(u8 action) {}
@@ -1139,10 +1080,6 @@ static inline void acpi_evaluation_failure_warn(acpi_handle handle,
 						acpi_status status) {}
 #endif	/* !CONFIG_ACPI */
 
-#if defined(CONFIG_ACPI) && defined(CONFIG_DYNAMIC_DEBUG)
-__printf(3, 4)
-void __acpi_handle_debug(struct _ddebug *descriptor, acpi_handle handle, const char *fmt, ...);
-#endif
 
 /*
  * acpi_handle_<level>: Print message with ACPI prefix and object path
@@ -1177,14 +1114,6 @@ void __acpi_handle_debug(struct _ddebug *descriptor, acpi_handle handle, const c
 })
 #endif
 
-#if defined(CONFIG_ACPI) && defined(CONFIG_GPIOLIB)
-bool acpi_gpio_get_irq_resource(struct acpi_resource *ares,
-				struct acpi_resource_gpio **agpio);
-bool acpi_gpio_get_io_resource(struct acpi_resource *ares,
-			       struct acpi_resource_gpio **agpio);
-int acpi_dev_gpio_irq_wake_get_by(struct acpi_device *adev, const char *con_id, int index,
-				  bool *wake_capable);
-#else
 static inline bool acpi_gpio_get_irq_resource(struct acpi_resource *ares,
 					      struct acpi_resource_gpio **agpio)
 {
@@ -1200,7 +1129,6 @@ static inline int acpi_dev_gpio_irq_wake_get_by(struct acpi_device *adev, const 
 {
 	return -ENXIO;
 }
-#endif
 
 static inline int acpi_dev_gpio_irq_wake_get(struct acpi_device *adev, int index,
 					     bool *wake_capable)

@@ -125,10 +125,6 @@ int slab_unmergeable(struct kmem_cache *s)
 	if (s->ctor)
 		return 1;
 
-#ifdef CONFIG_HARDENED_USERCOPY
-	if (s->usersize)
-		return 1;
-#endif
 
 	/*
 	 * We may have set a slab to be unmergeable during bootstrap.
@@ -145,9 +141,6 @@ bool slab_args_unmergeable(struct kmem_cache_args *args, slab_flags_t flags)
 		return true;
 
 	if (args->ctor)
-		return true;
-
-	if (IS_ENABLED(CONFIG_HARDENED_USERCOPY) && args->usersize)
 		return true;
 
 	if (flags & SLAB_NEVER_MERGE)
@@ -324,12 +317,7 @@ struct kmem_cache *__kmem_cache_create_args(const char *name,
 		goto out_unlock;
 	}
 
-	/* Fail closed on bad usersize of useroffset values. */
-	if (!IS_ENABLED(CONFIG_HARDENED_USERCOPY) ||
-	    WARN_ON(!args->usersize && args->useroffset) ||
-	    WARN_ON(object_size < args->usersize ||
-		    object_size - args->usersize < args->useroffset))
-		args->usersize = args->useroffset = 0;
+	args->usersize = args->useroffset = 0;
 
 	s = __kmem_cache_alias(name, object_size, flags, args);
 	if (s)
@@ -366,8 +354,6 @@ out_unlock:
 }
 EXPORT_SYMBOL(__kmem_cache_create_args);
 
-static struct kmem_cache *kmem_buckets_cache __ro_after_init;
-
 /**
  * kmem_buckets_create - Create a set of caches that handle dynamic sized
  *			 allocations via kmem_buckets_alloc()
@@ -380,90 +366,15 @@ static struct kmem_cache *kmem_buckets_cache __ro_after_init;
  *		to/from userspace.
  * @ctor: A constructor for the objects, run when new allocations are made.
  *
- * Cannot be called within an interrupt, but can be interrupted.
- *
- * Return: a pointer to the cache on success, NULL on failure. When
- * CONFIG_SLAB_BUCKETS is not enabled, ZERO_SIZE_PTR is returned, and
- * subsequent calls to kmem_buckets_alloc() will fall back to kmalloc().
- * (i.e. callers only need to check for NULL on failure.)
+ * Return: ZERO_SIZE_PTR so subsequent calls to kmem_buckets_alloc() fall back
+ * to kmalloc().
  */
 kmem_buckets *kmem_buckets_create(const char *name, slab_flags_t flags,
 				  unsigned int useroffset,
 				  unsigned int usersize,
 				  void (*ctor)(void *))
 {
-	unsigned long mask = 0;
-	unsigned int idx;
-	kmem_buckets *b;
-
-	BUILD_BUG_ON(ARRAY_SIZE(kmalloc_caches[KMALLOC_NORMAL]) > BITS_PER_LONG);
-
-	/*
-	 * When the separate buckets API is not built in, just return
-	 * a non-NULL value for the kmem_buckets pointer, which will be
-	 * unused when performing allocations.
-	 */
-	if (!IS_ENABLED(CONFIG_SLAB_BUCKETS))
-		return ZERO_SIZE_PTR;
-
-	if (WARN_ON(!kmem_buckets_cache))
-		return NULL;
-
-	b = kmem_cache_alloc(kmem_buckets_cache, GFP_KERNEL|__GFP_ZERO);
-	if (WARN_ON(!b))
-		return NULL;
-
-	flags |= SLAB_NO_MERGE;
-
-	for (idx = 0; idx < ARRAY_SIZE(kmalloc_caches[KMALLOC_NORMAL]); idx++) {
-		char *short_size, *cache_name;
-		unsigned int cache_useroffset, cache_usersize;
-		unsigned int size, aligned_idx;
-
-		if (!kmalloc_caches[KMALLOC_NORMAL][idx])
-			continue;
-
-		size = kmalloc_caches[KMALLOC_NORMAL][idx]->object_size;
-		if (!size)
-			continue;
-
-		short_size = strchr(kmalloc_caches[KMALLOC_NORMAL][idx]->name, '-');
-		if (WARN_ON(!short_size))
-			goto fail;
-
-		if (useroffset >= size) {
-			cache_useroffset = 0;
-			cache_usersize = 0;
-		} else {
-			cache_useroffset = useroffset;
-			cache_usersize = min(size - cache_useroffset, usersize);
-		}
-
-		aligned_idx = __kmalloc_index(size, false);
-		if (!(*b)[aligned_idx]) {
-			cache_name = kasprintf(GFP_KERNEL, "%s-%s", name, short_size + 1);
-			if (WARN_ON(!cache_name))
-				goto fail;
-			(*b)[aligned_idx] = kmem_cache_create_usercopy(cache_name, size,
-					0, flags, cache_useroffset,
-					cache_usersize, ctor);
-			kfree(cache_name);
-			if (WARN_ON(!(*b)[aligned_idx]))
-				goto fail;
-			set_bit(aligned_idx, &mask);
-		}
-		if (idx != aligned_idx)
-			(*b)[idx] = (*b)[aligned_idx];
-	}
-
-	return b;
-
-fail:
-	for_each_set_bit(idx, &mask, ARRAY_SIZE(kmalloc_caches[KMALLOC_NORMAL]))
-		kmem_cache_destroy((*b)[idx]);
-	kmem_cache_free(kmem_buckets_cache, b);
-
-	return NULL;
+	return ZERO_SIZE_PTR;
 }
 EXPORT_SYMBOL(kmem_buckets_create);
 
@@ -674,10 +585,6 @@ void __init create_boot_cache(struct kmem_cache *s, const char *name,
 		align = max(align, 1U << (ffs(size) - 1));
 	kmem_args.align = calculate_alignment(flags, align, size);
 
-#ifdef CONFIG_HARDENED_USERCOPY
-	kmem_args.useroffset = useroffset;
-	kmem_args.usersize = usersize;
-#endif
 
 	err = do_kmem_cache_create(s, name, size, &kmem_args, flags);
 
@@ -770,11 +677,7 @@ EXPORT_SYMBOL(kmalloc_size_roundup);
 #define KMALLOC_DMA_NAME(sz)
 #endif
 
-#ifdef CONFIG_MEMCG
-#define KMALLOC_CGROUP_NAME(sz)	.name[KMALLOC_CGROUP] = "kmalloc-cg-" #sz,
-#else
 #define KMALLOC_CGROUP_NAME(sz)
-#endif
 
 #define KMALLOC_RCL_NAME(sz)	.name[KMALLOC_RECLAIM] = "kmalloc-rcl-" #sz,
 
@@ -888,23 +791,9 @@ new_kmalloc_cache(int idx, enum kmalloc_cache_type type)
 
 	if ((KMALLOC_RECLAIM != KMALLOC_NORMAL) && (type == KMALLOC_RECLAIM)) {
 		flags |= SLAB_RECLAIM_ACCOUNT;
-	} else if (IS_ENABLED(CONFIG_MEMCG) && (type == KMALLOC_CGROUP)) {
-		if (mem_cgroup_kmem_disabled()) {
-			kmalloc_caches[type][idx] = kmalloc_caches[KMALLOC_NORMAL][idx];
-			return;
-		}
-		flags |= SLAB_ACCOUNT;
 	} else if (IS_ENABLED(CONFIG_ZONE_DMA) && (type == KMALLOC_DMA)) {
 		flags |= SLAB_CACHE_DMA;
 	}
-
-
-	/*
-	 * If CONFIG_MEMCG is enabled, disable cache merging for
-	 * KMALLOC_NORMAL caches.
-	 */
-	if (IS_ENABLED(CONFIG_MEMCG) && (type == KMALLOC_NORMAL))
-		flags |= SLAB_NO_MERGE;
 
 	if (minalign > ARCH_KMALLOC_MINALIGN) {
 		aligned_size = ALIGN(aligned_size, minalign);
@@ -947,10 +836,6 @@ void __init create_kmalloc_caches(void)
 	/* Kmalloc array is now usable */
 	slab_state = UP;
 
-	if (IS_ENABLED(CONFIG_SLAB_BUCKETS))
-		kmem_buckets_cache = kmem_cache_create("kmalloc_buckets",
-						       sizeof(kmem_buckets),
-						       0, SLAB_NO_MERGE, NULL);
 }
 
 gfp_t kmalloc_fix_flags(gfp_t flags)
@@ -1278,12 +1163,6 @@ static DEFINE_PER_CPU(struct kfree_rcu_cpu, krc) = {
 static __always_inline void
 debug_rcu_bhead_unqueue(struct kvfree_rcu_bulk_data *bhead)
 {
-#ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
-	int i;
-
-	for (i = 0; i < bhead->nr_records; i++)
-		debug_rcu_head_unqueue((struct rcu_head *)(bhead->records[i]));
-#endif
 }
 
 static inline struct kfree_rcu_cpu *

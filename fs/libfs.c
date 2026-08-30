@@ -75,9 +75,6 @@ struct dentry *simple_lookup(struct inode *dir, struct dentry *dentry, unsigned 
 		dentry->d_flags |= DCACHE_DONTCACHE;
 		spin_unlock(&dentry->d_lock);
 	}
-	if (IS_ENABLED(CONFIG_UNICODE) && IS_CASEFOLDED(dir))
-		return NULL;
-
 	d_add(dentry, NULL);
 	return NULL;
 }
@@ -1783,175 +1780,7 @@ bool is_empty_dir_inode(struct inode *inode)
 		(inode->i_op == &empty_dir_inode_operations);
 }
 
-#if IS_ENABLED(CONFIG_UNICODE)
-/**
- * generic_ci_d_compare - generic d_compare implementation for casefolding filesystems
- * @dentry:	dentry whose name we are checking against
- * @len:	len of name of dentry
- * @str:	str pointer to name of dentry
- * @name:	Name to compare against
- *
- * Return: 0 if names match, 1 if mismatch, or -ERRNO
- */
-int generic_ci_d_compare(const struct dentry *dentry, unsigned int len,
-			 const char *str, const struct qstr *name)
-{
-	const struct dentry *parent;
-	const struct inode *dir;
-	union shortname_store strbuf;
-	struct qstr qstr;
 
-	/*
-	 * Attempt a case-sensitive match first. It is cheaper and
-	 * should cover most lookups, including all the sane
-	 * applications that expect a case-sensitive filesystem.
-	 *
-	 * This comparison is safe under RCU because the caller
-	 * guarantees the consistency between str and len. See
-	 * __d_lookup_rcu_op_compare() for details.
-	 */
-	if (len == name->len && !memcmp(str, name->name, len))
-		return 0;
-
-	parent = READ_ONCE(dentry->d_parent);
-	dir = READ_ONCE(parent->d_inode);
-	if (!dir || !IS_CASEFOLDED(dir))
-		return 1;
-
-	qstr.len = len;
-	qstr.name = str;
-	/*
-	 * If the dentry name is stored in-line, then it may be concurrently
-	 * modified by a rename.  If this happens, the VFS will eventually retry
-	 * the lookup, so it doesn't matter what ->d_compare() returns.
-	 * However, it's unsafe to call utf8_strncasecmp() with an unstable
-	 * string.  Therefore, we have to copy the name into a temporary buffer.
-	 * As above, len is guaranteed to match str, so the shortname case
-	 * is exactly when str points to ->d_shortname.
-	 */
-	if (qstr.name == dentry->d_shortname.string) {
-		strbuf = dentry->d_shortname; // NUL is guaranteed to be in there
-		qstr.name = strbuf.string;
-		/* prevent compiler from optimizing out the temporary buffer */
-		barrier();
-	}
-
-	return utf8_strncasecmp(dentry->d_sb->s_encoding, name, &qstr);
-}
-EXPORT_SYMBOL(generic_ci_d_compare);
-
-/**
- * generic_ci_d_hash - generic d_hash implementation for casefolding filesystems
- * @dentry:	dentry of the parent directory
- * @str:	qstr of name whose hash we should fill in
- *
- * Return: 0 if hash was successful or unchanged, and -EINVAL on error
- */
-int generic_ci_d_hash(const struct dentry *dentry, struct qstr *str)
-{
-	const struct inode *dir = READ_ONCE(dentry->d_inode);
-	struct super_block *sb = dentry->d_sb;
-	const struct unicode_map *um = sb->s_encoding;
-	int ret;
-
-	if (!dir || !IS_CASEFOLDED(dir))
-		return 0;
-
-	ret = utf8_casefold_hash(um, dentry, str);
-	if (ret < 0 && sb_has_strict_encoding(sb))
-		return -EINVAL;
-	return 0;
-}
-EXPORT_SYMBOL(generic_ci_d_hash);
-
-static const struct dentry_operations generic_ci_dentry_ops = {
-	.d_hash = generic_ci_d_hash,
-	.d_compare = generic_ci_d_compare,
-#ifdef CONFIG_FS_ENCRYPTION
-	.d_revalidate = fscrypt_d_revalidate,
-#endif
-};
-
-/**
- * generic_ci_match() - Match a name (case-insensitively) with a dirent.
- * This is a filesystem helper for comparison with directory entries.
- * generic_ci_d_compare should be used in VFS' ->d_compare instead.
- *
- * @parent: Inode of the parent of the dirent under comparison
- * @name: name under lookup.
- * @folded_name: Optional pre-folded name under lookup
- * @de_name: Dirent name.
- * @de_name_len: dirent name length.
- *
- * Test whether a case-insensitive directory entry matches the filename
- * being searched.  If @folded_name is provided, it is used instead of
- * recalculating the casefold of @name.
- *
- * Return: > 0 if the directory entry matches, 0 if it doesn't match, or
- * < 0 on error.
- */
-int generic_ci_match(const struct inode *parent,
-		     const struct qstr *name,
-		     const struct qstr *folded_name,
-		     const u8 *de_name, u32 de_name_len)
-{
-	const struct super_block *sb = parent->i_sb;
-	const struct unicode_map *um = sb->s_encoding;
-	struct fscrypt_str decrypted_name = FSTR_INIT(NULL, de_name_len);
-	struct qstr dirent = QSTR_INIT(de_name, de_name_len);
-	int res = 0;
-
-	if (IS_ENCRYPTED(parent)) {
-		const struct fscrypt_str encrypted_name =
-			FSTR_INIT((u8 *) de_name, de_name_len);
-
-		if (WARN_ON_ONCE(!fscrypt_has_encryption_key(parent)))
-			return -EINVAL;
-
-		decrypted_name.name = kmalloc(de_name_len, GFP_KERNEL);
-		if (!decrypted_name.name)
-			return -ENOMEM;
-		res = fscrypt_fname_disk_to_usr(parent, 0, 0, &encrypted_name,
-						&decrypted_name);
-		if (res < 0) {
-			kfree(decrypted_name.name);
-			return res;
-		}
-		dirent.name = decrypted_name.name;
-		dirent.len = decrypted_name.len;
-	}
-
-	/*
-	 * Attempt a case-sensitive match first. It is cheaper and
-	 * should cover most lookups, including all the sane
-	 * applications that expect a case-sensitive filesystem.
-	 */
-
-	if (dirent.len == name->len &&
-	    !memcmp(name->name, dirent.name, dirent.len))
-		goto out;
-
-	if (folded_name->name)
-		res = utf8_strncasecmp_folded(um, folded_name, &dirent);
-	else
-		res = utf8_strncasecmp(um, name, &dirent);
-
-out:
-	kfree(decrypted_name.name);
-	if (res < 0 && sb_has_strict_encoding(sb)) {
-		pr_err_ratelimited("Directory contains filename that is invalid UTF-8");
-		return 0;
-	}
-	return !res;
-}
-EXPORT_SYMBOL(generic_ci_match);
-#endif
-
-#ifdef CONFIG_FS_ENCRYPTION
-static const struct dentry_operations generic_encrypted_dentry_ops = {
-	.d_revalidate = fscrypt_d_revalidate,
-};
-#endif
 
 /**
  * generic_set_sb_d_ops - helper for choosing the set of
@@ -1966,18 +1795,6 @@ static const struct dentry_operations generic_encrypted_dentry_ops = {
  */
 void generic_set_sb_d_ops(struct super_block *sb)
 {
-#if IS_ENABLED(CONFIG_UNICODE)
-	if (sb->s_encoding) {
-		set_default_d_op(sb, &generic_ci_dentry_ops);
-		return;
-	}
-#endif
-#ifdef CONFIG_FS_ENCRYPTION
-	if (sb->s_cop) {
-		set_default_d_op(sb, &generic_encrypted_dentry_ops);
-		return;
-	}
-#endif
 }
 EXPORT_SYMBOL(generic_set_sb_d_ops);
 

@@ -126,114 +126,17 @@ struct cma *dev_get_cma_area(struct device *dev)
 }
 EXPORT_SYMBOL_GPL(dev_get_cma_area);
 
-#ifdef CONFIG_DMA_NUMA_CMA
 
-static struct cma *dma_contiguous_numa_area[MAX_NUMNODES];
-static phys_addr_t numa_cma_size[MAX_NUMNODES] __initdata;
-static struct cma *dma_contiguous_pernuma_area[MAX_NUMNODES];
-static phys_addr_t pernuma_size_bytes __initdata;
-
-static int __init early_numa_cma(char *p)
-{
-	int nid, count = 0;
-	unsigned long tmp;
-	char *s = p;
-
-	while (*s) {
-		if (sscanf(s, "%lu%n", &tmp, &count) != 1)
-			break;
-
-		if (s[count] == ':') {
-			if (tmp >= MAX_NUMNODES)
-				break;
-			nid = array_index_nospec(tmp, MAX_NUMNODES);
-
-			s += count + 1;
-			tmp = memparse(s, &s);
-			numa_cma_size[nid] = tmp;
-
-			if (*s == ',')
-				s++;
-			else
-				break;
-		} else
-			break;
-	}
-
-	return 0;
-}
-early_param("numa_cma", early_numa_cma);
-
-static int __init early_cma_pernuma(char *p)
-{
-	pernuma_size_bytes = memparse(p, &p);
-	return 0;
-}
-early_param("cma_pernuma", early_cma_pernuma);
-#endif
-
-#ifdef CONFIG_CMA_SIZE_PERCENTAGE
-
-static phys_addr_t __init __maybe_unused cma_early_percent_memory(void)
-{
-	unsigned long total_pages = PHYS_PFN(memblock_phys_mem_size());
-
-	return (total_pages * CONFIG_CMA_SIZE_PERCENTAGE / 100) << PAGE_SHIFT;
-}
-
-#else
 
 static inline __maybe_unused phys_addr_t cma_early_percent_memory(void)
 {
 	return 0;
 }
 
-#endif
 
-#ifdef CONFIG_DMA_NUMA_CMA
-static void __init dma_numa_cma_reserve(void)
-{
-	int nid;
-
-	for_each_node(nid) {
-		int ret;
-		char name[CMA_MAX_NAME];
-		struct cma **cma;
-
-		if (!node_online(nid)) {
-			if (pernuma_size_bytes || numa_cma_size[nid])
-				pr_warn("invalid node %d specified\n", nid);
-			continue;
-		}
-
-		if (pernuma_size_bytes) {
-
-			cma = &dma_contiguous_pernuma_area[nid];
-			snprintf(name, sizeof(name), "pernuma%d", nid);
-			ret = cma_declare_contiguous_nid(0, pernuma_size_bytes, 0, 0,
-							 0, false, name, cma, nid);
-			if (ret)
-				pr_warn("%s: reservation failed: err %d, node %d", __func__,
-					ret, nid);
-		}
-
-		if (numa_cma_size[nid]) {
-
-			cma = &dma_contiguous_numa_area[nid];
-			snprintf(name, sizeof(name), "numa%d", nid);
-			ret = cma_declare_contiguous_nid(0, numa_cma_size[nid], 0, 0, 0, false,
-							 name, cma, nid);
-			if (ret)
-				pr_warn("%s: reservation failed: err %d, node %d", __func__,
-					ret, nid);
-		}
-	}
-}
-#else
 static inline void __init dma_numa_cma_reserve(void)
 {
 }
-#endif
 
 /**
  * dma_contiguous_reserve() - reserve area(s) for contiguous memory handling
@@ -265,11 +168,6 @@ void __init dma_contiguous_reserve(phys_addr_t limit)
 		if (base_cmdline + size_cmdline == limit_cmdline)
 			fixed = true;
 	} else {
-#if defined(CONFIG_CMA_SIZE_SEL_MIN)
-			selected_size = min(size_bytes, cma_early_percent_memory());
-#elif defined(CONFIG_CMA_SIZE_SEL_MAX)
-		selected_size = max(size_bytes, cma_early_percent_memory());
-#endif
 	}
 
 	if (selected_size && !dma_contiguous_default_area) {
@@ -407,9 +305,6 @@ static struct page *cma_alloc_aligned(struct cma *cma, size_t size, gfp_t gfp)
  */
 struct page *dma_alloc_contiguous(struct device *dev, size_t size, gfp_t gfp)
 {
-#ifdef CONFIG_DMA_NUMA_CMA
-	int nid = dev_to_node(dev);
-#endif
 
 	/* CMA can be used only in the context which permits sleeping */
 	if (!gfpflags_allow_blocking(gfp))
@@ -419,25 +314,6 @@ struct page *dma_alloc_contiguous(struct device *dev, size_t size, gfp_t gfp)
 	if (size <= PAGE_SIZE)
 		return NULL;
 
-#ifdef CONFIG_DMA_NUMA_CMA
-	if (nid != NUMA_NO_NODE && !(gfp & (GFP_DMA | GFP_DMA32))) {
-		struct cma *cma = dma_contiguous_pernuma_area[nid];
-		struct page *page;
-
-		if (cma) {
-			page = cma_alloc_aligned(cma, size, gfp);
-			if (page)
-				return page;
-		}
-
-		cma = dma_contiguous_numa_area[nid];
-		if (cma) {
-			page = cma_alloc_aligned(cma, size, gfp);
-			if (page)
-				return page;
-		}
-	}
-#endif
 	if (!dma_contiguous_default_area)
 		return NULL;
 
@@ -467,14 +343,6 @@ void dma_free_contiguous(struct device *dev, struct page *page, size_t size)
 		/*
 		 * otherwise, page is from either per-numa cma or default cma
 		 */
-#ifdef CONFIG_DMA_NUMA_CMA
-		if (cma_release(dma_contiguous_pernuma_area[page_to_nid(page)],
-					page, count))
-			return;
-		if (cma_release(dma_contiguous_numa_area[page_to_nid(page)],
-					page, count))
-			return;
-#endif
 		if (cma_release(dma_contiguous_default_area, page, count))
 			return;
 	}

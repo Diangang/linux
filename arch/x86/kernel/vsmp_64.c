@@ -94,7 +94,7 @@ static void __init set_vsmp_ctl(void)
 
 static void __init vsmp_cap_cpus(void)
 {
-#if !0 && defined(CONFIG_SMP) && defined(CONFIG_PCI)
+#if defined(CONFIG_SMP) && defined(CONFIG_PCI)
 	void __iomem *address;
 	unsigned int cfg, topology, node_shift, maxcpus;
 

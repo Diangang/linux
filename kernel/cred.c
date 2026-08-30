@@ -101,10 +101,6 @@ void exit_creds(struct task_struct *tsk)
 		put_cred(cred);
 	}
 
-#ifdef CONFIG_KEYS_REQUEST_CACHE
-	key_put(tsk->cached_requested_key);
-	tsk->cached_requested_key = NULL;
-#endif
 }
 
 /**
@@ -191,16 +187,7 @@ struct cred *prepare_creds(void)
 	get_uid(new->user);
 	get_user_ns(new->user_ns);
 
-#ifdef CONFIG_KEYS
-	key_get(new->session_keyring);
-	key_get(new->process_keyring);
-	key_get(new->thread_keyring);
-	key_get(new->request_key_auth);
-#endif
 
-#ifdef CONFIG_SECURITY
-	new->security = NULL;
-#endif
 
 	new->ucounts = get_ucounts(new->ucounts);
 	if (!new->ucounts)
@@ -229,15 +216,6 @@ struct cred *prepare_exec_creds(void)
 	if (!new)
 		return new;
 
-#ifdef CONFIG_KEYS
-	/* newly exec'd tasks don't get a thread keyring */
-	key_put(new->thread_keyring);
-	new->thread_keyring = NULL;
-
-	/* inherit the session keyring; new process keyring */
-	key_put(new->process_keyring);
-	new->process_keyring = NULL;
-#endif
 
 	new->suid = new->fsuid = new->euid;
 	new->sgid = new->fsgid = new->egid;
@@ -259,14 +237,8 @@ int copy_creds(struct task_struct *p, u64 clone_flags)
 	struct cred *new;
 	int ret;
 
-#ifdef CONFIG_KEYS_REQUEST_CACHE
-	p->cached_requested_key = NULL;
-#endif
 
 	if (
-#ifdef CONFIG_KEYS
-		!p->cred->thread_keyring &&
-#endif
 		clone_flags & CLONE_THREAD
 	    ) {
 		p->real_cred = get_cred_many(p->cred, 2);
@@ -290,24 +262,6 @@ int copy_creds(struct task_struct *p, u64 clone_flags)
 			goto error_put;
 	}
 
-#ifdef CONFIG_KEYS
-	/* new threads get their own thread keyrings if their parent already
-	 * had one */
-	if (new->thread_keyring) {
-		key_put(new->thread_keyring);
-		new->thread_keyring = NULL;
-		if (clone_flags & CLONE_THREAD)
-			install_thread_keyring_to_cred(new);
-	}
-
-	/* The process keyring is only shared between the threads in a process;
-	 * anything outside of those threads doesn't inherit.
-	 */
-	if (!(clone_flags & CLONE_THREAD)) {
-		key_put(new->process_keyring);
-		new->process_keyring = NULL;
-	}
-#endif
 
 	p->cred = p->real_cred = get_cred(new);
 	inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
@@ -572,17 +526,7 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
 	get_user_ns(new->user_ns);
 	get_group_info(new->group_info);
 
-#ifdef CONFIG_KEYS
-	new->session_keyring = NULL;
-	new->process_keyring = NULL;
-	new->thread_keyring = NULL;
-	new->request_key_auth = NULL;
-	new->jit_keyring = KEY_REQKEY_DEFL_THREAD_KEYRING;
-#endif
 
-#ifdef CONFIG_SECURITY
-	new->security = NULL;
-#endif
 	new->ucounts = get_ucounts(new->ucounts);
 	if (!new->ucounts)
 		goto error;

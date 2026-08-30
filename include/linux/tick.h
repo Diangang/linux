@@ -34,13 +34,8 @@ extern void tick_assert_timekeeping_handover(void);
 static inline void tick_assert_timekeeping_handover(void) { }
 #endif
 
-#if defined(CONFIG_GENERIC_CLOCKEVENTS) && defined(CONFIG_SUSPEND)
-extern void tick_freeze(void);
-extern void tick_unfreeze(void);
-#else
 static inline void tick_freeze(void) { }
 static inline void tick_unfreeze(void) { }
-#endif
 
 #ifdef CONFIG_TICK_ONESHOT
 extern void tick_irq_enter(void);

@@ -75,26 +75,6 @@ static int blkpg_ioctl(struct block_device *bdev,
 	return blkpg_do_ioctl(bdev, udata, op);
 }
 
-#ifdef CONFIG_COMPAT
-struct compat_blkpg_ioctl_arg {
-	compat_int_t op;
-	compat_int_t flags;
-	compat_int_t datalen;
-	compat_caddr_t data;
-};
-
-static int compat_blkpg_ioctl(struct block_device *bdev,
-			      struct compat_blkpg_ioctl_arg __user *arg)
-{
-	compat_caddr_t udata;
-	int op;
-
-	if (get_user(op, &arg->op) || get_user(udata, &arg->data))
-		return -EFAULT;
-
-	return blkpg_do_ioctl(bdev, compat_ptr(udata), op);
-}
-#endif
 
 /*
  * Check that [start, start + len) is a valid range from the block device's
@@ -278,37 +258,7 @@ static int put_u64(u64 __user *argp, u64 val)
 	return put_user(val, argp);
 }
 
-#ifdef CONFIG_COMPAT
-static int compat_put_long(compat_long_t __user *argp, long val)
-{
-	return put_user(val, argp);
-}
 
-static int compat_put_ulong(compat_ulong_t __user *argp, compat_ulong_t val)
-{
-	return put_user(val, argp);
-}
-#endif
-
-#ifdef CONFIG_COMPAT
-/*
- * This is the equivalent of compat_ptr_ioctl(), to be used by block
- * drivers that implement only commands that are completely compatible
- * between 32-bit and 64-bit user space
- */
-int blkdev_compat_ptr_ioctl(struct block_device *bdev, blk_mode_t mode,
-			unsigned cmd, unsigned long arg)
-{
-	struct gendisk *disk = bdev->bd_disk;
-
-	if (disk->fops->ioctl)
-		return disk->fops->ioctl(bdev, mode, cmd,
-					 (unsigned long)compat_ptr(arg));
-
-	return -ENOIOCTLCMD;
-}
-EXPORT_SYMBOL(blkdev_compat_ptr_ioctl);
-#endif
 
 enum pr_direction {
 	PR_IN,  /* read from device */
@@ -574,44 +524,6 @@ static int blkdev_getgeo(struct block_device *bdev,
 	return 0;
 }
 
-#ifdef CONFIG_COMPAT
-struct compat_hd_geometry {
-	unsigned char heads;
-	unsigned char sectors;
-	unsigned short cylinders;
-	u32 start;
-};
-
-static int compat_hdio_getgeo(struct block_device *bdev,
-			      struct compat_hd_geometry __user *ugeo)
-{
-	struct gendisk *disk = bdev->bd_disk;
-	struct hd_geometry geo;
-	int ret;
-
-	if (!ugeo)
-		return -EINVAL;
-	if (!disk->fops->getgeo)
-		return -ENOTTY;
-
-	memset(&geo, 0, sizeof(geo));
-	/*
-	 * We need to set the startsect first, the driver may
-	 * want to override it.
-	 */
-	geo.start = get_start_sect(bdev);
-	ret = disk->fops->getgeo(disk, &geo);
-	if (ret)
-		return ret;
-
-	ret = copy_to_user(ugeo, &geo, 4);
-	ret |= put_user(geo.start, &ugeo->start);
-	if (ret)
-		ret = -EFAULT;
-
-	return ret;
-}
-#endif
 
 /* set the logical block size */
 static int blkdev_bszset(struct file *file, blk_mode_t mode,
@@ -795,62 +707,3 @@ long blkdev_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 		return -ENOTTY;
 	return bdev->bd_disk->fops->ioctl(bdev, mode, cmd, arg);
 }
-
-#ifdef CONFIG_COMPAT
-
-#define BLKBSZGET_32		_IOR(0x12, 112, int)
-#define BLKBSZSET_32		_IOW(0x12, 113, int)
-#define BLKGETSIZE64_32		_IOR(0x12, 114, int)
-
-/* Most of the generic ioctls are handled in the normal fallback path.
-   This assumes the blkdev's low level compat_ioctl always returns
-   ENOIOCTLCMD for unknown ioctls. */
-long compat_blkdev_ioctl(struct file *file, unsigned cmd, unsigned long arg)
-{
-	int ret;
-	void __user *argp = compat_ptr(arg);
-	struct block_device *bdev = I_BDEV(file->f_mapping->host);
-	struct gendisk *disk = bdev->bd_disk;
-	blk_mode_t mode = file_to_blk_mode(file);
-
-	switch (cmd) {
-	/* These need separate implementations for the data structure */
-	case HDIO_GETGEO:
-		return compat_hdio_getgeo(bdev, argp);
-	case BLKPG:
-		return compat_blkpg_ioctl(bdev, argp);
-
-	/* Compat mode returns 32-bit data instead of 'long' */
-	case BLKRAGET:
-	case BLKFRAGET:
-		if (!argp)
-			return -EINVAL;
-		return compat_put_long(argp,
-			(bdev->bd_disk->bdi->ra_pages * PAGE_SIZE) / 512);
-	case BLKGETSIZE:
-		if (bdev_nr_sectors(bdev) > ~(compat_ulong_t)0)
-			return -EFBIG;
-		return compat_put_ulong(argp, bdev_nr_sectors(bdev));
-
-	/* The data is compatible, but the command number is different */
-	case BLKBSZGET_32: /* get the logical block size (cf. BLKSSZGET) */
-		return put_int(argp, bdev_logical_block_size(bdev));
-	case BLKBSZSET_32:
-		return blkdev_bszset(file, mode, argp);
-	case BLKGETSIZE64_32:
-		return put_u64(argp, bdev_nr_bytes(bdev));
-
-	/* Incompatible alignment on i386 */
-	case BLKTRACESETUP32:
-		return blk_trace_ioctl(bdev, cmd, argp);
-	default:
-		break;
-	}
-
-	ret = blkdev_common_ioctl(bdev, mode, cmd, arg, argp);
-	if (ret == -ENOIOCTLCMD && disk->fops->compat_ioctl)
-		ret = disk->fops->compat_ioctl(bdev, mode, cmd, arg);
-
-	return ret;
-}
-#endif

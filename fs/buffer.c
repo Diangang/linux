@@ -2290,10 +2290,6 @@ int block_read_full_folio(struct folio *folio, get_block_t *get_block)
 	bool page_error = false;
 	loff_t limit = i_size_read(inode);
 
-	/* This is needed for ext4. */
-	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
-		limit = inode->i_sb->s_maxbytes;
-
 	head = folio_create_buffers(folio, inode, 0);
 	blocksize = head->b_size;
 
@@ -2711,9 +2707,6 @@ static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
 		opf |= REQ_PRIO;
 
 	bio = bio_alloc(bh->b_bdev, 1, opf, GFP_NOIO);
-
-	if (IS_ENABLED(CONFIG_FS_ENCRYPTION))
-		buffer_set_crypto_ctx(bio, bh, GFP_NOIO);
 
 	bio->bi_iter.bi_sector = bh->b_blocknr * (bh->b_size >> 9);
 	bio->bi_write_hint = write_hint;

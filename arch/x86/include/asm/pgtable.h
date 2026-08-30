@@ -274,38 +274,6 @@ static inline bool pmd_leaf(pmd_t pte)
 	return pmd_flags(pte) & _PAGE_PSE;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline int pmd_trans_huge(pmd_t pmd)
-{
-	return (pmd_val(pmd) & _PAGE_PSE) == _PAGE_PSE;
-}
-
-#ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
-static inline int pud_trans_huge(pud_t pud)
-{
-	return (pud_val(pud) & _PAGE_PSE) == _PAGE_PSE;
-}
-#endif
-
-#define has_transparent_hugepage has_transparent_hugepage
-static inline int has_transparent_hugepage(void)
-{
-	return boot_cpu_has(X86_FEATURE_PSE);
-}
-
-#ifdef CONFIG_ARCH_SUPPORTS_PMD_PFNMAP
-static inline bool pmd_special(pmd_t pmd)
-{
-	return pmd_flags(pmd) & _PAGE_SPECIAL;
-}
-
-static inline pmd_t pmd_mkspecial(pmd_t pmd)
-{
-	return pmd_set_flags(pmd, _PAGE_SPECIAL);
-}
-#endif	/* CONFIG_ARCH_SUPPORTS_PMD_PFNMAP */
-
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 static inline pte_t pte_set_flags(pte_t pte, pteval_t set)
 {
@@ -380,22 +348,6 @@ static inline pte_t pte_wrprotect(pte_t pte)
 	return pte_mksaveddirty(pte);
 }
 
-#if 0
-static inline int pte_uffd_wp(pte_t pte)
-{
-	return pte_flags(pte) & _PAGE_UFFD_WP;
-}
-
-static inline pte_t pte_mkuffd_wp(pte_t pte)
-{
-	return pte_wrprotect(pte_set_flags(pte, _PAGE_UFFD_WP));
-}
-
-static inline pte_t pte_clear_uffd_wp(pte_t pte)
-{
-	return pte_clear_flags(pte, _PAGE_UFFD_WP);
-}
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 static inline pte_t pte_mkclean(pte_t pte)
 {
@@ -495,22 +447,6 @@ static inline pmd_t pmd_wrprotect(pmd_t pmd)
 	return pmd_mksaveddirty(pmd);
 }
 
-#if 0
-static inline int pmd_uffd_wp(pmd_t pmd)
-{
-	return pmd_flags(pmd) & _PAGE_UFFD_WP;
-}
-
-static inline pmd_t pmd_mkuffd_wp(pmd_t pmd)
-{
-	return pmd_wrprotect(pmd_set_flags(pmd, _PAGE_UFFD_WP));
-}
-
-static inline pmd_t pmd_clear_uffd_wp(pmd_t pmd)
-{
-	return pmd_clear_flags(pmd, _PAGE_UFFD_WP);
-}
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 static inline pmd_t pmd_mkold(pmd_t pmd)
 {
@@ -1499,37 +1435,6 @@ static inline pmd_t pmd_swp_clear_soft_dirty(pmd_t pmd)
 #endif
 #endif
 
-#if 0
-static inline pte_t pte_swp_mkuffd_wp(pte_t pte)
-{
-	return pte_set_flags(pte, _PAGE_SWP_UFFD_WP);
-}
-
-static inline int pte_swp_uffd_wp(pte_t pte)
-{
-	return pte_flags(pte) & _PAGE_SWP_UFFD_WP;
-}
-
-static inline pte_t pte_swp_clear_uffd_wp(pte_t pte)
-{
-	return pte_clear_flags(pte, _PAGE_SWP_UFFD_WP);
-}
-
-static inline pmd_t pmd_swp_mkuffd_wp(pmd_t pmd)
-{
-	return pmd_set_flags(pmd, _PAGE_SWP_UFFD_WP);
-}
-
-static inline int pmd_swp_uffd_wp(pmd_t pmd)
-{
-	return pmd_flags(pmd) & _PAGE_SWP_UFFD_WP;
-}
-
-static inline pmd_t pmd_swp_clear_uffd_wp(pmd_t pmd)
-{
-	return pmd_clear_flags(pmd, _PAGE_SWP_UFFD_WP);
-}
-#endif /* CONFIG_HAVE_ARCH_USERFAULTFD_WP */
 
 static inline u16 pte_flags_pkey(unsigned long pte_flags)
 {
@@ -1611,13 +1516,6 @@ void arch_check_zapped_pmd(struct vm_area_struct *vma, pmd_t pmd);
 #define arch_check_zapped_pud arch_check_zapped_pud
 void arch_check_zapped_pud(struct vm_area_struct *vma, pud_t pud);
 
-#ifdef CONFIG_XEN_PV
-#define arch_has_hw_nonleaf_pmd_young arch_has_hw_nonleaf_pmd_young
-static inline bool arch_has_hw_nonleaf_pmd_young(void)
-{
-	return !cpu_feature_enabled(X86_FEATURE_XENPV);
-}
-#endif
 
 
 

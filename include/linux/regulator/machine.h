@@ -289,13 +289,9 @@ struct regulator_init_data {
 	void *driver_data;	/* core does not touch this */
 };
 
-#ifdef CONFIG_REGULATOR
-void regulator_has_full_constraints(void);
-#else
 static inline void regulator_has_full_constraints(void)
 {
 }
-#endif
 
 static inline int regulator_suspend_prepare(suspend_state_t state)
 {

@@ -409,22 +409,6 @@ static bool remove_migration_pte(struct folio *folio,
 				pte = pte_swp_mkuffd_wp(pte);
 		}
 
-#ifdef CONFIG_HUGETLB_PAGE
-		if (folio_test_hugetlb(folio)) {
-			struct hstate *h = hstate_vma(vma);
-			unsigned int shift = huge_page_shift(h);
-			unsigned long psize = huge_page_size(h);
-
-			pte = arch_make_huge_pte(pte, shift, vma->vm_flags);
-			if (folio_test_anon(folio))
-				hugetlb_add_anon_rmap(folio, vma, pvmw.address,
-						      rmap_flags);
-			else
-				hugetlb_add_file_rmap(folio);
-			set_huge_pte_at(vma->vm_mm, pvmw.address, pvmw.pte, pte,
-					psize);
-		} else
-#endif
 		{
 			if (folio_test_anon(folio))
 				folio_add_anon_rmap_pte(folio, new, vma,
@@ -502,44 +486,6 @@ out:
 	spin_unlock(ptl);
 }
 
-#ifdef CONFIG_HUGETLB_PAGE
-/*
- * The vma read lock must be held upon entry. Holding that lock prevents either
- * the pte or the ptl from being freed.
- *
- * This function will release the vma lock before returning.
- */
-void migration_entry_wait_huge(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep)
-{
-	spinlock_t *ptl = huge_pte_lockptr(hstate_vma(vma), vma->vm_mm, ptep);
-	softleaf_t entry;
-	pte_t pte;
-
-	hugetlb_vma_assert_locked(vma);
-	spin_lock(ptl);
-	pte = huge_ptep_get(vma->vm_mm, addr, ptep);
-
-	if (huge_pte_none(pte))
-		goto fail;
-
-	entry = softleaf_from_pte(pte);
-	if (softleaf_is_migration(entry)) {
-		/*
-		 * If migration entry existed, safe to release vma lock
-		 * here because the pgtable page won't be freed without the
-		 * pgtable lock released.  See comment right above pgtable
-		 * lock release in softleaf_entry_wait_on_locked().
-		 */
-		hugetlb_vma_unlock_read(vma);
-		softleaf_entry_wait_on_locked(entry, ptl);
-		return;
-	}
-
-fail:
-	spin_unlock(ptl);
-	hugetlb_vma_unlock_read(vma);
-}
-#endif
 
 #ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
 void pmd_migration_entry_wait(struct mm_struct *mm, pmd_t *pmd)
@@ -684,12 +630,6 @@ static int __folio_migrate_mapping(struct address_space *mapping,
 				mod_lruvec_state(new_lruvec, NR_SHMEM_THPS, nr);
 			}
 		}
-#ifdef CONFIG_SWAP
-		if (folio_test_swapcache(folio)) {
-			mod_lruvec_state(old_lruvec, NR_SWAPCACHE, -nr);
-			mod_lruvec_state(new_lruvec, NR_SWAPCACHE, nr);
-		}
-#endif
 		if (dirty && mapping_can_writeback(mapping)) {
 			mod_lruvec_state(old_lruvec, NR_FILE_DIRTY, -nr);
 			__mod_zone_page_state(oldzone, NR_ZONE_WRITE_PENDING, -nr);
@@ -1594,11 +1534,7 @@ static inline int try_split_folio(struct folio *folio, struct list_head *split_f
 	return rc;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-#define NR_MAX_BATCHED_MIGRATION	HPAGE_PMD_NR
-#else
 #define NR_MAX_BATCHED_MIGRATION	512
-#endif
 #define NR_MAX_MIGRATE_PAGES_RETRY	10
 #define NR_MAX_MIGRATE_ASYNC_RETRY	3
 #define NR_MAX_MIGRATE_SYNC_RETRY					\

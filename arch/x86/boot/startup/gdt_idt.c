@@ -6,7 +6,6 @@
 #include <asm/desc.h>
 #include <asm/init.h>
 #include <asm/setup.h>
-#include <asm/sev.h>
 #include <asm/trapnr.h>
 
 /*
@@ -49,7 +48,6 @@ void startup_64_load_idt(void *vc_handler)
 void __init startup_64_setup_gdt_idt(void)
 {
 	struct gdt_page *gp = rip_rel_ptr((void *)(__force unsigned long)&gdt_page);
-	void *handler = NULL;
 
 	struct desc_ptr startup_gdt_descr = {
 		.address = (unsigned long)gp->gdt,
@@ -64,8 +62,5 @@ void __init startup_64_setup_gdt_idt(void)
 		     "movl %%eax, %%ss\n"
 		     "movl %%eax, %%es\n" : : "a"(__KERNEL_DS) : "memory");
 
-	if (IS_ENABLED(CONFIG_AMD_MEM_ENCRYPT))
-		handler = rip_rel_ptr(vc_no_ghcb);
-
-	startup_64_load_idt(handler);
+	startup_64_load_idt(NULL);
 }

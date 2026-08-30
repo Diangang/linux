@@ -166,9 +166,6 @@ static void __blkg_release(struct rcu_head *rcu)
 	struct blkcg *blkcg = blkg->blkcg;
 	int cpu;
 
-#ifdef CONFIG_BLK_CGROUP_PUNT_BIO
-	WARN_ON(!bio_list_empty(&blkg->async_bios));
-#endif
 	/*
 	 * Flush all the non-empty percpu lockless lists before releasing
 	 * us, given these stat belongs to us.
@@ -198,67 +195,6 @@ static void blkg_release(struct percpu_ref *ref)
 	call_rcu(&blkg->rcu_head, __blkg_release);
 }
 
-#ifdef CONFIG_BLK_CGROUP_PUNT_BIO
-static struct workqueue_struct *blkcg_punt_bio_wq;
-
-static void blkg_async_bio_workfn(struct work_struct *work)
-{
-	struct blkcg_gq *blkg = container_of(work, struct blkcg_gq,
-					     async_bio_work);
-	struct bio_list bios = BIO_EMPTY_LIST;
-	struct bio *bio;
-	struct blk_plug plug;
-	bool need_plug = false;
-
-	/* as long as there are pending bios, @blkg can't go away */
-	spin_lock(&blkg->async_bio_lock);
-	bio_list_merge_init(&bios, &blkg->async_bios);
-	spin_unlock(&blkg->async_bio_lock);
-
-	/* start plug only when bio_list contains at least 2 bios */
-	if (bios.head && bios.head->bi_next) {
-		need_plug = true;
-		blk_start_plug(&plug);
-	}
-	while ((bio = bio_list_pop(&bios)))
-		submit_bio(bio);
-	if (need_plug)
-		blk_finish_plug(&plug);
-}
-
-/*
- * When a shared kthread issues a bio for a cgroup, doing so synchronously can
- * lead to priority inversions as the kthread can be trapped waiting for that
- * cgroup.  Use this helper instead of submit_bio to punt the actual issuing to
- * a dedicated per-blkcg work item to avoid such priority inversions.
- */
-void blkcg_punt_bio_submit(struct bio *bio)
-{
-	struct blkcg_gq *blkg = bio->bi_blkg;
-
-	if (blkg->parent) {
-		spin_lock(&blkg->async_bio_lock);
-		bio_list_add(&blkg->async_bios, bio);
-		spin_unlock(&blkg->async_bio_lock);
-		queue_work(blkcg_punt_bio_wq, &blkg->async_bio_work);
-	} else {
-		/* never bounce for the root cgroup */
-		submit_bio(bio);
-	}
-}
-EXPORT_SYMBOL_GPL(blkcg_punt_bio_submit);
-
-static int __init blkcg_punt_bio_init(void)
-{
-	blkcg_punt_bio_wq = alloc_workqueue("blkcg_punt_bio",
-					    WQ_MEM_RECLAIM | WQ_FREEZABLE |
-					    WQ_UNBOUND | WQ_SYSFS, 0);
-	if (!blkcg_punt_bio_wq)
-		return -ENOMEM;
-	return 0;
-}
-subsys_initcall(blkcg_punt_bio_init);
-#endif /* CONFIG_BLK_CGROUP_PUNT_BIO */
 
 /**
  * bio_blkcg_css - return the blkcg CSS associated with a bio
@@ -317,11 +253,6 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct gendisk *disk,
 	INIT_LIST_HEAD(&blkg->q_node);
 	blkg->blkcg = blkcg;
 	blkg->iostat.blkg = blkg;
-#ifdef CONFIG_BLK_CGROUP_PUNT_BIO
-	spin_lock_init(&blkg->async_bio_lock);
-	bio_list_init(&blkg->async_bios);
-	INIT_WORK(&blkg->async_bio_work, blkg_async_bio_workfn);
-#endif
 
 	u64_stats_init(&blkg->iostat.sync);
 	for_each_possible_cpu(cpu) {
@@ -1265,12 +1196,6 @@ static struct cftype blkcg_legacy_files[] = {
 	{ }	/* terminate */
 };
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-struct list_head *blkcg_get_cgwb_list(struct cgroup_subsys_state *css)
-{
-	return &css_to_blkcg(css)->cgwb_list;
-}
-#endif
 
 /*
  * blkcg destruction is a three-stage process.
@@ -1453,9 +1378,6 @@ blkcg_css_alloc(struct cgroup_subsys_state *parent_css)
 	refcount_set(&blkcg->online_pin, 1);
 	INIT_RADIX_TREE(&blkcg->blkg_tree, GFP_NOWAIT);
 	INIT_HLIST_HEAD(&blkcg->blkg_list);
-#ifdef CONFIG_CGROUP_WRITEBACK
-	INIT_LIST_HEAD(&blkcg->cgwb_list);
-#endif
 	list_add_tail(&blkcg->all_blkcgs_node, &all_blkcgs);
 
 	mutex_unlock(&blkcg_pol_mutex);
@@ -1562,14 +1484,6 @@ struct cgroup_subsys io_cgrp_subsys = {
 	.legacy_cftypes = blkcg_legacy_files,
 	.legacy_name = "blkio",
 	.exit = blkcg_exit,
-#ifdef CONFIG_MEMCG
-	/*
-	 * This ensures that, if available, memcg is automatically enabled
-	 * together on the default hierarchy so that the owner cgroup can
-	 * be retrieved from writeback pages.
-	 */
-	.depends_on = 1 << memory_cgrp_id,
-#endif
 };
 EXPORT_SYMBOL_GPL(io_cgrp_subsys);
 

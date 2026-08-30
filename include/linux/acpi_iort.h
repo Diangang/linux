@@ -29,24 +29,6 @@ void iort_deregister_domain_token(int trans_id);
 struct fwnode_handle *iort_find_domain_token(int trans_id);
 struct fwnode_handle *iort_iwb_handle(u32 iwb_id);
 
-#ifdef CONFIG_ACPI_IORT
-u32 iort_msi_map_id(struct device *dev, u32 id);
-u32 iort_msi_xlate(struct device *dev, u32 id, struct fwnode_handle **node);
-int iort_its_translate_pa(struct fwnode_handle *node, phys_addr_t *base);
-struct irq_domain *iort_get_device_domain(struct device *dev, u32 id,
-					  enum irq_domain_bus_token bus_token);
-int iort_pmsi_get_msi_info(struct device *dev, u32 *dev_id, phys_addr_t *pa);
-void acpi_configure_pmsi_domain(struct device *dev);
-void iort_get_rmr_sids(struct fwnode_handle *iommu_fwnode,
-		       struct list_head *head);
-void iort_put_rmr_sids(struct fwnode_handle *iommu_fwnode,
-		       struct list_head *head);
-/* IOMMU interface */
-int iort_dma_get_ranges(struct device *dev, u64 *limit);
-int iort_iommu_configure_id(struct device *dev, const u32 *id_in);
-void iort_iommu_get_resv_regions(struct device *dev, struct list_head *head);
-phys_addr_t acpi_iort_dma_get_max_cpu_address(void);
-#else
 static inline u32 iort_msi_map_id(struct device *dev, u32 id)
 { return id; }
 static inline u32 iort_msi_xlate(struct device *dev, u32 id, struct fwnode_handle **node)
@@ -74,6 +56,5 @@ void iort_iommu_get_resv_regions(struct device *dev, struct list_head *head)
 
 static inline phys_addr_t acpi_iort_dma_get_max_cpu_address(void)
 { return PHYS_ADDR_MAX; }
-#endif
 
 #endif /* __ACPI_IORT_H__ */

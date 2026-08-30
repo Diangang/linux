@@ -610,125 +610,14 @@ static bool process_mem_region(struct mem_vector *region,
 		return false;
 	}
 
-#if defined(CONFIG_MEMORY_HOTREMOVE) && defined(CONFIG_ACPI)
-	/*
-	 * If immovable memory found, filter the intersection between
-	 * immovable memory and @region.
-	 */
-	for (i = 0; i < num_immovable_mem; i++) {
-		u64 start, end, entry_end, region_end;
-		struct mem_vector entry;
-
-		if (!mem_overlaps(region, &immovable_mem[i]))
-			continue;
-
-		start = immovable_mem[i].start;
-		end = start + immovable_mem[i].size;
-		region_end = region->start + region->size;
-
-		entry.start = clamp(region->start, start, end);
-		entry_end = clamp(region_end, start, end);
-		entry.size = entry_end - entry.start;
-
-		__process_mem_region(&entry, minimum, image_size);
-
-		if (slot_area_index == MAX_SLOT_AREA) {
-			debug_putstr("Aborted e820/efi memmap scan when walking immovable regions(slot_areas full)!\n");
-			return true;
-		}
-	}
-#endif
 	return false;
 }
 
-#ifdef CONFIG_EFI
-
-/*
- * Only EFI_CONVENTIONAL_MEMORY and EFI_UNACCEPTED_MEMORY (if supported) are
- * guaranteed to be free.
- *
- * Pick free memory more conservatively than the EFI spec allows: according to
- * the spec, EFI_BOOT_SERVICES_{CODE|DATA} are also free memory and thus
- * available to place the kernel image into, but in practice there's firmware
- * where using that memory leads to crashes. Buggy vendor EFI code registers
- * for an event that triggers on SetVirtualAddressMap(). The handler assumes
- * that EFI_BOOT_SERVICES_DATA memory has not been touched by loader yet, which
- * is probably true for Windows.
- *
- * Preserve EFI_BOOT_SERVICES_* regions until after SetVirtualAddressMap().
- */
-static inline bool memory_type_is_free(efi_memory_desc_t *md)
-{
-	if (md->type == EFI_CONVENTIONAL_MEMORY)
-		return true;
-
-	if (IS_ENABLED(CONFIG_UNACCEPTED_MEMORY) &&
-	    md->type == EFI_UNACCEPTED_MEMORY)
-		    return true;
-
-	return false;
-}
-
-/*
- * Returns true if we processed the EFI memmap, which we prefer over the E820
- * table if it is available.
- */
-static bool
-process_efi_entries(unsigned long minimum, unsigned long image_size)
-{
-	struct efi_info *e = &boot_params_ptr->efi_info;
-	bool efi_mirror_found = false;
-	struct mem_vector region;
-	efi_memory_desc_t *md;
-	unsigned long pmap;
-	char *signature;
-	u32 nr_desc;
-	int i;
-
-	signature = (char *)&e->efi_loader_signature;
-	if (strncmp(signature, EFI32_LOADER_SIGNATURE, 4) &&
-	    strncmp(signature, EFI64_LOADER_SIGNATURE, 4))
-		return false;
-
-	pmap = (e->efi_memmap | ((__u64)e->efi_memmap_hi << 32));
-
-	nr_desc = e->efi_memmap_size / e->efi_memdesc_size;
-	for (i = 0; i < nr_desc; i++) {
-		md = efi_early_memdesc_ptr(pmap, e->efi_memdesc_size, i);
-		if (md->attribute & EFI_MEMORY_MORE_RELIABLE) {
-			efi_mirror_found = true;
-			break;
-		}
-	}
-
-	for (i = 0; i < nr_desc; i++) {
-		md = efi_early_memdesc_ptr(pmap, e->efi_memdesc_size, i);
-
-		if (!memory_type_is_free(md))
-			continue;
-
-		if (efi_soft_reserve_enabled() &&
-		    (md->attribute & EFI_MEMORY_SP))
-			continue;
-
-		if (efi_mirror_found &&
-		    !(md->attribute & EFI_MEMORY_MORE_RELIABLE))
-			continue;
-
-		region.start = md->phys_addr;
-		region.size = md->num_pages << EFI_PAGE_SHIFT;
-		if (process_mem_region(&region, minimum, image_size))
-			break;
-	}
-	return true;
-}
-#else
 static inline bool
 process_efi_entries(unsigned long minimum, unsigned long image_size)
 {
 	return false;
 }
-#endif
 
 static void process_e820_entries(unsigned long minimum,
 				 unsigned long image_size)

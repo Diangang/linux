@@ -43,12 +43,6 @@ extern int debug_locks_off(void);
 
 # define locking_selftest()	do { } while (0)
 
-#if 0
-extern void debug_show_all_locks(void);
-extern void debug_show_held_locks(struct task_struct *task);
-extern void debug_check_no_locks_freed(const void *from, unsigned long len);
-extern void debug_check_no_locks_held(void);
-#else
 static inline void debug_show_all_locks(void)
 {
 }
@@ -66,6 +60,5 @@ static inline void
 debug_check_no_locks_held(void)
 {
 }
-#endif
 
 #endif

@@ -183,46 +183,9 @@ static inline unsigned long hmm_pfn_flags_order(unsigned long order)
 	return order << HMM_PFN_ORDER_SHIFT;
 }
 
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-static inline unsigned long pmd_to_hmm_pfn_flags(struct hmm_range *range,
-						 pmd_t pmd)
-{
-	if (pmd_protnone(pmd))
-		return 0;
-	return (pmd_write(pmd) ? (HMM_PFN_VALID | HMM_PFN_WRITE) :
-				 HMM_PFN_VALID) |
-	       hmm_pfn_flags_order(PMD_SHIFT - PAGE_SHIFT);
-}
-
-static int hmm_vma_handle_pmd(struct mm_walk *walk, unsigned long addr,
-			      unsigned long end, unsigned long hmm_pfns[],
-			      pmd_t pmd)
-{
-	struct hmm_vma_walk *hmm_vma_walk = walk->private;
-	struct hmm_range *range = hmm_vma_walk->range;
-	unsigned long pfn, npages, i;
-	unsigned int required_fault;
-	unsigned long cpu_flags;
-
-	npages = (end - addr) >> PAGE_SHIFT;
-	cpu_flags = pmd_to_hmm_pfn_flags(range, pmd);
-	required_fault =
-		hmm_range_need_fault(hmm_vma_walk, hmm_pfns, npages, cpu_flags);
-	if (required_fault)
-		return hmm_vma_fault(addr, end, required_fault, walk);
-
-	pfn = pmd_pfn(pmd) + ((addr & ~PMD_MASK) >> PAGE_SHIFT);
-	for (i = 0; addr < end; addr += PAGE_SIZE, i++, pfn++) {
-		hmm_pfns[i] &= HMM_PFN_INOUT_FLAGS;
-		hmm_pfns[i] |= pfn | cpu_flags;
-	}
-	return 0;
-}
-#else /* CONFIG_TRANSPARENT_HUGEPAGE */
 /* stub to allow the code below to compile */
 int hmm_vma_handle_pmd(struct mm_walk *walk, unsigned long addr,
 		unsigned long end, unsigned long hmm_pfns[], pmd_t pmd);
-#endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 
 static inline unsigned long pte_to_hmm_pfn_flags(struct hmm_range *range,
 						 pte_t pte)
@@ -539,60 +502,7 @@ out_unlock:
 #define hmm_vma_walk_pud	NULL
 #endif
 
-#ifdef CONFIG_HUGETLB_PAGE
-static int hmm_vma_walk_hugetlb_entry(pte_t *pte, unsigned long hmask,
-				      unsigned long start, unsigned long end,
-				      struct mm_walk *walk)
-{
-	unsigned long addr = start, i, pfn;
-	struct hmm_vma_walk *hmm_vma_walk = walk->private;
-	struct hmm_range *range = hmm_vma_walk->range;
-	struct vm_area_struct *vma = walk->vma;
-	unsigned int required_fault;
-	unsigned long pfn_req_flags;
-	unsigned long cpu_flags;
-	spinlock_t *ptl;
-	pte_t entry;
-
-	ptl = huge_pte_lock(hstate_vma(vma), walk->mm, pte);
-	entry = huge_ptep_get(walk->mm, addr, pte);
-
-	i = (start - range->start) >> PAGE_SHIFT;
-	pfn_req_flags = range->hmm_pfns[i];
-	cpu_flags = pte_to_hmm_pfn_flags(range, entry) |
-		    hmm_pfn_flags_order(huge_page_order(hstate_vma(vma)));
-	required_fault =
-		hmm_pte_need_fault(hmm_vma_walk, pfn_req_flags, cpu_flags);
-	if (required_fault) {
-		int ret;
-
-		spin_unlock(ptl);
-		hugetlb_vma_unlock_read(vma);
-		/*
-		 * Avoid deadlock: drop the vma lock before calling
-		 * hmm_vma_fault(), which will itself potentially take and
-		 * drop the vma lock. This is also correct from a
-		 * protection point of view, because there is no further
-		 * use here of either pte or ptl after dropping the vma
-		 * lock.
-		 */
-		ret = hmm_vma_fault(addr, end, required_fault, walk);
-		hugetlb_vma_lock_read(vma);
-		return ret;
-	}
-
-	pfn = pte_pfn(entry) + ((start & ~hmask) >> PAGE_SHIFT);
-	for (; addr < end; addr += PAGE_SIZE, i++, pfn++) {
-		range->hmm_pfns[i] &= HMM_PFN_INOUT_FLAGS;
-		range->hmm_pfns[i] |= pfn | cpu_flags;
-	}
-
-	spin_unlock(ptl);
-	return 0;
-}
-#else
 #define hmm_vma_walk_hugetlb_entry NULL
-#endif /* CONFIG_HUGETLB_PAGE */
 
 static int hmm_vma_walk_test(unsigned long start, unsigned long end,
 			     struct mm_walk *walk)

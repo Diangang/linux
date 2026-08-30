@@ -206,35 +206,6 @@ $(obj)/%.ll: $(obj)/%.c FORCE
 
 is-single-obj-m = $(and $(part-of-module),$(filter $@, $(obj-m)),y)
 
-ifdef CONFIG_FTRACE_MCOUNT_USE_RECORDMCOUNT
-# compiler will not generate __mcount_loc use recordmcount or recordmcount.pl
-ifdef BUILD_C_RECORDMCOUNT
-ifeq ("$(origin RECORDMCOUNT_WARN)", "command line")
-  RECORDMCOUNT_FLAGS = -w
-endif
-# Due to recursion, we must skip empty.o.
-# The empty.o file is created in the make process in order to determine
-# the target endianness and word size. It is made before all other C
-# files, including recordmcount.
-sub_cmd_record_mcount =					\
-	if [ $(@) != "scripts/mod/empty.o" ]; then	\
-		$(objtree)/scripts/recordmcount $(RECORDMCOUNT_FLAGS) "$(@)";	\
-	fi;
-recordmcount_source := $(srctree)/scripts/recordmcount.c \
-		    $(srctree)/scripts/recordmcount.h
-else
-sub_cmd_record_mcount = perl $(srctree)/scripts/recordmcount.pl "$(ARCH)" \
-	"little" \
-	"$(if $(CONFIG_64BIT),64,32)" \
-	"$(OBJDUMP)" "$(OBJCOPY)" "$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS)" \
-	"$(LD) $(KBUILD_LDFLAGS)" "$(NM)" "$(RM)" "$(MV)" \
-	"$(if $(part-of-module),1,0)" "$(@)";
-recordmcount_source := $(srctree)/scripts/recordmcount.pl
-endif # BUILD_C_RECORDMCOUNT
-cmd_record_mcount = $(if $(findstring $(strip $(CC_FLAGS_FTRACE)),$(_c_flags)),	\
-	$(sub_cmd_record_mcount))
-endif # CONFIG_FTRACE_MCOUNT_USE_RECORDMCOUNT
-
 # 'OBJECT_FILES_NON_STANDARD := y': skip objtool checking for a directory
 # 'OBJECT_FILES_NON_STANDARD_foo.o := 'y': skip objtool checking for a file
 # 'OBJECT_FILES_NON_STANDARD_foo.o := 'n': override directory skip for a file
@@ -250,7 +221,7 @@ cmd_warn_shared_object = $(if $(word 2, $(modname-multi)),$(warning $(kbuild-fil
 endif
 
 # Built-in and composite module parts
-$(obj)/%.o: $(obj)/%.c $(recordmcount_source) FORCE
+$(obj)/%.o: $(obj)/%.c FORCE
 	$(call if_changed_rule,cc_o_c)
 	$(call cmd,force_checksrc)
 

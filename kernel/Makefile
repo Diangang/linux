@@ -14,11 +14,6 @@ obj-y     = fork.o exec_domain.o panic.o \
 
 obj-$(CONFIG_MULTIUSER) += groups.o
 
-# Branch profiling isn't noinstr-safe
-ifdef CONFIG_TRACE_BRANCH_PROFILING
-CFLAGS_context_tracking.o += -DDISABLE_BRANCH_PROFILING
-endif
-
 # Prevents flicker of uninteresting __do_softirq()/__local_bh_disable_ip()
 # in coverage traces.
 KCOV_INSTRUMENT_softirq.o := n
@@ -48,7 +43,6 @@ obj-y += rcu/
 obj-y += dma/
 obj-y += entry/
 obj-y += unwind/
-obj-$(CONFIG_KCMP) += kcmp.o
 obj-$(CONFIG_FREEZER) += freezer.o
 obj-$(CONFIG_STACKTRACE) += stacktrace.o
 obj-y += time/
@@ -70,13 +64,6 @@ obj-$(CONFIG_CONTEXT_TRACKING) += context_tracking.o
 
 obj-$(CONFIG_HAS_IOMEM) += iomem.o
 
-
-CFLAGS_kstack_erase.o += $(DISABLE_KSTACK_ERASE)
-CFLAGS_kstack_erase.o += $(call cc-option,-mgeneral-regs-only)
-obj-$(CONFIG_KSTACK_ERASE) += kstack_erase.o
-KASAN_SANITIZE_kstack_erase.o := n
-KCSAN_SANITIZE_kstack_erase.o := n
-KCOV_INSTRUMENT_kstack_erase.o := n
 
 
 $(obj)/configs.o: $(obj)/config_data.gz

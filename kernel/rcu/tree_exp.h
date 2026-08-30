@@ -239,9 +239,7 @@ static void rcu_report_exp_cpu_mult(struct rcu_node *rnp, unsigned long flags,
 				    unsigned long mask_in, bool wake)
 				    __releases(rnp->lock)
 {
-	int cpu;
 	unsigned long mask;
-	struct rcu_data *rdp;
 
 	raw_lockdep_assert_held_rcu_node(rnp);
 	if (!(rnp->expmask & mask_in)) {
@@ -250,13 +248,6 @@ static void rcu_report_exp_cpu_mult(struct rcu_node *rnp, unsigned long flags,
 	}
 	mask = mask_in & rnp->expmask;
 	WRITE_ONCE(rnp->expmask, rnp->expmask & ~mask);
-	for_each_leaf_node_cpu_mask(rnp, cpu, mask) {
-		rdp = per_cpu_ptr(&rcu_data, cpu);
-		if (!IS_ENABLED(CONFIG_NO_HZ_FULL) || !rdp->rcu_forced_tick_exp)
-			continue;
-		rdp->rcu_forced_tick_exp = false;
-		tick_dep_clear_cpu(cpu, TICK_DEP_BIT_RCU_EXP);
-	}
 	__rcu_report_exp_rnp(rnp, wake, flags); /* Releases rnp->lock. */
 }
 

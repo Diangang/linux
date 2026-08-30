@@ -41,167 +41,6 @@ SYSSEG		= 0x1000		/* historical load address >> 4 */
 
 	.code16
 	.section ".bstext", "ax"
-#ifdef CONFIG_EFI_STUB
-	# "MZ", MS-DOS header
-	.word	IMAGE_DOS_SIGNATURE
-	.org	0x38
-	#
-	# Offset to the PE header.
-	#
-	.long	LINUX_PE_MAGIC
-	.long	pe_header
-pe_header:
-	.long	IMAGE_NT_SIGNATURE
-
-coff_header:
-	.set	image_file_add_flags, 0
-	.set	pe_opt_magic, IMAGE_NT_OPTIONAL_HDR64_MAGIC
-	.word	IMAGE_FILE_MACHINE_AMD64
-	.word	section_count			# nr_sections
-	.long	0 				# TimeDateStamp
-	.long	0				# PointerToSymbolTable
-	.long	1				# NumberOfSymbols
-	.word	section_table - optional_header	# SizeOfOptionalHeader
-	.word	IMAGE_FILE_EXECUTABLE_IMAGE	| \
-		image_file_add_flags		| \
-		IMAGE_FILE_DEBUG_STRIPPED	| \
-		IMAGE_FILE_LINE_NUMS_STRIPPED	# Characteristics
-
-optional_header:
-	.word	pe_opt_magic
-	.byte	0x02				# MajorLinkerVersion
-	.byte	0x14				# MinorLinkerVersion
-
-	.long	ZO__data			# SizeOfCode
-
-	.long	ZO__end - ZO__data		# SizeOfInitializedData
-	.long	0				# SizeOfUninitializedData
-
-	.long	setup_size + ZO_efi_pe_entry	# AddressOfEntryPoint
-
-	.long	setup_size			# BaseOfCode
-
-extra_header_fields:
-	.quad	0				# ImageBase
-	.long	salign				# SectionAlignment
-	.long	falign				# FileAlignment
-	.word	0				# MajorOperatingSystemVersion
-	.word	0				# MinorOperatingSystemVersion
-	.word	LINUX_EFISTUB_MAJOR_VERSION	# MajorImageVersion
-	.word	LINUX_EFISTUB_MINOR_VERSION	# MinorImageVersion
-	.word	0				# MajorSubsystemVersion
-	.word	0				# MinorSubsystemVersion
-	.long	0				# Win32VersionValue
-
-	.long	setup_size + ZO__end		# SizeOfImage
-
-	.long	salign				# SizeOfHeaders
-	.long	0				# CheckSum
-	.word	IMAGE_SUBSYSTEM_EFI_APPLICATION	# Subsystem (EFI application)
-	.word	IMAGE_DLLCHARACTERISTICS_NX_COMPAT	# DllCharacteristics
-	.quad	0				# SizeOfStackReserve
-	.quad	0				# SizeOfStackCommit
-	.quad	0				# SizeOfHeapReserve
-	.quad	0				# SizeOfHeapCommit
-	.long	0				# LoaderFlags
-	.long	(section_table - .) / 8		# NumberOfRvaAndSizes
-
-	.quad	0				# ExportTable
-	.quad	0				# ImportTable
-	.quad	0				# ResourceTable
-	.quad	0				# ExceptionTable
-	.quad	0				# CertificationTable
-	.quad	0				# BaseRelocationTable
-
-	# Section table
-section_table:
-	.ascii	".setup"
-	.byte	0
-	.byte	0
-	.long	pecompat_fstart - salign 	# VirtualSize
-	.long	salign				# VirtualAddress
-	.long	pecompat_fstart - salign	# SizeOfRawData
-	.long	salign				# PointerToRawData
-
-	.long	0, 0, 0
-	.long	IMAGE_SCN_CNT_INITIALIZED_DATA	| \
-		IMAGE_SCN_MEM_READ		| \
-		IMAGE_SCN_MEM_DISCARDABLE	# Characteristics
-
-#ifdef CONFIG_EFI_MIXED
-	.asciz	".compat"
-
-	.long	pecompat_fsize			# VirtualSize
-	.long	pecompat_fstart			# VirtualAddress
-	.long	pecompat_fsize			# SizeOfRawData
-	.long	pecompat_fstart			# PointerToRawData
-
-	.long	0, 0, 0
-	.long	IMAGE_SCN_CNT_INITIALIZED_DATA	| \
-		IMAGE_SCN_MEM_READ		| \
-		IMAGE_SCN_MEM_DISCARDABLE	# Characteristics
-
-	/*
-	 * Put the IA-32 machine type and the associated entry point address in
-	 * the .compat section, so loaders can figure out which other execution
-	 * modes this image supports.
-	 */
-	.pushsection ".pecompat", "a", @progbits
-	.balign	salign
-	.globl	pecompat_fstart
-pecompat_fstart:
-	.byte	0x1				# Version
-	.byte	8				# Size
-	.word	IMAGE_FILE_MACHINE_I386		# PE machine type
-	.long	setup_size + ZO_efi32_pe_entry	# Entrypoint
-	.byte	0x0				# Sentinel
-	.popsection
-#else
-	.set	pecompat_fstart, setup_size
-#endif
-	.ascii	".text\0\0\0"
-	.long	textsize            		# VirtualSize
-	.long	setup_size			# VirtualAddress
-	.long	textsize			# SizeOfRawData
-	.long	setup_size			# PointerToRawData
-	.long	0				# PointerToRelocations
-	.long	0				# PointerToLineNumbers
-	.word	0				# NumberOfRelocations
-	.word	0				# NumberOfLineNumbers
-	.long	IMAGE_SCN_CNT_CODE		| \
-		IMAGE_SCN_MEM_READ		| \
-		IMAGE_SCN_MEM_EXECUTE		# Characteristics
-
-#ifdef CONFIG_EFI_SBAT
-	.ascii	".sbat\0\0\0"
-	.long	ZO__esbat - ZO__sbat            # VirtualSize
-	.long	setup_size + ZO__sbat           # VirtualAddress
-	.long	ZO__esbat - ZO__sbat            # SizeOfRawData
-	.long	setup_size + ZO__sbat           # PointerToRawData
-
-	.long	0, 0, 0
-	.long	IMAGE_SCN_CNT_INITIALIZED_DATA	| \
-		IMAGE_SCN_MEM_READ		| \
-		IMAGE_SCN_MEM_DISCARDABLE	# Characteristics
-
-	.set	textsize, ZO__sbat
-#else
-	.set	textsize, ZO__data
-#endif
-
-	.ascii	".data\0\0\0"
-	.long	ZO__end - ZO__data		# VirtualSize
-	.long	setup_size + ZO__data		# VirtualAddress
-	.long	ZO__edata - ZO__data		# SizeOfRawData
-	.long	setup_size + ZO__data		# PointerToRawData
-
-	.long	0, 0, 0
-	.long	IMAGE_SCN_CNT_INITIALIZED_DATA	| \
-		IMAGE_SCN_MEM_READ		| \
-		IMAGE_SCN_MEM_WRITE		# Characteristics
-
-	.set	section_count, (. - section_table) / 40
-#endif /* CONFIG_EFI_STUB */
 
 	# Kernel attributes; used by setup.  This is part 1 of the
 	# header, from the old boot sector.
@@ -333,19 +172,7 @@ xloadflags:
 # define XLF1 0
 #endif
 
-#ifdef CONFIG_EFI_HANDOVER_PROTOCOL
-# ifdef CONFIG_EFI_MIXED
-#  define XLF23 (XLF_EFI_HANDOVER_32|XLF_EFI_HANDOVER_64)
-# else
-#  ifdef CONFIG_X86_64
-#   define XLF23 XLF_EFI_HANDOVER_64		/* 64-bit EFI handover ok */
-#  else
-#   define XLF23 XLF_EFI_HANDOVER_32		/* 32-bit EFI handover ok */
-#  endif
-# endif
-#else
 # define XLF23 0
-#endif
 
 # define XLF4 0
 
@@ -498,19 +325,7 @@ pref_address:		.quad LOAD_PHYSICAL_ADDR	# preferred load addr
 #endif
 
 	.macro		__handover_offset
-#ifndef CONFIG_EFI_HANDOVER_PROTOCOL
 	.long		0
-#elif !defined(CONFIG_X86_64)
-	.long		ZO_efi32_stub_entry
-#else
-	/* Yes, this is really how we defined it :( */
-	.long		ZO_efi64_stub_entry - 0x200
-#ifdef CONFIG_EFI_MIXED
-	.if		ZO_efi32_stub_entry != ZO_efi64_stub_entry - 0x200
-	.error		"32-bit and 64-bit EFI entry points do not match"
-	.endif
-#endif
-#endif
 	.endm
 
 init_size:		.long INIT_SIZE		# kernel initialization size

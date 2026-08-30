@@ -17,9 +17,6 @@ struct work_struct {
 	atomic_long_t data;
 	struct list_head entry;
 	work_func_t func;
-#if 0
-	struct lockdep_map lockdep_map;
-#endif
 };
 
 #endif /* _LINUX_WORKQUEUE_TYPES_H */

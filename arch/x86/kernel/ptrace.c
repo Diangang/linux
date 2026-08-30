@@ -464,9 +464,6 @@ void ptrace_disable(struct task_struct *child)
 	user_disable_single_step(child);
 }
 
-#if 0 || defined CONFIG_IA32_EMULATION
-static const struct user_regset_view user_x86_32_view; /* Initialized below. */
-#endif
 #ifdef CONFIG_X86_64
 static const struct user_regset_view user_x86_64_view; /* Initialized below. */
 #endif
@@ -550,21 +547,6 @@ long arch_ptrace(struct task_struct *child, long request,
 					     datap);
 
 
-#if 0 || defined CONFIG_IA32_EMULATION
-	case PTRACE_GET_THREAD_AREA:
-		if ((int) addr < 0)
-			return -EIO;
-		ret = do_get_thread_area(child, addr,
-					(struct user_desc __user *)data);
-		break;
-
-	case PTRACE_SET_THREAD_AREA:
-		if ((int) addr < 0)
-			return -EIO;
-		ret = do_set_thread_area(child, addr,
-					(struct user_desc __user *)data, 0);
-		break;
-#endif
 
 #ifdef CONFIG_X86_64
 		/* normal 64bit interface to access TLS data.
@@ -583,294 +565,8 @@ long arch_ptrace(struct task_struct *child, long request,
 	return ret;
 }
 
-#ifdef CONFIG_IA32_EMULATION
-
-#include <linux/compat.h>
-#include <linux/syscalls.h>
-#include <asm/ia32.h>
-#include <asm/user32.h>
-
-#define R32(l,q)							\
-	case offsetof(struct user32, regs.l):				\
-		regs->q = value; break
-
-#define SEG32(rs)							\
-	case offsetof(struct user32, regs.rs):				\
-		return set_segment_reg(child,				\
-				       offsetof(struct user_regs_struct, rs), \
-				       value);				\
-		break
-
-static int putreg32(struct task_struct *child, unsigned regno, u32 value)
-{
-	struct pt_regs *regs = task_pt_regs(child);
-	int ret;
-
-	switch (regno) {
-
-	SEG32(cs);
-	SEG32(ds);
-	SEG32(es);
-
-	/*
-	 * A 32-bit ptracer on a 64-bit kernel expects that writing
-	 * FS or GS will also update the base.  This is needed for
-	 * operations like PTRACE_SETREGS to fully restore a saved
-	 * CPU state.
-	 */
-
-	case offsetof(struct user32, regs.fs):
-		ret = set_segment_reg(child,
-				      offsetof(struct user_regs_struct, fs),
-				      value);
-		if (ret == 0)
-			child->thread.fsbase =
-				x86_fsgsbase_read_task(child, value);
-		return ret;
-
-	case offsetof(struct user32, regs.gs):
-		ret = set_segment_reg(child,
-				      offsetof(struct user_regs_struct, gs),
-				      value);
-		if (ret == 0)
-			child->thread.gsbase =
-				x86_fsgsbase_read_task(child, value);
-		return ret;
-
-	SEG32(ss);
-
-	R32(ebx, bx);
-	R32(ecx, cx);
-	R32(edx, dx);
-	R32(edi, di);
-	R32(esi, si);
-	R32(ebp, bp);
-	R32(eax, ax);
-	R32(eip, ip);
-	R32(esp, sp);
-
-	case offsetof(struct user32, regs.orig_eax):
-		/*
-		 * Warning: bizarre corner case fixup here.  A 32-bit
-		 * debugger setting orig_eax to -1 wants to disable
-		 * syscall restart.  Make sure that the syscall
-		 * restart code sign-extends orig_ax.  Also make sure
-		 * we interpret the -ERESTART* codes correctly if
-		 * loaded into regs->ax in case the task is not
-		 * actually still sitting at the exit from a 32-bit
-		 * syscall with TS_COMPAT still set.
-		 */
-		regs->orig_ax = value;
-		if (syscall_get_nr(child, regs) != -1)
-			child->thread_info.status |= TS_I386_REGS_POKED;
-		break;
-
-	case offsetof(struct user32, regs.eflags):
-		return set_flags(child, value);
-
-	case offsetof(struct user32, u_debugreg[0]) ...
-		offsetof(struct user32, u_debugreg[7]):
-		regno -= offsetof(struct user32, u_debugreg[0]);
-		return ptrace_set_debugreg(child, regno / 4, value);
-
-	default:
-		if (regno > sizeof(struct user32) || (regno & 3))
-			return -EIO;
-
-		/*
-		 * Other dummy fields in the virtual user structure
-		 * are ignored
-		 */
-		break;
-	}
-	return 0;
-}
-
-#undef R32
-#undef SEG32
-
-#define R32(l,q)							\
-	case offsetof(struct user32, regs.l):				\
-		*val = regs->q; break
-
-#define SEG32(rs)							\
-	case offsetof(struct user32, regs.rs):				\
-		*val = get_segment_reg(child,				\
-				       offsetof(struct user_regs_struct, rs)); \
-		break
-
-static int getreg32(struct task_struct *child, unsigned regno, u32 *val)
-{
-	struct pt_regs *regs = task_pt_regs(child);
-
-	switch (regno) {
-
-	SEG32(ds);
-	SEG32(es);
-	SEG32(fs);
-	SEG32(gs);
-
-	R32(cs, cs);
-	R32(ss, ss);
-	R32(ebx, bx);
-	R32(ecx, cx);
-	R32(edx, dx);
-	R32(edi, di);
-	R32(esi, si);
-	R32(ebp, bp);
-	R32(eax, ax);
-	R32(orig_eax, orig_ax);
-	R32(eip, ip);
-	R32(esp, sp);
-
-	case offsetof(struct user32, regs.eflags):
-		*val = get_flags(child);
-		break;
-
-	case offsetof(struct user32, u_debugreg[0]) ...
-		offsetof(struct user32, u_debugreg[7]):
-		regno -= offsetof(struct user32, u_debugreg[0]);
-		*val = ptrace_get_debugreg(child, regno / 4);
-		break;
-
-	default:
-		if (regno > sizeof(struct user32) || (regno & 3))
-			return -EIO;
-
-		/*
-		 * Other dummy fields in the virtual user structure
-		 * are ignored
-		 */
-		*val = 0;
-		break;
-	}
-	return 0;
-}
-
-#undef R32
-#undef SEG32
-
-static int genregs32_get(struct task_struct *target,
-			 const struct user_regset *regset,
-			 struct membuf to)
-{
-	int reg;
-
-	for (reg = 0; to.left; reg++) {
-		u32 val;
-		getreg32(target, reg * 4, &val);
-		membuf_store(&to, val);
-	}
-	return 0;
-}
-
-static int genregs32_set(struct task_struct *target,
-			 const struct user_regset *regset,
-			 unsigned int pos, unsigned int count,
-			 const void *kbuf, const void __user *ubuf)
-{
-	int ret = 0;
-	if (kbuf) {
-		const compat_ulong_t *k = kbuf;
-		while (count >= sizeof(*k) && !ret) {
-			ret = putreg32(target, pos, *k++);
-			count -= sizeof(*k);
-			pos += sizeof(*k);
-		}
-	} else {
-		const compat_ulong_t __user *u = ubuf;
-		while (count >= sizeof(*u) && !ret) {
-			compat_ulong_t word;
-			ret = __get_user(word, u++);
-			if (ret)
-				break;
-			ret = putreg32(target, pos, word);
-			count -= sizeof(*u);
-			pos += sizeof(*u);
-		}
-	}
-	return ret;
-}
-
-static long ia32_arch_ptrace(struct task_struct *child, compat_long_t request,
-			     compat_ulong_t caddr, compat_ulong_t cdata)
-{
-	unsigned long addr = caddr;
-	unsigned long data = cdata;
-	void __user *datap = compat_ptr(data);
-	int ret;
-	__u32 val;
-
-	switch (request) {
-	case PTRACE_PEEKUSR:
-		ret = getreg32(child, addr, &val);
-		if (ret == 0)
-			ret = put_user(val, (__u32 __user *)datap);
-		break;
-
-	case PTRACE_POKEUSR:
-		ret = putreg32(child, addr, data);
-		break;
-
-	case PTRACE_GETREGS:	/* Get all gp regs from the child. */
-		return copy_regset_to_user(child, &user_x86_32_view,
-					   REGSET_GENERAL,
-					   0, sizeof(struct user_regs_struct32),
-					   datap);
-
-	case PTRACE_SETREGS:	/* Set all gp regs in the child. */
-		return copy_regset_from_user(child, &user_x86_32_view,
-					     REGSET_GENERAL, 0,
-					     sizeof(struct user_regs_struct32),
-					     datap);
-
-	case PTRACE_GETFPREGS:	/* Get the child FPU state. */
-		return copy_regset_to_user(child, &user_x86_32_view,
-					   REGSET_FP, 0,
-					   sizeof(struct user_i387_ia32_struct),
-					   datap);
-
-	case PTRACE_SETFPREGS:	/* Set the child FPU state. */
-		return copy_regset_from_user(
-			child, &user_x86_32_view, REGSET_FP,
-			0, sizeof(struct user_i387_ia32_struct), datap);
-
-	case PTRACE_GETFPXREGS:	/* Get the child extended FPU state. */
-		return copy_regset_to_user(child, &user_x86_32_view,
-					   REGSET32_XFP, 0,
-					   sizeof(struct user32_fxsr_struct),
-					   datap);
-
-	case PTRACE_SETFPXREGS:	/* Set the child extended FPU state. */
-		return copy_regset_from_user(child, &user_x86_32_view,
-					     REGSET32_XFP, 0,
-					     sizeof(struct user32_fxsr_struct),
-					     datap);
-
-	case PTRACE_GET_THREAD_AREA:
-	case PTRACE_SET_THREAD_AREA:
-		return arch_ptrace(child, request, addr, data);
-
-	default:
-		return compat_ptrace_request(child, request, addr, data);
-	}
-
-	return ret;
-}
-#endif /* CONFIG_IA32_EMULATION */
 
 
-#ifdef CONFIG_COMPAT
-long compat_arch_ptrace(struct task_struct *child, compat_long_t request,
-			compat_ulong_t caddr, compat_ulong_t cdata)
-{
-#ifdef CONFIG_IA32_EMULATION
-	return ia32_arch_ptrace(child, request, caddr, cdata);
-#else
-	return 0;
-#endif
-}
-#endif	/* CONFIG_COMPAT */
 
 #ifdef CONFIG_X86_64
 
@@ -923,67 +619,6 @@ static const struct user_regset_view user_x86_64_view = {
 
 #endif	/* CONFIG_X86_64 */
 
-#if 0 || defined CONFIG_IA32_EMULATION
-static struct user_regset x86_32_regsets[] __ro_after_init = {
-	[REGSET32_GENERAL] = {
-		USER_REGSET_NOTE_TYPE(PRSTATUS),
-		.n		= sizeof(struct user_regs_struct32) / sizeof(u32),
-		.size		= sizeof(u32),
-		.align		= sizeof(u32),
-		.regset_get	= genregs32_get,
-		.set		= genregs32_set
-	},
-	[REGSET32_FP] = {
-		USER_REGSET_NOTE_TYPE(PRFPREG),
-		.n		= sizeof(struct user_i387_ia32_struct) / sizeof(u32),
-		.size		= sizeof(u32),
-		.align		= sizeof(u32),
-		.active		= regset_fpregs_active,
-		.regset_get	= fpregs_get,
-		.set		= fpregs_set
-	},
-	[REGSET32_XFP] = {
-		USER_REGSET_NOTE_TYPE(PRXFPREG),
-		.n		= sizeof(struct fxregs_state) / sizeof(u32),
-		.size		= sizeof(u32),
-		.align		= sizeof(u32),
-		.active		= regset_xregset_fpregs_active,
-		.regset_get	= xfpregs_get,
-		.set		= xfpregs_set
-	},
-	[REGSET32_XSTATE] = {
-		USER_REGSET_NOTE_TYPE(X86_XSTATE),
-		.size		= sizeof(u64),
-		.align		= sizeof(u64),
-		.active		= xstateregs_active,
-		.regset_get	= xstateregs_get,
-		.set		= xstateregs_set
-	},
-	[REGSET32_TLS] = {
-		USER_REGSET_NOTE_TYPE(386_TLS),
-		.n		= GDT_ENTRY_TLS_ENTRIES,
-		.bias		= GDT_ENTRY_TLS_MIN,
-		.size		= sizeof(struct user_desc),
-		.align		= sizeof(struct user_desc),
-		.active		= regset_tls_active,
-		.regset_get	= regset_tls_get,
-		.set		= regset_tls_set
-	},
-	[REGSET32_IOPERM] = {
-		USER_REGSET_NOTE_TYPE(386_IOPERM),
-		.n		= IO_BITMAP_BYTES / sizeof(u32),
-		.size		= sizeof(u32),
-		.align		= sizeof(u32),
-		.active		= ioperm_active,
-		.regset_get	= ioperm_get
-	},
-};
-
-static const struct user_regset_view user_x86_32_view = {
-	.name = "i386", .e_machine = EM_386,
-	.regsets = x86_32_regsets, .n = ARRAY_SIZE(x86_32_regsets)
-};
-#endif
 
 /*
  * This represents bytes 464..511 in the memory layout exported through
@@ -995,9 +630,6 @@ void __init update_regset_xstate_info(unsigned int size, u64 xstate_mask)
 {
 #ifdef CONFIG_X86_64
 	x86_64_regsets[REGSET64_XSTATE].n = size / sizeof(u64);
-#endif
-#if 0 || defined CONFIG_IA32_EMULATION
-	x86_32_regsets[REGSET32_XSTATE].n = size / sizeof(u64);
 #endif
 	xstate_fx_sw_bytes[USER_XSTATE_XCR0_WORD] = xstate_mask;
 }
@@ -1023,12 +655,6 @@ void __init update_regset_xstate_info(unsigned int size, u64 xstate_mask)
  */
 const struct user_regset_view *task_user_regset_view(struct task_struct *task)
 {
-#ifdef CONFIG_IA32_EMULATION
-	if (!user_64bit_mode(task_pt_regs(task)))
-#endif
-#if 0 || defined CONFIG_IA32_EMULATION
-		return &user_x86_32_view;
-#endif
 #ifdef CONFIG_X86_64
 	return &user_x86_64_view;
 #endif

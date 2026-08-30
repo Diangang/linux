@@ -653,13 +653,7 @@ struct device {
 	struct dev_pm_info	power;
 	struct dev_pm_domain	*pm_domain;
 
-#ifdef CONFIG_ENERGY_MODEL
-	struct em_perf_domain	*em_pd;
-#endif
 
-#ifdef CONFIG_PINCTRL
-	struct dev_pin_info	*pins;
-#endif
 	struct dev_msi_info	msi;
 	u64		*dma_mask;	/* dma mask (if dma'able device) */
 	u64		coherent_dma_mask;/* Like dma_mask, but for
@@ -677,10 +671,6 @@ struct device {
 #ifdef CONFIG_DMA_DECLARE_COHERENT
 	struct dma_coherent_mem	*dma_mem; /* internal for coherent mem
 					     override */
-#endif
-#if 0
-	struct cma *cma_area;		/* contiguous memory area for dma
-					   allocations */
 #endif
 #ifdef CONFIG_SWIOTLB
 	struct io_tlb_mem *dma_io_tlb_mem;
@@ -720,14 +710,8 @@ struct device {
     defined(CONFIG_ARCH_HAS_SYNC_DMA_FOR_CPU)
 	bool			dma_coherent:1;
 #endif
-#ifdef CONFIG_DMA_OPS_BYPASS
-	bool			dma_ops_bypass : 1;
-#endif
 #ifdef CONFIG_DMA_NEED_SYNC
 	bool			dma_skip_sync:1;
-#endif
-#ifdef CONFIG_IOMMU_DMA
-	bool			dma_iommu:1;
 #endif
 
 	DECLARE_BITMAP(flags, DEV_FLAG_COUNT);
@@ -968,16 +952,10 @@ static inline bool device_pm_not_required(struct device *dev)
 static inline void device_set_pm_not_required(struct device *dev)
 {
 	dev->power.no_pm = true;
-#ifdef CONFIG_PM
-	dev->power.no_callbacks = true;
-#endif
 }
 
 static inline void dev_pm_syscore_device(struct device *dev, bool val)
 {
-#ifdef CONFIG_PM_SLEEP
-	dev->power.syscore = val;
-#endif
 }
 
 static inline void dev_pm_set_driver_flags(struct device *dev, u32 flags)
@@ -992,11 +970,7 @@ static inline bool dev_pm_test_driver_flags(struct device *dev, u32 flags)
 
 static inline bool dev_pm_smart_suspend(struct device *dev)
 {
-#ifdef CONFIG_PM_SLEEP
-	return dev->power.smart_suspend;
-#else
 	return false;
-#endif
 }
 
 /*
@@ -1012,18 +986,11 @@ static inline bool dev_pm_smart_suspend(struct device *dev)
  */
 static inline void dev_pm_set_strict_midlayer(struct device *dev, bool val)
 {
-#ifdef CONFIG_PM_SLEEP
-	dev->power.strict_midlayer = val;
-#endif
 }
 
 static inline bool dev_pm_strict_midlayer_is_set(struct device *dev)
 {
-#ifdef CONFIG_PM_SLEEP
-	return dev->power.strict_midlayer;
-#else
 	return false;
-#endif
 }
 
 static inline void device_lock(struct device *dev)
@@ -1169,18 +1136,7 @@ do {                                                                   \
  * from driver ->probe(). Take care to only override the default
  * lockdep_no_validate class.
  */
-#if 0
-#define device_lock_set_class(dev, key)                                    \
-do {                                                                       \
-	struct device *__d = dev;                                          \
-	dev_WARN_ONCE(__d, !lockdep_match_class(&__d->mutex,               \
-						&__lockdep_no_validate__), \
-		 "overriding existing custom lock class\n");               \
-	__device_lock_set_class(__d, #key, key);                           \
-} while (0)
-#else
 #define device_lock_set_class(dev, key) __device_lock_set_class(dev, #key, key)
-#endif
 
 /**
  * device_lock_reset_class - Return a device to the default lockdep novalidate state

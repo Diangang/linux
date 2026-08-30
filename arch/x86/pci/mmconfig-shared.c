@@ -445,23 +445,6 @@ static bool is_acpi_reserved(u64 start, u64 end, enum e820_type not_used)
 
 static bool is_efi_mmio(struct resource *res)
 {
-#ifdef CONFIG_EFI
-	u64 start = res->start;
-	u64 end = res->start + resource_size(res);
-	efi_memory_desc_t *md;
-	u64 size, mmio_start, mmio_end;
-
-	for_each_efi_memory_desc(md) {
-		if (md->type == EFI_MEMORY_MAPPED_IO) {
-			size = md->num_pages << EFI_PAGE_SHIFT;
-			mmio_start = md->phys_addr;
-			mmio_end = mmio_start + size;
-
-			if (mmio_start <= start && end <= mmio_end)
-				return true;
-		}
-	}
-#endif
 
 	return false;
 }
@@ -658,31 +641,7 @@ static int __init pci_parse_mcfg(struct acpi_table_header *header)
 	return 0;
 }
 
-#ifdef CONFIG_ACPI_APEI
-extern int (*arch_apei_filter_addr)(int (*func)(__u64 start, __u64 size,
-				     void *data), void *data);
-
-static int pci_mmcfg_for_each_region(int (*func)(__u64 start, __u64 size,
-				     void *data), void *data)
-{
-	struct pci_mmcfg_region *cfg;
-	int rc;
-
-	if (list_empty(&pci_mmcfg_list))
-		return 0;
-
-	list_for_each_entry(cfg, &pci_mmcfg_list, list) {
-		rc = func(cfg->res.start, resource_size(&cfg->res), data);
-		if (rc)
-			return rc;
-	}
-
-	return 0;
-}
-#define set_apei_filter() (arch_apei_filter_addr = pci_mmcfg_for_each_region)
-#else
 #define set_apei_filter()
-#endif
 
 static void __init __pci_mmcfg_init(int early)
 {

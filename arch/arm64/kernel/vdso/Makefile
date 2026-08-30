@@ -15,8 +15,6 @@ obj-vdso := vgettimeofday.o note.o sigreturn.o vgetrandom.o vgetrandom-chacha.o
 targets := $(obj-vdso) vdso.so vdso.so.dbg
 obj-vdso := $(addprefix $(obj)/, $(obj-vdso))
 
-btildflags-$(CONFIG_ARM64_BTI_KERNEL) += -z force-bti
-
 # -Bsymbolic has been added for consistency with arm, the compat vDSO and
 # potential future proofing if we end up with internal calls to the exported
 # routines, as x86 does (see 6f121e548f83 ("x86, vdso: Reimplement vdso.so

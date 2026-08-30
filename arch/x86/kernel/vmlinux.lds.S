@@ -72,29 +72,7 @@ const_cpu_current_top_of_stack = cpu_current_top_of_stack;
 #define ALIGN_ENTRY_TEXT_END
 #endif
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-/*
- * This section contains data which will be mapped as decrypted. Memory
- * encryption operates on a page basis. Make this section PMD-aligned
- * to avoid splitting the pages while mapping the section early.
- *
- * Note: We use a separate section so that only this section gets
- * decrypted to avoid exposing more than we wish.
- */
-#define BSS_DECRYPTED						\
-	. = ALIGN(PMD_SIZE);					\
-	__start_bss_decrypted = .;				\
-	__pi___start_bss_decrypted = .;				\
-	*(.bss..decrypted);					\
-	. = ALIGN(PAGE_SIZE);					\
-	__start_bss_decrypted_unused = .;			\
-	. = ALIGN(PMD_SIZE);					\
-	__end_bss_decrypted = .;				\
-	__pi___end_bss_decrypted = .;				\
-
-#else
 #define BSS_DECRYPTED
-#endif
 
 #define KEXEC_RELOCATE_KERNEL
 PHDRS {
@@ -247,14 +225,6 @@ SECTIONS
 	}
 #endif
 
-#if 0
-	. = ALIGN(8);
-	.cfi_sites : AT(ADDR(.cfi_sites) - LOAD_OFFSET) {
-		__cfi_sites = .;
-		*(.cfi_sites)
-		__cfi_sites_end = .;
-	}
-#endif
 
 	/*
 	 * struct alt_inst entries. From the header (alternative.h):
@@ -360,30 +330,6 @@ SECTIONS
 	_end = .;
 	__pi__end = .;
 
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-	/*
-	 * Early scratch/workarea section: Lives outside of the kernel proper
-	 * (_text - _end).
-	 *
-	 * Resides after _end because even though the .brk section is after
-	 * __end_of_kernel_reserve, the .brk section is later reserved as a
-	 * part of the kernel. Since it is located after __end_of_kernel_reserve
-	 * it will be discarded and become part of the available memory. As
-	 * such, it can only be used by very early boot code and must not be
-	 * needed afterwards.
-	 *
-	 * Currently used by SME for performing in-place encryption of the
-	 * kernel during boot. Resides on a 2MB boundary to simplify the
-	 * pagetable setup used for SME in-place encryption.
-	 */
-	. = ALIGN(HPAGE_SIZE);
-	.init.scratch : AT(ADDR(.init.scratch) - LOAD_OFFSET) {
-		__init_scratch_begin = .;
-		*(.init.scratch)
-		. = ALIGN(HPAGE_SIZE);
-		__init_scratch_end = .;
-	}
-#endif
 
 	STABS_DEBUG
 	DWARF_DEBUG
@@ -437,13 +383,11 @@ SECTIONS
  * let's assert that fuller build coverage is more valuable than being able to
  * run a COMPILE_TEST kernel.
  */
-#ifndef CONFIG_COMPILE_TEST
 /*
  * The ASSERT() sync to . is intentional, for binutils 2.14 compatibility:
  */
 . = ASSERT((_end - LOAD_OFFSET <= KERNEL_IMAGE_SIZE),
 	   "kernel image bigger than KERNEL_IMAGE_SIZE");
-#endif
 
 /* needed for Clang - see arch/x86/entry/entry.S */
 PROVIDE(__ref_stack_chk_guard = __stack_chk_guard);
@@ -471,13 +415,13 @@ PROVIDE(__ref_stack_chk_guard = __stack_chk_guard);
 		"SRSO function pair won't alias");
 #endif
 
-#if defined(CONFIG_MITIGATION_ITS) && !0
+#if defined(CONFIG_MITIGATION_ITS)
 . = ASSERT(__x86_indirect_its_thunk_rax & 0x20, "__x86_indirect_thunk_rax not in second half of cacheline");
 . = ASSERT(((__x86_indirect_its_thunk_rcx - __x86_indirect_its_thunk_rax) % 64) == 0, "Indirect thunks are not cacheline apart");
 . = ASSERT(__x86_indirect_its_thunk_array == __x86_indirect_its_thunk_rax, "Gap in ITS thunk array");
 #endif
 
-#if defined(CONFIG_MITIGATION_ITS) && !0
+#if defined(CONFIG_MITIGATION_ITS)
 . = ASSERT(its_return_thunk & 0x20, "its_return_thunk not in second half of cacheline");
 #endif
 
@@ -489,8 +433,4 @@ PROVIDE(__ref_stack_chk_guard = __stack_chk_guard);
  * linker will never mark as relocatable. (Using just ABSOLUTE() is not
  * sufficient for that).
  */
-#ifdef CONFIG_XEN_PV
-xen_elfnote_entry_value =
-	ABSOLUTE(xen_elfnote_entry) + ABSOLUTE(startup_xen);
-#endif
 #include "../boot/startup/exports.h"

@@ -59,10 +59,6 @@ static void vm_area_init_from(const struct vm_area_struct *src,
 	data_race(memcpy(&dest->shared, &src->shared, sizeof(dest->shared)));
 	memcpy(&dest->vm_userfaultfd_ctx, &src->vm_userfaultfd_ctx,
 	       sizeof(dest->vm_userfaultfd_ctx));
-#ifdef CONFIG_SWAP
-	memcpy(&dest->swap_readahead_info, &src->swap_readahead_info,
-	       sizeof(dest->swap_readahead_info));
-#endif
 #ifndef CONFIG_MMU
 	dest->vm_region = src->vm_region;
 #endif

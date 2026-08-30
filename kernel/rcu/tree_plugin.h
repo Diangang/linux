@@ -82,8 +82,6 @@ static void __init rcu_bootup_announce_oddness(void)
 		pr_info("\tBoot-time adjustment of scheduler-enlistment delay to %ld jiffies.\n", jiffies_till_sched_qs);
 	if (rcu_kick_kthreads)
 		pr_info("\tKick kthreads if too-long grace period.\n");
-	if (IS_ENABLED(CONFIG_DEBUG_OBJECTS_RCU_HEAD))
-		pr_info("\tRCU callback double-/use-after-free debug is enabled.\n");
 	if (gp_preinit_delay)
 		pr_info("\tRCU debug GP pre-init slowdown %d jiffies.\n", gp_preinit_delay);
 	if (gp_init_delay)
@@ -102,8 +100,6 @@ static void __init rcu_bootup_announce_oddness(void)
 	nohz_full_patience_delay_jiffies = msecs_to_jiffies(nohz_full_patience_delay);
 	if (!use_softirq)
 		pr_info("\tRCU_SOFTIRQ processing moved to rcuc kthreads.\n");
-	if (IS_ENABLED(CONFIG_RCU_EQS_DEBUG))
-		pr_info("\tRCU debug extended QS entry/exit.\n");
 	rcupdate_announce_bootup_oddness();
 }
 
@@ -398,8 +394,6 @@ static void rcu_preempt_depth_set(int val)
 void __rcu_read_lock(void)
 {
 	rcu_preempt_read_enter();
-	if (IS_ENABLED(CONFIG_PROVE_LOCKING))
-		WARN_ON_ONCE(rcu_preempt_depth() > RCU_NEST_PMAX);
 	if (0 && rcu_state.gp_kthread)
 		WRITE_ONCE(current->rcu_read_unlock_special.b.need_qs, true);
 	barrier();  /* critical section after entry code. */
@@ -422,11 +416,6 @@ void __rcu_read_unlock(void)
 		barrier();  // critical-section exit before .s check.
 		if (unlikely(READ_ONCE(t->rcu_read_unlock_special.s)))
 			rcu_read_unlock_special(t);
-	}
-	if (IS_ENABLED(CONFIG_PROVE_LOCKING)) {
-		int rrln = rcu_preempt_depth();
-
-		WARN_ON_ONCE(rrln < 0 || rrln > RCU_NEST_PMAX);
 	}
 }
 EXPORT_SYMBOL_GPL(__rcu_read_unlock);

@@ -122,10 +122,7 @@ enum proc_mem_force {
 	PROC_MEM_FORCE_NEVER
 };
 
-static enum proc_mem_force proc_mem_force_override __ro_after_init =
-	IS_ENABLED(CONFIG_PROC_MEM_NO_FORCE) ? PROC_MEM_FORCE_NEVER :
-	IS_ENABLED(CONFIG_PROC_MEM_FORCE_PTRACE) ? PROC_MEM_FORCE_PTRACE :
-	PROC_MEM_FORCE_ALWAYS;
+static enum proc_mem_force proc_mem_force_override __ro_after_init = PROC_MEM_FORCE_ALWAYS;
 
 static const struct constant_table proc_mem_force_table[] __initconst = {
 	{ "always", PROC_MEM_FORCE_ALWAYS },
@@ -412,31 +409,6 @@ static const struct file_operations proc_pid_cmdline_ops = {
 	.llseek	= generic_file_llseek,
 };
 
-#ifdef CONFIG_KALLSYMS
-/*
- * Provides a wchan file via kallsyms in a proper one-value-per-file format.
- * Returns the resolved symbol to user space.
- */
-static int proc_pid_wchan(struct seq_file *m, struct pid_namespace *ns,
-			  struct pid *pid, struct task_struct *task)
-{
-	unsigned long wchan;
-	char symname[KSYM_NAME_LEN];
-
-	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS))
-		goto print0;
-
-	wchan = get_wchan(task);
-	if (wchan && !lookup_symbol_name(wchan, symname)) {
-		seq_puts(m, symname);
-		return 0;
-	}
-
-print0:
-	seq_putc(m, '0');
-	return 0;
-}
-#endif /* CONFIG_KALLSYMS */
 
 static int lock_trace(struct task_struct *task)
 {
@@ -1277,107 +1249,6 @@ static const struct file_operations proc_pid_sched_operations = {
 	.release	= single_release,
 };
 
-#ifdef CONFIG_TIME_NS
-static int timens_offsets_show(struct seq_file *m, void *v)
-{
-	struct task_struct *p;
-
-	p = get_proc_task(file_inode(m->file));
-	if (!p)
-		return -ESRCH;
-	proc_timens_show_offsets(p, m);
-
-	put_task_struct(p);
-
-	return 0;
-}
-
-static ssize_t timens_offsets_write(struct file *file, const char __user *buf,
-				    size_t count, loff_t *ppos)
-{
-	struct inode *inode = file_inode(file);
-	struct proc_timens_offset offsets[2];
-	char *kbuf = NULL, *pos, *next_line;
-	struct task_struct *p;
-	int ret, noffsets;
-
-	/* Only allow < page size writes at the beginning of the file */
-	if ((*ppos != 0) || (count >= PAGE_SIZE))
-		return -EINVAL;
-
-	/* Slurp in the user data */
-	kbuf = memdup_user_nul(buf, count);
-	if (IS_ERR(kbuf))
-		return PTR_ERR(kbuf);
-
-	/* Parse the user data */
-	ret = -EINVAL;
-	noffsets = 0;
-	for (pos = kbuf; pos; pos = next_line) {
-		struct proc_timens_offset *off = &offsets[noffsets];
-		char clock[10];
-		int err;
-
-		/* Find the end of line and ensure we don't look past it */
-		next_line = strchr(pos, '\n');
-		if (next_line) {
-			*next_line = '\0';
-			next_line++;
-			if (*next_line == '\0')
-				next_line = NULL;
-		}
-
-		err = sscanf(pos, "%9s %lld %lu", clock,
-				&off->val.tv_sec, &off->val.tv_nsec);
-		if (err != 3 || off->val.tv_nsec >= NSEC_PER_SEC)
-			goto out;
-
-		clock[sizeof(clock) - 1] = 0;
-		if (strcmp(clock, "monotonic") == 0 ||
-		    strcmp(clock, __stringify(CLOCK_MONOTONIC)) == 0)
-			off->clockid = CLOCK_MONOTONIC;
-		else if (strcmp(clock, "boottime") == 0 ||
-			 strcmp(clock, __stringify(CLOCK_BOOTTIME)) == 0)
-			off->clockid = CLOCK_BOOTTIME;
-		else
-			goto out;
-
-		noffsets++;
-		if (noffsets == ARRAY_SIZE(offsets)) {
-			if (next_line)
-				count = next_line - kbuf;
-			break;
-		}
-	}
-
-	ret = -ESRCH;
-	p = get_proc_task(inode);
-	if (!p)
-		goto out;
-	ret = proc_timens_set_offset(file, p, offsets, noffsets);
-	put_task_struct(p);
-	if (ret)
-		goto out;
-
-	ret = count;
-out:
-	kfree(kbuf);
-	return ret;
-}
-
-static int timens_offsets_open(struct inode *inode, struct file *filp)
-{
-	return single_open(filp, timens_offsets_show, inode);
-}
-
-static const struct file_operations proc_timens_offsets_operations = {
-	.open		= timens_offsets_open,
-	.read		= seq_read,
-	.write		= timens_offsets_write,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
-#endif /* CONFIG_TIME_NS */
 
 static ssize_t comm_write(struct file *file, const char __user *buf,
 				size_t count, loff_t *offset)
@@ -2160,98 +2031,6 @@ static const struct file_operations proc_map_files_operations = {
 	.llseek		= generic_file_llseek,
 };
 
-#if defined(CONFIG_CHECKPOINT_RESTORE) && defined(CONFIG_POSIX_TIMERS)
-struct timers_private {
-	struct pid		*pid;
-	struct task_struct	*task;
-	struct pid_namespace	*ns;
-};
-
-static void *timers_start(struct seq_file *m, loff_t *pos)
-{
-	struct timers_private *tp = m->private;
-
-	tp->task = get_pid_task(tp->pid, PIDTYPE_PID);
-	if (!tp->task)
-		return ERR_PTR(-ESRCH);
-
-	rcu_read_lock();
-	return seq_hlist_start_rcu(&tp->task->signal->posix_timers, *pos);
-}
-
-static void *timers_next(struct seq_file *m, void *v, loff_t *pos)
-{
-	struct timers_private *tp = m->private;
-
-	return seq_hlist_next_rcu(v, &tp->task->signal->posix_timers, pos);
-}
-
-static void timers_stop(struct seq_file *m, void *v)
-{
-	struct timers_private *tp = m->private;
-
-	if (tp->task) {
-		put_task_struct(tp->task);
-		tp->task = NULL;
-		rcu_read_unlock();
-	}
-}
-
-static int show_timer(struct seq_file *m, void *v)
-{
-	static const char * const nstr[] = {
-		[SIGEV_SIGNAL]	= "signal",
-		[SIGEV_NONE]	= "none",
-		[SIGEV_THREAD]	= "thread",
-	};
-
-	struct k_itimer *timer = hlist_entry((struct hlist_node *)v, struct k_itimer, list);
-	struct timers_private *tp = m->private;
-	int notify = timer->it_sigev_notify;
-
-	guard(spinlock_irq)(&timer->it_lock);
-	if (!posixtimer_valid(timer))
-		return 0;
-
-	seq_printf(m, "ID: %d\n", timer->it_id);
-	seq_printf(m, "signal: %d/%px\n", timer->sigq.info.si_signo,
-		   timer->sigq.info.si_value.sival_ptr);
-	seq_printf(m, "notify: %s/%s.%d\n", nstr[notify & ~SIGEV_THREAD_ID],
-		   (notify & SIGEV_THREAD_ID) ? "tid" : "pid",
-		   pid_nr_ns(timer->it_pid, tp->ns));
-	seq_printf(m, "ClockID: %d\n", timer->it_clock);
-
-	return 0;
-}
-
-static const struct seq_operations proc_timers_seq_ops = {
-	.start	= timers_start,
-	.next	= timers_next,
-	.stop	= timers_stop,
-	.show	= show_timer,
-};
-
-static int proc_timers_open(struct inode *inode, struct file *file)
-{
-	struct timers_private *tp;
-
-	tp = __seq_open_private(file, &proc_timers_seq_ops,
-			sizeof(struct timers_private));
-	if (!tp)
-		return -ENOMEM;
-
-	tp->pid = proc_pid(inode);
-	tp->ns = proc_pid_ns(inode->i_sb);
-	return 0;
-}
-
-static const struct file_operations proc_timers_operations = {
-	.open		= proc_timers_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= seq_release_private,
-};
-#endif
 
 static ssize_t timerslack_ns_write(struct file *file, const char __user *buf,
 					size_t count, loff_t *offset)
@@ -2423,402 +2202,9 @@ out:
 	return 0;
 }
 
-#ifdef CONFIG_SECURITY
-static int proc_pid_attr_open(struct inode *inode, struct file *file)
-{
-	file->private_data = NULL;
-	__mem_open(inode, file, PTRACE_MODE_READ_FSCREDS);
-	return 0;
-}
-
-static ssize_t proc_pid_attr_read(struct file * file, char __user * buf,
-				  size_t count, loff_t *ppos)
-{
-	struct inode * inode = file_inode(file);
-	char *p = NULL;
-	ssize_t length;
-	struct task_struct *task = get_proc_task(inode);
-
-	if (!task)
-		return -ESRCH;
-
-	length = security_getprocattr(task, PROC_I(inode)->op.lsmid,
-				      file->f_path.dentry->d_name.name,
-				      &p);
-	put_task_struct(task);
-	if (length > 0)
-		length = simple_read_from_buffer(buf, count, ppos, p, length);
-	kfree(p);
-	return length;
-}
-
-static ssize_t proc_pid_attr_write(struct file * file, const char __user * buf,
-				   size_t count, loff_t *ppos)
-{
-	struct inode * inode = file_inode(file);
-	struct task_struct *task;
-	void *page;
-	int rv;
-
-	/* A task may only write when it was the opener. */
-	if (file->private_data != current->mm)
-		return -EPERM;
-
-	rcu_read_lock();
-	task = pid_task(proc_pid(inode), PIDTYPE_PID);
-	if (!task) {
-		rcu_read_unlock();
-		return -ESRCH;
-	}
-	/* A task may only write its own attributes. */
-	if (current != task) {
-		rcu_read_unlock();
-		return -EACCES;
-	}
-	/* Prevent changes to overridden credentials. */
-	if (current_cred() != current_real_cred()) {
-		rcu_read_unlock();
-		return -EBUSY;
-	}
-	rcu_read_unlock();
-
-	if (count > PAGE_SIZE)
-		count = PAGE_SIZE;
-
-	/* No partial writes. */
-	if (*ppos != 0)
-		return -EINVAL;
-
-	page = memdup_user(buf, count);
-	if (IS_ERR(page)) {
-		rv = PTR_ERR(page);
-		goto out;
-	}
-
-	/* Guard against adverse ptrace interaction */
-	rv = mutex_lock_interruptible(&current->signal->cred_guard_mutex);
-	if (rv < 0)
-		goto out_free;
-
-	rv = security_setprocattr(PROC_I(inode)->op.lsmid,
-				  file->f_path.dentry->d_name.name, page,
-				  count);
-	mutex_unlock(&current->signal->cred_guard_mutex);
-out_free:
-	kfree(page);
-out:
-	return rv;
-}
-
-static const struct file_operations proc_pid_attr_operations = {
-	.open		= proc_pid_attr_open,
-	.read		= proc_pid_attr_read,
-	.write		= proc_pid_attr_write,
-	.llseek		= generic_file_llseek,
-	.release	= mem_release,
-};
-
-#define LSM_DIR_OPS(LSM) \
-static int proc_##LSM##_attr_dir_iterate(struct file *filp, \
-			     struct dir_context *ctx) \
-{ \
-	return proc_pident_readdir(filp, ctx, \
-				   LSM##_attr_dir_stuff, \
-				   ARRAY_SIZE(LSM##_attr_dir_stuff)); \
-} \
-\
-static const struct file_operations proc_##LSM##_attr_dir_ops = { \
-	.read		= generic_read_dir, \
-	.iterate_shared	= proc_##LSM##_attr_dir_iterate, \
-	.llseek		= default_llseek, \
-}; \
-\
-static struct dentry *proc_##LSM##_attr_dir_lookup(struct inode *dir, \
-				struct dentry *dentry, unsigned int flags) \
-{ \
-	return proc_pident_lookup(dir, dentry, \
-				  LSM##_attr_dir_stuff, \
-				  LSM##_attr_dir_stuff + ARRAY_SIZE(LSM##_attr_dir_stuff)); \
-} \
-\
-static const struct inode_operations proc_##LSM##_attr_dir_inode_ops = { \
-	.lookup		= proc_##LSM##_attr_dir_lookup, \
-	.getattr	= pid_getattr, \
-	.setattr	= proc_nochmod_setattr, \
-}
-
-#ifdef CONFIG_SECURITY_SMACK
-static const struct pid_entry smack_attr_dir_stuff[] = {
-	ATTR(LSM_ID_SMACK, "current",	0666),
-};
-LSM_DIR_OPS(smack);
-#endif
-
-#ifdef CONFIG_SECURITY_APPARMOR
-static const struct pid_entry apparmor_attr_dir_stuff[] = {
-	ATTR(LSM_ID_APPARMOR, "current",	0666),
-	ATTR(LSM_ID_APPARMOR, "prev",		0444),
-	ATTR(LSM_ID_APPARMOR, "exec",		0666),
-};
-LSM_DIR_OPS(apparmor);
-#endif
-
-static const struct pid_entry attr_dir_stuff[] = {
-	ATTR(LSM_ID_UNDEF, "current",	0666),
-	ATTR(LSM_ID_UNDEF, "prev",		0444),
-	ATTR(LSM_ID_UNDEF, "exec",		0666),
-	ATTR(LSM_ID_UNDEF, "fscreate",	0666),
-	ATTR(LSM_ID_UNDEF, "keycreate",	0666),
-	ATTR(LSM_ID_UNDEF, "sockcreate",	0666),
-#ifdef CONFIG_SECURITY_SMACK
-	DIR("smack",			0555,
-	    proc_smack_attr_dir_inode_ops, proc_smack_attr_dir_ops),
-#endif
-#ifdef CONFIG_SECURITY_APPARMOR
-	DIR("apparmor",			0555,
-	    proc_apparmor_attr_dir_inode_ops, proc_apparmor_attr_dir_ops),
-#endif
-};
-
-static int proc_attr_dir_readdir(struct file *file, struct dir_context *ctx)
-{
-	return proc_pident_readdir(file, ctx, 
-				   attr_dir_stuff, ARRAY_SIZE(attr_dir_stuff));
-}
-
-static const struct file_operations proc_attr_dir_operations = {
-	.read		= generic_read_dir,
-	.iterate_shared	= proc_attr_dir_readdir,
-	.llseek		= generic_file_llseek,
-};
-
-static struct dentry *proc_attr_dir_lookup(struct inode *dir,
-				struct dentry *dentry, unsigned int flags)
-{
-	return proc_pident_lookup(dir, dentry,
-				  attr_dir_stuff,
-				  attr_dir_stuff + ARRAY_SIZE(attr_dir_stuff));
-}
-
-static const struct inode_operations proc_attr_dir_inode_operations = {
-	.lookup		= proc_attr_dir_lookup,
-	.getattr	= pid_getattr,
-	.setattr	= proc_nochmod_setattr,
-};
-
-#endif
-
-#ifdef CONFIG_ELF_CORE
-static ssize_t proc_coredump_filter_read(struct file *file, char __user *buf,
-					 size_t count, loff_t *ppos)
-{
-	struct task_struct *task = get_proc_task(file_inode(file));
-	struct mm_struct *mm;
-	char buffer[PROC_NUMBUF];
-	size_t len;
-	int ret;
-
-	if (!task)
-		return -ESRCH;
-
-	ret = 0;
-	mm = get_task_mm(task);
-	if (mm) {
-		unsigned long flags = __mm_flags_get_dumpable(mm);
-
-		len = snprintf(buffer, sizeof(buffer), "%08lx\n",
-			       ((flags & MMF_DUMP_FILTER_MASK) >>
-				MMF_DUMP_FILTER_SHIFT));
-		mmput(mm);
-		ret = simple_read_from_buffer(buf, count, ppos, buffer, len);
-	}
-
-	put_task_struct(task);
-
-	return ret;
-}
-
-static ssize_t proc_coredump_filter_write(struct file *file,
-					  const char __user *buf,
-					  size_t count,
-					  loff_t *ppos)
-{
-	struct task_struct *task;
-	struct mm_struct *mm;
-	unsigned int val;
-	int ret;
-	int i;
-	unsigned long mask;
-
-	ret = kstrtouint_from_user(buf, count, 0, &val);
-	if (ret < 0)
-		return ret;
-
-	ret = -ESRCH;
-	task = get_proc_task(file_inode(file));
-	if (!task)
-		goto out_no_task;
-
-	mm = get_task_mm(task);
-	if (!mm)
-		goto out_no_mm;
-	ret = 0;
-
-	for (i = 0, mask = 1; i < MMF_DUMP_FILTER_BITS; i++, mask <<= 1) {
-		if (val & mask)
-			mm_flags_set(i + MMF_DUMP_FILTER_SHIFT, mm);
-		else
-			mm_flags_clear(i + MMF_DUMP_FILTER_SHIFT, mm);
-	}
-
-	mmput(mm);
- out_no_mm:
-	put_task_struct(task);
- out_no_task:
-	if (ret < 0)
-		return ret;
-	return count;
-}
-
-static const struct file_operations proc_coredump_filter_operations = {
-	.read		= proc_coredump_filter_read,
-	.write		= proc_coredump_filter_write,
-	.llseek		= generic_file_llseek,
-};
-#endif
 
 
-#ifdef CONFIG_USER_NS
-static int proc_id_map_open(struct inode *inode, struct file *file,
-	const struct seq_operations *seq_ops)
-{
-	struct user_namespace *ns = NULL;
-	struct task_struct *task;
-	struct seq_file *seq;
-	int ret = -EINVAL;
 
-	task = get_proc_task(inode);
-	if (task) {
-		rcu_read_lock();
-		ns = get_user_ns(task_cred_xxx(task, user_ns));
-		rcu_read_unlock();
-		put_task_struct(task);
-	}
-	if (!ns)
-		goto err;
-
-	ret = seq_open(file, seq_ops);
-	if (ret)
-		goto err_put_ns;
-
-	seq = file->private_data;
-	seq->private = ns;
-
-	return 0;
-err_put_ns:
-	put_user_ns(ns);
-err:
-	return ret;
-}
-
-static int proc_id_map_release(struct inode *inode, struct file *file)
-{
-	struct seq_file *seq = file->private_data;
-	struct user_namespace *ns = seq->private;
-	put_user_ns(ns);
-	return seq_release(inode, file);
-}
-
-static int proc_uid_map_open(struct inode *inode, struct file *file)
-{
-	return proc_id_map_open(inode, file, &proc_uid_seq_operations);
-}
-
-static int proc_gid_map_open(struct inode *inode, struct file *file)
-{
-	return proc_id_map_open(inode, file, &proc_gid_seq_operations);
-}
-
-static int proc_projid_map_open(struct inode *inode, struct file *file)
-{
-	return proc_id_map_open(inode, file, &proc_projid_seq_operations);
-}
-
-static const struct file_operations proc_uid_map_operations = {
-	.open		= proc_uid_map_open,
-	.write		= proc_uid_map_write,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= proc_id_map_release,
-};
-
-static const struct file_operations proc_gid_map_operations = {
-	.open		= proc_gid_map_open,
-	.write		= proc_gid_map_write,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= proc_id_map_release,
-};
-
-static const struct file_operations proc_projid_map_operations = {
-	.open		= proc_projid_map_open,
-	.write		= proc_projid_map_write,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= proc_id_map_release,
-};
-
-static int proc_setgroups_open(struct inode *inode, struct file *file)
-{
-	struct user_namespace *ns = NULL;
-	struct task_struct *task;
-	int ret;
-
-	ret = -ESRCH;
-	task = get_proc_task(inode);
-	if (task) {
-		rcu_read_lock();
-		ns = get_user_ns(task_cred_xxx(task, user_ns));
-		rcu_read_unlock();
-		put_task_struct(task);
-	}
-	if (!ns)
-		goto err;
-
-	if (file->f_mode & FMODE_WRITE) {
-		ret = -EACCES;
-		if (!ns_capable(ns, CAP_SYS_ADMIN))
-			goto err_put_ns;
-	}
-
-	ret = single_open(file, &proc_setgroups_show, ns);
-	if (ret)
-		goto err_put_ns;
-
-	return 0;
-err_put_ns:
-	put_user_ns(ns);
-err:
-	return ret;
-}
-
-static int proc_setgroups_release(struct inode *inode, struct file *file)
-{
-	struct seq_file *seq = file->private_data;
-	struct user_namespace *ns = seq->private;
-	int ret = single_release(inode, file);
-	put_user_ns(ns);
-	return ret;
-}
-
-static const struct file_operations proc_setgroups_operations = {
-	.open		= proc_setgroups_open,
-	.write		= proc_setgroups_write,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= proc_setgroups_release,
-};
-#endif /* CONFIG_USER_NS */
 
 static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
 				struct pid *pid, struct task_struct *task)
@@ -2831,63 +2217,7 @@ static int proc_pid_personality(struct seq_file *m, struct pid_namespace *ns,
 	return err;
 }
 
-#ifdef CONFIG_KSM
-static int proc_pid_ksm_merging_pages(struct seq_file *m, struct pid_namespace *ns,
-				struct pid *pid, struct task_struct *task)
-{
-	struct mm_struct *mm;
 
-	mm = get_task_mm(task);
-	if (mm) {
-		seq_printf(m, "%lu\n", mm->ksm_merging_pages);
-		mmput(mm);
-	}
-
-	return 0;
-}
-static int proc_pid_ksm_stat(struct seq_file *m, struct pid_namespace *ns,
-				struct pid *pid, struct task_struct *task)
-{
-	struct mm_struct *mm;
-	int ret = 0;
-
-	mm = get_task_mm(task);
-	if (mm) {
-		seq_printf(m, "ksm_rmap_items %lu\n", mm->ksm_rmap_items);
-		seq_printf(m, "ksm_zero_pages %ld\n", mm_ksm_zero_pages(mm));
-		seq_printf(m, "ksm_merging_pages %lu\n", mm->ksm_merging_pages);
-		seq_printf(m, "ksm_process_profit %ld\n", ksm_process_profit(mm));
-		seq_printf(m, "ksm_merge_any: %s\n",
-				mm_flags_test(MMF_VM_MERGE_ANY, mm) ? "yes" : "no");
-		ret = mmap_read_lock_killable(mm);
-		if (ret) {
-			mmput(mm);
-			return ret;
-		}
-		seq_printf(m, "ksm_mergeable: %s\n",
-				ksm_process_mergeable(mm) ? "yes" : "no");
-		mmap_read_unlock(mm);
-		mmput(mm);
-	}
-
-	return 0;
-}
-#endif /* CONFIG_KSM */
-
-#ifdef CONFIG_KSTACK_ERASE_METRICS
-static int proc_stack_depth(struct seq_file *m, struct pid_namespace *ns,
-				struct pid *pid, struct task_struct *task)
-{
-	unsigned long prev_depth = THREAD_SIZE -
-				(task->prev_lowest_stack & (THREAD_SIZE - 1));
-	unsigned long depth = THREAD_SIZE -
-				(task->lowest_stack & (THREAD_SIZE - 1));
-
-	seq_printf(m, "previous stack depth: %lu\nstack depth: %lu\n",
-							prev_depth, depth);
-	return 0;
-}
-#endif /* CONFIG_KSTACK_ERASE_METRICS */
 
 /*
  * Thread groups
@@ -2907,9 +2237,6 @@ static const struct pid_entry tgid_base_stuff[] = {
 	ONE("personality", S_IRUSR, proc_pid_personality),
 	ONE("limits",	  S_IRUGO, proc_pid_limits),
 	REG("sched",      S_IRUGO|S_IWUSR, proc_pid_sched_operations),
-#ifdef CONFIG_TIME_NS
-	REG("timens_offsets",  S_IRUGO|S_IWUSR, proc_timens_offsets_operations),
-#endif
 	REG("comm",      S_IRUGO|S_IWUSR, proc_pid_set_comm_operations),
 #ifdef CONFIG_HAVE_ARCH_TRACEHOOK
 	ONE("syscall",    S_IRUSR, proc_pid_syscall),
@@ -2934,43 +2261,15 @@ static const struct pid_entry tgid_base_stuff[] = {
 	REG("smaps_rollup", S_IRUGO, proc_pid_smaps_rollup_operations),
 	REG("pagemap",    S_IRUSR, proc_pagemap_operations),
 #endif
-#ifdef CONFIG_SECURITY
-	DIR("attr",       S_IRUGO|S_IXUGO, proc_attr_dir_inode_operations, proc_attr_dir_operations),
-#endif
-#ifdef CONFIG_KALLSYMS
-	ONE("wchan",      S_IRUGO, proc_pid_wchan),
-#endif
 #ifdef CONFIG_STACKTRACE
 	ONE("stack",      S_IRUSR, proc_pid_stack),
-#endif
-#ifdef CONFIG_CGROUPS
-	ONE("cgroup",  S_IRUGO, proc_cgroup_show),
 #endif
 	ONE("oom_score",  S_IRUGO, proc_oom_score),
 	REG("oom_adj",    S_IRUGO|S_IWUSR, proc_oom_adj_operations),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
-#ifdef CONFIG_ELF_CORE
-	REG("coredump_filter", S_IRUGO|S_IWUSR, proc_coredump_filter_operations),
-#endif
-#ifdef CONFIG_USER_NS
-	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
-	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
-	REG("projid_map", S_IRUGO|S_IWUSR, proc_projid_map_operations),
-	REG("setgroups",  S_IRUGO|S_IWUSR, proc_setgroups_operations),
-#endif
-#if defined(CONFIG_CHECKPOINT_RESTORE) && defined(CONFIG_POSIX_TIMERS)
-	REG("timers",	  S_IRUGO, proc_timers_operations),
-#endif
 	REG("timerslack_ns", S_IRUGO|S_IWUGO, proc_pid_set_timerslack_ns_operations),
-#ifdef CONFIG_KSTACK_ERASE_METRICS
-	ONE("stack_depth", S_IRUGO, proc_stack_depth),
-#endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
-#endif
-#ifdef CONFIG_KSM
-	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),
-	ONE("ksm_stat",  S_IRUSR, proc_pid_ksm_stat),
 #endif
 };
 
@@ -3243,33 +2542,14 @@ static const struct pid_entry tid_base_stuff[] = {
 	REG("smaps_rollup", S_IRUGO, proc_pid_smaps_rollup_operations),
 	REG("pagemap",    S_IRUSR, proc_pagemap_operations),
 #endif
-#ifdef CONFIG_SECURITY
-	DIR("attr",      S_IRUGO|S_IXUGO, proc_attr_dir_inode_operations, proc_attr_dir_operations),
-#endif
-#ifdef CONFIG_KALLSYMS
-	ONE("wchan",     S_IRUGO, proc_pid_wchan),
-#endif
 #ifdef CONFIG_STACKTRACE
 	ONE("stack",      S_IRUSR, proc_pid_stack),
-#endif
-#ifdef CONFIG_CGROUPS
-	ONE("cgroup",  S_IRUGO, proc_cgroup_show),
 #endif
 	ONE("oom_score", S_IRUGO, proc_oom_score),
 	REG("oom_adj",   S_IRUGO|S_IWUSR, proc_oom_adj_operations),
 	REG("oom_score_adj", S_IRUGO|S_IWUSR, proc_oom_score_adj_operations),
-#ifdef CONFIG_USER_NS
-	REG("uid_map",    S_IRUGO|S_IWUSR, proc_uid_map_operations),
-	REG("gid_map",    S_IRUGO|S_IWUSR, proc_gid_map_operations),
-	REG("projid_map", S_IRUGO|S_IWUSR, proc_projid_map_operations),
-	REG("setgroups",  S_IRUGO|S_IWUSR, proc_setgroups_operations),
-#endif
 #ifdef CONFIG_PROC_PID_ARCH_STATUS
 	ONE("arch_status", S_IRUGO, proc_pid_arch_status),
-#endif
-#ifdef CONFIG_KSM
-	ONE("ksm_merging_pages",  S_IRUSR, proc_pid_ksm_merging_pages),
-	ONE("ksm_stat",  S_IRUSR, proc_pid_ksm_stat),
 #endif
 };
 

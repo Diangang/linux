@@ -21,10 +21,6 @@
 #include <linux/mutex.h>
 #include <linux/rtmutex.h>
 
-#if defined(CONFIG_DEBUG_MUTEXES) || \
-   (0 && defined(CONFIG_DEBUG_RT_MUTEXES))
-#define DEBUG_WW_MUTEXES
-#endif
 
 #define WW_MUTEX_BASE			mutex
 #define ww_mutex_base_init(l,n,k)	__mutex_init(l,n,k)
@@ -167,16 +163,10 @@ static inline void ww_acquire_fini(struct ww_acquire_ctx *ctx)
 {
 #ifdef DEBUG_WW_MUTEXES
 	DEBUG_LOCKS_WARN_ON(ctx->acquired);
-	if (!IS_ENABLED(CONFIG_PROVE_LOCKING))
-		/*
-		 * lockdep will normally handle this,
-		 * but fail without anyway
-		 */
-		ctx->done_acquire = 1;
-
-	if (!IS_ENABLED(CONFIG_DEBUG_LOCK_ALLOC))
-		/* ensure ww_acquire_fini will still fail if called twice */
-		ctx->acquired = ~0U;
+	/* lockdep will normally handle this, but fail without anyway. */
+	ctx->done_acquire = 1;
+	/* Ensure ww_acquire_fini will still fail if called twice. */
+	ctx->acquired = ~0U;
 #endif
 }
 

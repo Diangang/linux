@@ -71,11 +71,7 @@
  *
  * Userland doesn't know about %px so also use %p there.
  */
-#if defined(__KERNEL__) && defined(CONFIG_DEBUG_VM_MAPLE_TREE)
-#define PTR_FMT "%px"
-#else
 #define PTR_FMT "%p"
-#endif
 
 #define MA_ROOT_PARENT 1
 

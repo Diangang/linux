@@ -39,13 +39,8 @@ struct irqchip_fwid {
 	phys_addr_t		*pa;
 };
 
-#if 0
-static void debugfs_add_domain_dir(struct irq_domain *d);
-static void debugfs_remove_domain_dir(struct irq_domain *d);
-#else
 static inline void debugfs_add_domain_dir(struct irq_domain *d) { }
 static inline void debugfs_remove_domain_dir(struct irq_domain *d) { }
-#endif
 
 static const char *irqchip_fwnode_get_name(const struct fwnode_handle *fwnode)
 {
@@ -239,9 +234,7 @@ static struct irq_domain *__irq_domain_create(const struct irq_domain_info *info
 	struct irq_domain *domain;
 	int err;
 
-	if (WARN_ON((info->size && info->direct_max) ||
-		    (!IS_ENABLED(CONFIG_IRQ_DOMAIN_NOMAP) && info->direct_max) ||
-		    (info->direct_max && info->direct_max != info->hwirq_max)))
+	if (WARN_ON(info->direct_max))
 		return ERR_PTR(-EINVAL);
 
 	domain = kzalloc_node(struct_size(domain, revmap, info->size),
@@ -592,8 +585,7 @@ EXPORT_SYMBOL_GPL(irq_get_default_domain);
 
 static bool irq_domain_is_nomap(struct irq_domain *domain)
 {
-	return IS_ENABLED(CONFIG_IRQ_DOMAIN_NOMAP) &&
-	       (domain->flags & IRQ_DOMAIN_FLAG_NO_MAP);
+	return false;
 }
 
 static void irq_domain_clear_mapping(struct irq_domain *domain,
@@ -735,48 +727,6 @@ void irq_domain_associate_many(struct irq_domain *domain, unsigned int irq_base,
 }
 EXPORT_SYMBOL_GPL(irq_domain_associate_many);
 
-#ifdef CONFIG_IRQ_DOMAIN_NOMAP
-/**
- * irq_create_direct_mapping() - Allocate an irq for direct mapping
- * @domain: domain to allocate the irq for or NULL for default domain
- *
- * This routine is used for irq controllers which can choose the hardware
- * interrupt numbers they generate. In such a case it's simplest to use
- * the linux irq as the hardware interrupt number. It still uses the linear
- * or radix tree to store the mapping, but the irq controller can optimize
- * the revmap path by using the hwirq directly.
- */
-unsigned int irq_create_direct_mapping(struct irq_domain *domain)
-{
-	struct device_node *of_node;
-	unsigned int virq;
-
-	if (domain == NULL)
-		domain = irq_default_domain;
-
-	of_node = irq_domain_get_of_node(domain);
-	virq = irq_alloc_desc_from(1, of_node_to_nid(of_node));
-	if (!virq) {
-		pr_debug("create_direct virq allocation failed\n");
-		return 0;
-	}
-	if (virq >= domain->hwirq_max) {
-		pr_err("ERROR: no free irqs available below %lu maximum\n",
-			domain->hwirq_max);
-		irq_free_desc(virq);
-		return 0;
-	}
-	pr_debug("create_direct obtained virq %d\n", virq);
-
-	if (irq_domain_associate(domain, virq, virq)) {
-		irq_free_desc(virq);
-		return 0;
-	}
-
-	return virq;
-}
-EXPORT_SYMBOL_GPL(irq_create_direct_mapping);
-#endif
 
 static unsigned int irq_create_mapping_affinity_locked(struct irq_domain *domain,
 						       irq_hw_number_t hwirq,
@@ -2079,81 +2029,3 @@ static void irq_domain_check_hierarchy(struct irq_domain *domain) { }
 static void irq_domain_free_one_irq(struct irq_domain *domain, unsigned int virq) { }
 
 #endif	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
-
-#if 0
-#include "internals.h"
-
-static struct dentry *domain_dir;
-
-static const struct irq_bit_descr irqdomain_flags[] = {
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_HIERARCHY),
-	BIT_MASK_DESCR(IRQ_DOMAIN_NAME_ALLOCATED),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_IPI_PER_CPU),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_IPI_SINGLE),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_MSI),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_ISOLATED_MSI),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_NO_MAP),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_MSI_PARENT),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_MSI_DEVICE),
-	BIT_MASK_DESCR(IRQ_DOMAIN_FLAG_NONCORE),
-};
-
-static void irq_domain_debug_show_one(struct seq_file *m, struct irq_domain *d, int ind)
-{
-	seq_printf(m, "%*sname:   %s\n", ind, "", d->name);
-	seq_printf(m, "%*ssize:   %u\n", ind + 1, "", d->revmap_size);
-	seq_printf(m, "%*smapped: %u\n", ind + 1, "", d->mapcount);
-	seq_printf(m, "%*sflags:  0x%08x\n", ind +1 , "", d->flags);
-	irq_debug_show_bits(m, ind, d->flags, irqdomain_flags, ARRAY_SIZE(irqdomain_flags));
-	if (d->ops && d->ops->debug_show)
-		d->ops->debug_show(m, d, NULL, ind + 1);
-#ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
-	if (!d->parent)
-		return;
-	seq_printf(m, "%*sparent: %s\n", ind + 1, "", d->parent->name);
-	irq_domain_debug_show_one(m, d->parent, ind + 4);
-#endif
-}
-
-static int irq_domain_debug_show(struct seq_file *m, void *p)
-{
-	struct irq_domain *d = m->private;
-
-	/* Default domain? Might be NULL */
-	if (!d) {
-		if (!irq_default_domain)
-			return 0;
-		d = irq_default_domain;
-	}
-	irq_domain_debug_show_one(m, d, 0);
-	return 0;
-}
-DEFINE_SHOW_ATTRIBUTE(irq_domain_debug);
-
-static void debugfs_add_domain_dir(struct irq_domain *d)
-{
-	if (!d->name || !domain_dir)
-		return;
-	debugfs_create_file(d->name, 0444, domain_dir, d,
-			    &irq_domain_debug_fops);
-}
-
-static void debugfs_remove_domain_dir(struct irq_domain *d)
-{
-	debugfs_lookup_and_remove(d->name, domain_dir);
-}
-
-void __init irq_domain_debugfs_init(struct dentry *root)
-{
-	struct irq_domain *d;
-
-	domain_dir = debugfs_create_dir("domains", root);
-
-	debugfs_create_file("default", 0444, domain_dir, NULL,
-			    &irq_domain_debug_fops);
-	mutex_lock(&irq_domain_mutex);
-	list_for_each_entry(d, &irq_domain_list, link)
-		debugfs_add_domain_dir(d);
-	mutex_unlock(&irq_domain_mutex);
-}
-#endif

@@ -40,10 +40,6 @@ struct cpuidle_state_usage {
 	unsigned long long	above; /* Number of times it's been too deep */
 	unsigned long long	below; /* Number of times it's been too shallow */
 	unsigned long long	rejected; /* Number of times idle entry was rejected */
-#ifdef CONFIG_SUSPEND
-	unsigned long long	s2idle_usage;
-	unsigned long long	s2idle_time; /* in US */
-#endif
 };
 
 struct cpuidle_state {
@@ -107,10 +103,6 @@ struct cpuidle_device {
 	struct cpuidle_device_kobj *kobj_dev;
 	struct list_head 	device_list;
 
-#ifdef CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED
-	cpumask_t		coupled_cpus;
-	struct cpuidle_coupled	*coupled;
-#endif
 };
 
 DECLARE_PER_CPU(struct cpuidle_device *, cpuidle_devices);
@@ -167,43 +159,6 @@ struct cpuidle_driver {
 	const char		*governor;
 };
 
-#ifdef CONFIG_CPU_IDLE
-extern void disable_cpuidle(void);
-extern bool cpuidle_not_available(struct cpuidle_driver *drv,
-				  struct cpuidle_device *dev);
-
-extern int cpuidle_select(struct cpuidle_driver *drv,
-			  struct cpuidle_device *dev,
-			  bool *stop_tick);
-extern int cpuidle_enter(struct cpuidle_driver *drv,
-			 struct cpuidle_device *dev, int index);
-extern void cpuidle_reflect(struct cpuidle_device *dev, int index);
-extern u64 cpuidle_poll_time(struct cpuidle_driver *drv,
-			     struct cpuidle_device *dev);
-
-extern int cpuidle_register_driver(struct cpuidle_driver *drv);
-extern struct cpuidle_driver *cpuidle_get_driver(void);
-extern void cpuidle_driver_state_disabled(struct cpuidle_driver *drv, int idx,
-					bool disable);
-extern void cpuidle_unregister_driver(struct cpuidle_driver *drv);
-extern int cpuidle_register_device(struct cpuidle_device *dev);
-extern void cpuidle_unregister_device(struct cpuidle_device *dev);
-extern void cpuidle_unregister_device_no_lock(struct cpuidle_device *dev);
-extern int cpuidle_register(struct cpuidle_driver *drv,
-			    const struct cpumask *const coupled_cpus);
-extern void cpuidle_unregister(struct cpuidle_driver *drv);
-extern void cpuidle_pause_and_lock(void);
-extern void cpuidle_resume_and_unlock(void);
-extern void cpuidle_pause(void);
-extern void cpuidle_resume(void);
-extern int cpuidle_enable_device(struct cpuidle_device *dev);
-extern void cpuidle_disable_device(struct cpuidle_device *dev);
-extern int cpuidle_play_dead(void);
-
-extern struct cpuidle_driver *cpuidle_get_cpu_driver(struct cpuidle_device *dev);
-static inline struct cpuidle_device *cpuidle_get_device(void)
-{return __this_cpu_read(cpuidle_devices); }
-#else
 static inline void disable_cpuidle(void) { }
 static inline bool cpuidle_not_available(struct cpuidle_driver *drv,
 					 struct cpuidle_device *dev)
@@ -243,17 +198,7 @@ static inline int cpuidle_play_dead(void) {return -ENODEV; }
 static inline struct cpuidle_driver *cpuidle_get_cpu_driver(
 	struct cpuidle_device *dev) {return NULL; }
 static inline struct cpuidle_device *cpuidle_get_device(void) {return NULL; }
-#endif
 
-#ifdef CONFIG_CPU_IDLE
-extern int cpuidle_find_deepest_state(struct cpuidle_driver *drv,
-				      struct cpuidle_device *dev,
-				      u64 latency_limit_ns);
-extern int cpuidle_enter_s2idle(struct cpuidle_driver *drv,
-				struct cpuidle_device *dev,
-				u64 latency_limit_ns);
-extern void cpuidle_use_deepest_state(u64 latency_limit_ns);
-#else
 static inline int cpuidle_find_deepest_state(struct cpuidle_driver *drv,
 					     struct cpuidle_device *dev,
 					     u64 latency_limit_ns)
@@ -265,25 +210,16 @@ static inline int cpuidle_enter_s2idle(struct cpuidle_driver *drv,
 static inline void cpuidle_use_deepest_state(u64 latency_limit_ns)
 {
 }
-#endif
 
 /* kernel/sched/idle.c */
 extern void sched_idle_set_state(struct cpuidle_state *idle_state);
 extern void default_idle_call(void);
 
-#ifdef CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED
-void cpuidle_coupled_parallel_barrier(struct cpuidle_device *dev, atomic_t *a);
-#else
 static inline void cpuidle_coupled_parallel_barrier(struct cpuidle_device *dev, atomic_t *a)
 {
 }
-#endif
 
-#if defined(CONFIG_CPU_IDLE) && defined(CONFIG_ARCH_HAS_CPU_RELAX)
-void cpuidle_poll_state_init(struct cpuidle_driver *drv);
-#else
 static inline void cpuidle_poll_state_init(struct cpuidle_driver *drv) {}
-#endif
 
 /******************************
  * CPUIDLE GOVERNOR INTERFACE *

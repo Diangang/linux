@@ -103,46 +103,6 @@ void unregister_cpu(struct cpu *cpu)
 	return;
 }
 
-#ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
-static ssize_t cpu_probe_store(struct device *dev,
-			       struct device_attribute *attr,
-			       const char *buf,
-			       size_t count)
-{
-	ssize_t cnt;
-	int ret;
-
-	ret = lock_device_hotplug_sysfs();
-	if (ret)
-		return ret;
-
-	cnt = arch_cpu_probe(buf, count);
-
-	unlock_device_hotplug();
-	return cnt;
-}
-
-static ssize_t cpu_release_store(struct device *dev,
-				 struct device_attribute *attr,
-				 const char *buf,
-				 size_t count)
-{
-	ssize_t cnt;
-	int ret;
-
-	ret = lock_device_hotplug_sysfs();
-	if (ret)
-		return ret;
-
-	cnt = arch_cpu_release(buf, count);
-
-	unlock_device_hotplug();
-	return cnt;
-}
-
-static DEVICE_ATTR(probe, S_IWUSR, NULL, cpu_probe_store);
-static DEVICE_ATTR(release, S_IWUSR, NULL, cpu_release_store);
-#endif /* CONFIG_ARCH_CPU_PROBE_RELEASE */
 #endif /* CONFIG_HOTPLUG_CPU */
 
 
@@ -441,10 +401,6 @@ static DEVICE_ATTR(modalias, 0444, print_cpu_modalias, NULL);
 #endif
 
 static struct attribute *cpu_root_attrs[] = {
-#ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
-	&dev_attr_probe.attr,
-	&dev_attr_release.attr,
-#endif
 	&cpu_attrs[0].attr.attr,
 	&cpu_attrs[1].attr.attr,
 	&cpu_attrs[2].attr.attr,

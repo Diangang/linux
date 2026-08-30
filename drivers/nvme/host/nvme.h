@@ -28,13 +28,8 @@ extern unsigned int admin_timeout;
 
 #define NVME_DEFAULT_KATO	5
 
-#ifdef CONFIG_ARCH_NO_SG_CHAIN
-#define  NVME_INLINE_SG_CNT  0
-#define  NVME_INLINE_METADATA_SG_CNT  0
-#else
 #define  NVME_INLINE_SG_CNT  2
 #define  NVME_INLINE_METADATA_SG_CNT  1
-#endif
 
 /*
  * Default to a 4K page size, with the intention to update this
@@ -509,7 +504,7 @@ struct nvme_ns_head {
 
 static inline bool nvme_ns_head_multipath(struct nvme_ns_head *head)
 {
-	return IS_ENABLED(CONFIG_NVME_MULTIPATH) && head->disk;
+	return false;
 }
 
 enum nvme_ns_features {

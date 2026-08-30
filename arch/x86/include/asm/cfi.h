@@ -99,11 +99,7 @@ enum cfi_mode {
 
 extern enum cfi_mode cfi_mode;
 
-#if 0
-extern bool cfi_bhi;
-#else
 #define cfi_bhi (0)
-#endif
 
 typedef u8 bhi_thunk[32];
 extern bhi_thunk __bhi_args[];
@@ -117,40 +113,6 @@ struct pt_regs;
 #define CFI_OFFSET 5
 #endif
 
-#if 0
-enum bug_trap_type handle_cfi_failure(struct pt_regs *regs);
-#define __bpfcall
-
-static inline int cfi_get_offset(void)
-{
-	switch (cfi_mode) {
-	case CFI_FINEIBT:
-		return /* fineibt_prefix_size */ 16;
-	case CFI_KCFI:
-		return CFI_OFFSET;
-	default:
-		return 0;
-	}
-}
-#define cfi_get_offset cfi_get_offset
-
-extern u32 cfi_get_func_hash(void *func);
-#define cfi_get_func_hash cfi_get_func_hash
-
-extern int cfi_get_func_arity(void *func);
-
-#if 0
-extern bool decode_fineibt_insn(struct pt_regs *regs, unsigned long *target, u32 *type);
-#else
-static inline bool
-decode_fineibt_insn(struct pt_regs *regs, unsigned long *target, u32 *type)
-{
-	return false;
-}
-
-#endif
-
-#else
 static inline enum bug_trap_type handle_cfi_failure(struct pt_regs *regs)
 {
 	return BUG_TRAP_TYPE_NONE;
@@ -159,7 +121,6 @@ static inline int cfi_get_func_arity(void *func)
 {
 	return 0;
 }
-#endif /* CONFIG_CFI */
 
 #if HAS_KERNEL_IBT == 1
 #define CFI_NOSEAL(x)	asm(IBT_NOSEAL(__stringify(x)))

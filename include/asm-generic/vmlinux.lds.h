@@ -166,13 +166,8 @@
  * often happens at runtime)
  */
 
-#if defined(CONFIG_DYNAMIC_FTRACE) && !defined(CONFIG_HAVE_DYNAMIC_FTRACE_NO_PATCHABLE)
-#define KEEP_PATCHABLE		KEEP(*(__patchable_function_entries))
-#define PATCHABLE_DISCARDS
-#else
 #define KEEP_PATCHABLE
 #define PATCHABLE_DISCARDS	*(__patchable_function_entries)
-#endif
 
 #ifndef CONFIG_ARCH_SUPPORTS_CFI
 /*
@@ -184,32 +179,7 @@
 #define FTRACE_STUB_HACK
 #endif
 
-#ifdef CONFIG_DYNAMIC_FTRACE
-/*
- * The ftrace call sites are logged to a section whose name depends on the
- * compiler option used. A given kernel image will only use one, AKA
- * FTRACE_CALLSITE_SECTION. We capture all of them here to avoid header
- * dependencies for FTRACE_CALLSITE_SECTION's definition.
- *
- * ftrace_ops_list_func will be defined as arch_ftrace_ops_list_func
- * as some archs will have a different prototype for that function
- * but ftrace_ops_list_func() will have a single prototype.
- */
-#define MCOUNT_REC()	. = ALIGN(8);				\
-			__start_mcount_loc = .;			\
-			KEEP(*(__mcount_loc))			\
-			KEEP_PATCHABLE				\
-			__stop_mcount_loc = .;			\
-			FTRACE_STUB_HACK			\
-			ftrace_ops_list_func = arch_ftrace_ops_list_func;
-#else
-# ifdef CONFIG_FUNCTION_TRACER
-#  define MCOUNT_REC()	FTRACE_STUB_HACK			\
-			ftrace_ops_list_func = arch_ftrace_ops_list_func;
-# else
 #  define MCOUNT_REC()
-# endif
-#endif
 
 #define BOUNDED_SECTION_PRE_LABEL(_sec_, _label_, _BEGIN_, _END_)	\
 	_BEGIN_##_label_ = .;						\
@@ -241,40 +211,17 @@
 
 #define HEADERED_SECTION(_sec)	 HEADERED_SECTION_BY(_sec, _sec)
 
-#ifdef CONFIG_TRACE_BRANCH_PROFILING
-#define LIKELY_PROFILE()						\
-	BOUNDED_SECTION_BY(_ftrace_annotated_branch, _annotated_branch_profile)
-#else
 #define LIKELY_PROFILE()
-#endif
 
-#ifdef CONFIG_PROFILE_ALL_BRANCHES
-#define BRANCH_PROFILE()					\
-	BOUNDED_SECTION_BY(_ftrace_branch, _branch_profile)
-#else
 #define BRANCH_PROFILE()
-#endif
 
 #define KPROBE_BLACKLIST()
 
 #define ERROR_INJECT_WHITELIST()
 
-#ifdef CONFIG_EVENT_TRACING
-#define FTRACE_EVENTS()							\
-	. = ALIGN(8);							\
-	BOUNDED_SECTION(_ftrace_events)					\
-	BOUNDED_SECTION_BY(_ftrace_eval_map, _ftrace_eval_maps)
-#else
 #define FTRACE_EVENTS()
-#endif
 
-#ifdef CONFIG_FTRACE_SYSCALLS
-#define TRACE_SYSCALLS()			\
-	. = ALIGN(8);				\
-	BOUNDED_SECTION_BY(__syscalls_metadata, _syscalls_metadata)
-#else
 #define TRACE_SYSCALLS()
-#endif
 
 #define BPF_RAW_TP()
 
@@ -286,18 +233,8 @@
 #define EARLYCON_TABLE()
 #endif
 
-#ifdef CONFIG_SECURITY
-#define LSM_TABLE()					\
-	. = ALIGN(8);					\
-	BOUNDED_SECTION_PRE_LABEL(.lsm_info.init, _lsm_info, __start, __end)
-
-#define EARLY_LSM_TABLE()						\
-	. = ALIGN(8);							\
-	BOUNDED_SECTION_PRE_LABEL(.early_lsm_info.init, _early_lsm_info, __start, __end)
-#else
 #define LSM_TABLE()
 #define EARLY_LSM_TABLE()
-#endif
 
 #define ___OF_TABLE(cfg, name)	_OF_TABLE_##cfg(name)
 #define __OF_TABLE(cfg, name)	___OF_TABLE(cfg, name)
@@ -325,14 +262,7 @@
 #define ACPI_PROBE_TABLE(name)
 #endif
 
-#ifdef CONFIG_THERMAL
-#define THERMAL_TABLE(name)						\
-	. = ALIGN(8);							\
-	BOUNDED_SECTION_POST_LABEL(__##name##_thermal_table,		\
-				   __##name##_thermal_table,, _end)
-#else
 #define THERMAL_TABLE(name)
-#endif
 
 #define KERNEL_DTB()							\
 	STRUCT_ALIGN();							\
@@ -631,19 +561,7 @@
 /*
  * .BTF
  */
-#ifdef CONFIG_DEBUG_INFO_BTF
-#define BTF								\
-	. = ALIGN(PAGE_SIZE);						\
-	.BTF : AT(ADDR(.BTF) - LOAD_OFFSET) {				\
-		BOUNDED_SECTION_BY(.BTF, _BTF)				\
-	}								\
-	. = ALIGN(PAGE_SIZE);						\
-	.BTF_ids : AT(ADDR(.BTF_ids) - LOAD_OFFSET) {			\
-		*(.BTF_ids)						\
-	}
-#else
 #define BTF
-#endif
 
 /*
  * Init task
@@ -654,17 +572,7 @@
 		INIT_TASK_DATA(align)					\
 	}
 
-#if 0
-#define KERNEL_CTORS()	. = ALIGN(8);			   \
-			__ctors_start = .;		   \
-			KEEP(*(SORT(.ctors.*)))		   \
-			KEEP(*(.ctors))			   \
-			KEEP(*(SORT(.init_array.*)))	   \
-			KEEP(*(.init_array))		   \
-			__ctors_end = .;
-#else
 #define KERNEL_CTORS()
-#endif
 
 /* init and exit section handling */
 #define INIT_DATA							\
@@ -840,14 +748,7 @@
 #endif
 
 /* Built-in firmware blobs */
-#ifdef CONFIG_FW_LOADER
-#define FW_LOADER_BUILT_IN_DATA						\
-	.builtin_fw : AT(ADDR(.builtin_fw) - LOAD_OFFSET) ALIGN(8) {	\
-		BOUNDED_SECTION_PRE_LABEL(.builtin_fw, _builtin_fw, __start, __end) \
-	}
-#else
 #define FW_LOADER_BUILT_IN_DATA
-#endif
 
 #define TRACEDATA
 
@@ -931,14 +832,7 @@
  * Note: We use a separate section so that only this section gets
  * decrypted to avoid exposing more than we wish.
  */
-#ifdef CONFIG_AMD_MEM_ENCRYPT
-#define PERCPU_DECRYPTED_SECTION					\
-	. = ALIGN(PAGE_SIZE);						\
-	*(.data..percpu..decrypted)					\
-	. = ALIGN(PAGE_SIZE);
-#else
 #define PERCPU_DECRYPTED_SECTION
-#endif
 
 
 /*
@@ -966,18 +860,7 @@
  * https://llvm.org/pr46478
  */
 #define DISCARD_EH_FRAME	*(.eh_frame)
-#if defined(CONFIG_GCOV_KERNEL) || 0
-# if 0
-#  define SANITIZER_DISCARDS						\
-	DISCARD_EH_FRAME
-# else
-#  define SANITIZER_DISCARDS						\
-	*(.init_array) *(.init_array.*)					\
-	DISCARD_EH_FRAME
-# endif
-#else
 # define SANITIZER_DISCARDS
-#endif
 
 #define COMMON_DISCARDS							\
 	SANITIZER_DISCARDS						\

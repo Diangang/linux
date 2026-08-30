@@ -411,13 +411,6 @@ static inline bool pte_flags_need_flush(unsigned long oldflags,
 	if (diff & flush_on_change)
 		return true;
 
-	/* Ensure there are no flags that were left behind */
-	if (IS_ENABLED(CONFIG_DEBUG_VM) &&
-	    (diff & ~(flush_on_clear | software_flags | flush_on_change))) {
-		VM_WARN_ON_ONCE(1);
-		return true;
-	}
-
 	return false;
 }
 

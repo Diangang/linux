@@ -86,9 +86,6 @@ static struct workqueue_struct *memcg_wq __ro_after_init;
 static struct kmem_cache *memcg_cachep;
 static struct kmem_cache *memcg_pn_cachep;
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-static DECLARE_WAIT_QUEUE_HEAD(memcg_cgwb_frn_waitq);
-#endif
 
 static inline bool task_is_dying(void)
 {
@@ -211,33 +208,9 @@ static inline struct obj_cgroup *__memcg_reparent_objcgs(struct mem_cgroup *memc
 	return objcg;
 }
 
-#if 0
-static void __mem_cgroup_flush_stats(struct mem_cgroup *memcg, bool force);
-
-static inline void reparent_state_local(struct mem_cgroup *memcg, struct mem_cgroup *parent)
-{
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return;
-
-	/*
-	 * Reparent stats exposed non-hierarchically. Flush @memcg's stats first
-	 * to read its stats accurately , and conservatively flush @parent's
-	 * stats after reparenting to avoid hiding a potentially large stat
-	 * update (e.g. from callers of mem_cgroup_flush_stats_ratelimited()).
-	 */
-	__mem_cgroup_flush_stats(memcg, true);
-
-	/* The following counts are all non-hierarchical and need to be reparented. */
-	reparent_memcg1_state_local(memcg, parent);
-	reparent_memcg1_lruvec_state_local(memcg, parent);
-
-	__mem_cgroup_flush_stats(parent, true);
-}
-#else
 static inline void reparent_state_local(struct mem_cgroup *memcg, struct mem_cgroup *parent)
 {
 }
-#endif
 
 static inline void reparent_locks(struct mem_cgroup *memcg, struct mem_cgroup *parent, int nid)
 {
@@ -379,9 +352,6 @@ static const unsigned int memcg_node_stat_items[] = {
 	NR_KERNEL_STACK_KB,
 	NR_PAGETABLE,
 	NR_SECONDARY_PAGETABLE,
-#ifdef CONFIG_SWAP
-	NR_SWAPCACHE,
-#endif
 #ifdef CONFIG_NUMA_BALANCING
 	PGPROMOTE_SUCCESS,
 #endif
@@ -402,9 +372,6 @@ static const unsigned int memcg_node_stat_items[] = {
 	PGSCAN_ANON,
 	PGSCAN_FILE,
 	PGREFILL,
-#ifdef CONFIG_HUGETLB_PAGE
-	NR_HUGETLB,
-#endif
 };
 
 static const unsigned int memcg_stat_items[] = {
@@ -506,36 +473,9 @@ unsigned long lruvec_page_state_local(struct lruvec *lruvec,
 	return x;
 }
 
-#if 0
-static void __mod_memcg_lruvec_state(struct mem_cgroup_per_node *pn,
-				     enum node_stat_item idx, long val);
-
-void reparent_memcg_lruvec_state_local(struct mem_cgroup *memcg,
-				       struct mem_cgroup *parent, int idx)
-{
-	int nid;
-
-	for_each_node(nid) {
-		struct lruvec *child_lruvec = mem_cgroup_lruvec(memcg, NODE_DATA(nid));
-		struct lruvec *parent_lruvec = mem_cgroup_lruvec(parent, NODE_DATA(nid));
-		unsigned long value = lruvec_page_state_local(child_lruvec, idx);
-		struct mem_cgroup_per_node *child_pn, *parent_pn;
-
-		child_pn = container_of(child_lruvec, struct mem_cgroup_per_node, lruvec);
-		parent_pn = container_of(parent_lruvec, struct mem_cgroup_per_node, lruvec);
-
-		__mod_memcg_lruvec_state(child_pn, idx, -value);
-		__mod_memcg_lruvec_state(parent_pn, idx, value);
-	}
-}
-#endif
 
 /* Subset of vm_event_item to report for memcg event stats */
 static const unsigned int memcg_vm_event_stat[] = {
-#if 0
-	PGPGIN,
-	PGPGOUT,
-#endif
 	PSWPIN,
 	PSWPOUT,
 	PGFAULT,
@@ -544,16 +484,6 @@ static const unsigned int memcg_vm_event_stat[] = {
 	PGDEACTIVATE,
 	PGLAZYFREE,
 	PGLAZYFREED,
-#ifdef CONFIG_SWAP
-	SWPIN_ZERO,
-	SWPOUT_ZERO,
-#endif
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	THP_FAULT_ALLOC,
-	THP_COLLAPSE_ALLOC,
-	THP_SWPOUT,
-	THP_SWPOUT_FALLBACK,
-#endif
 #ifdef CONFIG_NUMA_BALANCING
 	NUMA_PAGE_MIGRATE,
 	NUMA_PTE_UPDATES,
@@ -774,32 +704,6 @@ static long memcg_state_val_in_pages(int idx, long val)
 	return val < 0 ? -res : res;
 }
 
-#if 0
-/*
- * Used in mod_memcg_state() and mod_memcg_lruvec_state() to avoid race with
- * reparenting of non-hierarchical state_locals.
- */
-static inline struct mem_cgroup *get_non_dying_memcg_start(struct mem_cgroup *memcg)
-{
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return memcg;
-
-	rcu_read_lock();
-
-	while (memcg_is_dying(memcg))
-		memcg = parent_mem_cgroup(memcg);
-
-	return memcg;
-}
-
-static inline void get_non_dying_memcg_end(void)
-{
-	if (cgroup_subsys_on_dfl(memory_cgrp_subsys))
-		return;
-
-	rcu_read_unlock();
-}
-#else
 static inline struct mem_cgroup *get_non_dying_memcg_start(struct mem_cgroup *memcg)
 {
 	return memcg;
@@ -808,7 +712,6 @@ static inline struct mem_cgroup *get_non_dying_memcg_start(struct mem_cgroup *me
 static inline void get_non_dying_memcg_end(void)
 {
 }
-#endif
 
 static void __mod_memcg_state(struct mem_cgroup *memcg,
 			      enum memcg_stat_item idx, long val)
@@ -846,33 +749,6 @@ void mod_memcg_state(struct mem_cgroup *memcg, enum memcg_stat_item idx,
 	get_non_dying_memcg_end();
 }
 
-#if 0
-/* idx can be of type enum memcg_stat_item or node_stat_item. */
-unsigned long memcg_page_state_local(struct mem_cgroup *memcg, int idx)
-{
-	long x;
-	int i = memcg_stats_index(idx);
-
-	if (WARN_ONCE(BAD_STAT_IDX(i), "%s: missing stat item %d\n", __func__, idx))
-		return 0;
-
-	x = READ_ONCE(memcg->vmstats->state_local[i]);
-#ifdef CONFIG_SMP
-	if (x < 0)
-		x = 0;
-#endif
-	return x;
-}
-
-void reparent_memcg_state_local(struct mem_cgroup *memcg,
-				struct mem_cgroup *parent, int idx)
-{
-	unsigned long value = memcg_page_state_local(memcg, idx);
-
-	__mod_memcg_state(memcg, idx, -value);
-	__mod_memcg_state(parent, idx, value);
-}
-#endif
 
 static void __mod_memcg_lruvec_state(struct mem_cgroup_per_node *pn,
 				     enum node_stat_item idx, long val)
@@ -1026,17 +902,6 @@ bool memcg_vm_event_item_valid(enum vm_event_item idx)
 	return !BAD_STAT_IDX(memcg_events_index(idx));
 }
 
-#if 0
-unsigned long memcg_events_local(struct mem_cgroup *memcg, int event)
-{
-	int i = memcg_events_index(event);
-
-	if (WARN_ONCE(BAD_STAT_IDX(i), "%s: missing stat item %d\n", __func__, event))
-		return 0;
-
-	return READ_ONCE(memcg->vmstats->events_local[i]);
-}
-#endif
 
 struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p)
 {
@@ -1518,14 +1383,6 @@ static const struct memory_stat memory_stats[] = {
 	{ "file_mapped",		NR_FILE_MAPPED			},
 	{ "file_dirty",			NR_FILE_DIRTY			},
 	{ "file_writeback",		NR_WRITEBACK			},
-#ifdef CONFIG_SWAP
-	{ "swapcached",			NR_SWAPCACHE			},
-#endif
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	{ "anon_thp",			NR_ANON_THPS			},
-	{ "file_thp",			NR_FILE_THPS			},
-	{ "shmem_thp",			NR_SHMEM_THPS			},
-#endif
 	{ "inactive_anon",		NR_INACTIVE_ANON		},
 	{ "active_anon",		NR_ACTIVE_ANON			},
 	{ "inactive_file",		NR_INACTIVE_FILE		},
@@ -1533,9 +1390,6 @@ static const struct memory_stat memory_stats[] = {
 	{ "unevictable",		NR_UNEVICTABLE			},
 	{ "slab_reclaimable",		NR_SLAB_RECLAIMABLE_B		},
 	{ "slab_unreclaimable",		NR_SLAB_UNRECLAIMABLE_B		},
-#ifdef CONFIG_HUGETLB_PAGE
-	{ "hugetlb",			NR_HUGETLB			},
-#endif
 
 	/* The memory events */
 	{ "workingset_refault_anon",	WORKINGSET_REFAULT_ANON		},
@@ -1626,25 +1480,11 @@ unsigned long memcg_page_state_output(struct mem_cgroup *memcg, int item)
 		memcg_page_state_output_unit(item);
 }
 
-#if 0
-unsigned long memcg_page_state_local_output(struct mem_cgroup *memcg, int item)
-{
-	return memcg_page_state_local(memcg, item) *
-		memcg_page_state_output_unit(item);
-}
-#endif
 
-#ifdef CONFIG_HUGETLB_PAGE
-static bool memcg_accounts_hugetlb(void)
-{
-	return cgrp_dfl_root.flags & CGRP_ROOT_MEMORY_HUGETLB_ACCOUNTING;
-}
-#else /* CONFIG_HUGETLB_PAGE */
 static bool memcg_accounts_hugetlb(void)
 {
 	return false;
 }
-#endif /* CONFIG_HUGETLB_PAGE */
 
 static void memcg_stat_format(struct mem_cgroup *memcg, struct seq_buf *s)
 {
@@ -1665,11 +1505,6 @@ static void memcg_stat_format(struct mem_cgroup *memcg, struct seq_buf *s)
 	for (i = 0; i < ARRAY_SIZE(memory_stats); i++) {
 		u64 size;
 
-#ifdef CONFIG_HUGETLB_PAGE
-		if (unlikely(memory_stats[i].idx == NR_HUGETLB) &&
-			!memcg_accounts_hugetlb())
-			continue;
-#endif
 		size = memcg_page_state_output(memcg, memory_stats[i].idx);
 		seq_buf_printf(s, "%s %llu\n", memory_stats[i].name, size);
 
@@ -1693,11 +1528,6 @@ static void memcg_stat_format(struct mem_cgroup *memcg, struct seq_buf *s)
 		       memcg_page_state(memcg, PGSTEAL_KHUGEPAGED));
 
 	for (i = 0; i < ARRAY_SIZE(memcg_vm_event_stat); i++) {
-#if 0
-		if (memcg_vm_event_stat[i] == PGPGIN ||
-		    memcg_vm_event_stat[i] == PGPGOUT)
-			continue;
-#endif
 		seq_buf_printf(s, "%s %lu\n",
 			       vm_event_name(memcg_vm_event_stat[i]),
 			       memcg_events(memcg, memcg_vm_event_stat[i]));
@@ -1766,16 +1596,6 @@ void mem_cgroup_print_oom_meminfo(struct mem_cgroup *memcg)
 			K((u64)page_counter_read(&memcg->swap)),
 			K((u64)READ_ONCE(memcg->swap.max)),
 			atomic_long_read(&memcg->memory_events[MEMCG_SWAP_MAX]));
-#if 0
-	else {
-		pr_info("memory+swap: usage %llukB, limit %llukB, failcnt %lu\n",
-			K((u64)page_counter_read(&memcg->memsw)),
-			K((u64)memcg->memsw.max), memcg->memsw.failcnt);
-		pr_info("kmem: usage %llukB, limit %llukB, failcnt %lu\n",
-			K((u64)page_counter_read(&memcg->kmem)),
-			K((u64)memcg->kmem.max), memcg->kmem.failcnt);
-	}
-#endif
 
 	pr_info("Memory cgroup stats for ");
 	pr_cont_cgroup_path(memcg->css.cgroup);
@@ -2738,28 +2558,6 @@ static void commit_charge(struct folio *folio, struct obj_cgroup *objcg)
 	folio->memcg_data = (unsigned long)objcg;
 }
 
-#ifdef CONFIG_MEMCG_NMI_SAFETY_REQUIRES_ATOMIC
-static inline void account_slab_nmi_safe(struct mem_cgroup *memcg,
-					 struct pglist_data *pgdat,
-					 enum node_stat_item idx, int nr)
-{
-	struct lruvec *lruvec;
-
-	if (likely(!in_nmi())) {
-		lruvec = mem_cgroup_lruvec(memcg, pgdat);
-		mod_memcg_lruvec_state(lruvec, idx, nr);
-	} else {
-		struct mem_cgroup_per_node *pn = memcg->nodeinfo[pgdat->node_id];
-
-		/* preemption is disabled in_nmi(). */
-		css_rstat_updated(&memcg->css, smp_processor_id());
-		if (idx == NR_SLAB_RECLAIMABLE_B)
-			atomic_add(nr, &pn->slab_reclaimable);
-		else
-			atomic_add(nr, &pn->slab_unreclaimable);
-	}
-}
-#else
 static inline void account_slab_nmi_safe(struct mem_cgroup *memcg,
 					 struct pglist_data *pgdat,
 					 enum node_stat_item idx, int nr)
@@ -2769,7 +2567,6 @@ static inline void account_slab_nmi_safe(struct mem_cgroup *memcg,
 	lruvec = mem_cgroup_lruvec(memcg, pgdat);
 	mod_memcg_lruvec_state(lruvec, idx, nr);
 }
-#endif
 
 static inline void mod_objcg_mlstate(struct obj_cgroup *objcg,
 				       struct pglist_data *pgdat,
@@ -2917,9 +2714,6 @@ __always_inline struct obj_cgroup *current_obj_cgroup(void)
 	struct obj_cgroup *objcg;
 	int nid = numa_node_id();
 
-	if (IS_ENABLED(CONFIG_MEMCG_NMI_UNSAFE) && in_nmi())
-		return NULL;
-
 	if (in_task()) {
 		memcg = current->active_memcg;
 		if (unlikely(memcg))
@@ -2968,23 +2762,10 @@ struct obj_cgroup *get_obj_cgroup_from_folio(struct folio *folio)
 	return objcg;
 }
 
-#ifdef CONFIG_MEMCG_NMI_SAFETY_REQUIRES_ATOMIC
-static inline void account_kmem_nmi_safe(struct mem_cgroup *memcg, int val)
-{
-	if (likely(!in_nmi())) {
-		mod_memcg_state(memcg, MEMCG_KMEM, val);
-	} else {
-		/* preemption is disabled in_nmi(). */
-		css_rstat_updated(&memcg->css, smp_processor_id());
-		atomic_add(val, &memcg->kmem_stat);
-	}
-}
-#else
 static inline void account_kmem_nmi_safe(struct mem_cgroup *memcg, int val)
 {
 	mod_memcg_state(memcg, MEMCG_KMEM, val);
 }
-#endif
 
 /*
  * obj_cgroup_uncharge_pages: uncharge a number of kernel pages from a objcg
@@ -3556,199 +3337,6 @@ static void memcg_offline_kmem(struct mem_cgroup *memcg)
 	memcg_reparent_list_lrus(memcg, parent);
 }
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-
-static int memcg_wb_domain_init(struct mem_cgroup *memcg, gfp_t gfp)
-{
-	return wb_domain_init(&memcg->cgwb_domain, gfp);
-}
-
-static void memcg_wb_domain_exit(struct mem_cgroup *memcg)
-{
-	wb_domain_exit(&memcg->cgwb_domain);
-}
-
-static void memcg_wb_domain_size_changed(struct mem_cgroup *memcg)
-{
-	wb_domain_size_changed(&memcg->cgwb_domain);
-}
-
-struct wb_domain *mem_cgroup_wb_domain(struct bdi_writeback *wb)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(wb->memcg_css);
-
-	if (!memcg->css.parent)
-		return NULL;
-
-	return &memcg->cgwb_domain;
-}
-
-/**
- * mem_cgroup_wb_stats - retrieve writeback related stats from its memcg
- * @wb: bdi_writeback in question
- * @pfilepages: out parameter for number of file pages
- * @pheadroom: out parameter for number of allocatable pages according to memcg
- * @pdirty: out parameter for number of dirty pages
- * @pwriteback: out parameter for number of pages under writeback
- *
- * Determine the numbers of file, headroom, dirty, and writeback pages in
- * @wb's memcg.  File, dirty and writeback are self-explanatory.  Headroom
- * is a bit more involved.
- *
- * A memcg's headroom is "min(max, high) - used".  In the hierarchy, the
- * headroom is calculated as the lowest headroom of itself and the
- * ancestors.  Note that this doesn't consider the actual amount of
- * available memory in the system.  The caller should further cap
- * *@pheadroom accordingly.
- */
-void mem_cgroup_wb_stats(struct bdi_writeback *wb, unsigned long *pfilepages,
-			 unsigned long *pheadroom, unsigned long *pdirty,
-			 unsigned long *pwriteback)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(wb->memcg_css);
-	struct mem_cgroup *parent;
-
-	mem_cgroup_flush_stats_ratelimited(memcg);
-
-	*pdirty = memcg_page_state(memcg, NR_FILE_DIRTY);
-	*pwriteback = memcg_page_state(memcg, NR_WRITEBACK);
-	*pfilepages = memcg_page_state(memcg, NR_INACTIVE_FILE) +
-			memcg_page_state(memcg, NR_ACTIVE_FILE);
-
-	*pheadroom = PAGE_COUNTER_MAX;
-	while ((parent = parent_mem_cgroup(memcg))) {
-		unsigned long ceiling = min(READ_ONCE(memcg->memory.max),
-					    READ_ONCE(memcg->memory.high));
-		unsigned long used = page_counter_read(&memcg->memory);
-
-		*pheadroom = min(*pheadroom, ceiling - min(ceiling, used));
-		memcg = parent;
-	}
-}
-
-/*
- * Foreign dirty flushing
- *
- * There's an inherent mismatch between memcg and writeback.  The former
- * tracks ownership per-page while the latter per-inode.  This was a
- * deliberate design decision because honoring per-page ownership in the
- * writeback path is complicated, may lead to higher CPU and IO overheads
- * and deemed unnecessary given that write-sharing an inode across
- * different cgroups isn't a common use-case.
- *
- * Combined with inode majority-writer ownership switching, this works well
- * enough in most cases but there are some pathological cases.  For
- * example, let's say there are two cgroups A and B which keep writing to
- * different but confined parts of the same inode.  B owns the inode and
- * A's memory is limited far below B's.  A's dirty ratio can rise enough to
- * trigger balance_dirty_pages() sleeps but B's can be low enough to avoid
- * triggering background writeback.  A will be slowed down without a way to
- * make writeback of the dirty pages happen.
- *
- * Conditions like the above can lead to a cgroup getting repeatedly and
- * severely throttled after making some progress after each
- * dirty_expire_interval while the underlying IO device is almost
- * completely idle.
- *
- * Solving this problem completely requires matching the ownership tracking
- * granularities between memcg and writeback in either direction.  However,
- * the more egregious behaviors can be avoided by simply remembering the
- * most recent foreign dirtying events and initiating remote flushes on
- * them when local writeback isn't enough to keep the memory clean enough.
- *
- * The following two functions implement such mechanism.  When a foreign
- * page - a page whose memcg and writeback ownerships don't match - is
- * dirtied, mem_cgroup_track_foreign_dirty() records the inode owning
- * bdi_writeback on the page owning memcg.  When balance_dirty_pages()
- * decides that the memcg needs to sleep due to high dirty ratio, it calls
- * mem_cgroup_flush_foreign() which queues writeback on the recorded
- * foreign bdi_writebacks which haven't expired.  Both the numbers of
- * recorded bdi_writebacks and concurrent in-flight foreign writebacks are
- * limited to MEMCG_CGWB_FRN_CNT.
- *
- * The mechanism only remembers IDs and doesn't hold any object references.
- * As being wrong occasionally doesn't matter, updates and accesses to the
- * records are lockless and racy.
- */
-void mem_cgroup_track_foreign_dirty_slowpath(struct folio *folio,
-					     struct bdi_writeback *wb)
-{
-	struct mem_cgroup *memcg = folio_memcg(folio);
-	struct memcg_cgwb_frn *frn;
-	u64 now = get_jiffies_64();
-	u64 oldest_at = now;
-	int oldest = -1;
-	int i;
-
-
-	/*
-	 * Pick the slot to use.  If there is already a slot for @wb, keep
-	 * using it.  If not replace the oldest one which isn't being
-	 * written out.
-	 */
-	for (i = 0; i < MEMCG_CGWB_FRN_CNT; i++) {
-		frn = &memcg->cgwb_frn[i];
-		if (frn->bdi_id == wb->bdi->id &&
-		    frn->memcg_id == wb->memcg_css->id)
-			break;
-		if (time_before64(frn->at, oldest_at) &&
-		    atomic_read(&frn->done.cnt) == 1) {
-			oldest = i;
-			oldest_at = frn->at;
-		}
-	}
-
-	if (i < MEMCG_CGWB_FRN_CNT) {
-		/*
-		 * Re-using an existing one.  Update timestamp lazily to
-		 * avoid making the cacheline hot.  We want them to be
-		 * reasonably up-to-date and significantly shorter than
-		 * dirty_expire_interval as that's what expires the record.
-		 * Use the shorter of 1s and dirty_expire_interval / 8.
-		 */
-		unsigned long update_intv =
-			min_t(unsigned long, HZ,
-			      msecs_to_jiffies(dirty_expire_interval * 10) / 8);
-
-		if (time_before64(frn->at, now - update_intv))
-			frn->at = now;
-	} else if (oldest >= 0) {
-		/* replace the oldest free one */
-		frn = &memcg->cgwb_frn[oldest];
-		frn->bdi_id = wb->bdi->id;
-		frn->memcg_id = wb->memcg_css->id;
-		frn->at = now;
-	}
-}
-
-/* issue foreign writeback flushes for recorded foreign dirtying events */
-void mem_cgroup_flush_foreign(struct bdi_writeback *wb)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(wb->memcg_css);
-	unsigned long intv = msecs_to_jiffies(dirty_expire_interval * 10);
-	u64 now = jiffies_64;
-	int i;
-
-	for (i = 0; i < MEMCG_CGWB_FRN_CNT; i++) {
-		struct memcg_cgwb_frn *frn = &memcg->cgwb_frn[i];
-
-		/*
-		 * If the record is older than dirty_expire_interval,
-		 * writeback on it has already started.  No need to kick it
-		 * off again.  Also, don't start a new one if there's
-		 * already one in flight.
-		 */
-		if (time_after64(frn->at, now - intv) &&
-		    atomic_read(&frn->done.cnt) == 1) {
-			frn->at = 0;
-			cgroup_writeback_by_id(frn->bdi_id, frn->memcg_id,
-					       WB_REASON_FOREIGN_FLUSH,
-					       &frn->done);
-		}
-	}
-}
-
-#else	/* CONFIG_CGROUP_WRITEBACK */
 
 static int memcg_wb_domain_init(struct mem_cgroup *memcg, gfp_t gfp)
 {
@@ -3763,7 +3351,6 @@ static void memcg_wb_domain_size_changed(struct mem_cgroup *memcg)
 {
 }
 
-#endif	/* CONFIG_CGROUP_WRITEBACK */
 
 /*
  * Private memory cgroup IDR
@@ -3976,17 +3563,6 @@ static struct mem_cgroup *mem_cgroup_alloc(struct mem_cgroup *parent)
 	spin_lock_init(&memcg->peaks_lock);
 	memcg1_memcg_init(memcg);
 	memcg->kmemcg_id = -1;
-#ifdef CONFIG_CGROUP_WRITEBACK
-	INIT_LIST_HEAD(&memcg->cgwb_list);
-	for (i = 0; i < MEMCG_CGWB_FRN_CNT; i++)
-		memcg->cgwb_frn[i].done =
-			__WB_COMPLETION_INIT(&memcg_cgwb_frn_waitq);
-#endif
-#ifdef CONFIG_TRANSPARENT_HUGEPAGE
-	spin_lock_init(&memcg->deferred_split_queue.split_queue_lock);
-	INIT_LIST_HEAD(&memcg->deferred_split_queue.split_queue);
-	memcg->deferred_split_queue.split_queue_len = 0;
-#endif
 	lru_gen_init_memcg(memcg);
 	return memcg;
 fail:
@@ -4146,10 +3722,6 @@ static void mem_cgroup_css_free(struct cgroup_subsys_state *css)
 	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
 	int __maybe_unused i;
 
-#ifdef CONFIG_CGROUP_WRITEBACK
-	for (i = 0; i < MEMCG_CGWB_FRN_CNT; i++)
-		wb_wait_for_completion(&memcg->cgwb_frn[i].done);
-#endif
 	vmpressure_cleanup(&memcg->vmpressure);
 	cancel_work_sync(&memcg->high_work);
 	memcg1_remove_from_trees(memcg);
@@ -4237,52 +3809,9 @@ static void mem_cgroup_stat_aggregate(struct aggregate_control *ac)
 	}
 }
 
-#ifdef CONFIG_MEMCG_NMI_SAFETY_REQUIRES_ATOMIC
-static void flush_nmi_stats(struct mem_cgroup *memcg, struct mem_cgroup *parent,
-			    int cpu)
-{
-	int nid;
-
-	if (atomic_read(&memcg->kmem_stat)) {
-		int kmem = atomic_xchg(&memcg->kmem_stat, 0);
-		int index = memcg_stats_index(MEMCG_KMEM);
-
-		memcg->vmstats->state[index] += kmem;
-		if (parent)
-			parent->vmstats->state_pending[index] += kmem;
-	}
-
-	for_each_node_state(nid, N_MEMORY) {
-		struct mem_cgroup_per_node *pn = memcg->nodeinfo[nid];
-		struct lruvec_stats *lstats = pn->lruvec_stats;
-		struct lruvec_stats *plstats = NULL;
-
-		if (parent)
-			plstats = parent->nodeinfo[nid]->lruvec_stats;
-
-		if (atomic_read(&pn->slab_reclaimable)) {
-			int slab = atomic_xchg(&pn->slab_reclaimable, 0);
-			int index = memcg_stats_index(NR_SLAB_RECLAIMABLE_B);
-
-			lstats->state[index] += slab;
-			if (plstats)
-				plstats->state_pending[index] += slab;
-		}
-		if (atomic_read(&pn->slab_unreclaimable)) {
-			int slab = atomic_xchg(&pn->slab_unreclaimable, 0);
-			int index = memcg_stats_index(NR_SLAB_UNRECLAIMABLE_B);
-
-			lstats->state[index] += slab;
-			if (plstats)
-				plstats->state_pending[index] += slab;
-		}
-	}
-}
-#else
 static void flush_nmi_stats(struct mem_cgroup *memcg, struct mem_cgroup *parent,
 			    int cpu)
 {}
-#endif
 
 static void mem_cgroup_css_rstat_flush(struct cgroup_subsys_state *css, int cpu)
 {
@@ -4867,9 +4396,6 @@ struct cgroup_subsys memory_cgrp_subsys = {
 	.fork = mem_cgroup_fork,
 	.exit = mem_cgroup_exit,
 	.dfl_cftypes = memory_files,
-#if 0
-	.legacy_cftypes = mem_cgroup_legacy_files,
-#endif
 	.early_init = 0,
 };
 
@@ -5256,271 +4782,6 @@ int __init mem_cgroup_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_SWAP
-/**
- * __mem_cgroup_try_charge_swap - try charging swap space for a folio
- * @folio: folio being added to swap
- * @entry: swap entry to charge
- *
- * Try to charge @folio's memcg for the swap space at @entry.
- *
- * Returns 0 on success, -ENOMEM on failure.
- */
-int __mem_cgroup_try_charge_swap(struct folio *folio, swp_entry_t entry)
-{
-	unsigned int nr_pages = folio_nr_pages(folio);
-	struct page_counter *counter;
-	struct mem_cgroup *memcg;
-	struct obj_cgroup *objcg;
-
-	if (do_memsw_account())
-		return 0;
-
-	objcg = folio_objcg(folio);
-	VM_WARN_ON_ONCE_FOLIO(!objcg, folio);
-	if (!objcg)
-		return 0;
-
-	rcu_read_lock();
-	memcg = obj_cgroup_memcg(objcg);
-	if (!entry.val) {
-		memcg_memory_event(memcg, MEMCG_SWAP_FAIL);
-		rcu_read_unlock();
-		return 0;
-	}
-
-	memcg = mem_cgroup_private_id_get_online(memcg, nr_pages);
-	/* memcg is pined by memcg ID. */
-	rcu_read_unlock();
-
-	if (!mem_cgroup_is_root(memcg) &&
-	    !page_counter_try_charge(&memcg->swap, nr_pages, &counter)) {
-		memcg_memory_event(memcg, MEMCG_SWAP_MAX);
-		memcg_memory_event(memcg, MEMCG_SWAP_FAIL);
-		mem_cgroup_private_id_put(memcg, nr_pages);
-		return -ENOMEM;
-	}
-	mod_memcg_state(memcg, MEMCG_SWAP, nr_pages);
-
-	swap_cgroup_record(folio, mem_cgroup_private_id(memcg), entry);
-
-	return 0;
-}
-
-/**
- * __mem_cgroup_uncharge_swap - uncharge swap space
- * @entry: swap entry to uncharge
- * @nr_pages: the amount of swap space to uncharge
- */
-void __mem_cgroup_uncharge_swap(swp_entry_t entry, unsigned int nr_pages)
-{
-	struct mem_cgroup *memcg;
-	unsigned short id;
-
-	id = swap_cgroup_clear(entry, nr_pages);
-	rcu_read_lock();
-	memcg = mem_cgroup_from_private_id(id);
-	if (memcg) {
-		if (!mem_cgroup_is_root(memcg)) {
-			if (do_memsw_account())
-				page_counter_uncharge(&memcg->memsw, nr_pages);
-			else
-				page_counter_uncharge(&memcg->swap, nr_pages);
-		}
-		mod_memcg_state(memcg, MEMCG_SWAP, -nr_pages);
-		mem_cgroup_private_id_put(memcg, nr_pages);
-	}
-	rcu_read_unlock();
-}
-
-long mem_cgroup_get_nr_swap_pages(struct mem_cgroup *memcg)
-{
-	long nr_swap_pages = get_nr_swap_pages();
-
-	if (mem_cgroup_disabled() || do_memsw_account())
-		return nr_swap_pages;
-	for (; !mem_cgroup_is_root(memcg); memcg = parent_mem_cgroup(memcg))
-		nr_swap_pages = min_t(long, nr_swap_pages,
-				      READ_ONCE(memcg->swap.max) -
-				      page_counter_read(&memcg->swap));
-	return nr_swap_pages;
-}
-
-bool mem_cgroup_swap_full(struct folio *folio)
-{
-	struct mem_cgroup *memcg;
-	bool ret = false;
-
-	VM_BUG_ON_FOLIO(!folio_test_locked(folio), folio);
-
-	if (vm_swap_full())
-		return true;
-	if (do_memsw_account() || !folio_memcg_charged(folio))
-		return ret;
-
-	rcu_read_lock();
-	memcg = folio_memcg(folio);
-	for (; !mem_cgroup_is_root(memcg); memcg = parent_mem_cgroup(memcg)) {
-		unsigned long usage = page_counter_read(&memcg->swap);
-
-		if (usage * 2 >= READ_ONCE(memcg->swap.high) ||
-		    usage * 2 >= READ_ONCE(memcg->swap.max)) {
-			ret = true;
-			break;
-		}
-	}
-	rcu_read_unlock();
-
-	return ret;
-}
-
-static int __init setup_swap_account(char *s)
-{
-	bool res;
-
-	if (!kstrtobool(s, &res) && !res)
-		pr_warn_once("The swapaccount=0 commandline option is deprecated "
-			     "in favor of configuring swap control via cgroupfs. "
-			     "Please report your usecase to linux-mm@kvack.org if you "
-			     "depend on this functionality.\n");
-	return 1;
-}
-__setup("swapaccount=", setup_swap_account);
-
-static u64 swap_current_read(struct cgroup_subsys_state *css,
-			     struct cftype *cft)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(css);
-
-	return (u64)page_counter_read(&memcg->swap) * PAGE_SIZE;
-}
-
-static int swap_peak_show(struct seq_file *sf, void *v)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(seq_css(sf));
-
-	return peak_show(sf, v, &memcg->swap);
-}
-
-static ssize_t swap_peak_write(struct kernfs_open_file *of, char *buf,
-			       size_t nbytes, loff_t off)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
-
-	return peak_write(of, buf, nbytes, off, &memcg->swap,
-			  &memcg->swap_peaks);
-}
-
-static int swap_high_show(struct seq_file *m, void *v)
-{
-	return seq_puts_memcg_tunable(m,
-		READ_ONCE(mem_cgroup_from_seq(m)->swap.high));
-}
-
-static ssize_t swap_high_write(struct kernfs_open_file *of,
-			       char *buf, size_t nbytes, loff_t off)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
-	unsigned long high;
-	int err;
-
-	buf = strstrip(buf);
-	err = page_counter_memparse(buf, "max", &high);
-	if (err)
-		return err;
-
-	page_counter_set_high(&memcg->swap, high);
-
-	return nbytes;
-}
-
-static int swap_max_show(struct seq_file *m, void *v)
-{
-	return seq_puts_memcg_tunable(m,
-		READ_ONCE(mem_cgroup_from_seq(m)->swap.max));
-}
-
-static ssize_t swap_max_write(struct kernfs_open_file *of,
-			      char *buf, size_t nbytes, loff_t off)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_css(of_css(of));
-	unsigned long max;
-	int err;
-
-	buf = strstrip(buf);
-	err = page_counter_memparse(buf, "max", &max);
-	if (err)
-		return err;
-
-	xchg(&memcg->swap.max, max);
-
-	return nbytes;
-}
-
-static int swap_events_show(struct seq_file *m, void *v)
-{
-	struct mem_cgroup *memcg = mem_cgroup_from_seq(m);
-
-	seq_printf(m, "high %lu\n",
-		   atomic_long_read(&memcg->memory_events[MEMCG_SWAP_HIGH]));
-	seq_printf(m, "max %lu\n",
-		   atomic_long_read(&memcg->memory_events[MEMCG_SWAP_MAX]));
-	seq_printf(m, "fail %lu\n",
-		   atomic_long_read(&memcg->memory_events[MEMCG_SWAP_FAIL]));
-
-	return 0;
-}
-
-static struct cftype swap_files[] = {
-	{
-		.name = "swap.current",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.read_u64 = swap_current_read,
-	},
-	{
-		.name = "swap.high",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.seq_show = swap_high_show,
-		.write = swap_high_write,
-	},
-	{
-		.name = "swap.max",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.seq_show = swap_max_show,
-		.write = swap_max_write,
-	},
-	{
-		.name = "swap.peak",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.open = peak_open,
-		.release = peak_release,
-		.seq_show = swap_peak_show,
-		.write = swap_peak_write,
-	},
-	{
-		.name = "swap.events",
-		.flags = CFTYPE_NOT_ON_ROOT,
-		.file_offset = offsetof(struct mem_cgroup, swap_events_file),
-		.seq_show = swap_events_show,
-	},
-	{ }	/* terminate */
-};
-
-
-static int __init mem_cgroup_swap_init(void)
-{
-	if (mem_cgroup_disabled())
-		return 0;
-
-	WARN_ON(cgroup_add_dfl_cftypes(&memory_cgrp_subsys, swap_files));
-#if 0
-	WARN_ON(cgroup_add_legacy_cftypes(&memory_cgrp_subsys, memsw_files));
-#endif
-	return 0;
-}
-subsys_initcall(mem_cgroup_swap_init);
-
-#endif /* CONFIG_SWAP */
 
 void mem_cgroup_node_filter_allowed(struct mem_cgroup *memcg, nodemask_t *mask)
 {

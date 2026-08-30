@@ -80,7 +80,6 @@ static inline bool _raw_write_trylock_irqsave(rwlock_t *lock, unsigned long *fla
  * even on CONFIG_PREEMPT, because lockdep assumes that interrupts are
  * not re-enabled during lock-acquire (which the preempt-spin-ops do):
  */
-#if !defined(CONFIG_GENERIC_LOCKBREAK) || defined(CONFIG_DEBUG_LOCK_ALLOC)
 
 static inline void __raw_read_lock(rwlock_t *lock)
 	__acquires_shared(lock) __no_context_analysis
@@ -164,7 +163,6 @@ static inline void __raw_write_lock_nested(rwlock_t *lock, int subclass)
 	LOCK_CONTENDED(lock, do_raw_write_trylock, do_raw_write_lock);
 }
 
-#endif /* !CONFIG_GENERIC_LOCKBREAK || CONFIG_DEBUG_LOCK_ALLOC */
 
 static inline void __raw_write_unlock(rwlock_t *lock)
 	__releases(lock)
