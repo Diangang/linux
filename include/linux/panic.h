@@ -28,7 +28,6 @@ extern int panic_on_warn;
 extern unsigned long panic_on_taint;
 extern bool panic_on_taint_nousertaint;
 
-extern int sysctl_panic_on_stackoverflow;
 
 extern void __stack_chk_fail(void);
 void abort(void);
