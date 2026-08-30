@@ -24,7 +24,6 @@ SYM_DATA_START(real_mode_header)
 	.long	pa_trampoline_start64
 	.long	pa_trampoline_pgd;
 #endif
-	/* ACPI S3 wakeup */
 	/* APM/BIOS reboot */
 	.long	pa_machine_real_restart_asm
 #ifdef CONFIG_X86_64

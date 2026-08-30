@@ -25,7 +25,6 @@ struct real_mode_header {
 	u32	trampoline_start64;
 	u32	trampoline_pgd;
 #endif
-	/* ACPI S3 wakeup */
 	/* APM/BIOS reboot */
 	u32	machine_real_restart_asm;
 #ifdef CONFIG_X86_64

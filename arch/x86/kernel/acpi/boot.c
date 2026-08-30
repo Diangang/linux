@@ -33,7 +33,6 @@
 #include <asm/i8259.h>
 #include <asm/setup.h>
 
-#include "sleep.h" /* To include x86_acpi_suspend_lowlevel */
 static int __initdata acpi_force = 0;
 int acpi_disabled;
 EXPORT_SYMBOL(acpi_disabled);
@@ -719,8 +718,6 @@ static void acpi_unregister_gsi_ioapic(u32 gsi)
 int (*__acpi_register_gsi)(struct device *dev, u32 gsi,
 			   int trigger, int polarity) = acpi_register_gsi_pic;
 void (*__acpi_unregister_gsi)(u32 gsi) = NULL;
-
-int (*acpi_suspend_lowlevel)(void);
 
 /*
  * success: return IRQ number (>=0)

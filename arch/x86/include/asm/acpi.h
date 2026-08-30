@@ -56,12 +56,6 @@ static inline void acpi_disable_pci(void)
 	acpi_noirq_set();
 }
 
-/* Low-level suspend routine. */
-extern int (*acpi_suspend_lowlevel)(void);
-
-/* Physical address to resume after wakeup */
-unsigned long acpi_get_wakeup_address(void);
-
 static inline bool acpi_skip_set_wakeup_address(void)
 {
 	return cpu_feature_enabled(X86_FEATURE_XENPV);

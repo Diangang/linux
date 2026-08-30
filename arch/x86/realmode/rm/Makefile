@@ -9,16 +9,6 @@
 
 always-y := realmode.bin realmode.relocs
 
-wakeup-objs	:= wakeup_asm.o wakemain.o video-mode.o
-wakeup-objs	+= copy.o bioscall.o regs.o
-# The link order of the video-*.o modules can matter.  In particular,
-# video-vga.o *must* be listed first, followed by video-vesa.o.
-# Hardware-specific drivers should follow in the order they should be
-# probed, and video-bios.o should typically be last.
-wakeup-objs	+= video-vga.o
-wakeup-objs	+= video-vesa.o
-wakeup-objs	+= video-bios.o
-
 realmode-y			+= header.o
 realmode-y			+= trampoline_$(BITS).o
 realmode-y			+= stack.o
