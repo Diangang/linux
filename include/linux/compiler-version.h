@@ -25,15 +25,6 @@
 #endif
 
 /*
- * If the randstruct seed itself changes (whether for GCC plugins or
- * Clang), the entire tree needs to be rebuilt since the randomization of
- * structures may change between compilation units if not.
- */
-#ifdef RANDSTRUCT
-#include <generated/randstruct_hash.h>
-#endif
-
-/*
  * If any external changes affect Clang's integer wrapping sanitizer
  * behavior, a full rebuild is needed as the coverage for wrapping types
  * may have changed, which may impact the expected behaviors that should

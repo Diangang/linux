@@ -384,13 +384,6 @@ config HAVE_ARCH_SECCOMP_FILTER
 	    SECCOMP_ARCH_NATIVE_NR, SECCOMP_ARCH_NATIVE_NAME defined. If
 	    COMPAT is supported, have the SECCOMP_ARCH_COMPAT* defines too.
 
-config HAVE_ARCH_KSTACK_ERASE
-	bool
-	help
-	  An architecture should select this if it has the code which
-	  fills the used part of the kernel stack with the KSTACK_ERASE_POISON
-	  value before returning from system calls.
-
 config HAVE_STACKPROTECTOR
 	bool
 	help

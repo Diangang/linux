@@ -91,7 +91,6 @@
 #include <linux/sysctl.h>
 #include <linux/kcov.h>
 #include <linux/thread_info.h>
-#include <linux/kstack_erase.h>
 #include <linux/kasan.h>
 #include <linux/randomize_kstack.h>
 #include <linux/scs.h>
@@ -2082,8 +2081,6 @@ struct task_struct *copy_process(
 	retval = copy_thread(p, args);
 	if (retval)
 		goto bad_fork_cleanup_io;
-
-	stackleak_task_init(p);
 
 	if (pid != &init_struct_pid) {
 		pid = alloc_pid(p->nsproxy->pid_ns_for_children, args->set_tid,

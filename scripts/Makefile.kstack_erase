@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: GPL-2.0
-
-KSTACK_ERASE_CFLAGS   := $(kstack-erase-cflags-y)
-
-export KSTACK_ERASE_CFLAGS DISABLE_KSTACK_ERASE
-
-KBUILD_CFLAGS += $(KSTACK_ERASE_CFLAGS)

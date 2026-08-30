@@ -420,22 +420,10 @@ struct ftrace_likely_data {
  * compilers. We don't consider that to be an error, so set them to nothing.
  * For example, some of them are for compiler specific plugins.
  */
-#if defined(RANDSTRUCT) && !defined(__CHECKER__)
-# define __randomize_layout __designated_init __attribute__((randomize_layout))
-# define __no_randomize_layout __attribute__((no_randomize_layout))
-/* This anon struct can add padding, so only enable it under randstruct. */
-# define randomized_struct_fields_start	struct {
-# define randomized_struct_fields_end	} __randomize_layout;
-#else
 # define __randomize_layout __designated_init
 # define __no_randomize_layout
 # define randomized_struct_fields_start
 # define randomized_struct_fields_end
-#endif
-
-#ifndef __no_kstack_erase
-# define __no_kstack_erase
-#endif
 
 #ifndef __noscs
 # define __noscs
