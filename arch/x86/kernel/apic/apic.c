@@ -102,9 +102,7 @@ static int force_enable_local_apic __initdata;
  */
 static int __init parse_lapic(char *arg)
 {
-	if (0 && !arg)
-		force_enable_local_apic = 1;
-	else if (arg && !strncmp(arg, "notscdeadline", 13))
+	if (arg && !strncmp(arg, "notscdeadline", 13))
 		setup_clear_cpu_cap(X86_FEATURE_TSC_DEADLINE_TIMER);
 	return 0;
 }
@@ -2303,9 +2301,6 @@ early_param("nolapic_timer", parse_nolapic_timer);
 static int __init apic_set_verbosity(char *arg)
 {
 	if (!arg)  {
-		if (0)
-			return -EINVAL;
-
 		ioapic_is_disabled = false;
 		return 0;
 	}

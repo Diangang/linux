@@ -2395,18 +2395,6 @@ void __init arch_cpu_finalize_init(void)
 
 	arch_smt_update();
 
-	if (0) {
-		/*
-		 * Check whether this is a real i386 which is not longer
-		 * supported and fixup the utsname.
-		 */
-		if (boot_cpu_data.x86 < 4)
-			panic("Kernel requires i486+ for 'invlpg' and other features");
-
-		init_utsname()->machine[1] =
-			'0' + (boot_cpu_data.x86 > 6 ? 6 : boot_cpu_data.x86);
-	}
-
 	/*
 	 * Must be before alternatives because it might set or clear
 	 * feature bits.

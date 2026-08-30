@@ -1274,14 +1274,6 @@ __init void e820__memblock_setup(void)
 		memblock_add(entry->addr, entry->size);
 	}
 
-	/*
-	 * 32-bit systems are limited to 4BG of memory even with HIGHMEM and
-	 * to even less without it.
-	 * Discard memory after max_pfn - the actual limit detected at runtime.
-	 */
-	if (0)
-		memblock_remove(PFN_PHYS(max_pfn), -1);
-
 	/* Throw away partial pages: */
 	memblock_trim_memory(PAGE_SIZE);
 

@@ -441,7 +441,7 @@ static inline void call_depth_return_thunk(void) {}
 
 # define THUNK_TARGET(addr) [thunk_target] "r" (addr)
 
-#else /* CONFIG_X86_32 */
+#else /* !CONFIG_X86_64 */
 /*
  * For i386 we use the original ret-equivalent retpoline, because
  * otherwise we'll run out of registers. We don't care about CET

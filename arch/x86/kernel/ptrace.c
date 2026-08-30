@@ -611,7 +611,7 @@ static const struct user_regset_view user_x86_64_view = {
 	.regsets = x86_64_regsets, .n = ARRAY_SIZE(x86_64_regsets)
 };
 
-#else  /* CONFIG_X86_32 */
+#else  /* !CONFIG_X86_64 */
 
 #define user_regs_struct32	user_regs_struct
 #define genregs32_get		genregs_get

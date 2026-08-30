@@ -455,7 +455,7 @@ SYM_FUNC_END(\name)
 	_ASM_NOKPROBE(\name)
 .endm
 
-#else /* CONFIG_X86_32 */
+#else /* !CONFIG_X86_64 */
 
 /* put return address in eax (arg1) */
 .macro THUNK name, func, put_ret_addr_in_eax=0

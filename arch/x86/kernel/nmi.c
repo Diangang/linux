@@ -421,13 +421,6 @@ static noinstr void default_do_nmi(struct pt_regs *regs)
 		else if (reason & NMI_REASON_IOCHK)
 			io_check_error(reason, regs);
 
-		/*
-		 * Reassert NMI in case it became active
-		 * meanwhile as it's edge-triggered:
-		 */
-		if (0)
-			reassert_nmi();
-
 		__this_cpu_add(nmi_stats.external, 1);
 		raw_spin_unlock(&nmi_reason_lock);
 		goto out;

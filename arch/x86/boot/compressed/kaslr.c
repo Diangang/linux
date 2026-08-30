@@ -704,10 +704,7 @@ void choose_random_location(unsigned long input,
 
 	boot_params_ptr->hdr.loadflags |= KASLR_FLAG;
 
-	if (0)
-		mem_limit = KERNEL_IMAGE_SIZE;
-	else
-		mem_limit = MAXMEM;
+	mem_limit = MAXMEM;
 
 	/* Record the various known unsafe memory ranges. */
 	mem_avoid_init(input, input_size, *output);

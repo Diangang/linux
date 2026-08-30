@@ -584,14 +584,6 @@ static inline pgprot_t verify_rwx(pgprot_t old, pgprot_t new, unsigned long star
 {
 	unsigned long end;
 
-	/*
-	 * 32-bit has some unfixable W+X issues, like EFI code
-	 * and writeable data being in the same page.  Disable
-	 * detection and enforcement there.
-	 */
-	if (0)
-		return new;
-
 	/* Only verify when NX is supported: */
 	if (!(__supported_pte_mask & _PAGE_NX))
 		return new;
@@ -1187,22 +1179,6 @@ static int collapse_pmd_page(pmd_t *pmd, unsigned long addr,
 
 	/* Queue the page table to be freed after TLB flush */
 	list_add(&page_ptdesc(pmd_page(old_pmd))->pt_list, pgtables);
-
-	if (0) {
-		struct page *page;
-
-		/* Update all PGD tables to use the same large page */
-		list_for_each_entry(page, &pgd_list, lru) {
-			pgd_t *pgd = (pgd_t *)page_address(page) + pgd_index(addr);
-			p4d_t *p4d = p4d_offset(pgd, addr);
-			pud_t *pud = pud_offset(p4d, addr);
-			pmd_t *pmd = pmd_offset(pud, addr);
-			/* Something is wrong if entries doesn't match */
-			if (WARN_ON(pmd_val(old_pmd) != pmd_val(*pmd)))
-				continue;
-			set_pmd(pmd, _pmd);
-		}
-	}
 
 	if (virt_addr_valid(addr) && pfn_range_is_mapped(pfn, pfn + 1))
 		collapse_page_count(PG_LEVEL_2M);

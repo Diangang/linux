@@ -389,9 +389,6 @@ static void early_detect_mem_encrypt(struct cpuinfo_x86 *c)
 	 *	      don't advertise the SME feature.
 	 *   For SEV: If BIOS has not enabled SEV then don't advertise SEV and
 	 *	      any additional functionality based on it.
-	 *
-	 *   In all cases, since support for SME and SEV requires long mode,
-	 *   don't advertise the feature under CONFIG_X86_32.
 	 */
 	if (cpu_has(c, X86_FEATURE_SME) || cpu_has(c, X86_FEATURE_SEV)) {
 		/* Check if memory encryption is enabled */
@@ -399,15 +396,8 @@ static void early_detect_mem_encrypt(struct cpuinfo_x86 *c)
 		if (!(msr & MSR_AMD64_SYSCFG_MEM_ENCRYPT))
 			goto clear_all;
 
-		/*
-		 * Always adjust physical address bits. Even though this
-		 * will be a value above 32-bits this is still done for
-		 * CONFIG_X86_32 so that accurate values are reported.
-		 */
+		/* Always adjust physical address bits. */
 		c->x86_phys_bits -= (cpuid_ebx(0x8000001f) >> 6) & 0x3f;
-
-		if (0)
-			goto clear_all;
 
 		if (!sme_me_mask)
 			setup_clear_cpu_cap(X86_FEATURE_SME);

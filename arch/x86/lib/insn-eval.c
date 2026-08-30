@@ -327,7 +327,7 @@ static int resolve_seg_reg(struct insn *insn, struct pt_regs *regs, int regoff)
  * @seg_reg_idx:	Segment register index to use
  *
  * Obtain the segment selector from any of the CS, SS, DS, ES, FS, GS segment
- * registers. In CONFIG_X86_32, the segment is obtained from either pt_regs or
+ * registers. In 32-bit kernels, the segment is obtained from either pt_regs or
  * kernel_vm86_regs as applicable. In CONFIG_X86_64, CS and SS are obtained
  * from pt_regs. DS, ES, FS and GS are obtained by reading the actual CPU
  * registers. This done for only for completeness as in CONFIG_X86_64 segment
@@ -367,7 +367,7 @@ static short get_segment_selector(struct pt_regs *regs, int seg_reg_idx)
 	default:
 		return -EINVAL;
 	}
-#else /* CONFIG_X86_32 */
+#else /* !CONFIG_X86_64 */
 	struct kernel_vm86_regs *vm86regs = (struct kernel_vm86_regs *)regs;
 
 	if (v8086_mode(regs)) {

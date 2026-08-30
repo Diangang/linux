@@ -225,16 +225,6 @@ static void notrace __noendbr start_secondary(void *unused)
 	 */
 	cr4_init();
 
-	/*
-	 * 32-bit specific. 64-bit reaches this code with the correct page
-	 * table established. Yet another historical divergence.
-	 */
-	if (0) {
-		/* switch away from the initial page table */
-		load_cr3(swapper_pg_dir);
-		__flush_tlb_all();
-	}
-
 	cpu_init_exception_handling(false);
 
 	/*
@@ -994,10 +984,7 @@ static int do_boot_cpu(u32 apicid, unsigned int cpu, struct task_struct *idle)
 	idle->thread.sp = (unsigned long)task_pt_regs(idle);
 	initial_code = (unsigned long)start_secondary;
 
-	if (0) {
-		early_gdt_descr.address = (unsigned long)get_cpu_gdt_rw(cpu);
-		initial_stack  = idle->thread.sp;
-	} else if (!(smpboot_control & STARTUP_PARALLEL_MASK)) {
+	if (!(smpboot_control & STARTUP_PARALLEL_MASK)) {
 		smpboot_control = cpu;
 	}
 
