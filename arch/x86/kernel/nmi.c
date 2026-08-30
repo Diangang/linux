@@ -67,7 +67,6 @@ struct nmi_stats {
 	unsigned long recv_jiffies;
 	unsigned long idt_seq;
 	unsigned long idt_nmi_seq;
-	unsigned long idt_ignored;
 	atomic_long_t idt_calls;
 	unsigned long idt_seq_snap;
 	unsigned long idt_nmi_seq_snap;
@@ -565,9 +564,7 @@ nmi_restart:
 
 	inc_irq_stat(__nmi_count);
 
-	if (0 && ignore_nmis) {
-		WRITE_ONCE(nsp->idt_ignored, nsp->idt_ignored + 1);
-	} else if (!ignore_nmis) {
+	if (!ignore_nmis) {
 		if (0) {
 			WRITE_ONCE(nsp->idt_nmi_seq, nsp->idt_nmi_seq + 1);
 			WARN_ON_ONCE(!(nsp->idt_nmi_seq & 0x1));

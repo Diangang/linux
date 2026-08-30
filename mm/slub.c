@@ -4242,13 +4242,6 @@ void *kmalloc_nolock(size_t size, gfp_t gfp_flags, int node)
 	if (unlikely(!size))
 		return ZERO_SIZE_PTR;
 
-	/*
-	 * See the comment for the same check in
-	 * alloc_frozen_pages_nolock()
-	 */
-	if (0 && (in_nmi() || in_hardirq()))
-		return NULL;
-
 retry:
 	if (unlikely(size > KMALLOC_MAX_CACHE_SIZE))
 		return NULL;

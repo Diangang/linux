@@ -393,8 +393,6 @@ static void rcu_preempt_depth_set(int val)
 void __rcu_read_lock(void)
 {
 	rcu_preempt_read_enter();
-	if (0 && rcu_state.gp_kthread)
-		WRITE_ONCE(current->rcu_read_unlock_special.b.need_qs, true);
 	barrier();  /* critical section after entry code. */
 }
 EXPORT_SYMBOL_GPL(__rcu_read_lock);
@@ -455,7 +453,6 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 	bool empty_norm;
 	bool empty_exp_now;
 	struct list_head *np;
-	bool drop_boost_mutex = false;
 	struct rcu_data *rdp;
 	struct rcu_node *rnp;
 	union rcu_special special;
@@ -519,8 +516,6 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 		if (&t->rcu_node_entry == rnp->exp_tasks)
 			WRITE_ONCE(rnp->exp_tasks, np);
 		if (0) {
-			/* Snapshot ->boost_mtx ownership w/rnp->lock held. */
-			drop_boost_mutex = rt_mutex_owner(&rnp->boost_mtx.rtmutex) == t;
 			if (&t->rcu_node_entry == rnp->boost_tasks)
 				WRITE_ONCE(rnp->boost_tasks, np);
 		}
@@ -545,9 +540,6 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 		if (!empty_exp && empty_exp_now)
 			rcu_report_exp_rnp(rnp, true);
 
-		/* Unboost if we were boosted. */
-		if (0 && drop_boost_mutex)
-			rt_mutex_futex_unlock(&rnp->boost_mtx.rtmutex);
 	} else {
 		local_irq_restore(flags);
 	}
@@ -626,14 +618,12 @@ static void rcu_preempt_deferred_qs_handler(struct irq_work *iwp)
  * @t: The task being checked
  * @rdp: The per-CPU RCU data
  * @rnp: The RCU node for this CPU
- * @irqs_were_disabled: Whether interrupts were disabled before rcu_read_unlock()
  *
  * Returns true if expedited processing of the rcu_read_unlock() is needed.
  */
 static bool rcu_unlock_needs_exp_handling(struct task_struct *t,
 				      struct rcu_data *rdp,
-				      struct rcu_node *rnp,
-				      bool irqs_were_disabled)
+				      struct rcu_node *rnp)
 {
 	/*
 	 * Check if this task is blocking an expedited grace period. If the
@@ -653,30 +643,6 @@ static bool rcu_unlock_needs_exp_handling(struct task_struct *t,
 	 * handling to help complete the expedited GP.
 	 */
 	if (rdp->grpmask & READ_ONCE(rnp->expmask))
-		return true;
-
-	/*
-	 * In CONFIG_RCU_STRICT_GRACE_PERIOD=y kernels, all grace periods
-	 * are treated as short for testing purposes even if that means
-	 * disturbing the system more. Check if either:
-	 * - This CPU has not yet reported a quiescent state, or
-	 * - This task was preempted within an RCU critical section
-	 * In either case, require expedited handling for strict GP mode.
-	 */
-	if (0 &&
-	    ((rdp->grpmask & READ_ONCE(rnp->qsmask)) || t->rcu_blocked_node))
-		return true;
-
-	/*
-	 * RCU priority boosting case: If a task is subject to RCU priority
-	 * boosting and exits an RCU read-side critical section with interrupts
-	 * disabled, we need expedited handling to ensure timely deboosting.
-	 * Without this, a low-priority task could incorrectly run at high
-	 * real-time priority for an extended period degrading real-time
-	 * responsiveness. This applies to all CONFIG_RCU_BOOST=y kernels,
-	 * not just to PREEMPT_RT.
-	 */
-	if (0 && irqs_were_disabled && t->rcu_blocked_node)
 		return true;
 
 	return false;
@@ -705,7 +671,7 @@ static void rcu_read_unlock_special(struct task_struct *t)
 		struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
 		struct rcu_node *rnp = rdp->mynode;
 
-		needs_exp = rcu_unlock_needs_exp_handling(t, rdp, rnp, irqs_were_disabled);
+		needs_exp = rcu_unlock_needs_exp_handling(t, rdp, rnp);
 
 		// Need to defer quiescent state until everything is enabled.
 		if (use_softirq && (in_hardirq() || (needs_exp && !irqs_were_disabled))) {

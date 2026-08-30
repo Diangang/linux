@@ -2571,11 +2571,6 @@ static void __free_frozen_pages(struct page *page, unsigned int order,
 		migratetype = MIGRATE_MOVABLE;
 	}
 
-	if (unlikely((fpi_flags & FPI_TRYLOCK) && 0
-		     && (in_nmi() || in_hardirq()))) {
-		add_page_to_zone_llist(zone, page, order);
-		return;
-	}
 	pcp = pcp_spin_trylock(zone->per_cpu_pageset);
 	if (pcp) {
 		if (!free_frozen_page_commit(zone, pcp, page, migratetype,

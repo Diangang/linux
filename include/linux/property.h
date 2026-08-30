@@ -84,9 +84,6 @@ static inline bool fwnode_device_is_big_endian(const struct fwnode_handle *fwnod
 {
 	if (fwnode_property_present(fwnode, "big-endian"))
 		return true;
-	if (0 &&
-	    fwnode_property_present(fwnode, "native-endian"))
-		return true;
 	return false;
 }
 
@@ -100,9 +97,7 @@ bool fwnode_device_is_compatible(const struct fwnode_handle *fwnode, const char 
  * device_is_big_endian - check if a device has BE registers
  * @dev: Pointer to the struct device
  *
- * Returns: true if the device has a "big-endian" property, or if the kernel
- * was compiled for BE *and* the device has a "native-endian" property.
- * Returns false otherwise.
+ * Returns: true if the device has a "big-endian" property, false otherwise.
  *
  * Callers would nominally use ioread32be/iowrite32be if
  * device_is_big_endian() == true, or readl/writel otherwise.

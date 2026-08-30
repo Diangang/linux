@@ -1528,15 +1528,6 @@ static void __hrtimer_setup(struct hrtimer *timer, enum hrtimer_restart (*fn)(st
 	struct hrtimer_cpu_base *cpu_base;
 	int base;
 
-	/*
-	 * On PREEMPT_RT enabled kernels hrtimers which are not explicitly
-	 * marked for hard interrupt expiry mode are moved into soft
-	 * interrupt context for latency reasons and because the callbacks
-	 * can invoke functions which might sleep on RT, e.g. spin_lock().
-	 */
-	if (0 && !(mode & HRTIMER_MODE_HARD))
-		softtimer = true;
-
 	memset(timer, 0, sizeof(struct hrtimer));
 
 	cpu_base = raw_cpu_ptr(&hrtimer_bases);
@@ -1953,21 +1944,10 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
  * @sl:		sleeper to be started
  * @mode:	timer mode abs/rel
  *
- * Wrapper around hrtimer_start_expires() for hrtimer_sleeper based timers
- * to allow PREEMPT_RT to tweak the delivery mode (soft/hardirq context)
+ * Wrapper around hrtimer_start_expires() for hrtimer_sleeper based timers.
  */
 void hrtimer_sleeper_start_expires(struct hrtimer_sleeper *sl, enum hrtimer_mode mode)
 {
-	/*
-	 * Make the enqueue delivery mode check work on RT. If the sleeper
-	 * was initialized for hard interrupt delivery, force the mode bit.
-	 * This is a special case for hrtimer_sleepers because
-	 * __hrtimer_setup_sleeper() determines the delivery mode on RT so the
-	 * fiddling with this decision is avoided at the call sites.
-	 */
-	if (0 && sl->timer.is_hard)
-		mode |= HRTIMER_MODE_HARD;
-
 	hrtimer_start_expires(&sl->timer, mode);
 }
 EXPORT_SYMBOL_GPL(hrtimer_sleeper_start_expires);

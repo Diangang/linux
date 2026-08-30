@@ -214,8 +214,7 @@ do { \
  */
 #define rcu_softirq_qs_periodic(old_ts) \
 do { \
-	if (!0 && \
-	    time_after(jiffies, (old_ts) + HZ / 10)) { \
+	if (time_after(jiffies, (old_ts) + HZ / 10)) { \
 		preempt_disable(); \
 		rcu_softirq_qs(); \
 		preempt_enable(); \

@@ -54,23 +54,6 @@ static __always_inline bool do_syscall_x64(struct pt_regs *regs, int nr)
 	return false;
 }
 
-static __always_inline bool do_syscall_x32(struct pt_regs *regs, int nr)
-{
-	/*
-	 * Adjust the starting offset of the table, and convert numbers
-	 * < __X32_SYSCALL_BIT to very high and thus out of range
-	 * numbers for comparisons.
-	 */
-	unsigned int xnr = nr - __X32_SYSCALL_BIT;
-
-	if (0 && likely(xnr < X32_NR_syscalls)) {
-		xnr = array_index_nospec(xnr, X32_NR_syscalls);
-		regs->ax = x32_sys_call(regs, xnr);
-		return true;
-	}
-	return false;
-}
-
 /* Returns true to return using SYSRET, or false to use IRET */
 __visible noinstr bool do_syscall_64(struct pt_regs *regs, int nr)
 {
@@ -79,7 +62,7 @@ __visible noinstr bool do_syscall_64(struct pt_regs *regs, int nr)
 	instrumentation_begin();
 	add_random_kstack_offset();
 
-	if (!do_syscall_x64(regs, nr) && !do_syscall_x32(regs, nr) && nr != -1) {
+	if (!do_syscall_x64(regs, nr) && nr != -1) {
 		/* Invalid system call, but still a system call. */
 		regs->ax = __x64_sys_ni_syscall(regs);
 	}

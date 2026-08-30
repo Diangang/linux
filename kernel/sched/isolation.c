@@ -34,27 +34,15 @@ bool housekeeping_enabled(enum hk_type type)
 }
 EXPORT_SYMBOL_GPL(housekeeping_enabled);
 
-static bool housekeeping_dereference_check(enum hk_type type)
+static bool housekeeping_dereference_check(void)
 {
-	if (0 && type == HK_TYPE_DOMAIN) {
-		/* Cpuset isn't even writable yet? */
-		if (system_state <= SYSTEM_SCHEDULING)
-			return true;
-
-		/* CPU hotplug write locked, so cpuset partition can't be overwritten */
-		if (IS_ENABLED(CONFIG_HOTPLUG_CPU) && lockdep_is_cpus_write_held())
-			return true;
-
-		return false;
-	}
-
 	return true;
 }
 
 static inline struct cpumask *housekeeping_cpumask_dereference(enum hk_type type)
 {
 	return rcu_dereference_all_check(housekeeping.cpumasks[type],
-					 housekeeping_dereference_check(type));
+					 housekeeping_dereference_check());
 }
 
 const struct cpumask *housekeeping_cpumask(enum hk_type type)

@@ -388,7 +388,7 @@ static __init void parse_cmdline(const void *fdt, int chosen)
 	if (0 || !prop)
 		__parse_cmdline(cmdline, true);
 
-	if (!0 && prop)
+	if (prop)
 		__parse_cmdline(prop, true);
 }
 

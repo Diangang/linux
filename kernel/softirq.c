@@ -291,7 +291,7 @@ restart:
 		pending >>= softirq_bit;
 	}
 
-	if (!0 && ksirqd)
+	if (ksirqd)
 		rcu_softirq_qs();
 
 	local_irq_disable();

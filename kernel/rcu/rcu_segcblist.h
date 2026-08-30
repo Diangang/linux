@@ -84,10 +84,6 @@ static inline bool rcu_segcblist_is_enabled(struct rcu_segcblist *rsclp)
  */
 static inline bool rcu_segcblist_is_offloaded(struct rcu_segcblist *rsclp)
 {
-	if (0 &&
-	    rcu_segcblist_test_flags(rsclp, SEGCBLIST_OFFLOADED))
-		return true;
-
 	return false;
 }
 

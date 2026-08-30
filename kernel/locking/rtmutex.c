@@ -497,12 +497,7 @@ static __always_inline void rt_mutex_wake_q_add_task(struct rt_wake_q_head *wqh,
 						     struct task_struct *task,
 						     unsigned int wake_state)
 {
-	if (0 && wake_state == TASK_RTLOCK_WAIT) {
-		get_task_struct(task);
-		wqh->rtlock_task = task;
-	} else {
-		wake_q_add(&wqh->head, task);
-	}
+	wake_q_add(&wqh->head, task);
 }
 
 static __always_inline void rt_mutex_wake_q_add(struct rt_wake_q_head *wqh,
@@ -513,12 +508,6 @@ static __always_inline void rt_mutex_wake_q_add(struct rt_wake_q_head *wqh,
 
 static __always_inline void rt_mutex_wake_up_q(struct rt_wake_q_head *wqh)
 {
-	if (0 && wqh->rtlock_task) {
-		wake_up_state(wqh->rtlock_task, TASK_RTLOCK_WAIT);
-		put_task_struct(wqh->rtlock_task);
-		wqh->rtlock_task = NULL;
-	}
-
 	if (!wake_q_empty(&wqh->head))
 		wake_up_q(&wqh->head);
 
@@ -717,31 +706,6 @@ static int __sched rt_mutex_adjust_prio_chain(struct task_struct *task,
 		goto out_unlock_pi;
 
 	/*
-	 * There could be 'spurious' loops in the lock graph due to ww_mutex,
-	 * consider:
-	 *
-	 *   P1: A, ww_A, ww_B
-	 *   P2: ww_B, ww_A
-	 *   P3: A
-	 *
-	 * P3 should not return -EDEADLK because it gets trapped in the cycle
-	 * created by P1 and P2 (which will resolve -- and runs into
-	 * max_lock_depth above). Therefore disable detect_deadlock such that
-	 * the below termination condition can trigger once all relevant tasks
-	 * are boosted.
-	 *
-	 * Even when we start with ww_mutex we can disable deadlock detection,
-	 * since we would supress a ww_mutex induced deadlock at [6] anyway.
-	 * Supressing it here however is not sufficient since we might still
-	 * hit [6] due to adjustment driven iteration.
-	 *
-	 * NOTE: if someone were to create a deadlock between 2 ww_classes we'd
-	 * utterly fail to report it; lockdep should.
-	 */
-	if (0 && waiter->ww_ctx && detect_deadlock)
-		detect_deadlock = false;
-
-	/*
 	 * Drop out, when the task has no waiters. Note,
 	 * top_waiter can be NULL, when we are in the deboosting
 	 * mode!
@@ -808,18 +772,6 @@ static int __sched rt_mutex_adjust_prio_chain(struct task_struct *task,
 	 */
 	if (lock == orig_lock || rt_mutex_owner(lock) == top_task) {
 		ret = -EDEADLK;
-
-		/*
-		 * When the deadlock is due to ww_mutex; also see above. Don't
-		 * report the deadlock and instead let the ww_mutex wound/die
-		 * logic pick which of the contending threads gets -EDEADLK.
-		 *
-		 * NOTE: assumes the cycle only contains a single ww_class; any
-		 * other configuration and we fail to report; also, see
-		 * lockdep.
-		 */
-		if (0 && orig_waiter && orig_waiter->ww_ctx)
-			ret = 0;
 
 		raw_spin_unlock(&lock->wait_lock);
 		goto out_unlock_pi;

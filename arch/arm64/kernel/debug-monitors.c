@@ -212,14 +212,8 @@ static int call_el1_break_hook(struct pt_regs *regs, unsigned long esr)
 	if (esr_brk_comment(esr) == BUG_BRK_IMM)
 		return bug_brk_handler(regs, esr);
 
-	if (0 && esr_is_cfi_brk(esr))
-		return cfi_brk_handler(regs, esr);
-
 	if (esr_brk_comment(esr) == FAULT_BRK_IMM)
 		return reserved_fault_brk_handler(regs, esr);
-
-	if (0 && esr_is_ubsan_brk(esr))
-		return ubsan_brk_handler(regs, esr);
 
 	return DBG_HOOK_ERROR;
 }
@@ -231,11 +225,6 @@ NOKPROBE_SYMBOL(call_el1_break_hook);
  */
 void do_el0_brk64(unsigned long esr, struct pt_regs *regs)
 {
-	if (0 &&
-		esr_brk_comment(esr) == UPROBES_BRK_IMM &&
-		uprobe_brk_handler(regs, esr) == DBG_HOOK_HANDLED)
-		return;
-
 	send_user_sigtrap(TRAP_BRKPT);
 }
 

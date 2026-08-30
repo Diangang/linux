@@ -33,16 +33,6 @@ static void wake_irq_workd(void)
 		wake_up_process(tsk);
 }
 
-#ifdef CONFIG_SMP
-static void irq_work_wake(struct irq_work *entry)
-{
-	wake_irq_workd();
-}
-
-static DEFINE_PER_CPU(struct irq_work, irq_work_wakeup) =
-	IRQ_WORK_INIT_HARD(irq_work_wake);
-#endif
-
 static int irq_workd_should_run(unsigned int cpu)
 {
 	return !llist_empty(this_cpu_ptr(&lazy_list));
@@ -82,18 +72,14 @@ static __always_inline void irq_work_raise(struct irq_work *work)
 static void __irq_work_queue_local(struct irq_work *work)
 {
 	struct llist_head *list;
-	bool rt_lazy_work = false;
 	bool lazy_work = false;
 	int work_flags;
 
 	work_flags = atomic_read(&work->node.a_flags);
 	if (work_flags & IRQ_WORK_LAZY)
 		lazy_work = true;
-	else if (0 &&
-		 !(work_flags & IRQ_WORK_HARD_IRQ))
-		rt_lazy_work = true;
 
-	if (lazy_work || rt_lazy_work)
+	if (lazy_work)
 		list = this_cpu_ptr(&lazy_list);
 	else
 		list = this_cpu_ptr(&raised_list);
@@ -146,27 +132,10 @@ bool irq_work_queue_on(struct irq_work *work, int cpu)
 		/* Arch remote IPI send/receive backend aren't NMI safe */
 		WARN_ON_ONCE(in_nmi());
 
-		/*
-		 * On PREEMPT_RT the items which are not marked as
-		 * IRQ_WORK_HARD_IRQ are added to the lazy list and a HARD work
-		 * item is used on the remote CPU to wake the thread.
-		 */
-		if (0 &&
-		    !(atomic_read(&work->node.a_flags) & IRQ_WORK_HARD_IRQ)) {
-
-			if (!llist_add(&work->node.llist, &per_cpu(lazy_list, cpu)))
-				goto out;
-
-			work = &per_cpu(irq_work_wakeup, cpu);
-			if (!irq_work_claim(work))
-				goto out;
-		}
-
 		__smp_call_single_queue(cpu, &work->node.llist);
 	} else {
 		__irq_work_queue_local(work);
 	}
-out:
 	preempt_enable();
 
 	return true;
@@ -219,8 +188,7 @@ void irq_work_single(void *arg)
 	 */
 	(void)atomic_cmpxchg(&work->node.a_flags, flags, flags & ~IRQ_WORK_BUSY);
 
-	if ((0 && !irq_work_is_hard(work)) ||
-	    !arch_irq_work_has_interrupt())
+	if (!arch_irq_work_has_interrupt())
 		rcuwait_wake_up(&work->irqwait);
 }
 
@@ -280,8 +248,7 @@ void irq_work_sync(struct irq_work *work)
 	lockdep_assert_irqs_enabled();
 	might_sleep();
 
-	if ((0 && !irq_work_is_hard(work)) ||
-	    !arch_irq_work_has_interrupt()) {
+	if (!arch_irq_work_has_interrupt()) {
 		rcuwait_wait_event(&work->irqwait, !irq_work_is_busy(work),
 				   TASK_UNINTERRUPTIBLE);
 		return;

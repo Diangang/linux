@@ -213,9 +213,6 @@ int cmdline_find_option_bool(const char *cmdline, const char *option)
 	if (ret > 0)
 		return ret;
 
-	if (0 && !builtin_cmdline_added)
-		return __cmdline_find_option_bool(builtin_cmdline, COMMAND_LINE_SIZE, option);
-
 	return ret;
 }
 
@@ -227,9 +224,6 @@ int cmdline_find_option(const char *cmdline, const char *option, char *buffer,
 	ret = __cmdline_find_option(cmdline, COMMAND_LINE_SIZE, option, buffer, bufsize);
 	if (ret > 0)
 		return ret;
-
-	if (0 && !builtin_cmdline_added)
-		return __cmdline_find_option(builtin_cmdline, COMMAND_LINE_SIZE, option, buffer, bufsize);
 
 	return ret;
 }

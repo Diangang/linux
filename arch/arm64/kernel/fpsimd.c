@@ -1856,7 +1856,7 @@ void kernel_neon_end(struct user_fpsimd_state *state)
 	 * the task context kernel mode FPSIMD state. This can only happen when
 	 * running in softirq context on non-PREEMPT_RT.
 	 */
-	if (!0 && in_serving_softirq()) {
+	if (in_serving_softirq()) {
 		fpsimd_load_state(state);
 	} else {
 		clear_thread_flag(TIF_KERNEL_FPSTATE);

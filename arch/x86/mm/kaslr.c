@@ -120,7 +120,7 @@ void __init kernel_randomize_memory(void)
 	 * steal some physical address bits. Those design choices are in direct
 	 * conflict.
 	 */
-	if (!0 && (memory_tb < kaslr_regions[0].size_tb))
+	if (memory_tb < kaslr_regions[0].size_tb)
 		kaslr_regions[0].size_tb = memory_tb;
 
 	/*

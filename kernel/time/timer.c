@@ -1337,13 +1337,6 @@ static int __timer_delete_sync(struct timer_list *timer, bool shutdown)
 	 */
 	WARN_ON(in_hardirq() && !(timer->flags & TIMER_IRQSAFE));
 
-	/*
-	 * Must be able to sleep on PREEMPT_RT because of the slowpath in
-	 * del_timer_wait_running().
-	 */
-	if (0 && !(timer->flags & TIMER_IRQSAFE))
-		lockdep_assert_preemption_enabled();
-
 	do {
 		ret = __try_to_del_timer_sync(timer, shutdown);
 

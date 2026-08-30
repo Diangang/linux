@@ -225,8 +225,7 @@ struct kmem_cache {
  */
 static inline bool cache_has_sheaves(struct kmem_cache *s)
 {
-	/* Test CONFIG_SLUB_TINY for code elimination purposes */
-	return !0 && s->sheaf_capacity;
+	return s->sheaf_capacity;
 }
 
 #if defined(CONFIG_SYSFS)

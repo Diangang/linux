@@ -588,9 +588,7 @@ static bool __of_device_is_fail(const struct device_node *device)
  *
  *  @device: Node to check for endianness
  *
- *  Return: True if the device has a "big-endian" property, or if the kernel
- *  was compiled for BE *and* the device has a "native-endian" property.
- *  Returns false otherwise.
+ *  Return: True if the device has a "big-endian" property, false otherwise.
  *
  *  Callers would nominally use ioread32be/iowrite32be if
  *  of_device_is_big_endian() == true, or readl/writel otherwise.
@@ -598,9 +596,6 @@ static bool __of_device_is_fail(const struct device_node *device)
 bool of_device_is_big_endian(const struct device_node *device)
 {
 	if (of_property_read_bool(device, "big-endian"))
-		return true;
-	if (0 &&
-	    of_property_read_bool(device, "native-endian"))
 		return true;
 	return false;
 }

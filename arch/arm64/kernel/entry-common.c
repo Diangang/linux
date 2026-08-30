@@ -430,16 +430,6 @@ asmlinkage void noinstr el1h_64_sync_handler(struct pt_regs *regs)
 	}
 }
 
-static __always_inline void __el1_pnmi(struct pt_regs *regs,
-				       void (*handler)(struct pt_regs *))
-{
-	irqentry_state_t state;
-
-	state = irqentry_nmi_enter(regs);
-	do_interrupt_handler(regs, handler);
-	irqentry_nmi_exit(regs, state);
-}
-
 static __always_inline void __el1_irq(struct pt_regs *regs,
 				      void (*handler)(struct pt_regs *))
 {
@@ -458,10 +448,7 @@ static void noinstr el1_interrupt(struct pt_regs *regs,
 {
 	write_sysreg(DAIF_PROCCTX_NOIRQ, daif);
 
-	if (0 && regs_irqs_disabled(regs))
-		__el1_pnmi(regs, handler);
-	else
-		__el1_irq(regs, handler);
+	__el1_irq(regs, handler);
 }
 
 asmlinkage void noinstr el1h_64_irq_handler(struct pt_regs *regs)

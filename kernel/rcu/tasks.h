@@ -1048,9 +1048,8 @@ static void rcu_tasks_postscan(struct list_head *hop)
 			if (list_empty(&t->rcu_tasks_holdout_list))
 				rcu_tasks_pertask(t, hop);
 
-			// RT kernels need frequent pauses, otherwise
-			// pause at least once per pair of jiffies.
-			if (!0 && time_before(jiffies, j))
+			// Pause at least once per pair of jiffies.
+			if (time_before(jiffies, j))
 				continue;
 
 			// Keep our place in the list while pausing.
