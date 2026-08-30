@@ -2,7 +2,6 @@
 #ifndef _LINUX_VMALLOC_H
 #define _LINUX_VMALLOC_H
 
-#include <linux/alloc_tag.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>
 #include <linux/init.h>
@@ -141,69 +140,51 @@ extern void vm_unmap_ram(const void *mem, unsigned int count);
 extern void *vm_map_ram(struct page **pages, unsigned int count, int node);
 extern void vm_unmap_aliases(void);
 
-extern void *vmalloc_noprof(unsigned long size) __alloc_size(1);
-#define vmalloc(...)		alloc_hooks(vmalloc_noprof(__VA_ARGS__))
+extern void *vmalloc(unsigned long size) __alloc_size(1);
 
-extern void *vzalloc_noprof(unsigned long size) __alloc_size(1);
-#define vzalloc(...)		alloc_hooks(vzalloc_noprof(__VA_ARGS__))
+extern void *vzalloc(unsigned long size) __alloc_size(1);
 
-extern void *vmalloc_user_noprof(unsigned long size) __alloc_size(1);
-#define vmalloc_user(...)	alloc_hooks(vmalloc_user_noprof(__VA_ARGS__))
+extern void *vmalloc_user(unsigned long size) __alloc_size(1);
 
-extern void *vmalloc_node_noprof(unsigned long size, int node) __alloc_size(1);
-#define vmalloc_node(...)	alloc_hooks(vmalloc_node_noprof(__VA_ARGS__))
+extern void *vmalloc_node(unsigned long size, int node) __alloc_size(1);
 
-extern void *vzalloc_node_noprof(unsigned long size, int node) __alloc_size(1);
-#define vzalloc_node(...)	alloc_hooks(vzalloc_node_noprof(__VA_ARGS__))
+extern void *vzalloc_node(unsigned long size, int node) __alloc_size(1);
 
-extern void *vmalloc_32_noprof(unsigned long size) __alloc_size(1);
-#define vmalloc_32(...)		alloc_hooks(vmalloc_32_noprof(__VA_ARGS__))
+extern void *vmalloc_32(unsigned long size) __alloc_size(1);
 
-extern void *vmalloc_32_user_noprof(unsigned long size) __alloc_size(1);
-#define vmalloc_32_user(...)	alloc_hooks(vmalloc_32_user_noprof(__VA_ARGS__))
+extern void *vmalloc_32_user(unsigned long size) __alloc_size(1);
 
-extern void *__vmalloc_noprof(unsigned long size, gfp_t gfp_mask) __alloc_size(1);
-#define __vmalloc(...)		alloc_hooks(__vmalloc_noprof(__VA_ARGS__))
+extern void *__vmalloc(unsigned long size, gfp_t gfp_mask) __alloc_size(1);
 
-extern void *__vmalloc_node_range_noprof(unsigned long size, unsigned long align,
+extern void *__vmalloc_node_range(unsigned long size, unsigned long align,
 			unsigned long start, unsigned long end, gfp_t gfp_mask,
 			pgprot_t prot, unsigned long vm_flags, int node,
 			const void *caller) __alloc_size(1);
-#define __vmalloc_node_range(...)	alloc_hooks(__vmalloc_node_range_noprof(__VA_ARGS__))
 
-void *__vmalloc_node_noprof(unsigned long size, unsigned long align, gfp_t gfp_mask,
+void *__vmalloc_node(unsigned long size, unsigned long align, gfp_t gfp_mask,
 		int node, const void *caller) __alloc_size(1);
-#define __vmalloc_node(...)	alloc_hooks(__vmalloc_node_noprof(__VA_ARGS__))
 
-void *vmalloc_huge_node_noprof(unsigned long size, gfp_t gfp_mask, int node) __alloc_size(1);
-#define vmalloc_huge_node(...)	alloc_hooks(vmalloc_huge_node_noprof(__VA_ARGS__))
+void *vmalloc_huge_node(unsigned long size, gfp_t gfp_mask, int node) __alloc_size(1);
 
 static inline void *vmalloc_huge(unsigned long size, gfp_t gfp_mask)
 {
 	return vmalloc_huge_node(size, gfp_mask, NUMA_NO_NODE);
 }
 
-extern void *__vmalloc_array_noprof(size_t n, size_t size, gfp_t flags) __alloc_size(1, 2);
-#define __vmalloc_array(...)	alloc_hooks(__vmalloc_array_noprof(__VA_ARGS__))
+extern void *__vmalloc_array(size_t n, size_t size, gfp_t flags) __alloc_size(1, 2);
 
-extern void *vmalloc_array_noprof(size_t n, size_t size) __alloc_size(1, 2);
-#define vmalloc_array(...)	alloc_hooks(vmalloc_array_noprof(__VA_ARGS__))
+extern void *vmalloc_array(size_t n, size_t size) __alloc_size(1, 2);
 
-extern void *__vcalloc_noprof(size_t n, size_t size, gfp_t flags) __alloc_size(1, 2);
-#define __vcalloc(...)		alloc_hooks(__vcalloc_noprof(__VA_ARGS__))
+extern void *__vcalloc(size_t n, size_t size, gfp_t flags) __alloc_size(1, 2);
 
-extern void *vcalloc_noprof(size_t n, size_t size) __alloc_size(1, 2);
-#define vcalloc(...)		alloc_hooks(vcalloc_noprof(__VA_ARGS__))
+extern void *vcalloc(size_t n, size_t size) __alloc_size(1, 2);
 
-void *__must_check vrealloc_node_align_noprof(const void *p, size_t size,
+void *__must_check vrealloc_node_align(const void *p, size_t size,
 		unsigned long align, gfp_t flags, int nid) __realloc_size(2);
-#define vrealloc_node_noprof(_p, _s, _f, _nid)	\
-	vrealloc_node_align_noprof(_p, _s, 1, _f, _nid)
-#define vrealloc_noprof(_p, _s, _f)		\
-	vrealloc_node_align_noprof(_p, _s, 1, _f, NUMA_NO_NODE)
-#define vrealloc_node_align(...)		alloc_hooks(vrealloc_node_align_noprof(__VA_ARGS__))
-#define vrealloc_node(...)			alloc_hooks(vrealloc_node_noprof(__VA_ARGS__))
-#define vrealloc(...)				alloc_hooks(vrealloc_noprof(__VA_ARGS__))
+#define vrealloc_node(_p, _s, _f, _nid)	\
+	vrealloc_node_align(_p, _s, 1, _f, _nid)
+#define vrealloc(_p, _s, _f)		\
+	vrealloc_node_align(_p, _s, 1, _f, NUMA_NO_NODE)
 
 extern void vfree(const void *addr);
 extern void vfree_atomic(const void *addr);

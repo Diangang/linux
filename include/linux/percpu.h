@@ -2,7 +2,6 @@
 #ifndef __LINUX_PERCPU_H
 #define __LINUX_PERCPU_H
 
-#include <linux/alloc_tag.h>
 #include <linux/mmdebug.h>
 #include <linux/preempt.h>
 #include <linux/smp.h>
@@ -120,15 +119,15 @@ extern bool is_kernel_percpu_address(unsigned long addr);
 extern void __init setup_per_cpu_areas(void);
 #endif
 
-extern void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved,
+extern void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved,
 				   gfp_t gfp) __alloc_size(1);
 
 #define __alloc_percpu_gfp(_size, _align, _gfp)				\
-	alloc_hooks(pcpu_alloc_noprof(_size, _align, false, _gfp))
+	pcpu_alloc(_size, _align, false, _gfp)
 #define __alloc_percpu(_size, _align)					\
-	alloc_hooks(pcpu_alloc_noprof(_size, _align, false, GFP_KERNEL))
+	pcpu_alloc(_size, _align, false, GFP_KERNEL)
 #define __alloc_reserved_percpu(_size, _align)				\
-	alloc_hooks(pcpu_alloc_noprof(_size, _align, true, GFP_KERNEL))
+	pcpu_alloc(_size, _align, true, GFP_KERNEL)
 
 #define alloc_percpu_gfp(type, gfp)					\
 	(typeof(type) __percpu *)__alloc_percpu_gfp(sizeof(type),	\
@@ -136,9 +135,6 @@ extern void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved
 #define alloc_percpu(type)						\
 	(typeof(type) __percpu *)__alloc_percpu(sizeof(type),		\
 						__alignof__(type))
-#define alloc_percpu_noprof(type)					\
-	((typeof(type) __percpu *)pcpu_alloc_noprof(sizeof(type),	\
-					__alignof__(type), false, GFP_KERNEL))
 
 extern void free_percpu(void __percpu *__pdata);
 

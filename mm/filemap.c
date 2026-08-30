@@ -968,14 +968,14 @@ int filemap_add_folio(struct address_space *mapping, struct folio *folio,
 EXPORT_SYMBOL_GPL(filemap_add_folio);
 
 #ifdef CONFIG_NUMA
-struct folio *filemap_alloc_folio_noprof(gfp_t gfp, unsigned int order,
+struct folio *filemap_alloc_folio(gfp_t gfp, unsigned int order,
 		struct mempolicy *policy)
 {
 	int n;
 	struct folio *folio;
 
 	if (policy)
-		return folio_alloc_mpol_noprof(gfp, order, policy,
+		return folio_alloc_mpol(gfp, order, policy,
 				NO_INTERLEAVE_INDEX, numa_node_id());
 
 	if (cpuset_do_page_mem_spread()) {
@@ -983,14 +983,14 @@ struct folio *filemap_alloc_folio_noprof(gfp_t gfp, unsigned int order,
 		do {
 			cpuset_mems_cookie = read_mems_allowed_begin();
 			n = cpuset_mem_spread_node();
-			folio = __folio_alloc_node_noprof(gfp, order, n);
+			folio = __folio_alloc_node(gfp, order, n);
 		} while (!folio && read_mems_allowed_retry(cpuset_mems_cookie));
 
 		return folio;
 	}
-	return folio_alloc_noprof(gfp, order);
+	return folio_alloc(gfp, order);
 }
-EXPORT_SYMBOL(filemap_alloc_folio_noprof);
+EXPORT_SYMBOL(filemap_alloc_folio);
 #endif
 
 /*

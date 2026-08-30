@@ -51,7 +51,6 @@
 #include <linux/khugepaged.h>
 #include <linux/delayacct.h>
 #include <linux/cacheinfo.h>
-#include <linux/pgalloc_tag.h>
 #include <asm/div64.h>
 #include "internal.h"
 #include "shuffle.h"
@@ -1087,12 +1086,6 @@ static void kernel_init_pages(struct page *page, int numpages)
 }
 
 
-static inline void pgalloc_tag_add(struct page *page, struct task_struct *task,
-				   unsigned int nr) {}
-static inline void pgalloc_tag_sub(struct page *page, unsigned int nr) {}
-static inline void pgalloc_tag_sub_pages(struct alloc_tag *tag, unsigned int nr) {}
-
-
 __always_inline bool __free_pages_prepare(struct page *page,
 					  unsigned int order, fpi_t fpi_flags)
 {
@@ -1123,14 +1116,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	if (unlikely(PageHWPoison(page)) && !order) {
 		/* Do not let hwpoison pages hit pcplists/buddy */
 		reset_page_owner(page, order);
-		pgalloc_tag_sub(page, 1 << order);
-
-		/*
-		 * The page is isolated and accounted for.
-		 * Mark the codetag as empty to avoid accounting error
-		 * when the page is freed by unpoison_memory().
-		 */
-		clear_page_tag_ref(page);
 		return false;
 	}
 
@@ -1188,7 +1173,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 	page->flags.f &= ~PAGE_FLAGS_CHECK_AT_PREP;
 	page->private = 0;
 	reset_page_owner(page, order);
-	pgalloc_tag_sub(page, 1 << order);
 
 	if (!PageHighMem(page) && !(fpi_flags & FPI_TRYLOCK)) {
 		debug_check_no_locks_freed(page_address(page),
@@ -1615,7 +1599,6 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 		kernel_init_pages(page, 1 << order);
 
 	set_page_owner(page, order, gfp_flags);
-	pgalloc_tag_add(page, current, 1 << order);
 }
 
 static void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
@@ -2813,7 +2796,6 @@ static void __split_page(struct page *page, unsigned int order)
 	VM_WARN_ON_PAGE(PageCompound(page), page);
 
 	split_page_owner(page, order, 0);
-	pgalloc_tag_split(page_folio(page), order, 0);
 }
 
 /*
@@ -4679,7 +4661,7 @@ static inline bool prepare_alloc_pages(gfp_t gfp_mask, unsigned int order,
  * @page_array were set to %NULL on entry, the slots from 0 to the return value
  * - 1 will be filled.
  */
-unsigned long alloc_pages_bulk_noprof(gfp_t gfp, int preferred_nid,
+unsigned long __alloc_pages_bulk(gfp_t gfp, int preferred_nid,
 			nodemask_t *nodemask, int nr_pages,
 			struct page **page_array)
 {
@@ -4802,17 +4784,17 @@ out:
 	return nr_populated;
 
 failed:
-	page = __alloc_pages_noprof(gfp, 0, preferred_nid, nodemask);
+	page = __alloc_pages(gfp, 0, preferred_nid, nodemask);
 	if (page)
 		page_array[nr_populated++] = page;
 	goto out;
 }
-EXPORT_SYMBOL_GPL(alloc_pages_bulk_noprof);
+EXPORT_SYMBOL_GPL(__alloc_pages_bulk);
 
 /*
  * This is the 'heart' of the zoned buddy allocator.
  */
-struct page *__alloc_frozen_pages_noprof(gfp_t gfp, unsigned int order,
+struct page *__alloc_frozen_pages(gfp_t gfp, unsigned int order,
 		int preferred_nid, nodemask_t *nodemask)
 {
 	struct page *page;
@@ -4868,70 +4850,61 @@ out:
 
 	return page;
 }
-EXPORT_SYMBOL(__alloc_frozen_pages_noprof);
+EXPORT_SYMBOL(__alloc_frozen_pages);
 
-struct page *__alloc_pages_noprof(gfp_t gfp, unsigned int order,
+struct page *__alloc_pages(gfp_t gfp, unsigned int order,
 		int preferred_nid, nodemask_t *nodemask)
 {
 	struct page *page;
 
-	page = __alloc_frozen_pages_noprof(gfp, order, preferred_nid, nodemask);
+	page = __alloc_frozen_pages(gfp, order, preferred_nid, nodemask);
 	if (page)
 		set_page_refcounted(page);
 	return page;
 }
-EXPORT_SYMBOL(__alloc_pages_noprof);
+EXPORT_SYMBOL(__alloc_pages);
 
-struct folio *__folio_alloc_noprof(gfp_t gfp, unsigned int order, int preferred_nid,
+struct folio *__folio_alloc(gfp_t gfp, unsigned int order, int preferred_nid,
 		nodemask_t *nodemask)
 {
-	struct page *page = __alloc_pages_noprof(gfp | __GFP_COMP, order,
+	struct page *page = __alloc_pages(gfp | __GFP_COMP, order,
 					preferred_nid, nodemask);
 	return page_rmappable_folio(page);
 }
-EXPORT_SYMBOL(__folio_alloc_noprof);
+EXPORT_SYMBOL(__folio_alloc);
 
 /*
  * Common helper functions. Never use with __GFP_HIGHMEM because the returned
  * address cannot represent highmem pages. Use alloc_pages and then kmap if
  * you need to access high mem.
  */
-unsigned long get_free_pages_noprof(gfp_t gfp_mask, unsigned int order)
+unsigned long get_free_pages(gfp_t gfp_mask, unsigned int order)
 {
 	struct page *page;
 
-	page = alloc_pages_noprof(gfp_mask & ~__GFP_HIGHMEM, order);
+	page = alloc_pages(gfp_mask & ~__GFP_HIGHMEM, order);
 	if (!page)
 		return 0;
 	return (unsigned long) page_address(page);
 }
-EXPORT_SYMBOL(get_free_pages_noprof);
+EXPORT_SYMBOL(get_free_pages);
 
-unsigned long get_zeroed_page_noprof(gfp_t gfp_mask)
+unsigned long get_zeroed_page(gfp_t gfp_mask)
 {
-	return get_free_pages_noprof(gfp_mask | __GFP_ZERO, 0);
+	return get_free_pages(gfp_mask | __GFP_ZERO, 0);
 }
-EXPORT_SYMBOL(get_zeroed_page_noprof);
+EXPORT_SYMBOL(get_zeroed_page);
 
 static void ___free_pages(struct page *page, unsigned int order,
 			  fpi_t fpi_flags)
 {
 	/* get PageHead before we drop reference */
 	int head = PageHead(page);
-	/* get alloc tag in case the page is released by others */
-	struct alloc_tag *tag = pgalloc_tag_get(page);
 
 	if (put_page_testzero(page))
 		__free_frozen_pages(page, order, fpi_flags);
 	else if (!head) {
-		pgalloc_tag_sub_pages(tag, (1 << order) - 1);
 		while (order-- > 0) {
-			/*
-			 * The "tail" pages of this non-compound high-order
-			 * page will have no code tags, so to avoid warnings
-			 * mark them as empty.
-			 */
-			clear_page_tag_ref(page + (1 << order));
 			__free_frozen_pages(page + (1 << order), order,
 					    fpi_flags);
 		}
@@ -5026,7 +4999,7 @@ static void *make_alloc_exact(unsigned long addr, unsigned int order,
  *
  * Return: pointer to the allocated area or %NULL in case of error.
  */
-void *alloc_pages_exact_noprof(size_t size, gfp_t gfp_mask)
+void *alloc_pages_exact(size_t size, gfp_t gfp_mask)
 {
 	unsigned int order = get_order(size);
 	unsigned long addr;
@@ -5034,10 +5007,10 @@ void *alloc_pages_exact_noprof(size_t size, gfp_t gfp_mask)
 	if (WARN_ON_ONCE(gfp_mask & (__GFP_COMP | __GFP_HIGHMEM)))
 		gfp_mask &= ~(__GFP_COMP | __GFP_HIGHMEM);
 
-	addr = get_free_pages_noprof(gfp_mask, order);
+	addr = get_free_pages(gfp_mask, order);
 	return make_alloc_exact(addr, order, size);
 }
-EXPORT_SYMBOL(alloc_pages_exact_noprof);
+EXPORT_SYMBOL(alloc_pages_exact);
 
 /**
  * alloc_pages_exact_nid - allocate an exact number of physically-contiguous
@@ -5051,7 +5024,7 @@ EXPORT_SYMBOL(alloc_pages_exact_noprof);
  *
  * Return: pointer to the allocated area or %NULL in case of error.
  */
-void * __meminit alloc_pages_exact_nid_noprof(int nid, size_t size, gfp_t gfp_mask)
+void * __meminit alloc_pages_exact_nid(int nid, size_t size, gfp_t gfp_mask)
 {
 	unsigned int order = get_order(size);
 	struct page *p;
@@ -5059,7 +5032,7 @@ void * __meminit alloc_pages_exact_nid_noprof(int nid, size_t size, gfp_t gfp_ma
 	if (WARN_ON_ONCE(gfp_mask & (__GFP_COMP | __GFP_HIGHMEM)))
 		gfp_mask &= ~(__GFP_COMP | __GFP_HIGHMEM);
 
-	p = alloc_pages_node_noprof(nid, gfp_mask, order);
+	p = alloc_pages_node(nid, gfp_mask, order);
 	if (!p)
 		return NULL;
 	return make_alloc_exact((unsigned long)page_address(p), order, size);
@@ -5799,7 +5772,6 @@ EXPORT_SYMBOL(adjust_managed_page_count);
 
 void free_reserved_page(struct page *page)
 {
-	clear_page_tag_ref(page);
 	ClearPageReserved(page);
 	init_page_count(page);
 	__free_page(page);
@@ -6511,7 +6483,7 @@ static void __free_contig_frozen_range(unsigned long pfn, unsigned long nr_pages
  *
  * Return: zero on success or negative error code.
  */
-int alloc_contig_frozen_range_noprof(unsigned long start, unsigned long end,
+int alloc_contig_frozen_range(unsigned long start, unsigned long end,
 		acr_flags_t alloc_flags, gfp_t gfp_mask)
 {
 	const unsigned int order = ilog2(end - start);
@@ -6649,7 +6621,7 @@ done:
 	undo_isolate_page_range(start, end);
 	return ret;
 }
-EXPORT_SYMBOL(alloc_contig_frozen_range_noprof);
+EXPORT_SYMBOL(alloc_contig_frozen_range);
 
 /**
  * alloc_contig_range() -- tries to allocate given range of pages
@@ -6668,7 +6640,7 @@ EXPORT_SYMBOL(alloc_contig_frozen_range_noprof);
  *
  * Return: zero on success or negative error code.
  */
-int alloc_contig_range_noprof(unsigned long start, unsigned long end,
+int alloc_contig_range(unsigned long start, unsigned long end,
 			      acr_flags_t alloc_flags, gfp_t gfp_mask)
 {
 	int ret;
@@ -6676,13 +6648,13 @@ int alloc_contig_range_noprof(unsigned long start, unsigned long end,
 	if (WARN_ON(gfp_mask & __GFP_COMP))
 		return -EINVAL;
 
-	ret = alloc_contig_frozen_range_noprof(start, end, alloc_flags, gfp_mask);
+	ret = alloc_contig_frozen_range(start, end, alloc_flags, gfp_mask);
 	if (!ret)
 		set_pages_refcounted(pfn_to_page(start), end - start);
 
 	return ret;
 }
-EXPORT_SYMBOL(alloc_contig_range_noprof);
+EXPORT_SYMBOL(alloc_contig_range);
 
 static bool pfn_range_valid_contig(struct zone *z, unsigned long start_pfn,
 				   unsigned long nr_pages, bool skip_hugetlb,
@@ -6767,7 +6739,7 @@ static bool zone_spans_last_pfn(const struct zone *zone,
  *
  * Return: pointer to contiguous frozen pages on success, or NULL if not successful.
  */
-struct page *alloc_contig_frozen_pages_noprof(unsigned long nr_pages,
+struct page *alloc_contig_frozen_pages(unsigned long nr_pages,
 		gfp_t gfp_mask, int nid, nodemask_t *nodemask)
 {
 	unsigned long ret, pfn, flags;
@@ -6796,7 +6768,7 @@ retry:
 				 * win the race and cause allocation to fail.
 				 */
 				spin_unlock_irqrestore(&zone->lock, flags);
-				ret = alloc_contig_frozen_range_noprof(pfn,
+				ret = alloc_contig_frozen_range(pfn,
 							pfn + nr_pages,
 							ACR_FLAGS_NONE,
 							gfp_mask);
@@ -6821,7 +6793,7 @@ retry:
 	}
 	return NULL;
 }
-EXPORT_SYMBOL(alloc_contig_frozen_pages_noprof);
+EXPORT_SYMBOL(alloc_contig_frozen_pages);
 
 /**
  * alloc_contig_pages() -- tries to find and allocate contiguous range of pages
@@ -6839,7 +6811,7 @@ EXPORT_SYMBOL(alloc_contig_frozen_pages_noprof);
  *
  * Return: pointer to contiguous pages on success, or NULL if not successful.
  */
-struct page *alloc_contig_pages_noprof(unsigned long nr_pages, gfp_t gfp_mask,
+struct page *alloc_contig_pages(unsigned long nr_pages, gfp_t gfp_mask,
 		int nid, nodemask_t *nodemask)
 {
 	struct page *page;
@@ -6847,14 +6819,14 @@ struct page *alloc_contig_pages_noprof(unsigned long nr_pages, gfp_t gfp_mask,
 	if (WARN_ON(gfp_mask & __GFP_COMP))
 		return NULL;
 
-	page = alloc_contig_frozen_pages_noprof(nr_pages, gfp_mask, nid,
+	page = alloc_contig_frozen_pages(nr_pages, gfp_mask, nid,
 						nodemask);
 	if (page)
 		set_pages_refcounted(page, nr_pages);
 
 	return page;
 }
-EXPORT_SYMBOL(alloc_contig_pages_noprof);
+EXPORT_SYMBOL(alloc_contig_pages);
 
 /**
  * free_contig_frozen_range() -- free the contiguous range of frozen pages
@@ -7092,7 +7064,7 @@ static bool __free_unaccepted(struct page *page)
 }
 
 
-struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned int order)
+struct page *alloc_frozen_pages_nolock(gfp_t gfp_flags, int nid, unsigned int order)
 {
 	/*
 	 * Do not specify __GFP_DIRECT_RECLAIM, since direct claim is not allowed.
@@ -7164,7 +7136,7 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
  *
  * Allocates pages of a given order from the given node. This is safe to
  * call from any context (from atomic, NMI, and also reentrant
- * allocator -> tracepoint -> alloc_pages_nolock_noprof).
+ * allocator -> tracepoint -> alloc_pages_nolock).
  * Allocation is best effort and to be expected to fail easily so nobody should
  * rely on the success. Failures are not reported via warn_alloc().
  * See always fail conditions below.
@@ -7172,13 +7144,13 @@ struct page *alloc_frozen_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned
  * Return: allocated page or NULL on failure. NULL does not mean EBUSY or EAGAIN.
  * It means ENOMEM. There is no reason to call it again and expect !NULL.
  */
-struct page *alloc_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned int order)
+struct page *alloc_pages_nolock(gfp_t gfp_flags, int nid, unsigned int order)
 {
 	struct page *page;
 
-	page = alloc_frozen_pages_nolock_noprof(gfp_flags, nid, order);
+	page = alloc_frozen_pages_nolock(gfp_flags, nid, order);
 	if (page)
 		set_page_refcounted(page);
 	return page;
 }
-EXPORT_SYMBOL_GPL(alloc_pages_nolock_noprof);
+EXPORT_SYMBOL_GPL(alloc_pages_nolock);

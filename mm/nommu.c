@@ -109,34 +109,34 @@ void vfree(const void *addr)
 }
 EXPORT_SYMBOL(vfree);
 
-void *__vmalloc_noprof(unsigned long size, gfp_t gfp_mask)
+void *__vmalloc(unsigned long size, gfp_t gfp_mask)
 {
 	/*
 	 *  You can't specify __GFP_HIGHMEM with kmalloc() since kmalloc()
 	 * returns only a logical address.
 	 */
-	return kmalloc_noprof(size, (gfp_mask | __GFP_COMP) & ~__GFP_HIGHMEM);
+	return kmalloc(size, (gfp_mask | __GFP_COMP) & ~__GFP_HIGHMEM);
 }
-EXPORT_SYMBOL(__vmalloc_noprof);
+EXPORT_SYMBOL(__vmalloc);
 
-void *vrealloc_node_align_noprof(const void *p, size_t size, unsigned long align,
+void *vrealloc_node_align(const void *p, size_t size, unsigned long align,
 				 gfp_t flags, int node)
 {
-	return krealloc_noprof(p, size, (flags | __GFP_COMP) & ~__GFP_HIGHMEM);
+	return krealloc(p, size, (flags | __GFP_COMP) & ~__GFP_HIGHMEM);
 }
 
-void *__vmalloc_node_range_noprof(unsigned long size, unsigned long align,
+void *__vmalloc_node_range(unsigned long size, unsigned long align,
 		unsigned long start, unsigned long end, gfp_t gfp_mask,
 		pgprot_t prot, unsigned long vm_flags, int node,
 		const void *caller)
 {
-	return __vmalloc_noprof(size, gfp_mask);
+	return __vmalloc(size, gfp_mask);
 }
 
-void *__vmalloc_node_noprof(unsigned long size, unsigned long align, gfp_t gfp_mask,
+void *__vmalloc_node(unsigned long size, unsigned long align, gfp_t gfp_mask,
 		int node, const void *caller)
 {
-	return __vmalloc_noprof(size, gfp_mask);
+	return __vmalloc(size, gfp_mask);
 }
 
 static void *__vmalloc_user_flags(unsigned long size, gfp_t flags)
@@ -157,11 +157,11 @@ static void *__vmalloc_user_flags(unsigned long size, gfp_t flags)
 	return ret;
 }
 
-void *vmalloc_user_noprof(unsigned long size)
+void *vmalloc_user(unsigned long size)
 {
 	return __vmalloc_user_flags(size, GFP_KERNEL | __GFP_ZERO);
 }
-EXPORT_SYMBOL(vmalloc_user_noprof);
+EXPORT_SYMBOL(vmalloc_user);
 
 struct page *vmalloc_to_page(const void *addr)
 {
@@ -195,11 +195,11 @@ long vread_iter(struct iov_iter *iter, const char *addr, size_t count)
  *	For tight control over page level allocator and protection flags
  *	use __vmalloc() instead.
  */
-void *vmalloc_noprof(unsigned long size)
+void *vmalloc(unsigned long size)
 {
-	return __vmalloc_noprof(size, GFP_KERNEL);
+	return __vmalloc(size, GFP_KERNEL);
 }
-EXPORT_SYMBOL(vmalloc_noprof);
+EXPORT_SYMBOL(vmalloc);
 
 /*
  *	vmalloc_huge_node  -  allocate virtually contiguous memory, on a node
@@ -214,9 +214,9 @@ EXPORT_SYMBOL(vmalloc_noprof);
  *	Due to NOMMU implications the node argument and HUGE page attribute is
  *	ignored.
  */
-void *vmalloc_huge_node_noprof(unsigned long size, gfp_t gfp_mask, int node)
+void *vmalloc_huge_node(unsigned long size, gfp_t gfp_mask, int node)
 {
-	return __vmalloc_noprof(size, gfp_mask);
+	return __vmalloc(size, gfp_mask);
 }
 
 /*
@@ -231,11 +231,11 @@ void *vmalloc_huge_node_noprof(unsigned long size, gfp_t gfp_mask, int node)
  *	For tight control over page level allocator and protection flags
  *	use __vmalloc() instead.
  */
-void *vzalloc_noprof(unsigned long size)
+void *vzalloc(unsigned long size)
 {
-	return __vmalloc_noprof(size, GFP_KERNEL | __GFP_ZERO);
+	return __vmalloc(size, GFP_KERNEL | __GFP_ZERO);
 }
-EXPORT_SYMBOL(vzalloc_noprof);
+EXPORT_SYMBOL(vzalloc);
 
 /**
  * vmalloc_node - allocate memory on a specific node
@@ -248,11 +248,11 @@ EXPORT_SYMBOL(vzalloc_noprof);
  * For tight control over page level allocator and protection flags
  * use __vmalloc() instead.
  */
-void *vmalloc_node_noprof(unsigned long size, int node)
+void *vmalloc_node(unsigned long size, int node)
 {
-	return vmalloc_noprof(size);
+	return vmalloc(size);
 }
-EXPORT_SYMBOL(vmalloc_node_noprof);
+EXPORT_SYMBOL(vmalloc_node);
 
 /**
  * vzalloc_node - allocate memory on a specific node with zero fill
@@ -266,11 +266,11 @@ EXPORT_SYMBOL(vmalloc_node_noprof);
  * For tight control over page level allocator and protection flags
  * use __vmalloc() instead.
  */
-void *vzalloc_node_noprof(unsigned long size, int node)
+void *vzalloc_node(unsigned long size, int node)
 {
-	return vzalloc_noprof(size);
+	return vzalloc(size);
 }
-EXPORT_SYMBOL(vzalloc_node_noprof);
+EXPORT_SYMBOL(vzalloc_node);
 
 /**
  * vmalloc_32  -  allocate virtually contiguous memory (32bit addressable)
@@ -279,11 +279,11 @@ EXPORT_SYMBOL(vzalloc_node_noprof);
  *	Allocate enough 32bit PA addressable pages to cover @size from the
  *	page level allocator and map them into contiguous kernel virtual space.
  */
-void *vmalloc_32_noprof(unsigned long size)
+void *vmalloc_32(unsigned long size)
 {
-	return __vmalloc_noprof(size, GFP_KERNEL);
+	return __vmalloc(size, GFP_KERNEL);
 }
-EXPORT_SYMBOL(vmalloc_32_noprof);
+EXPORT_SYMBOL(vmalloc_32);
 
 /**
  * vmalloc_32_user - allocate zeroed virtually contiguous 32bit memory
@@ -295,15 +295,15 @@ EXPORT_SYMBOL(vmalloc_32_noprof);
  * VM_USERMAP is set on the corresponding VMA so that subsequent calls to
  * remap_vmalloc_range() are permissible.
  */
-void *vmalloc_32_user_noprof(unsigned long size)
+void *vmalloc_32_user(unsigned long size)
 {
 	/*
 	 * We'll have to sort out the ZONE_DMA bits for 64-bit,
 	 * but for now this can simply use vmalloc_user() directly.
 	 */
-	return vmalloc_user_noprof(size);
+	return vmalloc_user(size);
 }
-EXPORT_SYMBOL(vmalloc_32_user_noprof);
+EXPORT_SYMBOL(vmalloc_32_user);
 
 void *vmap(struct page **pages, unsigned int count, unsigned long flags, pgprot_t prot)
 {

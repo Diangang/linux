@@ -176,7 +176,7 @@ EXPORT_SYMBOL(mempool_init_node);
  *
  * Return: %0 on success, negative error code otherwise.
  */
-int mempool_init_noprof(struct mempool *pool, int min_nr,
+int mempool_init(struct mempool *pool, int min_nr,
 		mempool_alloc_t *alloc_fn, mempool_free_t *free_fn,
 		void *pool_data)
 {
@@ -184,7 +184,7 @@ int mempool_init_noprof(struct mempool *pool, int min_nr,
 				 pool_data, GFP_KERNEL, NUMA_NO_NODE);
 
 }
-EXPORT_SYMBOL(mempool_init_noprof);
+EXPORT_SYMBOL(mempool_init);
 
 /**
  * mempool_create_node - create a memory pool
@@ -204,13 +204,13 @@ EXPORT_SYMBOL(mempool_init_noprof);
  *
  * Return: pointer to the created memory pool object or %NULL on error.
  */
-struct mempool *mempool_create_node_noprof(int min_nr,
+struct mempool *mempool_create_node(int min_nr,
 		mempool_alloc_t *alloc_fn, mempool_free_t *free_fn,
 		void *pool_data, gfp_t gfp_mask, int node_id)
 {
 	struct mempool *pool;
 
-	pool = kmalloc_node_noprof(sizeof(*pool), gfp_mask | __GFP_ZERO, node_id);
+	pool = kmalloc_node(sizeof(*pool), gfp_mask | __GFP_ZERO, node_id);
 	if (!pool)
 		return NULL;
 
@@ -222,7 +222,7 @@ struct mempool *mempool_create_node_noprof(int min_nr,
 
 	return pool;
 }
-EXPORT_SYMBOL(mempool_create_node_noprof);
+EXPORT_SYMBOL(mempool_create_node);
 
 /**
  * mempool_resize - resize an existing memory pool
@@ -377,7 +377,7 @@ static inline gfp_t mempool_adjust_gfp(gfp_t *gfp_mask)
  *
  * Return: Always 0.  If it wasn't for %$#^$ alloc tags, it would return void.
  */
-int mempool_alloc_bulk_noprof(struct mempool *pool, void **elems,
+int mempool_alloc_bulk(struct mempool *pool, void **elems,
 		unsigned int count, unsigned int allocated)
 {
 	gfp_t gfp_mask = GFP_KERNEL;
@@ -419,7 +419,7 @@ use_pool:
 	gfp_temp = gfp_mask;
 	goto repeat_alloc;
 }
-EXPORT_SYMBOL_GPL(mempool_alloc_bulk_noprof);
+EXPORT_SYMBOL_GPL(mempool_alloc_bulk);
 
 /**
  * mempool_alloc - allocate an element from a memory pool
@@ -437,7 +437,7 @@ EXPORT_SYMBOL_GPL(mempool_alloc_bulk_noprof);
  * an element.  Allocation failure can only happen when @gfp_mask does not
  * include %__GFP_DIRECT_RECLAIM.
  */
-void *mempool_alloc_noprof(struct mempool *pool, gfp_t gfp_mask)
+void *mempool_alloc(struct mempool *pool, gfp_t gfp_mask)
 {
 	gfp_t gfp_temp = mempool_adjust_gfp(&gfp_mask);
 	void *element;
@@ -475,7 +475,7 @@ repeat_alloc:
 
 	return element;
 }
-EXPORT_SYMBOL(mempool_alloc_noprof);
+EXPORT_SYMBOL(mempool_alloc);
 
 /**
  * mempool_alloc_preallocated - allocate an element from preallocated elements
@@ -607,7 +607,7 @@ void *mempool_alloc_slab(gfp_t gfp_mask, void *pool_data)
 {
 	struct kmem_cache *mem = pool_data;
 	VM_BUG_ON(mem->ctor);
-	return kmem_cache_alloc_noprof(mem, gfp_mask);
+	return kmem_cache_alloc(mem, gfp_mask);
 }
 EXPORT_SYMBOL(mempool_alloc_slab);
 
@@ -625,7 +625,7 @@ EXPORT_SYMBOL(mempool_free_slab);
 void *mempool_kmalloc(gfp_t gfp_mask, void *pool_data)
 {
 	size_t size = (size_t)pool_data;
-	return kmalloc_noprof(size, gfp_mask);
+	return kmalloc(size, gfp_mask);
 }
 EXPORT_SYMBOL(mempool_kmalloc);
 
@@ -642,7 +642,7 @@ EXPORT_SYMBOL(mempool_kfree);
 void *mempool_alloc_pages(gfp_t gfp_mask, void *pool_data)
 {
 	int order = (int)(long)pool_data;
-	return alloc_pages_noprof(gfp_mask, order);
+	return alloc_pages(gfp_mask, order);
 }
 EXPORT_SYMBOL(mempool_alloc_pages);
 

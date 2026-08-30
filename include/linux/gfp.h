@@ -6,7 +6,6 @@
 
 #include <linux/mmzone.h>
 #include <linux/topology.h>
-#include <linux/alloc_tag.h>
 #include <linux/cleanup.h>
 #include <linux/sched.h>
 
@@ -217,41 +216,32 @@ static inline void arch_free_page(struct page *page, int order) { }
 static inline void arch_alloc_page(struct page *page, int order) { }
 #endif
 
-struct page *__alloc_pages_noprof(gfp_t gfp, unsigned int order, int preferred_nid,
+struct page *__alloc_pages(gfp_t gfp, unsigned int order, int preferred_nid,
 		nodemask_t *nodemask);
-#define __alloc_pages(...)			alloc_hooks(__alloc_pages_noprof(__VA_ARGS__))
 
-struct folio *__folio_alloc_noprof(gfp_t gfp, unsigned int order, int preferred_nid,
+struct folio *__folio_alloc(gfp_t gfp, unsigned int order, int preferred_nid,
 		nodemask_t *nodemask);
-#define __folio_alloc(...)			alloc_hooks(__folio_alloc_noprof(__VA_ARGS__))
 
-unsigned long alloc_pages_bulk_noprof(gfp_t gfp, int preferred_nid,
+unsigned long __alloc_pages_bulk(gfp_t gfp, int preferred_nid,
 				nodemask_t *nodemask, int nr_pages,
 				struct page **page_array);
-#define __alloc_pages_bulk(...)			alloc_hooks(alloc_pages_bulk_noprof(__VA_ARGS__))
 
-unsigned long alloc_pages_bulk_mempolicy_noprof(gfp_t gfp,
+unsigned long alloc_pages_bulk_mempolicy(gfp_t gfp,
 				unsigned long nr_pages,
 				struct page **page_array);
-#define  alloc_pages_bulk_mempolicy(...)				\
-	alloc_hooks(alloc_pages_bulk_mempolicy_noprof(__VA_ARGS__))
-
 /* Bulk allocate order-0 pages */
 #define alloc_pages_bulk(_gfp, _nr_pages, _page_array)		\
 	__alloc_pages_bulk(_gfp, numa_mem_id(), NULL, _nr_pages, _page_array)
 
 static inline unsigned long
-alloc_pages_bulk_node_noprof(gfp_t gfp, int nid, unsigned long nr_pages,
+alloc_pages_bulk_node(gfp_t gfp, int nid, unsigned long nr_pages,
 				   struct page **page_array)
 {
 	if (nid == NUMA_NO_NODE)
 		nid = numa_mem_id();
 
-	return alloc_pages_bulk_noprof(gfp, nid, NULL, nr_pages, page_array);
+	return __alloc_pages_bulk(gfp, nid, NULL, nr_pages, page_array);
 }
-
-#define alloc_pages_bulk_node(...)				\
-	alloc_hooks(alloc_pages_bulk_node_noprof(__VA_ARGS__))
 
 static inline void warn_if_node_offline(int this_node, gfp_t gfp_mask)
 {
@@ -272,105 +262,91 @@ static inline void warn_if_node_offline(int this_node, gfp_t gfp_mask)
  * online. For more general interface, see alloc_pages_node().
  */
 static inline struct page *
-__alloc_pages_node_noprof(int nid, gfp_t gfp_mask, unsigned int order)
+__alloc_pages_node(int nid, gfp_t gfp_mask, unsigned int order)
 {
 	VM_BUG_ON(nid < 0 || nid >= MAX_NUMNODES);
 	warn_if_node_offline(nid, gfp_mask);
 
-	return __alloc_pages_noprof(gfp_mask, order, nid, NULL);
+	return __alloc_pages(gfp_mask, order, nid, NULL);
 }
 
-#define  __alloc_pages_node(...)		alloc_hooks(__alloc_pages_node_noprof(__VA_ARGS__))
 
 static inline
-struct folio *__folio_alloc_node_noprof(gfp_t gfp, unsigned int order, int nid)
+struct folio *__folio_alloc_node(gfp_t gfp, unsigned int order, int nid)
 {
 	VM_BUG_ON(nid < 0 || nid >= MAX_NUMNODES);
 	warn_if_node_offline(nid, gfp);
 
-	return __folio_alloc_noprof(gfp, order, nid, NULL);
+	return __folio_alloc(gfp, order, nid, NULL);
 }
 
-#define  __folio_alloc_node(...)		alloc_hooks(__folio_alloc_node_noprof(__VA_ARGS__))
 
 /*
  * Allocate pages, preferring the node given as nid. When nid == NUMA_NO_NODE,
  * prefer the current CPU's closest node. Otherwise node must be valid and
  * online.
  */
-static inline struct page *alloc_pages_node_noprof(int nid, gfp_t gfp_mask,
+static inline struct page *alloc_pages_node(int nid, gfp_t gfp_mask,
 						   unsigned int order)
 {
 	if (nid == NUMA_NO_NODE)
 		nid = numa_mem_id();
 
-	return __alloc_pages_node_noprof(nid, gfp_mask, order);
+	return __alloc_pages_node(nid, gfp_mask, order);
 }
 
-#define  alloc_pages_node(...)			alloc_hooks(alloc_pages_node_noprof(__VA_ARGS__))
 
 #ifdef CONFIG_NUMA
-struct page *alloc_pages_noprof(gfp_t gfp, unsigned int order);
-struct folio *folio_alloc_noprof(gfp_t gfp, unsigned int order);
-struct folio *folio_alloc_mpol_noprof(gfp_t gfp, unsigned int order,
+struct page *alloc_pages(gfp_t gfp, unsigned int order);
+struct folio *folio_alloc(gfp_t gfp, unsigned int order);
+struct folio *folio_alloc_mpol(gfp_t gfp, unsigned int order,
 		struct mempolicy *mpol, pgoff_t ilx, int nid);
-struct folio *vma_alloc_folio_noprof(gfp_t gfp, int order, struct vm_area_struct *vma,
+struct folio *vma_alloc_folio(gfp_t gfp, int order, struct vm_area_struct *vma,
 		unsigned long addr);
 #else
-static inline struct page *alloc_pages_noprof(gfp_t gfp_mask, unsigned int order)
+static inline struct page *alloc_pages(gfp_t gfp_mask, unsigned int order)
 {
-	return alloc_pages_node_noprof(numa_node_id(), gfp_mask, order);
+	return alloc_pages_node(numa_node_id(), gfp_mask, order);
 }
-static inline struct folio *folio_alloc_noprof(gfp_t gfp, unsigned int order)
+static inline struct folio *folio_alloc(gfp_t gfp, unsigned int order)
 {
-	return __folio_alloc_node_noprof(gfp, order, numa_node_id());
+	return __folio_alloc_node(gfp, order, numa_node_id());
 }
-static inline struct folio *folio_alloc_mpol_noprof(gfp_t gfp, unsigned int order,
+static inline struct folio *folio_alloc_mpol(gfp_t gfp, unsigned int order,
 		struct mempolicy *mpol, pgoff_t ilx, int nid)
 {
-	return folio_alloc_noprof(gfp, order);
+	return folio_alloc(gfp, order);
 }
-static inline struct folio *vma_alloc_folio_noprof(gfp_t gfp, int order,
+static inline struct folio *vma_alloc_folio(gfp_t gfp, int order,
 		struct vm_area_struct *vma, unsigned long addr)
 {
-	return folio_alloc_noprof(gfp, order);
+	return folio_alloc(gfp, order);
 }
 #endif
 
-#define alloc_pages(...)			alloc_hooks(alloc_pages_noprof(__VA_ARGS__))
-#define folio_alloc(...)			alloc_hooks(folio_alloc_noprof(__VA_ARGS__))
-#define folio_alloc_mpol(...)			alloc_hooks(folio_alloc_mpol_noprof(__VA_ARGS__))
-#define vma_alloc_folio(...)			alloc_hooks(vma_alloc_folio_noprof(__VA_ARGS__))
 
 #define alloc_page(gfp_mask) alloc_pages(gfp_mask, 0)
 
-static inline struct page *alloc_page_vma_noprof(gfp_t gfp,
+static inline struct page *alloc_page_vma(gfp_t gfp,
 		struct vm_area_struct *vma, unsigned long addr)
 {
-	struct folio *folio = vma_alloc_folio_noprof(gfp, 0, vma, addr);
+	struct folio *folio = vma_alloc_folio(gfp, 0, vma, addr);
 
 	return &folio->page;
 }
-#define alloc_page_vma(...)			alloc_hooks(alloc_page_vma_noprof(__VA_ARGS__))
 
-struct page *alloc_pages_nolock_noprof(gfp_t gfp_flags, int nid, unsigned int order);
-#define alloc_pages_nolock(...)			alloc_hooks(alloc_pages_nolock_noprof(__VA_ARGS__))
+struct page *alloc_pages_nolock(gfp_t gfp_flags, int nid, unsigned int order);
 
-extern unsigned long get_free_pages_noprof(gfp_t gfp_mask, unsigned int order);
-#define __get_free_pages(...)			alloc_hooks(get_free_pages_noprof(__VA_ARGS__))
+extern unsigned long get_free_pages(gfp_t gfp_mask, unsigned int order);
+#define __get_free_pages(...)			get_free_pages(__VA_ARGS__)
 
-extern unsigned long get_zeroed_page_noprof(gfp_t gfp_mask);
-#define get_zeroed_page(...)			alloc_hooks(get_zeroed_page_noprof(__VA_ARGS__))
+extern unsigned long get_zeroed_page(gfp_t gfp_mask);
 
-void *alloc_pages_exact_noprof(size_t size, gfp_t gfp_mask) __alloc_size(1);
-#define alloc_pages_exact(...)			alloc_hooks(alloc_pages_exact_noprof(__VA_ARGS__))
+void *alloc_pages_exact(size_t size, gfp_t gfp_mask) __alloc_size(1);
 
 void free_pages_exact(void *virt, size_t size);
 
-__meminit void *alloc_pages_exact_nid_noprof(int nid, size_t size, gfp_t gfp_mask) __alloc_size(2);
-#define alloc_pages_exact_nid(...)					\
-	alloc_hooks(alloc_pages_exact_nid_noprof(__VA_ARGS__))
-
+__meminit void *alloc_pages_exact_nid(int nid, size_t size, gfp_t gfp_mask) __alloc_size(2);
 #define __get_free_page(gfp_mask)					\
 	__get_free_pages((gfp_mask), 0)
 
@@ -434,25 +410,17 @@ typedef unsigned int __bitwise acr_flags_t;
 #define ACR_FLAGS_CMA ((__force acr_flags_t)BIT(0)) // allocate for CMA
 
 /* The below functions must be run on a range from a single zone. */
-int alloc_contig_frozen_range_noprof(unsigned long start, unsigned long end,
+int alloc_contig_frozen_range(unsigned long start, unsigned long end,
 		acr_flags_t alloc_flags, gfp_t gfp_mask);
-#define alloc_contig_frozen_range(...)	\
-	alloc_hooks(alloc_contig_frozen_range_noprof(__VA_ARGS__))
 
-int alloc_contig_range_noprof(unsigned long start, unsigned long end,
+int alloc_contig_range(unsigned long start, unsigned long end,
 		acr_flags_t alloc_flags, gfp_t gfp_mask);
-#define alloc_contig_range(...)	\
-	alloc_hooks(alloc_contig_range_noprof(__VA_ARGS__))
 
-struct page *alloc_contig_frozen_pages_noprof(unsigned long nr_pages,
+struct page *alloc_contig_frozen_pages(unsigned long nr_pages,
 		gfp_t gfp_mask, int nid, nodemask_t *nodemask);
-#define alloc_contig_frozen_pages(...) \
-	alloc_hooks(alloc_contig_frozen_pages_noprof(__VA_ARGS__))
 
-struct page *alloc_contig_pages_noprof(unsigned long nr_pages, gfp_t gfp_mask,
+struct page *alloc_contig_pages(unsigned long nr_pages, gfp_t gfp_mask,
 		int nid, nodemask_t *nodemask);
-#define alloc_contig_pages(...)	\
-	alloc_hooks(alloc_contig_pages_noprof(__VA_ARGS__))
 
 void free_contig_frozen_range(unsigned long pfn, unsigned long nr_pages);
 void free_contig_range(unsigned long pfn, unsigned long nr_pages);

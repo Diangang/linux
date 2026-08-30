@@ -70,13 +70,12 @@ static inline bool is_via_compact_memory(int order) { return false; }
  */
 #define COMPACTION_HPAGE_ORDER	(PMD_SHIFT - PAGE_SHIFT)
 
-static struct page *mark_allocated_noprof(struct page *page, unsigned int order, gfp_t gfp_flags)
+static struct page *mark_allocated(struct page *page, unsigned int order, gfp_t gfp_flags)
 {
 	post_alloc_hook(page, order, __GFP_MOVABLE);
 	set_page_refcounted(page);
 	return page;
 }
-#define mark_allocated(...)	alloc_hooks(mark_allocated_noprof(__VA_ARGS__))
 
 static unsigned long release_free_list(struct list_head *freepages)
 {
@@ -1786,7 +1785,7 @@ static void isolate_freepages(struct compact_control *cc)
  * This is a migrate-callback that "allocates" freepages by taking pages
  * from the isolated freelists in the block we are migrating to.
  */
-static struct folio *compaction_alloc_noprof(struct folio *src, unsigned long data)
+static struct folio *compaction_alloc(struct folio *src, unsigned long data)
 {
 	struct compact_control *cc = (struct compact_control *)data;
 	struct folio *dst;
@@ -1832,11 +1831,6 @@ again:
 	cc->nr_freepages -= 1 << order;
 	cc->nr_migratepages -= 1 << order;
 	return page_rmappable_folio(&dst->page);
-}
-
-static struct folio *compaction_alloc(struct folio *src, unsigned long data)
-{
-	return alloc_hooks(compaction_alloc_noprof(src, data));
 }
 
 /*

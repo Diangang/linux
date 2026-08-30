@@ -36,7 +36,7 @@ enum {
 	___GFP_THISNODE_BIT,
 	___GFP_UNUSED2_BIT,
 	___GFP_ZEROTAGS_BIT,
-	___GFP_NO_OBJ_EXT_BIT,
+	___GFP_NO_SHEAF_BIT,
 	___GFP_LAST_BIT
 };
 
@@ -67,7 +67,7 @@ enum {
 #define ___GFP_SKIP_ZERO	0
 #define ___GFP_SKIP_KASAN	0
 #define ___GFP_NOLOCKDEP	0
-#define ___GFP_NO_OBJ_EXT       BIT(___GFP_NO_OBJ_EXT_BIT)
+#define ___GFP_NO_SHEAF	BIT(___GFP_NO_SHEAF_BIT)
 
 /*
  * Physical address zone modifiers (see linux/mmzone.h - low four bits)
@@ -107,15 +107,13 @@ enum {
  * %__GFP_THISNODE forces the allocation to be satisfied from the requested
  * node with no fallbacks or placement policy enforcements.
  *
- * %__GFP_NO_OBJ_EXT causes slab allocation to have no object extension.
- * mark_obj_codetag_empty() should be called upon freeing for objects allocated
- * with this flag to indicate that their NULL tags are expected and normal.
+ * %__GFP_NO_SHEAF prevents recursive slab sheaf allocation.
  */
 #define __GFP_RECLAIMABLE ((__force gfp_t)___GFP_RECLAIMABLE)
 #define __GFP_WRITE	((__force gfp_t)___GFP_WRITE)
 #define __GFP_HARDWALL   ((__force gfp_t)___GFP_HARDWALL)
 #define __GFP_THISNODE	((__force gfp_t)___GFP_THISNODE)
-#define __GFP_NO_OBJ_EXT   ((__force gfp_t)___GFP_NO_OBJ_EXT)
+#define __GFP_NO_SHEAF	((__force gfp_t)___GFP_NO_SHEAF)
 
 /**
  * DOC: Watermark modifiers

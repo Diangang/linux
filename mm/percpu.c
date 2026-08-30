@@ -1574,15 +1574,6 @@ static struct pcpu_chunk *pcpu_chunk_addr_search(void *addr)
 	return pcpu_get_page_chunk(pcpu_addr_to_page(addr));
 }
 
-static void pcpu_alloc_tag_alloc_hook(struct pcpu_chunk *chunk, int off,
-				      size_t size)
-{
-}
-
-static void pcpu_alloc_tag_free_hook(struct pcpu_chunk *chunk, int off, size_t size)
-{
-}
-
 /**
  * pcpu_alloc - the percpu allocator
  * @size: size of area to allocate in bytes
@@ -1598,7 +1589,7 @@ static void pcpu_alloc_tag_free_hook(struct pcpu_chunk *chunk, int off, size_t s
  * RETURNS:
  * Percpu pointer to the allocated area on success, NULL on failure.
  */
-void __percpu *pcpu_alloc_noprof(size_t size, size_t align, bool reserved,
+void __percpu *pcpu_alloc(size_t size, size_t align, bool reserved,
 				 gfp_t gfp)
 {
 	gfp_t pcpu_gfp;
@@ -1754,8 +1745,6 @@ area_found:
 
 	ptr = __addr_to_pcpu_ptr(chunk->base_addr + off);
 
-	pcpu_alloc_tag_alloc_hook(chunk, off, size);
-
 	return ptr;
 
 fail_unlock:
@@ -1785,7 +1774,7 @@ fail:
 
 	return NULL;
 }
-EXPORT_SYMBOL_GPL(pcpu_alloc_noprof);
+EXPORT_SYMBOL_GPL(pcpu_alloc);
 
 /**
  * pcpu_balance_free - manage the amount of free chunks
@@ -2103,8 +2092,6 @@ void free_percpu(void __percpu *ptr)
 		WARN_ON_ONCE(1);
 		return;
 	}
-
-	pcpu_alloc_tag_free_hook(chunk, off, size);
 
 	/*
 	 * If there are more than one fully free chunks, wake up grim reaper.

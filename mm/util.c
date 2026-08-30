@@ -130,16 +130,17 @@ EXPORT_SYMBOL(kstrndup);
  * Return: newly allocated copy of @src or %NULL in case of error,
  * result is physically contiguous. Use kfree() to free.
  */
-void *kmemdup_noprof(const void *src, size_t len, gfp_t gfp)
+void *kmemdup(const void *src, size_t len, gfp_t gfp)
 {
 	void *p;
 
-	p = kmalloc_node_track_caller_noprof(len, gfp, NUMA_NO_NODE, _RET_IP_);
+	p = __kmalloc_node_track_caller(PASS_BUCKET_PARAMS(len, NULL), gfp,
+					 NUMA_NO_NODE, _RET_IP_);
 	if (p)
 		memcpy(p, src, len);
 	return p;
 }
-EXPORT_SYMBOL(kmemdup_noprof);
+EXPORT_SYMBOL(kmemdup);
 
 /**
  * kmemdup_array - duplicate a given array.
@@ -633,26 +634,26 @@ unsigned long vm_mmap_shadow_stack(unsigned long addr, unsigned long len,
  * @size: element size.
  * @flags: the type of memory to allocate (see kmalloc).
  */
-void *__vmalloc_array_noprof(size_t n, size_t size, gfp_t flags)
+void *__vmalloc_array(size_t n, size_t size, gfp_t flags)
 {
 	size_t bytes;
 
 	if (unlikely(check_mul_overflow(n, size, &bytes)))
 		return NULL;
-	return __vmalloc_noprof(bytes, flags);
+	return __vmalloc(bytes, flags);
 }
-EXPORT_SYMBOL(__vmalloc_array_noprof);
+EXPORT_SYMBOL(__vmalloc_array);
 
 /**
  * vmalloc_array - allocate memory for a virtually contiguous array.
  * @n: number of elements.
  * @size: element size.
  */
-void *vmalloc_array_noprof(size_t n, size_t size)
+void *vmalloc_array(size_t n, size_t size)
 {
-	return __vmalloc_array_noprof(n, size, GFP_KERNEL);
+	return __vmalloc_array(n, size, GFP_KERNEL);
 }
-EXPORT_SYMBOL(vmalloc_array_noprof);
+EXPORT_SYMBOL(vmalloc_array);
 
 /**
  * __vcalloc - allocate and zero memory for a virtually contiguous array.
@@ -660,22 +661,22 @@ EXPORT_SYMBOL(vmalloc_array_noprof);
  * @size: element size.
  * @flags: the type of memory to allocate (see kmalloc).
  */
-void *__vcalloc_noprof(size_t n, size_t size, gfp_t flags)
+void *__vcalloc(size_t n, size_t size, gfp_t flags)
 {
-	return __vmalloc_array_noprof(n, size, flags | __GFP_ZERO);
+	return __vmalloc_array(n, size, flags | __GFP_ZERO);
 }
-EXPORT_SYMBOL(__vcalloc_noprof);
+EXPORT_SYMBOL(__vcalloc);
 
 /**
  * vcalloc - allocate and zero memory for a virtually contiguous array.
  * @n: number of elements.
  * @size: element size.
  */
-void *vcalloc_noprof(size_t n, size_t size)
+void *vcalloc(size_t n, size_t size)
 {
-	return __vmalloc_array_noprof(n, size, GFP_KERNEL | __GFP_ZERO);
+	return __vmalloc_array(n, size, GFP_KERNEL | __GFP_ZERO);
 }
-EXPORT_SYMBOL(vcalloc_noprof);
+EXPORT_SYMBOL(vcalloc);
 
 struct anon_vma *folio_anon_vma(const struct folio *folio)
 {

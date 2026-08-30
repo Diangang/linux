@@ -181,11 +181,6 @@ struct page {
 
 	/* Usage count. *DO NOT USE DIRECTLY*. See page_ref.h */
 	atomic_t _refcount;
-
-#if   defined(CONFIG_SLAB_OBJ_EXT)
-	unsigned long _unused_slab_obj_exts;
-#endif
-
 	/*
 	 * On machines where all RAM is mapped into kernel address space,
 	 * we can simply calculate the virtual address. On machines with
@@ -297,11 +292,6 @@ typedef struct {
  */
 typedef swp_entry_t softleaf_t;
 
-#if defined(CONFIG_SLAB_OBJ_EXT)
-/* We have some extra room after the refcount in tail pages. */
-#define NR_PAGES_IN_LARGE_FOLIO
-#endif
-
 /*
  * On 32bit, we can cut the required metadata in half, because:
  * (a) PID_MAX_LIMIT implicitly limits the number of MMs we could ever have,
@@ -373,7 +363,6 @@ typedef unsigned short mm_id_t;
  * @_hugetlb_cgroup_rsvd: Do not use directly, use accessor in hugetlb_cgroup.h.
  * @_hugetlb_hwpoison: Do not use directly, call raw_hwp_list_head().
  * @_deferred_list: Folios to be split under memory pressure.
- * @_unused_slab_obj_exts: Placeholder to match obj_exts in struct slab.
  *
  * A folio is a physically, virtually and logically contiguous set
  * of bytes.  It is a power-of-two in size, and it is aligned to that
@@ -414,9 +403,6 @@ struct folio {
 			};
 			atomic_t _mapcount;
 			atomic_t _refcount;
-#if   defined(CONFIG_SLAB_OBJ_EXT)
-			unsigned long _unused_slab_obj_exts;
-#endif
 #if defined(WANT_PAGE_VIRTUAL)
 			void *virtual;
 #endif

@@ -1802,9 +1802,6 @@ static inline int sched_core_idle_cpu(int cpu) { return idle_cpu(cpu); }
 
 extern void sched_set_stop_task(int cpu, struct task_struct *stop);
 
-#define alloc_tag_save(_tag)			NULL
-#define alloc_tag_restore(_tag, _old)		do {} while (0)
-
 /* Avoids recursive inclusion hell */
 static inline void sched_mm_cid_before_execve(struct task_struct *t) { }
 static inline void sched_mm_cid_after_execve(struct task_struct *t) { }

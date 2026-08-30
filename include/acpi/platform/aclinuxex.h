@@ -47,8 +47,8 @@ acpi_status acpi_os_terminate(void);
  * However, boot has  (system_state != SYSTEM_RUNNING)
  * to quiet __might_sleep() in kmalloc() and resume does not.
  *
- * These specialized allocators have to be macros for their allocations to be
- * accounted separately (to have separate alloc_tag).
+ * These specialized allocators select an atomic allocation context while
+ * interrupts are disabled.
  */
 #define acpi_os_allocate(_size)	\
 		kmalloc(_size, irqs_disabled() ? GFP_ATOMIC : GFP_KERNEL)

@@ -4468,7 +4468,7 @@ void free_workqueue_attrs(struct workqueue_attrs *attrs)
  *
  * Return: The allocated new workqueue_attr on success. %NULL on failure.
  */
-struct workqueue_attrs *alloc_workqueue_attrs_noprof(void)
+struct workqueue_attrs *alloc_workqueue_attrs(void)
 {
 	struct workqueue_attrs *attrs;
 
@@ -5507,12 +5507,12 @@ static struct workqueue_struct *__alloc_workqueue(const char *fmt,
 	else
 		wq_size = sizeof(*wq);
 
-	wq = kzalloc_noprof(wq_size, GFP_KERNEL);
+	wq = kzalloc(wq_size, GFP_KERNEL);
 	if (!wq)
 		return NULL;
 
 	if (flags & WQ_UNBOUND) {
-		wq->unbound_attrs = alloc_workqueue_attrs_noprof();
+		wq->unbound_attrs = alloc_workqueue_attrs();
 		if (!wq->unbound_attrs)
 			goto err_free_wq;
 	}
@@ -5602,7 +5602,7 @@ err_destroy:
 }
 
 __printf(1, 4)
-struct workqueue_struct *alloc_workqueue_noprof(const char *fmt,
+struct workqueue_struct *alloc_workqueue(const char *fmt,
 						unsigned int flags,
 						int max_active, ...)
 {
@@ -5619,7 +5619,7 @@ struct workqueue_struct *alloc_workqueue_noprof(const char *fmt,
 
 	return wq;
 }
-EXPORT_SYMBOL_GPL(alloc_workqueue_noprof);
+EXPORT_SYMBOL_GPL(alloc_workqueue);
 
 static void devm_workqueue_release(void *res)
 {

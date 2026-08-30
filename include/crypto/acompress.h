@@ -248,7 +248,7 @@ static inline const char *crypto_acomp_driver_name(struct crypto_acomp *tfm)
  *
  * Return:	allocated handle in case of success or NULL in case of an error
  */
-static inline struct acomp_req *acomp_request_alloc_extra_noprof(
+static inline struct acomp_req *acomp_request_alloc_extra(
 	struct crypto_acomp *tfm, size_t extra, gfp_t gfp)
 {
 	struct acomp_req *req;
@@ -258,19 +258,18 @@ static inline struct acomp_req *acomp_request_alloc_extra_noprof(
 	if (check_add_overflow(len, extra, &len))
 		return NULL;
 
-	req = kzalloc_noprof(len, gfp);
+	req = kzalloc(len, gfp);
 	if (likely(req))
 		acomp_request_set_tfm(req, tfm);
 	return req;
 }
-#define acomp_request_alloc_noprof(tfm, ...) \
+#define acomp_request_alloc(tfm, ...) \
 	CONCATENATE(acomp_request_alloc_noprof_, COUNT_ARGS(__VA_ARGS__))( \
 		tfm, ##__VA_ARGS__)
 #define acomp_request_alloc_noprof_0(tfm) \
 	acomp_request_alloc_noprof_1(tfm, GFP_KERNEL)
 #define acomp_request_alloc_noprof_1(tfm, gfp) \
-	acomp_request_alloc_extra_noprof(tfm, 0, gfp)
-#define acomp_request_alloc(...)	alloc_hooks(acomp_request_alloc_noprof(__VA_ARGS__))
+	acomp_request_alloc_extra(tfm, 0, gfp)
 
 /**
  * acomp_request_alloc_extra() -- allocate acomp request with extra memory
@@ -281,7 +280,6 @@ static inline struct acomp_req *acomp_request_alloc_extra_noprof(
  *
  * Return:	allocated handle in case of success or NULL in case of an error
  */
-#define acomp_request_alloc_extra(...)	alloc_hooks(acomp_request_alloc_extra_noprof(__VA_ARGS__))
 
 static inline void *acomp_request_extra(struct acomp_req *req)
 {

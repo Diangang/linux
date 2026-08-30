@@ -6,7 +6,6 @@
 #include <linux/errno.h>
 #include <linux/mmdebug.h>
 #include <linux/gfp.h>
-#include <linux/pgalloc_tag.h>
 #include <linux/bug.h>
 #include <linux/list.h>
 #include <linux/mmzone.h>
@@ -3485,13 +3484,12 @@ static inline bool ptdesc_test_kernel(const struct ptdesc *ptdesc)
  *
  * Return: The ptdesc describing the allocated page tables.
  */
-static inline struct ptdesc *pagetable_alloc_noprof(gfp_t gfp, unsigned int order)
+static inline struct ptdesc *pagetable_alloc(gfp_t gfp, unsigned int order)
 {
-	struct page *page = alloc_pages_noprof(gfp | __GFP_COMP, order);
+	struct page *page = alloc_pages(gfp | __GFP_COMP, order);
 
 	return page_ptdesc(page);
 }
-#define pagetable_alloc(...)	alloc_hooks(pagetable_alloc_noprof(__VA_ARGS__))
 
 static inline void __pagetable_free(struct ptdesc *pt)
 {

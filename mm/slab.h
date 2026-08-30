@@ -11,12 +11,6 @@
 #include <linux/kfence.h>
 #include <linux/kasan.h>
 
-#define OBJEXTS_ALLOC_FAIL	(1UL << 0)
-#define OBJEXTS_FLAGS_MASK	OBJEXTS_ALLOC_FAIL
-
-struct slabobj_ext {
-} __aligned(8);
-
 /*
  * Internal slab definitions
  */
@@ -58,14 +52,6 @@ struct freelist_counters {
 					 * that the slab was corrupted
 					 */
 					unsigned frozen:1;
-#ifdef CONFIG_64BIT
-					/*
-					 * Some optimizations use free bits in 'counters' field
-					 * to save memory. In case ->stride field is not available,
-					 * such optimizations are disabled.
-					 */
-					unsigned int stride;
-#endif
 				};
 			};
 		};
@@ -91,9 +77,6 @@ struct slab {
 
 	unsigned int __page_type;
 	atomic_t __page_refcount;
-#ifdef CONFIG_SLAB_OBJ_EXT
-	unsigned long obj_exts;
-#endif
 };
 
 #define SLAB_MATCH(pg, sl)						\
@@ -101,9 +84,6 @@ struct slab {
 SLAB_MATCH(flags, flags);
 SLAB_MATCH(compound_info, slab_cache);	/* Ensure bit 0 is clear */
 SLAB_MATCH(_refcount, __page_refcount);
-#if   defined(CONFIG_SLAB_OBJ_EXT)
-SLAB_MATCH(_unused_slab_obj_exts, obj_exts);
-#endif
 #undef SLAB_MATCH
 static_assert(sizeof(struct slab) <= sizeof(struct page));
 #if defined(system_has_freelist_aba)
@@ -483,117 +463,6 @@ static inline void metadata_access_disable(void)
 	kmsan_enable_current();
 	kasan_enable_current();
 }
-
-#ifdef CONFIG_SLAB_OBJ_EXT
-
-/*
- * slab_obj_exts - get the pointer to the slab object extension vector
- * associated with a slab.
- * @slab: a pointer to the slab struct
- *
- * Returns the address of the object extension vector associated with the slab,
- * or zero if no such vector has been associated yet.
- * Do not dereference the return value directly; use get/put_slab_obj_exts()
- * pair and slab_obj_ext() to access individual elements.
- *
- * Example usage:
- *
- * obj_exts = slab_obj_exts(slab);
- * if (obj_exts) {
- *         get_slab_obj_exts(obj_exts);
- *         obj_ext = slab_obj_ext(slab, obj_exts, obj_to_index(s, slab, obj));
- *         // do something with obj_ext
- *         put_slab_obj_exts(obj_exts);
- * }
- *
- * Note that the get/put semantics does not involve reference counting.
- * Instead, it updates kasan/kmsan depth so that accesses to slabobj_ext
- * won't be reported as access violations.
- */
-static inline unsigned long slab_obj_exts(struct slab *slab)
-{
-	unsigned long obj_exts = READ_ONCE(slab->obj_exts);
-
-
-	return obj_exts & ~OBJEXTS_FLAGS_MASK;
-}
-
-static inline void get_slab_obj_exts(unsigned long obj_exts)
-{
-	VM_WARN_ON_ONCE(!obj_exts);
-	metadata_access_enable();
-}
-
-static inline void put_slab_obj_exts(unsigned long obj_exts)
-{
-	metadata_access_disable();
-}
-
-#ifdef CONFIG_64BIT
-static inline void slab_set_stride(struct slab *slab, unsigned int stride)
-{
-	slab->stride = stride;
-}
-static inline unsigned int slab_get_stride(struct slab *slab)
-{
-	return slab->stride;
-}
-#else
-static inline void slab_set_stride(struct slab *slab, unsigned int stride)
-{
-	VM_WARN_ON_ONCE(stride != sizeof(struct slabobj_ext));
-}
-static inline unsigned int slab_get_stride(struct slab *slab)
-{
-	return sizeof(struct slabobj_ext);
-}
-#endif
-
-/*
- * slab_obj_ext - get the pointer to the slab object extension metadata
- * associated with an object in a slab.
- * @slab: a pointer to the slab struct
- * @obj_exts: a pointer to the object extension vector
- * @index: an index of the object
- *
- * Returns a pointer to the object extension associated with the object.
- * Must be called within a section covered by get/put_slab_obj_exts().
- */
-static inline struct slabobj_ext *slab_obj_ext(struct slab *slab,
-					       unsigned long obj_exts,
-					       unsigned int index)
-{
-	struct slabobj_ext *obj_ext;
-
-	VM_WARN_ON_ONCE(obj_exts != slab_obj_exts(slab));
-
-	obj_ext = (struct slabobj_ext *)(obj_exts +
-					 slab_get_stride(slab) * index);
-	return kasan_reset_tag(obj_ext);
-}
-
-int alloc_slab_obj_exts(struct slab *slab, struct kmem_cache *s,
-                        gfp_t gfp, bool new_slab);
-
-#else /* CONFIG_SLAB_OBJ_EXT */
-
-static inline unsigned long slab_obj_exts(struct slab *slab)
-{
-	return 0;
-}
-
-static inline struct slabobj_ext *slab_obj_ext(struct slab *slab,
-					       unsigned long obj_exts,
-					       unsigned int index)
-{
-	return NULL;
-}
-
-static inline void slab_set_stride(struct slab *slab, unsigned int stride) { }
-static inline unsigned int slab_get_stride(struct slab *slab) { return 0; }
-
-
-#endif /* CONFIG_SLAB_OBJ_EXT */
 
 static inline enum node_stat_item cache_vmstat_idx(struct kmem_cache *s)
 {

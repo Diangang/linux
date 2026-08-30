@@ -6,7 +6,6 @@
 #define _LINUX_MEMPOOL_H
 
 #include <linux/sched.h>
-#include <linux/alloc_tag.h>
 #include <linux/wait.h>
 #include <linux/compiler.h>
 
@@ -41,19 +40,15 @@ void mempool_exit(struct mempool *pool);
 int mempool_init_node(struct mempool *pool, int min_nr,
 		mempool_alloc_t *alloc_fn, mempool_free_t *free_fn,
 		void *pool_data, gfp_t gfp_mask, int node_id);
-int mempool_init_noprof(struct mempool *pool, int min_nr,
+int mempool_init(struct mempool *pool, int min_nr,
 		mempool_alloc_t *alloc_fn, mempool_free_t *free_fn,
 		void *pool_data);
-#define mempool_init(...)						\
-	alloc_hooks(mempool_init_noprof(__VA_ARGS__))
 
 struct mempool *mempool_create(int min_nr, mempool_alloc_t *alloc_fn,
 		mempool_free_t *free_fn, void *pool_data);
-struct mempool *mempool_create_node_noprof(int min_nr,
+struct mempool *mempool_create_node(int min_nr,
 		mempool_alloc_t *alloc_fn, mempool_free_t *free_fn,
 		void *pool_data, gfp_t gfp_mask, int nid);
-#define mempool_create_node(...)					\
-	alloc_hooks(mempool_create_node_noprof(__VA_ARGS__))
 
 #define mempool_create(_min_nr, _alloc_fn, _free_fn, _pool_data)	\
 	mempool_create_node(_min_nr, _alloc_fn, _free_fn, _pool_data,	\
@@ -62,13 +57,9 @@ struct mempool *mempool_create_node_noprof(int min_nr,
 int mempool_resize(struct mempool *pool, int new_min_nr);
 void mempool_destroy(struct mempool *pool);
 
-void *mempool_alloc_noprof(struct mempool *pool, gfp_t gfp_mask) __malloc;
-#define mempool_alloc(...)						\
-	alloc_hooks(mempool_alloc_noprof(__VA_ARGS__))
-int mempool_alloc_bulk_noprof(struct mempool *pool, void **elem,
+void *mempool_alloc(struct mempool *pool, gfp_t gfp_mask) __malloc;
+int mempool_alloc_bulk(struct mempool *pool, void **elem,
 		unsigned int count, unsigned int allocated);
-#define mempool_alloc_bulk(...)						\
-	alloc_hooks(mempool_alloc_bulk_noprof(__VA_ARGS__))
 
 void *mempool_alloc_preallocated(struct mempool *pool) __malloc;
 void mempool_free(void *element, struct mempool *pool);
