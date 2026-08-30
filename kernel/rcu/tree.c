@@ -162,12 +162,8 @@ static bool rcu_init_invoked(void);
 static void rcu_cleanup_dead_rnp(struct rcu_node *rnp_leaf);
 static void rcu_init_new_rnp(struct rcu_node *rnp_leaf);
 
-/*
- * rcuc/rcub/rcuop kthread realtime priority. The "rcuop"
- * real-time priority(enabling/disabling) is controlled by
- * the extra CONFIG_RCU_NOCB_CPU_CB_BOOST configuration.
- */
-static int kthread_prio = 0 ? 1 : 0;
+/* rcuc/rcub/rcuop kthread realtime priority. */
+static int kthread_prio;
 module_param(kthread_prio, int, 0444);
 
 /* Delay in jiffies for grace-period initialization delays, debug only. */
@@ -4430,12 +4426,7 @@ static void __init sanitize_kthread_prio(void)
 {
 	int kthread_prio_in = kthread_prio;
 
-	if (0 && kthread_prio < 2
-	    && IS_BUILTIN(CONFIG_RCU_TORTURE_TEST))
-		kthread_prio = 2;
-	else if (0 && kthread_prio < 1)
-		kthread_prio = 1;
-	else if (kthread_prio < 0)
+	if (kthread_prio < 0)
 		kthread_prio = 0;
 	else if (kthread_prio > 99)
 		kthread_prio = 99;
