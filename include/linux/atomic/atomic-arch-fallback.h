@@ -2563,10 +2563,6 @@ raw_atomic_dec_if_positive(atomic_t *v)
 #endif
 }
 
-#ifdef CONFIG_GENERIC_ATOMIC64
-#include <asm-generic/atomic64.h>
-#endif
-
 /**
  * raw_atomic64_read() - atomic load with relaxed ordering
  * @v: pointer to atomic64_t
@@ -4690,4 +4686,4 @@ raw_atomic64_dec_if_positive(atomic64_t *v)
 }
 
 #endif /* _LINUX_ATOMIC_FALLBACK_H */
-// 206314f82b8b73a5c3aa69cf7f35ac9e7b5d6b58
+// bb18a8b6b0ff9ea49a10c094992f1bc4dd496b72
