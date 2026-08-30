@@ -8,7 +8,6 @@
 #include <asm/cpufeatures.h>
 #include <asm/alternative.h>
 
-#include <linux/kmsan-checks.h>
 #include <linux/mmdebug.h>
 
 /* duplicated to the one in bootmem.h */
@@ -81,11 +80,6 @@ KCFI_REFERENCE(__clear_pages_unrolled);
 static inline void clear_pages(void *addr, unsigned int npages)
 {
 	u64 len = npages * PAGE_SIZE;
-	/*
-	 * Clean up KMSAN metadata for the pages being cleared. The assembly call
-	 * below clobbers @addr, so perform unpoisoning before it.
-	 */
-	kmsan_unpoison_memory(addr, len);
 
 	/*
 	 * The inline asm embeds a CALL instruction and usually that is a no-no

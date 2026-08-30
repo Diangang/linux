@@ -7,16 +7,8 @@ always-$(KBUILD_BUILTIN)	+= vmlinux.lds
 
 CPPFLAGS_vmlinux.lds += -U$(UTS_MACHINE)
 
-KASAN_SANITIZE_head$(BITS).o				:= n
-KASAN_SANITIZE_dumpstack.o				:= n
-KASAN_SANITIZE_dumpstack_$(BITS).o			:= n
-KASAN_SANITIZE_stacktrace.o				:= n
-KASAN_SANITIZE_paravirt.o				:= n
-
 # With some compiler versions the generated code results in boot hangs, caused
 # by several compilation units. To be safe, disable all instrumentation.
-KMSAN_SANITIZE_head$(BITS).o				:= n
-KMSAN_SANITIZE_nmi.o					:= n
 
 # If instrumentation of the following files is enabled, boot hangs during
 # first second.

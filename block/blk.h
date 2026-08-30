@@ -117,13 +117,6 @@ static inline bool biovec_phys_mergeable(struct request_queue *q,
 	phys_addr_t addr1 = bvec_phys(vec1);
 	phys_addr_t addr2 = bvec_phys(vec2);
 
-	/*
-	 * Merging adjacent physical pages may not work correctly under KMSAN
-	 * if their metadata pages aren't adjacent. Just disable merging.
-	 */
-	if (0)
-		return false;
-
 	if (addr1 + vec1->bv_len != addr2)
 		return false;
 	if (!zone_device_pages_have_same_pgmap(vec1->bv_page, vec2->bv_page))

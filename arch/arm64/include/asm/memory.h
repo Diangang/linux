@@ -64,42 +64,11 @@
 #define KERNEL_START		_text
 #define KERNEL_END		_end
 
-/*
- * Generic and Software Tag-Based KASAN modes require 1/8th and 1/16th of the
- * kernel virtual address space for storing the shadow memory respectively.
- *
- * The mapping between a virtual memory address and its corresponding shadow
- * memory address is defined based on the formula:
- *
- *     shadow_addr = (addr >> KASAN_SHADOW_SCALE_SHIFT) + KASAN_SHADOW_OFFSET
- *
- * where KASAN_SHADOW_SCALE_SHIFT is the order of the number of bits that map
- * to a single shadow byte and KASAN_SHADOW_OFFSET is a constant that offsets
- * the mapping. Note that KASAN_SHADOW_OFFSET does not point to the start of
- * the shadow memory region.
- *
- * Based on this mapping, we define two constants:
- *
- *     KASAN_SHADOW_START: the start of the shadow memory region;
- *     KASAN_SHADOW_END: the end of the shadow memory region.
- *
- * KASAN_SHADOW_END is defined first as the shadow address that corresponds to
- * the upper bound of possible virtual kernel memory addresses UL(1) << 64
- * according to the mapping formula.
- *
- * KASAN_SHADOW_START is defined second based on KASAN_SHADOW_END. The shadow
- * memory start must map to the lowest possible kernel virtual memory address
- * and thus it depends on the actual bitness of the address space.
- *
- * As KASAN inserts redzones between stack variables, this increases the stack
- * memory usage significantly. Thus, we double the (minimum) stack size.
- */
-#define KASAN_THREAD_SHIFT	0
 #define PAGE_END		(_PAGE_END(VA_BITS_MIN))
 
 #define DIRECT_MAP_PHYSMEM_END	__pa(PAGE_END - 1)
 
-#define MIN_THREAD_SHIFT	(14 + KASAN_THREAD_SHIFT)
+#define MIN_THREAD_SHIFT	14
 
 /*
  * VMAP'd stacks are allocated at page granularity, so we must ensure that such
@@ -365,7 +334,7 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
 	__typeof__(x) __page = x;					\
 	u64 __idx = ((u64)__page - VMEMMAP_START) / sizeof(struct page);\
 	u64 __addr = PAGE_OFFSET + (__idx * PAGE_SIZE);			\
-	(void *)__tag_set((const void *)__addr, page_kasan_tag(__page));\
+	(void *)__addr;						\
 })
 
 #define virt_to_page(x)	({						\

@@ -514,8 +514,6 @@ alternative_else_nop_endif
 
 #define NOKPROBE(x)
 
-#define EXPORT_SYMBOL_NOKASAN(name)	EXPORT_SYMBOL(name)
-
 	/*
 	 * Emit a 64-bit absolute little endian symbol reference in a way that
 	 * ensures that it will be resolved at build time, even when building a

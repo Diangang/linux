@@ -489,7 +489,6 @@
  */
 #define TEXT_TEXT							\
 		ALIGN_FUNCTION();					\
-		*(.text.asan.* .text.tsan.*)				\
 		*(.text.unknown .text.unknown.*)			\
 		TEXT_SPLIT						\
 		TEXT_UNLIKELY						\
@@ -850,18 +849,7 @@
 	EXIT_DATA
 #endif
 
-/*
- * Clang's -fprofile-arcs, -fsanitize=kernel-address, and
- * -fsanitize=thread produce unwanted sections (.eh_frame
- * and .init_array.*), but CONFIG_CONSTRUCTORS wants to
- * keep any .init_array.* sections.
- * https://llvm.org/pr46478
- */
-#define DISCARD_EH_FRAME	*(.eh_frame)
-# define SANITIZER_DISCARDS
-
 #define COMMON_DISCARDS							\
-	SANITIZER_DISCARDS						\
 	PATCHABLE_DISCARDS						\
 	*(.discard)							\
 	*(.discard.*)							\

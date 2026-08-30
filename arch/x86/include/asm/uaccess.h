@@ -5,8 +5,6 @@
  * User space memory access functions
  */
 #include <linux/compiler.h>
-#include <linux/instrumented.h>
-#include <linux/kasan-checks.h>
 #include <linux/mm_types.h>
 #include <linux/string.h>
 #include <linux/mmap_lock.h>
@@ -78,7 +76,6 @@ extern int __get_user_bad(void);
 		     : "=a" (__ret_gu), "=r" (__val_gu),		\
 			ASM_CALL_CONSTRAINT				\
 		     : "0" (ptr), [size] "i" (sizeof(*(ptr))));		\
-	instrument_get_user(__val_gu);					\
 	(x) = (__force __typeof__(*(ptr))) __val_gu;			\
 	__builtin_expect(__ret_gu, 0);					\
 })
@@ -148,8 +145,7 @@ extern void __put_user_nocheck_8(void);
 /*
  * ptr must be evaluated and assigned to the temporary __ptr_pu before
  * the assignment of x to __val_pu, to avoid any function calls
- * involved in the ptr expression (possibly implicitly generated due
- * to KASAN) from clobbering %ax.
+ * involved in the ptr expression from clobbering %ax.
  */
 #define do_put_user_call(fn,x,ptr)					\
 ({									\
@@ -168,7 +164,6 @@ extern void __put_user_nocheck_8(void);
 		       "r" (__val_pu),					\
 		       [size] "i" (sizeof(*(ptr)))			\
 		     :"ebx");						\
-	instrument_put_user(__x, __ptr, sizeof(*(ptr)));		\
 	__builtin_expect(__ret_pu, 0);					\
 })
 
@@ -234,7 +229,6 @@ do {									\
 	default:							\
 		__put_user_bad();					\
 	}								\
-	instrument_put_user(__x, __ptr, size);				\
 } while (0)
 
 

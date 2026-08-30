@@ -9,7 +9,6 @@
 #include <linux/kobject.h>
 #include <linux/sched/mm.h>
 #include <linux/kfence.h>
-#include <linux/kasan.h>
 
 /*
  * Internal slab definitions
@@ -260,7 +259,7 @@ static inline void *nearest_obj(struct kmem_cache *cache,
 static inline unsigned int __obj_to_index(const struct kmem_cache *cache,
 					  void *addr, const void *obj)
 {
-	return reciprocal_divide(kasan_reset_tag(obj) - addr,
+	return reciprocal_divide(obj - addr,
 				 cache->reciprocal_size);
 }
 
@@ -445,24 +444,6 @@ static inline bool kmem_cache_debug_flags(struct kmem_cache *s, slab_flags_t fla
 }
 
 static inline bool slab_in_kunit_test(void) { return false; }
-
-/*
- * slub is about to manipulate internal object metadata.  This memory lies
- * outside the range of the allocated object, so accessing it would normally
- * be reported by kasan as a bounds error.  metadata_access_enable() is used
- * to tell kasan that these accesses are OK.
- */
-static inline void metadata_access_enable(void)
-{
-	kasan_disable_current();
-	kmsan_disable_current();
-}
-
-static inline void metadata_access_disable(void)
-{
-	kmsan_enable_current();
-	kasan_enable_current();
-}
 
 static inline enum node_stat_item cache_vmstat_idx(struct kmem_cache *s)
 {

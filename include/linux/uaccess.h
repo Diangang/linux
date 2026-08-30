@@ -4,7 +4,6 @@
 
 #include <linux/cleanup.h>
 #include <linux/fault-inject-usercopy.h>
-#include <linux/instrumented.h>
 #include <linux/minmax.h>
 #include <linux/nospec.h>
 #include <linux/sched.h>
@@ -58,7 +57,7 @@
  * raw_copy_{to,from}_user(to, from, size) should copy up to size bytes and
  * return the amount left to copy.  They should assume that access_ok() has
  * already been checked (and succeeded); they should *not* zero-pad anything.
- * No KASAN or object size checks either - those belong here.
+ * No object size checks either - those belong here.
  *
  * Both of these functions should attempt to copy size bytes starting at from
  * into the area starting at to.  They must not fetch or store anything
@@ -100,10 +99,8 @@ __copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
 {
 	unsigned long res;
 
-	instrument_copy_from_user_before(to, from, n);
 	check_object_size(to, n, false);
 	res = raw_copy_from_user(to, from, n);
-	instrument_copy_from_user_after(to, from, n, res);
 	return res;
 }
 
@@ -113,12 +110,10 @@ __copy_from_user(void *to, const void __user *from, unsigned long n)
 	unsigned long res;
 
 	might_fault();
-	instrument_copy_from_user_before(to, from, n);
 	if (should_fail_usercopy())
 		return n;
 	check_object_size(to, n, false);
 	res = raw_copy_from_user(to, from, n);
-	instrument_copy_from_user_after(to, from, n, res);
 	return res;
 }
 
@@ -140,7 +135,6 @@ __copy_to_user_inatomic(void __user *to, const void *from, unsigned long n)
 {
 	if (should_fail_usercopy())
 		return n;
-	instrument_copy_to_user(to, from, n);
 	check_object_size(from, n, true);
 	return raw_copy_to_user(to, from, n);
 }
@@ -151,7 +145,6 @@ __copy_to_user(void __user *to, const void *from, unsigned long n)
 	might_fault();
 	if (should_fail_usercopy())
 		return n;
-	instrument_copy_to_user(to, from, n);
 	check_object_size(from, n, true);
 	return raw_copy_to_user(to, from, n);
 }
@@ -181,9 +174,7 @@ _inline_copy_from_user(void *to, const void __user *from, unsigned long n)
 		 */
 		barrier_nospec();
 	}
-	instrument_copy_from_user_before(to, from, n);
 	res = raw_copy_from_user(to, from, n);
-	instrument_copy_from_user_after(to, from, n, res);
 	if (likely(!res))
 		return 0;
 fail:
@@ -202,7 +193,6 @@ _inline_copy_to_user(void __user *to, const void *from, unsigned long n)
 	if (should_fail_usercopy())
 		return n;
 	if (access_ok(to, n)) {
-		instrument_copy_to_user(to, from, n);
 		n = raw_copy_to_user(to, from, n);
 	}
 	return n;

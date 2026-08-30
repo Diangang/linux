@@ -118,8 +118,6 @@ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
 	if (!new)
 		return NULL;
 
-	ASSERT_EXCLUSIVE_WRITER(orig->vm_flags);
-	ASSERT_EXCLUSIVE_WRITER(orig->vm_file);
 	vm_area_init_from(orig, new);
 
 	if (vma_pfnmap_track_ctx_dup(orig, new)) {

@@ -26,7 +26,6 @@
 #include <linux/sizes.h>
 #include <linux/syscalls.h>
 #include <linux/mm_types.h>
-#include <linux/kasan.h>
 #include <linux/ubsan.h>
 #include <linux/cfi.h>
 

@@ -2,7 +2,6 @@
 #include <linux/compiler.h>
 #include <linux/export.h>
 #include <linux/fault-inject-usercopy.h>
-#include <linux/kasan-checks.h>
 #include <linux/thread_info.h>
 #include <linux/uaccess.h>
 #include <linux/kernel.h>
@@ -120,7 +119,6 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 	if (unlikely(count <= 0))
 		return 0;
 
-	kasan_check_write(dst, count);
 	check_object_size(dst, count, false);
 
 	if (can_do_masked_user_access()) {

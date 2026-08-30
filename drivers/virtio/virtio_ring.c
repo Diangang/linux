@@ -11,7 +11,6 @@
 #include <linux/module.h>
 #include <linux/hrtimer.h>
 #include <linux/dma-mapping.h>
-#include <linux/kmsan.h>
 #include <linux/spinlock.h>
 
 #ifdef DEBUG
@@ -444,12 +443,6 @@ static int vring_map_one_sg(const struct vring_virtqueue *vq, struct scatterlist
 	*len = sg->length;
 
 	if (!vq->use_map_api) {
-		/*
-		 * If DMA is not used, KMSAN doesn't know that the scatterlist
-		 * is initialized by the hardware. Explicitly check/unpoison it
-		 * depending on the direction.
-		 */
-		kmsan_handle_dma(sg_phys(sg), sg->length, direction);
 		*addr = (dma_addr_t)sg_phys(sg);
 		return 0;
 	}
@@ -3767,7 +3760,6 @@ dma_addr_t virtqueue_map_single_attrs(const struct virtqueue *_vq, void *ptr,
 	const struct vring_virtqueue *vq = to_vvq(_vq);
 
 	if (!vq->use_map_api) {
-		kmsan_handle_dma(virt_to_phys(ptr), size, dir);
 		return (dma_addr_t)virt_to_phys(ptr);
 	}
 

@@ -10,10 +10,6 @@
 /* Even with __builtin_ the compiler may decide to use the out of line
    function. */
 
-#if defined(__SANITIZE_MEMORY__) && defined(__NO_FORTIFY)
-#include <linux/kmsan_string.h>
-#endif
-
 #define __HAVE_ARCH_MEMCPY 1
 extern void *memcpy(void *to, const void *from, size_t len);
 extern void *__memcpy(void *to, const void *from, size_t len);
@@ -23,10 +19,6 @@ void *memset(void *s, int c, size_t n);
 void *__memset(void *s, int c, size_t n);
 KCFI_REFERENCE(__memset);
 
-/*
- * KMSAN needs to instrument as much code as possible. Use C versions of
- * memsetXX() from lib/string.c under KMSAN.
- */
 #define __HAVE_ARCH_MEMSET16
 static inline void *memset16(uint16_t *s, uint16_t v, size_t n)
 {

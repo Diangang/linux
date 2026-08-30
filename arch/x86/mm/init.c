@@ -997,10 +997,10 @@ struct execmem_info __init *execmem_arch_setup(void)
 	if (IS_ENABLED(CONFIG_ARCH_HAS_EXECMEM_ROX) &&
 	    cpu_feature_enabled(X86_FEATURE_PSE)) {
 		pgprot = PAGE_KERNEL_ROX;
-		flags = EXECMEM_KASAN_SHADOW | EXECMEM_ROX_CACHE;
+		flags = EXECMEM_ROX_CACHE;
 	} else {
 		pgprot = PAGE_KERNEL;
-		flags = EXECMEM_KASAN_SHADOW;
+		flags = 0;
 	}
 
 	execmem_info = (struct execmem_info){
@@ -1020,14 +1020,12 @@ struct execmem_info __init *execmem_arch_setup(void)
 				.alignment = MODULE_ALIGN,
 			},
 			[EXECMEM_BPF] = {
-				.flags	= EXECMEM_KASAN_SHADOW,
 				.start	= start,
 				.end	= MODULES_END,
 				.pgprot	= PAGE_KERNEL,
 				.alignment = MODULE_ALIGN,
 			},
 			[EXECMEM_MODULE_DATA] = {
-				.flags	= EXECMEM_KASAN_SHADOW,
 				.start	= start,
 				.end	= MODULES_END,
 				.pgprot	= PAGE_KERNEL,

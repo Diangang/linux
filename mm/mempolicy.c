@@ -2931,8 +2931,7 @@ out:
 /*
  * Drop the (possibly final) reference to task->mempolicy.  It needs to be
  * dropped after task->mempolicy is set to NULL so that any allocation done as
- * part of its kmem_cache_free(), such as by KASAN, doesn't reference a freed
- * policy.
+ * part of its kmem_cache_free() doesn't reference a freed policy.
  */
 void mpol_put_task_policy(struct task_struct *task)
 {

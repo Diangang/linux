@@ -449,9 +449,6 @@ void __init smp_prepare_boot_cpu(void)
 	if (system_uses_irq_prio_masking())
 		init_gic_priority_masking();
 
-	kasan_init_hw_tags();
-	/* Init percpu seeds for random tags after cpus are set up. */
-	kasan_init_sw_tags();
 }
 
 /*

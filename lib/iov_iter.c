@@ -10,7 +10,6 @@
 #include <linux/splice.h>
 #include <linux/compat.h>
 #include <linux/scatterlist.h>
-#include <linux/instrumented.h>
 #include <linux/iov_iter.h>
 
 static __always_inline
@@ -21,7 +20,6 @@ size_t copy_to_user_iter(void __user *iter_to, size_t progress,
 		return len;
 	if (access_ok(iter_to, len)) {
 		from += progress;
-		instrument_copy_to_user(iter_to, from, len);
 		len = raw_copy_to_user(iter_to, from, len);
 	}
 	return len;
@@ -63,9 +61,7 @@ size_t copy_from_user_iter(void __user *iter_from, size_t progress,
 		barrier_nospec();
 	}
 	to += progress;
-	instrument_copy_from_user_before(to, iter_from, len);
 	res = raw_copy_from_user(to, iter_from, len);
-	instrument_copy_from_user_after(to, iter_from, len, res);
 
 	return res;
 }
@@ -206,7 +202,6 @@ size_t copy_to_user_iter_mc(void __user *iter_to, size_t progress,
 {
 	if (access_ok(iter_to, len)) {
 		from += progress;
-		instrument_copy_to_user(iter_to, from, len);
 		len = copy_mc_to_user(iter_to, from, len);
 	}
 	return len;

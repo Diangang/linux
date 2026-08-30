@@ -1077,7 +1077,7 @@ static void fill_contig_page_info(struct zone *zone,
 		 * Count number of free blocks.
 		 *
 		 * Access to nr_free is lockless as nr_free is used only for
-		 * diagnostic purposes. Use data_race to avoid KCSAN warning.
+		 * diagnostic purposes. Mark it as an intentional data race.
 		 */
 		blocks = data_race(zone->free_area[order].nr_free);
 		info->free_blocks_total += blocks;
@@ -1435,7 +1435,7 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 	for (order = 0; order < NR_PAGE_ORDERS; ++order)
 		/*
 		 * Access to nr_free is lockless as nr_free is used only for
-		 * printing purposes. Use data_race to avoid KCSAN warning.
+		 * printing purposes. Mark it as an intentional data race.
 		 */
 		seq_printf(m, "%6lu ", data_race(zone->free_area[order].nr_free));
 	seq_putc(m, '\n');

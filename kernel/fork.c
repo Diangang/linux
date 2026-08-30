@@ -37,7 +37,6 @@
 #include <linux/fdtable.h>
 #include <linux/iocontext.h>
 #include <linux/key.h>
-#include <linux/kmsan.h>
 #include <linux/binfmts.h>
 #include <linux/mman.h>
 #include <linux/mmu_notifier.h>
@@ -90,7 +89,6 @@
 #include <linux/sysctl.h>
 #include <linux/kcov.h>
 #include <linux/thread_info.h>
-#include <linux/kasan.h>
 #include <linux/randomize_kstack.h>
 #include <linux/scs.h>
 #include <linux/stackprotector.h>
@@ -290,10 +288,7 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 	if (vm_area) {
 		BUG_ON(vm_area->nr_pages != THREAD_SIZE / PAGE_SIZE);
 
-		/* Reset stack metadata. */
-		kasan_unpoison_range(vm_area->addr, THREAD_SIZE);
-
-		stack = kasan_reset_tag(vm_area->addr);
+		stack = vm_area->addr;
 
 		/* Clear stale pointers from reused stack. */
 		clear_pages(vm_area->addr, vm_area->nr_pages);
@@ -317,7 +312,6 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 	 * so cache the vm_struct.
 	 */
 	tsk->stack_vm_area = vm_area;
-	stack = kasan_reset_tag(stack);
 	tsk->stack = stack;
 	return 0;
 }
@@ -357,7 +351,7 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 					     THREAD_SIZE_ORDER);
 
 	if (likely(page)) {
-		tsk->stack = kasan_reset_tag(page_address(page));
+		tsk->stack = page_address(page);
 		return 0;
 	}
 	return -ENOMEM;
@@ -389,7 +383,6 @@ static int alloc_thread_stack_node(struct task_struct *tsk, int node)
 {
 	unsigned long *stack;
 	stack = kmem_cache_alloc_node(thread_stack_cache, THREADINFO_GFP, node);
-	stack = kasan_reset_tag(stack);
 	tsk->stack = stack;
 	return stack ? 0 : -ENOMEM;
 }
@@ -882,7 +875,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->worker_private = NULL;
 
 	kcov_task_init(tsk);
-	kmsan_task_create(tsk);
 	kmap_local_fork(tsk);
 
 
@@ -2234,7 +2226,6 @@ struct task_struct *copy_process(
 			if (is_child_reaper(pid)) {
 				struct pid_namespace *ns = ns_of_pid(pid);
 
-				ASSERT_EXCLUSIVE_WRITER(ns->child_reaper);
 				WRITE_ONCE(ns->child_reaper, p);
 				p->signal->flags |= SIGNAL_UNKILLABLE;
 			}

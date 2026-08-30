@@ -74,8 +74,8 @@ bool arch_support_alt_relocation(struct special_alt *special_alt,
  *    writing, there are 11 occurrences of it in the allmodconfig kernel.
  *
  *    As of GCC 7 there are quite a few more of these and the 'in between' code
- *    is significant. Esp. with KASAN enabled some of the code between the mov
- *    and jmpq uses .rodata itself, which can confuse things.
+ *    is significant. Some of the code between the mov and jmpq uses .rodata
+ *    itself, which can confuse things.
  *
  *    TODO: Once we have DWARF CFI and smarter instruction decoding logic,
  *    ensure the same register is used in the mov and jump instructions.

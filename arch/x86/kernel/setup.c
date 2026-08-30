@@ -37,7 +37,6 @@
 #include <asm/gart.h>
 #include <asm/hypervisor.h>
 #include <asm/io_apic.h>
-#include <asm/kasan.h>
 #include <asm/kaslr.h>
 #include <asm/mce.h>
 #include <asm/memtype.h>
@@ -933,8 +932,6 @@ void __init setup_arch(char **cmdline_p)
 		early_xdbc_register_console();
 
 	x86_init.paging.pagetable_init();
-
-	kasan_init();
 
 	/*
 	 * Sync back kernel address range.

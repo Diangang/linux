@@ -28,7 +28,6 @@
 #include <linux/overflow.h>
 #include <linux/sched.h>
 #include <linux/pgtable.h>
-#include <linux/kasan.h>
 #include <linux/memremap.h>
 #include <linux/slab.h>
 #include <linux/cacheinfo.h>
@@ -2355,15 +2354,6 @@ static inline bool folio_use_access_time(struct folio *folio)
 	return false;
 }
 #endif /* CONFIG_NUMA_BALANCING */
-
-
-static inline u8 page_kasan_tag(const struct page *page)
-{
-	return 0xff;
-}
-
-static inline void page_kasan_tag_set(struct page *page, u8 tag) { }
-static inline void page_kasan_tag_reset(struct page *page) { }
 
 
 static inline struct zone *page_zone(const struct page *page)

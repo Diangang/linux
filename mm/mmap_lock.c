@@ -122,7 +122,7 @@ int __vma_start_write(struct vm_area_struct *vma, int state)
 	 * We should use WRITE_ONCE() here because we can have concurrent reads
 	 * from the early lockless pessimistic check in vma_start_read().
 	 * We don't really care about the correctness of that early check, but
-	 * we should use WRITE_ONCE() for cleanliness and to keep KCSAN happy.
+	 * we should use WRITE_ONCE() for cleanliness.
 	 */
 	WRITE_ONCE(vma->vm_lock_seq, mm_lock_seq);
 

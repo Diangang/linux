@@ -27,7 +27,6 @@ static struct execmem_info default_execmem_info __ro_after_init;
 static void *execmem_vmalloc(struct execmem_range *range, size_t size,
 			     pgprot_t pgprot, unsigned long vm_flags)
 {
-	bool kasan = range->flags & EXECMEM_KASAN_SHADOW;
 	gfp_t gfp_flags = GFP_KERNEL | __GFP_NOWARN;
 	unsigned int align = range->alignment;
 	unsigned long start = range->start;
@@ -47,11 +46,6 @@ static void *execmem_vmalloc(struct execmem_range *range, size_t size,
 
 	if (!p) {
 		pr_warn_ratelimited("unable to allocate memory\n");
-		return NULL;
-	}
-
-	if (kasan && (kasan_alloc_module_shadow(p, size, GFP_KERNEL) < 0)) {
-		vfree(p);
 		return NULL;
 	}
 
@@ -472,7 +466,7 @@ void *execmem_alloc(enum execmem_type type, size_t size)
 	else
 		p = execmem_vmalloc(range, size, pgprot, vm_flags);
 
-	return kasan_reset_tag(p);
+	return p;
 }
 
 void *execmem_alloc_rw(enum execmem_type type, size_t size)

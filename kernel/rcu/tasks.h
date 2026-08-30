@@ -229,7 +229,7 @@ static void set_tasks_gp_state(struct rcu_tasks *rtp, int newstate)
 /* Return state name. */
 static const char *tasks_gp_state_getname(struct rcu_tasks *rtp)
 {
-	int i = data_race(rtp->gp_state); // Let KCSAN detect update races
+	int i = data_race(rtp->gp_state);
 	int j = READ_ONCE(i); // Prevent the compiler from reading twice
 
 	if (j >= ARRAY_SIZE(rcu_tasks_gp_state_names))

@@ -21,8 +21,6 @@
 #include <linux/jiffies.h>
 #include <linux/compiler.h>
 #include <linux/kernel.h>
-#include <linux/kasan.h>
-#include <linux/kmsan.h>
 #include <linux/module.h>
 #include <linux/suspend.h>
 #include <linux/ratelimit.h>
@@ -1040,49 +1038,12 @@ out:
 	return ret;
 }
 
-/*
- * Skip KASAN memory poisoning when either:
- *
- * 1. For generic KASAN: deferred memory initialization has not yet completed.
- *    Tag-based KASAN modes skip pages freed via deferred memory initialization
- *    using page tags instead (see below).
- * 2. For tag-based KASAN modes: the page has a match-all KASAN tag, indicating
- *    that error detection is disabled for accesses via the page address.
- *
- * Pages will have match-all tags in the following circumstances:
- *
- * 1. Pages are being initialized for the first time, including during deferred
- *    memory init; see the call to page_kasan_tag_reset in __init_single_page.
- * 2. The allocation was not unpoisoned due to __GFP_SKIP_KASAN, with the
- *    exception of pages unpoisoned by kasan_unpoison_vmalloc.
- * 3. The allocation was excluded from being checked due to sampling,
- *    see the call to kasan_unpoison_pages.
- *
- * Poisoning pages during deferred memory init will greatly lengthen the
- * process and cause problem in large memory systems as the deferred pages
- * initialization is done with interrupt disabled.
- *
- * Assuming that there will be no reference to those newly initialized
- * pages before they are ever allocated, this should have no effect on
- * KASAN memory tracking as the poison will be properly inserted at page
- * allocation time. The only corner case is when pages are allocated by
- * on-demand allocation and then freed again before the deferred pages
- * initialization is done, but this is not likely to happen.
- */
-static inline bool should_skip_kasan_poison(struct page *page)
-{
-	return page_kasan_tag(page) == KASAN_TAG_KERNEL;
-}
-
 static void kernel_init_pages(struct page *page, int numpages)
 {
 	int i;
 
-	/* s390's use of memset() could override KASAN redzones. */
-	kasan_disable_current();
 	for (i = 0; i < numpages; i++)
-		clear_highpage_kasan_tagged(page + i);
-	kasan_enable_current();
+		clear_highpage(page + i);
 }
 
 
@@ -1090,14 +1051,12 @@ __always_inline bool __free_pages_prepare(struct page *page,
 					  unsigned int order, fpi_t fpi_flags)
 {
 	int bad = 0;
-	bool skip_kasan_poison = should_skip_kasan_poison(page);
 	bool init = want_init_on_free();
 	bool compound = PageCompound(page);
 	struct folio *folio = page_folio(page);
 
 	VM_BUG_ON_PAGE(PageTail(page), page);
 
-	kmsan_free_page(page, order);
 
 	/*
 	 * In rare cases, when truncation or holepunching raced with
@@ -1181,21 +1140,6 @@ __always_inline bool __free_pages_prepare(struct page *page,
 					   PAGE_SIZE << order);
 	}
 
-	/*
-	 * As memory initialization might be integrated into KASAN,
-	 * KASAN poisoning and memory initialization code must be
-	 * kept together to avoid discrepancies in behavior.
-	 *
-	 * With hardware tag-based KASAN, memory tags must be set before the
-	 * page becomes unavailable via arch_free_page.
-	 */
-	if (!skip_kasan_poison) {
-		kasan_poison_pages(page, order, init);
-
-		/* Memory is already initialized if KASAN did it internally. */
-		if (kasan_has_integrated_init())
-			init = false;
-	}
 	if (init)
 		kernel_init_pages(page, 1 << order);
 
@@ -1533,46 +1477,15 @@ static inline bool check_new_pages(struct page *page, unsigned int order)
 	return false;
 }
 
-static inline bool should_skip_kasan_unpoison(gfp_t flags)
-{
-	/* Skip, if hardware tag-based KASAN is not enabled. */
-	if (!kasan_hw_tags_enabled())
-		return true;
-
-	/*
-	 * With hardware tag-based KASAN enabled, skip if this has been
-	 * requested via __GFP_SKIP_KASAN.
-	 */
-	return flags & __GFP_SKIP_KASAN;
-}
-
-static inline bool should_skip_init(gfp_t flags)
-{
-	/* Don't skip, if hardware tag-based KASAN is not enabled. */
-	if (!kasan_hw_tags_enabled())
-		return false;
-
-	/* For hardware tag-based KASAN, skip if requested. */
-	return (flags & __GFP_SKIP_ZERO);
-}
-
 inline void post_alloc_hook(struct page *page, unsigned int order,
 				gfp_t gfp_flags)
 {
-	bool init = !want_init_on_free() && want_init_on_alloc(gfp_flags) &&
-			!should_skip_init(gfp_flags);
+	bool init = !want_init_on_free() && want_init_on_alloc(gfp_flags);
 	bool zero_tags = init && (gfp_flags & __GFP_ZEROTAGS);
-	int i;
 
 	set_page_private(page, 0);
 
 	arch_alloc_page(page, order);
-
-	/*
-	 * As memory initialization might be integrated into KASAN,
-	 * KASAN unpoisoning and memory initialization code must be
-	 * kept together to avoid discrepancies in behavior.
-	 */
 
 	/*
 	 * If memory tags should be zeroed
@@ -1581,19 +1494,6 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 	if (zero_tags)
 		init = !tag_clear_highpages(page, 1 << order);
 
-	if (!should_skip_kasan_unpoison(gfp_flags) &&
-	    kasan_unpoison_pages(page, order, init)) {
-		/* Take note that memory was initialized by KASAN. */
-		if (kasan_has_integrated_init())
-			init = false;
-	} else {
-		/*
-		 * If memory tags have not been set by KASAN, reset the page
-		 * tags to ensure page_address() dereferencing does not fault.
-		 */
-		for (i = 0; i != 1 << order; ++i)
-			page_kasan_tag_reset(page + i);
-	}
 	/* If memory is still not initialized, initialize it now. */
 	if (init)
 		kernel_init_pages(page, 1 << order);
@@ -3091,13 +2991,6 @@ static struct page *rmqueue_pcplist(struct zone *preferred_zone,
  * Use pcplists for THP or "cheap" high-order allocations.
  */
 
-/*
- * Do not instrument rmqueue() with KMSAN. This function may call
- * __msan_poison_alloca() through a call to set_pfnblock_migratetype().
- * If __msan_poison_alloca() attempts to allocate pages for the stack depot, it
- * may call rmqueue() again, which will result in a deadlock.
- */
-__no_sanitize_memory
 static inline
 struct page *rmqueue(struct zone *preferred_zone,
 			struct zone *zone, unsigned int order,
@@ -4846,7 +4739,6 @@ struct page *__alloc_frozen_pages(gfp_t gfp, unsigned int order,
 	page = __alloc_pages_slowpath(alloc_gfp, order, &ac);
 
 out:
-	kmsan_alloc_page(page, order, alloc_gfp);
 
 	return page;
 }
@@ -6423,8 +6315,7 @@ static int __alloc_contig_verify_gfp_mask(gfp_t gfp_mask, gfp_t *gfp_cc_mask)
 {
 	const gfp_t reclaim_mask = __GFP_IO | __GFP_FS | __GFP_RECLAIM;
 	const gfp_t action_mask = __GFP_COMP | __GFP_RETRY_MAYFAIL | __GFP_NOWARN |
-				  __GFP_ZERO | __GFP_ZEROTAGS | __GFP_SKIP_ZERO |
-				  __GFP_SKIP_KASAN;
+				  __GFP_ZERO | __GFP_ZEROTAGS;
 	const gfp_t cc_action_mask = __GFP_RETRY_MAYFAIL | __GFP_NOWARN;
 
 	/*
@@ -7078,9 +6969,8 @@ struct page *alloc_frozen_pages_nolock(gfp_t gfp_flags, int nid, unsigned int or
 	 * various contexts. We cannot use printk_deferred_enter() to mitigate,
 	 * since the running context is unknown.
 	 *
-	 * Specify __GFP_ZERO to make sure that call to kmsan_alloc_page() below
-	 * is safe in any context. Also zeroing the page is mandatory for
-	 * BPF use cases.
+	 * Specify __GFP_ZERO because zeroing the page is mandatory for BPF use
+	 * cases.
 	 *
 	 * Though __GFP_NOMEMALLOC is not checked in the code path below,
 	 * specify it here to highlight that alloc_pages_nolock()
@@ -7125,7 +7015,6 @@ struct page *alloc_frozen_pages_nolock(gfp_t gfp_flags, int nid, unsigned int or
 
 	/* Unlike regular alloc_pages() there is no __alloc_pages_slowpath(). */
 
-	kmsan_alloc_page(page, order, alloc_gfp);
 	return page;
 }
 /**

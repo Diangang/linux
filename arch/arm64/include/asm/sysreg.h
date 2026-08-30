@@ -11,7 +11,6 @@
 
 #include <linux/bits.h>
 #include <linux/stringify.h>
-#include <linux/kasan-tags.h>
 #include <linux/kconfig.h>
 
 #include <asm/gpr-num.h>

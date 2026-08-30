@@ -4,7 +4,6 @@
 #include <linux/resume_user_mode.h>
 #include <linux/highmem.h>
 #include <linux/jump_label.h>
-#include <linux/kmsan.h>
 #include <linux/tick.h>
 
 /* Workaround to allow gradual conversion of architecture code */
@@ -153,7 +152,6 @@ irqentry_state_t noinstr irqentry_nmi_enter(struct pt_regs *regs)
 	ct_nmi_enter();
 
 	instrumentation_begin();
-	kmsan_unpoison_entry_regs(regs);
 	trace_hardirqs_off_finish();
 	ftrace_nmi_enter();
 	instrumentation_end();

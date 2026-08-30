@@ -5,10 +5,6 @@ KCOV_INSTRUMENT		:= n
 
 obj-y += mutex.o semaphore.o rwsem.o percpu-rwsem.o
 
-# Avoid recursion lockdep -> sanitizer -> ... -> lockdep & improve performance.
-KASAN_SANITIZE_lockdep.o := n
-KCSAN_SANITIZE_lockdep.o := n
-
 obj-$(CONFIG_SMP) += spinlock.o
 obj-$(CONFIG_LOCK_SPIN_ON_OWNER) += osq_lock.o
 obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o

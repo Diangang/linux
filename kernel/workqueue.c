@@ -2011,9 +2011,6 @@ static void insert_work(struct pool_workqueue *pwq, struct work_struct *work,
 {
 	debug_work_activate(work);
 
-	/* record the work call stack in order to print it in KASAN reports */
-	kasan_record_aux_stack(work);
-
 	/* we own @work, set data and link */
 	set_work_pwq(work, pwq, extra_flags);
 	list_add_tail(&work->entry, head);

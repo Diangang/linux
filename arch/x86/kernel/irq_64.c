@@ -56,8 +56,8 @@ static int map_irq_stack(unsigned int cpu)
 }
 #else
 /*
- * If VMAP stacks are disabled due to KASAN, just use the per cpu
- * backing store without guard pages.
+ * If VMAP stacks are disabled, just use the per cpu backing store without
+ * guard pages.
  */
 static int map_irq_stack(unsigned int cpu)
 {

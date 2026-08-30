@@ -56,7 +56,6 @@
 #include <linux/writeback.h>
 #include <linux/shm.h>
 #include <linux/kcov.h>
-#include <linux/kmsan.h>
 #include <linux/random.h>
 #include <linux/rcuwait.h>
 #include <linux/compat.h>
@@ -502,7 +501,6 @@ static struct task_struct *find_child_reaper(struct task_struct *father,
 
 	reaper = find_alive_thread(father);
 	if (reaper) {
-		ASSERT_EXCLUSIVE_WRITER(pid_ns->child_reaper);
 		WRITE_ONCE(pid_ns->child_reaper, reaper);
 		return reaper;
 	}
@@ -716,7 +714,6 @@ void __noreturn do_exit(long code)
 		kthread_do_exit(kthread, code);
 
 	kcov_task_exit(tsk);
-	kmsan_task_exit(tsk);
 
 	synchronize_group_exit(tsk, code);
 	ptrace_event(PTRACE_EVENT_EXIT, code);

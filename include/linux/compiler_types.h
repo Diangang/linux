@@ -258,58 +258,9 @@ struct ftrace_likely_data {
  */
 #define noinline_for_tracing noinline
 
-/*
- * Sanitizer helper attributes: Because using __always_inline and
- * __no_sanitize_* conflict, provide helper attributes that will either expand
- * to __no_sanitize_* in compilation units where instrumentation is enabled
- * (__SANITIZE_*__), or __always_inline in compilation units without
- * instrumentation (__SANITIZE_*__ undefined).
- */
-#ifdef __SANITIZE_ADDRESS__
-/*
- * We can't declare function 'inline' because __no_sanitize_address conflicts
- * with inlining. Attempt to inline it may cause a build failure.
- *     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67368
- * '__maybe_unused' allows us to avoid defined-but-not-used warnings.
- */
-# define __no_kasan_or_inline __no_sanitize_address notrace __maybe_unused
-# define __no_sanitize_or_inline __no_kasan_or_inline
-#else
-# define __no_kasan_or_inline __always_inline
-#endif
-
 # define __data_racy
 
-#ifdef __SANITIZE_THREAD__
-/*
- * Clang still emits instrumentation for __tsan_func_{entry,exit}() and builtin
- * atomics even with __no_sanitize_thread (to avoid false positives in userspace
- * ThreadSanitizer). The kernel's requirements are stricter and we really do not
- * want any instrumentation with __no_kcsan.
- *
- * Therefore we add __disable_sanitizer_instrumentation where available to
- * disable all instrumentation. See Kconfig.kcsan where this is mandatory.
- */
-# define __no_kcsan __no_sanitize_thread __disable_sanitizer_instrumentation
-# define __no_sanitize_or_inline __no_kcsan notrace __maybe_unused
-#else
-# define __no_kcsan
-#endif
-
-#ifdef __SANITIZE_MEMORY__
-/*
- * Similarly to KASAN and KCSAN, KMSAN loses function attributes of inlined
- * functions, therefore disabling KMSAN checks also requires disabling inlining.
- *
- * __no_sanitize_or_inline effectively prevents KMSAN from reporting errors
- * within the function and marks all its outputs as initialized.
- */
-# define __no_sanitize_or_inline __no_kmsan_checks notrace __maybe_unused
-#endif
-
-#ifndef __no_sanitize_or_inline
 #define __no_sanitize_or_inline __always_inline
-#endif
 
 /*
  * The assume attribute is used to indicate that a certain condition is
@@ -394,8 +345,7 @@ struct ftrace_likely_data {
 /* Section for code which can't be instrumented at all */
 #define __noinstr_section(section)					\
 	noinline notrace __attribute((__section__(section)))		\
-	__no_kcsan __no_sanitize_address __no_profile __no_sanitize_coverage \
-	__no_sanitize_memory
+	__no_profile __no_sanitize_coverage
 
 #define noinstr __noinstr_section(".noinstr.text")
 

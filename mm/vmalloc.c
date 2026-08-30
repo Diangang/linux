@@ -72,7 +72,7 @@ static const bool vmap_allow_huge = false;
 
 bool is_vmalloc_addr(const void *x)
 {
-	unsigned long addr = (unsigned long)kasan_reset_tag(x);
+	unsigned long addr = (unsigned long)x;
 
 	return addr >= VMALLOC_START && addr < VMALLOC_END;
 }
@@ -320,9 +320,6 @@ int vmap_page_range(unsigned long addr, unsigned long end,
 	err = vmap_range_noflush(addr, end, phys_addr, pgprot_nx(prot),
 				 ioremap_max_page_shift);
 	flush_cache_vmap(addr, end);
-	if (!err)
-		err = kmsan_ioremap_page_range(addr, end, phys_addr, prot,
-					       ioremap_max_page_shift);
 	return err;
 }
 
@@ -473,7 +470,6 @@ void __vunmap_range_noflush(unsigned long start, unsigned long end)
 
 void vunmap_range_noflush(unsigned long start, unsigned long end)
 {
-	kmsan_vunmap_range_noflush(start, end);
 	__vunmap_range_noflush(start, end);
 }
 
@@ -654,24 +650,17 @@ int __vmap_pages_range_noflush(unsigned long addr, unsigned long end,
 }
 
 int vmap_pages_range_noflush(unsigned long addr, unsigned long end,
-		pgprot_t prot, struct page **pages, unsigned int page_shift,
-		gfp_t gfp_mask)
+		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
-	int ret = kmsan_vmap_pages_range_noflush(addr, end, prot, pages,
-						page_shift, gfp_mask);
-
-	if (ret)
-		return ret;
 	return __vmap_pages_range_noflush(addr, end, prot, pages, page_shift);
 }
 
 static int __vmap_pages_range(unsigned long addr, unsigned long end,
-		pgprot_t prot, struct page **pages, unsigned int page_shift,
-		gfp_t gfp_mask)
+		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
 	int err;
 
-	err = vmap_pages_range_noflush(addr, end, prot, pages, page_shift, gfp_mask);
+	err = vmap_pages_range_noflush(addr, end, prot, pages, page_shift);
 	flush_cache_vmap(addr, end);
 	return err;
 }
@@ -691,7 +680,7 @@ static int __vmap_pages_range(unsigned long addr, unsigned long end,
 int vmap_pages_range(unsigned long addr, unsigned long end,
 		pgprot_t prot, struct page **pages, unsigned int page_shift)
 {
-	return __vmap_pages_range(addr, end, prot, pages, page_shift, GFP_KERNEL);
+	return __vmap_pages_range(addr, end, prot, pages, page_shift);
 }
 
 static int check_sparse_vm_area(struct vm_struct *area, unsigned long start,
@@ -754,7 +743,7 @@ int is_vmalloc_or_module_addr(const void *x)
 	 * just put it in the vmalloc space.
 	 */
 #if defined(CONFIG_EXECMEM) && defined(MODULES_VADDR)
-	unsigned long addr = (unsigned long)kasan_reset_tag(x);
+	unsigned long addr = (unsigned long)x;
 	if (addr >= MODULES_VADDR && addr < MODULES_END)
 		return 1;
 #endif
@@ -1045,8 +1034,6 @@ static struct vmap_area *__find_vmap_area(unsigned long addr, struct rb_root *ro
 {
 	struct rb_node *n = root->rb_node;
 
-	addr = (unsigned long)kasan_reset_tag((void *)addr);
-
 	while (n) {
 		struct vmap_area *va;
 
@@ -1068,8 +1055,6 @@ __find_vmap_area_exceed_addr(unsigned long addr, struct rb_root *root)
 {
 	struct vmap_area *va = NULL;
 	struct rb_node *n = root->rb_node;
-
-	addr = (unsigned long)kasan_reset_tag((void *)addr);
 
 	while (n) {
 		struct vmap_area *tmp;
@@ -2004,7 +1989,6 @@ static struct vmap_area *alloc_vmap_area(unsigned long size,
 	unsigned int vn_id;
 	bool allow_block;
 	int purged = 0;
-	int ret;
 
 	if (unlikely(!size || offset_in_page(size) || !is_power_of_2(align)))
 		return ERR_PTR(-EINVAL);
@@ -2083,12 +2067,6 @@ retry:
 	BUG_ON(!IS_ALIGNED(va->va_start, align));
 	BUG_ON(va->va_start < vstart);
 	BUG_ON(va->va_end > vend);
-
-	ret = kasan_populate_vmalloc(addr, size, gfp_mask);
-	if (ret) {
-		free_vmap_area(va);
-		return ERR_PTR(ret);
-	}
 
 	return va;
 
@@ -2229,33 +2207,6 @@ decay_va_pool_node(struct vmap_node *vn, bool full_decay)
 	}
 
 	reclaim_list_global(&decay_list);
-}
-
-#define KASAN_RELEASE_BATCH_SIZE 32
-
-static void
-kasan_release_vmalloc_node(struct vmap_node *vn)
-{
-	struct vmap_area *va;
-	unsigned long start, end;
-	unsigned int batch_count = 0;
-
-	start = list_first_entry(&vn->purge_list, struct vmap_area, list)->va_start;
-	end = list_last_entry(&vn->purge_list, struct vmap_area, list)->va_end;
-
-	list_for_each_entry(va, &vn->purge_list, list) {
-		if (is_vmalloc_or_module_addr((void *) va->va_start))
-			kasan_release_vmalloc(va->va_start, va->va_end,
-				va->va_start, va->va_end,
-				KASAN_VMALLOC_PAGE_RANGE);
-
-		if (need_resched() || (++batch_count >= KASAN_RELEASE_BATCH_SIZE)) {
-			cond_resched();
-			batch_count = 0;
-		}
-	}
-
-	kasan_release_vmalloc(start, end, start, end, KASAN_VMALLOC_TLB_FLUSH);
 }
 
 static void purge_vmap_node(struct work_struct *work)
@@ -2971,7 +2922,7 @@ EXPORT_SYMBOL_GPL(vm_unmap_aliases);
 void vm_unmap_ram(const void *mem, unsigned int count)
 {
 	unsigned long size = (unsigned long)count << PAGE_SHIFT;
-	unsigned long addr = (unsigned long)kasan_reset_tag(mem);
+	unsigned long addr = (unsigned long)mem;
 	struct vmap_area *va;
 
 	might_sleep();
@@ -2979,8 +2930,6 @@ void vm_unmap_ram(const void *mem, unsigned int count)
 	BUG_ON(addr < VMALLOC_START);
 	BUG_ON(addr > VMALLOC_END);
 	BUG_ON(!PAGE_ALIGNED(addr));
-
-	kasan_poison_vmalloc(mem, size);
 
 	if (likely(count <= VMAP_MAX_ALLOC)) {
 		debug_check_no_locks_freed(mem, size);
@@ -3040,13 +2989,6 @@ void *vm_map_ram(struct page **pages, unsigned int count, int node)
 		vm_unmap_ram(mem, count);
 		return NULL;
 	}
-
-	/*
-	 * Mark the pages as accessible, now that they are mapped.
-	 * With hardware tag-based KASAN, marking is skipped for
-	 * non-VM_ALLOC mappings, see __kasan_unpoison_vmalloc().
-	 */
-	mem = kasan_unpoison_vmalloc(mem, size, KASAN_VMALLOC_PROT_NORMAL);
 
 	return mem;
 }
@@ -3132,7 +3074,6 @@ void __init vm_area_register_early(struct vm_struct *vm, size_t align)
 	vm->addr = (void *)addr;
 	vm->next = *p;
 	*p = vm;
-	kasan_populate_early_vm_area_shadow(vm->addr, vm->size);
 }
 
 void clear_vm_uninitialized_flag(struct vm_struct *vm)
@@ -3180,18 +3121,6 @@ struct vm_struct *__get_vm_area_node(unsigned long size,
 		kfree(area);
 		return NULL;
 	}
-
-	/*
-	 * Mark pages for non-VM_ALLOC mappings as accessible. Do it now as a
-	 * best-effort approach, as they can be mapped outside of vmalloc code.
-	 * For VM_ALLOC mappings, the pages are marked as accessible after
-	 * getting mapped in __vmalloc_node_range().
-	 * With hardware tag-based KASAN, marking is skipped for
-	 * non-VM_ALLOC mappings, see __kasan_unpoison_vmalloc().
-	 */
-	if (!(flags & VM_ALLOC))
-		area->addr = kasan_unpoison_vmalloc(area->addr, requested_size,
-						    KASAN_VMALLOC_PROT_NORMAL);
 
 	return area;
 }
@@ -3280,8 +3209,6 @@ struct vm_struct *remove_vm_area(const void *addr)
 
 	debug_check_no_locks_freed(vm->addr, get_vm_area_size(vm));
 	debug_check_no_obj_freed(vm->addr, get_vm_area_size(vm));
-	kasan_free_module_shadow(vm);
-	kasan_poison_vmalloc(vm->addr, get_vm_area_size(vm));
 
 	free_unmap_vmap_area(va);
 	return vm;
@@ -3684,8 +3611,7 @@ static void defer_vm_area_cleanup(struct vm_struct *area)
 
 /*
  * Page tables allocations ignore external GFP. Enforces it by
- * the memalloc scope API. It is used by vmalloc internals and
- * KASAN shadow population only.
+ * the memalloc scope API. It is used by vmalloc internals.
  *
  * GFP to scope mapping:
  *
@@ -3803,7 +3729,7 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
 	flags = memalloc_apply_gfp_scope(gfp_mask);
 	do {
 		ret = __vmap_pages_range(addr, addr + size, prot, area->pages,
-				page_shift, nested_gfp);
+				page_shift);
 		if (nofail && (ret < 0))
 			schedule_timeout_uninterruptible(1);
 	} while (nofail && (ret < 0));
@@ -3884,7 +3810,6 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 {
 	struct vm_struct *area;
 	void *ret;
-	kasan_vmalloc_flags_t kasan_flags = KASAN_VMALLOC_NONE;
 	unsigned long original_align = align;
 	unsigned int shift = PAGE_SHIFT;
 
@@ -3930,49 +3855,10 @@ again:
 		goto fail;
 	}
 
-	/*
-	 * Prepare arguments for __vmalloc_area_node() and
-	 * kasan_unpoison_vmalloc().
-	 */
-	if (pgprot_val(prot) == pgprot_val(PAGE_KERNEL)) {
-		if (kasan_hw_tags_enabled()) {
-			/*
-			 * Modify protection bits to allow tagging.
-			 * This must be done before mapping.
-			 */
-			prot = arch_vmap_pgprot_tagged(prot);
-
-			/*
-			 * Skip page_alloc poisoning and zeroing for physical
-			 * pages backing VM_ALLOC mapping. Memory is instead
-			 * poisoned and zeroed by kasan_unpoison_vmalloc().
-			 */
-			gfp_mask |= __GFP_SKIP_KASAN | __GFP_SKIP_ZERO;
-		}
-
-		/* Take note that the mapping is PAGE_KERNEL. */
-		kasan_flags |= KASAN_VMALLOC_PROT_NORMAL;
-	}
-
 	/* Allocate physical pages and map them into vmalloc space. */
 	ret = __vmalloc_area_node(area, gfp_mask, prot, shift, node);
 	if (!ret)
 		goto fail;
-
-	/*
-	 * Mark the pages as accessible, now that they are mapped.
-	 * The condition for setting KASAN_VMALLOC_INIT should complement the
-	 * one in post_alloc_hook() with regards to the __GFP_SKIP_ZERO check
-	 * to make sure that memory is initialized under the same conditions.
-	 * Tag-based KASAN modes only assign tags to normal non-executable
-	 * allocations, see __kasan_unpoison_vmalloc().
-	 */
-	kasan_flags |= KASAN_VMALLOC_VM_ALLOC;
-	if (!want_init_on_free() && want_init_on_alloc(gfp_mask) &&
-	    (gfp_mask & __GFP_SKIP_ZERO))
-		kasan_flags |= KASAN_VMALLOC_INIT;
-	/* KASAN_VMALLOC_PROT_NORMAL already set if required. */
-	area->addr = kasan_unpoison_vmalloc(area->addr, size, kasan_flags);
 
 	/*
 	 * In this function, newly allocated vm_struct has VM_UNINITIALIZED
@@ -4223,7 +4109,6 @@ void *vrealloc_node_align(const void *p, size_t size, unsigned long align,
 		if (want_init_on_free() || want_init_on_alloc(flags))
 			memset((void *)p + size, 0, old_size - size);
 		vm->requested_size = size;
-		kasan_vrealloc(p, old_size, size);
 		return (void *)p;
 	}
 
@@ -4237,7 +4122,6 @@ void *vrealloc_node_align(const void *p, size_t size, unsigned long align,
 		 * realloc shrink time.
 		 */
 		vm->requested_size = size;
-		kasan_vrealloc(p, old_size, size);
 		return (void *)p;
 	}
 
@@ -4488,8 +4372,6 @@ long vread_iter(struct iov_iter *iter, const char *addr, size_t count)
 	char *vaddr;
 	size_t n, size, flags, remains;
 	unsigned long next;
-
-	addr = kasan_reset_tag(addr);
 
 	/* Don't allow overflow */
 	if ((unsigned long) addr + count < count)
@@ -4777,7 +4659,7 @@ struct vm_struct **pcpu_get_vm_areas(const unsigned long *offsets,
 	struct vmap_area **vas, *va;
 	struct vm_struct **vms;
 	int area, area2, last_area, term_area;
-	unsigned long base, start, size, end, last_end, orig_start, orig_end;
+	unsigned long base, start, size, end, last_end;
 	bool purged = false;
 
 	/* verify parameters and allocate data structures */
@@ -4903,12 +4785,6 @@ retry:
 
 	spin_unlock(&free_vmap_area_lock);
 
-	/* populate the kasan shadow space */
-	for (area = 0; area < nr_vms; area++) {
-		if (kasan_populate_vmalloc(vas[area]->va_start, sizes[area], GFP_KERNEL))
-			goto err_free_shadow;
-	}
-
 	/* insert all vm's */
 	for (area = 0; area < nr_vms; area++) {
 		struct vmap_node *vn = addr_to_node(vas[area]->va_start);
@@ -4919,14 +4795,6 @@ retry:
 				 pcpu_get_vm_areas);
 		spin_unlock(&vn->busy.lock);
 	}
-
-	/*
-	 * Mark allocated areas as accessible. Do it now as a best-effort
-	 * approach, as they can be mapped outside of vmalloc code.
-	 * With hardware tag-based KASAN, marking is skipped for
-	 * non-VM_ALLOC mappings, see __kasan_unpoison_vmalloc().
-	 */
-	kasan_unpoison_vmap_areas(vms, nr_vms, KASAN_VMALLOC_PROT_NORMAL);
 
 	kfree(vas);
 	return vms;
@@ -4939,14 +4807,8 @@ recovery:
 	 * and when pcpu_get_vm_areas() is success.
 	 */
 	while (area--) {
-		orig_start = vas[area]->va_start;
-		orig_end = vas[area]->va_end;
-		va = merge_or_add_vmap_area_augment(vas[area], &free_vmap_area_root,
+		merge_or_add_vmap_area_augment(vas[area], &free_vmap_area_root,
 				&free_vmap_area_list);
-		if (va)
-			kasan_release_vmalloc(orig_start, orig_end,
-				va->va_start, va->va_end,
-				KASAN_VMALLOC_PAGE_RANGE | KASAN_VMALLOC_TLB_FLUSH);
 		vas[area] = NULL;
 	}
 
@@ -4978,30 +4840,6 @@ err_free:
 		kfree(vms[area]);
 	}
 err_free2:
-	kfree(vas);
-	kfree(vms);
-	return NULL;
-
-err_free_shadow:
-	spin_lock(&free_vmap_area_lock);
-	/*
-	 * We release all the vmalloc shadows, even the ones for regions that
-	 * hadn't been successfully added. This relies on kasan_release_vmalloc
-	 * being able to tolerate this case.
-	 */
-	for (area = 0; area < nr_vms; area++) {
-		orig_start = vas[area]->va_start;
-		orig_end = vas[area]->va_end;
-		va = merge_or_add_vmap_area_augment(vas[area], &free_vmap_area_root,
-				&free_vmap_area_list);
-		if (va)
-			kasan_release_vmalloc(orig_start, orig_end,
-				va->va_start, va->va_end,
-				KASAN_VMALLOC_PAGE_RANGE | KASAN_VMALLOC_TLB_FLUSH);
-		vas[area] = NULL;
-		kfree(vms[area]);
-	}
-	spin_unlock(&free_vmap_area_lock);
 	kfree(vas);
 	kfree(vms);
 	return NULL;

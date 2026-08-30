@@ -5,10 +5,6 @@
 
 # If these files are instrumented, boot hangs during the first second.
 KCOV_INSTRUMENT_common.o := n
-KMSAN_SANITIZE_common.o := n
-
-# As above, instrumenting secondary CPU boot code causes boot hangs.
-KCSAN_SANITIZE_common.o := n
 
 obj-y			:= cacheinfo.o scattered.o
 obj-y			+= topology_common.o topology_ext.o topology_amd.o

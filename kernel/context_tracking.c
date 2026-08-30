@@ -103,8 +103,6 @@ static void noinstr ct_kernel_exit(bool user, int offset)
 	lockdep_assert_irqs_disabled();
 	rcu_preempt_deferred_qs(current);
 
-	// instrumentation for the noinstr ct_kernel_exit_state()
-	instrument_atomic_write(&ct->state, sizeof(ct->state));
 
 	instrumentation_end();
 	WRITE_ONCE(ct->nesting, 0); /* Avoid irq-access tearing. */
@@ -139,8 +137,6 @@ static void noinstr ct_kernel_enter(bool user, int offset)
 	// ... but is watching here.
 	instrumentation_begin();
 
-	// instrumentation for the noinstr ct_kernel_enter_state()
-	instrument_atomic_write(&ct->state, sizeof(ct->state));
 
 	WRITE_ONCE(ct->nesting, 1);
 	WARN_ON_ONCE(ct_nmi_nesting());
@@ -186,8 +182,6 @@ void noinstr ct_nmi_exit(void)
 	/* This NMI interrupted an RCU-idle CPU, restore RCU-idleness. */
 	WRITE_ONCE(ct->nmi_nesting, 0); /* Avoid store tearing. */
 
-	// instrumentation for the noinstr ct_kernel_exit_state()
-	instrument_atomic_write(&ct->state, sizeof(ct->state));
 	instrumentation_end();
 
 	// RCU is watching here ...
@@ -236,10 +230,6 @@ void noinstr ct_nmi_enter(void)
 		// ... but is watching here.
 
 		instrumentation_begin();
-		// instrumentation for the noinstr rcu_is_watching_curr_cpu()
-		instrument_atomic_read(&ct->state, sizeof(ct->state));
-		// instrumentation for the noinstr ct_kernel_enter_state()
-		instrument_atomic_write(&ct->state, sizeof(ct->state));
 
 		incby = 1;
 	} else if (!in_nmi()) {

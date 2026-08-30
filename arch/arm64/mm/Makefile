@@ -7,6 +7,3 @@ obj-$(CONFIG_ARM64_CONTPTE)	+= contpte.o
 obj-$(CONFIG_TRANS_TABLE)	+= trans_pgd.o
 obj-$(CONFIG_TRANS_TABLE)	+= trans_pgd-asm.o
 obj-$(CONFIG_ARM64_GCS)		+= gcs.o
-KASAN_SANITIZE_physaddr.o	+= n
-
-KASAN_SANITIZE_kasan_init.o	:= n

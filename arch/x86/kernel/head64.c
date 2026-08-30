@@ -33,7 +33,6 @@
 #include <asm/bios_ebda.h>
 #include <asm/bootparam_utils.h>
 #include <asm/microcode.h>
-#include <asm/kasan.h>
 #include <asm/fixmap.h>
 #include <asm/realmode.h>
 #include <asm/extable.h>
@@ -242,10 +241,6 @@ asmlinkage __visible void __init __noreturn x86_64_start_kernel(char * real_mode
 
 	clear_bss();
 
-	/*
-	 * This needs to happen *before* kasan_early_init() because latter maps stuff
-	 * into that page.
-	 */
 	clear_page(init_top_pgt);
 
 	/*
@@ -255,15 +250,9 @@ asmlinkage __visible void __init __noreturn x86_64_start_kernel(char * real_mode
 	 */
 	sme_early_init();
 
-	kasan_early_init();
-
 	/*
 	 * Flush global TLB entries which could be left over from the trampoline page
 	 * table.
-	 *
-	 * This needs to happen *after* kasan_early_init() as KASAN-enabled .configs
-	 * instrument native_write_cr4() so KASAN must be initialized for that
-	 * instrumentation to work.
 	 */
 	__native_tlb_flush_global(this_cpu_read(cpu_tlbstate.cr4));
 

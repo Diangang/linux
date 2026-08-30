@@ -23,8 +23,7 @@
 #ifndef __ASSEMBLY__
 
 #include <linux/compiler_types.h>
-#include <linux/kasan-checks.h>
-#include <linux/kcsan-checks.h>
+#include <linux/types.h>
 
 /*
  * Yes, this permits 64-bit accesses on 32-bit architectures. These will
@@ -69,7 +68,7 @@ unsigned long __read_once_word_nocheck(const void *addr)
 
 /*
  * Use READ_ONCE_NOCHECK() instead of READ_ONCE() if you need to load a
- * word from memory atomically but without telling KASAN/KCSAN. This is
+ * word from memory atomically without sanitizer checks. This is
  * usually used by unwinding code when walking the stack of a running process.
  */
 #define READ_ONCE_NOCHECK(x)						\
@@ -82,10 +81,6 @@ unsigned long __read_once_word_nocheck(const void *addr)
 static __no_sanitize_or_inline
 unsigned long read_word_at_a_time(const void *addr)
 {
-	/* open-coded instrument_read(addr, 1) */
-	kasan_check_read(addr, 1);
-	kcsan_check_read(addr, 1);
-
 	/*
 	 * This load can race with concurrent stores to out-of-bounds memory,
 	 * but READ_ONCE() can't be used because it requires higher alignment

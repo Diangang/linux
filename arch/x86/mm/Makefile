@@ -5,11 +5,6 @@ KCOV_INSTRUMENT_pgprot.o		:= n
 # See the "Disable KCOV" comment in arch/x86/kernel/Makefile.
 KCOV_INSTRUMENT_physaddr.o		:= n
 
-KASAN_SANITIZE_pgprot.o		:= n
-
-# Avoid recursion by not calling KMSAN hooks for CEA code.
-KMSAN_SANITIZE_cpu_entry_area.o := n
-
 obj-y				:=  init.o init_$(BITS).o fault.o ioremap.o extable.o mmap.o \
 				    pgtable.o physaddr.o tlb.o cpu_entry_area.o maccess.o pgprot.o
 
@@ -19,7 +14,6 @@ obj-y				+= pat/
 CFLAGS_physaddr.o		:= -fno-stack-protector
 
 
-KMSAN_SANITIZE_kmsan_shadow.o	:= n
 
 
 obj-$(CONFIG_NUMA)		+= numa.o

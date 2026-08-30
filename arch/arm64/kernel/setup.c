@@ -40,7 +40,6 @@
 #include <asm/elf.h>
 #include <asm/cpufeature.h>
 #include <asm/cpu_ops.h>
-#include <asm/kasan.h>
 #include <asm/numa.h>
 #include <asm/rsi.h>
 #include <asm/scs.h>
@@ -276,7 +275,7 @@ u64 cpu_logical_map(unsigned int cpu)
 	return __cpu_logical_map[cpu];
 }
 
-void __init __no_sanitize_address setup_arch(char **cmdline_p)
+void __init setup_arch(char **cmdline_p)
 {
 	setup_initial_init_mm(_text, _etext, _edata, _end);
 
@@ -337,8 +336,6 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 		unflatten_device_tree();
 
 	bootmem_init();
-
-	kasan_init();
 
 	request_standard_resources();
 

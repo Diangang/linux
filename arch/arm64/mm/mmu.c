@@ -32,7 +32,6 @@
 #include <asm/barrier.h>
 #include <asm/cputype.h>
 #include <asm/fixmap.h>
-#include <asm/kasan.h>
 #include <asm/kernel-pgtable.h>
 #include <asm/sections.h>
 #include <asm/setup.h>

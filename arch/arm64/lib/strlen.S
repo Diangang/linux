@@ -43,11 +43,6 @@
 #define REP8_7f 0x7f7f7f7f7f7f7f7f
 #define REP8_80 0x8080808080808080
 
-/*
- * When KASAN_HW_TAGS is in use, memory is checked at MTE_GRANULE_SIZE
- * (16-byte) granularity, and we must ensure that no access straddles this
- * alignment boundary.
- */
 #define MIN_PAGE_SIZE 4096
 
 	/* Since strings are short on average, we check the first 16 bytes
@@ -206,4 +201,4 @@ L(page_cross):
 	b	L(page_cross_entry)
 SYM_FUNC_END(__pi_strlen)
 SYM_FUNC_ALIAS_WEAK(strlen, __pi_strlen)
-EXPORT_SYMBOL_NOKASAN(strlen)
+EXPORT_SYMBOL(strlen)

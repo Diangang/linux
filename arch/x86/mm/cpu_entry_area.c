@@ -9,7 +9,6 @@
 #include <asm/cpu_entry_area.h>
 #include <asm/fixmap.h>
 #include <asm/desc.h>
-#include <asm/kasan.h>
 #include <asm/setup.h>
 
 static DEFINE_PER_CPU_PAGE_ALIGNED(struct entry_stack_page, entry_stack_storage);
@@ -185,9 +184,6 @@ static void __init setup_cpu_entry_area(unsigned int cpu)
 	pgprot_t gdt_prot = PAGE_KERNEL;
 	pgprot_t tss_prot = PAGE_KERNEL;
 #endif
-
-	kasan_populate_shadow_for_vaddr(cea, CPU_ENTRY_AREA_SIZE,
-					early_cpu_to_node(cpu));
 
 	cea_set_pte(&cea->gdt, get_cpu_gdt_paddr(cpu), gdt_prot);
 

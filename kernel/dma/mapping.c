@@ -11,7 +11,6 @@
 #include <linux/export.h>
 #include <linux/gfp.h>
 #include <linux/iommu-dma.h>
-#include <linux/kmsan.h>
 #include <linux/of_device.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
@@ -169,8 +168,6 @@ dma_addr_t dma_map_phys(struct device *dev, phys_addr_t phys, size_t size,
 	else if (ops->map_phys)
 		addr = ops->map_phys(dev, phys, size, dir, attrs);
 
-	if (!is_mmio)
-		kmsan_handle_dma(phys, size, dir);
 	debug_dma_map_phys(dev, phys, size, dir, addr, attrs);
 
 	return addr;
@@ -246,7 +243,6 @@ static int __dma_map_sg_attrs(struct device *dev, struct scatterlist *sg,
 		ents = ops->map_sg(dev, sg, nents, dir, attrs);
 
 	if (ents > 0) {
-		kmsan_handle_dma_sg(sg, nents, dir);
 		debug_dma_map_sg(dev, sg, nents, ents, dir, attrs);
 	} else if (WARN_ON_ONCE(ents != -EINVAL && ents != -ENOMEM &&
 				ents != -EIO && ents != -EREMOTEIO)) {

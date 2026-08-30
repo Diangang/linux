@@ -18,7 +18,6 @@
 #include <linux/sysctl.h>
 #include <linux/sysfs.h>
 #include <linux/page-isolation.h>
-#include <linux/kasan.h>
 #include <linux/kthread.h>
 #include <linux/freezer.h>
 #include <linux/page_owner.h>

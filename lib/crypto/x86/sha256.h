@@ -61,8 +61,6 @@ static bool sha256_finup_2x_arch(const struct __sha256_ctx *ctx,
 		kernel_fpu_begin();
 		sha256_ni_finup2x(ctx, data1, data2, len, out1, out2);
 		kernel_fpu_end();
-		kmsan_unpoison_memory(out1, SHA256_DIGEST_SIZE);
-		kmsan_unpoison_memory(out2, SHA256_DIGEST_SIZE);
 		return true;
 	}
 	return false;

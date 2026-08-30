@@ -8,9 +8,9 @@
 /*
  * {pgd,p4d}_populate_kernel() are defined as macros to allow
  * compile-time optimization based on the configured page table levels.
- * Without this, linking may fail because callers (e.g., KASAN) may rely
- * on calls to these functions being optimized away when passing symbols
- * that exist only for certain page table levels.
+ * Without this, linking may fail because callers may rely on calls to these
+ * functions being optimized away when passing symbols that exist only for
+ * certain page table levels.
  */
 #define pgd_populate_kernel(addr, pgd, p4d)				\
 	do {								\

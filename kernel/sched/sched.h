@@ -2191,7 +2191,6 @@ static inline void __block_task(struct rq *rq, struct task_struct *p)
 		delayacct_blkio_start();
 	}
 
-	ASSERT_EXCLUSIVE_WRITER(p->on_rq);
 
 	/*
 	 * The moment this write goes through, ttwu() can swoop in and migrate

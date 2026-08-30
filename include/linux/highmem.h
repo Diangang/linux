@@ -6,7 +6,6 @@
 #include <linux/kernel.h>
 #include <linux/bug.h>
 #include <linux/cacheflush.h>
-#include <linux/kmsan.h>
 #include <linux/mm.h>
 #include <linux/uaccess.h>
 #include <linux/hardirq.h>
@@ -337,14 +336,6 @@ static inline void clear_highpage(struct page *page)
 	kunmap_local(kaddr);
 }
 
-static inline void clear_highpage_kasan_tagged(struct page *page)
-{
-	void *kaddr = kmap_local_page(page);
-
-	clear_page(kasan_reset_tag(kaddr));
-	kunmap_local(kaddr);
-}
-
 #ifndef __HAVE_ARCH_TAG_CLEAR_HIGHPAGES
 
 /* Return false to let people know we did not initialize the pages */
@@ -395,7 +386,6 @@ static inline void copy_user_highpage(struct page *to, struct page *from,
 	vfrom = kmap_local_page(from);
 	vto = kmap_local_page(to);
 	copy_user_page(vto, vfrom, vaddr, to);
-	kmsan_unpoison_memory(page_address(to), PAGE_SIZE);
 	kunmap_local(vto);
 	kunmap_local(vfrom);
 }
@@ -411,7 +401,6 @@ static inline void copy_highpage(struct page *to, struct page *from)
 	vfrom = kmap_local_page(from);
 	vto = kmap_local_page(to);
 	copy_page(vto, vfrom);
-	kmsan_copy_page_meta(to, from);
 	kunmap_local(vto);
 	kunmap_local(vfrom);
 }
@@ -434,8 +423,6 @@ static inline int copy_mc_user_highpage(struct page *to, struct page *from,
 	vfrom = kmap_local_page(from);
 	vto = kmap_local_page(to);
 	ret = copy_mc_to_kernel(vto, vfrom, PAGE_SIZE);
-	if (!ret)
-		kmsan_unpoison_memory(page_address(to), PAGE_SIZE);
 	kunmap_local(vto);
 	kunmap_local(vfrom);
 
@@ -453,8 +440,6 @@ static inline int copy_mc_highpage(struct page *to, struct page *from)
 	vfrom = kmap_local_page(from);
 	vto = kmap_local_page(to);
 	ret = copy_mc_to_kernel(vto, vfrom, PAGE_SIZE);
-	if (!ret)
-		kmsan_copy_page_meta(to, from);
 	kunmap_local(vto);
 	kunmap_local(vfrom);
 

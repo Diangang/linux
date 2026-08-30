@@ -73,4 +73,4 @@ L(not_found):
 	ret
 SYM_FUNC_END(__pi_memchr)
 SYM_FUNC_ALIAS_WEAK(memchr, __pi_memchr)
-EXPORT_SYMBOL_NOKASAN(memchr)
+EXPORT_SYMBOL(memchr)

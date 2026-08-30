@@ -3,7 +3,6 @@
 #include <linux/spinlock.h>
 #include <linux/task_work.h>
 #include <linux/resume_user_mode.h>
-#include <linux/kasan.h>
 
 static struct callback_head work_exited; /* all we need is ->next == NULL */
 
@@ -67,8 +66,6 @@ int task_work_add(struct task_struct *task, struct callback_head *work,
 			return -EINVAL;
 		if (!IS_ENABLED(CONFIG_IRQ_WORK))
 			return -EINVAL;
-	} else {
-		kasan_record_aux_stack(work);
 	}
 
 	head = READ_ONCE(task->task_works);

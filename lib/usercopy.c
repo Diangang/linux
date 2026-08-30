@@ -3,7 +3,6 @@
 #include <linux/errno.h>
 #include <linux/export.h>
 #include <linux/fault-inject-usercopy.h>
-#include <linux/instrumented.h>
 #include <linux/kernel.h>
 #include <linux/nospec.h>
 #include <linux/string.h>

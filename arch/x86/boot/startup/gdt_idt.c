@@ -15,8 +15,8 @@
  * this happens in the functions called from head_64.S.
  *
  * The idt_table can't be used that early because all the code modifying it is
- * in idt.c and can be instrumented by tracing or KASAN, which both don't work
- * during early CPU bringup. Also the idt_table has the runtime vectors
+ * in idt.c and can be instrumented by tracing, which doesn't work during early
+ * CPU bringup. Also the idt_table has the runtime vectors
  * configured which require certain CPU state to be setup already (like TSS),
  * which also hasn't happened yet in early CPU bringup.
  */

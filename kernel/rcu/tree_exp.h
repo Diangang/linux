@@ -261,7 +261,6 @@ static void rcu_report_exp_rdp(struct rcu_data *rdp)
 
 	raw_spin_lock_irqsave_rcu_node(rnp, flags);
 	WRITE_ONCE(rdp->cpu_no_qs.b.exp, false);
-	ASSERT_EXCLUSIVE_WRITER(rdp->cpu_no_qs.b.exp);
 	rcu_report_exp_cpu_mult(rnp, flags, rdp->grpmask, true);
 }
 
@@ -706,7 +705,6 @@ static void rcu_exp_sel_wait_wake(unsigned long s)
 static void rcu_exp_need_qs(void)
 {
 	lockdep_assert_irqs_disabled();
-	ASSERT_EXCLUSIVE_WRITER_SCOPED(*this_cpu_ptr(&rcu_data.cpu_no_qs.b.exp));
 	__this_cpu_write(rcu_data.cpu_no_qs.b.exp, true);
 	/* Store .exp before .rcu_urgent_qs. */
 	smp_store_release(this_cpu_ptr(&rcu_data.rcu_urgent_qs), true);
@@ -734,7 +732,6 @@ static void rcu_exp_handler(void *unused)
 	 * WARN if the CPU is unexpectedly already looking for a
 	 * QS or has already reported one.
 	 */
-	ASSERT_EXCLUSIVE_WRITER_SCOPED(rdp->cpu_no_qs.b.exp);
 	if (WARN_ON_ONCE(!(READ_ONCE(rnp->expmask) & rdp->grpmask) ||
 			 READ_ONCE(rdp->cpu_no_qs.b.exp)))
 		return;
@@ -844,7 +841,6 @@ static void rcu_exp_handler(void *unused)
 	struct rcu_node *rnp = rdp->mynode;
 	bool preempt_bh_enabled = !(preempt_count() & (PREEMPT_MASK | SOFTIRQ_MASK));
 
-	ASSERT_EXCLUSIVE_WRITER_SCOPED(rdp->cpu_no_qs.b.exp);
 	if (!(READ_ONCE(rnp->expmask) & rdp->grpmask) ||
 	    __this_cpu_read(rcu_data.cpu_no_qs.b.exp))
 		return;

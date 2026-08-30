@@ -160,7 +160,7 @@
  * Architectures that can implement ACQUIRE better need to take care.
  */
 #ifndef smp_mb__after_spinlock
-#define smp_mb__after_spinlock()	kcsan_mb()
+#define smp_mb__after_spinlock()	do { } while (0)
 #endif
 
 static inline void do_raw_spin_lock(raw_spinlock_t *lock) __acquires(lock)

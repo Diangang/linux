@@ -1053,7 +1053,6 @@ void activate_task(struct rq *rq, struct task_struct *p, int flags)
 	enqueue_task(rq, p, flags);
 
 	WRITE_ONCE(p->on_rq, TASK_ON_RQ_QUEUED);
-	ASSERT_EXCLUSIVE_WRITER(p->on_rq);
 }
 
 void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
@@ -1061,7 +1060,6 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 	WARN_ON_ONCE(flags & DEQUEUE_SLEEP);
 
 	WRITE_ONCE(p->on_rq, TASK_ON_RQ_MIGRATING);
-	ASSERT_EXCLUSIVE_WRITER(p->on_rq);
 
 	/*
 	 * Code explicitly relies on TASK_ON_RQ_MIGRATING begin set *before*

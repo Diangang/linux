@@ -6,7 +6,6 @@
 #include <linux/ftrace.h>
 #include <linux/highmem.h>
 #include <linux/hrtimer_rearm.h>
-#include <linux/kmsan.h>
 #include <linux/rseq_entry.h>
 #include <linux/static_call_types.h>
 #include <linux/syscalls.h>
@@ -98,7 +97,6 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
 	user_exit_irqoff();
 
 	instrumentation_begin();
-	kmsan_unpoison_entry_regs(regs);
 	trace_hardirqs_off_finish();
 	instrumentation_end();
 }
@@ -420,7 +418,6 @@ static __always_inline irqentry_state_t irqentry_enter_from_kernel_mode(struct p
 		lockdep_hardirqs_off(CALLER_ADDR0);
 		ct_irq_enter();
 		instrumentation_begin();
-		kmsan_unpoison_entry_regs(regs);
 		trace_hardirqs_off_finish();
 		instrumentation_end();
 
@@ -436,7 +433,6 @@ static __always_inline irqentry_state_t irqentry_enter_from_kernel_mode(struct p
 	 */
 	lockdep_hardirqs_off(CALLER_ADDR0);
 	instrumentation_begin();
-	kmsan_unpoison_entry_regs(regs);
 	rcu_irq_enter_check_tick();
 	trace_hardirqs_off_finish();
 	instrumentation_end();

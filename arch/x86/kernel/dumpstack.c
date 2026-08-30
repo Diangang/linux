@@ -16,7 +16,6 @@
 #include <linux/bug.h>
 #include <linux/nmi.h>
 #include <linux/sysfs.h>
-#include <linux/kasan.h>
 
 #include <asm/cpu_entry_area.h>
 #include <asm/stacktrace.h>
@@ -170,12 +169,6 @@ static void show_regs_if_on_stack(struct stack_info *info, struct pt_regs *regs,
 	}
 }
 
-/*
- * This function reads pointers from the stack and dereferences them. The
- * pointers may not have their KMSAN shadow set up properly, which may result
- * in false positive reports. Disable instrumentation to avoid those.
- */
-__no_kmsan_checks
 static void __show_trace_log_lvl(struct task_struct *task, struct pt_regs *regs,
 				 unsigned long *stack, const char *log_lvl)
 {
@@ -301,20 +294,7 @@ next:
 static void show_trace_log_lvl(struct task_struct *task, struct pt_regs *regs,
 			       unsigned long *stack, const char *log_lvl)
 {
-	/*
-	 * Disable KASAN to avoid false positives during walking another
-	 * task's stacks, as values on these stacks may change concurrently
-	 * with task execution.
-	 */
-	bool disable_kasan = task && task != current;
-
-	if (disable_kasan)
-		kasan_disable_current();
-
 	__show_trace_log_lvl(task, regs, stack, log_lvl);
-
-	if (disable_kasan)
-		kasan_enable_current();
 }
 
 void show_stack(struct task_struct *task, unsigned long *sp,
@@ -393,10 +373,7 @@ void oops_end(unsigned long flags, struct pt_regs *regs, int signr)
 	 * We're not going to return, but we might be on an IST stack or
 	 * have very little stack space left.  Rewind the stack and kill
 	 * the task.
-	 * Before we rewind the stack, we have to tell KASAN that we're going to
-	 * reuse the task stack and that existing poisons are invalid.
 	 */
-	kasan_unpoison_task_stack(current);
 	rewind_stack_and_make_dead(signr);
 }
 NOKPROBE_SYMBOL(oops_end);
@@ -456,8 +433,6 @@ void die_addr(const char *str, struct pt_regs *regs, long err, long gp_addr)
 	int sig = SIGSEGV;
 
 	__die_header(str, regs, err);
-	if (gp_addr)
-		kasan_non_canonical_hook(gp_addr);
 	if (__die_body(str, regs, err))
 		sig = 0;
 	oops_end(flags, regs, sig);

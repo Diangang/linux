@@ -24,9 +24,7 @@
 #include <linux/vmalloc.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
-#include <linux/kasan.h>
 #include <linux/node.h>
-#include <linux/kmsan.h>
 #include <linux/cpu.h>
 #include <linux/cpuset.h>
 #include <linux/mempolicy.h>
@@ -487,7 +485,6 @@ static inline void *get_freepointer(struct kmem_cache *s, void *object)
 	unsigned long ptr_addr;
 	freeptr_t p;
 
-	object = kasan_reset_tag(object);
 	ptr_addr = (unsigned long)object + s->offset;
 	p = *(freeptr_t *)(ptr_addr);
 	return freelist_ptr_decode(s, p, ptr_addr);
@@ -497,8 +494,6 @@ static inline void set_freepointer(struct kmem_cache *s, void *object, void *fp)
 {
 	unsigned long freeptr_addr = (unsigned long)object + s->offset;
 
-
-	freeptr_addr = (unsigned long)kasan_reset_tag((void *)freeptr_addr);
 	*(freeptr_t *)freeptr_addr = freelist_ptr_encode(s, fp, freeptr_addr);
 }
 
@@ -686,7 +681,7 @@ static inline bool slab_update_freelist(struct kmem_cache *s, struct slab *slab,
 static inline void set_orig_size(struct kmem_cache *s,
 				void *object, unsigned long orig_size)
 {
-	void *p = kasan_reset_tag(object);
+	void *p = object;
 
 	if (!slub_debug_orig_size(s))
 		return;
@@ -699,7 +694,7 @@ static inline void set_orig_size(struct kmem_cache *s,
 
 static inline unsigned long get_orig_size(struct kmem_cache *s, void *object)
 {
-	void *p = kasan_reset_tag(object);
+	void *p = object;
 
 	if (is_kfence_address(object))
 		return kfence_ksize(object);
@@ -779,7 +774,6 @@ static inline int check_valid_pointer(struct kmem_cache *s,
 		return 1;
 
 	base = slab_address(slab);
-	object = kasan_reset_tag(object);
 	object = restore_red_left(s, object);
 	if (object < base || object >= base + slab->objects * s->size ||
 		(object - base) % s->size) {
@@ -792,10 +786,8 @@ static inline int check_valid_pointer(struct kmem_cache *s,
 static void print_section(char *level, char *text, u8 *addr,
 			  unsigned int length)
 {
-	metadata_access_enable();
 	print_hex_dump(level, text, DUMP_PREFIX_ADDRESS,
-			16, 1, kasan_reset_tag((void *)addr), length, 1);
-	metadata_access_disable();
+			16, 1, addr, length, 1);
 }
 
 static struct track *get_track(struct kmem_cache *s, void *object,
@@ -805,7 +797,7 @@ static struct track *get_track(struct kmem_cache *s, void *object,
 
 	p = object + get_info_end(s);
 
-	return kasan_reset_tag(p + alloc);
+	return p + alloc;
 }
 
 #ifdef CONFIG_STACKDEPOT
@@ -972,8 +964,6 @@ static void print_trailer(struct kmem_cache *s, struct slab *slab, u8 *p)
 	if (slub_debug_orig_size(s))
 		off += sizeof(unsigned long);
 
-	off += kasan_metadata_size(s, false);
-
 	if (off != size_from_object(s))
 		/* Beginning of the filler is the free pointer */
 		print_section(KERN_ERR, "Padding  ", p + off,
@@ -1026,16 +1016,11 @@ static __printf(3, 4) void slab_err(struct kmem_cache *s, struct slab *slab,
 
 static void init_object(struct kmem_cache *s, void *object, u8 val)
 {
-	u8 *p = kasan_reset_tag(object);
+	u8 *p = object;
 	unsigned int poison_size = s->object_size;
 
 	if (s->flags & SLAB_RED_ZONE) {
-		/*
-		 * Here and below, avoid overwriting the KMSAN shadow. Keeping
-		 * the shadow makes it possible to distinguish uninit-value
-		 * from use-after-free.
-		 */
-		memset_no_sanitize_memory(p - s->red_left_pad, val,
+		memset(p - s->red_left_pad, val,
 					  s->red_left_pad);
 
 		if (slub_debug_orig_size(s) && val == SLUB_RED_ACTIVE) {
@@ -1049,12 +1034,12 @@ static void init_object(struct kmem_cache *s, void *object, u8 val)
 	}
 
 	if (s->flags & __OBJECT_POISON) {
-		memset_no_sanitize_memory(p, POISON_FREE, poison_size - 1);
-		memset_no_sanitize_memory(p + poison_size - 1, POISON_END, 1);
+		memset(p, POISON_FREE, poison_size - 1);
+		memset(p + poison_size - 1, POISON_END, 1);
 	}
 
 	if (s->flags & SLAB_RED_ZONE)
-		memset_no_sanitize_memory(p + poison_size, val,
+		memset(p + poison_size, val,
 					  s->inuse - poison_size);
 }
 
@@ -1076,9 +1061,7 @@ check_bytes_and_report(struct kmem_cache *s, struct slab *slab,
 	u8 *end;
 	u8 *addr = slab_address(slab);
 
-	metadata_access_enable();
-	fault = memchr_inv(kasan_reset_tag(start), value, bytes);
-	metadata_access_disable();
+	fault = memchr_inv(start, value, bytes);
 	if (!fault)
 		return 1;
 
@@ -1130,8 +1113,6 @@ skip_bug_print:
  *   - B. alloc tracking (SLAB_STORE_USER)
  *   - C. free tracking (SLAB_STORE_USER)
  *   - D. original request size (SLAB_KMALLOC && SLAB_STORE_USER)
- *   - E. KASAN metadata (if enabled)
- *
  * [Mandatory padding] (if CONFIG_SLUB_DEBUG && SLAB_RED_ZONE)
  *   - One mandatory debug word to guarantee a minimum poisoned gap
  *     between metadata and the next object, independent of alignment.
@@ -1167,8 +1148,6 @@ static int check_pad_bytes(struct kmem_cache *s, struct slab *slab, u8 *p)
 			off += sizeof(unsigned long);
 	}
 
-	off += kasan_metadata_size(s, false);
-
 	if (size_from_object(s) == off)
 		return 1;
 
@@ -1200,9 +1179,7 @@ slab_pad_check(struct kmem_cache *s, struct slab *slab)
 		return;
 
 	pad = end - remainder;
-	metadata_access_enable();
-	fault = memchr_inv(kasan_reset_tag(pad), POISON_INUSE, remainder);
-	metadata_access_disable();
+	fault = memchr_inv(pad, POISON_INUSE, remainder);
 	if (!fault)
 		return;
 	while (end > fault && end[-1] == POISON_INUSE)
@@ -1221,7 +1198,7 @@ static int check_object(struct kmem_cache *s, struct slab *slab,
 {
 	u8 *p = object;
 	u8 *endobject = object + s->object_size;
-	unsigned int orig_size, kasan_meta_size;
+	unsigned int orig_size;
 	int ret = 1;
 
 	if (s->flags & SLAB_RED_ZONE) {
@@ -1254,18 +1231,12 @@ static int check_object(struct kmem_cache *s, struct slab *slab,
 
 	if (s->flags & SLAB_POISON) {
 		if (val != SLUB_RED_ACTIVE && (s->flags & __OBJECT_POISON)) {
-			/*
-			 * KASAN can save its free meta data inside of the
-			 * object at offset 0. Thus, skip checking the part of
-			 * the redzone that overlaps with the meta data.
-			 */
-			kasan_meta_size = kasan_metadata_size(s, true);
-			if (kasan_meta_size < s->object_size - 1 &&
+			if (s->object_size > 1 &&
 			    !check_bytes_and_report(s, slab, p, "Poison",
-					p + kasan_meta_size, POISON_FREE,
-					s->object_size - kasan_meta_size - 1, ret))
+					p, POISON_FREE,
+					s->object_size - 1, ret))
 				ret = 0;
-			if (kasan_meta_size < s->object_size &&
+			if (s->object_size &&
 			    !check_bytes_and_report(s, slab, p, "End Poison",
 					p + s->object_size - 1, POISON_END, 1, ret))
 				ret = 0;
@@ -1463,9 +1434,7 @@ void setup_slab_debug(struct kmem_cache *s, struct slab *slab, void *addr)
 	if (!kmem_cache_debug_flags(s, SLAB_POISON))
 		return;
 
-	metadata_access_enable();
-	memset(kasan_reset_tag(addr), POISON_INUSE, slab_size(slab));
-	metadata_access_disable();
+	memset(addr, POISON_INUSE, slab_size(slab));
 }
 
 static inline int alloc_consistency_checks(struct kmem_cache *s,
@@ -1792,58 +1761,30 @@ static inline void dec_slabs_node(struct kmem_cache *s, int node,
  * production configuration these hooks all should produce no code at all.
  *
  * Returns true if freeing of the object can proceed, false if its reuse
- * was delayed by CONFIG_SLUB_RCU_DEBUG or KASAN quarantine, or it was returned
- * to KFENCE.
+ * was delayed by CONFIG_SLUB_RCU_DEBUG or it was returned to KFENCE.
  *
  * For objects allocated via kmalloc_nolock(), only a subset of alloc hooks
  * are invoked, so some free hooks must handle asymmetric hook calls.
  *
- * Alloc hooks called for kmalloc_nolock():
- * - kmsan_slab_alloc()
- * - kasan_slab_alloc()
  * Free hooks that must handle missing corresponding alloc hooks:
  * - kfence_free()
  *
  * Free hooks that have no alloc hook counterpart, and thus safe to call:
  * - debug_check_no_locks_freed()
  * - debug_check_no_obj_freed()
- * - __kcsan_check_access()
  */
 static __always_inline
-bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
-		    bool after_rcu_delay)
+bool slab_free_hook(struct kmem_cache *s, void *x, bool init)
 {
-	/* Are the object contents still accessible? */
-	bool still_accessible = (s->flags & SLAB_TYPESAFE_BY_RCU) && !after_rcu_delay;
-
-	kmsan_slab_free(s, x);
-
 	debug_check_no_locks_freed(x, s->object_size);
 
 	if (!(s->flags & SLAB_DEBUG_OBJECTS))
 		debug_check_no_obj_freed(x, s->object_size);
 
-	/* Use KCSAN to help debug racy use-after-free. */
-	if (!still_accessible)
-		__kcsan_check_access(x, s->object_size,
-				     KCSAN_ACCESS_WRITE | KCSAN_ACCESS_ASSERT);
-
 	if (kfence_free(x))
 		return false;
 
 	/*
-	 * Give KASAN a chance to notice an invalid free operation before we
-	 * modify the object.
-	 */
-	if (kasan_slab_pre_free(s, x))
-		return false;
-
-
-	/*
-	 * As memory initialization might be integrated into KASAN,
-	 * kasan_slab_free and initialization memset's must be
-	 * kept together to avoid discrepancies in behavior.
-	 *
 	 * The initialization memset's clear the object and the metadata,
 	 * but don't touch the SLAB redzone.
 	 *
@@ -1856,10 +1797,9 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 
 		inuse = get_info_end(s);
 		orig_size = get_orig_size(s, x);
-		if (!kasan_has_integrated_init())
-			memset(kasan_reset_tag(x), 0, orig_size);
+		memset(x, 0, orig_size);
 		rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
-		memset((char *)kasan_reset_tag(x) + inuse, 0,
+		memset((char *)x + inuse, 0,
 		       s->size - inuse - rsize);
 		/*
 		 * Restore orig_size, otherwise kmalloc redzone overwritten
@@ -1868,8 +1808,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 		set_orig_size(s, x, orig_size);
 
 	}
-	/* KASAN might put x into memory quarantine, delaying its reuse. */
-	return !kasan_slab_free(s, x, init, still_accessible, false);
+	return true;
 }
 
 static __fastpath_inline
@@ -1883,7 +1822,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 	bool init;
 
 	if (is_kfence_address(next)) {
-		slab_free_hook(s, next, false, false);
+		slab_free_hook(s, next, false);
 		return false;
 	}
 
@@ -1898,7 +1837,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 		next = get_freepointer(s, object);
 
 		/* If object's reuse doesn't have to be delayed */
-		if (likely(slab_free_hook(s, object, init, false))) {
+		if (likely(slab_free_hook(s, object, init))) {
 			/* Move object to the new freelist */
 			set_freepointer(s, object, *head);
 			*head = object;
@@ -1919,12 +1858,8 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 static void *setup_object(struct kmem_cache *s, void *object)
 {
 	setup_object_debug(s, object);
-	object = kasan_init_slab_obj(s, object);
-	if (unlikely(s->ctor)) {
-		kasan_unpoison_new_object(s, object);
+	if (unlikely(s->ctor))
 		s->ctor(object);
-		kasan_poison_new_object(s, object);
-	}
 	return object;
 }
 
@@ -2108,7 +2043,7 @@ static bool __rcu_free_sheaf_prepare(struct kmem_cache *s,
 	while (i < sheaf->size) {
 		struct slab *slab = virt_to_slab(p[i]);
 
-		if (unlikely(!slab_free_hook(s, p[i], init, true))) {
+		if (unlikely(!slab_free_hook(s, p[i], init))) {
 			p[i] = p[--sheaf->size];
 			continue;
 		}
@@ -2529,8 +2464,6 @@ static struct slab *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 	slab->frozen = 0;
 
 	slab->slab_cache = s;
-
-	kasan_poison_slab(slab);
 
 	start = slab_address(slab);
 
@@ -3380,7 +3313,7 @@ static __always_inline void maybe_wipe_obj_freeptr(struct kmem_cache *s,
 {
 	if (unlikely(slab_want_init_on_free(s)) && obj &&
 	    !freeptr_outside_object(s))
-		memset((void *)((char *)kasan_reset_tag(obj) + s->offset),
+		memset((void *)((char *)obj + s->offset),
 			0, sizeof(void *));
 }
 
@@ -3566,13 +3499,11 @@ struct kmem_cache *slab_pre_alloc_hook(struct kmem_cache *s, gfp_t flags)
 }
 
 static __fastpath_inline
-void slab_post_alloc_hook(struct kmem_cache *s, gfp_t flags, size_t size,
+void slab_post_alloc_hook(struct kmem_cache *s, size_t size,
 			  void **p, bool init, unsigned int orig_size)
 {
 	unsigned int zero_size = s->object_size;
-	bool kasan_init = init;
 	size_t i;
-	gfp_t init_flags = flags & gfp_allowed_mask;
 
 	/*
 	 * For kmalloc object, the allocated memory size(object_size) is likely
@@ -3586,32 +3517,9 @@ void slab_post_alloc_hook(struct kmem_cache *s, gfp_t flags, size_t size,
 	    (s->flags & SLAB_KMALLOC))
 		zero_size = orig_size;
 
-	/*
-	 * When slab_debug is enabled, avoid memory initialization integrated
-	 * into KASAN and instead zero out the memory via the memset below with
-	 * the proper size. Otherwise, KASAN might overwrite SLUB redzones and
-	 * cause false-positive reports. This does not lead to a performance
-	 * penalty on production builds, as slab_debug is not intended to be
-	 * enabled there.
-	 */
-	if (__slub_debug_enabled())
-		kasan_init = false;
-
-	/*
-	 * As memory initialization might be integrated into KASAN,
-	 * kasan_slab_alloc and initialization memset must be
-	 * kept together to avoid discrepancies in behavior.
-	 *
-	 * As p[i] might get tagged, memset comes after KASAN.
-	 */
-	for (i = 0; i < size; i++) {
-		p[i] = kasan_slab_alloc(s, p[i], init_flags, kasan_init);
-		if (p[i] && init && (!kasan_init ||
-				     !kasan_has_integrated_init()))
+	for (i = 0; i < size; i++)
+		if (p[i] && init)
 			memset(p[i], 0, zero_size);
-		kmsan_slab_alloc(s, p[i], init_flags);
-	}
-
 }
 
 /*
@@ -3927,7 +3835,7 @@ static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s,
 	 * When init equals 'true', like for kzalloc() family, only
 	 * @orig_size bytes might be zeroed instead of s->object_size.
 	 */
-	slab_post_alloc_hook(s, gfpflags, 1, &object, init, orig_size);
+	slab_post_alloc_hook(s, 1, &object, init, orig_size);
 
 	return object;
 }
@@ -4223,7 +4131,7 @@ kmem_cache_alloc_from_sheaf(struct kmem_cache *s, gfp_t gfp,
 
 	init = slab_want_init_on_alloc(gfp, s);
 
-	slab_post_alloc_hook(s, gfp, 1, &ret, init, s->object_size);
+	slab_post_alloc_hook(s, 1, &ret, init, s->object_size);
 out:
 
 	return ret;
@@ -4260,9 +4168,6 @@ static void *___kmalloc_large_node(size_t size, gfp_t flags, int node)
 				      PAGE_SIZE << order);
 		__SetPageLargeKmalloc(page);
 	}
-
-	ptr = kasan_kmalloc_large(ptr, size, flags);
-	kmsan_kmalloc_large(ptr, size, flags);
 
 	return ptr;
 }
@@ -4301,7 +4206,6 @@ void *__do_kmalloc_node(size_t size, kmem_buckets *b, gfp_t flags, int node,
 	s = kmalloc_slab(size, b, flags, caller);
 
 	ret = slab_alloc_node(s, flags, node, caller, size);
-	ret = kasan_kmalloc(s, ret, size, flags);
 	return ret;
 }
 void *__kmalloc_node(DECL_BUCKET_PARAMS(size, b), gfp_t flags, int node)
@@ -4389,10 +4293,9 @@ retry:
 
 success:
 	maybe_wipe_obj_freeptr(s, ret);
-	slab_post_alloc_hook(s, alloc_gfp, 1, &ret,
+	slab_post_alloc_hook(s, 1, &ret,
 			     slab_want_init_on_alloc(alloc_gfp, s), size);
 
-	ret = kasan_kmalloc(s, ret, size, alloc_gfp);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(kmalloc_nolock);
@@ -4410,8 +4313,6 @@ void *__kmalloc_cache(struct kmem_cache *s, gfp_t gfpflags, size_t size)
 	void *ret = slab_alloc_node(s, gfpflags, NUMA_NO_NODE,
 				    _RET_IP_, size);
 
-
-	ret = kasan_kmalloc(s, ret, size, gfpflags);
 	return ret;
 }
 EXPORT_SYMBOL(__kmalloc_cache);
@@ -4421,8 +4322,6 @@ void *__kmalloc_cache_node(struct kmem_cache *s, gfp_t gfpflags,
 {
 	void *ret = slab_alloc_node(s, gfpflags, node, _RET_IP_, size);
 
-
-	ret = kasan_kmalloc(s, ret, size, gfpflags);
 	return ret;
 }
 EXPORT_SYMBOL(__kmalloc_cache_node);
@@ -5049,7 +4948,7 @@ next_remote_batch:
 	while (i < size) {
 		struct slab *slab = virt_to_slab(p[i]);
 
-		if (unlikely(!slab_free_hook(s, p[i], init, false))) {
+		if (unlikely(!slab_free_hook(s, p[i], init))) {
 			p[i] = p[--size];
 			continue;
 		}
@@ -5205,8 +5104,6 @@ static void defer_free(struct kmem_cache *s, void *head)
 
 	guard(preempt)();
 
-	head = kasan_reset_tag(head);
-
 	df = this_cpu_ptr(&defer_free_objects);
 	if (llist_add(head + s->offset, &df->objects))
 		irq_work_queue(&df->work);
@@ -5224,7 +5121,7 @@ static __fastpath_inline
 void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	       unsigned long addr)
 {
-	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s), false)))
+	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s))))
 		return;
 
 	if (likely(can_free_to_pcs(slab)) && likely(free_to_pcs(s, object, true)))
@@ -5239,10 +5136,6 @@ static __fastpath_inline
 void slab_free_bulk(struct kmem_cache *s, struct slab *slab, void *head,
 		    void *tail, void **p, int cnt, unsigned long addr)
 {
-	/*
-	 * With KASAN enabled slab_free_freelist_hook modifies the freelist
-	 * to remove objects, whose reuse must be delayed.
-	 */
 	if (likely(slab_free_freelist_hook(s, &head, &tail, &cnt))) {
 		__slab_free(s, slab, head, tail, cnt, addr);
 		stat_add(s, FREE_SLOWPATH, cnt);
@@ -5315,8 +5208,6 @@ static inline size_t slab_ksize(struct slab *slab)
 	if (s->flags & (SLAB_RED_ZONE | SLAB_POISON))
 		return s->object_size;
 #endif
-	if (s->flags & SLAB_KASAN)
-		return s->object_size;
 	/*
 	 * If we have the need to store the freelist pointer
 	 * or any other metadata back there then we can
@@ -5362,29 +5253,14 @@ static size_t __ksize(const void *object)
  * This should only be used internally to query the true size of allocations.
  * It is not meant to be a way to discover the usable size of an allocation
  * after the fact. Instead, use kmalloc_size_roundup(). Using memory beyond
- * the originally requested allocation size may trigger KASAN, UBSAN_BOUNDS,
- * and/or FORTIFY_SOURCE.
+ * the originally requested allocation size may trigger UBSAN_BOUNDS and/or
+ * FORTIFY_SOURCE.
  *
  * Return: size of the actual memory used by @objp in bytes
  */
 size_t ksize(const void *objp)
 {
-	/*
-	 * We need to first check that the pointer to the object is valid.
-	 * The KASAN report printed from ksize() is more useful, then when
-	 * it's printed later when the behaviour could be undefined due to
-	 * a potential use-after-free or double-free.
-	 *
-	 * We use kasan_check_byte(), which is supported for the hardware
-	 * tag-based KASAN mode, unlike kasan_check_read/write().
-	 *
-	 * If the pointed to memory is invalid, we return 0 to avoid users of
-	 * ksize() writing to and potentially corrupting the memory region.
-	 *
-	 * We want to perform the check before __ksize(), to avoid potentially
-	 * crashing in __ksize() due to accessing invalid metadata.
-	 */
-	if (unlikely(ZERO_OR_NULL_PTR(objp)) || !kasan_check_byte(objp))
+	if (unlikely(ZERO_OR_NULL_PTR(objp)))
 		return 0;
 
 	return kfence_ksize(objp) ?: __ksize(objp);
@@ -5402,9 +5278,6 @@ static void free_large_kmalloc(struct page *page, void *object)
 
 	if (WARN_ON_ONCE(order == 0))
 		pr_warn_once("object pointer: 0x%p\n", object);
-
-	kasan_kfree_large(object);
-	kmsan_kfree_large(object);
 
 	mod_lruvec_page_state(page, NR_SLAB_UNRECLAIMABLE_B,
 			      -(PAGE_SIZE << order));
@@ -5517,29 +5390,9 @@ void kfree_nolock(const void *object)
 	 * Unlike slab_free() do NOT call the following:
 	 * debug_check_no_locks_freed(x, s->object_size);
 	 * debug_check_no_obj_freed(x, s->object_size);
-	 * __kcsan_check_access(x, s->object_size, ..);
 	 * kfence_free(x);
 	 * since they take spinlocks or not safe from any context.
 	 */
-	kmsan_slab_free(s, x);
-	/*
-	 * If KASAN finds a kernel bug it will do kasan_report_invalid_free()
-	 * which will call raw_spin_lock_irqsave() which is technically
-	 * unsafe from NMI, but take chance and report kernel bug.
-	 * The sequence of
-	 * kasan_report_invalid_free() -> raw_spin_lock_irqsave() -> NMI
-	 *  -> kfree_nolock() -> kasan_report_invalid_free() on the same CPU
-	 * is double buggy and deserves to deadlock.
-	 */
-	if (kasan_slab_pre_free(s, x))
-		return;
-	/*
-	 * kasan_slab_pre_free is done for 'x'.
-	 * The only thing left is kasan_poison without quarantine,
-	 * since kasan quarantine takes locks and not supported from NMI.
-	 */
-	kasan_slab_free(s, x, false, false, /* skip quarantine */true);
-
 	if (likely(can_free_to_pcs(slab)) && likely(free_to_pcs(s, x, false)))
 		return;
 
@@ -5562,10 +5415,6 @@ __do_krealloc(const void *p, size_t new_size, unsigned long align, gfp_t flags, 
 
 	if (unlikely(ZERO_OR_NULL_PTR(p)))
 		goto alloc_new;
-
-	/* Check for double-free. */
-	if (!kasan_check_byte(p))
-		return NULL;
 
 	if (is_kfence_address(p)) {
 		ks = orig_size = kfence_ksize(p);
@@ -5605,33 +5454,27 @@ __do_krealloc(const void *p, size_t new_size, unsigned long align, gfp_t flags, 
 
 	/* Zero out spare memory. */
 	if (want_init_on_alloc(flags)) {
-		kasan_disable_current();
 		if (orig_size && orig_size < new_size)
-			memset(kasan_reset_tag(p) + orig_size, 0, new_size - orig_size);
+			memset((char *)p + orig_size, 0, new_size - orig_size);
 		else
-			memset(kasan_reset_tag(p) + new_size, 0, ks - new_size);
-		kasan_enable_current();
+			memset((char *)p + new_size, 0, ks - new_size);
 	}
 
 	/* Setup kmalloc redzone when needed */
 	if (s && slub_debug_orig_size(s)) {
 		set_orig_size(s, (void *)p, new_size);
 		if (s->flags & SLAB_RED_ZONE && new_size < ks)
-			memset_no_sanitize_memory(kasan_reset_tag(p) + new_size,
+			memset((char *)p + new_size,
 						SLUB_RED_ACTIVE, ks - new_size);
 	}
 
-	p = kasan_krealloc(p, new_size, flags);
 	return (void *)p;
 
 alloc_new:
 	ret = __kmalloc_node_track_caller(PASS_BUCKET_PARAMS(new_size, NULL),
 					   flags, nid, _RET_IP_);
 	if (ret && p) {
-		/* Disable KASAN checks as the object's redzone is accessed. */
-		kasan_disable_current();
-		memcpy(ret, kasan_reset_tag(p), min(new_size, (size_t)(orig_size ?: ks)));
-		kasan_enable_current();
+		memcpy(ret, p, min(new_size, (size_t)(orig_size ?: ks)));
 	}
 
 	return ret;
@@ -5686,7 +5529,7 @@ void *krealloc_node_align(const void *p, size_t new_size, unsigned long align,
 	}
 
 	ret = __do_krealloc(p, new_size, align, flags, nid);
-	if (ret && kasan_reset_tag(p) != kasan_reset_tag(ret))
+	if (ret && p != ret)
 		kfree(p);
 
 	return ret;
@@ -5863,9 +5706,7 @@ void *kvrealloc_node_align(const void *p, size_t size, unsigned long align,
 
 		if (p) {
 			/* We already know that `p` is not a vmalloc address. */
-			kasan_disable_current();
-			memcpy(n, kasan_reset_tag(p), min(size, ksize(p)));
-			kasan_enable_current();
+			memcpy(n, p, min(size, ksize(p)));
 
 			kfree(p);
 		}
@@ -6281,7 +6122,7 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 
 out:
 	/* kmem_cache debug support and memory initialization. */
-	slab_post_alloc_hook(s, flags, size, p,
+	slab_post_alloc_hook(s, size, p,
 			     slab_want_init_on_alloc(flags, s), s->object_size);
 
 	return size;
@@ -6507,7 +6348,6 @@ static void early_kmem_cache_node_alloc(int node)
 #ifdef CONFIG_SLUB_DEBUG
 	init_object(kmem_cache_node, n, SLUB_RED_ACTIVE);
 #endif
-	n = kasan_slab_alloc(kmem_cache_node, n, GFP_KERNEL, false);
 	slab->freelist = get_freepointer(kmem_cache_node, n);
 	slab->inuse = 1;
 	kmem_cache_node->per_node[node].node = n;
@@ -6727,7 +6567,6 @@ static int calculate_sizes(struct kmem_cache_args *args, struct kmem_cache *s)
 	}
 #endif
 
-	kasan_cache_create(s, &size, &s->flags);
 #ifdef CONFIG_SLUB_DEBUG
 	if (flags & SLAB_RED_ZONE) {
 		/*
@@ -6896,7 +6735,7 @@ void __kmem_obj_info(struct kmem_obj_info *kpp, void *object, struct slab *slab)
 	kpp->kp_slab = slab;
 	kpp->kp_slab_cache = s;
 	base = slab_address(slab);
-	objp0 = kasan_reset_tag(object);
+	objp0 = object;
 #ifdef CONFIG_SLUB_DEBUG
 	objp = restore_red_left(s, objp0);
 #else
@@ -8044,7 +7883,6 @@ static char *create_unique_id(struct kmem_cache *s)
 		kfree(name);
 		return ERR_PTR(-EINVAL);
 	}
-	kmsan_unpoison_memory(name, p - name);
 	return name;
 }
 
@@ -8140,7 +7978,6 @@ int sysfs_slab_alias(struct kmem_cache *s, const char *name)
 	al->name = name;
 	al->next = alias_list;
 	alias_list = al;
-	kmsan_unpoison_memory(al, sizeof(*al));
 	return 0;
 }
 

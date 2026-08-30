@@ -161,7 +161,6 @@ enum _slab_flag_bits {
 
 /* Fault injection mark */
 # define SLAB_FAILSLAB		__SLAB_FLAG_UNUSED
-#define SLAB_KASAN		__SLAB_FLAG_UNUSED
 
 /*
  * Ignore user specified debugging flags.
@@ -198,8 +197,6 @@ enum _slab_flag_bits {
 
 #define ZERO_OR_NULL_PTR(x) ((unsigned long)(x) <= \
 				(unsigned long)ZERO_SIZE_PTR)
-
-#include <linux/kasan.h>
 
 struct list_lru;
 /*

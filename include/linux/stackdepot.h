@@ -6,10 +6,8 @@
  * later retrieve many potentially duplicated stack traces without wasting
  * memory.
  *
- * For example, KASAN needs to save allocation and free stack traces for each
- * object. Storing two stack traces per object requires a lot of memory (e.g.
- * SLUB_DEBUG needs 256 bytes per object for that). Since allocation and free
- * stack traces often repeat, using stack depot allows to save about 100x space.
+ * Debugging users can save repeated stack traces here instead of storing a
+ * full trace in every tracked object.
  *
  * Author: Alexander Potapenko <glider@google.com>
  * Copyright (C) 2016 Google, Inc.

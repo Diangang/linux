@@ -33,7 +33,6 @@
 
 #include <asm/boot.h>
 #include <asm/fixmap.h>
-#include <asm/kasan.h>
 #include <asm/kernel-pgtable.h>
 #include <asm/memory.h>
 #include <asm/numa.h>

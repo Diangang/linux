@@ -62,7 +62,6 @@
 #include <linux/sched/clock.h>
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
-#include <linux/kasan.h>
 #include <linux/context_tracking.h>
 #include "../time/tick-internal.h"
 
@@ -1536,7 +1535,6 @@ static void rcu_sr_normal_gp_cleanup(void)
 		return;
 
 	rcu_state.srs_wait_tail = NULL;
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.srs_wait_tail);
 	WARN_ON_ONCE(!rcu_sr_is_wait_head(wait_tail));
 
 	/*
@@ -1569,7 +1567,6 @@ static void rcu_sr_normal_gp_cleanup(void)
 	}
 
 	/* Concurrent sr_normal_gp_cleanup work might observe this update. */
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.srs_done_tail);
 	smp_store_release(&rcu_state.srs_done_tail, wait_tail);
 
 	/*
@@ -1614,7 +1611,6 @@ static bool rcu_sr_normal_gp_init(void)
 	 */
 	WARN_ON_ONCE(rcu_state.srs_wait_tail != NULL);
 	rcu_state.srs_wait_tail = wait_head;
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.srs_wait_tail);
 
 	return start_new_poll;
 }
@@ -1681,7 +1677,6 @@ static noinline_for_stack bool rcu_gp_init(void)
 	WARN_ON_ONCE(0 &&
 		     rcu_seq_done_exact(&old_gp_seq, rcu_seq_snap(&rcu_state.gp_seq)));
 
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.gp_seq);
 	rcu_poll_gp_seq_start(&rcu_state.gp_seq_polled_snap);
 	raw_spin_unlock_irq_rcu_node(rnp);
 
@@ -2032,7 +2027,6 @@ static noinline void rcu_gp_cleanup(void)
 
 	/* Declare grace period done, trace first to use old GP number. */
 	rcu_seq_end(&rcu_state.gp_seq);
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.gp_seq);
 	WRITE_ONCE(rcu_state.gp_state, RCU_GP_IDLE);
 	/* Check for GP requests since above loop. */
 	rdp = this_cpu_ptr(&rcu_data);
@@ -2907,7 +2901,6 @@ __call_rcu_common(struct rcu_head *head, rcu_callback_t func, bool lazy_in)
 	}
 	head->func = func;
 	head->next = NULL;
-	kasan_record_aux_stack(head);
 
 	local_irq_save(flags);
 	rdp = this_cpu_ptr(&rcu_data);
@@ -3984,7 +3977,6 @@ int rcutree_prepare_cpu(unsigned int cpu)
 	rcu_preempt_deferred_qs_init(rdp);
 	rcu_spawn_rnp_kthreads(rnp);
 	rcu_spawn_cpu_nocb_kthread(cpu);
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.n_online_cpus);
 	WRITE_ONCE(rcu_state.n_online_cpus, rcu_state.n_online_cpus + 1);
 
 	return 0;
@@ -4062,7 +4054,6 @@ void rcutree_report_cpu_starting(unsigned int cpu)
 	rnp->expmaskinitnext |= mask;
 	/* Allow lockless access for expedited grace periods. */
 	smp_store_release(&rcu_state.ncpus, rcu_state.ncpus + newcpu); /* ^^^ */
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.ncpus);
 	rcu_gpnum_ovf(rnp, rdp); /* Offline-induced counter wrap? */
 	rdp->rcu_onl_gp_seq = READ_ONCE(rcu_state.gp_seq);
 	rdp->rcu_onl_gp_state = READ_ONCE(rcu_state.gp_state);
@@ -4208,7 +4199,6 @@ void rcutree_migrate_callbacks(int cpu)
  */
 int rcutree_dead_cpu(unsigned int cpu)
 {
-	ASSERT_EXCLUSIVE_WRITER(rcu_state.n_online_cpus);
 	WRITE_ONCE(rcu_state.n_online_cpus, rcu_state.n_online_cpus - 1);
 	// Stop-machine done, so allow nohz_full to disable tick.
 	tick_dep_clear(TICK_DEP_BIT_RCU);

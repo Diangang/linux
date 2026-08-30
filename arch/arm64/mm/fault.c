@@ -15,7 +15,6 @@
 #include <linux/mm.h>
 #include <linux/hardirq.h>
 #include <linux/init.h>
-#include <linux/kasan.h>
 #include <linux/kprobes.h>
 #include <linux/uaccess.h>
 #include <linux/page-flags.h>
@@ -343,8 +342,6 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 	pr_alert("Unable to handle kernel %s at virtual address %016lx\n", msg,
 		 addr);
 
-	kasan_non_canonical_hook(addr);
-
 	mem_abort_decode(esr);
 
 	show_pte(addr);
@@ -353,16 +350,9 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 	make_task_dead(SIGKILL);
 }
 
-/* Tag faults aren't enabled without CONFIG_KASAN_HW_TAGS. */
-static inline void report_tag_fault(unsigned long addr, unsigned long esr,
-				    struct pt_regs *regs) { }
-
 static void do_tag_recovery(unsigned long addr, unsigned long esr,
 			   struct pt_regs *regs)
 {
-
-	report_tag_fault(addr, esr, regs);
-
 	/*
 	 * Disable MTE Tag Checking on the local CPU for the current EL.
 	 * It will be done lazily on the other CPUs when they will hit a

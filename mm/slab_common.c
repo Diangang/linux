@@ -22,7 +22,6 @@
 #include <linux/swiotlb.h>
 #include <linux/proc_fs.h>
 #include <linux/debugfs.h>
-#include <linux/kasan.h>
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 #include <asm/page.h>
@@ -400,7 +399,7 @@ void kmem_cache_destroy(struct kmem_cache *s)
 {
 	int err;
 
-	if (unlikely(!s) || !kasan_check_byte(s))
+	if (unlikely(!s))
 		return;
 
 	/* in-flight kfree_rcu()'s may include objects from our cache */
@@ -418,9 +417,6 @@ void kmem_cache_destroy(struct kmem_cache *s)
 		cpus_read_unlock();
 		return;
 	}
-
-	/* free asan quarantined objects */
-	kasan_cache_shutdown(s);
 
 	err = __kmem_cache_shutdown(s);
 	if (!slab_in_kunit_test())
@@ -457,8 +453,6 @@ EXPORT_SYMBOL(kmem_cache_destroy);
  */
 int kmem_cache_shrink(struct kmem_cache *cachep)
 {
-	kasan_cache_shrink(cachep);
-
 	return __kmem_cache_shrink(cachep);
 }
 EXPORT_SYMBOL(kmem_cache_shrink);
@@ -985,7 +979,6 @@ void kfree_sensitive(const void *p)
 
 	ks = ksize(mem);
 	if (ks) {
-		kasan_unpoison_range(mem, ks);
 		memzero_explicit(mem, ks);
 	}
 	kfree(mem);
@@ -1000,7 +993,6 @@ EXPORT_SYMBOL(kfree_sensitive);
 void kvfree_call_rcu(struct rcu_head *head, void *ptr)
 {
 	if (head) {
-		kasan_record_aux_stack(ptr);
 		call_rcu(head, kvfree_rcu_cb);
 		return;
 	}
@@ -1686,7 +1678,6 @@ void kvfree_call_rcu(struct rcu_head *head, void *ptr)
 		return;
 	}
 
-	kasan_record_aux_stack(ptr);
 	success = add_ptr_to_bulk_krc_lock(&krcp, &flags, ptr, !head);
 	if (!success) {
 		run_page_cache_worker(krcp);

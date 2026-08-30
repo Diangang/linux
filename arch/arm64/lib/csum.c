@@ -2,7 +2,6 @@
 // Copyright (C) 2019-2020 Arm Ltd.
 
 #include <linux/compiler.h>
-#include <linux/kasan-checks.h>
 #include <linux/kernel.h>
 
 #include <asm/checksum.h>
@@ -14,11 +13,7 @@ static u64 accumulate(u64 sum, u64 data)
 	return tmp + (tmp >> 64);
 }
 
-/*
- * We over-read the buffer and this makes KASAN unhappy. Instead, disable
- * instrumentation and call kasan explicitly.
- */
-unsigned int __no_sanitize_address do_csum(const unsigned char *buff, int len)
+unsigned int do_csum(const unsigned char *buff, int len)
 {
 	unsigned int offset, shift, sum;
 	const u64 *ptr;
@@ -31,12 +26,8 @@ unsigned int __no_sanitize_address do_csum(const unsigned char *buff, int len)
 	/*
 	 * This is to all intents and purposes safe, since rounding down cannot
 	 * result in a different page or cache line being accessed, and @buff
-	 * should absolutely not be pointing to anything read-sensitive. We do,
-	 * however, have to be careful not to piss off KASAN, which means using
-	 * unchecked reads to accommodate the head and tail, for which we'll
-	 * compensate with an explicit check up-front.
+	 * should absolutely not be pointing to anything read-sensitive.
 	 */
-	kasan_check_read(buff, len);
 	ptr = (u64 *)(buff - offset);
 	len = len + offset - 8;
 

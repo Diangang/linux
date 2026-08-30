@@ -93,11 +93,7 @@ unsigned long unwind_recover_ret_addr(struct unwind_state *state,
 				     addr, addr_p);
 }
 
-/*
- * This disables KASAN checking when reading a value from another task's stack,
- * since the other task could be running on another CPU and could have poisoned
- * the stack in the meantime.
- */
+/* Another task's stack can change concurrently while it is running. */
 #define READ_ONCE_TASK_STACK(task, x)			\
 ({							\
 	unsigned long val;				\

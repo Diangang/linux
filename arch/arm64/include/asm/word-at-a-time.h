@@ -51,8 +51,6 @@ static inline unsigned long load_unaligned_zeropad(const void *addr)
 {
 	unsigned long ret;
 
-	__mte_enable_tco_async();
-
 	/* Load word from unaligned pointer addr */
 	asm(
 	"1:	ldr	%0, %2\n"
@@ -60,8 +58,6 @@ static inline unsigned long load_unaligned_zeropad(const void *addr)
 	_ASM_EXTABLE_LOAD_UNALIGNED_ZEROPAD(1b, 2b, %0, %1)
 	: "=&r" (ret)
 	: "r" (addr), "Q" (*(unsigned long *)addr));
-
-	__mte_disable_tco_async();
 
 	return ret;
 }

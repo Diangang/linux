@@ -2,7 +2,6 @@
 #ifndef _LINUX_IOREMAP_H
 #define _LINUX_IOREMAP_H
 
-#include <linux/kasan.h>
 #include <asm/pgtable.h>
 #include <asm/vmalloc.h>
 
@@ -17,7 +16,7 @@
 #endif
 static inline bool is_ioremap_addr(const void *x)
 {
-	unsigned long addr = (unsigned long)kasan_reset_tag(x);
+	unsigned long addr = (unsigned long)x;
 
 	return addr >= IOREMAP_START && addr < IOREMAP_END;
 }

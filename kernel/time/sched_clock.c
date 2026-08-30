@@ -104,14 +104,7 @@ unsigned long long notrace sched_clock(void)
 {
 	unsigned long long ns;
 	preempt_disable_notrace();
-	/*
-	 * All of __sched_clock() is a seqcount_latch reader critical section,
-	 * but relies on the raw helpers which are uninstrumented. For KCSAN,
-	 * mark all accesses in __sched_clock() as atomic.
-	 */
-	kcsan_nestable_atomic_begin();
 	ns = __sched_clock();
-	kcsan_nestable_atomic_end();
 	preempt_enable_notrace();
 	return ns;
 }

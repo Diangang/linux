@@ -9,8 +9,6 @@
 
 #ifndef __ASSEMBLER__
 
-#include <linux/kasan-checks.h>
-
 #include <asm/alternative-macros.h>
 
 #define __nops(n)	".rept	" #n "\nnop\n.endr\n"
@@ -111,7 +109,6 @@ do {									\
 	union { __unqual_scalar_typeof(*p) __val; char __c[1]; } __u =	\
 		{ .__val = (__force __unqual_scalar_typeof(*p)) (v) };	\
 	compiletime_assert_atomic_type(*p);				\
-	kasan_check_write(__p, sizeof(*p));				\
 	switch (sizeof(*p)) {						\
 	case 1:								\
 		asm volatile ("stlrb %w1, %0"				\
@@ -145,7 +142,6 @@ do {									\
 	union { __unqual_scalar_typeof(*p) __val; char __c[1]; } __u;	\
 	typeof(p) __p = (p);						\
 	compiletime_assert_atomic_type(*p);				\
-	kasan_check_read(__p, sizeof(*p));				\
 	switch (sizeof(*p)) {						\
 	case 1:								\
 		asm volatile ("ldarb %w0, %1"				\

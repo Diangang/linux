@@ -73,7 +73,6 @@
 #include <linux/minmax.h>
 #include <linux/mm.h>
 #include <linux/cpu.h>
-#include <linux/kasan.h>
 #include <linux/percpu.h>
 #include <linux/sched/isolation.h>
 

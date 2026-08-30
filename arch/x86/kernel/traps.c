@@ -15,7 +15,6 @@
 #include <linux/context_tracking.h>
 #include <linux/interrupt.h>
 #include <linux/kallsyms.h>
-#include <linux/kmsan.h>
 #include <linux/spinlock.h>
 #include <linux/kprobes.h>
 #include <linux/uaccess.h>
@@ -413,7 +412,6 @@ noinstr bool handle_bug(struct pt_regs *regs)
 	 * is a rare case that uses @regs without passing them to
 	 * irqentry_enter().
 	 */
-	kmsan_unpoison_entry_regs(regs);
 	/*
 	 * Since we're emulating a CALL with exceptions, restore the interrupt
 	 * state to what it was at the exception site.
@@ -904,14 +902,7 @@ DEFINE_IDTENTRY_ERRORCODE(exc_general_protection)
 		snprintf(desc, sizeof(desc), GPFSTR ", %s 0x%lx",
 			 kernel_gp_hint_help[hint], gp_addr);
 
-	/*
-	 * KASAN is interested only in the non-canonical case, clear it
-	 * otherwise.
-	 */
-	if (hint != GP_NON_CANONICAL)
-		gp_addr = 0;
-
-	die_addr(desc, regs, error_code, gp_addr);
+	die_addr(desc, regs, error_code, 0);
 
 exit:
 	cond_local_irq_disable(regs);

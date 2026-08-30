@@ -1033,130 +1033,6 @@ static int add_ignores(struct objtool_file *file)
  * These functions must not directly change AC, but may PUSHF/POPF.
  */
 static const char *uaccess_safe_builtin[] = {
-	/* KASAN */
-	"kasan_report",
-	"kasan_check_range",
-	/* KASAN out-of-line */
-	"__asan_loadN_noabort",
-	"__asan_load1_noabort",
-	"__asan_load2_noabort",
-	"__asan_load4_noabort",
-	"__asan_load8_noabort",
-	"__asan_load16_noabort",
-	"__asan_storeN_noabort",
-	"__asan_store1_noabort",
-	"__asan_store2_noabort",
-	"__asan_store4_noabort",
-	"__asan_store8_noabort",
-	"__asan_store16_noabort",
-	"__kasan_check_read",
-	"__kasan_check_write",
-	/* KASAN in-line */
-	"__asan_report_load_n_noabort",
-	"__asan_report_load1_noabort",
-	"__asan_report_load2_noabort",
-	"__asan_report_load4_noabort",
-	"__asan_report_load8_noabort",
-	"__asan_report_load16_noabort",
-	"__asan_report_store_n_noabort",
-	"__asan_report_store1_noabort",
-	"__asan_report_store2_noabort",
-	"__asan_report_store4_noabort",
-	"__asan_report_store8_noabort",
-	"__asan_report_store16_noabort",
-	/* KCSAN */
-	"__kcsan_check_access",
-	"__kcsan_mb",
-	"__kcsan_wmb",
-	"__kcsan_rmb",
-	"__kcsan_release",
-	"kcsan_found_watchpoint",
-	"kcsan_setup_watchpoint",
-	"kcsan_check_scoped_accesses",
-	"kcsan_disable_current",
-	"kcsan_enable_current_nowarn",
-	/* KCSAN/TSAN */
-	"__tsan_func_entry",
-	"__tsan_func_exit",
-	"__tsan_read_range",
-	"__tsan_write_range",
-	"__tsan_read1",
-	"__tsan_read2",
-	"__tsan_read4",
-	"__tsan_read8",
-	"__tsan_read16",
-	"__tsan_write1",
-	"__tsan_write2",
-	"__tsan_write4",
-	"__tsan_write8",
-	"__tsan_write16",
-	"__tsan_read_write1",
-	"__tsan_read_write2",
-	"__tsan_read_write4",
-	"__tsan_read_write8",
-	"__tsan_read_write16",
-	"__tsan_volatile_read1",
-	"__tsan_volatile_read2",
-	"__tsan_volatile_read4",
-	"__tsan_volatile_read8",
-	"__tsan_volatile_read16",
-	"__tsan_volatile_write1",
-	"__tsan_volatile_write2",
-	"__tsan_volatile_write4",
-	"__tsan_volatile_write8",
-	"__tsan_volatile_write16",
-	"__tsan_atomic8_load",
-	"__tsan_atomic16_load",
-	"__tsan_atomic32_load",
-	"__tsan_atomic64_load",
-	"__tsan_atomic8_store",
-	"__tsan_atomic16_store",
-	"__tsan_atomic32_store",
-	"__tsan_atomic64_store",
-	"__tsan_atomic8_exchange",
-	"__tsan_atomic16_exchange",
-	"__tsan_atomic32_exchange",
-	"__tsan_atomic64_exchange",
-	"__tsan_atomic8_fetch_add",
-	"__tsan_atomic16_fetch_add",
-	"__tsan_atomic32_fetch_add",
-	"__tsan_atomic64_fetch_add",
-	"__tsan_atomic8_fetch_sub",
-	"__tsan_atomic16_fetch_sub",
-	"__tsan_atomic32_fetch_sub",
-	"__tsan_atomic64_fetch_sub",
-	"__tsan_atomic8_fetch_and",
-	"__tsan_atomic16_fetch_and",
-	"__tsan_atomic32_fetch_and",
-	"__tsan_atomic64_fetch_and",
-	"__tsan_atomic8_fetch_or",
-	"__tsan_atomic16_fetch_or",
-	"__tsan_atomic32_fetch_or",
-	"__tsan_atomic64_fetch_or",
-	"__tsan_atomic8_fetch_xor",
-	"__tsan_atomic16_fetch_xor",
-	"__tsan_atomic32_fetch_xor",
-	"__tsan_atomic64_fetch_xor",
-	"__tsan_atomic8_fetch_nand",
-	"__tsan_atomic16_fetch_nand",
-	"__tsan_atomic32_fetch_nand",
-	"__tsan_atomic64_fetch_nand",
-	"__tsan_atomic8_compare_exchange_strong",
-	"__tsan_atomic16_compare_exchange_strong",
-	"__tsan_atomic32_compare_exchange_strong",
-	"__tsan_atomic64_compare_exchange_strong",
-	"__tsan_atomic8_compare_exchange_weak",
-	"__tsan_atomic16_compare_exchange_weak",
-	"__tsan_atomic32_compare_exchange_weak",
-	"__tsan_atomic64_compare_exchange_weak",
-	"__tsan_atomic8_compare_exchange_val",
-	"__tsan_atomic16_compare_exchange_val",
-	"__tsan_atomic32_compare_exchange_val",
-	"__tsan_atomic64_compare_exchange_val",
-	"__tsan_atomic_thread_fence",
-	"__tsan_atomic_signal_fence",
-	"__tsan_unaligned_read16",
-	"__tsan_unaligned_write16",
 	/* KCOV */
 	"write_comp_data",
 	"check_kcov_mode",
@@ -1170,28 +1046,6 @@ static const char *uaccess_safe_builtin[] = {
 	"__sanitizer_cov_trace_cmp4",
 	"__sanitizer_cov_trace_cmp8",
 	"__sanitizer_cov_trace_switch",
-	/* KMSAN */
-	"kmsan_copy_to_user",
-	"kmsan_disable_current",
-	"kmsan_enable_current",
-	"kmsan_report",
-	"kmsan_unpoison_entry_regs",
-	"kmsan_unpoison_memory",
-	"__msan_chain_origin",
-	"__msan_get_context_state",
-	"__msan_instrument_asm_store",
-	"__msan_metadata_ptr_for_load_1",
-	"__msan_metadata_ptr_for_load_2",
-	"__msan_metadata_ptr_for_load_4",
-	"__msan_metadata_ptr_for_load_8",
-	"__msan_metadata_ptr_for_load_n",
-	"__msan_metadata_ptr_for_store_1",
-	"__msan_metadata_ptr_for_store_2",
-	"__msan_metadata_ptr_for_store_4",
-	"__msan_metadata_ptr_for_store_8",
-	"__msan_metadata_ptr_for_store_n",
-	"__msan_poison_alloca",
-	"__msan_warning",
 	/* UBSAN */
 	"ubsan_type_mismatch_common",
 	"__ubsan_handle_type_mismatch",
@@ -4140,12 +3994,6 @@ static int validate_retpoline(struct objtool_file *file)
 	return warnings;
 }
 
-static bool is_kasan_insn(struct instruction *insn)
-{
-	return (insn->type == INSN_CALL &&
-		!strcmp(insn_call_dest(insn)->name, "__asan_handle_no_return"));
-}
-
 static bool is_ubsan_insn(struct instruction *insn)
 {
 	return (insn->type == INSN_CALL &&
@@ -4194,13 +4042,13 @@ static bool ignore_unreachable_insn(struct objtool_file *file, struct instructio
 
 	/*
 	 * Check if this (or a subsequent) instruction is related to
-	 * CONFIG_UBSAN or sanitizer instrumentation.
+	 * CONFIG_UBSAN instrumentation.
 	 *
 	 * End the search at 5 instructions to avoid going into the weeds.
 	 */
 	for (i = 0; i < 5; i++) {
 
-		if (is_kasan_insn(insn) || is_ubsan_insn(insn))
+		if (is_ubsan_insn(insn))
 			return true;
 
 		if (insn->type == INSN_JUMP_UNCONDITIONAL) {

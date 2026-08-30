@@ -115,22 +115,17 @@ void ftrace_likely_update(struct ftrace_likely_data *f, int val,
  * For example, if accesses to a given variable are protected by a lock,
  * except for diagnostic code, then the accesses under the lock should
  * be plain C-language accesses and those in the diagnostic code should
- * use data_race().  This way, KCSAN will complain if buggy lockless
- * accesses to that variable are introduced, even if the buggy accesses
- * are protected by READ_ONCE() or WRITE_ONCE().
+ * use data_race().
  *
- * This macro *does not* affect normal code generation, but is a hint
- * to tooling that data races here are to be ignored.  If the access must
- * be atomic *and* KCSAN should ignore the access, use both data_race()
- * and READ_ONCE(), for example, data_race(READ_ONCE(x)).
+ * This macro does not affect normal code generation. If the access must be
+ * atomic, use both data_race() and READ_ONCE(), for example,
+ * data_race(READ_ONCE(x)).
  */
 #define data_race(expr)							\
 ({									\
-	__kcsan_disable_current();					\
 	disable_context_analysis();					\
 	auto __v = (expr);						\
 	enable_context_analysis();					\
-	__kcsan_enable_current();					\
 	__v;								\
 })
 

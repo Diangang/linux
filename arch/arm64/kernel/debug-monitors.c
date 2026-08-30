@@ -218,10 +218,6 @@ static int call_el1_break_hook(struct pt_regs *regs, unsigned long esr)
 	if (esr_brk_comment(esr) == FAULT_BRK_IMM)
 		return reserved_fault_brk_handler(regs, esr);
 
-	if (0 &&
-		(esr_brk_comment(esr) & ~KASAN_BRK_MASK) == KASAN_BRK_IMM)
-		return kasan_brk_handler(regs, esr);
-
 	if (0 && esr_is_ubsan_brk(esr))
 		return ubsan_brk_handler(regs, esr);
 

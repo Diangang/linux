@@ -15,7 +15,6 @@
  * User space memory access functions
  */
 #include <linux/bitops.h>
-#include <linux/kasan-checks.h>
 #include <linux/string.h>
 
 #include <asm/asm-extable.h>
@@ -77,8 +76,6 @@ static inline void __uaccess_enable_hw_pan(void)
 
 static inline void uaccess_disable_privileged(void)
 {
-	mte_disable_tco();
-
 	if (uaccess_ttbr0_disable())
 		return;
 
@@ -87,8 +84,6 @@ static inline void uaccess_disable_privileged(void)
 
 static inline void uaccess_enable_privileged(void)
 {
-	mte_enable_tco();
-
 	if (uaccess_ttbr0_enable())
 		return;
 
@@ -203,11 +198,6 @@ do {									\
 
 #define get_user	__get_user
 
-/*
- * We must not call into the scheduler between __mte_enable_tco_async() and
- * __mte_disable_tco_async(). As `dst` and `src` may contain blocking
- * functions, we must evaluate these outside of the critical section.
- */
 #define __get_kernel_nofault(dst, src, type, err_label)			\
 do {									\
 	__typeof__(dst) __gkn_dst = (dst);				\
@@ -215,13 +205,10 @@ do {									\
 	do { 								\
 		__label__ __gkn_label;					\
 									\
-		__mte_enable_tco_async();				\
 		__raw_get_mem("ldr", *((type *)(__gkn_dst)),		\
 		      (__force type *)(__gkn_src), __gkn_label, K);	\
-		__mte_disable_tco_async();				\
 		break;							\
 	__gkn_label:							\
-		__mte_disable_tco_async();				\
 		goto err_label;						\
 	} while (0);							\
 } while (0)
@@ -300,11 +287,6 @@ do {									\
 
 #define put_user	__put_user
 
-/*
- * We must not call into the scheduler between __mte_enable_tco_async() and
- * __mte_disable_tco_async(). As `dst` and `src` may contain blocking
- * functions, we must evaluate these outside of the critical section.
- */
 #define __put_kernel_nofault(dst, src, type, err_label)			\
 do {									\
 	__typeof__(dst) __pkn_dst = (dst);				\
@@ -312,13 +294,10 @@ do {									\
 									\
 	do {								\
 		__label__ __pkn_err;					\
-		__mte_enable_tco_async();				\
 		__raw_put_mem("str", *((type *)(__pkn_src)),		\
 			      (__force type *)(__pkn_dst), __pkn_err, K);	\
-		__mte_disable_tco_async();				\
 		break;							\
 	__pkn_err:							\
-		__mte_disable_tco_async();				\
 		goto err_label;						\
 	} while (0);							\
 } while(0)
@@ -359,11 +338,6 @@ static __must_check __always_inline bool user_access_begin(const void __user *pt
 #define arch_unsafe_get_user(x, ptr, label) \
 	__raw_get_mem("ldtr", x, uaccess_mask_ptr(ptr), label, U)
 
-/*
- * KCSAN uses these to save and restore ttbr state.
- * We do not support KCSAN with ARM64_SW_TTBR0_PAN, so
- * they are no-ops.
- */
 static inline unsigned long user_access_save(void) { return 0; }
 static inline void user_access_restore(unsigned long enabled) { }
 
@@ -414,7 +388,6 @@ extern unsigned long __must_check __copy_user_flushcache(void *to, const void __
 
 static inline size_t copy_from_user_flushcache(void *dst, const void __user *src, size_t size)
 {
-	kasan_check_write(dst, size);
 	return __copy_user_flushcache(dst, __uaccess_mask_ptr(src), size);
 }
 #endif

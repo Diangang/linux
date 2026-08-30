@@ -136,4 +136,4 @@ L(byte_loop):
 	ret
 SYM_FUNC_END(__pi_memcmp)
 SYM_FUNC_ALIAS_WEAK(memcmp, __pi_memcmp)
-EXPORT_SYMBOL_NOKASAN(memcmp)
+EXPORT_SYMBOL(memcmp)

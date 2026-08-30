@@ -662,7 +662,6 @@ CONFIG_FRAME_POINTER=y
 #
 # Generic Kernel Debugging Instruments
 #
-CONFIG_ARCH_HAS_UBSAN=y
 # end of Generic Kernel Debugging Instruments
 
 #

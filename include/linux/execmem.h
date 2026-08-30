@@ -5,13 +5,7 @@
 #include <linux/types.h>
 #include <linux/cleanup.h>
 
-#if (0) && \
-		1
-#include <linux/kasan.h>
-#define MODULE_ALIGN (PAGE_SIZE << KASAN_SHADOW_SCALE_SHIFT)
-#else
 #define MODULE_ALIGN PAGE_SIZE
-#endif
 
 /**
  * enum execmem_type - types of executable memory ranges
@@ -43,11 +37,9 @@ enum execmem_type {
 
 /**
  * enum execmem_range_flags - options for executable memory allocations
- * @EXECMEM_KASAN_SHADOW:	allocate kasan shadow
  * @EXECMEM_ROX_CACHE:		allocations should use ROX cache of huge pages
  */
 enum execmem_range_flags {
-	EXECMEM_KASAN_SHADOW	= (1 << 0),
 	EXECMEM_ROX_CACHE	= (1 << 1),
 };
 

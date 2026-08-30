@@ -24,9 +24,6 @@ void copy_highpage(struct page *to, struct page *from)
 
 	copy_page(kto, kfrom);
 
-	if (kasan_hw_tags_enabled())
-		page_kasan_tag_reset(to);
-
 	if (!system_supports_mte())
 		return;
 

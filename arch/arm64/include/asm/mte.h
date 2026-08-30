@@ -11,7 +11,6 @@
 #ifndef __ASSEMBLER__
 
 #include <linux/bitfield.h>
-#include <linux/kasan-enabled.h>
 #include <linux/page-flags.h>
 #include <linux/sched.h>
 #include <linux/types.h>
@@ -111,8 +110,7 @@ static inline void mte_disable_tco_entry(struct task_struct *task)
 	 * This is beneficial on microarchitectures where re-enabling TCO is
 	 * expensive.
 	 */
-	if (kasan_hw_tags_enabled() ||
-	    (task->thread.sctlr_user & (1UL << SCTLR_EL1_TCF0_SHIFT)))
+	if (task->thread.sctlr_user & (1UL << SCTLR_EL1_TCF0_SHIFT))
 		asm volatile(SET_PSTATE_TCO(0));
 }
 

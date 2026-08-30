@@ -92,7 +92,6 @@ static inline void mm_lock_seqcount_begin(struct mm_struct *mm)
 
 static inline void mm_lock_seqcount_end(struct mm_struct *mm)
 {
-	ASSERT_EXCLUSIVE_WRITER(mm->mm_lock_seq);
 	do_raw_write_seqcount_end(&mm->mm_lock_seq);
 }
 

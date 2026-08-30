@@ -477,7 +477,6 @@ void __meminit __init_single_page(struct page *page, unsigned long pfn,
 	init_page_count(page);
 	atomic_set(&page->_mapcount, -1);
 	page_cpupid_reset_last(page);
-	page_kasan_tag_reset(page);
 
 	INIT_LIST_HEAD(&page->lru);
 #ifdef WANT_PAGE_VIRTUAL
@@ -1649,11 +1648,6 @@ void __init memblock_free_pages(unsigned long pfn, unsigned int order)
 {
 	struct page *page = pfn_to_page(pfn);
 
-	if (!kmsan_memblock_free_pages(page, order)) {
-		/* KMSAN will take care of these pages. */
-		return;
-	}
-
 	/* pages were reserved and not allocated */
 	__free_pages_core(page, order, MEMINIT_EARLY);
 }
@@ -1712,11 +1706,6 @@ static void __init mem_debugging_and_hardening_init(void)
 	} else {
 		static_branch_disable(&init_on_free);
 	}
-
-	if (0 &&
-	    (_init_on_alloc_enabled_early || _init_on_free_enabled_early))
-		pr_info("mem auto-init: please make sure init_on_alloc and init_on_free are disabled when running KMSAN\n");
-
 
 	/*
 	 * Any page debugging or hardening option also enables sanity checking
@@ -1836,7 +1825,6 @@ void __init mm_core_init(void)
 	mem_debugging_and_hardening_init();
 	kfence_alloc_pool_and_metadata();
 	report_meminit();
-	kmsan_init_shadow();
 	stack_depot_early_init();
 
 	memblock_free_all();
@@ -1858,7 +1846,6 @@ void __init mm_core_init(void)
 	init_espfix_bsp();
 	/* Should be run after espfix64 is set up. */
 	pti_init();
-	kmsan_init_runtime();
 	mm_cache_init();
 	execmem_init();
 }

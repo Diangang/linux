@@ -18,7 +18,6 @@
 #include <linux/gfp.h>
 #include <linux/jhash.h>
 #include <linux/kernel.h>
-#include <linux/kmsan.h>
 #include <linux/list.h>
 #include <linux/mm.h>
 #include <linux/mutex.h>
@@ -34,7 +33,6 @@
 #include <linux/string.h>
 #include <linux/types.h>
 #include <linux/memblock.h>
-#include <linux/kasan-enabled.h>
 
 /*
  * The pool_index is offset by 1 so the first record does not have a 0 handle.
@@ -56,7 +54,7 @@ static bool __stack_depot_early_init_passed __initdata;
 
 /* Hash table of stored stack records. */
 static struct list_head *stack_table;
-/* Fixed order of the number of table buckets. Used when KASAN is enabled. */
+/* Fixed order of the number of table buckets. */
 static unsigned int stack_bucket_number_order;
 /* Hash mask for indexing the table. */
 static unsigned int stack_hash_mask;
@@ -164,14 +162,6 @@ int __init stack_depot_early_init(void)
 		pr_info("disabled\n");
 		return 0;
 	}
-
-	/*
-	 * If KASAN is enabled, use the maximum order: KASAN is frequently used
-	 * in fuzzing scenarios, which leads to a large number of different
-	 * stack traces being stored in stack depot.
-	 */
-	if (kasan_enabled() && !stack_bucket_number_order)
-		stack_bucket_number_order = STACK_BUCKET_NUMBER_ORDER_MAX;
 
 	/*
 	 * Check if early init has been requested after setting
@@ -330,7 +320,6 @@ static bool depot_init_pool(void **prealloc)
 
 	/* Pairs with concurrent READ_ONCE() in depot_fetch_stack(). */
 	WRITE_ONCE(pools_num, pools_num + 1);
-	ASSERT_EXCLUSIVE_WRITER(pools_num);
 
 	pool_offset = 0;
 
@@ -481,11 +470,6 @@ depot_alloc_stack(unsigned long *entries, unsigned int nr_entries, u32 hash, dep
 		counters[DEPOT_COUNTER_PERSIST_BYTES] += record_size;
 	}
 
-	/*
-	 * Let KMSAN know the stored stack record is initialized. This shall
-	 * prevent false positive reports if instrumented code accesses it.
-	 */
-	kmsan_unpoison_memory(stack, record_size);
 
 	return stack;
 }
@@ -763,11 +747,6 @@ unsigned int stack_depot_fetch(depot_stack_handle_t handle,
 	struct stack_record *stack;
 
 	*entries = NULL;
-	/*
-	 * Let KMSAN know *entries is initialized. This shall prevent false
-	 * positive reports if instrumented code accesses it.
-	 */
-	kmsan_unpoison_memory(entries, sizeof(*entries));
 
 	if (!handle || stack_depot_disabled)
 		return 0;

@@ -137,15 +137,6 @@ ssize_t sized_strscpy(char *dest, const char *src, size_t count)
 #endif
 #endif
 
-	/*
-	 * load_unaligned_zeropad() or read_word_at_a_time() below may read
-	 * uninitialized bytes after the trailing zero and use them in
-	 * comparisons. Disable this optimization under KMSAN to prevent
-	 * false positive reports.
-	 */
-	if (0)
-		max = 0;
-
 	while (max >= sizeof(unsigned long)) {
 		unsigned long c, data;
 

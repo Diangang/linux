@@ -14,7 +14,6 @@
 #ifndef __ASSEMBLY__
 
 #include <linux/compiler.h>
-#include <linux/kcsan-checks.h>
 #include <asm/rwonce.h>
 
 #ifndef nop
@@ -27,27 +26,27 @@
  */
 
 #ifdef __mb
-#define mb()	do { kcsan_mb(); __mb(); } while (0)
+#define mb()	__mb()
 #endif
 
 #ifdef __rmb
-#define rmb()	do { kcsan_rmb(); __rmb(); } while (0)
+#define rmb()	__rmb()
 #endif
 
 #ifdef __wmb
-#define wmb()	do { kcsan_wmb(); __wmb(); } while (0)
+#define wmb()	__wmb()
 #endif
 
 #ifdef __dma_mb
-#define dma_mb()	do { kcsan_mb(); __dma_mb(); } while (0)
+#define dma_mb()	__dma_mb()
 #endif
 
 #ifdef __dma_rmb
-#define dma_rmb()	do { kcsan_rmb(); __dma_rmb(); } while (0)
+#define dma_rmb()	__dma_rmb()
 #endif
 
 #ifdef __dma_wmb
-#define dma_wmb()	do { kcsan_wmb(); __dma_wmb(); } while (0)
+#define dma_wmb()	__dma_wmb()
 #endif
 
 /*
@@ -96,15 +95,15 @@
 #ifdef CONFIG_SMP
 
 #ifndef smp_mb
-#define smp_mb()	do { kcsan_mb(); __smp_mb(); } while (0)
+#define smp_mb()	__smp_mb()
 #endif
 
 #ifndef smp_rmb
-#define smp_rmb()	do { kcsan_rmb(); __smp_rmb(); } while (0)
+#define smp_rmb()	__smp_rmb()
 #endif
 
 #ifndef smp_wmb
-#define smp_wmb()	do { kcsan_wmb(); __smp_wmb(); } while (0)
+#define smp_wmb()	__smp_wmb()
 #endif
 
 #else	/* !CONFIG_SMP */
@@ -157,19 +156,19 @@ do {									\
 #ifdef CONFIG_SMP
 
 #ifndef smp_store_mb
-#define smp_store_mb(var, value)  do { kcsan_mb(); __smp_store_mb(var, value); } while (0)
+#define smp_store_mb(var, value)	__smp_store_mb(var, value)
 #endif
 
 #ifndef smp_mb__before_atomic
-#define smp_mb__before_atomic()	do { kcsan_mb(); __smp_mb__before_atomic(); } while (0)
+#define smp_mb__before_atomic()	__smp_mb__before_atomic()
 #endif
 
 #ifndef smp_mb__after_atomic
-#define smp_mb__after_atomic()	do { kcsan_mb(); __smp_mb__after_atomic(); } while (0)
+#define smp_mb__after_atomic()	__smp_mb__after_atomic()
 #endif
 
 #ifndef smp_store_release
-#define smp_store_release(p, v) do { kcsan_release(); __smp_store_release(p, v); } while (0)
+#define smp_store_release(p, v)	__smp_store_release(p, v)
 #endif
 
 #ifndef smp_load_acquire
@@ -210,13 +209,13 @@ do {									\
 #endif	/* CONFIG_SMP */
 
 /* Barriers for virtual machine guests when talking to an SMP host */
-#define virt_mb() do { kcsan_mb(); __smp_mb(); } while (0)
-#define virt_rmb() do { kcsan_rmb(); __smp_rmb(); } while (0)
-#define virt_wmb() do { kcsan_wmb(); __smp_wmb(); } while (0)
-#define virt_store_mb(var, value) do { kcsan_mb(); __smp_store_mb(var, value); } while (0)
-#define virt_mb__before_atomic() do { kcsan_mb(); __smp_mb__before_atomic(); } while (0)
-#define virt_mb__after_atomic()	do { kcsan_mb(); __smp_mb__after_atomic(); } while (0)
-#define virt_store_release(p, v) do { kcsan_release(); __smp_store_release(p, v); } while (0)
+#define virt_mb()	__smp_mb()
+#define virt_rmb()	__smp_rmb()
+#define virt_wmb()	__smp_wmb()
+#define virt_store_mb(var, value)	__smp_store_mb(var, value)
+#define virt_mb__before_atomic()	__smp_mb__before_atomic()
+#define virt_mb__after_atomic()	__smp_mb__after_atomic()
+#define virt_store_release(p, v)	__smp_store_release(p, v)
 #define virt_load_acquire(p) __smp_load_acquire(p)
 
 /**

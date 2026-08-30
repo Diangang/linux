@@ -7,7 +7,6 @@
 
 #include <linux/context_tracking.h>
 #include <linux/irq-entry-common.h>
-#include <linux/kasan.h>
 #include <linux/linkage.h>
 #include <linux/lockdep.h>
 #include <linux/ptrace.h>

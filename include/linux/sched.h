@@ -20,7 +20,6 @@
 #include <linux/pid_types.h>
 #include <linux/sem_types.h>
 #include <linux/shm.h>
-#include <linux/kmsan_types.h>
 #include <linux/mutex_types.h>
 #include <linux/plist_types.h>
 #include <linux/hrtimer_types.h>
@@ -41,7 +40,6 @@
 #include <linux/restart_block.h>
 #include <linux/rseq_types.h>
 #include <linux/seqlock_types.h>
-#include <linux/kcsan.h>
 #include <linux/rv.h>
 #include <linux/uidgid_types.h>
 #include <linux/tracepoint-defs.h>

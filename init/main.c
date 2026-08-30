@@ -34,7 +34,6 @@
 #include <linux/nmi.h>
 #include <linux/percpu.h>
 #include <linux/kprobes.h>
-#include <linux/kmsan.h>
 #include <linux/ksysfs.h>
 #include <linux/vmalloc.h>
 #include <linux/kernel_stat.h>
@@ -93,7 +92,6 @@
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
 #include <linux/jump_label.h>
-#include <linux/kcsan.h>
 #include <linux/init_syscalls.h>
 #include <linux/stackdepot.h>
 #include <linux/randomize_kstack.h>
@@ -832,7 +830,7 @@ static void __init print_kernel_cmdline(const char *cmdline)
 		pr_notice("%s%s\n", KERNEL_CMDLINE_PREFIX, cmdline);
 }
 
-asmlinkage __visible __init __no_sanitize_address __noreturn __no_stack_protector
+asmlinkage __visible __init __noreturn __no_stack_protector
 void start_kernel(void)
 {
 	char *command_line;
@@ -1029,8 +1027,6 @@ void start_kernel(void)
 
 	acpi_subsystem_init();
 	arch_post_acpi_subsys_init();
-	kcsan_init();
-
 	/* Do the rest non-__init'ed, we're now alive */
 	rest_init();
 

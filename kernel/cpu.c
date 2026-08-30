@@ -1596,7 +1596,6 @@ static int _cpu_up(unsigned int cpu, int tasks_frozen, enum cpuhp_state target)
 		 * Reset stale stack state from the last time this CPU was online.
 		 */
 		scs_task_reset(idle);
-		kasan_unpoison_task_stack(idle);
 	}
 
 	cpuhp_tasks_frozen = tasks_frozen;
