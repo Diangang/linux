@@ -1446,12 +1446,6 @@ static void __init its_select_mitigation(void)
 		return;
 	}
 
-	if (0) {
-		pr_err("WARNING: ITS mitigation is not compatible with CONFIG_DEBUG_FORCE_FUNCTION_ALIGN_64B\n");
-		its_mitigation = ITS_MITIGATION_OFF;
-		return;
-	}
-
 	if (its_mitigation == ITS_MITIGATION_RETPOLINE_STUFF &&
 	    !IS_ENABLED(CONFIG_MITIGATION_CALL_DEPTH_TRACKING)) {
 		pr_err("RSB stuff mitigation not supported, using default\n");

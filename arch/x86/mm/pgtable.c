@@ -74,10 +74,9 @@ struct mm_struct *pgd_page_get_mm(struct page *page)
 static void pgd_ctor(struct mm_struct *mm, pgd_t *pgd)
 {
 	/* PAE preallocates all its PMDs.  No cloning needed. */
-	if (!0)
-		clone_pgd_range(pgd + KERNEL_PGD_BOUNDARY,
-				swapper_pg_dir + KERNEL_PGD_BOUNDARY,
-				KERNEL_PGD_PTRS);
+	clone_pgd_range(pgd + KERNEL_PGD_BOUNDARY,
+			swapper_pg_dir + KERNEL_PGD_BOUNDARY,
+			KERNEL_PGD_PTRS);
 
 	/* List used to sync kernel mapping updates */
 	pgd_set_mm(pgd, mm);

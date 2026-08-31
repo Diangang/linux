@@ -54,8 +54,7 @@ static inline int is_ia32_frame(struct ksignal *ksig)
 
 static inline int is_x32_frame(struct ksignal *ksig)
 {
-	return 0 &&
-		ksig->ka.sa.sa_flags & SA_X32_ABI;
+	return 0;
 }
 
 /*

@@ -522,15 +522,12 @@ static DEFINE_PER_CPU(unsigned long, nmi_dr7);
 DEFINE_IDTENTRY_RAW(exc_nmi)
 {
 	irqentry_state_t irq_state;
-	struct nmi_stats *nsp = this_cpu_ptr(&nmi_stats);
 
 	/*
 	 * Re-enable NMIs right here when running as an SEV-ES guest. This might
 	 * cause nested NMIs, but those can be handled safely.
 	 */
 	sev_es_nmi_complete();
-	if (0)
-		raw_atomic_long_inc(&nsp->idt_calls);
 
 	if (arch_cpu_is_offline(smp_processor_id())) {
 		if (microcode_nmi_handler_enabled())
@@ -546,12 +543,6 @@ DEFINE_IDTENTRY_RAW(exc_nmi)
 	this_cpu_write(nmi_cr2, read_cr2());
 
 nmi_restart:
-	if (0) {
-		WRITE_ONCE(nsp->idt_seq, nsp->idt_seq + 1);
-		WARN_ON_ONCE(!(nsp->idt_seq & 0x1));
-		WRITE_ONCE(nsp->recv_jiffies, jiffies);
-	}
-
 	/*
 	 * Needs to happen before DR7 is accessed, because the hypervisor can
 	 * intercept DR7 reads/writes, turning those into #VC exceptions.
@@ -565,15 +556,7 @@ nmi_restart:
 	inc_irq_stat(__nmi_count);
 
 	if (!ignore_nmis) {
-		if (0) {
-			WRITE_ONCE(nsp->idt_nmi_seq, nsp->idt_nmi_seq + 1);
-			WARN_ON_ONCE(!(nsp->idt_nmi_seq & 0x1));
-		}
 		default_do_nmi(regs);
-		if (0) {
-			WRITE_ONCE(nsp->idt_nmi_seq, nsp->idt_nmi_seq + 1);
-			WARN_ON_ONCE(nsp->idt_nmi_seq & 0x1);
-		}
 	}
 
 	irqentry_nmi_exit(regs, irq_state);
@@ -584,11 +567,6 @@ nmi_restart:
 
 	if (unlikely(this_cpu_read(nmi_cr2) != read_cr2()))
 		write_cr2(this_cpu_read(nmi_cr2));
-	if (0) {
-		WRITE_ONCE(nsp->idt_seq, nsp->idt_seq + 1);
-		WARN_ON_ONCE(nsp->idt_seq & 0x1);
-		WRITE_ONCE(nsp->recv_jiffies, jiffies);
-	}
 	if (this_cpu_dec_return(nmi_state))
 		goto nmi_restart;
 }

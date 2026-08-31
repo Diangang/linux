@@ -28,8 +28,7 @@ enum tsx_ctrl_states {
 };
 
 static enum tsx_ctrl_states tsx_ctrl_state __ro_after_init =
-	IS_ENABLED(CONFIG_X86_INTEL_TSX_MODE_AUTO) ? TSX_CTRL_AUTO   :
-	0 ? TSX_CTRL_DISABLE : TSX_CTRL_ENABLE;
+	IS_ENABLED(CONFIG_X86_INTEL_TSX_MODE_AUTO) ? TSX_CTRL_AUTO : TSX_CTRL_ENABLE;
 
 static void tsx_disable(void)
 {

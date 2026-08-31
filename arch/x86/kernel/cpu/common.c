@@ -295,33 +295,7 @@ early_param("noinvpcid", x86_noinvpcid_setup);
 /* Standard macro to see if a specific flag is changeable */
 static inline bool flag_is_changeable_p(unsigned long flag)
 {
-	unsigned long f1, f2;
-
-	if (!0)
-		return true;
-
-	/*
-	 * Cyrix and IDT cpus allow disabling of CPUID
-	 * so the code below may return different results
-	 * when it is executed before and after enabling
-	 * the CPUID. Add "volatile" to not allow gcc to
-	 * optimize the subsequent calls to this function.
-	 */
-	asm volatile ("pushfl		\n\t"
-		      "pushfl		\n\t"
-		      "popl %0		\n\t"
-		      "movl %0, %1	\n\t"
-		      "xorl %2, %0	\n\t"
-		      "pushl %0		\n\t"
-		      "popfl		\n\t"
-		      "pushfl		\n\t"
-		      "popl %0		\n\t"
-		      "popfl		\n\t"
-
-		      : "=&r" (f1), "=&r" (f2)
-		      : "ir" (flag));
-
-	return (f1 ^ f2) & flag;
+	return true;
 }
 
 static inline void squash_the_stupid_serial_number(struct cpuinfo_x86 *c)

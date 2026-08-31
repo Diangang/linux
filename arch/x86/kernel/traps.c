@@ -441,11 +441,6 @@ noinstr bool handle_bug(struct pt_regs *regs)
 		break;
 
 	case BUG_UD1_UBSAN:
-		if (0) {
-			pr_crit("%s at %pS\n",
-				report_ubsan_failure(ud_imm),
-				(void *)regs->ip);
-		}
 		break;
 
 	default:
@@ -1323,13 +1318,6 @@ DEFINE_IDTENTRY(exc_coprocessor_error)
 
 DEFINE_IDTENTRY(exc_simd_coprocessor_error)
 {
-	if (0) {
-		/* AMD 486 bug: INVD in CPL 0 raises #XF instead of #GP */
-		if (!static_cpu_has(X86_FEATURE_XMM)) {
-			__exc_general_protection(regs, 0);
-			return;
-		}
-	}
 	math_error(regs, X86_TRAP_XF);
 }
 

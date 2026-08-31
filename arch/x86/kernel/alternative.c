@@ -1044,9 +1044,6 @@ Efault:
 	return false;
 }
 
-
-static void poison_cfi(void *addr);
-
 static void __init_or_module poison_endbr(void *addr)
 {
 	u32 poison = gen_endbr_poison();
@@ -1078,8 +1075,6 @@ void __init_or_module noinline apply_seal_endbr(s32 *start, s32 *end)
 		void *addr = (void *)s + *s;
 
 		poison_endbr(addr);
-		if (0)
-			poison_cfi(addr - CFI_OFFSET);
 	}
 }
 
@@ -1101,11 +1096,6 @@ static void __apply_fineibt(s32 *start_retpoline, s32 *end_retpoline,
 			    s32 *start_cfi, s32 *end_cfi, bool builtin)
 {
 }
-
-#ifdef CONFIG_X86_KERNEL_IBT
-static void poison_cfi(void *addr) { }
-#endif
-
 
 void apply_fineibt(s32 *start_retpoline, s32 *end_retpoline,
 		   s32 *start_cfi, s32 *end_cfi)
