@@ -13,11 +13,10 @@ config CRC32_ARCH
 	bool
 	depends on CRC32 && CRC_OPTIMIZATIONS
 	default y if ARM64
-	default y if X86
 
 config CRC_OPTIMIZATIONS
 	bool "Enable optimized CRC implementations" if EXPERT
-	default y
+	default y if ARM64
 	help
 	  Disabling this option reduces code size slightly by disabling the
 	  architecture-optimized implementations of any CRC variants that are

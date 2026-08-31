@@ -84,17 +84,13 @@ u32 crc32c(u32 crc, const void *p, size_t len);
 /*
  * crc32_optimizations() returns flags that indicate which CRC32 library
  * functions are using architecture-specific optimizations.  Unlike
- * IS_ENABLED(CONFIG_CRC32_ARCH) it takes into account the different CRC32
- * variants and also whether any needed CPU features are available at runtime.
+ * It takes into account the different CRC32 variants and whether any needed
+ * CPU features are available at runtime.
  */
 #define CRC32_LE_OPTIMIZATION	BIT(0) /* crc32_le() is optimized */
 #define CRC32_BE_OPTIMIZATION	BIT(1) /* crc32_be() is optimized */
 #define CRC32C_OPTIMIZATION	BIT(2) /* crc32c() is optimized */
-#if IS_ENABLED(CONFIG_CRC32_ARCH)
 u32 crc32_optimizations(void);
-#else
-static inline u32 crc32_optimizations(void) { return 0; }
-#endif
 
 /*
  * Helpers for hash table generation of ethernet nics:

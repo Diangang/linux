@@ -57,17 +57,18 @@ crc32c_base(u32 crc, const u8 *p, size_t len)
 
 #ifdef CONFIG_CRC32_ARCH
 #include "crc32.h" /* $(SRCARCH)/crc32.h */
+#else
+#define crc32_le_arch crc32_le_base
+#define crc32_be_arch crc32_be_base
+#define crc32c_arch crc32c_base
+static inline u32 crc32_optimizations_arch(void) { return 0; }
+#endif
 
 u32 crc32_optimizations(void)
 {
 	return crc32_optimizations_arch();
 }
 EXPORT_SYMBOL(crc32_optimizations);
-#else
-#define crc32_le_arch crc32_le_base
-#define crc32_be_arch crc32_be_base
-#define crc32c_arch crc32c_base
-#endif
 
 u32 crc32_le(u32 crc, const void *p, size_t len)
 {
