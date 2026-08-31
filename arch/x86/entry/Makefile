@@ -6,7 +6,6 @@
 UBSAN_SANITIZE := n
 KCOV_INSTRUMENT := n
 
-CFLAGS_syscall_32.o		+= -fno-stack-protector
 CFLAGS_syscall_64.o		+= -fno-stack-protector
 
 obj-y				:= entry.o entry_$(BITS).o syscall_$(BITS).o
@@ -15,5 +14,3 @@ obj-y				+= vdso/
 obj-y				+= vsyscall/
 
 obj-$(CONFIG_PREEMPTION)	+= thunk.o
-CFLAGS_entry_fred.o		+= -fno-stack-protector
-CFLAGS_REMOVE_entry_fred.o	+= -pg

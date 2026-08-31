@@ -19,10 +19,6 @@ KCOV_INSTRUMENT_stacktrace.o				:= n
 KCOV_INSTRUMENT_dumpstack.o				:= n
 KCOV_INSTRUMENT_dumpstack_$(BITS).o			:= n
 KCOV_INSTRUMENT_unwind_orc.o				:= n
-KCOV_INSTRUMENT_unwind_frame.o				:= n
-KCOV_INSTRUMENT_unwind_guess.o				:= n
-
-CFLAGS_head32.o := -fno-stack-protector
 CFLAGS_head64.o := -fno-stack-protector
 CFLAGS_irq.o := -I $(src)/../include/asm/trace
 
@@ -61,7 +57,6 @@ obj-y				+= cpu/
 obj-y				+= acpi/
 obj-y				+= reboot.o
 obj-$(CONFIG_PCI)		+= early-quirks.o
-apm-y				:= apm_32.o
 obj-$(CONFIG_SMP)		+= smp.o
 obj-$(CONFIG_SMP)		+= smpboot.o
 obj-$(CONFIG_X86_TSC)		+= tsc_sync.o
@@ -72,9 +67,6 @@ obj-$(CONFIG_HPET_TIMER) 	+= hpet.o
 
 obj-$(CONFIG_AMD_NB)		+= amd_nb.o
 obj-$(CONFIG_AMD_NODE)		+= amd_node.o
-
-
-obj-$(CONFIG_OF)			+= devicetree.o
 
 
 obj-$(CONFIG_SCHED_MC_PRIO)		+= itmt.o
