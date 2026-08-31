@@ -261,7 +261,7 @@ void finish_rcuwait(struct rcuwait *w)
 EXPORT_SYMBOL_GPL(finish_rcuwait);
 
 
-#if defined(CONFIG_TREE_RCU) || defined(CONFIG_RCU_TRACE)
+#ifdef CONFIG_TREE_RCU
 void do_trace_rcu_torture_read(const char *rcutorturename, struct rcu_head *rhp,
 			       unsigned long secs,
 			       unsigned long c_old, unsigned long c)

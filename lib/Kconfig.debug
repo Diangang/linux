@@ -180,8 +180,6 @@ config STACKTRACE
 
 source "kernel/rcu/Kconfig.debug"
 
-source "kernel/trace/Kconfig"
-
 config ARCH_HAS_DEVMEM_IS_ALLOWED
 	bool
 

@@ -44,8 +44,6 @@ static bool rcu_rdp_is_offloaded(struct rcu_data *rdp)
  */
 static void __init rcu_bootup_announce_oddness(void)
 {
-	if (IS_ENABLED(CONFIG_RCU_TRACE))
-		pr_info("\tRCU event tracing is enabled.\n");
 	if ((IS_ENABLED(CONFIG_64BIT) && RCU_FANOUT != 64) ||
 	    (!IS_ENABLED(CONFIG_64BIT) && RCU_FANOUT != 32))
 		pr_info("\tCONFIG_RCU_FANOUT set to non-default value of %d.\n",
