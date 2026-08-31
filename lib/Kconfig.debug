@@ -46,40 +46,7 @@ config MESSAGE_LOGLEVEL_DEFAULT
 
 endmenu # "printk and dmesg options"
 
-config DEBUG_KERNEL
-	bool "Kernel debugging"
-	help
-	  Say Y here if you are developing drivers or trying to debug and
-	  identify kernel problems.
-
 menu "Compile-time checks and compiler options"
-
-# Clang generates .uleb128 with label differences for DWARF v5, a feature that
-# older binutils ports do not support when utilizing RISC-V style linker
-# relaxation: https://sourceware.org/bugzilla/show_bug.cgi?id=27215
-config AS_HAS_NON_CONST_ULEB128
-	def_bool $(as-instr,.uleb128 .Lexpr_end4 - .Lexpr_start3\n.Lexpr_start3:\n.Lexpr_end4:)
-
-choice
-	prompt "Debug information"
-	depends on DEBUG_KERNEL
-	help
-	  Selecting something other than "None" results in a kernel image
-	  that will include debugging info resulting in a larger kernel image.
-	  This adds debug symbols to the kernel and modules (gcc -g), and
-	  is needed if you intend to use kernel crashdump or binary object
-	  tools like crash, kgdb, LKCD, gdb, etc on the kernel.
-
-	  Choose which version of DWARF debug info to emit. If unsure,
-	  select "Toolchain default".
-
-config DEBUG_INFO_NONE
-	bool "Disable debug information"
-	help
-	  Do not build the kernel with debugging information, which will
-	  result in a faster and smaller build.
-
-endchoice # "Debug information"
 
 config FRAME_WARN
 	int "Warn for stack frames larger than"

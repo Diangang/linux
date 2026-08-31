@@ -399,40 +399,6 @@ config STACKPROTECTOR_STRONG
 	  about 20% of all kernel functions, which increases the kernel code
 	  size by about 2%.
 
-config ARCH_SUPPORTS_LTO_CLANG
-	bool
-	help
-	  An architecture should select this option if it supports:
-	  - compiling with Clang,
-	  - compiling inline assembly with Clang's integrated assembler,
-	  - and linking with LLD.
-
-config ARCH_SUPPORTS_LTO_CLANG_THIN
-	bool
-	help
-	  An architecture should select this option if it can support Clang's
-	  ThinLTO mode.
-
-choice
-	prompt "Link Time Optimization (n)"
-	default LTO_NONE
-	help
-	  This option enables Link Time Optimization (LTO), which allows the
-	  compiler to optimize binaries globally.
-
-	  If unsure, select LTO_NONE. Note that LTO is very resource-intensive
-	  so it's disabled by default.
-
-config LTO_NONE
-	bool "None"
-	help
-	  Build the kernel normally, without Link Time Optimization (LTO).
-
-endchoice
-
-config ARCH_SUPPORTS_PROPELLER_CLANG
-	bool
-
 config ARCH_SUPPORTS_CFI
 	bool
 	help
