@@ -1169,10 +1169,8 @@ static void __init print_local_APIC(void *dummy)
 
 	v = apic_read(APIC_LDR);
 	pr_debug("... APIC LDR: %08x\n", v);
-	if (!x2apic_enabled()) {
-		v = apic_read(APIC_DFR);
-		pr_debug("... APIC DFR: %08x\n", v);
-	}
+	v = apic_read(APIC_DFR);
+	pr_debug("... APIC DFR: %08x\n", v);
 	v = apic_read(APIC_SPIV);
 	pr_debug("... APIC SPIV: %08x\n", v);
 

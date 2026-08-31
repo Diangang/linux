@@ -2291,8 +2291,6 @@ void cpu_init(void)
 		wrmsrq(MSR_KERNEL_GS_BASE, 0);
 		barrier();
 
-		x2apic_setup();
-
 		intel_posted_msi_init();
 	}
 

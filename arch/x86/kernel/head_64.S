@@ -234,21 +234,6 @@ SYM_INNER_LABEL(common_startup_64, SYM_L_LOCAL)
 	testl	$X2APIC_ENABLE, %eax
 	jnz	.Lread_apicid_msr
 
-#ifdef CONFIG_X86_X2APIC
-	/*
-	 * If system is in X2APIC mode then MMIO base might not be
-	 * mapped causing the MMIO read below to fault. Faults can't
-	 * be handled at that point.
-	 */
-	cmpl	$0, x2apic_mode(%rip)
-	jz	.Lread_apicid_mmio
-
-	/* Force the AP into X2APIC mode. */
-	orl	$X2APIC_ENABLE, %eax
-	wrmsr
-	jmp	.Lread_apicid_msr
-#endif
-
 .Lread_apicid_mmio:
 	/* Read the APIC ID from the fix-mapped MMIO space. */
 	movq	apic_mmio_base(%rip), %rcx

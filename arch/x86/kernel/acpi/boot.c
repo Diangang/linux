@@ -170,10 +170,6 @@ static int __init
 acpi_parse_x2apic(union acpi_subtable_headers *header, const unsigned long end)
 {
 	struct acpi_madt_local_x2apic *processor = NULL;
-#ifdef CONFIG_X86_X2APIC
-	u32 apic_id;
-	u8 enabled;
-#endif
 
 	processor = (struct acpi_madt_local_x2apic *)header;
 
@@ -182,43 +178,7 @@ acpi_parse_x2apic(union acpi_subtable_headers *header, const unsigned long end)
 
 	acpi_table_print_madt_entry(&header->common);
 
-#ifdef CONFIG_X86_X2APIC
-	apic_id = processor->local_apic_id;
-	enabled = processor->lapic_flags & ACPI_MADT_ENABLED;
-
-	/* Ignore invalid ID */
-	if (apic_id == 0xffffffff)
-		return 0;
-
-	/* don't register processors that cannot be onlined */
-	if (!acpi_is_processor_usable(processor->lapic_flags))
-		return 0;
-
-	/*
-	 * According to https://uefi.org/specs/ACPI/6.5/05_ACPI_Software_Programming_Model.html#processor-local-x2apic-structure
-	 * when MADT provides both valid LAPIC and x2APIC entries, the APIC ID
-	 * in x2APIC must be equal or greater than 0xff.
-	 */
-	if (has_lapic_cpus && apic_id < 0xff)
-		return 0;
-
-	/*
-	 * We need to register disabled CPU as well to permit
-	 * counting disabled CPUs. This allows us to size
-	 * cpus_possible_map more accurately, to permit
-	 * to not preallocating memory for all NR_CPUS
-	 * when we use CPU hotplug.
-	 */
-	if (!apic_id_valid(apic_id)) {
-		if (enabled)
-			pr_warn("x2apic entry ignored\n");
-		return 0;
-	}
-
-	topology_register_apic(apic_id, processor->uid, enabled);
-#else
 	pr_warn("x2apic entry ignored\n");
-#endif
 
 	return 0;
 }

@@ -76,17 +76,12 @@ u8 boot_cpu_apic_version __ro_after_init;
  */
 static int apic_extnmi __ro_after_init = APIC_EXTNMI_BSP;
 
-/*
- * Hypervisor supports 15 bits of APIC ID in MSI Extended Destination ID
- */
-static bool virt_ext_dest_id __ro_after_init;
-
 /* For parallel bootup. */
 unsigned long apic_mmio_base __ro_after_init;
 
 static inline bool apic_accessible(void)
 {
-	return x2apic_mode || apic_mmio_base;
+	return apic_mmio_base;
 }
 
 
@@ -1560,217 +1555,13 @@ void apic_ap_setup(void)
 	end_local_APIC_setup();
 }
 
-static __init void apic_read_boot_cpu_id(bool x2apic)
+static __init void apic_read_boot_cpu_id(void)
 {
-	/*
-	 * This can be invoked from check_x2apic() before the APIC has been
-	 * selected. But that code knows for sure that the BIOS enabled
-	 * X2APIC.
-	 */
-	if (x2apic) {
-		boot_cpu_physical_apicid = native_apic_msr_read(APIC_ID);
-		boot_cpu_apic_version = GET_APIC_VERSION(native_apic_msr_read(APIC_LVR));
-	} else {
-		boot_cpu_physical_apicid = read_apic_id();
-		boot_cpu_apic_version = GET_APIC_VERSION(apic_read(APIC_LVR));
-	}
+	boot_cpu_physical_apicid = read_apic_id();
+	boot_cpu_apic_version = GET_APIC_VERSION(apic_read(APIC_LVR));
 	topology_register_boot_apic(boot_cpu_physical_apicid);
 }
 
-#ifdef CONFIG_X86_X2APIC
-int x2apic_mode;
-EXPORT_SYMBOL_GPL(x2apic_mode);
-
-enum {
-	X2APIC_OFF,
-	X2APIC_DISABLED,
-	/* All states below here have X2APIC enabled */
-	X2APIC_ON,
-	X2APIC_ON_LOCKED
-};
-static int x2apic_state;
-
-static bool x2apic_hw_locked(void)
-{
-	u64 x86_arch_cap_msr;
-	u64 msr;
-
-	x86_arch_cap_msr = x86_read_arch_cap_msr();
-	if (x86_arch_cap_msr & ARCH_CAP_XAPIC_DISABLE) {
-		rdmsrq(MSR_IA32_XAPIC_DISABLE_STATUS, msr);
-		return (msr & LEGACY_XAPIC_DISABLED);
-	}
-	return false;
-}
-
-static void __x2apic_disable(void)
-{
-	u64 msr;
-
-	if (!boot_cpu_has(X86_FEATURE_APIC))
-		return;
-
-	rdmsrq(MSR_IA32_APICBASE, msr);
-	if (!(msr & X2APIC_ENABLE))
-		return;
-	/* Disable xapic and x2apic first and then reenable xapic mode */
-	wrmsrq(MSR_IA32_APICBASE, msr & ~(X2APIC_ENABLE | XAPIC_ENABLE));
-	wrmsrq(MSR_IA32_APICBASE, msr & ~X2APIC_ENABLE);
-	printk_once(KERN_INFO "x2apic disabled\n");
-}
-
-static void __x2apic_enable(void)
-{
-	u64 msr;
-
-	rdmsrq(MSR_IA32_APICBASE, msr);
-	if (msr & X2APIC_ENABLE)
-		return;
-	wrmsrq(MSR_IA32_APICBASE, msr | X2APIC_ENABLE);
-	printk_once(KERN_INFO "x2apic enabled\n");
-}
-
-static int __init setup_nox2apic(char *str)
-{
-	if (x2apic_enabled()) {
-		u32 apicid = native_apic_msr_read(APIC_ID);
-
-		if (apicid >= 255) {
-			pr_warn("Apicid: %08x, cannot enforce nox2apic\n",
-				apicid);
-			return 0;
-		}
-		if (x2apic_hw_locked()) {
-			pr_warn("APIC locked in x2apic mode, can't disable\n");
-			return 0;
-		}
-		pr_warn("x2apic already enabled.\n");
-		__x2apic_disable();
-	}
-	setup_clear_cpu_cap(X86_FEATURE_X2APIC);
-	x2apic_state = X2APIC_DISABLED;
-	x2apic_mode = 0;
-	return 0;
-}
-early_param("nox2apic", setup_nox2apic);
-
-/* Called from cpu_init() to enable x2apic on (secondary) cpus */
-void x2apic_setup(void)
-{
-	/*
-	 * Try to make the AP's APIC state match that of the BSP,  but if the
-	 * BSP is unlocked and the AP is locked then there is a state mismatch.
-	 * Warn about the mismatch in case a GP fault occurs due to a locked AP
-	 * trying to be turned off.
-	 */
-	if (x2apic_state != X2APIC_ON_LOCKED && x2apic_hw_locked())
-		pr_warn("x2apic lock mismatch between BSP and AP.\n");
-	/*
-	 * If x2apic is not in ON or LOCKED state, disable it if already enabled
-	 * from BIOS.
-	 */
-	if (x2apic_state < X2APIC_ON) {
-		__x2apic_disable();
-		return;
-	}
-	__x2apic_enable();
-}
-
-static __init void apic_set_fixmap(bool read_apic);
-
-static __init void x2apic_disable(void)
-{
-	u32 x2apic_id;
-
-	if (x2apic_state < X2APIC_ON)
-		return;
-
-	x2apic_id = read_apic_id();
-	if (x2apic_id >= 255)
-		panic("Cannot disable x2apic, id: %08x\n", x2apic_id);
-
-	if (x2apic_hw_locked()) {
-		pr_warn("Cannot disable locked x2apic, id: %08x\n", x2apic_id);
-		return;
-	}
-
-	__x2apic_disable();
-
-	x2apic_mode = 0;
-	x2apic_state = X2APIC_DISABLED;
-
-	/*
-	 * Don't reread the APIC ID as it was already done from
-	 * check_x2apic() and the APIC driver still is a x2APIC variant,
-	 * which fails to do the read after x2APIC was disabled.
-	 */
-	apic_set_fixmap(false);
-}
-
-static __init void x2apic_enable(void)
-{
-	if (x2apic_state != X2APIC_OFF)
-		return;
-
-	x2apic_mode = 1;
-	x2apic_state = X2APIC_ON;
-	__x2apic_enable();
-}
-
-static __init void try_to_enable_x2apic(int remap_mode)
-{
-	if (x2apic_state == X2APIC_DISABLED)
-		return;
-
-	if (remap_mode != IRQ_REMAP_X2APIC_MODE) {
-		u32 apic_limit = 255;
-
-		/*
-		 * Using X2APIC without IR is not architecturally supported
-		 * on bare metal but may be supported in guests.
-		 */
-		if (!x86_init.hyper.x2apic_available()) {
-			pr_info("x2apic: IRQ remapping doesn't support X2APIC mode\n");
-			x2apic_disable();
-			return;
-		}
-
-		/*
-		 * If the hypervisor supports extended destination ID in
-		 * MSI, that increases the maximum APIC ID that can be
-		 * used for non-remapped IRQ domains.
-		 */
-		if (x86_init.hyper.msi_ext_dest_id()) {
-			virt_ext_dest_id = 1;
-			apic_limit = 32767;
-		}
-
-		/*
-		 * Without IR, all CPUs can be addressed by IOAPIC/MSI only
-		 * in physical mode, and CPUs with an APIC ID that cannot
-		 * be addressed must not be brought online.
-		 */
-		x2apic_set_max_apicid(apic_limit);
-		x2apic_phys = 1;
-	}
-	x2apic_enable();
-}
-
-void __init check_x2apic(void)
-{
-	if (x2apic_enabled()) {
-		pr_info("x2apic: enabled by BIOS, switching to x2apic ops\n");
-		x2apic_mode = 1;
-		if (x2apic_hw_locked())
-			x2apic_state = X2APIC_ON_LOCKED;
-		else
-			x2apic_state = X2APIC_ON;
-		apic_read_boot_cpu_id(true);
-	} else if (!boot_cpu_has(X86_FEATURE_X2APIC)) {
-		x2apic_state = X2APIC_DISABLED;
-	}
-}
-#else /* CONFIG_X86_X2APIC */
 void __init check_x2apic(void)
 {
 	if (!apic_is_x2apic_enabled())
@@ -1778,52 +1569,11 @@ void __init check_x2apic(void)
 	/*
 	 * Checkme: Can we simply turn off x2APIC here instead of disabling the APIC?
 	 */
-	pr_err("Kernel does not support x2APIC, please recompile with CONFIG_X86_X2APIC.\n");
+	pr_err("Kernel does not support x2APIC.\n");
 	pr_err("Disabling APIC, expect reduced performance and functionality.\n");
 
 	apic_is_disabled = true;
 	setup_clear_cpu_cap(X86_FEATURE_APIC);
-}
-
-static inline void try_to_enable_x2apic(int remap_mode) { }
-static inline void __x2apic_enable(void) { }
-static inline void __x2apic_disable(void) { }
-#endif /* !CONFIG_X86_X2APIC */
-
-void __init enable_IR_x2apic(void)
-{
-	unsigned long flags;
-	int ret, ir_stat;
-
-	if (ioapic_is_disabled) {
-		pr_info("Not enabling interrupt remapping due to skipped IO-APIC setup\n");
-		return;
-	}
-
-	ir_stat = irq_remapping_prepare();
-	if (ir_stat < 0 && !x2apic_supported())
-		return;
-
-	ret = save_ioapic_entries();
-	if (ret) {
-		pr_info("Saving IO-APIC state failed: %d\n", ret);
-		return;
-	}
-
-	local_irq_save(flags);
-	legacy_pic->mask_all();
-	mask_ioapic_entries();
-
-	/* If irq_remapping_prepare() succeeded, try to enable it */
-	if (ir_stat >= 0)
-		ir_stat = irq_remapping_enable();
-	/* ir_stat contains the remap mode or an error code */
-	try_to_enable_x2apic(ir_stat);
-
-	if (ir_stat < 0)
-		restore_ioapic_entries();
-	legacy_pic->restore_mask();
-	local_irq_restore(flags);
 }
 
 #ifdef CONFIG_X86_64
@@ -1958,9 +1708,6 @@ void __init init_apic_mappings(void)
 	if (apic_validate_deadline_timer())
 		pr_info("TSC deadline timer available\n");
 
-	if (x2apic_mode)
-		return;
-
 	if (!smp_found_config) {
 		if (!detect_init_APIC()) {
 			pr_info("APIC: disable apic facility\n");
@@ -1975,7 +1722,7 @@ static __init void apic_set_fixmap(bool read_apic)
 	apic_mmio_base = APIC_BASE;
 	apic_pr_verbose("Mapped APIC to %16lx (%16lx)\n", apic_mmio_base, mp_lapic_addr);
 	if (read_apic)
-		apic_read_boot_cpu_id(false);
+		apic_read_boot_cpu_id();
 }
 
 void __init register_lapic_address(unsigned long address)
@@ -1984,8 +1731,7 @@ void __init register_lapic_address(unsigned long address)
 	WARN_ON_ONCE(mp_lapic_addr);
 	mp_lapic_addr = address;
 
-	if (!x2apic_mode)
-		apic_set_fixmap(true);
+	apic_set_fixmap(true);
 }
 
 /*
@@ -2165,13 +1911,10 @@ void __irq_msi_compose_msg(struct irq_cfg *cfg, struct msi_msg *msg,
 	 * just be writing to memory if it tried that, and needs IR to
 	 * address APICs which can't be addressed in the normal 32-bit
 	 * address range at 0xFFExxxxx. That is typically just 8 bits, but
-	 * some hypervisors allow the extended destination ID field in bits
-	 * 5-11 to be used, giving support for 15 bits of APIC IDs in total.
+	 * the destination APIC ID is limited to 8 bits.
 	 */
 	if (dmar)
 		msg->arch_addr_hi.destid_8_31 = cfg->dest_apicid >> 8;
-	else if (virt_ext_dest_id && cfg->dest_apicid < 0x8000)
-		msg->arch_addr_lo.virt_destid_8_14 = cfg->dest_apicid >> 8;
 	else
 		WARN_ON_ONCE(cfg->dest_apicid > 0xFF);
 }

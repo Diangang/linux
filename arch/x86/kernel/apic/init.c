@@ -95,9 +95,6 @@ void __init apic_install_driver(struct apic *driver)
 
 	apic = driver;
 
-	if (IS_ENABLED(CONFIG_X86_X2APIC) && apic->x2apic_set_max_apicid)
-		apic->max_apic_id = x2apic_max_apicid;
-
 	/* Copy the original eoi() callback as KVM/HyperV might overwrite it */
 	if (!apic->native_eoi)
 		apic->native_eoi = apic->eoi;

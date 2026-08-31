@@ -294,30 +294,6 @@ config SMP
 
 	  If you don't know what to do here, say N.
 
-config X86_X2APIC
-	bool "x2APIC interrupt controller architecture support"
-	depends on X86_LOCAL_APIC && X86_64 && IRQ_REMAP
-	default y
-	help
-	  x2APIC is an interrupt controller architecture, a component of which
-	  (the local APIC) is present in the CPU. It allows faster access to
-	  the local APIC and supports a larger number of CPUs in the system
-	  than the predecessors.
-
-	  x2APIC was introduced in Intel CPUs around 2008 and in AMD EPYC CPUs
-	  in 2019, but it can be disabled by the BIOS. It is also frequently
-	  emulated in virtual machines, even when the host CPU does not support
-	  it. Support in the CPU can be checked by executing
-		grep x2apic /proc/cpuinfo
-
-	  If this configuration option is disabled, the kernel will boot with
-	  very reduced functionality and performance on some platforms that
-	  have x2APIC enabled. On the other hand, on hardware that does not
-	  support x2APIC, a kernel with this option enabled will just fallback
-	  to older APIC implementations.
-
-	  If in doubt, say Y.
-
 config X86_MPPARSE
 	bool "Enable MPS table" if ACPI
 	default y

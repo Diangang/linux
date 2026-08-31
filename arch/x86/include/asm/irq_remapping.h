@@ -23,7 +23,6 @@ enum irq_remap_cap {
 
 enum {
 	IRQ_REMAP_XAPIC_MODE,
-	IRQ_REMAP_X2APIC_MODE,
 };
 
 /*

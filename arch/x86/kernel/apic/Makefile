@@ -16,8 +16,6 @@ obj-$(CONFIG_SMP)		+= ipi.o
 
 ifeq ($(CONFIG_X86_64),y)
 # APIC probe will depend on the listing order here
-obj-$(CONFIG_X86_X2APIC)	+= x2apic_phys.o
-obj-$(CONFIG_X86_X2APIC)	+= x2apic_cluster.o
 obj-y				+= apic_flat_64.o
 endif
 

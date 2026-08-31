@@ -117,8 +117,6 @@ static inline bool apic_is_x2apic_enabled(void)
 	return msr & X2APIC_ENABLE;
 }
 
-extern void enable_IR_x2apic(void);
-
 extern int lapic_get_maxlvt(void);
 extern void clear_local_APIC(void);
 extern void disconnect_bsp_APIC(int virt_wire_setup);
@@ -194,62 +192,6 @@ static inline void topology_apply_cmdline_limits_early(void) { }
 static inline void topology_init_possible_cpus(void) { }
 #endif /* !CONFIG_X86_LOCAL_APIC */
 
-#ifdef CONFIG_X86_X2APIC
-static inline void native_apic_msr_write(u32 reg, u32 v)
-{
-	if (reg == APIC_DFR || reg == APIC_ID || reg == APIC_LDR ||
-	    reg == APIC_LVR)
-		return;
-
-	wrmsrq(APIC_BASE_MSR + (reg >> 4), v);
-}
-
-static inline void native_apic_msr_eoi(void)
-{
-	native_wrmsrq(APIC_BASE_MSR + (APIC_EOI >> 4), APIC_EOI_ACK);
-}
-
-static inline u32 native_apic_msr_read(u32 reg)
-{
-	u64 msr;
-
-	if (reg == APIC_DFR)
-		return -1;
-
-	rdmsrq(APIC_BASE_MSR + (reg >> 4), msr);
-	return (u32)msr;
-}
-
-static inline void native_x2apic_icr_write(u32 low, u32 id)
-{
-	wrmsrq(APIC_BASE_MSR + (APIC_ICR >> 4), ((__u64) id) << 32 | low);
-}
-
-static inline u64 native_x2apic_icr_read(void)
-{
-	unsigned long val;
-
-	rdmsrq(APIC_BASE_MSR + (APIC_ICR >> 4), val);
-	return val;
-}
-
-extern int x2apic_mode;
-extern int x2apic_phys;
-extern void __init x2apic_set_max_apicid(u32 apicid);
-extern void x2apic_setup(void);
-static inline int x2apic_enabled(void)
-{
-	return boot_cpu_has(X86_FEATURE_X2APIC) && apic_is_x2apic_enabled();
-}
-
-#define x2apic_supported()	(boot_cpu_has(X86_FEATURE_X2APIC))
-#else /* !CONFIG_X86_X2APIC */
-static inline void x2apic_setup(void) { }
-static inline int x2apic_enabled(void) { return 0; }
-static inline u32 native_apic_msr_read(u32 reg) { BUG(); }
-#define x2apic_mode		(0)
-#define	x2apic_supported()	(0)
-#endif /* !CONFIG_X86_X2APIC */
 extern void __init check_x2apic(void);
 
 struct irq_data;
@@ -283,7 +225,6 @@ struct apic {
 
 	u32	disable_esr		: 1,
 		dest_mode_logical	: 1,
-		x2apic_set_max_apicid	: 1,
 		nmi_to_offline_cpu	: 1;
 
 	u32	(*calc_dest_apicid)(unsigned int cpu);
