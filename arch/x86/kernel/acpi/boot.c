@@ -1125,13 +1125,6 @@ static void __init acpi_process_madt(void)
 				smp_found_config = 1;
 			}
 
-#ifdef CONFIG_ACPI_MADT_WAKEUP
-			/*
-			 * Parse MADT MP Wake entry.
-			 */
-			acpi_table_parse_madt(ACPI_MADT_TYPE_MULTIPROC_WAKEUP,
-					      acpi_parse_mp_wake, 1);
-#endif
 		}
 		if (error == -EINVAL) {
 			/*
