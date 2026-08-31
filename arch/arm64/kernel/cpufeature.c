@@ -237,16 +237,16 @@ static const struct arm64_ftr_bits ftr_id_aa64isar1[] = {
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_SPECRES_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_SB_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_FRINTTS_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_GPI_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_GPA_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_LRCPC_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_FCMA_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_JSCVT_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_EXACT, ID_AA64ISAR1_EL1_API_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_EXACT, ID_AA64ISAR1_EL1_APA_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR1_EL1_DPB_SHIFT, 4, 0),
 	ARM64_FTR_END,
@@ -259,9 +259,9 @@ static const struct arm64_ftr_bits ftr_id_aa64isar2[] = {
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_CLRBHB_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_BC_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_MOPS_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_EXACT, ID_AA64ISAR2_EL1_APA3_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_VISIBLE_IF_IS_ENABLED(CONFIG_ARM64_PTR_AUTH),
+	ARM64_FTR_BITS(FTR_HIDDEN,
 		       FTR_STRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_GPA3_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_RPRES_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64ISAR2_EL1_WFxT_SHIFT, 4, 0),
@@ -2102,53 +2102,6 @@ static bool has_rasv1p1(const struct arm64_cpu_capabilities *__unused, int scope
 }
 #endif /* CONFIG_ARM64_RAS_EXTN */
 
-#ifdef CONFIG_ARM64_PTR_AUTH
-static bool has_address_auth_cpucap(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	int boot_val, sec_val;
-
-	/* We don't expect to be called with SCOPE_SYSTEM */
-	WARN_ON(scope == SCOPE_SYSTEM);
-	/*
-	 * The ptr-auth feature levels are not intercompatible with lower
-	 * levels. Hence we must match ptr-auth feature level of the secondary
-	 * CPUs with that of the boot CPU. The level of boot cpu is fetched
-	 * from the sanitised register whereas direct register read is done for
-	 * the secondary CPUs.
-	 * The sanitised feature state is guaranteed to match that of the
-	 * boot CPU as a mismatched secondary CPU is parked before it gets
-	 * a chance to update the state, with the capability.
-	 */
-	boot_val = cpuid_feature_extract_field(read_sanitised_ftr_reg(entry->sys_reg),
-					       entry->field_pos, entry->sign);
-	if (scope & SCOPE_BOOT_CPU)
-		return boot_val >= entry->min_field_value;
-	/* Now check for the secondary CPUs with SCOPE_LOCAL_CPU scope */
-	sec_val = cpuid_feature_extract_field(__read_sysreg_by_encoding(entry->sys_reg),
-					      entry->field_pos, entry->sign);
-	return (sec_val >= entry->min_field_value) && (sec_val == boot_val);
-}
-
-static bool has_address_auth_metacap(const struct arm64_cpu_capabilities *entry,
-				     int scope)
-{
-	bool api = has_address_auth_cpucap(cpucap_ptrs[ARM64_HAS_ADDRESS_AUTH_IMP_DEF], scope);
-	bool apa = has_address_auth_cpucap(cpucap_ptrs[ARM64_HAS_ADDRESS_AUTH_ARCH_QARMA5], scope);
-	bool apa3 = has_address_auth_cpucap(cpucap_ptrs[ARM64_HAS_ADDRESS_AUTH_ARCH_QARMA3], scope);
-
-	return apa || apa3 || api;
-}
-
-static bool has_generic_auth(const struct arm64_cpu_capabilities *entry,
-			     int __unused)
-{
-	bool gpi = __system_matches_cap(ARM64_HAS_GENERIC_AUTH_IMP_DEF);
-	bool gpa = __system_matches_cap(ARM64_HAS_GENERIC_AUTH_ARCH_QARMA5);
-	bool gpa3 = __system_matches_cap(ARM64_HAS_GENERIC_AUTH_ARCH_QARMA3);
-
-	return gpa || gpa3 || gpi;
-}
-#endif /* CONFIG_ARM64_PTR_AUTH */
 
 #ifdef CONFIG_ARM64_E0PD
 static void cpu_enable_e0pd(struct arm64_cpu_capabilities const *cap)
@@ -2560,60 +2513,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_cpuid_feature,
 		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, SB, IMP)
 	},
-#ifdef CONFIG_ARM64_PTR_AUTH
-	{
-		.desc = "Address authentication (architected QARMA5 algorithm)",
-		.capability = ARM64_HAS_ADDRESS_AUTH_ARCH_QARMA5,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_address_auth_cpucap,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, APA, PAuth)
-	},
-	{
-		.desc = "Address authentication (architected QARMA3 algorithm)",
-		.capability = ARM64_HAS_ADDRESS_AUTH_ARCH_QARMA3,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_address_auth_cpucap,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR2_EL1, APA3, PAuth)
-	},
-	{
-		.desc = "Address authentication (IMP DEF algorithm)",
-		.capability = ARM64_HAS_ADDRESS_AUTH_IMP_DEF,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_address_auth_cpucap,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, API, PAuth)
-	},
-	{
-		.capability = ARM64_HAS_ADDRESS_AUTH,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_address_auth_metacap,
-	},
-	{
-		.desc = "Generic authentication (architected QARMA5 algorithm)",
-		.capability = ARM64_HAS_GENERIC_AUTH_ARCH_QARMA5,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, GPA, IMP)
-	},
-	{
-		.desc = "Generic authentication (architected QARMA3 algorithm)",
-		.capability = ARM64_HAS_GENERIC_AUTH_ARCH_QARMA3,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR2_EL1, GPA3, IMP)
-	},
-	{
-		.desc = "Generic authentication (IMP DEF algorithm)",
-		.capability = ARM64_HAS_GENERIC_AUTH_IMP_DEF,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, GPI, IMP)
-	},
-	{
-		.capability = ARM64_HAS_GENERIC_AUTH,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_generic_auth,
-	},
-#endif /* CONFIG_ARM64_PTR_AUTH */
 	{
 		/*
 		 * Depends on having GICv3
@@ -2911,33 +2810,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = match,						\
 	}
 
-#ifdef CONFIG_ARM64_PTR_AUTH
-static const struct arm64_cpu_capabilities ptr_auth_hwcap_addr_matches[] = {
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR1_EL1, APA, PAuth)
-	},
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR2_EL1, APA3, PAuth)
-	},
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR1_EL1, API, PAuth)
-	},
-	{},
-};
-
-static const struct arm64_cpu_capabilities ptr_auth_hwcap_gen_matches[] = {
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR1_EL1, GPA, IMP)
-	},
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR2_EL1, GPA3, IMP)
-	},
-	{
-		HWCAP_CPUID_MATCH(ID_AA64ISAR1_EL1, GPI, IMP)
-	},
-	{},
-};
-#endif
 
 #ifdef CONFIG_ARM64_SVE
 static bool has_sve_feature(const struct arm64_cpu_capabilities *cap, int scope)
@@ -3023,10 +2895,6 @@ static const struct arm64_cpu_capabilities arm64_elf_hwcaps[] = {
 	HWCAP_CAP(ID_AA64PFR1_EL1, SSBS, SSBS2, CAP_HWCAP, KERNEL_HWCAP_SSBS),
 #ifdef CONFIG_ARM64_BTI
 	HWCAP_CAP(ID_AA64PFR1_EL1, BT, IMP, CAP_HWCAP, KERNEL_HWCAP_BTI),
-#endif
-#ifdef CONFIG_ARM64_PTR_AUTH
-	HWCAP_MULTI_CAP(ptr_auth_hwcap_addr_matches, CAP_HWCAP, KERNEL_HWCAP_PACA),
-	HWCAP_MULTI_CAP(ptr_auth_hwcap_gen_matches, CAP_HWCAP, KERNEL_HWCAP_PACG),
 #endif
 	HWCAP_CAP(ID_AA64MMFR0_EL1, ECV, IMP, CAP_HWCAP, KERNEL_HWCAP_ECV),
 	HWCAP_CAP(ID_AA64MMFR1_EL1, AFP, IMP, CAP_HWCAP, KERNEL_HWCAP_AFP),

@@ -51,12 +51,7 @@ KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
 KBUILD_AFLAGS	+= -fno-asynchronous-unwind-tables -fno-unwind-tables
 KBUILD_RUSTFLAGS += -Cforce-unwind-tables=n
 
-ifeq ($(CONFIG_ARM64_PTR_AUTH_KERNEL),y)
-  KBUILD_RUSTFLAGS += -Zbranch-protection=pac-ret
-  KBUILD_CFLAGS += -msign-return-address=non-leaf
-else
-  KBUILD_CFLAGS += $(call cc-option,-mbranch-protection=none)
-endif
+KBUILD_CFLAGS += $(call cc-option,-mbranch-protection=none)
 
 # Tell the assembler to support instructions from the latest target
 # architecture.

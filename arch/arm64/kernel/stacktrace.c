@@ -236,7 +236,6 @@ kunwind_next(struct kunwind_state *state)
 	if (err)
 		return err;
 
-	state->common.pc = ptrauth_strip_kernel_insn_pac(state->common.pc);
 
 	return kunwind_recover_return_address(state);
 }
@@ -462,7 +461,7 @@ unwind_user_frame(struct frame_tail __user *tail, void *cookie,
 	if (err)
 		return NULL;
 
-	lr = ptrauth_strip_user_insn_pac(buftail.lr);
+	lr = buftail.lr;
 
 	if (!consume_entry(cookie, lr))
 		return NULL;

@@ -29,9 +29,6 @@ cpucap_is_possible(const unsigned int cap)
 		return IS_ENABLED(CONFIG_ARM64_SME);
 	case ARM64_HAS_CNP:
 		return IS_ENABLED(CONFIG_ARM64_CNP);
-	case ARM64_HAS_ADDRESS_AUTH:
-	case ARM64_HAS_GENERIC_AUTH:
-		return IS_ENABLED(CONFIG_ARM64_PTR_AUTH);
 	case ARM64_HAS_GIC_PRIO_MASKING:
 		return 0;
 	case ARM64_MTE:

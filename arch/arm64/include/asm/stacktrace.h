@@ -11,7 +11,6 @@
 #include <linux/llist.h>
 
 #include <asm/memory.h>
-#include <asm/pointer_auth.h>
 #include <asm/ptrace.h>
 #include <asm/sdei.h>
 

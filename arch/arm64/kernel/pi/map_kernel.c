@@ -53,16 +53,6 @@ static void __init map_kernel(u64 kaslr_offset, u64 va_offset, int root_level)
 	if (arm64_test_sw_feature_override(ARM64_SW_FEATURE_OVERRIDE_RODATA_OFF))
 		text_prot = PAGE_KERNEL_EXEC;
 
-	/*
-	 * We only enable the shadow call stack dynamically if we are running
-	 * on a system that does not implement PAC or BTI. PAC and SCS provide
-	 * roughly the same level of protection, and BTI relies on the PACIASP
-	 * instructions serving as landing pads, preventing us from patching
-	 * those instructions into something else.
-	 */
-	if (IS_ENABLED(CONFIG_ARM64_PTR_AUTH_KERNEL) && cpu_has_pac())
-		enable_scs = false;
-
 	/* Map all code read-write on the first pass if needed */
 	twopass |= enable_scs;
 	prot = twopass ? data_prot : text_prot;

@@ -5,6 +5,8 @@
 #ifndef __ASM_GCS_H
 #define __ASM_GCS_H
 
+#include <uapi/linux/prctl.h>
+
 #include <asm/types.h>
 #include <asm/uaccess.h>
 

@@ -54,7 +54,6 @@
 #include <asm/mpam.h>
 #include <asm/mte.h>
 #include <asm/processor.h>
-#include <asm/pointer_auth.h>
 #include <asm/stacktrace.h>
 #include <asm/switch_to.h>
 #include <asm/system_misc.h>
@@ -220,7 +219,7 @@ void __show_regs(struct pt_regs *regs)
 
 	if (!user_mode(regs)) {
 		printk("pc : %pS\n", (void *)regs->pc);
-		printk("lr : %pS\n", (void *)ptrauth_strip_kernel_insn_pac(lr));
+		printk("lr : %pS\n", (void *)lr);
 	} else {
 		printk("pc : %016llx\n", regs->pc);
 		printk("lr : %016llx\n", lr);
@@ -440,7 +439,6 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 	 */
 	fpsimd_flush_task_state(p);
 
-	ptrauth_thread_init_kernel(p);
 
 	if (likely(!args->fn)) {
 		*childregs = *current_pt_regs();
@@ -734,7 +732,6 @@ struct task_struct *__switch_to(struct task_struct *prev,
 	entry_task_switch(next);
 	ssbs_thread_switch(next);
 	cntkctl_thread_switch(prev, next);
-	ptrauth_thread_switch_user(next);
 	permission_overlay_switch(next);
 	gcs_thread_switch(next);
 
@@ -820,7 +817,6 @@ void arch_setup_new_exec(void)
 		relax_compatible_cpus_allowed_ptr(current);
 
 	current->mm->context.flags = mmflags;
-	ptrauth_thread_init_user();
 	mte_thread_init_user();
 	do_set_tsc_mode(PR_TSC_ENABLE);
 

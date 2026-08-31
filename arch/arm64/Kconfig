@@ -500,45 +500,6 @@ endmenu # "ARMv8.2 architectural features"
 
 menu "ARMv8.3 architectural features"
 
-config ARM64_PTR_AUTH
-	bool "Enable support for pointer authentication"
-	default y
-	help
-	  Pointer authentication (part of the ARMv8.3 Extensions) provides
-	  instructions for signing and authenticating pointers against secret
-	  keys, which can be used to mitigate Return Oriented Programming (ROP)
-	  and other attacks.
-
-	  This option enables these instructions at EL0 (i.e. for userspace).
-	  Choosing this option will cause the kernel to initialise secret keys
-	  for each process at exec() time, with these keys being
-	  context-switched along with the process.
-
-	  The feature is detected at runtime. If the feature is not present in
-	  hardware it will not be advertised to userspace/KVM guest nor will it
-	  be enabled.
-
-	  If the feature is present on the boot CPU but not on a late CPU, then
-	  the late CPU will be parked. Also, if the boot CPU does not have
-	  address auth and the late CPU has then the late CPU will still boot
-	  but with the feature disabled. On such a system, this option should
-	  not be selected.
-
-config ARM64_PTR_AUTH_KERNEL
-	bool "Use pointer authentication for kernel"
-	default y
-	depends on ARM64_PTR_AUTH
-	# Modern compilers insert a .note.gnu.property section note for PAC
-	# which is only understood by binutils starting with version 2.33.1.
-	depends on n || LD_VERSION >= 23301 || (CC_IS_GCC && GCC_VERSION < 90100)
-	help
-	  If the compiler supports the -mbranch-protection or
-	  -msign-return-address flag (e.g. GCC 7 or later), then this option
-	  will cause the kernel itself to be compiled with return address
-	  protection. In this case, and if the target hardware is known to
-	  support pointer authentication, then CONFIG_STACKPROTECTOR can be
-	  disabled with minimal loss of protection.
-
 endmenu # "ARMv8.3 architectural features"
 
 menu "ARMv8.4 architectural features"

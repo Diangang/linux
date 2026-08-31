@@ -13,7 +13,6 @@
 #include <linux/init.h>
 #include <linux/pgtable.h>
 
-#include <asm/asm_pointer_auth.h>
 #include <asm/assembler.h>
 #include <asm/boot.h>
 #include <asm/bug.h>
@@ -393,9 +392,6 @@ SYM_FUNC_START_LOCAL(__secondary_switched)
 
 	init_cpu_task x2, x1, x3
 
-#ifdef CONFIG_ARM64_PTR_AUTH
-	ptrauth_keys_init_cpu x2, x3, x4, x5
-#endif
 
 	bl	secondary_start_kernel
 	ASM_BUG()

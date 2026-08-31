@@ -13,7 +13,6 @@
 #include <linux/cfi_types.h>
 #include <asm/assembler.h>
 #include <asm/asm-offsets.h>
-#include <asm/asm_pointer_auth.h>
 #include <asm/hwcap.h>
 #include <asm/kernel-pgtable.h>
 #include <asm/pgtable-hwdef.h>

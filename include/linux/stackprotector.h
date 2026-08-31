@@ -25,7 +25,7 @@ static inline unsigned long get_random_canary(void)
 	return get_random_long() & CANARY_MASK;
 }
 
-#if defined(CONFIG_STACKPROTECTOR) || defined(CONFIG_ARM64_PTR_AUTH)
+#ifdef CONFIG_STACKPROTECTOR
 # include <asm/stackprotector.h>
 #else
 static inline void boot_init_stack_canary(void)

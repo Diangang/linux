@@ -40,7 +40,6 @@
 #include <asm/cpufeature.h>
 #include <asm/lse.h>
 #include <asm/pgtable-hwdef.h>
-#include <asm/pointer_auth.h>
 #include <asm/ptrace.h>
 #include <asm/spectre.h>
 #include <asm/types.h>
@@ -136,12 +135,6 @@ struct thread_struct {
 	 */
 	struct user_fpsimd_state	*kernel_fpsimd_state;
 	unsigned int			kernel_fpsimd_cpu;
-#ifdef CONFIG_ARM64_PTR_AUTH
-	struct ptrauth_keys_user	keys_user;
-#ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
-	struct ptrauth_keys_kernel	keys_kernel;
-#endif
-#endif
 	u64			sctlr_user;
 	u64			svcr;
 	u64			tpidr2_el0;
@@ -345,14 +338,6 @@ extern void __init minsigstksz_setup(void);
 #define SVE_GET_VL()	sve_get_current_vl()
 #define SME_SET_VL(arg)	sme_set_current_vl(arg)
 #define SME_GET_VL()	sme_get_current_vl()
-
-/* PR_PAC_RESET_KEYS prctl */
-#define PAC_RESET_KEYS(tsk, arg)	ptrauth_prctl_reset_keys(tsk, arg)
-
-/* PR_PAC_{SET,GET}_ENABLED_KEYS prctl */
-#define PAC_SET_ENABLED_KEYS(tsk, keys, enabled)				\
-	ptrauth_set_enabled_keys(tsk, keys, enabled)
-#define PAC_GET_ENABLED_KEYS(tsk) ptrauth_get_enabled_keys(tsk)
 
 #ifdef CONFIG_ARM64_TAGGED_ADDR_ABI
 /* PR_{SET,GET}_TAGGED_ADDR_CTRL prctl */

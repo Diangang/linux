@@ -33,12 +33,6 @@ int main(void)
   BLANK();
   DEFINE(THREAD_CPU_CONTEXT,	offsetof(struct task_struct, thread.cpu_context));
   DEFINE(THREAD_SCTLR_USER,	offsetof(struct task_struct, thread.sctlr_user));
-#ifdef CONFIG_ARM64_PTR_AUTH
-  DEFINE(THREAD_KEYS_USER,	offsetof(struct task_struct, thread.keys_user));
-#endif
-#ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
-  DEFINE(THREAD_KEYS_KERNEL,	offsetof(struct task_struct, thread.keys_kernel));
-#endif
   BLANK();
   DEFINE(S_X0,			offsetof(struct pt_regs, regs[0]));
   DEFINE(S_X2,			offsetof(struct pt_regs, regs[2]));
@@ -90,13 +84,6 @@ int main(void)
   BLANK();
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
   DEFINE(TRAMP_VALIAS,		TRAMP_VALIAS);
-#endif
-#ifdef CONFIG_ARM64_PTR_AUTH
-  DEFINE(PTRAUTH_USER_KEY_APIA,		offsetof(struct ptrauth_keys_user, apia));
-#ifdef CONFIG_ARM64_PTR_AUTH_KERNEL
-  DEFINE(PTRAUTH_KERNEL_KEY_APIA,	offsetof(struct ptrauth_keys_kernel, apia));
-#endif
-  BLANK();
 #endif
   BLANK();
   DEFINE(PIE_E0_ASM, PIE_E0);

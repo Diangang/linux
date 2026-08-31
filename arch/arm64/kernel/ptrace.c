@@ -33,7 +33,6 @@
 #include <asm/fpsimd.h>
 #include <asm/gcs.h>
 #include <asm/mte.h>
-#include <asm/pointer_auth.h>
 #include <asm/stacktrace.h>
 #include <asm/syscall.h>
 #include <asm/traps.h>
@@ -874,61 +873,6 @@ static int zt_set(struct task_struct *target,
 
 #endif /* CONFIG_ARM64_SME */
 
-#ifdef CONFIG_ARM64_PTR_AUTH
-static int pac_mask_get(struct task_struct *target,
-			const struct user_regset *regset,
-			struct membuf to)
-{
-	/*
-	 * The PAC bits can differ across data and instruction pointers
-	 * depending on TCR_EL1.TBID*, which we may make use of in future, so
-	 * we expose separate masks.
-	 */
-	unsigned long mask = ptrauth_user_pac_mask();
-	struct user_pac_mask uregs = {
-		.data_mask = mask,
-		.insn_mask = mask,
-	};
-
-	if (!system_supports_address_auth())
-		return -EINVAL;
-
-	return membuf_write(&to, &uregs, sizeof(uregs));
-}
-
-static int pac_enabled_keys_get(struct task_struct *target,
-				const struct user_regset *regset,
-				struct membuf to)
-{
-	long enabled_keys = ptrauth_get_enabled_keys(target);
-
-	if (IS_ERR_VALUE(enabled_keys))
-		return enabled_keys;
-
-	return membuf_write(&to, &enabled_keys, sizeof(enabled_keys));
-}
-
-static int pac_enabled_keys_set(struct task_struct *target,
-				const struct user_regset *regset,
-				unsigned int pos, unsigned int count,
-				const void *kbuf, const void __user *ubuf)
-{
-	int ret;
-	long enabled_keys = ptrauth_get_enabled_keys(target);
-
-	if (IS_ERR_VALUE(enabled_keys))
-		return enabled_keys;
-
-	ret = user_regset_copyin(&pos, &count, &kbuf, &ubuf, &enabled_keys, 0,
-				 sizeof(long));
-	if (ret)
-		return ret;
-
-	return ptrauth_set_enabled_keys(target, PR_PAC_ENABLED_KEYS_MASK,
-					enabled_keys);
-}
-
-#endif /* CONFIG_ARM64_PTR_AUTH */
 
 #ifdef CONFIG_ARM64_TAGGED_ADDR_ABI
 static int tagged_addr_ctrl_get(struct task_struct *target,
@@ -1075,10 +1019,6 @@ enum aarch64_regset {
 	REGSET_ZA,
 	REGSET_ZT,
 #endif
-#ifdef CONFIG_ARM64_PTR_AUTH
-	REGSET_PAC_MASK,
-	REGSET_PAC_ENABLED_KEYS,
-#endif
 #ifdef CONFIG_ARM64_TAGGED_ADDR_ABI
 	REGSET_TAGGED_ADDR_CTRL,
 #endif
@@ -1181,24 +1121,6 @@ static const struct user_regset aarch64_regsets[] = {
 		.align = sizeof(u64),
 		.regset_get = zt_get,
 		.set = zt_set,
-	},
-#endif
-#ifdef CONFIG_ARM64_PTR_AUTH
-	[REGSET_PAC_MASK] = {
-		USER_REGSET_NOTE_TYPE(ARM_PAC_MASK),
-		.n = sizeof(struct user_pac_mask) / sizeof(u64),
-		.size = sizeof(u64),
-		.align = sizeof(u64),
-		.regset_get = pac_mask_get,
-		/* this cannot be set dynamically */
-	},
-	[REGSET_PAC_ENABLED_KEYS] = {
-		USER_REGSET_NOTE_TYPE(ARM_PAC_ENABLED_KEYS),
-		.n = 1,
-		.size = sizeof(long),
-		.align = sizeof(long),
-		.regset_get = pac_enabled_keys_get,
-		.set = pac_enabled_keys_set,
 	},
 #endif
 #ifdef CONFIG_ARM64_TAGGED_ADDR_ABI

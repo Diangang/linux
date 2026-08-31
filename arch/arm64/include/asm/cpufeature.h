@@ -789,21 +789,6 @@ static __always_inline bool system_supports_cnp(void)
 	return alternative_has_cap_unlikely(ARM64_HAS_CNP);
 }
 
-static inline bool system_supports_address_auth(void)
-{
-	return cpus_have_final_boot_cap(ARM64_HAS_ADDRESS_AUTH);
-}
-
-static inline bool system_supports_generic_auth(void)
-{
-	return alternative_has_cap_unlikely(ARM64_HAS_GENERIC_AUTH);
-}
-
-static inline bool system_has_full_ptr_auth(void)
-{
-	return system_supports_address_auth() && system_supports_generic_auth();
-}
-
 static __always_inline bool system_uses_irq_prio_masking(void)
 {
 	return alternative_has_cap_unlikely(ARM64_HAS_GIC_PRIO_MASKING);
@@ -1018,28 +1003,6 @@ static inline bool cpu_has_bti(void)
 	return arm64_apply_feature_override(read_cpuid(ID_AA64PFR1_EL1),
 					    ID_AA64PFR1_EL1_BT_SHIFT, 4,
 					    &id_aa64pfr1_override);
-}
-
-static inline bool cpu_has_pac(void)
-{
-	u64 isar1, isar2;
-
-	if (!IS_ENABLED(CONFIG_ARM64_PTR_AUTH))
-		return false;
-
-	isar1 = read_cpuid(ID_AA64ISAR1_EL1);
-	isar2 = read_cpuid(ID_AA64ISAR2_EL1);
-
-	if (arm64_apply_feature_override(isar1, ID_AA64ISAR1_EL1_APA_SHIFT, 4,
-					 &id_aa64isar1_override))
-		return true;
-
-	if (arm64_apply_feature_override(isar1, ID_AA64ISAR1_EL1_API_SHIFT, 4,
-					 &id_aa64isar1_override))
-		return true;
-
-	return arm64_apply_feature_override(isar2, ID_AA64ISAR2_EL1_APA3_SHIFT, 4,
-					    &id_aa64isar2_override);
 }
 
 static inline bool cpu_has_lva(void)
