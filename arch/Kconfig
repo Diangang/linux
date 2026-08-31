@@ -595,15 +595,6 @@ config PAGE_SIZE_4KB
 
 endchoice
 
-config PAGE_SIZE_LESS_THAN_64KB
-	def_bool y
-	depends on y
-	depends on PAGE_SIZE_LESS_THAN_256KB
-
-config PAGE_SIZE_LESS_THAN_256KB
-	def_bool y
-	depends on y
-
 config PAGE_SHIFT
 	int
 	default	12 if PAGE_SIZE_4KB
