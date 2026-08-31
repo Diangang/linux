@@ -8,8 +8,7 @@
 #include <linux/percpu-defs.h>
 #include <linux/prandom.h>
 
-DECLARE_STATIC_KEY_MAYBE(CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT,
-			 randomize_kstack_offset);
+DECLARE_STATIC_KEY_FALSE(randomize_kstack_offset);
 
 /*
  * Do not use this anywhere else in the kernel. This is used here because
@@ -68,8 +67,7 @@ static __always_inline u32 get_kstack_offset(void)
  * entropy, please see: tools/testing/selftests/lkdtm/stack-entropy.sh
  */
 #define add_random_kstack_offset() do {					\
-	if (static_branch_maybe(CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT,	\
-				&randomize_kstack_offset)) {		\
+	if (static_branch_unlikely(&randomize_kstack_offset)) {		\
 		u32 offset = get_kstack_offset();			\
 		u8 *ptr = __kstack_alloca(KSTACK_OFFSET_MAX(offset));	\
 		/* Keep allocation even after "ptr" loses scope. */	\
