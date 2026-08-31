@@ -759,9 +759,6 @@ endchoice
 
 source "kernel/Kconfig.hz"
 
-config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
-	def_bool CRASH_RESERVE
-
 config PHYSICAL_START
 	hex "Physical address where the kernel is loaded" if EXPERT
 	default "0x1000000"
