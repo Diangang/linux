@@ -7,7 +7,6 @@
 #include <linux/pkeys.h>
 
 #include <asm/tlbflush.h>
-#include <asm/paravirt.h>
 #include <asm/debugreg.h>
 #include <asm/gsseg.h>
 #include <asm/desc.h>
@@ -139,7 +138,6 @@ extern void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
 
 #define activate_mm(prev, next)			\
 do {						\
-	paravirt_enter_mmap(next);		\
 	switch_mm_irqs_off((prev), (next), NULL);	\
 } while (0);
 
@@ -166,14 +164,12 @@ static inline void arch_dup_pkeys(struct mm_struct *oldmm,
 static inline int arch_dup_mmap(struct mm_struct *oldmm, struct mm_struct *mm)
 {
 	arch_dup_pkeys(oldmm, mm);
-	paravirt_enter_mmap(mm);
 	dup_lam(oldmm, mm);
 	return ldt_dup_context(oldmm, mm);
 }
 
 static inline void arch_exit_mmap(struct mm_struct *mm)
 {
-	paravirt_arch_exit_mmap(mm);
 	ldt_arch_exit_mmap(mm);
 }
 

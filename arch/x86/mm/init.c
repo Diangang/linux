@@ -779,9 +779,6 @@ void __init poking_init(void)
 	text_poke_mm = mm_alloc();
 	BUG_ON(!text_poke_mm);
 
-	/* Xen PV guests need the PGD to be pinned. */
-	paravirt_enter_mmap(text_poke_mm);
-
 	set_notrack_mm(text_poke_mm);
 
 	/*

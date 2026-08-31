@@ -453,63 +453,6 @@ void text_poke_apply_relocation(u8 *buf, const u8 * const instr, size_t instrlen
 	optimize_nops(instr, buf, instrlen);
 }
 
-/* Low-level backend functions usable from alternative code replacements. */
-DEFINE_ASM_FUNC(nop_func, "", .entry.text);
-EXPORT_SYMBOL_GPL(nop_func);
-
-noinstr void BUG_func(void)
-{
-	BUG();
-}
-EXPORT_SYMBOL(BUG_func);
-
-#define CALL_RIP_REL_OPCODE	0xff
-#define CALL_RIP_REL_MODRM	0x15
-
-/*
- * Rewrite the "call BUG_func" replacement to point to the target of the
- * indirect pv_ops call "call *disp(%ip)".
- */
-static unsigned int alt_replace_call(u8 *instr, u8 *insn_buff, struct alt_instr *a)
-{
-	void *target, *bug = &BUG_func;
-	s32 disp;
-
-	if (a->replacementlen != 5 || insn_buff[0] != CALL_INSN_OPCODE) {
-		pr_err("ALT_FLAG_DIRECT_CALL set for a non-call replacement instruction\n");
-		BUG();
-	}
-
-	if (a->instrlen != 6 ||
-	    instr[0] != CALL_RIP_REL_OPCODE ||
-	    instr[1] != CALL_RIP_REL_MODRM) {
-		pr_err("ALT_FLAG_DIRECT_CALL set for unrecognized indirect call\n");
-		BUG();
-	}
-
-	/* Skip CALL_RIP_REL_OPCODE and CALL_RIP_REL_MODRM */
-	disp = *(s32 *)(instr + 2);
-#ifdef CONFIG_X86_64
-	/* ff 15 00 00 00 00   call   *0x0(%rip) */
-	/* target address is stored at "next instruction + disp". */
-	target = *(void **)(instr + a->instrlen + disp);
-#else
-	/* ff 15 00 00 00 00   call   *0x0 */
-	/* target address is stored at disp. */
-	target = *(void **)disp;
-#endif
-	if (!target)
-		target = bug;
-
-	/* (BUG_func - .) + (target - BUG_func) := target - . */
-	*(s32 *)(insn_buff + 1) += target - bug;
-
-	if (target == &nop_func)
-		return 0;
-
-	return 5;
-}
-
 static inline u8 * instr_va(struct alt_instr *i)
 {
 	return (u8 *)&i->instr_offset + i->instr_offset;
@@ -576,9 +519,6 @@ static void __init_or_module prep_patch_site(struct patch_site *ps)
 
 	memcpy(ps->buff, repl, alt->replacementlen);
 	buff_sz = alt->replacementlen;
-
-	if (alt->flags & ALT_FLAG_DIRECT_CALL)
-		buff_sz = alt_replace_call(ps->instr, ps->buff, alt);
 
 	for (; buff_sz < ps->len; buff_sz++)
 		ps->buff[buff_sz] = 0x90;
@@ -1378,12 +1318,6 @@ void __init alternative_instructions(void)
 	 * expect a machine check to cause undue problems during to code
 	 * patching.
 	 */
-
-	/*
-	 * Make sure to set (artificial) features depending on used paravirt
-	 * functions which can later influence alternative patching.
-	 */
-	paravirt_set_cap();
 
 	/* Keep CET-IBT disabled until caller/callee are patched */
 	ibt = ibt_save(/*disable*/ true);

@@ -12,7 +12,6 @@
 
 #include <asm/acpi.h>
 #include <asm/bios_ebda.h>
-#include <asm/paravirt.h>
 #include <asm/pci_x86.h>
 #include <asm/mpspec.h>
 #include <asm/setup.h>
@@ -88,7 +87,7 @@ struct x86_init_ops x86_init __initdata = {
 
 	.oem = {
 		.arch_setup		= x86_init_noop,
-		.banner			= default_banner,
+		.banner			= x86_init_noop,
 	},
 
 	.paging = {

@@ -120,14 +120,6 @@ static inline int desc_empty(const void *ptr)
 #define write_gdt_entry(dt, entry, desc, type)	native_write_gdt_entry(dt, entry, desc, type)
 #define write_idt_entry(dt, entry, g)		native_write_idt_entry(dt, entry, g)
 
-static inline void paravirt_alloc_ldt(struct desc_struct *ldt, unsigned entries)
-{
-}
-
-static inline void paravirt_free_ldt(struct desc_struct *ldt, unsigned entries)
-{
-}
-
 #define store_ldt(ldt) asm("sldt %0" : "=m"(ldt))
 
 static inline void native_write_idt_entry(gate_desc *idt, int entry, const gate_desc *gate)

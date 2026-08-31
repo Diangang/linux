@@ -42,7 +42,6 @@ struct smp_ops {
 	void (*send_call_func_single_ipi)(int cpu);
 };
 
-/* Globals due to paravirt */
 extern void set_cpu_sibling_map(int cpu);
 
 #ifdef CONFIG_SMP

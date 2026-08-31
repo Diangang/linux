@@ -12,9 +12,6 @@
 
 #define ALT_FLAG_NOT		(1 << 0)
 #define ALT_NOT(feature)	((ALT_FLAG_NOT << ALT_FLAGS_SHIFT) | (feature))
-#define ALT_FLAG_DIRECT_CALL	(1 << 1)
-#define ALT_DIRECT_CALL(feature) ((ALT_FLAG_DIRECT_CALL << ALT_FLAGS_SHIFT) | (feature))
-#define ALT_CALL_ALWAYS		ALT_DIRECT_CALL(X86_FEATURE_ALWAYS)
 
 #ifndef __ASSEMBLER__
 
@@ -166,8 +163,6 @@ static inline int alternatives_text_reserved(void *start, void *end)
 }
 #endif	/* CONFIG_SMP */
 
-#define ALT_CALL_INSTR		"call BUG_func"
-
 #define alt_slen		"772b-771b"
 #define alt_total_slen		"773b-771b"
 #define alt_rlen		"775f-774f"
@@ -298,9 +293,6 @@ static inline int alternatives_text_reserved(void *start, void *end)
 	     ".size " #func ", . - " #func "\n\t"	\
 	     ".popsection")
 
-void BUG_func(void);
-void nop_func(void);
-
 #else /* __ASSEMBLER__ */
 
 #ifdef CONFIG_SMP
@@ -328,10 +320,6 @@ void nop_func(void);
 	.4byte \ft_flags
 	.byte \orig_len
 	.byte \alt_len
-.endm
-
-.macro ALT_CALL_INSTR
-	call BUG_func
 .endm
 
 /*

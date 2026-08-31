@@ -5,11 +5,7 @@
 #include <linux/jump_label.h>
 #include <asm/cpufeature.h>
 #include <asm-generic/qspinlock_types.h>
-#include <asm/paravirt.h>
 #include <asm/rmwcc.h>
-#ifdef CONFIG_PARAVIRT
-#include <asm/paravirt-spinlock.h>
-#endif
 
 #define _Q_PENDING_LOOPS	(1 << 9)
 
@@ -30,9 +26,7 @@ static __always_inline u32 queued_fetch_set_pending_acquire(struct qspinlock *lo
 	return val;
 }
 
-#ifndef CONFIG_PARAVIRT
 static inline void native_pv_lock_init(void) { }
-#endif
 
 #include <asm-generic/qspinlock.h>
 

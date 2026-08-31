@@ -24,15 +24,11 @@
 
 #include "mm_internal.h"
 
-#ifdef CONFIG_PARAVIRT
-# define STATIC_NOPV
-#else
-# define STATIC_NOPV			static
-# define __flush_tlb_local		native_flush_tlb_local
-# define __flush_tlb_global		native_flush_tlb_global
-# define __flush_tlb_one_user(addr)	native_flush_tlb_one_user(addr)
-# define __flush_tlb_multi(msk, info)	native_flush_tlb_multi(msk, info)
-#endif
+#define STATIC_NOPV			static
+#define __flush_tlb_local		native_flush_tlb_local
+#define __flush_tlb_global		native_flush_tlb_global
+#define __flush_tlb_one_user(addr)	native_flush_tlb_one_user(addr)
+#define __flush_tlb_multi(msk, info)	native_flush_tlb_multi(msk, info)
 
 /*
  *	TLB flushing, formerly SMP-only
@@ -1490,10 +1486,10 @@ void flush_tlb_one_kernel(unsigned long addr)
 	count_vm_tlb_event(NR_TLB_LOCAL_FLUSH_ONE);
 
 	/*
-	 * If PTI is off, then __flush_tlb_one_user() is just INVLPG or its
-	 * paravirt equivalent.  Even with PCID, this is sufficient: we only
-	 * use PCID if we also use global PTEs for the kernel mapping, and
-	 * INVLPG flushes global translations across all address spaces.
+	 * If PTI is off, then __flush_tlb_one_user() is just INVLPG. Even
+	 * with PCID, this is sufficient: we only use PCID if we also use
+	 * global PTEs for the kernel mapping, and INVLPG flushes global
+	 * translations across all address spaces.
 	 *
 	 * If PTI is on, then the kernel is mapped with non-global PTEs, and
 	 * __flush_tlb_one_user() will flush the given address for the current

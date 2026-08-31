@@ -143,7 +143,7 @@ static void flush_ldt(void *__mm)
 	refresh_ldt_segments();
 }
 
-/* The caller must call finalize_ldt_struct on the result. LDT starts zeroed. */
+/* The LDT starts zeroed. */
 static struct ldt_struct *alloc_ldt_struct(unsigned int num_entries)
 {
 	struct ldt_struct *new_ldt;
@@ -359,12 +359,6 @@ static void free_ldt_pgtables(struct mm_struct *mm)
 #endif
 }
 
-/* After calling this, the LDT is immutable. */
-static void finalize_ldt_struct(struct ldt_struct *ldt)
-{
-	paravirt_alloc_ldt(ldt->entries, ldt->nr_entries);
-}
-
 static void install_ldt(struct mm_struct *mm, struct ldt_struct *ldt)
 {
 	mutex_lock(&mm->context.lock);
@@ -383,7 +377,6 @@ static void free_ldt_struct(struct ldt_struct *ldt)
 	if (likely(!ldt))
 		return;
 
-	paravirt_free_ldt(ldt->entries, ldt->nr_entries);
 	if (ldt->nr_entries * LDT_ENTRY_SIZE > PAGE_SIZE)
 		vfree_atomic(ldt->entries);
 	else
@@ -415,7 +408,6 @@ int ldt_dup_context(struct mm_struct *old_mm, struct mm_struct *mm)
 
 	memcpy(new_ldt->entries, old_mm->context.ldt->entries,
 	       new_ldt->nr_entries * LDT_ENTRY_SIZE);
-	finalize_ldt_struct(new_ldt);
 
 	retval = map_ldt_struct(mm, new_ldt, 0);
 	if (retval) {
@@ -561,7 +553,6 @@ static int write_ldt(void __user *ptr, unsigned long bytecount, int oldmode)
 		memcpy(new_ldt->entries, old_ldt->entries, old_nr_entries * LDT_ENTRY_SIZE);
 
 	new_ldt->entries[ldt_info.entry_number] = ldt;
-	finalize_ldt_struct(new_ldt);
 
 	/*
 	 * If we are using PTI, map the new LDT into the userspace pagetables.

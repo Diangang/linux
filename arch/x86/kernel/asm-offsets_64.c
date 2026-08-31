@@ -8,11 +8,6 @@
 
 int main(void)
 {
-#ifdef CONFIG_PARAVIRT
-	BLANK();
-#endif
-
-
 #define ENTRY(entry) OFFSET(pt_regs_ ## entry, pt_regs, entry)
 	ENTRY(bx);
 	ENTRY(cx);

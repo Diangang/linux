@@ -130,8 +130,7 @@ struct tlb_state {
 	 * the tlb_gen in the list.
 	 *
 	 * To be clear, this means that it's legal for the TLB code to
-	 * flush the TLB without updating tlb_gen.  This can happen
-	 * (for now, at least) due to paravirt remote flushes.
+	 * flush the TLB without updating tlb_gen.
 	 *
 	 * NB: context 0 is a bit special, since it's also used by
 	 * various bits of init code.  This is fine -- code that

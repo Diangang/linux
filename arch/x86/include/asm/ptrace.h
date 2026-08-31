@@ -171,10 +171,6 @@ struct pt_regs {
 
 #endif /* !__i386__ */
 
-#ifdef CONFIG_PARAVIRT
-#include <asm/paravirt-base.h>
-#endif
-
 #include <asm/proto.h>
 
 struct cpuinfo_x86;
@@ -220,8 +216,8 @@ static inline bool user_64bit_mode(struct pt_regs *regs)
 {
 #ifdef CONFIG_X86_64
 	/*
-	 * On non-paravirt systems, this is the only long mode CPL 3
-	 * selector.  We do not allow long mode selectors in the LDT.
+	 * This is the only long mode CPL 3 selector. We do not allow long
+	 * mode selectors in the LDT.
 	 */
 	return regs->cs == __USER_CS;
 #else /* !CONFIG_X86_64 */

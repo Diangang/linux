@@ -1147,8 +1147,7 @@ static inline pte_t ptep_get_and_clear_full(struct mm_struct *mm,
 	pte_t pte;
 	if (full) {
 		/*
-		 * Full address destruction in progress; paravirt does not
-		 * care about updates and native needs no locking
+		 * Full address destruction in progress; native needs no locking.
 		 */
 		pte = native_local_ptep_get_and_clear(ptep);
 	} else {

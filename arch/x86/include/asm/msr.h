@@ -115,13 +115,11 @@ static inline int native_read_msr_safe(u32 msr, u64 *p)
 	return err;
 }
 
-/* Can be uninlined because referenced by paravirt */
 static inline void notrace native_write_msr(u32 msr, u64 val)
 {
 	native_wrmsrq(msr, val);
 }
 
-/* Can be uninlined because referenced by paravirt */
 static inline int notrace native_write_msr_safe(u32 msr, u64 val)
 {
 	int err;

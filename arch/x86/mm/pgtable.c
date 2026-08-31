@@ -15,14 +15,12 @@ pgtable_t pte_alloc_one(struct mm_struct *mm)
 
 void ___pte_free_tlb(struct mmu_gather *tlb, struct page *pte)
 {
-	paravirt_release_pte(page_to_pfn(pte));
 	tlb_remove_ptdesc(tlb, page_ptdesc(pte));
 }
 
 #if CONFIG_PGTABLE_LEVELS > 2
 void ___pmd_free_tlb(struct mmu_gather *tlb, pmd_t *pmd)
 {
-	paravirt_release_pmd(__pa(pmd) >> PAGE_SHIFT);
 	/*
 	 * NOTE! For PAE, any changes to the top page-directory-pointer-table
 	 * entries need a full cr3 reload to flush.
@@ -33,14 +31,12 @@ void ___pmd_free_tlb(struct mmu_gather *tlb, pmd_t *pmd)
 #if CONFIG_PGTABLE_LEVELS > 3
 void ___pud_free_tlb(struct mmu_gather *tlb, pud_t *pud)
 {
-	paravirt_release_pud(__pa(pud) >> PAGE_SHIFT);
 	tlb_remove_ptdesc(tlb, virt_to_ptdesc(pud));
 }
 
 #if CONFIG_PGTABLE_LEVELS > 4
 void ___p4d_free_tlb(struct mmu_gather *tlb, p4d_t *p4d)
 {
-	paravirt_release_p4d(__pa(p4d) >> PAGE_SHIFT);
 	tlb_remove_ptdesc(tlb, virt_to_ptdesc(p4d));
 }
 #endif	/* CONFIG_PGTABLE_LEVELS > 4 */
@@ -171,8 +167,6 @@ static void mop_up_one_pmd(struct mm_struct *mm, pgd_t *pgdp)
 		pmd_t *pmd = (pmd_t *)pgd_page_vaddr(pgd);
 
 		pgd_clear(pgdp);
-
-		paravirt_release_pmd(pgd_val(pgd) >> PAGE_SHIFT);
 		pmd_free(mm, pmd);
 		mm_dec_nr_pmds(mm);
 	}
@@ -287,9 +281,6 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 			preallocate_pmds(mm, u_pmds, PREALLOCATED_USER_PMDS) != 0)
 		goto out_free_pmds;
 
-	if (paravirt_pgd_alloc(mm) != 0)
-		goto out_free_user_pmds;
-
 	/*
 	 * Make sure that pre-populating the pmds is atomic with
 	 * respect to anything walking the pgd_list, so that they
@@ -308,9 +299,6 @@ pgd_t *pgd_alloc(struct mm_struct *mm)
 
 	return pgd;
 
-out_free_user_pmds:
-	if (sizeof(u_pmds) != 0)
-		free_pmds(mm, u_pmds, PREALLOCATED_USER_PMDS);
 out_free_pmds:
 	if (sizeof(pmds) != 0)
 		free_pmds(mm, pmds, PREALLOCATED_PMDS);
@@ -324,7 +312,6 @@ void pgd_free(struct mm_struct *mm, pgd_t *pgd)
 {
 	pgd_mop_up_pmds(mm, pgd);
 	pgd_dtor(pgd);
-	paravirt_pgd_free(mm, pgd);
 	_pgd_free(mm, pgd);
 }
 

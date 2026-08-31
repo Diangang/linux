@@ -26,9 +26,6 @@ int io_delay_type __read_mostly = DEFAULT_IO_DELAY_TYPE;
 
 static int __initdata io_delay_override;
 
-/*
- * Paravirt wants native_io_delay to be a constant.
- */
 void native_io_delay(void)
 {
 	switch (io_delay_type) {

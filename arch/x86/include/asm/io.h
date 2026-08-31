@@ -241,17 +241,8 @@ extern void native_io_delay(void);
 extern int io_delay_type;
 extern void io_delay_init(void);
 
-#if defined(CONFIG_PARAVIRT)
-#include <asm/paravirt-base.h>
-#else
-#define call_io_delay() true
-#endif
-
 static inline void slow_down_io(void)
 {
-	if (!call_io_delay())
-		return;
-
 	native_io_delay();
 }
 
