@@ -1935,63 +1935,6 @@ static bool has_hw_dbm(const struct arm64_cpu_capabilities *cap,
 
 #endif
 
-#ifdef CONFIG_ARM64_AMU_EXTN
-
-/*
- * The "amu_cpus" cpumask only signals that the CPU implementation for the
- * flagged CPUs supports the Activity Monitors Unit (AMU) but does not provide
- * information regarding all the events that it supports. When a CPU bit is
- * set in the cpumask, the user of this feature can only rely on the presence
- * of the 4 fixed counters for that CPU. But this does not guarantee that the
- * counters are enabled or access to these counters is enabled by code
- * executed at higher exception levels (firmware).
- */
-static struct cpumask amu_cpus __read_mostly;
-
-bool cpu_has_amu_feat(int cpu)
-{
-	return cpumask_test_cpu(cpu, &amu_cpus);
-}
-
-int get_cpu_with_amu_feat(void)
-{
-	return cpumask_any(&amu_cpus);
-}
-
-static void cpu_amu_enable(struct arm64_cpu_capabilities const *cap)
-{
-	if (has_cpuid_feature(cap, SCOPE_LOCAL_CPU)) {
-		cpumask_set_cpu(smp_processor_id(), &amu_cpus);
-
-		update_freq_counters_refs();
-	}
-}
-
-static bool has_amu(const struct arm64_cpu_capabilities *cap,
-		    int __unused)
-{
-	/*
-	 * The AMU extension is a non-conflicting feature: the kernel can
-	 * safely run a mix of CPUs with and without support for the
-	 * activity monitors extension. Therefore, unconditionally enable
-	 * the capability to allow any late CPU to use the feature.
-	 *
-	 * With this feature unconditionally enabled, the cpu_enable
-	 * function will be called for all CPUs that match the criteria,
-	 * including secondary and hotplugged, marking this feature as
-	 * present on that respective CPU. The enable function will also
-	 * print a detection message.
-	 */
-
-	return true;
-}
-#else
-int get_cpu_with_amu_feat(void)
-{
-	return nr_cpu_ids;
-}
-#endif
-
 static bool runs_at_el2(const struct arm64_cpu_capabilities *entry, int __unused)
 {
 	return is_kernel_in_hyp_mode();
@@ -2411,17 +2354,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_rasv1p1,
 	},
 #endif /* CONFIG_ARM64_RAS_EXTN */
-#ifdef CONFIG_ARM64_AMU_EXTN
-	{
-		.desc = "Activity Monitors Unit (AMU)",
-		.capability = ARM64_HAS_AMU_EXTN,
-		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,
-		.matches = has_amu,
-		.cpu_enable = cpu_amu_enable,
-		.cpus = &amu_cpus,
-		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, AMU, IMP)
-	},
-#endif /* CONFIG_ARM64_AMU_EXTN */
 	{
 		.desc = "Data cache clean to the PoU not required for I/D coherence",
 		.capability = ARM64_HAS_CACHE_IDC,

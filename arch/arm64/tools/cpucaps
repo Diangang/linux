@@ -8,7 +8,6 @@ BTI
 # Unreliable: use system_supports_32bit_el0() instead.
 HAS_32BIT_EL0_DO_NOT_USE
 HAS_32BIT_EL1
-HAS_AMU_EXTN
 HAS_ARMv8_4_TTL
 HAS_CACHE_DIC
 HAS_CACHE_IDC

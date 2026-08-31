@@ -417,39 +417,7 @@
 
 /* Definitions for system register interface to AMU for ARMv8.4 onwards */
 #define SYS_AM_EL0(crm, op2)		sys_reg(3, 3, 13, (crm), (op2))
-#define SYS_AMCR_EL0			SYS_AM_EL0(2, 0)
-#define SYS_AMCFGR_EL0			SYS_AM_EL0(2, 1)
-#define SYS_AMCGCR_EL0			SYS_AM_EL0(2, 2)
 #define SYS_AMUSERENR_EL0		SYS_AM_EL0(2, 3)
-#define SYS_AMCNTENCLR0_EL0		SYS_AM_EL0(2, 4)
-#define SYS_AMCNTENSET0_EL0		SYS_AM_EL0(2, 5)
-#define SYS_AMCNTENCLR1_EL0		SYS_AM_EL0(3, 0)
-#define SYS_AMCNTENSET1_EL0		SYS_AM_EL0(3, 1)
-
-/*
- * Group 0 of activity monitors (architected):
- *                op0  op1  CRn   CRm       op2
- * Counter:       11   011  1101  010:n<3>  n<2:0>
- * Type:          11   011  1101  011:n<3>  n<2:0>
- * n: 0-15
- *
- * Group 1 of activity monitors (auxiliary):
- *                op0  op1  CRn   CRm       op2
- * Counter:       11   011  1101  110:n<3>  n<2:0>
- * Type:          11   011  1101  111:n<3>  n<2:0>
- * n: 0-15
- */
-
-#define SYS_AMEVCNTR0_EL0(n)		SYS_AM_EL0(4 + ((n) >> 3), (n) & 7)
-#define SYS_AMEVTYPER0_EL0(n)		SYS_AM_EL0(6 + ((n) >> 3), (n) & 7)
-#define SYS_AMEVCNTR1_EL0(n)		SYS_AM_EL0(12 + ((n) >> 3), (n) & 7)
-#define SYS_AMEVTYPER1_EL0(n)		SYS_AM_EL0(14 + ((n) >> 3), (n) & 7)
-
-/* AMU v1: Fixed (architecturally defined) activity monitors */
-#define SYS_AMEVCNTR0_CORE_EL0		SYS_AMEVCNTR0_EL0(0)
-#define SYS_AMEVCNTR0_CONST_EL0		SYS_AMEVCNTR0_EL0(1)
-#define SYS_AMEVCNTR0_INST_RET_EL0	SYS_AMEVCNTR0_EL0(2)
-#define SYS_AMEVCNTR0_MEM_STALL		SYS_AMEVCNTR0_EL0(3)
 
 #define SYS_CNTFRQ_EL0			sys_reg(3, 3, 14, 0, 0)
 
@@ -581,13 +549,6 @@
 #define SYS_CONTEXTIDR_EL2		sys_reg(3, 4, 13, 0, 1)
 #define SYS_TPIDR_EL2			sys_reg(3, 4, 13, 0, 2)
 #define SYS_SCXTNUM_EL2			sys_reg(3, 4, 13, 0, 7)
-
-#define __AMEV_op2(m)			(m & 0x7)
-#define __AMEV_CRm(n, m)		(n | ((m & 0x8) >> 3))
-#define __SYS__AMEVCNTVOFF0n_EL2(m)	sys_reg(3, 4, 13, __AMEV_CRm(0x8, m), __AMEV_op2(m))
-#define SYS_AMEVCNTVOFF0n_EL2(m)	__SYS__AMEVCNTVOFF0n_EL2(m)
-#define __SYS__AMEVCNTVOFF1n_EL2(m)	sys_reg(3, 4, 13, __AMEV_CRm(0xA, m), __AMEV_op2(m))
-#define SYS_AMEVCNTVOFF1n_EL2(m)	__SYS__AMEVCNTVOFF1n_EL2(m)
 
 #define SYS_CNTVOFF_EL2			sys_reg(3, 4, 14, 0, 3)
 #define SYS_CNTHCTL_EL2			sys_reg(3, 4, 14, 1, 0)
