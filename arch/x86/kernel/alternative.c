@@ -158,18 +158,8 @@ static void *its_init_thunk(void *thunk, int reg)
 	return thunk + offset;
 }
 
-static void its_pages_protect(struct its_array *pages)
-{
-	for (int i = 0; i < pages->num; i++) {
-		void *page = pages->pages[i];
-		execmem_restore_rox(page, PAGE_SIZE);
-	}
-}
-
 static void its_fini_core(void)
 {
-	if (IS_ENABLED(CONFIG_STRICT_KERNEL_RWX))
-		its_pages_protect(&its_pages);
 	kfree(its_pages.pages);
 }
 

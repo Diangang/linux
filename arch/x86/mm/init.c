@@ -962,47 +962,27 @@ void update_cache_mode_entry(unsigned entry, enum page_cache_mode cache)
 #ifdef CONFIG_EXECMEM
 static struct execmem_info execmem_info __ro_after_init;
 
-#ifdef CONFIG_ARCH_HAS_EXECMEM_ROX
-void execmem_fill_trapping_insns(void *ptr, size_t size)
-{
-	memset(ptr, INT3_INSN_OPCODE, size);
-}
-#endif
-
 struct execmem_info __init *execmem_arch_setup(void)
 {
 	unsigned long start, offset = 0;
-	enum execmem_range_flags flags;
-	pgprot_t pgprot;
 
 	if (kaslr_enabled())
 		offset = get_random_u32_inclusive(1, 1024) * PAGE_SIZE;
 
 	start = MODULES_VADDR + offset;
 
-	if (IS_ENABLED(CONFIG_ARCH_HAS_EXECMEM_ROX) &&
-	    cpu_feature_enabled(X86_FEATURE_PSE)) {
-		pgprot = PAGE_KERNEL_ROX;
-		flags = EXECMEM_ROX_CACHE;
-	} else {
-		pgprot = PAGE_KERNEL;
-		flags = 0;
-	}
-
 	execmem_info = (struct execmem_info){
 		.ranges = {
 			[EXECMEM_MODULE_TEXT] = {
-				.flags	= flags,
 				.start	= start,
 				.end	= MODULES_END,
-				.pgprot	= pgprot,
+				.pgprot	= PAGE_KERNEL,
 				.alignment = MODULE_ALIGN,
 			},
 			[EXECMEM_FTRACE] = {
-				.flags	= flags,
 				.start	= start,
 				.end	= MODULES_END,
-				.pgprot	= pgprot,
+				.pgprot	= PAGE_KERNEL,
 				.alignment = MODULE_ALIGN,
 			},
 			[EXECMEM_BPF] = {

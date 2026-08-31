@@ -36,42 +36,6 @@ enum execmem_type {
 };
 
 /**
- * enum execmem_range_flags - options for executable memory allocations
- * @EXECMEM_ROX_CACHE:		allocations should use ROX cache of huge pages
- */
-enum execmem_range_flags {
-	EXECMEM_ROX_CACHE	= (1 << 1),
-};
-
-#ifdef CONFIG_ARCH_HAS_EXECMEM_ROX
-/**
- * execmem_fill_trapping_insns - set memory to contain instructions that
- *				 will trap
- * @ptr:	pointer to memory to fill
- * @size:	size of the range to fill
- *
- * A hook for architecures to fill execmem ranges with invalid instructions.
- * Architectures that use EXECMEM_ROX_CACHE must implement this.
- */
-void execmem_fill_trapping_insns(void *ptr, size_t size);
-
-/**
- * execmem_restore_rox - restore read-only-execute permissions
- * @ptr:	address of the region to remap
- * @size:	size of the region to remap
- *
- * Restores read-only-execute permissions on a range [@ptr, @ptr + @size)
- * after it was temporarily remapped as writable. Relies on architecture
- * implementation of set_memory_rox() to restore mapping using large pages.
- *
- * Return: 0 on success or negative error code on failure.
- */
-int execmem_restore_rox(void *ptr, size_t size);
-#else
-static inline int execmem_restore_rox(void *ptr, size_t size) { return 0; }
-#endif
-
-/**
  * struct execmem_range - definition of an address space suitable for code and
  *			  related data allocations
  * @start:	address space start
@@ -81,7 +45,6 @@ static inline int execmem_restore_rox(void *ptr, size_t size) { return 0; }
  * @fallback_end:   start of the secondary address space (inclusive)
  * @pgprot:	permissions for memory in this address space
  * @alignment:	alignment required for text allocations
- * @flags:	options for memory allocations for this range
  */
 struct execmem_range {
 	unsigned long   start;
@@ -90,7 +53,6 @@ struct execmem_range {
 	unsigned long   fallback_end;
 	pgprot_t        pgprot;
 	unsigned int	alignment;
-	enum execmem_range_flags flags;
 };
 
 /**
@@ -151,10 +113,6 @@ void *execmem_alloc(enum execmem_type type, size_t size);
  * Forces writable permissions on the allocated memory and the caller is
  * responsible to manage the permissions afterwards.
  *
- * For architectures that use ROX cache the permissions will be set to R+W.
- * For architectures that don't use ROX cache the default permissions for @type
- * will be used as they must be writable.
- *
  * Return: a pointer to the allocated memory or %NULL
  */
 void *execmem_alloc_rw(enum execmem_type type, size_t size);
@@ -178,14 +136,6 @@ DEFINE_FREE(execmem, void *, if (_T) execmem_free(_T));
  */
 struct vm_struct *execmem_vmap(size_t size);
 #endif
-
-/**
- * execmem_is_rox - check if execmem is read-only
- * @type - the execmem type to check
- *
- * Return: %true if the @type is read-only, %false if it's writable
- */
-bool execmem_is_rox(enum execmem_type type);
 
 #if defined(CONFIG_EXECMEM) && !defined(CONFIG_ARCH_WANTS_EXECMEM_LATE)
 void execmem_init(void);
