@@ -594,6 +594,4 @@ extern int zlib_inflateInit2(z_streamp strm, int  windowBits);
 
 /* Utility function: initialize zlib, unpack binary blob, clean up zlib,
  * return len or negative error code. */
-extern int zlib_inflate_blob(void *dst, unsigned dst_sz, const void *src, unsigned src_sz);
-
 #endif /* _ZLIB_H */
