@@ -202,8 +202,6 @@ void dump_cpu_features(void)
 		.width = 0,				\
 	}
 
-static void cpu_enable_cnp(struct arm64_cpu_capabilities const *cap);
-
 static bool __system_matches_cap(unsigned int n);
 
 /*
@@ -1726,20 +1724,6 @@ static bool has_cache_dic(const struct arm64_cpu_capabilities *entry,
 	return ctr & BIT(CTR_EL0_DIC_SHIFT);
 }
 
-static bool __maybe_unused
-has_useable_cnp(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	/*
-	 * Kdump isn't guaranteed to power-off all secondary CPUs, CNP
-	 * may share TLB entries with a CPU stuck in the crashed
-	 * kernel.
-	 */
-	if (is_kdump_kernel())
-		return false;
-
-	return has_cpuid_feature(entry, scope);
-}
-
 static bool __meltdown_safe = true;
 static int __kpti_forced; /* 0: not forced, >0: forced on, <0: forced off */
 
@@ -2379,16 +2363,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_cpuid_feature,
 		ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, SSBS, IMP)
 	},
-#ifdef CONFIG_ARM64_CNP
-	{
-		.desc = "Common not Private translations",
-		.capability = ARM64_HAS_CNP,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_useable_cnp,
-		.cpu_enable = cpu_enable_cnp,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR2_EL1, CnP, IMP)
-	},
-#endif
 	{
 		.desc = "Speculation barrier (SB)",
 		.capability = ARM64_HAS_SB,
@@ -3410,11 +3384,6 @@ static int __init init_32bit_el0_mask(void)
 				 enable_mismatched_32bit_el0, NULL);
 }
 subsys_initcall_sync(init_32bit_el0_mask);
-
-static void __maybe_unused cpu_enable_cnp(struct arm64_cpu_capabilities const *cap)
-{
-	cpu_enable_swapper_cnp();
-}
 
 /*
  * We emulate only the following system register space.

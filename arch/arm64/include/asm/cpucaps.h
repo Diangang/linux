@@ -27,8 +27,6 @@ cpucap_is_possible(const unsigned int cap)
 	case ARM64_SME2:
 	case ARM64_SME_FA64:
 		return IS_ENABLED(CONFIG_ARM64_SME);
-	case ARM64_HAS_CNP:
-		return IS_ENABLED(CONFIG_ARM64_CNP);
 	case ARM64_HAS_GIC_PRIO_MASKING:
 		return 0;
 	case ARM64_MTE:

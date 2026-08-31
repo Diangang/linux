@@ -124,26 +124,20 @@ static inline void cpu_install_ttbr0(phys_addr_t ttbr0, unsigned long t0sz)
 	local_flush_tlb_all();
 	__cpu_set_tcr_t0sz(t0sz);
 
-	/* avoid cpu_switch_mm() and its SW-PAN and CNP interactions */
+	/* Avoid cpu_switch_mm() and its SW-PAN interactions. */
 	write_sysreg(ttbr0, ttbr0_el1);
 	isb();
 }
 
-void __cpu_replace_ttbr1(pgd_t *pgdp, bool cnp);
-
-static inline void cpu_enable_swapper_cnp(void)
-{
-	__cpu_replace_ttbr1(lm_alias(swapper_pg_dir), true);
-}
+void __cpu_replace_ttbr1(pgd_t *pgdp);
 
 static inline void cpu_replace_ttbr1(pgd_t *pgdp)
 {
 	/*
-	 * Only for early TTBR1 replacement before cpucaps are finalized and
-	 * before we've decided whether to use CNP.
+	 * Only for early TTBR1 replacement before cpucaps are finalized.
 	 */
 	WARN_ON(system_capabilities_finalized());
-	__cpu_replace_ttbr1(pgdp, false);
+	__cpu_replace_ttbr1(pgdp);
 }
 
 /*

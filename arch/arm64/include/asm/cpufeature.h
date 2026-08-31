@@ -784,11 +784,6 @@ static __always_inline bool system_supports_fpmr(void)
 	return alternative_has_cap_unlikely(ARM64_HAS_FPMR);
 }
 
-static __always_inline bool system_supports_cnp(void)
-{
-	return alternative_has_cap_unlikely(ARM64_HAS_CNP);
-}
-
 static __always_inline bool system_uses_irq_prio_masking(void)
 {
 	return alternative_has_cap_unlikely(ARM64_HAS_GIC_PRIO_MASKING);
