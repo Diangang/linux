@@ -1643,10 +1643,10 @@ void __init memblock_free_pages(unsigned long pfn, unsigned int order)
 	__free_pages_core(page, order, MEMINIT_EARLY);
 }
 
-DEFINE_STATIC_KEY_MAYBE(CONFIG_INIT_ON_ALLOC_DEFAULT_ON, init_on_alloc);
+DEFINE_STATIC_KEY_FALSE(init_on_alloc);
 EXPORT_SYMBOL(init_on_alloc);
 
-DEFINE_STATIC_KEY_MAYBE(CONFIG_INIT_ON_FREE_DEFAULT_ON, init_on_free);
+DEFINE_STATIC_KEY_FALSE(init_on_free);
 EXPORT_SYMBOL(init_on_free);
 
 static bool _init_on_alloc_enabled_early __read_mostly;
@@ -1664,7 +1664,7 @@ static int __init early_init_on_free(char *buf)
 }
 early_param("init_on_free", early_init_on_free);
 
-DEFINE_STATIC_KEY_MAYBE(CONFIG_DEBUG_VM, check_pages_enabled);
+DEFINE_STATIC_KEY_FALSE(check_pages_enabled);
 
 static bool check_pages_enabled_early __initdata;
 
@@ -1700,8 +1700,7 @@ static void __init mem_debugging_and_hardening_init(void)
 
 	/*
 	 * Any page debugging or hardening option also enables sanity checking
-	 * of struct pages being allocated or freed. With CONFIG_DEBUG_VM it's
-	 * enabled already.
+	 * of struct pages being allocated or freed.
 	 */
 	if (want_check_pages)
 		static_branch_enable(&check_pages_enabled);

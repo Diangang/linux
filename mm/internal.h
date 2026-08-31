@@ -639,7 +639,7 @@ void set_recommended_min_free_kbytes(void);
 extern char * const zone_names[MAX_NR_ZONES];
 
 /* perform sanity checks on struct pages being allocated or freed */
-DECLARE_STATIC_KEY_MAYBE(CONFIG_DEBUG_VM, check_pages_enabled);
+DECLARE_STATIC_KEY_FALSE(check_pages_enabled);
 
 extern int min_free_kbytes;
 extern int defrag_mode;
