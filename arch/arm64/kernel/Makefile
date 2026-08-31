@@ -29,7 +29,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 
 obj-$(CONFIG_HAVE_STATIC_CALL)		+= static_call.o
 obj-$(CONFIG_PCI)			+= pci.o
-obj-$(CONFIG_PARAVIRT)			+= paravirt.o
 obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr.o
 obj-$(CONFIG_ARM64_PTR_AUTH)		+= pointer_auth.o
 obj-y					+= vdso-wrap.o

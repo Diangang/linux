@@ -82,10 +82,6 @@ struct rt_rq;
 struct sched_group;
 struct cpuidle_state;
 
-#if defined(CONFIG_PARAVIRT) && !defined(CONFIG_HAVE_PV_STEAL_CLOCK_GEN)
-# include <asm/paravirt.h>
-#endif
-
 #include <asm/barrier.h>
 
 #include "cpupri.h"
@@ -849,10 +845,6 @@ struct rq {
 #ifdef CONFIG_HOTPLUG_CPU
 	struct rcuwait		hotplug_wait;
 #endif
-#ifdef CONFIG_PARAVIRT
-	u64			prev_steal_time;
-#endif
-
 	/* calc_load related fields */
 	unsigned long		calc_load_update;
 	long			calc_load_active;

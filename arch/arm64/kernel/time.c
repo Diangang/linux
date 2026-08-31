@@ -30,7 +30,6 @@
 #include <clocksource/arm_arch_timer.h>
 
 #include <asm/thread_info.h>
-#include <asm/paravirt.h>
 
 static bool profile_pc_cb(void *arg, unsigned long pc)
 {
@@ -67,6 +66,4 @@ void __init time_init(void)
 
 	/* Calibrate the delay loop directly */
 	lpj_fine = arch_timer_rate / HZ;
-
-	pv_time_init();
 }

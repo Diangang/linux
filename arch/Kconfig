@@ -513,9 +513,6 @@ config HAVE_CONTEXT_TRACKING_USER_OFFSTACK
 	  - No use of instrumentation, unless instrumentation_begin() got
 	    called.
 
-config HAVE_PV_STEAL_CLOCK_GEN
-	bool
-
 config HAVE_MOVE_PUD
 	bool
 	help

@@ -114,17 +114,6 @@ void account_system_time(struct task_struct *p, int hardirq_offset, u64 cputime)
 }
 
 /*
- * Account for involuntary wait time.
- * @cputime: the CPU time spent in involuntary wait
- */
-void account_steal_time(u64 cputime)
-{
-	u64 *cpustat = kcpustat_this_cpu->cpustat;
-
-	cpustat[CPUTIME_STEAL] += cputime;
-}
-
-/*
  * Account for idle time.
  * @cputime: the CPU time spent in idle wait
  */
@@ -138,55 +127,6 @@ void account_idle_time(u64 cputime)
 	else
 		cpustat[CPUTIME_IDLE] += cputime;
 }
-
-
-
-/*
- * When a guest is interrupted for a longer amount of time, missed clock
- * ticks are not redelivered later. Due to that, this function may on
- * occasion account more time than the calling functions think elapsed.
- */
-#ifdef CONFIG_PARAVIRT
-struct static_key paravirt_steal_enabled;
-
-#ifdef CONFIG_HAVE_PV_STEAL_CLOCK_GEN
-static u64 native_steal_clock(int cpu)
-{
-	return 0;
-}
-
-DEFINE_STATIC_CALL(pv_steal_clock, native_steal_clock);
-#endif
-#endif
-
-static __always_inline u64 steal_account_process_time(u64 maxtime)
-{
-#ifdef CONFIG_PARAVIRT
-	if (static_key_false(&paravirt_steal_enabled)) {
-		u64 steal;
-
-		steal = paravirt_steal_clock(smp_processor_id());
-		steal -= this_rq()->prev_steal_time;
-		steal = min(steal, maxtime);
-		account_steal_time(steal);
-		this_rq()->prev_steal_time += steal;
-
-		return steal;
-	}
-#endif /* CONFIG_PARAVIRT */
-	return 0;
-}
-
-/*
- * Account how much elapsed time was spent in steal, IRQ, or softirq time.
- */
-static inline u64 account_other_time(u64 max)
-{
-	lockdep_assert_irqs_disabled();
-
-	return steal_account_process_time(max);
-}
-
 #ifdef CONFIG_64BIT
 static inline u64 read_sum_exec_runtime(struct task_struct *t)
 {
@@ -254,17 +194,11 @@ void thread_group_cputime(struct task_struct *tsk, struct task_cputime *times)
  */
 void account_process_tick(struct task_struct *p, int user_tick)
 {
-	u64 cputime, steal;
+	u64 cputime;
 
 	if (vtime_accounting_enabled_this_cpu())
 		return;
 	cputime = TICK_NSEC;
-	steal = steal_account_process_time(ULONG_MAX);
-
-	if (steal >= cputime)
-		return;
-
-	cputime -= steal;
 
 	if (user_tick)
 		account_user_time(p, cputime);
@@ -280,14 +214,8 @@ void account_process_tick(struct task_struct *p, int user_tick)
  */
 void account_idle_ticks(unsigned long ticks)
 {
-	u64 cputime, steal;
+	u64 cputime;
 	cputime = ticks * TICK_NSEC;
-	steal = steal_account_process_time(ULONG_MAX);
-
-	if (steal >= cputime)
-		return;
-
-	cputime -= steal;
 	account_idle_time(cputime);
 }
 
