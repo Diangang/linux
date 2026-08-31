@@ -1762,7 +1762,7 @@ static bool unmap_kernel_at_el0(const struct arm64_cpu_capabilities *entry,
 		__meltdown_safe = false;
 
 	/* Useful for KASLR robustness */
-	if (kaslr_enabled() && kaslr_requires_kpti()) {
+	if (kaslr_enabled()) {
 		if (!__kpti_forced) {
 			str = "KASLR";
 			__kpti_forced = 1;
@@ -2003,14 +2003,6 @@ static void cpu_enable_pan(const struct arm64_cpu_capabilities *__unused)
 	set_pstate_pan(1);
 }
 
-
-#ifdef CONFIG_ARM64_E0PD
-static void cpu_enable_e0pd(struct arm64_cpu_capabilities const *cap)
-{
-	if (this_cpu_has_cap(ARM64_HAS_E0PD))
-		sysreg_clear_set(tcr_el1, 0, TCR_EL1_E0PD1);
-}
-#endif /* CONFIG_ARM64_E0PD */
 
 static void cpu_enable_ls64(struct arm64_cpu_capabilities const *cap)
 {
@@ -2379,16 +2371,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.type = ARM64_CPUCAP_EARLY_LOCAL_CPU_FEATURE,
 		.matches = can_trap_icv_dir_el1,
 	},
-#ifdef CONFIG_ARM64_E0PD
-	{
-		.desc = "E0PD",
-		.capability = ARM64_HAS_E0PD,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.cpu_enable = cpu_enable_e0pd,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR2_EL1, E0PD, IMP)
-	},
-#endif
 	{
 		.desc = "Random Number Generator",
 		.capability = ARM64_HAS_RNG,

@@ -252,7 +252,7 @@ asmlinkage void __init early_map_kernel(u64 boot_status, phys_addr_t fdt)
 	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE)) {
 		u64 kaslr_seed = kaslr_early_init(fdt_mapped, chosen);
 
-		if (kaslr_seed && kaslr_requires_kpti())
+		if (kaslr_seed)
 			arm64_use_ng_mappings = ng_mappings_allowed();
 
 		kaslr_offset |= kaslr_seed & ~(MIN_KIMG_ALIGN - 1);

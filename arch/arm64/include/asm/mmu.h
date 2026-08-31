@@ -78,22 +78,6 @@ extern void linear_map_maybe_split_to_ptes(void);
  * state once the SMP CPUs are up and thus make the switch to non-global
  * mappings if required.
  */
-static inline bool kaslr_requires_kpti(void)
-{
-	/*
-	 * E0PD does a similar job to KPTI so can be used instead
-	 * where available.
-	 */
-	if (IS_ENABLED(CONFIG_ARM64_E0PD)) {
-		u64 mmfr2 = read_sysreg_s(SYS_ID_AA64MMFR2_EL1);
-		if (cpuid_feature_extract_unsigned_field(mmfr2,
-						ID_AA64MMFR2_EL1_E0PD_SHIFT))
-			return false;
-	}
-
-	return true;
-}
-
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 void kpti_install_ng_mappings(void);
 #else
