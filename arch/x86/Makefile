@@ -1,16 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
-# Unified Makefile for i386 and x86_64
+# Makefile for x86-64
 
-# select defconfig based on actual architecture
-ifeq ($(ARCH),x86)
-  ifeq ($(shell uname -m | sed -e 's/i.86/i386/'),i386)
-        KBUILD_DEFCONFIG := i386_defconfig
-  else
-        KBUILD_DEFCONFIG := x86_64_defconfig
-  endif
-else
-        KBUILD_DEFCONFIG := $(ARCH)_defconfig
-endif
+KBUILD_DEFCONFIG := x86_64_defconfig
 
 ifdef CONFIG_CC_IS_GCC
 RETPOLINE_CFLAGS	:= -mindirect-branch=thunk-extern -mindirect-branch-register
@@ -53,9 +44,7 @@ REALMODE_CFLAGS += $(cc_stack_align4)
 REALMODE_CFLAGS += $(CLANG_FLAGS)
 export REALMODE_CFLAGS
 
-# BITS is used as extension for files which are available in a 32 bit
-# and a 64 bit version to simplify shared Makefiles.
-# e.g.: obj-y += foo_$(BITS).o
+# BITS selects the 64-bit variants in shared Makefiles.
 export BITS
 
 #
