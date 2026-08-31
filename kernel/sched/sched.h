@@ -8,7 +8,6 @@
 #include <linux/prandom.h>
 #include <linux/sched/affinity.h>
 #include <linux/sched/autogroup.h>
-#include <linux/sched/cpufreq.h>
 #include <linux/sched/deadline.h>
 #include <linux/sched.h>
 #include <linux/sched/loadavg.h>
@@ -2573,8 +2572,6 @@ static inline void sched_core_account_forceidle(struct rq *rq) { }
 
 static inline void sched_core_tick(struct rq *rq) { }
 
-
-static inline void cpufreq_update_util(struct rq *rq, unsigned int flags) { }
 
 #ifdef arch_scale_freq_capacity
 # ifndef arch_scale_freq_invariant

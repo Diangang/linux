@@ -3899,29 +3899,6 @@ static inline void update_cfs_group(struct sched_entity *se)
 {
 }
 
-static inline void cfs_rq_util_change(struct cfs_rq *cfs_rq, int flags)
-{
-	struct rq *rq = rq_of(cfs_rq);
-
-	if (&rq->cfs == cfs_rq) {
-		/*
-		 * There are a few boundary cases this might miss but it should
-		 * get called often enough that that should (hopefully) not be
-		 * a real problem.
-		 *
-		 * It will not get called when we go idle, because the idle
-		 * thread is a different class (!fair), nor will the utilization
-		 * number include things like RT tasks.
-		 *
-		 * As is, the util number is not freq-invariant (we'd have to
-		 * implement arch_scale_freq_capacity() for that).
-		 *
-		 * See cpu_util_cfs().
-		 */
-		cpufreq_update_util(rq, flags);
-	}
-}
-
 static inline bool load_avg_is_decayed(struct sched_avg *sa)
 {
 	if (sa->load_sum)
@@ -4149,8 +4126,6 @@ static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 
 	add_tg_cfs_propagate(cfs_rq, se->avg.load_sum);
 
-	cfs_rq_util_change(cfs_rq, 0);
-
 }
 
 /**
@@ -4168,8 +4143,6 @@ static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 	__update_sa(&cfs_rq->avg, runnable, -se->avg.runnable_avg, -se->avg.runnable_sum);
 
 	add_tg_cfs_propagate(cfs_rq, -se->avg.load_sum);
-
-	cfs_rq_util_change(cfs_rq, 0);
 
 }
 
@@ -4217,8 +4190,6 @@ static inline void update_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 		detach_entity_load_avg(cfs_rq, se);
 		update_tg_load_avg(cfs_rq);
 	} else if (decayed) {
-		cfs_rq_util_change(cfs_rq, 0);
-
 		if (flags & UPDATE_TG)
 			update_tg_load_avg(cfs_rq);
 	}
@@ -5256,12 +5227,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 	if (task_is_throttled(p) && enqueue_throttled_task(p))
 		return;
 
-	/*
-	 * The code below (indirectly) updates schedutil which looks at
-	 * the cfs_rq utilization to select a frequency.
-	 * Let's add the task's estimated utilization to the cfs_rq's
-	 * estimated utilization, before we update schedutil.
-	 */
+	/* Add the task's estimated utilization to the cfs_rq. */
 	if (!p->se.sched_delayed || (flags & ENQUEUE_DELAYED))
 		util_est_enqueue(&rq->cfs, p);
 
@@ -5269,14 +5235,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 		requeue_delayed_entity(se);
 		return;
 	}
-
-	/*
-	 * If in_iowait is set, the code below may not trigger any cpufreq
-	 * utilization updates, so do it here explicitly with the IOWAIT flag
-	 * passed.
-	 */
-	if (p->in_iowait)
-		cpufreq_update_util(rq, SCHED_CPUFREQ_IOWAIT);
 
 	if (task_new && se->sched_delayed)
 		h_nr_runnable = 0;
@@ -8097,32 +8055,21 @@ static inline void update_blocked_load_tick(struct rq *rq) {}
 static inline void update_has_blocked_load_status(struct rq *rq, bool has_blocked_load) {}
 #endif /* !CONFIG_NO_HZ_COMMON */
 
-static bool __update_blocked_others(struct rq *rq, bool *done)
+static void __update_blocked_others(struct rq *rq, bool *done)
 {
-	bool updated;
-
-	/*
-	 * update_load_avg() can call cpufreq_update_util(). Make sure that RT,
-	 * DL and IRQ signals have been updated before updating CFS.
-	 */
-	updated = update_other_load_avgs(rq);
+	update_other_load_avgs(rq);
 
 	if (others_have_blocked(rq))
 		*done = false;
-
-	return updated;
 }
 
-static bool __update_blocked_fair(struct rq *rq, bool *done)
+static void __update_blocked_fair(struct rq *rq, bool *done)
 {
 	struct cfs_rq *cfs_rq = &rq->cfs;
-	bool decayed;
 
-	decayed = update_cfs_rq_load_avg(cfs_rq_clock_pelt(cfs_rq), cfs_rq);
+	update_cfs_rq_load_avg(cfs_rq_clock_pelt(cfs_rq), cfs_rq);
 	if (cfs_rq_has_blocked_load(cfs_rq))
 		*done = false;
-
-	return decayed;
 }
 
 static unsigned long task_h_load(struct task_struct *p)
@@ -8132,16 +8079,14 @@ static unsigned long task_h_load(struct task_struct *p)
 
 static void __sched_balance_update_blocked_averages(struct rq *rq)
 {
-	bool decayed = false, done = true;
+	bool done = true;
 
 	update_blocked_load_tick(rq);
 
-	decayed |= __update_blocked_others(rq, &done);
-	decayed |= __update_blocked_fair(rq, &done);
+	__update_blocked_others(rq, &done);
+	__update_blocked_fair(rq, &done);
 
 	update_has_blocked_load_status(rq, !done);
-	if (decayed)
-		cpufreq_update_util(rq, 0);
 }
 
 static void sched_balance_update_blocked_averages(int cpu)
