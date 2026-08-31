@@ -77,7 +77,4 @@ config SPARSE_IRQ
 
 	  If you don't know what to do here, say N.
 
-config GENERIC_IRQ_KEXEC_CLEAR_VM_FORWARD
-	bool
-
 endmenu
