@@ -30,11 +30,6 @@ extern bool rodata_full;
 
 static inline void contextidr_thread_switch(struct task_struct *next)
 {
-	if (!0)
-		return;
-
-	write_sysreg(task_pid_nr(next), contextidr_el1);
-	isb();
 }
 
 /*

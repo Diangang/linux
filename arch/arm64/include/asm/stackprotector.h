@@ -29,8 +29,7 @@ static __always_inline void boot_init_stack_canary(void)
 	unsigned long canary = get_random_canary();
 
 	current->stack_canary = canary;
-	if (!0)
-		__stack_chk_guard = current->stack_canary;
+	__stack_chk_guard = current->stack_canary;
 #endif
 	ptrauth_thread_init_kernel(current);
 	ptrauth_thread_switch_kernel(current);

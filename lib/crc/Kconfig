@@ -17,7 +17,6 @@ config CRC32_ARCH
 
 config CRC_OPTIMIZATIONS
 	bool "Enable optimized CRC implementations" if EXPERT
-	depends on !UML
 	default y
 	help
 	  Disabling this option reduces code size slightly by disabling the

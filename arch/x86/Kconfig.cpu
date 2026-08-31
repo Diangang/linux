@@ -39,7 +39,6 @@ config X86_MINIMUM_CPU_FAMILY
 
 config X86_DEBUGCTLMSR
 	def_bool y
-	depends on !(n || n || n || n || n || n || n) && !UML
 
 config IA32_FEAT_CTL
 	def_bool y

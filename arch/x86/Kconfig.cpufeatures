@@ -115,7 +115,6 @@ config X86_DISABLED_FEATURE_LAM
 
 config X86_DISABLED_FEATURE_ENQCMD
 	def_bool y
-	depends on !INTEL_IOMMU_SVM
 
 config X86_DISABLED_FEATURE_SGX
 	def_bool y
@@ -123,7 +122,6 @@ config X86_DISABLED_FEATURE_SGX
 
 config X86_DISABLED_FEATURE_XENPV
 	def_bool y
-	depends on !XEN_PV
 
 config X86_DISABLED_FEATURE_TDX_GUEST
 	def_bool y
@@ -139,4 +137,3 @@ config X86_DISABLED_FEATURE_FRED
 
 config X86_DISABLED_FEATURE_SEV_SNP
 	def_bool y
-	depends on !KVM_AMD_SEV
