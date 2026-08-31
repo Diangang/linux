@@ -24,7 +24,6 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
 	 nmi_backtrace.o win_minmax.o memcat_p.o \
 	 buildid.o objpool.o iomem_copy.o sys_info.o
 
-lib-$(CONFIG_UNION_FIND) += union_find.o
 lib-$(CONFIG_PRINTK) += dump_stack.o
 lib-$(CONFIG_SMP) += cpumask.o
 
@@ -56,7 +55,6 @@ obj-$(CONFIG_GENERIC_HWEIGHT) += hweight.o
 obj-$(CONFIG_INTERVAL_TREE) += interval_tree.o
 
 obj-$(CONFIG_BITREVERSE) += bitrev.o
-obj-$(CONFIG_XXHASH)	+= xxhash.o
 obj-$(CONFIG_GENERIC_ALLOCATOR) += genalloc.o
 
 obj-$(CONFIG_SMP) += percpu_counter.o
