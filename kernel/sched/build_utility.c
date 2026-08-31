@@ -24,7 +24,6 @@
 #include <linux/cpuset.h>
 #include <linux/ctype.h>
 #include <linux/debugfs.h>
-#include <linux/energy_model.h>
 #include <linux/hashtable_api.h>
 #include <linux/irq.h>
 #include <linux/kobject_api.h>

@@ -51,6 +51,7 @@
 #include <linux/uaccess.h>
 #include <linux/sched/isolation.h>
 #include <linux/sched/debug.h>
+#include <linux/sched/topology.h>
 #include <linux/nmi.h>
 #include <linux/delay.h>
 #include <linux/irq_work.h>

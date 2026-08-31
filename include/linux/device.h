@@ -13,7 +13,6 @@
 #define _DEVICE_H_
 
 #include <linux/dev_printk.h>
-#include <linux/energy_model.h>
 #include <linux/ioport.h>
 #include <linux/kobject.h>
 #include <linux/klist.h>
@@ -553,7 +552,6 @@ enum struct_device_flags {
  * @pm_domain:	Provide callbacks that are executed during system suspend,
  * 		hibernation, system resume and during runtime PM transitions
  * 		along with subsystem-level and driver-level callbacks.
- * @em_pd:	device's energy model performance domain
  * @pins:	For device pin management.
  *		See Documentation/driver-api/pin-control.rst for details.
  * @msi:	MSI related data

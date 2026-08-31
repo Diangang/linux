@@ -12,7 +12,6 @@
 #define __LINUX_OPP_H__
 
 #include <linux/cleanup.h>
-#include <linux/energy_model.h>
 #include <linux/err.h>
 #include <linux/notifier.h>
 

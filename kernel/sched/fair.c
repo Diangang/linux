@@ -20,7 +20,6 @@
  *  Adaptive scheduling granularity, math enhancements by Peter Zijlstra
  *  Copyright (C) 2007 Red Hat, Inc., Peter Zijlstra
  */
-#include <linux/energy_model.h>
 #include <linux/mmap_lock.h>
 #include <linux/hugetlb_inline.h>
 #include <linux/jiffies.h>
@@ -5123,46 +5122,6 @@ static inline void hrtick_update(struct rq *rq)
 }
 #endif /* !CONFIG_SCHED_HRTICK */
 
-static inline bool cpu_overutilized(int cpu)
-{
-	unsigned long rq_util_max;
-
-	if (!sched_energy_enabled())
-		return false;
-
-	rq_util_max = uclamp_rq_get(cpu_rq(cpu), UCLAMP_MAX);
-
-	/* Return true only if the utilization doesn't fit CPU's capacity */
-	return !util_fits_cpu(cpu_util_cfs(cpu), 0, rq_util_max, cpu);
-}
-
-/*
- * overutilized value make sense only if EAS is enabled
- */
-static inline bool is_rd_overutilized(struct root_domain *rd)
-{
-	return !sched_energy_enabled() || READ_ONCE(rd->overutilized);
-}
-
-static inline void set_rd_overutilized(struct root_domain *rd, bool flag)
-{
-	if (!sched_energy_enabled())
-		return;
-
-	WRITE_ONCE(rd->overutilized, flag);
-}
-
-static inline void check_update_overutilized_status(struct rq *rq)
-{
-	/*
-	 * overutilized field is used for load balancing decisions only
-	 * if energy aware scheduler is being used
-	 */
-
-	if (!is_rd_overutilized(rq->rd) && cpu_overutilized(rq->cpu))
-		set_rd_overutilized(rq->rd, 1);
-}
-
 /* Runqueue only has SCHED_IDLE tasks enqueued */
 static int sched_idle_rq(struct rq *rq)
 {
@@ -5294,23 +5253,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	/* At this point se is NULL and we are at root level*/
 	add_nr_running(rq, 1);
-
-	/*
-	 * Since new tasks are assigned an initial util_avg equal to
-	 * half of the spare capacity of their CPU, tiny tasks have the
-	 * ability to cross the overutilized threshold, which will
-	 * result in the load balancer ruining all the task placement
-	 * done by EAS. As a way to mitigate that effect, do not account
-	 * for the first enqueue operation of new tasks during the
-	 * overutilized flag detection.
-	 *
-	 * A better way of solving this problem would be to wait for
-	 * the PELT signals of tasks to converge before taking them
-	 * into account, but that is not straightforward to implement,
-	 * and the following generally works well enough in practice.
-	 */
-	if (!task_new)
-		check_update_overutilized_status(rq);
 
 	assert_list_leaf_cfs_rq(rq);
 
@@ -6461,367 +6403,6 @@ unsigned long sched_cpu_util(int cpu)
 }
 
 /*
- * energy_env - Utilization landscape for energy estimation.
- * @task_busy_time: Utilization contribution by the task for which we test the
- *                  placement. Given by eenv_task_busy_time().
- * @pd_busy_time:   Utilization of the whole perf domain without the task
- *                  contribution. Given by eenv_pd_busy_time().
- * @cpu_cap:        Maximum CPU capacity for the perf domain.
- * @pd_cap:         Entire perf domain capacity. (pd->nr_cpus * cpu_cap).
- */
-struct energy_env {
-	unsigned long task_busy_time;
-	unsigned long pd_busy_time;
-	unsigned long cpu_cap;
-	unsigned long pd_cap;
-};
-
-/*
- * Compute the task busy time for compute_energy(). This time cannot be
- * injected directly into effective_cpu_util() because of the IRQ scaling.
- * The latter only makes sense with the most recent CPUs where the task has
- * run.
- */
-static inline void eenv_task_busy_time(struct energy_env *eenv,
-				       struct task_struct *p, int prev_cpu)
-{
-	unsigned long busy_time, max_cap = arch_scale_cpu_capacity(prev_cpu);
-	unsigned long irq = cpu_util_irq(cpu_rq(prev_cpu));
-
-	if (unlikely(irq >= max_cap))
-		busy_time = max_cap;
-	else
-		busy_time = scale_irq_capacity(task_util_est(p), irq, max_cap);
-
-	eenv->task_busy_time = busy_time;
-}
-
-/*
- * Compute the perf_domain (PD) busy time for compute_energy(). Based on the
- * utilization for each @pd_cpus, it however doesn't take into account
- * clamping since the ratio (utilization / cpu_capacity) is already enough to
- * scale the EM reported power consumption at the (eventually clamped)
- * cpu_capacity.
- *
- * The contribution of the task @p for which we want to estimate the
- * energy cost is removed (by cpu_util()) and must be calculated
- * separately (see eenv_task_busy_time). This ensures:
- *
- *   - A stable PD utilization, no matter which CPU of that PD we want to place
- *     the task on.
- *
- *   - A fair comparison between CPUs as the task contribution (task_util())
- *     will always be the same no matter which CPU utilization we rely on
- *     (util_avg or util_est).
- *
- * Set @eenv busy time for the PD that spans @pd_cpus. This busy time can't
- * exceed @eenv->pd_cap.
- */
-static inline void eenv_pd_busy_time(struct energy_env *eenv,
-				     struct cpumask *pd_cpus,
-				     struct task_struct *p)
-{
-	unsigned long busy_time = 0;
-	int cpu;
-
-	for_each_cpu(cpu, pd_cpus) {
-		unsigned long util = cpu_util(cpu, p, -1, 0);
-
-		busy_time += effective_cpu_util(cpu, util, NULL, NULL);
-	}
-
-	eenv->pd_busy_time = min(eenv->pd_cap, busy_time);
-}
-
-/*
- * Compute the maximum utilization for compute_energy() when the task @p
- * is placed on the cpu @dst_cpu.
- *
- * Returns the maximum utilization among @eenv->cpus. This utilization can't
- * exceed @eenv->cpu_cap.
- */
-static inline unsigned long
-eenv_pd_max_util(struct energy_env *eenv, struct cpumask *pd_cpus,
-		 struct task_struct *p, int dst_cpu)
-{
-	unsigned long max_util = 0;
-	int cpu;
-
-	for_each_cpu(cpu, pd_cpus) {
-		struct task_struct *tsk = (cpu == dst_cpu) ? p : NULL;
-		unsigned long util = cpu_util(cpu, p, dst_cpu, 1);
-		unsigned long eff_util, min, max;
-
-		/*
-		 * Performance domain frequency: utilization clamping
-		 * must be considered since it affects the selection
-		 * of the performance domain frequency.
-		 * NOTE: in case RT tasks are running, by default the min
-		 * utilization can be max OPP.
-		 */
-		eff_util = effective_cpu_util(cpu, util, &min, &max);
-
-		/* Task's uclamp can modify min and max value */
-		if (tsk && uclamp_is_used()) {
-			min = max(min, uclamp_eff_value(p, UCLAMP_MIN));
-
-			/*
-			 * If there is no active max uclamp constraint,
-			 * directly use task's one, otherwise keep max.
-			 */
-			if (uclamp_rq_is_idle(cpu_rq(cpu)))
-				max = uclamp_eff_value(p, UCLAMP_MAX);
-			else
-				max = max(max, uclamp_eff_value(p, UCLAMP_MAX));
-		}
-
-		eff_util = sugov_effective_cpu_perf(cpu, eff_util, min, max);
-		max_util = max(max_util, eff_util);
-	}
-
-	return min(max_util, eenv->cpu_cap);
-}
-
-/*
- * compute_energy(): Use the Energy Model to estimate the energy that @pd would
- * consume for a given utilization landscape @eenv. When @dst_cpu < 0, the task
- * contribution is ignored.
- */
-static inline unsigned long
-compute_energy(struct energy_env *eenv, struct perf_domain *pd,
-	       struct cpumask *pd_cpus, struct task_struct *p, int dst_cpu)
-{
-	unsigned long max_util = eenv_pd_max_util(eenv, pd_cpus, p, dst_cpu);
-	unsigned long busy_time = eenv->pd_busy_time;
-	unsigned long energy;
-
-	if (dst_cpu >= 0)
-		busy_time = min(eenv->pd_cap, busy_time + eenv->task_busy_time);
-
-	energy = em_cpu_energy(pd->em_pd, max_util, busy_time, eenv->cpu_cap);
-
-
-	return energy;
-}
-
-/*
- * find_energy_efficient_cpu(): Find most energy-efficient target CPU for the
- * waking task. find_energy_efficient_cpu() looks for the CPU with maximum
- * spare capacity in each performance domain and uses it as a potential
- * candidate to execute the task. Then, it uses the Energy Model to figure
- * out which of the CPU candidates is the most energy-efficient.
- *
- * The rationale for this heuristic is as follows. In a performance domain,
- * all the most energy efficient CPU candidates (according to the Energy
- * Model) are those for which we'll request a low frequency. When there are
- * several CPUs for which the frequency request will be the same, we don't
- * have enough data to break the tie between them, because the Energy Model
- * only includes active power costs. With this model, if we assume that
- * frequency requests follow utilization (e.g. using schedutil), the CPU with
- * the maximum spare capacity in a performance domain is guaranteed to be among
- * the best candidates of the performance domain.
- *
- * In practice, it could be preferable from an energy standpoint to pack
- * small tasks on a CPU in order to let other CPUs go in deeper idle states,
- * but that could also hurt our chances to go cluster idle, and we have no
- * ways to tell with the current Energy Model if this is actually a good
- * idea or not. So, find_energy_efficient_cpu() basically favors
- * cluster-packing, and spreading inside a cluster. That should at least be
- * a good thing for latency, and this is consistent with the idea that most
- * of the energy savings of EAS come from the asymmetry of the system, and
- * not so much from breaking the tie between identical CPUs. That's also the
- * reason why EAS is enabled in the topology code only for systems where
- * SD_ASYM_CPUCAPACITY is set.
- *
- * NOTE: Forkees are not accepted in the energy-aware wake-up path because
- * they don't have any useful utilization data yet and it's not possible to
- * forecast their impact on energy consumption. Consequently, they will be
- * placed by sched_balance_find_dst_cpu() on the least loaded CPU, which might turn out
- * to be energy-inefficient in some use-cases. The alternative would be to
- * bias new tasks towards specific types of CPUs first, or to try to infer
- * their util_avg from the parent task, but those heuristics could hurt
- * other use-cases too. So, until someone finds a better way to solve this,
- * let's keep things simple by re-using the existing slow path.
- */
-static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu)
-{
-	struct cpumask *cpus = this_cpu_cpumask_var_ptr(select_rq_mask);
-	unsigned long prev_delta = ULONG_MAX, best_delta = ULONG_MAX;
-	unsigned long p_util_min = uclamp_is_used() ? uclamp_eff_value(p, UCLAMP_MIN) : 0;
-	unsigned long p_util_max = uclamp_is_used() ? uclamp_eff_value(p, UCLAMP_MAX) : 1024;
-	struct root_domain *rd = this_rq()->rd;
-	int cpu, best_energy_cpu, target = -1;
-	int prev_fits = -1, best_fits = -1;
-	unsigned long best_actual_cap = 0;
-	unsigned long prev_actual_cap = 0;
-	struct sched_domain *sd;
-	struct perf_domain *pd;
-	struct energy_env eenv;
-
-	pd = rcu_dereference_all(rd->pd);
-	if (!pd)
-		return target;
-
-	/*
-	 * Energy-aware wake-up happens on the lowest sched_domain starting
-	 * from sd_asym_cpucapacity spanning over this_cpu and prev_cpu.
-	 */
-	sd = rcu_dereference_all(*this_cpu_ptr(&sd_asym_cpucapacity));
-	while (sd && !cpumask_test_cpu(prev_cpu, sched_domain_span(sd)))
-		sd = sd->parent;
-	if (!sd)
-		return target;
-
-	target = prev_cpu;
-
-	sync_entity_load_avg(&p->se);
-	if (!task_util_est(p) && p_util_min == 0)
-		return target;
-
-	eenv_task_busy_time(&eenv, p, prev_cpu);
-
-	for (; pd; pd = pd->next) {
-		unsigned long util_min = p_util_min, util_max = p_util_max;
-		unsigned long cpu_cap, cpu_actual_cap, util;
-		long prev_spare_cap = -1, max_spare_cap = -1;
-		unsigned long rq_util_min, rq_util_max;
-		unsigned long cur_delta, base_energy;
-		int max_spare_cap_cpu = -1;
-		int fits, max_fits = -1;
-
-		if (!cpumask_and(cpus, perf_domain_span(pd), cpu_online_mask))
-			continue;
-
-		/* Account external pressure for the energy estimation */
-		cpu = cpumask_first(cpus);
-		cpu_actual_cap = get_actual_cpu_capacity(cpu);
-
-		eenv.cpu_cap = cpu_actual_cap;
-		eenv.pd_cap = 0;
-
-		for_each_cpu(cpu, cpus) {
-			struct rq *rq = cpu_rq(cpu);
-
-			eenv.pd_cap += cpu_actual_cap;
-
-			if (!cpumask_test_cpu(cpu, sched_domain_span(sd)))
-				continue;
-
-			if (!cpumask_test_cpu(cpu, p->cpus_ptr))
-				continue;
-
-			util = cpu_util(cpu, p, cpu, 0);
-			cpu_cap = capacity_of(cpu);
-
-			/*
-			 * Skip CPUs that cannot satisfy the capacity request.
-			 * IOW, placing the task there would make the CPU
-			 * overutilized. Take uclamp into account to see how
-			 * much capacity we can get out of the CPU; this is
-			 * aligned with sched_cpu_util().
-			 */
-			if (uclamp_is_used() && !uclamp_rq_is_idle(rq)) {
-				/*
-				 * Open code uclamp_rq_util_with() except for
-				 * the clamp() part. I.e.: apply max aggregation
-				 * only. util_fits_cpu() logic requires to
-				 * operate on non clamped util but must use the
-				 * max-aggregated uclamp_{min, max}.
-				 */
-				rq_util_min = uclamp_rq_get(rq, UCLAMP_MIN);
-				rq_util_max = uclamp_rq_get(rq, UCLAMP_MAX);
-
-				util_min = max(rq_util_min, p_util_min);
-				util_max = max(rq_util_max, p_util_max);
-			}
-
-			fits = util_fits_cpu(util, util_min, util_max, cpu);
-			if (!fits)
-				continue;
-
-			lsub_positive(&cpu_cap, util);
-
-			if (cpu == prev_cpu) {
-				/* Always use prev_cpu as a candidate. */
-				prev_spare_cap = cpu_cap;
-				prev_fits = fits;
-			} else if ((fits > max_fits) ||
-				   ((fits == max_fits) && ((long)cpu_cap > max_spare_cap))) {
-				/*
-				 * Find the CPU with the maximum spare capacity
-				 * among the remaining CPUs in the performance
-				 * domain.
-				 */
-				max_spare_cap = cpu_cap;
-				max_spare_cap_cpu = cpu;
-				max_fits = fits;
-			}
-		}
-
-		if (max_spare_cap_cpu < 0 && prev_spare_cap < 0)
-			continue;
-
-		eenv_pd_busy_time(&eenv, cpus, p);
-		/* Compute the 'base' energy of the pd, without @p */
-		base_energy = compute_energy(&eenv, pd, cpus, p, -1);
-
-		/* Evaluate the energy impact of using prev_cpu. */
-		if (prev_spare_cap > -1) {
-			prev_delta = compute_energy(&eenv, pd, cpus, p,
-						    prev_cpu);
-			/* CPU utilization has changed */
-			if (prev_delta < base_energy)
-				return target;
-			prev_delta -= base_energy;
-			prev_actual_cap = cpu_actual_cap;
-			best_delta = min(best_delta, prev_delta);
-		}
-
-		/* Evaluate the energy impact of using max_spare_cap_cpu. */
-		if (max_spare_cap_cpu >= 0 && max_spare_cap > prev_spare_cap) {
-			/* Current best energy cpu fits better */
-			if (max_fits < best_fits)
-				continue;
-
-			/*
-			 * Both don't fit performance hint (i.e. uclamp_min)
-			 * but best energy cpu has better capacity.
-			 */
-			if ((max_fits < 0) &&
-			    (cpu_actual_cap <= best_actual_cap))
-				continue;
-
-			cur_delta = compute_energy(&eenv, pd, cpus, p,
-						   max_spare_cap_cpu);
-			/* CPU utilization has changed */
-			if (cur_delta < base_energy)
-				return target;
-			cur_delta -= base_energy;
-
-			/*
-			 * Both fit for the task but best energy cpu has lower
-			 * energy impact.
-			 */
-			if ((max_fits > 0) && (best_fits > 0) &&
-			    (cur_delta >= best_delta))
-				continue;
-
-			best_delta = cur_delta;
-			best_energy_cpu = max_spare_cap_cpu;
-			best_fits = max_fits;
-			best_actual_cap = cpu_actual_cap;
-		}
-	}
-
-	if ((best_fits > prev_fits) ||
-	    ((best_fits > 0) && (best_delta < prev_delta)) ||
-	    ((best_fits < 0) && (best_actual_cap > prev_actual_cap)))
-		target = best_energy_cpu;
-
-	return target;
-}
-
-/*
  * select_task_rq_fair: Select target runqueue for the waking task in domains
  * that have the relevant SD flag set. In practice, this is SD_BALANCE_WAKE,
  * SD_BALANCE_FORK, or SD_BALANCE_EXEC.
@@ -6852,13 +6433,6 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int wake_flags)
 		if ((wake_flags & WF_CURRENT_CPU) &&
 		    cpumask_test_cpu(cpu, p->cpus_ptr))
 			return cpu;
-
-		if (!is_rd_overutilized(this_rq()->rd)) {
-			new_cpu = find_energy_efficient_cpu(p, prev_cpu);
-			if (new_cpu >= 0)
-				return new_cpu;
-			new_cpu = prev_cpu;
-		}
 
 		want_affine = !wake_wide(p) && cpumask_test_cpu(cpu, p->cpus_ptr);
 	}
@@ -8117,7 +7691,6 @@ struct sg_lb_stats {
 	unsigned int group_asym_packing;	/* Tasks should be moved to preferred CPU */
 	unsigned int group_smt_balance;		/* Task on busy SMT be moved */
 	unsigned long group_misfit_task_load;	/* A CPU has a task too big for its capacity */
-	unsigned int group_overutilized;	/* At least one CPU is overutilized in the group */
 #ifdef CONFIG_NUMA_BALANCING
 	unsigned int nr_numa_running;
 	unsigned int nr_preferred_running;
@@ -8349,13 +7922,6 @@ group_has_capacity(unsigned int imbalance_pct, struct sg_lb_stats *sgs)
 static inline bool
 group_is_overloaded(unsigned int imbalance_pct, struct sg_lb_stats *sgs)
 {
-	/*
-	 * With EAS and uclamp, 1 CPU in the group must be overutilized to
-	 * consider the group overloaded.
-	 */
-	if (sched_energy_enabled() && !sgs->group_overutilized)
-		return false;
-
 	if (sgs->sum_nr_running <= sgs->group_weight)
 		return false;
 
@@ -8564,9 +8130,6 @@ static inline void update_sg_lb_stats(struct lb_env *env,
 
 		nr_running = rq->nr_running;
 		sgs->sum_nr_running += nr_running;
-
-		if (cpu_overutilized(i))
-			sgs->group_overutilized = 1;
 
 		/*
 		 * No need to call idle_cpu() if nr_running is not 0
@@ -9219,7 +8782,7 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 	struct sg_lb_stats *local = &sds->local_stat;
 	struct sg_lb_stats tmp_sgs;
 	unsigned long sum_util = 0;
-	bool sg_overloaded = 0, sg_overutilized = 0;
+	bool sg_overloaded = 0;
 
 	do {
 		struct sg_lb_stats *sgs = &tmp_sgs;
@@ -9241,8 +8804,6 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 			sds->busiest = sg;
 			sds->busiest_stat = *sgs;
 		}
-
-		sg_overutilized |= sgs->group_overutilized;
 
 		/* Now, start updating sd_lb_stats */
 		sds->total_load += sgs->group_load;
@@ -9268,10 +8829,6 @@ static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sd
 		/* update overload indicator if we are at root domain */
 		set_rd_overloaded(env->dst_rq->rd, sg_overloaded);
 
-		/* Update over-utilization (tipping point, U >= 0) indicator */
-		set_rd_overutilized(env->dst_rq->rd, sg_overutilized);
-	} else if (sg_overutilized) {
-		set_rd_overutilized(env->dst_rq->rd, sg_overutilized);
 	}
 
 	update_idle_cpu_scan(env, sum_util);
@@ -9507,10 +9064,6 @@ static struct sched_group *sched_balance_find_src_group(struct lb_env *env)
 	/* Misfit tasks should be dealt with regardless of the avg load */
 	if (busiest->group_type == group_misfit_task)
 		goto force_balance;
-
-	if (!is_rd_overutilized(env->dst_rq->rd) &&
-	    rcu_dereference_all(env->dst_rq->rd->pd))
-		goto out_balanced;
 
 	/* ASYM feature bypasses nice load balance check */
 	if (busiest->group_type == group_asym_packing)
@@ -11256,8 +10809,6 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 		task_tick_numa(rq, curr);
 
 	update_misfit_status(curr, rq);
-	check_update_overutilized_status(task_rq(curr));
-
 	task_tick_core(rq, curr);
 }
 

@@ -621,12 +621,6 @@ static inline bool sched_asym_prefer(int a, int b)
 	return arch_asym_cpu_priority(a) > arch_asym_cpu_priority(b);
 }
 
-struct perf_domain {
-	struct em_perf_domain *em_pd;
-	struct perf_domain *next;
-	struct rcu_head rcu;
-};
-
 /*
  * We add the notion of a root-domain which will be used to define per-domain
  * variables. Each exclusive cpuset essentially defines an island domain by
@@ -648,9 +642,6 @@ struct root_domain {
 	 * - Running task is misfit
 	 */
 	bool			overloaded;
-
-	/* Indicate one or more CPUs over-utilized (tipping point) */
-	bool			overutilized;
 
 	/*
 	 * The bit corresponding to a CPU gets set here if such CPU has more
@@ -690,11 +681,6 @@ struct root_domain {
 	cpumask_var_t		rto_mask;
 	struct cpupri		cpupri;
 
-	/*
-	 * NULL-terminated list of performance domains intersecting with the
-	 * CPUs of the rd. Protected by RCU.
-	 */
-	struct perf_domain __rcu *pd;
 };
 
 extern void init_defrootdomain(void);
@@ -2585,10 +2571,6 @@ unsigned long effective_cpu_util(int cpu, unsigned long util_cfs,
 				 unsigned long *min,
 				 unsigned long *max);
 
-unsigned long sugov_effective_cpu_perf(int cpu, unsigned long actual,
-				 unsigned long min,
-				 unsigned long max);
-
 
 /*
  * Verify the fitness of task @p to run on @cpu taking into account the
@@ -2675,12 +2657,6 @@ unsigned long scale_irq_capacity(unsigned long util, unsigned long irq, unsigned
 }
 
 extern void __setparam_fair(struct task_struct *p, const struct sched_attr *attr);
-
-
-#define perf_domain_span(pd) NULL
-
-static inline bool sched_energy_enabled(void) { return false; }
-
 
 
 static inline void membarrier_switch_mm(struct rq *rq,
