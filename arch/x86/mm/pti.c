@@ -31,7 +31,6 @@
 
 #include <asm/cpufeature.h>
 #include <asm/hypervisor.h>
-#include <asm/vsyscall.h>
 #include <asm/cmdline.h>
 #include <asm/pti.h>
 #include <asm/tlbflush.h>
@@ -283,27 +282,6 @@ static pte_t *pti_user_pagetable_walk_pte(unsigned long address, bool late_text)
 	}
 	return pte;
 }
-
-#ifdef CONFIG_X86_VSYSCALL_EMULATION
-static void __init pti_setup_vsyscall(void)
-{
-	pte_t *pte, *target_pte;
-	unsigned int level;
-
-	pte = lookup_address(VSYSCALL_ADDR, &level);
-	if (!pte || WARN_ON(level != PG_LEVEL_4K) || pte_none(*pte))
-		return;
-
-	target_pte = pti_user_pagetable_walk_pte(VSYSCALL_ADDR, false);
-	if (WARN_ON(!target_pte))
-		return;
-
-	*target_pte = *pte;
-	set_vsyscall_pgtable_user_bits(kernel_to_user_pgdp(swapper_pg_dir));
-}
-#else
-static void __init pti_setup_vsyscall(void) { }
-#endif
 
 enum pti_clone_level {
 	PTI_CLONE_PMD,
@@ -617,7 +595,6 @@ void __init pti_init(void)
 	 * but notably the text is still RW.
 	 */
 	pti_clone_entry_text(false);
-	pti_setup_vsyscall();
 }
 
 /*

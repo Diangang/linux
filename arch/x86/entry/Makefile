@@ -11,6 +11,4 @@ CFLAGS_syscall_64.o		+= -fno-stack-protector
 obj-y				:= entry.o entry_$(BITS).o syscall_$(BITS).o
 
 obj-y				+= vdso/
-obj-y				+= vsyscall/
-
 obj-$(CONFIG_PREEMPTION)	+= thunk.o

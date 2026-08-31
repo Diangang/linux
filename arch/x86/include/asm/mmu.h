@@ -9,14 +9,11 @@
 
 /* Uprobes on this MM assume 32-bit code */
 #define MM_CONTEXT_UPROBE_IA32		0
-/* vsyscall page is accessible on this MM */
-#define MM_CONTEXT_HAS_VSYSCALL		1
-/* Do not allow changing LAM mode */
-#define MM_CONTEXT_LOCK_LAM		2
+#define MM_CONTEXT_LOCK_LAM		1
 /* Allow LAM and SVA coexisting */
-#define MM_CONTEXT_FORCE_TAGGED_SVA	3
+#define MM_CONTEXT_FORCE_TAGGED_SVA	2
 /* Tracks mm_cpumask */
-#define MM_CONTEXT_NOTRACK		4
+#define MM_CONTEXT_NOTRACK		3
 
 /*
  * x86 has arch-specific MMU state beyond what lives in mm_struct.

@@ -930,7 +930,6 @@ static void __meminit vmemmap_use_new_sub_pmd(unsigned long start, unsigned long
  * Memory hotplug specific functions
  */
 
-static struct kcore_list kcore_vsyscall;
 
 static void __init register_page_bootmem_info(void)
 {
@@ -1013,8 +1012,6 @@ void __init mem_init(void)
 	register_page_bootmem_info();
 
 	/* Register memory areas for /proc/kcore */
-	if (get_gate_vma(&init_mm))
-		kclist_add(&kcore_vsyscall, (void *)VSYSCALL_ADDR, PAGE_SIZE, KCORE_USER);
 
 	preallocate_vmalloc_pages();
 }

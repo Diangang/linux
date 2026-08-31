@@ -686,9 +686,6 @@ void set_personality_64bit(void)
 	/* Pretend that this comes from a 64bit execve */
 	task_pt_regs(current)->orig_ax = __NR_execve;
 	current_thread_info()->status &= ~TS_COMPAT;
-	if (current->mm)
-		__set_bit(MM_CONTEXT_HAS_VSYSCALL, &current->mm->context.flags);
-
 	/* TBD: overwrites user setup. Should have two bits.
 	   But 64bit processes have always behaved this way,
 	   so it's not too bad. The main problem is just that

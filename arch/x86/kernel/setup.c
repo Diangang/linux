@@ -50,7 +50,6 @@
 #include <asm/realmode.h>
 #include <asm/thermal.h>
 #include <asm/unwind.h>
-#include <asm/vsyscall.h>
 
 /*
  * max_low_pfn_mapped: highest directly mapped pfn < 4 GB
@@ -943,7 +942,6 @@ void __init setup_arch(char **cmdline_p)
 
 	tboot_probe();
 
-	map_vsyscall();
 
 	x86_32_probe_apic();
 

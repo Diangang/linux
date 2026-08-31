@@ -20,7 +20,7 @@
 #include <asm/cpufeature.h>		/* boot_cpu_has, ...		*/
 #include <asm/traps.h>			/* dotraplinkage, ...		*/
 #include <asm/fixmap.h>			/* VSYSCALL_ADDR		*/
-#include <asm/vsyscall.h>		/* emulate_vsyscall		*/
+#include <asm/vsyscall.h>		/* is_vsyscall_vaddr		*/
 #include <asm/vm86.h>			/* struct vm86			*/
 #include <asm/mmu_context.h>		/* vma_pkey()			*/
 #include <asm/desc.h>			/* store_idt(), ...		*/
@@ -1072,24 +1072,6 @@ void do_user_addr_fault(struct pt_regs *regs,
 	 */
 	if (user_mode(regs))
 		flags |= FAULT_FLAG_USER;
-
-#ifdef CONFIG_X86_64
-	/*
-	 * Faults in the vsyscall page might need emulation.  The
-	 * vsyscall page is at a high address (>PAGE_OFFSET), but is
-	 * considered to be part of the user address space.
-	 *
-	 * The vsyscall page does not have a "real" VMA, so do this
-	 * emulation before we go searching for VMAs.
-	 *
-	 * PKRU never rejects instruction fetches, so we don't need
-	 * to consider the PF_PK bit.
-	 */
-	if (is_vsyscall_vaddr(address)) {
-		if (emulate_vsyscall_pf(error_code, regs, address))
-			return;
-	}
-#endif
 
 	if (!(flags & FAULT_FLAG_USER))
 		goto lock_mmap;

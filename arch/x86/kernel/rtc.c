@@ -7,7 +7,6 @@
 #include <linux/mc146818rtc.h>
 #include <linux/export.h>
 
-#include <asm/vsyscall.h>
 #include <asm/x86_init.h>
 #include <asm/time.h>
 #include <asm/setup.h>
