@@ -621,17 +621,13 @@ static void gcs_thread_switch(struct task_struct *next)
 #endif
 
 /*
- * Handle sysreg updates for ARM erratum 1418040 which affects the 32bit view of
- * CNTVCT, various other errata which require trapping all CNTVCT{,_EL0}
- * accesses and prctl(PR_SET_TSC). Ensure access is disabled iff a workaround is
- * required or PR_TSC_SIGSEGV is set.
+ * Handle sysreg updates for prctl(PR_SET_TSC).
  */
 static void update_cntkctl_el1(struct task_struct *next)
 {
 	struct thread_info *ti = task_thread_info(next);
 
-	if (test_ti_thread_flag(ti, TIF_TSC_SIGSEGV) ||
-	    has_erratum_handler(read_cntvct_el0))
+	if (test_ti_thread_flag(ti, TIF_TSC_SIGSEGV))
 		sysreg_clear_set(cntkctl_el1, ARCH_TIMER_USR_VCT_ACCESS_EN, 0);
 	else
 		sysreg_clear_set(cntkctl_el1, 0, ARCH_TIMER_USR_VCT_ACCESS_EN);

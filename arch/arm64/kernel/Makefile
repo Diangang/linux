@@ -3,8 +3,6 @@
 # Makefile for the linux kernel.
 #
 
-CFLAGS_armv8_deprecated.o := -I$(src)
-
 # Remove stack protector to avoid triggering unneeded stack canary
 # checks due to randomize_kstack_offset.
 CFLAGS_REMOVE_syscall.o	 = -fstack-protector -fstack-protector-strong
@@ -27,7 +25,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 			   syscall.o proton-pack.o idle.o patching.o pi/	\
 			   rsi.o jump_label.o
 
-obj-$(CONFIG_HAVE_STATIC_CALL)		+= static_call.o
 obj-$(CONFIG_PCI)			+= pci.o
 obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr.o
 obj-$(CONFIG_ARM64_PTR_AUTH)		+= pointer_auth.o

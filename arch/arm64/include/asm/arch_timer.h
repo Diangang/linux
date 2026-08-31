@@ -14,53 +14,9 @@
 
 #include <linux/bug.h>
 #include <linux/init.h>
-#include <linux/jump_label.h>
-#include <linux/percpu.h>
 #include <linux/types.h>
 
 #include <clocksource/arm_arch_timer.h>
-
-#if IS_ENABLED(CONFIG_ARM_ARCH_TIMER_OOL_WORKAROUND)
-#define has_erratum_handler(h)						\
-	({								\
-		const struct arch_timer_erratum_workaround *__wa;	\
-		__wa = __this_cpu_read(timer_unstable_counter_workaround); \
-		(__wa && __wa->h);					\
-	})
-
-#define erratum_handler(h)						\
-	({								\
-		const struct arch_timer_erratum_workaround *__wa;	\
-		__wa = __this_cpu_read(timer_unstable_counter_workaround); \
-		(__wa && __wa->h) ? ({ isb(); __wa->h;}) : arch_timer_##h; \
-	})
-
-#else
-#define has_erratum_handler(h)			   false
-#define erratum_handler(h)			   (arch_timer_##h)
-#endif
-
-enum arch_timer_erratum_match_type {
-	ate_match_dt,
-	ate_match_local_cap_id,
-	ate_match_acpi_oem_info,
-};
-
-struct clock_event_device;
-
-struct arch_timer_erratum_workaround {
-	enum arch_timer_erratum_match_type match_type;
-	const void *id;
-	const char *desc;
-	u64 (*read_cntpct_el0)(void);
-	u64 (*read_cntvct_el0)(void);
-	int (*set_next_event_phys)(unsigned long, struct clock_event_device *);
-	int (*set_next_event_virt)(unsigned long, struct clock_event_device *);
-	bool disable_compat_vdso;
-};
-
-DECLARE_PER_CPU(const struct arch_timer_erratum_workaround *,
-		timer_unstable_counter_workaround);
 
 static inline notrace u64 arch_timer_read_cntpct_el0(void)
 {
@@ -88,7 +44,7 @@ static inline notrace u64 arch_timer_read_cntvct_el0(void)
 
 #define arch_timer_reg_read_stable(reg)					\
 	({								\
-		erratum_handler(read_ ## reg)();			\
+		arch_timer_read_ ## reg();				\
 	})
 
 /*

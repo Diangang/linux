@@ -27,7 +27,4 @@ config ARM_ARCH_TIMER
 	select TIMER_OF if OF
 	select TIMER_ACPI if ACPI
 
-config ARM_ARCH_TIMER_OOL_WORKAROUND
-	bool
-
 endmenu
