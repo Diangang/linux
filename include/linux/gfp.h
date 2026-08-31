@@ -403,29 +403,6 @@ static inline bool gfp_compaction_allowed(gfp_t gfp_mask)
 
 extern gfp_t vma_thp_gfp_mask(struct vm_area_struct *vma);
 
-#ifdef CONFIG_CONTIG_ALLOC
-
-typedef unsigned int __bitwise acr_flags_t;
-#define ACR_FLAGS_NONE ((__force acr_flags_t)0) // ordinary allocation request
-#define ACR_FLAGS_CMA ((__force acr_flags_t)BIT(0)) // allocate for CMA
-
-/* The below functions must be run on a range from a single zone. */
-int alloc_contig_frozen_range(unsigned long start, unsigned long end,
-		acr_flags_t alloc_flags, gfp_t gfp_mask);
-
-int alloc_contig_range(unsigned long start, unsigned long end,
-		acr_flags_t alloc_flags, gfp_t gfp_mask);
-
-struct page *alloc_contig_frozen_pages(unsigned long nr_pages,
-		gfp_t gfp_mask, int nid, nodemask_t *nodemask);
-
-struct page *alloc_contig_pages(unsigned long nr_pages, gfp_t gfp_mask,
-		int nid, nodemask_t *nodemask);
-
-void free_contig_frozen_range(unsigned long pfn, unsigned long nr_pages);
-void free_contig_range(unsigned long pfn, unsigned long nr_pages);
-#endif
-
 DEFINE_FREE(free_page, void *, free_page((unsigned long)_T))
 
 #endif /* __LINUX_GFP_H */

@@ -15,7 +15,6 @@
 #include <linux/sched.h>
 #include <linux/mman.h>
 #include <linux/memblock.h>
-#include <linux/page-isolation.h>
 #include <linux/padata.h>
 #include <linux/nmi.h>
 #include <linux/buffer_head.h>
@@ -572,8 +571,7 @@ void __meminit __init_page_from_nid(unsigned long pfn, int nid)
 	__init_single_page(pfn_to_page(pfn), pfn, zid, nid);
 
 	if (pageblock_aligned(pfn))
-		init_pageblock_migratetype(pfn_to_page(pfn), MIGRATE_MOVABLE,
-				false);
+		init_pageblock_migratetype(pfn_to_page(pfn), MIGRATE_MOVABLE);
 }
 
 static inline void pgdat_set_deferred_range(pg_data_t *pgdat) {}
@@ -666,14 +664,12 @@ static void __init init_unavailable_range(unsigned long spfn,
  * done. Non-atomic initialization, single-pass.
  *
  * All aligned pageblocks are initialized to the specified migratetype
- * (usually MIGRATE_MOVABLE). Besides setting the migratetype, no related
- * zone stats (e.g., nr_isolate_pageblock) are touched.
+ * (usually MIGRATE_MOVABLE).
  */
 void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone,
 		unsigned long start_pfn, unsigned long zone_end_pfn,
 		enum meminit_context context,
-		struct vmem_altmap *altmap, int migratetype,
-		bool isolate_pageblock)
+		struct vmem_altmap *altmap, int migratetype)
 {
 	unsigned long pfn, end_pfn = start_pfn + size;
 	struct page *page;
@@ -708,8 +704,7 @@ void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone
 		 * over the place during system boot.
 		 */
 		if (pageblock_aligned(pfn)) {
-			init_pageblock_migratetype(page, migratetype,
-					isolate_pageblock);
+			init_pageblock_migratetype(page, migratetype);
 			cond_resched();
 		}
 		pfn++;
@@ -732,8 +727,7 @@ static void __init memmap_init_zone_range(struct zone *zone,
 		return;
 
 	memmap_init_range(end_pfn - start_pfn, nid, zone_id, start_pfn,
-			  zone_end_pfn, MEMINIT_EARLY, NULL, MIGRATE_MOVABLE,
-			  false);
+			  zone_end_pfn, MEMINIT_EARLY, NULL, MIGRATE_MOVABLE);
 
 	if (*hole_pfn < start_pfn)
 		init_unavailable_range(*hole_pfn, start_pfn, zone_id, nid);

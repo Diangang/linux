@@ -4,7 +4,6 @@
 
 #include <linux/mmzone.h>
 #include <linux/pageblock-flags.h>
-#include <linux/page-isolation.h>
 #include <linux/jump_label.h>
 #include <linux/slab.h>
 #include <linux/pgtable.h>

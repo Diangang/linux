@@ -217,9 +217,6 @@ const char * const migratetype_names[MIGRATE_TYPES] = {
 	"Movable",
 	"Reclaimable",
 	"HighAtomic",
-#ifdef CONFIG_MEMORY_ISOLATION
-	"Isolate",
-#endif
 };
 
 int min_free_kbytes = 1024;
@@ -284,11 +281,7 @@ get_pfnblock_bitmap_bitidx(const struct page *page, unsigned long pfn,
 	unsigned long *bitmap;
 	unsigned long word_bitidx;
 
-#ifdef CONFIG_MEMORY_ISOLATION
-	BUILD_BUG_ON(NR_PAGEBLOCK_BITS != 8);
-#else
 	BUILD_BUG_ON(NR_PAGEBLOCK_BITS != 4);
-#endif
 	BUILD_BUG_ON(__MIGRATE_TYPE_END > MIGRATETYPE_MASK);
 	VM_BUG_ON_PAGE(!zone_spans_pfn(page_zone(page), pfn), page);
 
@@ -362,16 +355,7 @@ bool get_pfnblock_bit(const struct page *page, unsigned long pfn,
 __always_inline enum migratetype
 get_pfnblock_migratetype(const struct page *page, unsigned long pfn)
 {
-	unsigned long mask = MIGRATETYPE_AND_ISO_MASK;
-	unsigned long flags;
-
-	flags = __get_pfnblock_flags_mask(page, pfn, mask);
-
-#ifdef CONFIG_MEMORY_ISOLATION
-	if (flags & BIT(PB_migrate_isolate))
-		return MIGRATE_ISOLATE;
-#endif
-	return flags & MIGRATETYPE_MASK;
+	return __get_pfnblock_flags_mask(page, pfn, MIGRATETYPE_MASK);
 }
 
 /**
@@ -451,45 +435,20 @@ static void set_pageblock_migratetype(struct page *page,
 		     migratetype < MIGRATE_PCPTYPES))
 		migratetype = MIGRATE_UNMOVABLE;
 
-#ifdef CONFIG_MEMORY_ISOLATION
-	if (migratetype == MIGRATE_ISOLATE) {
-		VM_WARN_ONCE(1,
-			"Use set_pageblock_isolate() for pageblock isolation");
-		return;
-	}
-	VM_WARN_ONCE(get_pageblock_isolate(page),
-		     "Use clear_pageblock_isolate() to unisolate pageblock");
-	/* MIGRATETYPE_AND_ISO_MASK clears PB_migrate_isolate if it is set */
-#endif
 	__set_pfnblock_flags_mask(page, page_to_pfn(page),
 				  (unsigned long)migratetype,
-				  MIGRATETYPE_AND_ISO_MASK);
+				  MIGRATETYPE_MASK);
 }
 
 void __meminit init_pageblock_migratetype(struct page *page,
-					  enum migratetype migratetype,
-					  bool isolate)
+					  enum migratetype migratetype)
 {
-	unsigned long flags;
-
 	if (unlikely(page_group_by_mobility_disabled &&
 		     migratetype < MIGRATE_PCPTYPES))
 		migratetype = MIGRATE_UNMOVABLE;
 
-	flags = migratetype;
-
-#ifdef CONFIG_MEMORY_ISOLATION
-	if (migratetype == MIGRATE_ISOLATE) {
-		VM_WARN_ONCE(
-			1,
-			"Set isolate=true to isolate pageblock with a migratetype");
-		return;
-	}
-	if (isolate)
-		flags |= BIT(PB_migrate_isolate);
-#endif
-	__set_pfnblock_flags_mask(page, page_to_pfn(page), flags,
-				  MIGRATETYPE_AND_ISO_MASK);
+	__set_pfnblock_flags_mask(page, page_to_pfn(page), migratetype,
+				  MIGRATETYPE_MASK);
 }
 
 static inline bool __maybe_unused bad_range(struct zone *zone, struct page *page)
@@ -608,9 +567,8 @@ compaction_capture(struct capture_control *capc, struct page *page,
 	if (!capc || order != capc->cc->order)
 		return false;
 
-	/* Do not accidentally pollute CMA or isolated regions*/
-	if (is_migrate_cma(migratetype) ||
-	    is_migrate_isolate(migratetype))
+	/* Do not accidentally pollute CMA regions */
+	if (is_migrate_cma(migratetype))
 		return false;
 
 	/*
@@ -649,9 +607,6 @@ static inline void account_freepages(struct zone *zone, int nr_pages,
 {
 	lockdep_assert_held(&zone->lock);
 
-	if (is_migrate_isolate(migratetype))
-		return;
-
 	__mod_zone_page_state(zone, NR_FREE_PAGES, nr_pages);
 
 	if (is_migrate_cma(migratetype))
@@ -679,7 +634,7 @@ static inline void __add_to_free_list(struct page *page, struct zone *zone,
 		list_add(&page->buddy_list, &area->free_list[migratetype]);
 	area->nr_free++;
 
-	if (order >= pageblock_order && !is_migrate_isolate(migratetype))
+	if (order >= pageblock_order)
 		__mod_zone_page_state(zone, NR_FREE_PAGES_BLOCKS, nr_pages);
 }
 
@@ -703,13 +658,6 @@ static inline void move_to_free_list(struct page *page, struct zone *zone,
 
 	account_freepages(zone, -nr_pages, old_mt);
 	account_freepages(zone, nr_pages, new_mt);
-
-	if (order >= pageblock_order &&
-	    is_migrate_isolate(old_mt) != is_migrate_isolate(new_mt)) {
-		if (!is_migrate_isolate(old_mt))
-			nr_pages = -nr_pages;
-		__mod_zone_page_state(zone, NR_FREE_PAGES_BLOCKS, nr_pages);
-	}
 }
 
 static inline void __del_page_from_free_list(struct page *page, struct zone *zone,
@@ -730,7 +678,7 @@ static inline void __del_page_from_free_list(struct page *page, struct zone *zon
 	set_page_private(page, 0);
 	zone->free_area[order].nr_free--;
 
-	if (order >= pageblock_order && !is_migrate_isolate(migratetype))
+	if (order >= pageblock_order)
 		__mod_zone_page_state(zone, NR_FREE_PAGES_BLOCKS, -nr_pages);
 }
 
@@ -1667,127 +1615,6 @@ static int move_freepages_block(struct zone *zone, struct page *page,
 
 }
 
-#ifdef CONFIG_MEMORY_ISOLATION
-/* Look for a buddy that straddles start_pfn */
-static unsigned long find_large_buddy(unsigned long start_pfn)
-{
-	/*
-	 * If start_pfn is not an order-0 PageBuddy, next PageBuddy containing
-	 * start_pfn has minimal order of __ffs(start_pfn) + 1. Start checking
-	 * the order with __ffs(start_pfn). If start_pfn is order-0 PageBuddy,
-	 * the starting order does not matter.
-	 */
-	int order = start_pfn ? __ffs(start_pfn) : MAX_PAGE_ORDER;
-	struct page *page;
-	unsigned long pfn = start_pfn;
-
-	while (!PageBuddy(page = pfn_to_page(pfn))) {
-		/* Nothing found */
-		if (++order > MAX_PAGE_ORDER)
-			return start_pfn;
-		pfn &= ~0UL << order;
-	}
-
-	/*
-	 * Found a preceding buddy, but does it straddle?
-	 */
-	if (pfn + (1 << buddy_order(page)) > start_pfn)
-		return pfn;
-
-	/* Nothing found */
-	return start_pfn;
-}
-
-static inline void toggle_pageblock_isolate(struct page *page, bool isolate)
-{
-	if (isolate)
-		set_pageblock_isolate(page);
-	else
-		clear_pageblock_isolate(page);
-}
-
-/**
- * __move_freepages_block_isolate - move free pages in block for page isolation
- * @zone: the zone
- * @page: the pageblock page
- * @isolate: to isolate the given pageblock or unisolate it
- *
- * This is similar to move_freepages_block(), but handles the special
- * case encountered in page isolation, where the block of interest
- * might be part of a larger buddy spanning multiple pageblocks.
- *
- * Unlike the regular page allocator path, which moves pages while
- * stealing buddies off the freelist, page isolation is interested in
- * arbitrary pfn ranges that may have overlapping buddies on both ends.
- *
- * This function handles that. Straddling buddies are split into
- * individual pageblocks. Only the block of interest is moved.
- *
- * Returns %true if pages could be moved, %false otherwise.
- */
-static bool __move_freepages_block_isolate(struct zone *zone,
-		struct page *page, bool isolate)
-{
-	unsigned long start_pfn, buddy_pfn;
-	int from_mt;
-	int to_mt;
-	struct page *buddy;
-
-	if (isolate == get_pageblock_isolate(page)) {
-		VM_WARN_ONCE(1, "%s a pageblock that is already in that state",
-			     isolate ? "Isolate" : "Unisolate");
-		return false;
-	}
-
-	if (!prep_move_freepages_block(zone, page, &start_pfn, NULL, NULL))
-		return false;
-
-	/* No splits needed if buddies can't span multiple blocks */
-	if (pageblock_order == MAX_PAGE_ORDER)
-		goto move;
-
-	buddy_pfn = find_large_buddy(start_pfn);
-	buddy = pfn_to_page(buddy_pfn);
-	/* We're a part of a larger buddy */
-	if (PageBuddy(buddy) && buddy_order(buddy) > pageblock_order) {
-		int order = buddy_order(buddy);
-
-		del_page_from_free_list(buddy, zone, order,
-					get_pfnblock_migratetype(buddy, buddy_pfn));
-		toggle_pageblock_isolate(page, isolate);
-		split_large_buddy(zone, buddy, buddy_pfn, order, FPI_NONE);
-		return true;
-	}
-
-move:
-	/* Use MIGRATETYPE_MASK to get non-isolate migratetype */
-	if (isolate) {
-		from_mt = __get_pfnblock_flags_mask(page, page_to_pfn(page),
-						    MIGRATETYPE_MASK);
-		to_mt = MIGRATE_ISOLATE;
-	} else {
-		from_mt = MIGRATE_ISOLATE;
-		to_mt = __get_pfnblock_flags_mask(page, page_to_pfn(page),
-						  MIGRATETYPE_MASK);
-	}
-
-	__move_freepages_block(zone, start_pfn, from_mt, to_mt);
-	toggle_pageblock_isolate(pfn_to_page(start_pfn), isolate);
-
-	return true;
-}
-
-bool pageblock_isolate_and_move_free_pages(struct zone *zone, struct page *page)
-{
-	return __move_freepages_block_isolate(zone, page, true);
-}
-
-bool pageblock_unisolate_and_move_free_pages(struct zone *zone, struct page *page)
-{
-	return __move_freepages_block_isolate(zone, page, false);
-}
-
-#endif /* CONFIG_MEMORY_ISOLATION */
 
 static inline bool boost_watermark(struct zone *zone)
 {
@@ -2556,20 +2383,14 @@ static void __free_frozen_pages(struct page *page, unsigned int order,
 
 	/*
 	 * We only track unmovable, reclaimable and movable on pcp lists.
-	 * Place ISOLATE pages on the isolated list because they are being
-	 * offlined but treat HIGHATOMIC and CMA as movable pages so we can
-	 * get those areas back if necessary. Otherwise, we may have to free
-	 * excessively into the page allocator
+	 * Treat HIGHATOMIC and CMA as movable pages so we can get those areas
+	 * back if necessary. Otherwise, we may have to free excessively into
+	 * the page allocator.
 	 */
 	zone = page_zone(page);
 	migratetype = get_pfnblock_migratetype(page, pfn);
-	if (unlikely(migratetype >= MIGRATE_PCPTYPES)) {
-		if (unlikely(is_migrate_isolate(migratetype))) {
-			free_one_page(zone, page, pfn, order, fpi_flags);
-			return;
-		}
+	if (unlikely(migratetype >= MIGRATE_PCPTYPES))
 		migratetype = MIGRATE_MOVABLE;
-	}
 
 	pcp = pcp_spin_trylock(zone->per_cpu_pageset);
 	if (pcp) {
@@ -2636,24 +2457,12 @@ void free_unref_folios(struct folio_batch *folios)
 		migratetype = get_pfnblock_migratetype(&folio->page, pfn);
 
 		/* Different zone requires a different pcp lock */
-		if (zone != locked_zone ||
-		    is_migrate_isolate(migratetype)) {
+		if (zone != locked_zone) {
 			if (pcp) {
 				pcp_spin_unlock(pcp);
 				locked_zone = NULL;
 				pcp = NULL;
 			}
-
-			/*
-			 * Free isolated pages directly to the
-			 * allocator, see comment in free_frozen_pages.
-			 */
-			if (is_migrate_isolate(migratetype)) {
-				free_one_page(zone, &folio->page, pfn,
-					      order, FPI_NONE);
-				continue;
-			}
-
 			/*
 			 * trylock is necessary as folios may be getting freed
 			 * from IRQ or SoftIRQ context after an IO completion.
@@ -2667,10 +2476,7 @@ void free_unref_folios(struct folio_batch *folios)
 			locked_zone = zone;
 		}
 
-		/*
-		 * Non-isolated types over MIGRATE_PCPTYPES get added
-		 * to the MIGRATE_MOVABLE pcp list.
-		 */
+		/* Types over MIGRATE_PCPTYPES use the MIGRATE_MOVABLE pcp list. */
 		if (unlikely(migratetype >= MIGRATE_PCPTYPES))
 			migratetype = MIGRATE_MOVABLE;
 
@@ -2719,18 +2525,16 @@ int __isolate_free_page(struct page *page, unsigned int order)
 	struct zone *zone = page_zone(page);
 	int mt = get_pageblock_migratetype(page);
 
-	if (!is_migrate_isolate(mt)) {
-		unsigned long watermark;
-		/*
-		 * Obey watermarks as if the page was being allocated. We can
-		 * emulate a high-order watermark check with a raised order-0
-		 * watermark, because we already know our high-order page
-		 * exists.
-		 */
-		watermark = zone->_watermark[WMARK_MIN] + (1UL << order);
-		if (!zone_watermark_ok(zone, 0, watermark, 0, ALLOC_CMA))
-			return 0;
-	}
+	unsigned long watermark;
+
+	/*
+	 * Obey watermarks as if the page was being allocated. We can emulate
+	 * a high-order watermark check with a raised order-0 watermark,
+	 * because we already know our high-order page exists.
+	 */
+	watermark = zone->_watermark[WMARK_MIN] + (1UL << order);
+	if (!zone_watermark_ok(zone, 0, watermark, 0, ALLOC_CMA))
+		return 0;
 
 	del_page_from_free_list(page, zone, order, mt);
 
@@ -6206,556 +6010,6 @@ void __init page_alloc_sysctl_init(void)
 	register_sysctl_init("vm", page_alloc_sysctl_table);
 }
 
-#ifdef CONFIG_CONTIG_ALLOC
-/* Usage: See admin-guide/dynamic-debug-howto.rst */
-static void alloc_contig_dump_pages(struct list_head *page_list)
-{
-	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, "migrate failure");
-
-	if (DYNAMIC_DEBUG_BRANCH(descriptor)) {
-		struct page *page;
-
-		dump_stack();
-		list_for_each_entry(page, page_list, lru)
-			dump_page(page, "migration failure");
-	}
-}
-
-/* [start, end) must belong to a single zone. */
-static int __alloc_contig_migrate_range(struct compact_control *cc,
-					unsigned long start, unsigned long end)
-{
-	/* This function is based on compact_zone() from compaction.c. */
-	unsigned int nr_reclaimed;
-	unsigned long pfn = start;
-	unsigned int tries = 0;
-	int ret = 0;
-	struct migration_target_control mtc = {
-		.nid = zone_to_nid(cc->zone),
-		.gfp_mask = cc->gfp_mask,
-		.reason = MR_CONTIG_RANGE,
-	};
-
-	lru_cache_disable();
-
-	while (pfn < end || !list_empty(&cc->migratepages)) {
-		if (fatal_signal_pending(current)) {
-			ret = -EINTR;
-			break;
-		}
-
-		if (list_empty(&cc->migratepages)) {
-			cc->nr_migratepages = 0;
-			ret = isolate_migratepages_range(cc, pfn, end);
-			if (ret && ret != -EAGAIN)
-				break;
-			pfn = cc->migrate_pfn;
-			tries = 0;
-		} else if (++tries == 5) {
-			ret = -EBUSY;
-			break;
-		}
-
-		nr_reclaimed = reclaim_clean_pages_from_list(cc->zone,
-							&cc->migratepages);
-		cc->nr_migratepages -= nr_reclaimed;
-
-		ret = migrate_pages(&cc->migratepages, alloc_migration_target,
-			NULL, (unsigned long)&mtc, cc->mode, MR_CONTIG_RANGE, NULL);
-
-		/*
-		 * On -ENOMEM, migrate_pages() bails out right away. It is pointless
-		 * to retry again over this error, so do the same here.
-		 */
-		if (ret == -ENOMEM)
-			break;
-	}
-
-	lru_cache_enable();
-	if (ret < 0) {
-		if (!(cc->gfp_mask & __GFP_NOWARN) && ret == -EBUSY)
-			alloc_contig_dump_pages(&cc->migratepages);
-		putback_movable_pages(&cc->migratepages);
-	}
-
-	return (ret < 0) ? ret : 0;
-}
-
-static void split_free_frozen_pages(struct list_head *list, gfp_t gfp_mask)
-{
-	int order;
-
-	for (order = 0; order < NR_PAGE_ORDERS; order++) {
-		struct page *page, *next;
-		int nr_pages = 1 << order;
-
-		list_for_each_entry_safe(page, next, &list[order], lru) {
-			int i;
-
-			post_alloc_hook(page, order, gfp_mask);
-			if (!order)
-				continue;
-
-			__split_page(page, order);
-
-			/* Add all subpages to the order-0 head, in sequence. */
-			list_del(&page->lru);
-			for (i = 0; i < nr_pages; i++)
-				list_add_tail(&page[i].lru, &list[0]);
-		}
-	}
-}
-
-static int __alloc_contig_verify_gfp_mask(gfp_t gfp_mask, gfp_t *gfp_cc_mask)
-{
-	const gfp_t reclaim_mask = __GFP_IO | __GFP_FS | __GFP_RECLAIM;
-	const gfp_t action_mask = __GFP_COMP | __GFP_RETRY_MAYFAIL | __GFP_NOWARN |
-				  __GFP_ZERO | __GFP_ZEROTAGS;
-	const gfp_t cc_action_mask = __GFP_RETRY_MAYFAIL | __GFP_NOWARN;
-
-	/*
-	 * We are given the range to allocate; node, mobility and placement
-	 * hints are irrelevant at this point. We'll simply ignore them.
-	 */
-	gfp_mask &= ~(GFP_ZONEMASK | __GFP_RECLAIMABLE | __GFP_WRITE |
-		      __GFP_HARDWALL | __GFP_THISNODE | __GFP_MOVABLE);
-
-	/*
-	 * We only support most reclaim flags (but not NOFAIL/NORETRY), and
-	 * selected action flags.
-	 */
-	if (gfp_mask & ~(reclaim_mask | action_mask))
-		return -EINVAL;
-
-	/*
-	 * Flags to control page compaction/migration/reclaim, to free up our
-	 * page range. Migratable pages are movable, __GFP_MOVABLE is implied
-	 * for them.
-	 *
-	 * Traditionally we always had __GFP_RETRY_MAYFAIL set, keep doing that
-	 * to not degrade callers.
-	 */
-	*gfp_cc_mask = (gfp_mask & (reclaim_mask | cc_action_mask)) |
-			__GFP_MOVABLE | __GFP_RETRY_MAYFAIL;
-	return 0;
-}
-
-static void __free_contig_frozen_range(unsigned long pfn, unsigned long nr_pages)
-{
-	for (; nr_pages--; pfn++)
-		free_frozen_pages(pfn_to_page(pfn), 0);
-}
-
-/**
- * alloc_contig_frozen_range() -- tries to allocate given range of frozen pages
- * @start:	start PFN to allocate
- * @end:	one-past-the-last PFN to allocate
- * @alloc_flags:	allocation information
- * @gfp_mask:	GFP mask. Node/zone/placement hints are ignored; only some
- *		action and reclaim modifiers are supported. Reclaim modifiers
- *		control allocation behavior during compaction/migration/reclaim.
- *
- * The PFN range does not have to be pageblock aligned. The PFN range must
- * belong to a single zone.
- *
- * The first thing this routine does is attempt to MIGRATE_ISOLATE all
- * pageblocks in the range.  Once isolated, the pageblocks should not
- * be modified by others.
- *
- * All frozen pages which PFN is in [start, end) are allocated for the
- * caller, and they could be freed with free_contig_frozen_range(),
- * free_frozen_pages() also could be used to free compound frozen pages
- * directly.
- *
- * Return: zero on success or negative error code.
- */
-int alloc_contig_frozen_range(unsigned long start, unsigned long end,
-		acr_flags_t alloc_flags, gfp_t gfp_mask)
-{
-	const unsigned int order = ilog2(end - start);
-	unsigned long outer_start, outer_end;
-	int ret = 0;
-
-	struct compact_control cc = {
-		.nr_migratepages = 0,
-		.order = -1,
-		.zone = page_zone(pfn_to_page(start)),
-		.mode = MIGRATE_SYNC,
-		.ignore_skip_hint = true,
-		.no_set_skip_hint = true,
-		.alloc_contig = true,
-	};
-	INIT_LIST_HEAD(&cc.migratepages);
-	enum pb_isolate_mode mode = (alloc_flags & ACR_FLAGS_CMA) ?
-					    PB_ISOLATE_MODE_CMA_ALLOC :
-					    PB_ISOLATE_MODE_OTHER;
-
-	/*
-	 * In contrast to the buddy, we allow for orders here that exceed
-	 * MAX_PAGE_ORDER, so we must manually make sure that we are not
-	 * exceeding the maximum folio order.
-	 */
-	if (WARN_ON_ONCE((gfp_mask & __GFP_COMP) && order > MAX_FOLIO_ORDER))
-		return -EINVAL;
-
-	gfp_mask = current_gfp_context(gfp_mask);
-	if (__alloc_contig_verify_gfp_mask(gfp_mask, (gfp_t *)&cc.gfp_mask))
-		return -EINVAL;
-
-	/*
-	 * What we do here is we mark all pageblocks in range as
-	 * MIGRATE_ISOLATE.  Because pageblock and max order pages may
-	 * have different sizes, and due to the way page allocator
-	 * work, start_isolate_page_range() has special handlings for this.
-	 *
-	 * Once the pageblocks are marked as MIGRATE_ISOLATE, we
-	 * migrate the pages from an unaligned range (ie. pages that
-	 * we are interested in). This will put all the pages in
-	 * range back to page allocator as MIGRATE_ISOLATE.
-	 *
-	 * When this is done, we take the pages in range from page
-	 * allocator removing them from the buddy system.  This way
-	 * page allocator will never consider using them.
-	 *
-	 * This lets us mark the pageblocks back as
-	 * MIGRATE_CMA/MIGRATE_MOVABLE so that free pages in the
-	 * aligned range but not in the unaligned, original range are
-	 * put back to page allocator so that buddy can use them.
-	 */
-
-	ret = start_isolate_page_range(start, end, mode);
-	if (ret)
-		goto done;
-
-	drain_all_pages(cc.zone);
-
-	/*
-	 * In case of -EBUSY, we'd like to know which page causes problem.
-	 * So, just fall through. test_pages_isolated() has a tracepoint
-	 * which will report the busy page.
-	 *
-	 * It is possible that busy pages could become available before
-	 * the call to test_pages_isolated, and the range will actually be
-	 * allocated.  So, if we fall through be sure to clear ret so that
-	 * -EBUSY is not accidentally used or returned to caller.
-	 */
-	ret = __alloc_contig_migrate_range(&cc, start, end);
-	if (ret && ret != -EBUSY)
-		goto done;
-
-	/*
-	 * When in-use hugetlb pages are migrated, they may simply be released
-	 * back into the free hugepage pool instead of being returned to the
-	 * buddy system.  After the migration of in-use huge pages is completed,
-	 * we will invoke replace_free_hugepage_folios() to ensure that these
-	 * hugepages are properly released to the buddy system.
-	 */
-	ret = replace_free_hugepage_folios(start, end);
-	if (ret)
-		goto done;
-
-	/*
-	 * Pages from [start, end) are within a pageblock_nr_pages
-	 * aligned blocks that are marked as MIGRATE_ISOLATE.  What's
-	 * more, all pages in [start, end) are free in page allocator.
-	 * What we are going to do is to allocate all pages from
-	 * [start, end) (that is remove them from page allocator).
-	 *
-	 * The only problem is that pages at the beginning and at the
-	 * end of interesting range may be not aligned with pages that
-	 * page allocator holds, ie. they can be part of higher order
-	 * pages.  Because of this, we reserve the bigger range and
-	 * once this is done free the pages we are not interested in.
-	 *
-	 * We don't have to hold zone->lock here because the pages are
-	 * isolated thus they won't get removed from buddy.
-	 */
-	outer_start = find_large_buddy(start);
-
-	/* Make sure the range is really isolated. */
-	if (test_pages_isolated(outer_start, end, mode)) {
-		ret = -EBUSY;
-		goto done;
-	}
-
-	/* Grab isolated pages from freelists. */
-	outer_end = isolate_freepages_range(&cc, outer_start, end);
-	if (!outer_end) {
-		ret = -EBUSY;
-		goto done;
-	}
-
-	if (!(gfp_mask & __GFP_COMP)) {
-		split_free_frozen_pages(cc.freepages, gfp_mask);
-
-		/* Free head and tail (if any) */
-		if (start != outer_start)
-			__free_contig_frozen_range(outer_start, start - outer_start);
-		if (end != outer_end)
-			__free_contig_frozen_range(end, outer_end - end);
-	} else if (start == outer_start && end == outer_end && is_power_of_2(end - start)) {
-		struct page *head = pfn_to_page(start);
-
-		check_new_pages(head, order);
-		prep_new_page(head, order, gfp_mask, 0);
-	} else {
-		ret = -EINVAL;
-		WARN(true, "PFN range: requested [%lu, %lu), allocated [%lu, %lu)\n",
-		     start, end, outer_start, outer_end);
-	}
-done:
-	undo_isolate_page_range(start, end);
-	return ret;
-}
-EXPORT_SYMBOL(alloc_contig_frozen_range);
-
-/**
- * alloc_contig_range() -- tries to allocate given range of pages
- * @start:	start PFN to allocate
- * @end:	one-past-the-last PFN to allocate
- * @alloc_flags:	allocation information
- * @gfp_mask:	GFP mask.
- *
- * This routine is a wrapper around alloc_contig_frozen_range(), it can't
- * be used to allocate compound pages, the refcount of each allocated page
- * will be set to one.
- *
- * All pages which PFN is in [start, end) are allocated for the caller,
- * and should be freed with free_contig_range() or by manually calling
- * __free_page() on each allocated page.
- *
- * Return: zero on success or negative error code.
- */
-int alloc_contig_range(unsigned long start, unsigned long end,
-			      acr_flags_t alloc_flags, gfp_t gfp_mask)
-{
-	int ret;
-
-	if (WARN_ON(gfp_mask & __GFP_COMP))
-		return -EINVAL;
-
-	ret = alloc_contig_frozen_range(start, end, alloc_flags, gfp_mask);
-	if (!ret)
-		set_pages_refcounted(pfn_to_page(start), end - start);
-
-	return ret;
-}
-EXPORT_SYMBOL(alloc_contig_range);
-
-static bool pfn_range_valid_contig(struct zone *z, unsigned long start_pfn,
-				   unsigned long nr_pages, bool skip_hugetlb,
-				   bool *skipped_hugetlb)
-{
-	unsigned long end_pfn = start_pfn + nr_pages;
-	struct page *page;
-
-	while (start_pfn < end_pfn) {
-		unsigned long step = 1;
-
-		page = pfn_to_online_page(start_pfn);
-		if (!page)
-			return false;
-
-		if (page_zone(page) != z)
-			return false;
-
-		if (page_is_unmovable(z, page, PB_ISOLATE_MODE_OTHER, &step))
-			return false;
-
-		/*
-		 * Only consider ranges containing hugepages if those pages are
-		 * smaller than the requested contiguous region.  e.g.:
-		 *     Move 2MB pages to free up a 1GB range.
-		 *     Don't move 1GB pages to free up a 2MB range.
-		 *
-		 * This makes contiguous allocation more reliable if multiple
-		 * hugepage sizes are used without causing needless movement.
-		 */
-		if (PageHuge(page)) {
-			unsigned int order;
-
-			if (skip_hugetlb) {
-				*skipped_hugetlb = true;
-				return false;
-			}
-
-			page = compound_head(page);
-			order = compound_order(page);
-			if ((order >= MAX_FOLIO_ORDER) ||
-			    (nr_pages <= (1 << order)))
-				return false;
-		}
-
-		start_pfn += step;
-	}
-	return true;
-}
-
-static bool zone_spans_last_pfn(const struct zone *zone,
-				unsigned long start_pfn, unsigned long nr_pages)
-{
-	unsigned long last_pfn = start_pfn + nr_pages - 1;
-
-	return zone_spans_pfn(zone, last_pfn);
-}
-
-/**
- * alloc_contig_frozen_pages() -- tries to find and allocate contiguous range of frozen pages
- * @nr_pages:	Number of contiguous pages to allocate
- * @gfp_mask:	GFP mask. Node/zone/placement hints limit the search; only some
- *		action and reclaim modifiers are supported. Reclaim modifiers
- *		control allocation behavior during compaction/migration/reclaim.
- * @nid:	Target node
- * @nodemask:	Mask for other possible nodes
- *
- * This routine is a wrapper around alloc_contig_frozen_range(). It scans over
- * zones on an applicable zonelist to find a contiguous pfn range which can then
- * be tried for allocation with alloc_contig_frozen_range(). This routine is
- * intended for allocation requests which can not be fulfilled with the buddy
- * allocator.
- *
- * The allocated memory is always aligned to a page boundary. If nr_pages is a
- * power of two, then allocated range is also guaranteed to be aligned to same
- * nr_pages (e.g. 1GB request would be aligned to 1GB).
- *
- * Allocated frozen pages need be freed with free_contig_frozen_range(),
- * or by manually calling free_frozen_pages() on each allocated frozen
- * non-compound page, for compound frozen pages could be freed with
- * free_frozen_pages() directly.
- *
- * Return: pointer to contiguous frozen pages on success, or NULL if not successful.
- */
-struct page *alloc_contig_frozen_pages(unsigned long nr_pages,
-		gfp_t gfp_mask, int nid, nodemask_t *nodemask)
-{
-	unsigned long ret, pfn, flags;
-	struct zonelist *zonelist;
-	struct zone *zone;
-	struct zoneref *z;
-	bool skip_hugetlb = true;
-	bool skipped_hugetlb = false;
-
-retry:
-	zonelist = node_zonelist(nid, gfp_mask);
-	for_each_zone_zonelist_nodemask(zone, z, zonelist,
-					gfp_zone(gfp_mask), nodemask) {
-		spin_lock_irqsave(&zone->lock, flags);
-
-		pfn = ALIGN(zone->zone_start_pfn, nr_pages);
-		while (zone_spans_last_pfn(zone, pfn, nr_pages)) {
-			if (pfn_range_valid_contig(zone, pfn, nr_pages,
-						   skip_hugetlb,
-						   &skipped_hugetlb)) {
-				/*
-				 * We release the zone lock here because
-				 * alloc_contig_frozen_range() will also lock
-				 * the zone at some point. If there's an
-				 * allocation spinning on this lock, it may
-				 * win the race and cause allocation to fail.
-				 */
-				spin_unlock_irqrestore(&zone->lock, flags);
-				ret = alloc_contig_frozen_range(pfn,
-							pfn + nr_pages,
-							ACR_FLAGS_NONE,
-							gfp_mask);
-				if (!ret)
-					return pfn_to_page(pfn);
-				spin_lock_irqsave(&zone->lock, flags);
-			}
-			pfn += nr_pages;
-		}
-		spin_unlock_irqrestore(&zone->lock, flags);
-	}
-	/*
-	 * If we failed, retry the search, but treat regions with HugeTLB pages
-	 * as valid targets.  This retains fast-allocations on first pass
-	 * without trying to migrate HugeTLB pages (which may fail). On the
-	 * second pass, we will try moving HugeTLB pages when those pages are
-	 * smaller than the requested contiguous region size.
-	 */
-	if (skip_hugetlb && skipped_hugetlb) {
-		skip_hugetlb = false;
-		goto retry;
-	}
-	return NULL;
-}
-EXPORT_SYMBOL(alloc_contig_frozen_pages);
-
-/**
- * alloc_contig_pages() -- tries to find and allocate contiguous range of pages
- * @nr_pages:	Number of contiguous pages to allocate
- * @gfp_mask:	GFP mask.
- * @nid:	Target node
- * @nodemask:	Mask for other possible nodes
- *
- * This routine is a wrapper around alloc_contig_frozen_pages(), it can't
- * be used to allocate compound pages, the refcount of each allocated page
- * will be set to one.
- *
- * Allocated pages can be freed with free_contig_range() or by manually
- * calling __free_page() on each allocated page.
- *
- * Return: pointer to contiguous pages on success, or NULL if not successful.
- */
-struct page *alloc_contig_pages(unsigned long nr_pages, gfp_t gfp_mask,
-		int nid, nodemask_t *nodemask)
-{
-	struct page *page;
-
-	if (WARN_ON(gfp_mask & __GFP_COMP))
-		return NULL;
-
-	page = alloc_contig_frozen_pages(nr_pages, gfp_mask, nid,
-						nodemask);
-	if (page)
-		set_pages_refcounted(page, nr_pages);
-
-	return page;
-}
-EXPORT_SYMBOL(alloc_contig_pages);
-
-/**
- * free_contig_frozen_range() -- free the contiguous range of frozen pages
- * @pfn:	start PFN to free
- * @nr_pages:	Number of contiguous frozen pages to free
- *
- * This can be used to free the allocated compound/non-compound frozen pages.
- */
-void free_contig_frozen_range(unsigned long pfn, unsigned long nr_pages)
-{
-	struct page *first_page = pfn_to_page(pfn);
-	const unsigned int order = ilog2(nr_pages);
-
-	if (WARN_ON_ONCE(first_page != compound_head(first_page)))
-		return;
-
-	if (PageHead(first_page)) {
-		WARN_ON_ONCE(order != compound_order(first_page));
-		free_frozen_pages(first_page, order);
-		return;
-	}
-
-	__free_contig_frozen_range(pfn, nr_pages);
-}
-EXPORT_SYMBOL(free_contig_frozen_range);
-
-/**
- * free_contig_range() -- free the contiguous range of pages
- * @pfn:	start PFN to free
- * @nr_pages:	Number of contiguous pages to free
- *
- * This can be only used to free the allocated non-compound pages.
- */
-void free_contig_range(unsigned long pfn, unsigned long nr_pages)
-{
-	if (WARN_ON_ONCE(PageHead(pfn_to_page(pfn))))
-		return;
-
-	for (; nr_pages--; pfn++)
-		__free_page(pfn_to_page(pfn));
-}
-EXPORT_SYMBOL(free_contig_range);
-#endif /* CONFIG_CONTIG_ALLOC */
 
 /*
  * Effectively disable pcplists for the zone by setting the high limit to 0

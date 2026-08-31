@@ -17,7 +17,6 @@
 #include <linux/backing-dev.h>
 #include <linux/sysctl.h>
 #include <linux/sysfs.h>
-#include <linux/page-isolation.h>
 #include <linux/kthread.h>
 #include <linux/page_owner.h>
 #include <linux/psi.h>
@@ -943,56 +942,16 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 
 		if (PageHuge(page)) {
 			const unsigned int order = compound_order(page);
-			/*
-			 * skip hugetlbfs if we are not compacting for pages
-			 * bigger than its order. THPs and other compound pages
-			 * are handled below.
-			 */
-			if (!cc->alloc_contig) {
-
-				if (order <= MAX_PAGE_ORDER) {
-					low_pfn += (1UL << order) - 1;
-					nr_scanned += (1UL << order) - 1;
-				}
-				goto isolate_fail;
-			}
-			/* for alloc_contig case */
-			if (locked) {
-				lruvec_unlock_irqrestore(locked, flags);
-				locked = NULL;
-			}
-
-			folio = page_folio(page);
-			ret = isolate_or_dissolve_huge_folio(folio, &cc->migratepages);
 
 			/*
-			 * Fail isolation in case isolate_or_dissolve_huge_folio()
-			 * reports an error. In case of -ENOMEM, abort right away.
+			 * Skip hugetlbfs. THPs and other compound pages are
+			 * handled below.
 			 */
-			if (ret < 0) {
-				 /* Do not report -EBUSY down the chain */
-				if (ret == -EBUSY)
-					ret = 0;
+			if (order <= MAX_PAGE_ORDER) {
 				low_pfn += (1UL << order) - 1;
 				nr_scanned += (1UL << order) - 1;
-				goto isolate_fail;
 			}
-
-			if (folio_test_hugetlb(folio)) {
-				/*
-				 * Hugepage was successfully isolated and placed
-				 * on the cc->migratepages list.
-				 */
-				low_pfn += folio_nr_pages(folio) - folio_page_idx(folio, page) - 1;
-				goto isolate_success_no_list;
-			}
-
-			/*
-			 * Ok, the hugepage was dissolved. Now these pages are
-			 * Buddy and cannot be re-allocated because they are
-			 * isolated. Fall-through as the check below handles
-			 * Buddy pages.
-			 */
+			goto isolate_fail;
 		}
 
 		/*
@@ -1024,7 +983,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 		 * skip them at once. The check is racy, but we can consider
 		 * only valid values and the only danger is skipping too much.
 		 */
-		if (PageCompound(page) && !cc->alloc_contig) {
+		if (PageCompound(page)) {
 			const unsigned int order = compound_order(page);
 
 			/* Skip based on page order and compaction target order. */
@@ -1176,8 +1135,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 			 * Check LRU folio order under the lock
 			 */
 			if (unlikely(skip_isolation_on_order(folio_order(folio),
-							     cc->order) &&
-				     !cc->alloc_contig)) {
+							     cc->order))) {
 				low_pfn += folio_nr_pages(folio) - 1;
 				nr_scanned += folio_nr_pages(folio) - 1;
 				folio_set_lru(folio);
@@ -1197,7 +1155,6 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 
 isolate_success:
 		list_add(&folio->lru, &cc->migratepages);
-isolate_success_no_list:
 		cc->nr_migratepages += folio_nr_pages(folio);
 		nr_isolated += folio_nr_pages(folio);
 		nr_scanned += folio_nr_pages(folio) - 1;

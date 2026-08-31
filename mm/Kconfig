@@ -63,13 +63,6 @@ config HAVE_GUP_FAST
 config ARCH_KEEP_MEMBLOCK
 	bool
 
-# Keep arch NUMA mapping infrastructure post-init.
-config NUMA_KEEP_MEMINFO
-	bool
-
-config MEMORY_ISOLATION
-	bool
-
 # IORESOURCE_SYSTEM_RAM regions in the kernel resource tree that are marked
 # IORESOURCE_EXCLUSIVE cannot be mapped to user space, for example, via
 # /dev/mem.
@@ -151,9 +144,6 @@ config NUMA_MIGRATION
 config MIGRATION
 	bool
 	depends on MMU
-
-config CONTIG_ALLOC
-	def_bool (MEMORY_ISOLATION && COMPACTION) || CMA
 
 config PCP_BATCH_SCALE_MAX
 	int "Maximum scale factor of PCP (Per-CPU pageset) batch allocate/free"

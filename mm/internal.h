@@ -930,13 +930,15 @@ extern void zone_pcp_disable(struct zone *zone);
 extern void zone_pcp_enable(struct zone *zone);
 extern void zone_pcp_init(struct zone *zone);
 
+void __meminit init_pageblock_migratetype(struct page *page,
+					  enum migratetype migratetype);
+
 extern void *memmap_alloc(phys_addr_t size, phys_addr_t align,
 			  phys_addr_t min_addr,
 			  int nid, bool exact_nid);
 
 void memmap_init_range(unsigned long, int, unsigned long, unsigned long,
-		unsigned long, enum meminit_context, struct vmem_altmap *, int,
-		bool);
+		unsigned long, enum meminit_context, struct vmem_altmap *, int);
 
 /*
  * mm/sparse.c
@@ -1040,7 +1042,6 @@ struct compact_control {
 					 * isolation or migration failures to
 					 * ensure forward progress.
 					 */
-	bool alloc_contig;		/* alloc_contig_range allocation */
 };
 
 /*

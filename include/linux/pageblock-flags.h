@@ -19,14 +19,6 @@ enum pageblock_bits {
 	PB_migrate_1,
 	PB_migrate_2,
 	PB_compact_skip,/* If set the block is skipped by compaction */
-
-#ifdef CONFIG_MEMORY_ISOLATION
-	/*
-	 * Pageblock isolation is represented with a separate bit, so that
-	 * the migratetype of a block is not overwritten by isolation.
-	 */
-	PB_migrate_isolate, /* If set the block is isolated */
-#endif
 	/*
 	 * Assume the bits will always align on a word. If this assumption
 	 * changes then get/set pageblock needs updating.
@@ -37,13 +29,6 @@ enum pageblock_bits {
 #define NR_PAGEBLOCK_BITS (roundup_pow_of_two(__NR_PAGEBLOCK_BITS))
 
 #define MIGRATETYPE_MASK (BIT(PB_migrate_0)|BIT(PB_migrate_1)|BIT(PB_migrate_2))
-
-#ifdef CONFIG_MEMORY_ISOLATION
-#define MIGRATETYPE_AND_ISO_MASK (MIGRATETYPE_MASK | BIT(PB_migrate_isolate))
-#else
-#define MIGRATETYPE_AND_ISO_MASK MIGRATETYPE_MASK
-#endif
-
 
 /* If huge pages are not used, group by PAGE_BLOCK_MAX_ORDER */
 #define pageblock_order		PAGE_BLOCK_MAX_ORDER

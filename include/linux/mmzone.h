@@ -86,9 +86,6 @@ enum migratetype {
 	MIGRATE_PCPTYPES,	/* the number of types on the pcp lists */
 	MIGRATE_HIGHATOMIC = MIGRATE_PCPTYPES,
 	__MIGRATE_TYPE_END = MIGRATE_HIGHATOMIC,
-#ifdef CONFIG_MEMORY_ISOLATION
-	MIGRATE_ISOLATE,	/* can't allocate from here */
-#endif
 	MIGRATE_TYPES
 };
 
@@ -722,16 +719,6 @@ struct zone {
 	unsigned long		present_pages;
 
 	const char		*name;
-
-#ifdef CONFIG_MEMORY_ISOLATION
-	/*
-	 * Number of isolated pageblock. It is used to solve incorrect
-	 * freepage counting problem due to racy retrieving migratetype
-	 * of pageblock. Protected by zone->lock.
-	 */
-	unsigned long		nr_isolate_pageblock;
-#endif
-
 
 	int initialized;
 
