@@ -1867,58 +1867,6 @@ static int __init parse_kpti(char *str)
 }
 early_param("kpti", parse_kpti);
 
-#ifdef CONFIG_ARM64_HW_AFDBM
-static struct cpumask dbm_cpus __read_mostly;
-
-static inline void __cpu_enable_hw_dbm(void)
-{
-	u64 tcr = read_sysreg(tcr_el1) | TCR_EL1_HD;
-
-	write_sysreg(tcr, tcr_el1);
-	isb();
-	local_flush_tlb_all();
-}
-
-static bool cpu_has_broken_dbm(void)
-{
-	/* List of CPUs which have broken DBM support. */
-	static const struct midr_range cpus[] = {
-		{},
-	};
-
-	return is_midr_in_range_list(cpus);
-}
-
-static bool cpu_can_use_dbm(const struct arm64_cpu_capabilities *cap)
-{
-	return has_cpuid_feature(cap, SCOPE_LOCAL_CPU) &&
-	       !cpu_has_broken_dbm();
-}
-
-static void cpu_enable_hw_dbm(struct arm64_cpu_capabilities const *cap)
-{
-	if (cpu_can_use_dbm(cap)) {
-		__cpu_enable_hw_dbm();
-		cpumask_set_cpu(smp_processor_id(), &dbm_cpus);
-	}
-}
-
-static bool has_hw_dbm(const struct arm64_cpu_capabilities *cap,
-		       int __unused)
-{
-	/*
-	 * DBM is a non-conflicting feature. i.e, the kernel can safely
-	 * run a mix of CPUs with and without the feature. So, we
-	 * unconditionally enable the capability to allow any late CPU
-	 * to use the feature. We only enable the control bits on the
-	 * CPU, if it is supported.
-	 */
-
-	return true;
-}
-
-#endif
-
 static bool runs_at_el2(const struct arm64_cpu_capabilities *entry, int __unused)
 {
 	return is_kernel_in_hyp_mode();
@@ -2306,17 +2254,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_cpuid_feature,
 		ARM64_CPUID_FIELDS(ID_AA64MMFR2_EL1, TTL, IMP)
 	},
-#ifdef CONFIG_ARM64_HW_AFDBM
-	{
-		.desc = "Hardware dirty bit management",
-		.type = ARM64_CPUCAP_WEAK_LOCAL_CPU_FEATURE,
-		.capability = ARM64_HW_DBM,
-		.matches = has_hw_dbm,
-		.cpu_enable = cpu_enable_hw_dbm,
-		.cpus = &dbm_cpus,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR1_EL1, HAFDBS, DBM)
-	},
-#endif
 	{
 		.desc = "CRC32 instructions",
 		.capability = ARM64_HAS_CRC32,

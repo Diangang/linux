@@ -1401,20 +1401,6 @@ static inline void update_mmu_cache_range(struct vm_fault *vmf,
 #endif
 
 /*
- * On arm64 without hardware Access Flag, copying from user will fail because
- * the pte is old and cannot be marked young. So we always end up with zeroed
- * page after fork() + CoW for pfn mappings. We don't always have a
- * hardware-managed access flag on arm64.
- */
-#define arch_has_hw_pte_young		cpu_has_hw_af
-
-/*
- * Experimentally, it's cheap to set the access flag in hardware and we
- * benefit from prefaulting mappings as 'old' to start with.
- */
-#define arch_wants_old_prefaulted_pte	cpu_has_hw_af
-
-/*
  * Request exec memory is read into pagecache in at least 64K folios. This size
  * can be contpte-mapped when 4K base pages are in use (16 pages into 1 iTLB
  * entry), and HPA can coalesce it (4 pages into 1 TLB entry) when 16K base
