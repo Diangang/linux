@@ -74,17 +74,6 @@
 	.endm
 
 /*
- * RAS Error Synchronization barrier
- */
-	.macro  esb
-#ifdef CONFIG_ARM64_RAS_EXTN
-	hint    #16
-#else
-	nop
-#endif
-	.endm
-
-/*
  * Value prediction barrier
  */
 	.macro	csdb

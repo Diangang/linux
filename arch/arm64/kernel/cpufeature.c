@@ -2019,32 +2019,6 @@ static void cpu_enable_pan(const struct arm64_cpu_capabilities *__unused)
 	set_pstate_pan(1);
 }
 
-#ifdef CONFIG_ARM64_RAS_EXTN
-static void cpu_clear_disr(const struct arm64_cpu_capabilities *__unused)
-{
-	/* Firmware may have left a deferred SError in this register. */
-	write_sysreg_s(0, SYS_DISR_EL1);
-}
-static bool has_rasv1p1(const struct arm64_cpu_capabilities *__unused, int scope)
-{
-	const struct arm64_cpu_capabilities rasv1p1_caps[] = {
-		{
-			ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, RAS, V1P1)
-		},
-		{
-			ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, RAS, IMP)
-		},
-		{
-			ARM64_CPUID_FIELDS(ID_AA64PFR1_EL1, RAS_frac, RASv1p1)
-		},
-	};
-
-	return (has_cpuid_feature(&rasv1p1_caps[0], scope) ||
-		(has_cpuid_feature(&rasv1p1_caps[1], scope) &&
-		 has_cpuid_feature(&rasv1p1_caps[2], scope)));
-}
-#endif /* CONFIG_ARM64_RAS_EXTN */
-
 
 #ifdef CONFIG_ARM64_E0PD
 static void cpu_enable_e0pd(struct arm64_cpu_capabilities const *cap)
@@ -2338,22 +2312,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, SVE, IMP)
 	},
 #endif /* CONFIG_ARM64_SVE */
-#ifdef CONFIG_ARM64_RAS_EXTN
-	{
-		.desc = "RAS Extension Support",
-		.capability = ARM64_HAS_RAS_EXTN,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		.cpu_enable = cpu_clear_disr,
-		ARM64_CPUID_FIELDS(ID_AA64PFR0_EL1, RAS, IMP)
-	},
-	{
-		.desc = "RASv1p1 Extension Support",
-		.capability = ARM64_HAS_RASV1P1_EXTN,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_rasv1p1,
-	},
-#endif /* CONFIG_ARM64_RAS_EXTN */
 	{
 		.desc = "Data cache clean to the PoU not required for I/D coherence",
 		.capability = ARM64_HAS_CACHE_IDC,

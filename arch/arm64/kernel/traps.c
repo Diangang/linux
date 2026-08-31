@@ -772,7 +772,8 @@ void __noreturn panic_bad_stack(struct pt_regs *regs, unsigned long esr, unsigne
 	cpu_park_loop();
 }
 
-void __noreturn arm64_serror_panic(struct pt_regs *regs, unsigned long esr)
+static void __noreturn arm64_serror_panic(struct pt_regs *regs,
+					  unsigned long esr)
 {
 	add_taint(TAINT_MACHINE_CHECK, LOCKDEP_STILL_OK);
 	console_verbose();
@@ -787,43 +788,9 @@ void __noreturn arm64_serror_panic(struct pt_regs *regs, unsigned long esr)
 	cpu_park_loop();
 }
 
-bool arm64_is_fatal_ras_serror(struct pt_regs *regs, unsigned long esr)
-{
-	unsigned long aet = arm64_ras_serror_get_severity(esr);
-
-	switch (aet) {
-	case ESR_ELx_AET_CE:	/* corrected error */
-	case ESR_ELx_AET_UEO:	/* restartable, not yet consumed */
-		/*
-		 * The CPU can make progress. We may take UEO again as
-		 * a more severe error.
-		 */
-		return false;
-
-	case ESR_ELx_AET_UEU:	/* Uncorrected Unrecoverable */
-	case ESR_ELx_AET_UER:	/* Uncorrected Recoverable */
-		/*
-		 * The CPU can't make progress. The exception may have
-		 * been imprecise.
-		 *
-		 * Neoverse-N1 #1349291 means a non-KVM SError reported as
-		 * Unrecoverable should be treated as Uncontainable. We
-		 * call arm64_serror_panic() in both cases.
-		 */
-		return true;
-
-	case ESR_ELx_AET_UC:	/* Uncontainable or Uncategorized error */
-	default:
-		/* Error has been silently propagated */
-		arm64_serror_panic(regs, esr);
-	}
-}
-
 void do_serror(struct pt_regs *regs, unsigned long esr)
 {
-	/* non-RAS errors are not containable */
-	if (!arm64_is_ras_serror(esr) || arm64_is_fatal_ras_serror(regs, esr))
-		arm64_serror_panic(regs, esr);
+	arm64_serror_panic(regs, esr);
 }
 
 /* GENERIC_BUG traps */
