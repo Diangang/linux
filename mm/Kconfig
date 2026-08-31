@@ -70,18 +70,6 @@ config EXCLUSIVE_SYSTEM_RAM
 	def_bool y
 	depends on !DEVMEM || STRICT_DEVMEM
 
-#
-# Only be set on architectures that have completely implemented memory hotplug
-# feature. If you are not sure, don't touch it.
-#
-config ARCH_ENABLE_MEMORY_HOTPLUG
-	bool
-
-# eventually, we can have this option just 'select SPARSEMEM'
-
-config ARCH_MHP_MEMMAP_ON_MEMORY_ENABLE
-       bool
-
 # Heavily threaded applications may benefit from splitting the mm-wide
 # page_table_lock, so that faults on different parts of the user address
 # space can be handled with less contention: split it at this NR_CPUS.
@@ -247,15 +235,6 @@ config GENERIC_EARLY_IOREMAP
 
 config ARCH_HAS_CACHE_LINE_SIZE
 	bool
-
-config ARCH_HAS_CURRENT_STACK_POINTER
-	bool
-	help
-	  In support of HARDENED_USERCOPY performing stack variable lifetime
-	  checking, an architecture-agnostic way to find the stack pointer
-	  is needed. Once an architecture defines an unsigned long global
-	  register alias named "current_stack_pointer", this config can be
-	  selected.
 
 config ZONE_DMA
 	bool "Support DMA zone"
