@@ -229,14 +229,6 @@ config ARCH_WANTS_NO_INSTR
 	  functions to denote that the toolchain should avoid instrumenting such
 	  functions and is required for correctness.
 
-config HAVE_REGS_AND_STACK_ACCESS_API
-	bool
-	help
-	  This symbol should be selected by an architecture if it supports
-	  the API needed to access registers and stack entries from pt_regs,
-	  declared in asm/ptrace.h
-	  For example the kprobes-based event tracer needs this API.
-
 config HAVE_RUST
 	bool
 	help
@@ -378,17 +370,6 @@ config HAVE_ARCH_WITHIN_STACK_FRAMES
 	  or local variables (i.e. that it excludes saved return addresses,
 	  and similar) by implementing an inline arch_within_stack_frames(),
 	  which is used by CONFIG_HARDENED_USERCOPY.
-
-config HAVE_CONTEXT_TRACKING_USER
-	bool
-	help
-	  Provide kernel/user boundaries probes necessary for subsystems
-	  that need it, such as userspace RCU extended quiescent state.
-	  Syscalls need to be wrapped inside user_exit()-user_enter(), either
-	  optimized behind static key or through the slow path using TIF_NOHZ
-	  flag. Exceptions handlers must be wrapped as well. Irqs are already
-	  protected inside ct_irq_enter/ct_irq_exit() but preemption or signal
-	  handling on irq exit still need to be protected.
 
 config HAVE_MOVE_PUD
 	bool
