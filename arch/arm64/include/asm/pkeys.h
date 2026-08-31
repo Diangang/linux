@@ -35,7 +35,6 @@ static inline int arch_override_mprotect_pkey(struct vm_area_struct *vma,
 
 static inline int execute_only_pkey(struct mm_struct *mm)
 {
-	// Execute-only mappings are handled by EPAN/FEAT_PAN3.
 	return -1;
 }
 

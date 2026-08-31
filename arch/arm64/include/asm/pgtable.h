@@ -202,10 +202,8 @@ static inline bool por_el0_allows_pkey(u8 pkey, bool write, bool execute)
 
 /*
  * p??_access_permitted() is true for valid user mappings (PTE_USER
- * bit set, subject to the write permission check). For execute-only
- * mappings, like PROT_EXEC with EPAN (both PTE_USER and PTE_UXN bits
- * not set) must return false. PROT_NONE mappings do not have the
- * PTE_VALID bit set.
+ * bit set, subject to the write permission check). PROT_NONE mappings do not
+ * have the PTE_VALID bit set.
  */
 #define pte_access_permitted_no_overlay(pte, write) \
 	(((pte_val(pte) & (PTE_VALID | PTE_USER)) == (PTE_VALID | PTE_USER)) && (!(write) || pte_write(pte)))

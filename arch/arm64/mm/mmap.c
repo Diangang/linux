@@ -18,7 +18,6 @@ static pgprot_t protection_map[16] __ro_after_init = {
 	[VM_READ]					= PAGE_READONLY,
 	[VM_WRITE]					= PAGE_READONLY,
 	[VM_WRITE | VM_READ]				= PAGE_READONLY,
-	/* PAGE_EXECONLY if Enhanced PAN */
 	[VM_EXEC]					= PAGE_READONLY_EXEC,
 	[VM_EXEC | VM_READ]				= PAGE_READONLY_EXEC,
 	[VM_EXEC | VM_WRITE]				= PAGE_READONLY_EXEC,
@@ -27,7 +26,6 @@ static pgprot_t protection_map[16] __ro_after_init = {
 	[VM_SHARED | VM_READ]				= PAGE_READONLY,
 	[VM_SHARED | VM_WRITE]				= PAGE_SHARED,
 	[VM_SHARED | VM_WRITE | VM_READ]		= PAGE_SHARED,
-	/* PAGE_EXECONLY if Enhanced PAN */
 	[VM_SHARED | VM_EXEC]				= PAGE_READONLY_EXEC,
 	[VM_SHARED | VM_EXEC | VM_READ]			= PAGE_READONLY_EXEC,
 	[VM_SHARED | VM_EXEC | VM_WRITE]		= PAGE_SHARED_EXEC,
@@ -66,15 +64,6 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
 
 static int __init adjust_protection_map(void)
 {
-	/*
-	 * With Enhanced PAN we can honour the execute-only permissions as
-	 * there is no PAN override with such mappings.
-	 */
-	if (cpus_have_cap(ARM64_HAS_EPAN)) {
-		protection_map[VM_EXEC] = PAGE_EXECONLY;
-		protection_map[VM_EXEC | VM_SHARED] = PAGE_EXECONLY;
-	}
-
 	if (lpa2_is_enabled()) {
 		for (int i = 0; i < ARRAY_SIZE(protection_map); i++)
 			pgprot_val(protection_map[i]) &= ~PTE_SHARED;

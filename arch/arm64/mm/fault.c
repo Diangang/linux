@@ -622,9 +622,8 @@ static int __kprobes do_page_fault(unsigned long far, unsigned long esr,
 		vm_flags = VM_READ;
 		/* Write implies read */
 		vm_flags |= VM_WRITE;
-		/* If EPAN is absent then exec implies read */
-		if (!alternative_has_cap_unlikely(ARM64_HAS_EPAN))
-			vm_flags |= VM_EXEC;
+		/* Execute implies read. */
+		vm_flags |= VM_EXEC;
 	}
 
 	if (is_ttbr0_addr(addr) && is_el1_permission_fault(addr, esr, regs)) {

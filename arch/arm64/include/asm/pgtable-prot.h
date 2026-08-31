@@ -57,7 +57,6 @@
 #define _PAGE_SHARED_EXEC	(_PAGE_DEFAULT | PTE_USER | PTE_RDONLY | PTE_NG | PTE_PXN | PTE_WRITE)
 #define _PAGE_READONLY		(_PAGE_DEFAULT | PTE_USER | PTE_RDONLY | PTE_NG | PTE_PXN | PTE_UXN)
 #define _PAGE_READONLY_EXEC	(_PAGE_DEFAULT | PTE_USER | PTE_RDONLY | PTE_NG | PTE_PXN)
-#define _PAGE_EXECONLY		(_PAGE_DEFAULT | PTE_RDONLY | PTE_NG | PTE_PXN)
 
 #ifndef __ASSEMBLER__
 
@@ -122,7 +121,6 @@ static inline bool __pure lpa2_is_enabled(void)
 #define PAGE_SHARED_EXEC	__pgprot(_PAGE_SHARED_EXEC)
 #define PAGE_READONLY		__pgprot(_PAGE_READONLY)
 #define PAGE_READONLY_EXEC	__pgprot(_PAGE_READONLY_EXEC)
-#define PAGE_EXECONLY		__pgprot(_PAGE_EXECONLY)
 
 #endif /* __ASSEMBLER__ */
 
@@ -145,7 +143,7 @@ static inline bool __pure lpa2_is_enabled(void)
 /* 1:                                                      PTE_USER */
 /* 2:                                          PTE_WRITE            */
 /* 3:                                          PTE_WRITE | PTE_USER */
-/* 4: PAGE_EXECONLY                  PTE_PXN                        */
+/* 4:                                PTE_PXN                        */
 /* 5: PAGE_READONLY_EXEC             PTE_PXN |             PTE_USER */
 /* 6:                                PTE_PXN | PTE_WRITE            */
 /* 7: PAGE_SHARED_EXEC               PTE_PXN | PTE_WRITE | PTE_USER */
@@ -164,7 +162,6 @@ static inline bool __pure lpa2_is_enabled(void)
 #define PIE_E0	( \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_GCS),           PIE_GCS)  | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_GCS_RO),        PIE_R)   | \
-	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_EXECONLY),      PIE_X_O) | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_READONLY_EXEC), PIE_RX_O)  | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_SHARED_EXEC),   PIE_RWX_O) | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_READONLY),      PIE_R_O)   | \
@@ -173,7 +170,6 @@ static inline bool __pure lpa2_is_enabled(void)
 #define PIE_E1	( \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_GCS),           PIE_NONE_O) | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_GCS_RO),        PIE_NONE_O) | \
-	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_EXECONLY),      PIE_NONE_O) | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_READONLY_EXEC), PIE_R)      | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_SHARED_EXEC),   PIE_RW)     | \
 	PIRx_ELx_PERM_PREP(pte_pi_index(_PAGE_READONLY),      PIE_R)      | \
