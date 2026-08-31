@@ -83,7 +83,6 @@ struct thread_info {
 #define TIF_NEED_FPU_LOAD	19	/* load FPU on return to userspace */
 #define TIF_NOCPUID		20	/* CPUID is not accessible in userland */
 #define TIF_NOTSC		21	/* TSC is not accessible in userland */
-#define TIF_IO_BITMAP		22	/* uses I/O bitmap */
 #define TIF_SPEC_FORCE_UPDATE	23	/* Force speculation MSR update in context switch */
 #define TIF_FORCED_TF		24	/* true if TF in eflags artificially */
 #define TIF_SINGLESTEP		25	/* reenable singlestep on user return*/
@@ -96,7 +95,6 @@ struct thread_info {
 #define _TIF_NEED_FPU_LOAD	BIT(TIF_NEED_FPU_LOAD)
 #define _TIF_NOCPUID		BIT(TIF_NOCPUID)
 #define _TIF_NOTSC		BIT(TIF_NOTSC)
-#define _TIF_IO_BITMAP		BIT(TIF_IO_BITMAP)
 #define _TIF_SPEC_FORCE_UPDATE	BIT(TIF_SPEC_FORCE_UPDATE)
 #define _TIF_FORCED_TF		BIT(TIF_FORCED_TF)
 #define _TIF_BLOCKSTEP		BIT(TIF_BLOCKSTEP)
@@ -117,11 +115,7 @@ struct thread_info {
 # define _TIF_WORK_CTXSW	(_TIF_WORK_CTXSW_BASE)
 #endif
 
-#ifdef CONFIG_X86_IOPL_IOPERM
-# define _TIF_WORK_CTXSW_PREV	(_TIF_WORK_CTXSW | _TIF_IO_BITMAP)
-#else
 # define _TIF_WORK_CTXSW_PREV	(_TIF_WORK_CTXSW)
-#endif
 
 #define _TIF_WORK_CTXSW_NEXT	(_TIF_WORK_CTXSW)
 

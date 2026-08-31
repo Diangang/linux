@@ -286,58 +286,6 @@ static inline void native_load_tls(struct thread_struct *t, unsigned int cpu)
 		gdt[GDT_ENTRY_TLS_MIN + i] = t->tls_array[i];
 }
 
-DECLARE_PER_CPU(bool, __tss_limit_invalid);
-
-static inline void force_reload_TR(void)
-{
-	struct desc_struct *d = get_current_gdt_rw();
-	tss_desc tss;
-
-	memcpy(&tss, &d[GDT_ENTRY_TSS], sizeof(tss_desc));
-
-	/*
-	 * LTR requires an available TSS, and the TSS is currently
-	 * busy.  Make it be available so that LTR will work.
-	 */
-	tss.type = DESC_TSS;
-	write_gdt_entry(d, GDT_ENTRY_TSS, &tss, DESC_TSS);
-
-	load_TR_desc();
-	this_cpu_write(__tss_limit_invalid, false);
-}
-
-/*
- * Call this if you need the TSS limit to be correct, which should be the case
- * if and only if you have TIF_IO_BITMAP set or you're switching to a task
- * with TIF_IO_BITMAP set.
- */
-static inline void refresh_tss_limit(void)
-{
-	DEBUG_LOCKS_WARN_ON(preemptible());
-
-	if (unlikely(this_cpu_read(__tss_limit_invalid)))
-		force_reload_TR();
-}
-
-/*
- * If you do something evil that corrupts the cached TSS limit (I'm looking
- * at you, VMX exits), call this function.
- *
- * The optimization here is that the TSS limit only matters for Linux if the
- * IO bitmap is in use.  If the TSS limit gets forced to its minimum value,
- * everything works except that IO bitmap will be ignored and all CPL 3 IO
- * instructions will #GP, which is exactly what we want for normal tasks.
- */
-static inline void invalidate_tss_limit(void)
-{
-	DEBUG_LOCKS_WARN_ON(preemptible());
-
-	if (unlikely(test_thread_flag(TIF_IO_BITMAP)))
-		force_reload_TR();
-	else
-		this_cpu_write(__tss_limit_invalid, true);
-}
-
 /* This intentionally ignores lm, since 32-bit apps don't have that field. */
 #define LDT_empty(info)					\
 	((info)->base_addr		== 0	&&	\

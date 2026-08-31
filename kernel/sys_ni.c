@@ -251,6 +251,8 @@ COND_SYSCALL_COMPAT(fanotify_mark);
 COND_SYSCALL(vm86old);
 COND_SYSCALL(modify_ldt);
 COND_SYSCALL(vm86);
+COND_SYSCALL(iopl);
+COND_SYSCALL(ioperm);
 COND_SYSCALL(kexec_file_load);
 COND_SYSCALL(map_shadow_stack);
 

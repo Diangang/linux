@@ -2189,22 +2189,6 @@ static inline void tss_setup_ist(struct tss_struct *tss)
 static inline void tss_setup_ist(struct tss_struct *tss) { }
 #endif /* !CONFIG_X86_64 */
 
-static inline void tss_setup_io_bitmap(struct tss_struct *tss)
-{
-	tss->x86_tss.io_bitmap_base = IO_BITMAP_OFFSET_INVALID;
-
-#ifdef CONFIG_X86_IOPL_IOPERM
-	tss->io_bitmap.prev_max = 0;
-	tss->io_bitmap.prev_sequence = 0;
-	memset(tss->io_bitmap.bitmap, 0xff, sizeof(tss->io_bitmap.bitmap));
-	/*
-	 * Invalidate the extra array entry past the end of the all
-	 * permission bitmap as required by the hardware.
-	 */
-	tss->io_bitmap.mapall[IO_BITMAP_LONGS] = ~0UL;
-#endif
-}
-
 /*
  * Setup everything needed to handle exceptions from the IDT, including the IST
  * exceptions which use paranoid_entry().
@@ -2220,7 +2204,7 @@ void cpu_init_exception_handling(bool boot_cpu)
 	/* For IDT mode, IST vectors need to be set in TSS. */
 	if (!cpu_feature_enabled(X86_FEATURE_FRED))
 		tss_setup_ist(tss);
-	tss_setup_io_bitmap(tss);
+	tss->x86_tss.io_bitmap_base = IO_BITMAP_OFFSET_INVALID;
 	set_tss_desc(cpu, &get_cpu_entry_area(cpu)->tss.x86_tss);
 
 	load_TR_desc();

@@ -43,7 +43,6 @@
 #include <asm/desc.h>
 #include <asm/prctl.h>
 #include <asm/spec-ctrl.h>
-#include <asm/io_bitmap.h>
 #include <asm/proto.h>
 #include <asm/frame.h>
 #include <asm/unwind.h>
@@ -75,9 +74,6 @@ __visible DEFINE_PER_CPU_PAGE_ALIGNED(struct tss_struct, cpu_tss_rw) = {
 	 },
 };
 EXPORT_PER_CPU_SYMBOL(cpu_tss_rw);
-
-DEFINE_PER_CPU(bool, __tss_limit_invalid);
-EXPORT_PER_CPU_SYMBOL_GPL(__tss_limit_invalid);
 
 /*
  * The cache may be in an incoherent state and needs flushing during kexec.
@@ -116,9 +112,6 @@ void arch_release_task_struct(struct task_struct *tsk)
 void exit_thread(struct task_struct *tsk)
 {
 	struct thread_struct *t = &tsk->thread;
-
-	if (test_thread_flag(TIF_IO_BITMAP))
-		io_bitmap_exit(tsk);
 
 	free_vm86(t);
 
@@ -173,10 +166,6 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 	frame->bp = encode_frame_pointer(childregs);
 	frame->ret_addr = (unsigned long) ret_from_fork_asm;
 	p->thread.sp = (unsigned long) fork_frame;
-	p->thread.io_bitmap = NULL;
-	clear_tsk_thread_flag(p, TIF_IO_BITMAP);
-	p->thread.iopl_warn = 0;
-
 #ifdef CONFIG_X86_64
 	current_save_fsgs();
 	p->thread.fsindex = current->thread.fsindex;
@@ -252,9 +241,6 @@ int copy_thread(struct task_struct *p, const struct kernel_clone_args *args)
 	/* Set a new TLS for the child thread? */
 	if (clone_flags & CLONE_SETTLS)
 		ret = set_new_tls(p, tls);
-
-	if (!ret && unlikely(test_tsk_thread_flag(current, TIF_IO_BITMAP)))
-		io_bitmap_share(p);
 
 	return ret;
 }
@@ -414,88 +400,6 @@ void arch_setup_new_exec(void)
 
 	mm_reset_untag_mask(current->mm);
 }
-
-#ifdef CONFIG_X86_IOPL_IOPERM
-static inline void switch_to_bitmap(unsigned long tifp)
-{
-	/*
-	 * Invalidate I/O bitmap if the previous task used it. This prevents
-	 * any possible leakage of an active I/O bitmap.
-	 *
-	 * If the next task has an I/O bitmap it will handle it on exit to
-	 * user mode.
-	 */
-	if (tifp & _TIF_IO_BITMAP)
-		tss_invalidate_io_bitmap();
-}
-
-static void tss_copy_io_bitmap(struct tss_struct *tss, struct io_bitmap *iobm)
-{
-	/*
-	 * Copy at least the byte range of the incoming tasks bitmap which
-	 * covers the permitted I/O ports.
-	 *
-	 * If the previous task which used an I/O bitmap had more bits
-	 * permitted, then the copy needs to cover those as well so they
-	 * get turned off.
-	 */
-	memcpy(tss->io_bitmap.bitmap, iobm->bitmap,
-	       max(tss->io_bitmap.prev_max, iobm->max));
-
-	/*
-	 * Store the new max and the sequence number of this bitmap
-	 * and a pointer to the bitmap itself.
-	 */
-	tss->io_bitmap.prev_max = iobm->max;
-	tss->io_bitmap.prev_sequence = iobm->sequence;
-}
-
-/**
- * native_tss_update_io_bitmap - Update I/O bitmap before exiting to user mode
- */
-void native_tss_update_io_bitmap(void)
-{
-	struct tss_struct *tss = this_cpu_ptr(&cpu_tss_rw);
-	struct thread_struct *t = &current->thread;
-	u16 *base = &tss->x86_tss.io_bitmap_base;
-
-	if (!test_thread_flag(TIF_IO_BITMAP)) {
-		native_tss_invalidate_io_bitmap();
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_X86_IOPL_IOPERM) && t->iopl_emul == 3) {
-		*base = IO_BITMAP_OFFSET_VALID_ALL;
-	} else {
-		struct io_bitmap *iobm = t->io_bitmap;
-
-		if (WARN_ON_ONCE(!iobm)) {
-			clear_thread_flag(TIF_IO_BITMAP);
-			native_tss_invalidate_io_bitmap();
-		}
-
-		/*
-		 * Only copy bitmap data when the sequence number differs. The
-		 * update time is accounted to the incoming task.
-		 */
-		if (tss->io_bitmap.prev_sequence != iobm->sequence)
-			tss_copy_io_bitmap(tss, iobm);
-
-		/* Enable the bitmap */
-		*base = IO_BITMAP_OFFSET_VALID_MAP;
-	}
-
-	/*
-	 * Make sure that the TSS limit is covering the IO bitmap. It might have
-	 * been cut down by a VMEXIT to 0x67 which would cause a subsequent I/O
-	 * access from user space to trigger a #GP because the bitmap is outside
-	 * the TSS limit.
-	 */
-	refresh_tss_limit();
-}
-#else /* CONFIG_X86_IOPL_IOPERM */
-static inline void switch_to_bitmap(unsigned long tifp) { }
-#endif
 
 #ifdef CONFIG_SMP
 
@@ -706,8 +610,6 @@ void __switch_to_xtra(struct task_struct *prev_p, struct task_struct *next_p)
 
 	tifn = read_task_thread_flags(next_p);
 	tifp = read_task_thread_flags(prev_p);
-
-	switch_to_bitmap(tifp);
 
 	if ((tifp & _TIF_BLOCKSTEP || tifn & _TIF_BLOCKSTEP) &&
 	    arch_has_block_step()) {

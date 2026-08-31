@@ -37,7 +37,6 @@
 #include <asm/traps.h>
 #include <asm/syscall.h>
 #include <asm/fsgsbase.h>
-#include <asm/io_bitmap.h>
 
 #include "tls.h"
 
@@ -47,13 +46,11 @@ enum x86_regset_32 {
 	REGSET32_XFP,
 	REGSET32_XSTATE,
 	REGSET32_TLS,
-	REGSET32_IOPERM,
 };
 
 enum x86_regset_64 {
 	REGSET64_GENERAL,
 	REGSET64_FP,
-	REGSET64_IOPERM,
 	REGSET64_XSTATE,
 	REGSET64_SSP,
 };
@@ -431,30 +428,6 @@ static int ptrace_set_debugreg(struct task_struct *tsk, int n,
 }
 
 /*
- * These access the current or another (stopped) task's io permission
- * bitmap for debugging or core dump.
- */
-static int ioperm_active(struct task_struct *target,
-			 const struct user_regset *regset)
-{
-	struct io_bitmap *iobm = target->thread.io_bitmap;
-
-	return iobm ? DIV_ROUND_UP(iobm->max, regset->size) : 0;
-}
-
-static int ioperm_get(struct task_struct *target,
-		      const struct user_regset *regset,
-		      struct membuf to)
-{
-	struct io_bitmap *iobm = target->thread.io_bitmap;
-
-	if (!iobm)
-		return -ENXIO;
-
-	return membuf_write(&to, iobm->bitmap, IO_BITMAP_BYTES);
-}
-
-/*
  * Called by kernel/ptrace.c when detaching..
  *
  * Make sure the single step bit is not set.
@@ -595,14 +568,6 @@ static struct user_regset x86_64_regsets[] __ro_after_init = {
 		.active		= xstateregs_active,
 		.regset_get	= xstateregs_get,
 		.set		= xstateregs_set
-	},
-	[REGSET64_IOPERM] = {
-		USER_REGSET_NOTE_TYPE(386_IOPERM),
-		.n		= IO_BITMAP_LONGS,
-		.size		= sizeof(long),
-		.align		= sizeof(long),
-		.active		= ioperm_active,
-		.regset_get	= ioperm_get
 	},
 };
 

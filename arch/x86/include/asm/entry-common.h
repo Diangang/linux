@@ -5,7 +5,6 @@
 #include <linux/randomize_kstack.h>
 
 #include <asm/nospec-branch.h>
-#include <asm/io_bitmap.h>
 #include <asm/fpu/api.h>
 #include <asm/fred.h>
 
@@ -17,9 +16,6 @@ static __always_inline void arch_enter_from_user_mode(struct pt_regs *regs)
 
 static inline void arch_exit_work(unsigned long ti_work)
 {
-	if (unlikely(ti_work & _TIF_IO_BITMAP))
-		tss_update_io_bitmap();
-
 	if (unlikely(ti_work & _TIF_NEED_FPU_LOAD))
 		switch_fpu_return();
 }
