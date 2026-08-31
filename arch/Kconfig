@@ -906,9 +906,6 @@ config ARCH_WANT_LD_ORPHAN_WARN
 	  by the linker, since the locations of such sections can change between linker
 	  versions.
 
-config ARCH_HAS_ELFCORE_COMPAT
-	bool
-
 config ARCH_HAS_PARANOID_L1D_FLUSH
 	bool
 
