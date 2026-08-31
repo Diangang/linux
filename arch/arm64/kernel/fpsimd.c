@@ -209,30 +209,20 @@ static void fpsimd_bind_task_to_cpu(void);
  *
  * The caller may freely manipulate the FPSIMD context metadata until
  * put_cpu_fpsimd_context() is called.
- *
- * On RT kernels local_bh_disable() is not sufficient because it only
- * serializes soft interrupt related sections via a local lock, but stays
- * preemptible. Disabling preemption is the right choice here as bottom
- * half processing is always in thread context on RT kernels so it
- * implicitly prevents bottom half processing as well.
  */
 static void get_cpu_fpsimd_context(void)
 {
-	if (!0) {
-		/*
-		 * The softirq subsystem lacks a true unmask/mask API, and
-		 * re-enabling softirq processing using local_bh_enable() will
-		 * not only unmask softirqs, it will also result in immediate
-		 * delivery of any pending softirqs.
-		 * This is undesirable when running with IRQs disabled, but in
-		 * that case, there is no need to mask softirqs in the first
-		 * place, so only bother doing so when IRQs are enabled.
-		 */
-		if (!irqs_disabled())
-			local_bh_disable();
-	} else {
-		preempt_disable();
-	}
+	/*
+	 * The softirq subsystem lacks a true unmask/mask API, and
+	 * re-enabling softirq processing using local_bh_enable() will
+	 * not only unmask softirqs, it will also result in immediate
+	 * delivery of any pending softirqs.
+	 * This is undesirable when running with IRQs disabled, but in
+	 * that case, there is no need to mask softirqs in the first
+	 * place, so only bother doing so when IRQs are enabled.
+	 */
+	if (!irqs_disabled())
+		local_bh_disable();
 }
 
 /*
@@ -244,12 +234,8 @@ static void get_cpu_fpsimd_context(void)
  */
 static void put_cpu_fpsimd_context(void)
 {
-	if (!0) {
-		if (!irqs_disabled())
-			local_bh_enable();
-	} else {
-		preempt_enable();
-	}
+	if (!irqs_disabled())
+		local_bh_enable();
 }
 
 unsigned int task_get_vl(const struct task_struct *task, enum vec_type type)
