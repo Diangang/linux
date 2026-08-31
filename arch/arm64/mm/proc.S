@@ -94,10 +94,6 @@ SYM_FUNC_ALIAS(__pi_idmap_cpu_replace_ttbr1, idmap_cpu_replace_ttbr1)
 
 	.macro	pte_to_phys, phys, pte
 	and	\phys, \pte, #PTE_ADDR_LOW
-#ifdef CONFIG_ARM64_PA_BITS_52
-	and	\pte, \pte, #PTE_ADDR_HIGH
-	orr	\phys, \phys, \pte, lsl #PTE_ADDR_HIGH_SHIFT
-#endif
 	.endm
 
 	.macro	kpti_mk_tbl_ng, type, num_entries
@@ -170,11 +166,6 @@ SYM_TYPED_FUNC_START(idmap_kpti_install_ng_mappings)
 
 	cbnz	cpu, __idmap_kpti_secondary
 
-#if CONFIG_PGTABLE_LEVELS > 4
-	stp	x29, x30, [sp, #-32]!
-	mov	x29, sp
-	stp	x19, x20, [sp, #16]
-#endif
 
 	/* We're the boot CPU. Wait for the others to catch up */
 	sevl
@@ -194,27 +185,6 @@ SYM_TYPED_FUNC_START(idmap_kpti_install_ng_mappings)
 
 	/* Everybody is enjoying the idmap, so we can rewrite swapper. */
 
-#ifdef CONFIG_ARM64_LPA2
-	/*
-	 * If LPA2 support is configured, but 52-bit virtual addressing is not
-	 * enabled at runtime, we will fall back to one level of paging less,
-	 * and so we have to walk swapper_pg_dir as if we dereferenced its
-	 * address from a PGD level entry, and terminate the PGD level loop
-	 * right after.
-	 */
-	adrp	pgd, swapper_pg_dir	// walk &swapper_pg_dir at the next level
-	mov	cur_pgdp, end_pgdp	// must be equal to terminate the PGD loop
-alternative_if_not ARM64_HAS_VA52
-	b	.Lderef_pgd		// skip to the next level
-alternative_else_nop_endif
-	/*
-	 * LPA2 based 52-bit virtual addressing requires 52-bit physical
-	 * addressing to be enabled as well. In this case, the shareability
-	 * bits are repurposed as physical address bits, and should not be
-	 * set in pte_flags.
-	 */
-	bic	pte_flags, pte_flags, #PTE_SHARED
-#endif
 
 	/* PGD */
 	adrp		cur_pgdp, swapper_pg_dir
@@ -231,50 +201,28 @@ alternative_else_nop_endif
 
 	/* Set the flag to zero to indicate that we're all done */
 	str	wzr, [flag_ptr]
-#if CONFIG_PGTABLE_LEVELS > 4
-	ldp	x19, x20, [sp, #16]
-	ldp	x29, x30, [sp], #32
-#endif
 	ret
 
 .Lderef_pgd:
 	/* P4D */
-	.if		CONFIG_PGTABLE_LEVELS > 4
-	p4d		.req	x30
-	pte_to_phys	cur_p4dp, pgd
-	kpti_map_pgtbl	p4d, 0
-	kpti_mk_tbl_ng	p4d, PTRS_PER_P4D
-	b		.Lnext_pgd
-	.else		/* CONFIG_PGTABLE_LEVELS <= 4 */
 	p4d		.req	pgd
 	.set		.Lnext_p4d, .Lnext_pgd
-	.endif
 
 .Lderef_p4d:
 	/* PUD */
-	.if		CONFIG_PGTABLE_LEVELS > 3
 	pud		.req	x10
 	pte_to_phys	cur_pudp, p4d
 	kpti_map_pgtbl	pud, 1
 	kpti_mk_tbl_ng	pud, PTRS_PER_PUD
 	b		.Lnext_p4d
-	.else		/* CONFIG_PGTABLE_LEVELS <= 3 */
-	pud		.req	pgd
-	.set		.Lnext_pud, .Lnext_pgd
-	.endif
 
 .Lderef_pud:
 	/* PMD */
-	.if		CONFIG_PGTABLE_LEVELS > 2
 	pmd		.req	x13
 	pte_to_phys	cur_pmdp, pud
 	kpti_map_pgtbl	pmd, 2
 	kpti_mk_tbl_ng	pmd, PTRS_PER_PMD
 	b		.Lnext_pud
-	.else		/* CONFIG_PGTABLE_LEVELS <= 2 */
-	pmd		.req	pgd
-	.set		.Lnext_pmd, .Lnext_pgd
-	.endif
 
 .Lderef_pmd:
 	/* PTE */
@@ -384,15 +332,6 @@ SYM_FUNC_START(__cpu_setup)
 
 	tcr_clear_errata_bits tcr, x9, x5
 
-#ifdef CONFIG_ARM64_VA_BITS_52
-	mov		x9, #64 - VA_BITS
-alternative_if ARM64_HAS_VA52
-	tcr_set_t1sz	tcr, x9
-#ifdef CONFIG_ARM64_LPA2
-	orr		tcr, tcr, #TCR_EL1_DS
-#endif
-alternative_else_nop_endif
-#endif
 
 	/*
 	 * Set the IPS bits in TCR_EL1.

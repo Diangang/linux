@@ -20,7 +20,6 @@
 /* Fatal system error detected by secondary CPU, crash the system */
 #define CPU_PANIC_KERNEL		(3)
 
-#define CPU_STUCK_REASON_52_BIT_VA	(UL(1) << CPU_STUCK_REASON_SHIFT)
 #define CPU_STUCK_REASON_NO_GRAN	(UL(2) << CPU_STUCK_REASON_SHIFT)
 
 #ifndef __ASSEMBLER__

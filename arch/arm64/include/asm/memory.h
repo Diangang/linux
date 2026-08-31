@@ -20,16 +20,7 @@
  */
 #define PCI_IO_SIZE		SZ_16M
 
-/*
- * VMEMMAP_SIZE - allows the whole linear region to be covered by
- *                a struct page array
- *
- * If we are configured with a 52-bit kernel VA then our VMEMMAP_SIZE
- * needs to cover the memory region from the beginning of the 52-bit
- * PAGE_OFFSET all the way to PAGE_END for 48-bit. This allows us to
- * keep a constant PAGE_OFFSET and "fallback" to using the higher end
- * of the VMEMMAP where 52-bit support is not available in hardware.
- */
+/* VMEMMAP_SIZE allows the whole linear region to be covered by struct page. */
 #define VMEMMAP_RANGE	(_PAGE_END(VA_BITS_MIN) - PAGE_OFFSET)
 #define VMEMMAP_SIZE	((VMEMMAP_RANGE >> PAGE_SHIFT) * sizeof(struct page))
 
@@ -53,11 +44,7 @@
 #define PCI_IO_END		(PCI_IO_START + PCI_IO_SIZE)
 #define FIXADDR_TOP		(-UL(SZ_8M))
 
-#if VA_BITS > 48
-#define VA_BITS_MIN		(48)
-#else
 #define VA_BITS_MIN		(VA_BITS)
-#endif
 
 #define _PAGE_END(va)		(-(UL(1) << ((va) - 1)))
 
@@ -179,21 +166,7 @@
 #include <asm/sections.h>
 #include <asm/sysreg.h>
 
-static inline u64 __pure read_tcr(void)
-{
-	u64  tcr;
-
-	// read_sysreg() uses asm volatile, so avoid it here
-	asm("mrs %0, tcr_el1" : "=r"(tcr));
-	return tcr;
-}
-
-#if VA_BITS > 48
-// For reasons of #include hell, we can't use TCR_T1SZ_OFFSET/TCR_T1SZ_MASK here
-#define vabits_actual		(64 - ((read_tcr() >> 16) & 63))
-#else
 #define vabits_actual		((u64)VA_BITS)
-#endif
 
 extern s64			memstart_addr;
 /* PHYS_OFFSET - the physical address of the start of memory. */

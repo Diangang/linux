@@ -51,35 +51,25 @@
 /*
  * PMD_SHIFT determines the size a level 2 page table entry can map.
  */
-#if CONFIG_PGTABLE_LEVELS > 2
 #define PMD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(2)
 #define PMD_SIZE		(_AC(1, UL) << PMD_SHIFT)
 #define PMD_MASK		(~(PMD_SIZE-1))
 #define PTRS_PER_PMD		(1 << PTDESC_TABLE_SHIFT)
-#endif
 
 /*
  * PUD_SHIFT determines the size a level 1 page table entry can map.
  */
-#if CONFIG_PGTABLE_LEVELS > 3
 #define PUD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(1)
 #define PUD_SIZE		(_AC(1, UL) << PUD_SHIFT)
 #define PUD_MASK		(~(PUD_SIZE-1))
 #define PTRS_PER_PUD		(1 << PTDESC_TABLE_SHIFT)
-#endif
 
-#if CONFIG_PGTABLE_LEVELS > 4
-#define P4D_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(0)
-#define P4D_SIZE		(_AC(1, UL) << P4D_SHIFT)
-#define P4D_MASK		(~(P4D_SIZE-1))
-#define PTRS_PER_P4D		(1 << PTDESC_TABLE_SHIFT)
-#endif
 
 /*
  * PGDIR_SHIFT determines the size a top-level page table entry can map
  * (depending on the configuration, this level can be -1, 0, 1 or 2).
  */
-#define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(4 - CONFIG_PGTABLE_LEVELS)
+#define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(0)
 #define PGDIR_SIZE		(_AC(1, UL) << PGDIR_SHIFT)
 #define PGDIR_MASK		(~(PGDIR_SIZE-1))
 #define PTRS_PER_PGD		(1 << (VA_BITS - PGDIR_SHIFT))
@@ -173,11 +163,6 @@
 #define PTE_SWBITS_MASK		_AT(pteval_t, (BIT(63) | GENMASK(58, 55)))
 
 #define PTE_ADDR_LOW		(((_AT(pteval_t, 1) << (50 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
-#ifdef CONFIG_ARM64_PA_BITS_52
-#define PTE_ADDR_HIGH		(_AT(pteval_t, 0x3) << 8)
-#define PTE_ADDR_HIGH_SHIFT	42
-#define PHYS_TO_PTE_ADDR_MASK	GENMASK_ULL(49, 8)
-#endif
 
 /*
  * AttrIndx[2:0] encoding (mapping attributes defined in the MAIR* registers).
@@ -263,20 +248,6 @@
 /*
  * TTBR.
  */
-#ifdef CONFIG_ARM64_PA_BITS_52
-/*
- * TTBR_ELx[1] is RES0 in this configuration.
- */
-#define TTBR_BADDR_MASK_52	GENMASK_ULL(47, 2)
-#endif
 
-#ifdef CONFIG_ARM64_VA_BITS_52
-#define PTRS_PER_PGD_52_VA (UL(1) << (52 - PGDIR_SHIFT))
-#define PTRS_PER_PGD_48_VA (UL(1) << (48 - PGDIR_SHIFT))
-#define PTRS_PER_PGD_EXTRA (PTRS_PER_PGD_52_VA - PTRS_PER_PGD_48_VA)
-
-/* Must be at least 64-byte aligned to prevent corruption of the TTBR */
-#define TTBR1_BADDR_4852_OFFSET (PTRS_PER_PGD_EXTRA << PTDESC_ORDER)
-#endif
 
 #endif

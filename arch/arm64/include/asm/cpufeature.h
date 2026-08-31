@@ -809,11 +809,6 @@ static inline bool system_supports_bti_kernel(void)
 	return false;
 }
 
-static inline bool system_supports_lpa2(void)
-{
-	return cpus_have_final_cap(ARM64_HAS_LPA2);
-}
-
 static inline bool system_supports_poe(void)
 {
 	return alternative_has_cap_unlikely(ARM64_HAS_S1POE);
@@ -958,35 +953,6 @@ static inline bool cpu_has_bti(void)
 	return arm64_apply_feature_override(read_cpuid(ID_AA64PFR1_EL1),
 					    ID_AA64PFR1_EL1_BT_SHIFT, 4,
 					    &id_aa64pfr1_override);
-}
-
-static inline bool cpu_has_lva(void)
-{
-	u64 mmfr2;
-
-	mmfr2 = read_sysreg_s(SYS_ID_AA64MMFR2_EL1);
-	mmfr2 &= ~id_aa64mmfr2_override.mask;
-	mmfr2 |= id_aa64mmfr2_override.val;
-	return cpuid_feature_extract_unsigned_field(mmfr2,
-						    ID_AA64MMFR2_EL1_VARange_SHIFT);
-}
-
-static inline bool cpu_has_lpa2(void)
-{
-#ifdef CONFIG_ARM64_LPA2
-	u64 mmfr0;
-	int feat;
-
-	mmfr0 = read_sysreg(id_aa64mmfr0_el1);
-	mmfr0 &= ~id_aa64mmfr0_override.mask;
-	mmfr0 |= id_aa64mmfr0_override.val;
-	feat = cpuid_feature_extract_signed_field(mmfr0,
-						  ID_AA64MMFR0_EL1_TGRAN_SHIFT);
-
-	return feat >= ID_AA64MMFR0_EL1_TGRAN_LPA2;
-#else
-	return false;
-#endif
 }
 
 #endif /* __ASSEMBLER__ */

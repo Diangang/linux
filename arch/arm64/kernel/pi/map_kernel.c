@@ -117,65 +117,6 @@ static void __init map_kernel(u64 kaslr_offset, u64 va_offset, int root_level)
 	idmap_cpu_replace_ttbr1((phys_addr_t)swapper_pg_dir);
 }
 
-static void noinline __section(".idmap.text") set_ttbr0_for_lpa2(phys_addr_t ttbr)
-{
-	u64 sctlr = read_sysreg(sctlr_el1);
-	u64 tcr = read_sysreg(tcr_el1) | TCR_EL1_DS;
-	u64 mmfr0 = read_sysreg(id_aa64mmfr0_el1);
-	u64 parange = cpuid_feature_extract_unsigned_field(mmfr0,
-							   ID_AA64MMFR0_EL1_PARANGE_SHIFT);
-
-	tcr &= ~TCR_EL1_IPS_MASK;
-	tcr |= parange << TCR_EL1_IPS_SHIFT;
-
-	asm("	msr	sctlr_el1, %0		;"
-	    "	isb				;"
-	    "   msr     ttbr0_el1, %1		;"
-	    "   msr     tcr_el1, %2		;"
-	    "	isb				;"
-	    "	tlbi    vmalle1			;"
-	    "	dsb     nsh			;"
-	    "	isb				;"
-	    "	msr     sctlr_el1, %3		;"
-	    "	isb				;"
-	    ::	"r"(sctlr & ~SCTLR_ELx_M), "r"(ttbr), "r"(tcr), "r"(sctlr));
-}
-
-static void __init remap_idmap_for_lpa2(void)
-{
-	/* clear the bits that change meaning once LPA2 is turned on */
-	ptdesc_t mask = PTE_SHARED;
-
-	/*
-	 * We have to clear bits [9:8] in all block or page descriptors in the
-	 * initial ID map, as otherwise they will be (mis)interpreted as
-	 * physical address bits once we flick the LPA2 switch (TCR.DS). Since
-	 * we cannot manipulate live descriptors in that way without creating
-	 * potential TLB conflicts, let's create another temporary ID map in a
-	 * LPA2 compatible fashion, and update the initial ID map while running
-	 * from that.
-	 */
-	create_init_idmap(init_pg_dir, mask);
-	dsb(ishst);
-	set_ttbr0_for_lpa2((phys_addr_t)init_pg_dir);
-
-	/*
-	 * Recreate the initial ID map with the same granularity as before.
-	 * Don't bother with the FDT, we no longer need it after this.
-	 */
-	memset(init_idmap_pg_dir, 0,
-	       (char *)init_idmap_pg_end - (char *)init_idmap_pg_dir);
-
-	create_init_idmap(init_idmap_pg_dir, mask);
-	dsb(ishst);
-
-	/* switch back to the updated initial ID map */
-	set_ttbr0_for_lpa2((phys_addr_t)init_idmap_pg_dir);
-
-	/* wipe the temporary ID map from memory */
-	memset(init_pg_dir, 0, (char *)init_pg_end - (char *)init_pg_dir);
-}
-
 static void *__init map_fdt(phys_addr_t fdt)
 {
 	static u8 ptes[INIT_IDMAP_FDT_SIZE] __initdata __aligned(PAGE_SIZE);
@@ -222,8 +163,7 @@ asmlinkage void __init early_map_kernel(u64 boot_status, phys_addr_t fdt)
 	static char const chosen_str[] __initconst = "/chosen";
 	u64 va_base, pa_base = (u64)&_text;
 	u64 kaslr_offset = pa_base % MIN_KIMG_ALIGN;
-	int root_level = 4 - CONFIG_PGTABLE_LEVELS;
-	int va_bits = VA_BITS;
+	int root_level = 0;
 	int chosen;
 	void *fdt_mapped = map_fdt(fdt);
 
@@ -233,14 +173,6 @@ asmlinkage void __init early_map_kernel(u64 boot_status, phys_addr_t fdt)
 	/* Parse the command line for CPU feature overrides */
 	chosen = fdt_path_offset(fdt_mapped, chosen_str);
 	init_feature_override(boot_status, fdt_mapped, chosen);
-
-	if (IS_ENABLED(CONFIG_ARM64_LPA2) && !cpu_has_lpa2()) {
-		va_bits = VA_BITS_MIN;
-		root_level++;
-	}
-
-	if (va_bits > VA_BITS_MIN)
-		sysreg_clear_set(tcr_el1, TCR_EL1_T1SZ_MASK, TCR_T1SZ(va_bits));
 
 	/*
 	 * The virtual KASLR displacement modulo 2MiB is decided by the
@@ -257,9 +189,6 @@ asmlinkage void __init early_map_kernel(u64 boot_status, phys_addr_t fdt)
 
 		kaslr_offset |= kaslr_seed & ~(MIN_KIMG_ALIGN - 1);
 	}
-
-	if (IS_ENABLED(CONFIG_ARM64_LPA2) && va_bits > VA_BITS_MIN)
-		remap_idmap_for_lpa2();
 
 	va_base = KIMAGE_VADDR + kaslr_offset;
 	map_kernel(kaslr_offset, va_base - pa_base, root_level);

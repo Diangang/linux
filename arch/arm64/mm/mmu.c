@@ -1170,16 +1170,11 @@ static int __init __kpti_install_ng_mappings(void *__unused)
 	kpti_remap_fn *remap_fn;
 
 	int cpu = smp_processor_id();
-	int levels = CONFIG_PGTABLE_LEVELS;
+	int levels = 4;
 	int order = order_base_2(levels);
 	u64 kpti_ng_temp_pgd_pa = 0;
 	pgd_t *kpti_ng_temp_pgd;
 	u64 alloc = 0;
-
-	if (levels == 5 && !pgtable_l5_enabled())
-		levels = 4;
-	else if (levels == 4 && !pgtable_l4_enabled())
-		levels = 3;
 
 	remap_fn = (void *)__pa_symbol(idmap_kpti_install_ng_mappings);
 

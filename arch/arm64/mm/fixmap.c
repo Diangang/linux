@@ -75,7 +75,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 	p4d_t p4d = READ_ONCE(*p4dp);
 	pud_t *pudp;
 
-	if (CONFIG_PGTABLE_LEVELS > 3 && !p4d_none(p4d) &&
+	if (!p4d_none(p4d) &&
 	    p4d_page_paddr(p4d) != __pa_symbol(bm_pud)) {
 		BUG();
 	}

@@ -100,18 +100,6 @@ static inline void arch_leave_lazy_mmu_mode(void)
 #define pte_ERROR(e)	\
 	pr_err("%s:%d: bad pte %016llx.\n", __FILE__, __LINE__, pte_val(e))
 
-#ifdef CONFIG_ARM64_PA_BITS_52
-static inline phys_addr_t __pte_to_phys(pte_t pte)
-{
-	pte_val(pte) &= ~PTE_MAYBE_SHARED;
-	return (pte_val(pte) & PTE_ADDR_LOW) |
-		((pte_val(pte) & PTE_ADDR_HIGH) << PTE_ADDR_HIGH_SHIFT);
-}
-static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
-{
-	return (phys | (phys >> PTE_ADDR_HIGH_SHIFT)) & PHYS_TO_PTE_ADDR_MASK;
-}
-#else
 static inline phys_addr_t __pte_to_phys(pte_t pte)
 {
 	return pte_val(pte) & PTE_ADDR_LOW;
@@ -121,7 +109,6 @@ static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
 {
 	return phys;
 }
-#endif
 
 #define pte_pfn(pte)		(__pte_to_phys(pte) >> PAGE_SHIFT)
 #define pfn_pte(pfn,prot)	\
@@ -700,12 +687,8 @@ static inline bool pmd_leaf(pmd_t pmd)
 #define pte_leaf_size(pte)	(pte_cont(pte) ? CONT_PTE_SIZE : PAGE_SIZE)
 
 
-#if CONFIG_PGTABLE_LEVELS < 3
-static inline bool pud_table(pud_t pud) { return true; }
-#else
 #define pud_table(pud)		((pud_val(pud) & PUD_TYPE_MASK) == \
 				 PUD_TYPE_TABLE)
-#endif
 
 extern pgd_t swapper_pg_dir[];
 extern pgd_t idmap_pg_dir[];
@@ -762,7 +745,6 @@ static inline unsigned long pmd_page_vaddr(pmd_t pmd)
 /* use ONLY for statically allocated translation tables */
 #define pte_offset_kimg(dir,addr)	((pte_t *)__phys_to_kimg(pte_offset_phys((dir), (addr))))
 
-#if CONFIG_PGTABLE_LEVELS > 2
 
 #define pmd_ERROR(e)	\
 	pr_err("%s:%d: bad pmd %016llx.\n", __FILE__, __LINE__, pmd_val(e))
@@ -784,15 +766,8 @@ static inline bool pud_leaf(pud_t pud)
 #define pud_user(pud)		pte_user(pud_pte(pud))
 #define pud_user_exec(pud)	pte_user_exec(pud_pte(pud))
 
-static inline bool pgtable_l4_enabled(void);
-
 static inline void set_pud(pud_t *pudp, pud_t pud)
 {
-	if (!pgtable_l4_enabled() && in_swapper_pgdir(pudp)) {
-		set_swapper_pgd((pgd_t *)pudp, __pgd(pud_val(pud)));
-		return;
-	}
-
 	WRITE_ONCE(*pudp, pud);
 
 	if (pud_valid(pud))
@@ -826,45 +801,16 @@ static inline pmd_t *pud_pgtable(pud_t pud)
 /* use ONLY for statically allocated translation tables */
 #define pmd_offset_kimg(dir,addr)	((pmd_t *)__phys_to_kimg(pmd_offset_phys((dir), (addr))))
 
-#else
 
-#define pud_valid(pud)		false
-#define pud_page_paddr(pud)	({ BUILD_BUG(); 0; })
-#define pud_user_exec(pud)	pud_user(pud) /* Always 0 with folding */
 
-/* Match pmd_offset folding in <asm/generic/pgtable-nopmd.h> */
-#define pmd_set_fixmap(addr)		NULL
-#define pmd_set_fixmap_offset(pudp, addr)	((pmd_t *)pudp)
-#define pmd_clear_fixmap()
-
-#define pmd_offset_kimg(dir,addr)	((pmd_t *)dir)
-
-#endif	/* CONFIG_PGTABLE_LEVELS > 2 */
-
-#if CONFIG_PGTABLE_LEVELS > 3
-
-static __always_inline bool pgtable_l4_enabled(void)
-{
-	if (CONFIG_PGTABLE_LEVELS > 4 || !IS_ENABLED(CONFIG_ARM64_LPA2))
-		return true;
-	if (!alternative_has_cap_likely(ARM64_ALWAYS_BOOT))
-		return vabits_actual == VA_BITS;
-	return alternative_has_cap_unlikely(ARM64_HAS_VA52);
-}
-
-static inline bool mm_pud_folded(const struct mm_struct *mm)
-{
-	return !pgtable_l4_enabled();
-}
-#define mm_pud_folded  mm_pud_folded
+#define mm_pud_folded(mm)	false
 
 #define pud_ERROR(e)	\
 	pr_err("%s:%d: bad pud %016llx.\n", __FILE__, __LINE__, pud_val(e))
 
-#define p4d_none(p4d)		(pgtable_l4_enabled() && !p4d_val(p4d))
-#define p4d_bad(p4d)		(pgtable_l4_enabled() && \
-				((p4d_val(p4d) & P4D_TYPE_MASK) != \
-				 P4D_TYPE_TABLE))
+#define p4d_none(p4d)		(!p4d_val(p4d))
+#define p4d_bad(p4d)		((p4d_val(p4d) & P4D_TYPE_MASK) != \
+				 P4D_TYPE_TABLE)
 #define p4d_present(p4d)	(!p4d_none(p4d))
 
 static inline void set_p4d(p4d_t *p4dp, p4d_t p4d)
@@ -880,8 +826,7 @@ static inline void set_p4d(p4d_t *p4dp, p4d_t p4d)
 
 static inline void p4d_clear(p4d_t *p4dp)
 {
-	if (pgtable_l4_enabled())
-		set_p4d(p4dp, __p4d(0));
+	set_p4d(p4dp, __p4d(0));
 }
 
 static inline phys_addr_t p4d_page_paddr(p4d_t p4d)
@@ -891,14 +836,6 @@ static inline phys_addr_t p4d_page_paddr(p4d_t p4d)
 
 #define pud_index(addr)		(((addr) >> PUD_SHIFT) & (PTRS_PER_PUD - 1))
 
-static inline pud_t *p4d_to_folded_pud(p4d_t *p4dp, unsigned long addr)
-{
-	/* Ensure that 'p4dp' indexes a page table according to 'addr' */
-	VM_BUG_ON(((addr >> P4D_SHIFT) ^ ((u64)p4dp >> 3)) % PTRS_PER_P4D);
-
-	return (pud_t *)PTR_ALIGN_DOWN(p4dp, PAGE_SIZE) + pud_index(addr);
-}
-
 static inline pud_t *p4d_pgtable(p4d_t p4d)
 {
 	return (pud_t *)__va(p4d_page_paddr(p4d));
@@ -906,16 +843,12 @@ static inline pud_t *p4d_pgtable(p4d_t p4d)
 
 static inline phys_addr_t pud_offset_phys(p4d_t *p4dp, unsigned long addr)
 {
-	BUG_ON(!pgtable_l4_enabled());
-
 	return p4d_page_paddr(READ_ONCE(*p4dp)) + pud_index(addr) * sizeof(pud_t);
 }
 
 static inline
 pud_t *pud_offset_lockless(p4d_t *p4dp, p4d_t p4d, unsigned long addr)
 {
-	if (!pgtable_l4_enabled())
-		return p4d_to_folded_pud(p4dp, addr);
 	return (pud_t *)__va(p4d_page_paddr(p4d)) + pud_index(addr);
 }
 #define pud_offset_lockless pud_offset_lockless
@@ -928,159 +861,28 @@ static inline pud_t *pud_offset(p4d_t *p4dp, unsigned long addr)
 
 static inline pud_t *pud_set_fixmap(unsigned long addr)
 {
-	if (!pgtable_l4_enabled())
-		return NULL;
 	return (pud_t *)set_fixmap_offset(FIX_PUD, addr);
 }
 
 static inline pud_t *pud_set_fixmap_offset(p4d_t *p4dp, unsigned long addr)
 {
-	if (!pgtable_l4_enabled())
-		return p4d_to_folded_pud(p4dp, addr);
 	return pud_set_fixmap(pud_offset_phys(p4dp, addr));
 }
 
 static inline void pud_clear_fixmap(void)
 {
-	if (pgtable_l4_enabled())
-		clear_fixmap(FIX_PUD);
+	clear_fixmap(FIX_PUD);
 }
 
 /* use ONLY for statically allocated translation tables */
 static inline pud_t *pud_offset_kimg(p4d_t *p4dp, u64 addr)
 {
-	if (!pgtable_l4_enabled())
-		return p4d_to_folded_pud(p4dp, addr);
 	return (pud_t *)__phys_to_kimg(pud_offset_phys(p4dp, addr));
 }
 
 #define p4d_page(p4d)		pfn_to_page(__phys_to_pfn(__p4d_to_phys(p4d)))
 
-#else
 
-static inline bool pgtable_l4_enabled(void) { return false; }
-
-#define p4d_page_paddr(p4d)	({ BUILD_BUG(); 0;})
-
-/* Match pud_offset folding in <asm/generic/pgtable-nopud.h> */
-#define pud_set_fixmap(addr)		NULL
-#define pud_set_fixmap_offset(pgdp, addr)	((pud_t *)pgdp)
-#define pud_clear_fixmap()
-
-#define pud_offset_kimg(dir,addr)	((pud_t *)dir)
-
-#endif  /* CONFIG_PGTABLE_LEVELS > 3 */
-
-#if CONFIG_PGTABLE_LEVELS > 4
-
-static __always_inline bool pgtable_l5_enabled(void)
-{
-	if (!alternative_has_cap_likely(ARM64_ALWAYS_BOOT))
-		return vabits_actual == VA_BITS;
-	return alternative_has_cap_unlikely(ARM64_HAS_VA52);
-}
-
-static inline bool mm_p4d_folded(const struct mm_struct *mm)
-{
-	return !pgtable_l5_enabled();
-}
-#define mm_p4d_folded  mm_p4d_folded
-
-#define p4d_ERROR(e)	\
-	pr_err("%s:%d: bad p4d %016llx.\n", __FILE__, __LINE__, p4d_val(e))
-
-#define pgd_none(pgd)		(pgtable_l5_enabled() && !pgd_val(pgd))
-#define pgd_bad(pgd)		(pgtable_l5_enabled() && \
-				((pgd_val(pgd) & PGD_TYPE_MASK) != \
-				 PGD_TYPE_TABLE))
-#define pgd_present(pgd)	(!pgd_none(pgd))
-
-static inline void set_pgd(pgd_t *pgdp, pgd_t pgd)
-{
-	if (in_swapper_pgdir(pgdp)) {
-		set_swapper_pgd(pgdp, __pgd(pgd_val(pgd)));
-		return;
-	}
-
-	WRITE_ONCE(*pgdp, pgd);
-	queue_pte_barriers();
-}
-
-static inline void pgd_clear(pgd_t *pgdp)
-{
-	if (pgtable_l5_enabled())
-		set_pgd(pgdp, __pgd(0));
-}
-
-static inline phys_addr_t pgd_page_paddr(pgd_t pgd)
-{
-	return __pgd_to_phys(pgd);
-}
-
-#define p4d_index(addr)		(((addr) >> P4D_SHIFT) & (PTRS_PER_P4D - 1))
-
-static inline p4d_t *pgd_to_folded_p4d(pgd_t *pgdp, unsigned long addr)
-{
-	/* Ensure that 'pgdp' indexes a page table according to 'addr' */
-	VM_BUG_ON(((addr >> PGDIR_SHIFT) ^ ((u64)pgdp >> 3)) % PTRS_PER_PGD);
-
-	return (p4d_t *)PTR_ALIGN_DOWN(pgdp, PAGE_SIZE) + p4d_index(addr);
-}
-
-static inline phys_addr_t p4d_offset_phys(pgd_t *pgdp, unsigned long addr)
-{
-	BUG_ON(!pgtable_l5_enabled());
-
-	return pgd_page_paddr(READ_ONCE(*pgdp)) + p4d_index(addr) * sizeof(p4d_t);
-}
-
-static inline
-p4d_t *p4d_offset_lockless(pgd_t *pgdp, pgd_t pgd, unsigned long addr)
-{
-	if (!pgtable_l5_enabled())
-		return pgd_to_folded_p4d(pgdp, addr);
-	return (p4d_t *)__va(pgd_page_paddr(pgd)) + p4d_index(addr);
-}
-#define p4d_offset_lockless p4d_offset_lockless
-
-static inline p4d_t *p4d_offset(pgd_t *pgdp, unsigned long addr)
-{
-	return p4d_offset_lockless(pgdp, READ_ONCE(*pgdp), addr);
-}
-
-static inline p4d_t *p4d_set_fixmap(unsigned long addr)
-{
-	if (!pgtable_l5_enabled())
-		return NULL;
-	return (p4d_t *)set_fixmap_offset(FIX_P4D, addr);
-}
-
-static inline p4d_t *p4d_set_fixmap_offset(pgd_t *pgdp, unsigned long addr)
-{
-	if (!pgtable_l5_enabled())
-		return pgd_to_folded_p4d(pgdp, addr);
-	return p4d_set_fixmap(p4d_offset_phys(pgdp, addr));
-}
-
-static inline void p4d_clear_fixmap(void)
-{
-	if (pgtable_l5_enabled())
-		clear_fixmap(FIX_P4D);
-}
-
-/* use ONLY for statically allocated translation tables */
-static inline p4d_t *p4d_offset_kimg(pgd_t *pgdp, u64 addr)
-{
-	if (!pgtable_l5_enabled())
-		return pgd_to_folded_p4d(pgdp, addr);
-	return (p4d_t *)__phys_to_kimg(p4d_offset_phys(pgdp, addr));
-}
-
-#define pgd_page(pgd)		pfn_to_page(__phys_to_pfn(__pgd_to_phys(pgd)))
-
-#else
-
-static inline bool pgtable_l5_enabled(void) { return false; }
 
 #define p4d_index(addr)		(((addr) >> P4D_SHIFT) & (PTRS_PER_P4D - 1))
 
@@ -1113,7 +915,6 @@ p4d_t *p4d_offset_lockless_folded(pgd_t *pgdp, pgd_t pgd, unsigned long addr)
 }
 #define p4d_offset_lockless p4d_offset_lockless_folded
 
-#endif  /* CONFIG_PGTABLE_LEVELS > 4 */
 
 #define pgd_ERROR(e)	\
 	pr_err("%s:%d: bad pgd %016llx.\n", __FILE__, __LINE__, pgd_val(e))
@@ -1394,11 +1195,7 @@ static inline void update_mmu_cache_range(struct vm_fault *vmf,
 	update_mmu_cache_range(NULL, vma, addr, ptep, 1)
 #define update_mmu_cache_pmd(vma, address, pmd) do { } while (0)
 
-#ifdef CONFIG_ARM64_PA_BITS_52
-#define phys_to_ttbr(addr)	(((addr) | ((addr) >> 46)) & TTBR_BADDR_MASK_52)
-#else
 #define phys_to_ttbr(addr)	(addr)
-#endif
 
 /*
  * Request exec memory is read into pagecache in at least 64K folios. This size

@@ -62,18 +62,6 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
 	return !(((pfn << PAGE_SHIFT) + size) & ~PHYS_MASK);
 }
 
-static int __init adjust_protection_map(void)
-{
-	if (lpa2_is_enabled()) {
-		for (int i = 0; i < ARRAY_SIZE(protection_map); i++)
-			pgprot_val(protection_map[i]) &= ~PTE_SHARED;
-		gcs_page_prot &= ~PTE_SHARED;
-	}
-
-	return 0;
-}
-arch_initcall(adjust_protection_map);
-
 pgprot_t vm_get_page_prot(vm_flags_t vm_flags)
 {
 	ptdesc_t prot;

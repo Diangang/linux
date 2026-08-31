@@ -72,21 +72,9 @@ extern unsigned long prot_ns_shared;
 #define PTE_MAYBE_NG		(arm64_use_ng_mappings ? PTE_NG : 0)
 #define PMD_MAYBE_NG		(arm64_use_ng_mappings ? PMD_SECT_NG : 0)
 
-#ifndef CONFIG_ARM64_LPA2
-#define lpa2_is_enabled()	false
 #define PTE_MAYBE_SHARED	PTE_SHARED
 #define PMD_MAYBE_SHARED	PMD_SECT_S
 #define PHYS_MASK_SHIFT		(CONFIG_ARM64_PA_BITS)
-#else
-static inline bool __pure lpa2_is_enabled(void)
-{
-	return read_tcr() & TCR_EL1_DS;
-}
-
-#define PTE_MAYBE_SHARED	(lpa2_is_enabled() ? 0 : PTE_SHARED)
-#define PMD_MAYBE_SHARED	(lpa2_is_enabled() ? 0 : PMD_SECT_S)
-#define PHYS_MASK_SHIFT		(lpa2_is_enabled() ? CONFIG_ARM64_PA_BITS : 48)
-#endif
 
 /*
  * Highest possible physical address supported.

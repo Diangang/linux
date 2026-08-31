@@ -1811,39 +1811,6 @@ static bool has_nv1(const struct arm64_cpu_capabilities *entry, int scope)
 		  is_midr_in_range_list(nv1_ni_list)));
 }
 
-#if defined(ID_AA64MMFR0_EL1_TGRAN_LPA2) && defined(ID_AA64MMFR0_EL1_TGRAN_2_SUPPORTED_LPA2)
-static bool has_lpa2_at_stage1(u64 mmfr0)
-{
-	unsigned int tgran;
-
-	tgran = cpuid_feature_extract_unsigned_field(mmfr0,
-					ID_AA64MMFR0_EL1_TGRAN_SHIFT);
-	return tgran == ID_AA64MMFR0_EL1_TGRAN_LPA2;
-}
-
-static bool has_lpa2_at_stage2(u64 mmfr0)
-{
-	unsigned int tgran;
-
-	tgran = cpuid_feature_extract_unsigned_field(mmfr0,
-					ID_AA64MMFR0_EL1_TGRAN_2_SHIFT);
-	return tgran == ID_AA64MMFR0_EL1_TGRAN_2_SUPPORTED_LPA2;
-}
-
-static bool has_lpa2(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	u64 mmfr0;
-
-	mmfr0 = read_sanitised_ftr_reg(SYS_ID_AA64MMFR0_EL1);
-	return has_lpa2_at_stage1(mmfr0) && has_lpa2_at_stage2(mmfr0);
-}
-#else
-static bool has_lpa2(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	return false;
-}
-#endif
-
 static void cpu_enable_kpti(struct arm64_cpu_capabilities const *cap)
 {
 	if (__this_cpu_read(this_cpu_vector) == vectors) {
@@ -2413,12 +2380,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_bbml2_noabort,
 	},
 	{
-		.desc = "52-bit Virtual Addressing for KVM (LPA2)",
-		.capability = ARM64_HAS_LPA2,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_lpa2,
-	},
-	{
 		.desc = "FPMR",
 		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
 		.capability = ARM64_HAS_FPMR,
@@ -2426,19 +2387,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.cpu_enable = cpu_enable_fpmr,
 		ARM64_CPUID_FIELDS(ID_AA64PFR2_EL1, FPMR, IMP)
 	},
-#ifdef CONFIG_ARM64_VA_BITS_52
-	{
-		.capability = ARM64_HAS_VA52,
-		.type = ARM64_CPUCAP_BOOT_CPU_FEATURE,
-		.matches = has_cpuid_feature,
-		.desc = "52-bit Virtual Addressing (LPA2)",
-#ifdef CONFIG_ARM64_4K_PAGES
-		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, TGRAN4, 52_BIT)
-#else
-			ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, TGRAN16, 52_BIT)
-#endif
-		},
-#endif
 	{
 		.desc = "Memory Partitioning And Monitoring",
 		.type = ARM64_CPUCAP_SYSTEM_FEATURE,

@@ -151,8 +151,6 @@ int __cpu_up(unsigned int cpu, struct task_struct *idle)
 		fallthrough;
 	case CPU_STUCK_IN_KERNEL:
 		pr_crit("CPU%u: is stuck in kernel\n", cpu);
-		if (status & CPU_STUCK_REASON_52_BIT_VA)
-			pr_crit("CPU%u: does not support 52-bit VAs\n", cpu);
 		if (status & CPU_STUCK_REASON_NO_GRAN) {
 			pr_crit("CPU%u: does not support %luK granule\n",
 				cpu, PAGE_SIZE / SZ_1K);
