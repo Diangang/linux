@@ -122,8 +122,4 @@ static inline int cfi_get_func_arity(void *func)
 	return 0;
 }
 
-#if HAS_KERNEL_IBT == 1
-#define CFI_NOSEAL(x)	asm(IBT_NOSEAL(__stringify(x)))
-#endif
-
 #endif /* _ASM_X86_CFI_H */

@@ -547,37 +547,6 @@ config X86_PAT
 
 	  If unsure, say Y.
 
-config CC_HAS_IBT
-	# GCC >= 9 and binutils >= 2.29
-	# Retpoline check to work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93654
-	def_bool (CC_IS_GCC && $(cc-option, -fcf-protection=branch -mindirect-branch-register)) && \
-		  $(as-instr,endbr64)
-
-config X86_CET
-	def_bool n
-	help
-	  CET features configured (Shadow stack or IBT)
-
-config X86_KERNEL_IBT
-	prompt "Indirect Branch Tracking"
-	def_bool y
-	depends on X86_64 && CC_HAS_IBT && HAVE_OBJTOOL
-	select OBJTOOL
-	select X86_CET
-	help
-	  Build the kernel with support for Indirect Branch Tracking, a
-	  hardware support course-grain forward-edge Control Flow Integrity
-	  protection. It enforces that all indirect calls must land on
-	  an ENDBR instruction, as such, the compiler will instrument the
-	  code with them to make this happen.
-
-	  In addition to building the kernel with IBT, seal all functions that
-	  are not indirect call targets, avoiding them ever becoming one.
-
-	  This requires LTO like objtool runs and will slow down the build. It
-	  does significantly reduce the number of ENDBR instructions in the
-	  kernel image.
-
 config X86_INTEL_MEMORY_PROTECTION_KEYS
 	prompt "Memory Protection Keys"
 	def_bool y

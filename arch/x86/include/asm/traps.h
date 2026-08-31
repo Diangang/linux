@@ -17,10 +17,6 @@ struct pt_regs *fixup_bad_iret(struct pt_regs *bad_regs);
 asmlinkage __visible noinstr struct pt_regs *vc_switch_off_ist(struct pt_regs *eregs);
 #endif
 
-extern int ibt_selftest(void);
-extern int ibt_selftest_noendbr(void);
-
-
 noinstr bool handle_bug(struct pt_regs *regs);
 
 static inline int get_si_code(unsigned long condition)

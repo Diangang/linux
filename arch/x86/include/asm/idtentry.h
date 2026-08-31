@@ -642,9 +642,6 @@ DECLARE_IDTENTRY_RAW(X86_TRAP_DB,	exc_debug);
 DECLARE_IDTENTRY_DF(X86_TRAP_DF,	exc_double_fault);
 
 /* #CP */
-#ifdef CONFIG_X86_CET
-DECLARE_IDTENTRY_ERRORCODE(X86_TRAP_CP,	exc_control_protection);
-#endif
 
 /* #VC */
 

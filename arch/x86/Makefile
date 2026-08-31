@@ -66,21 +66,7 @@ ifdef CONFIG_CC_IS_GCC
 CC_FLAGS_FPU += -mhard-float
 endif
 
-ifeq ($(CONFIG_X86_KERNEL_IBT),y)
-#
-# Kernel IBT has S_CET.NOTRACK_EN=0, as such the compilers must not generate
-# NOTRACK prefixes. Current generation compilers unconditionally employ NOTRACK
-# for jump-tables, as such, disable jump-tables for now.
-#
-# (jump-tables are implicitly disabled by RETPOLINE)
-#
-#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104816
-#
-KBUILD_CFLAGS += $(call cc-option,-fcf-protection=branch -fno-jump-tables)
-KBUILD_RUSTFLAGS += -Zcf-protection=branch $(if $(call rustc-min-version,109300),-Cjump-tables=n,-Zno-jump-tables)
-else
 KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
-endif
 
         BITS := 64
         UTS_MACHINE := x86_64

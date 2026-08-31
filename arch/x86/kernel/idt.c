@@ -95,9 +95,6 @@ static const __initconst struct idt_data def_idts[] = {
 	ISTG(X86_TRAP_MC,		asm_exc_machine_check, IST_INDEX_MCE),
 #endif
 
-#ifdef CONFIG_X86_CET
-	INTG(X86_TRAP_CP,		asm_exc_control_protection),
-#endif
 
 
 	SYSG(X86_TRAP_OF,		asm_exc_overflow),

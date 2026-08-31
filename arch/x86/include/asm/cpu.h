@@ -54,8 +54,6 @@ void init_ia32_feat_ctl(struct cpuinfo_x86 *c);
 static inline void init_ia32_feat_ctl(struct cpuinfo_x86 *c) {}
 #endif
 
-extern __noendbr void cet_disable(void);
-
 struct cpu_signature;
 
 void intel_collect_cpu_info(struct cpu_signature *sig);

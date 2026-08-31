@@ -343,7 +343,7 @@ late_initcall(cpu_finalize_pre_userspace);
 
 /* These bits should not change their value after CPU init is finished. */
 static const unsigned long cr4_pinned_mask = X86_CR4_SMEP | X86_CR4_SMAP |
-					     X86_CR4_FSGSBASE | X86_CR4_CET;
+					     X86_CR4_FSGSBASE;
 
 /*
  * The CR pinning protects against ROP on the 'mov %reg, %CRn' instruction(s).
@@ -505,75 +505,6 @@ static __init int setup_disable_pku(char *arg)
 __setup("nopku", setup_disable_pku);
 #endif
 
-#ifdef CONFIG_X86_KERNEL_IBT
-
-__noendbr u64 ibt_save(bool disable)
-{
-	u64 msr = 0;
-
-	if (cpu_feature_enabled(X86_FEATURE_IBT)) {
-		rdmsrq(MSR_IA32_S_CET, msr);
-		if (disable)
-			wrmsrq(MSR_IA32_S_CET, msr & ~CET_ENDBR_EN);
-	}
-
-	return msr;
-}
-
-__noendbr void ibt_restore(u64 save)
-{
-	u64 msr;
-
-	if (cpu_feature_enabled(X86_FEATURE_IBT)) {
-		rdmsrq(MSR_IA32_S_CET, msr);
-		msr &= ~CET_ENDBR_EN;
-		msr |= (save & CET_ENDBR_EN);
-		wrmsrq(MSR_IA32_S_CET, msr);
-	}
-}
-
-#endif
-
-static __always_inline void setup_cet(struct cpuinfo_x86 *c)
-{
-	bool user_shstk, kernel_ibt;
-
-	if (!IS_ENABLED(CONFIG_X86_CET))
-		return;
-
-	kernel_ibt = HAS_KERNEL_IBT && cpu_feature_enabled(X86_FEATURE_IBT);
-	user_shstk = cpu_feature_enabled(X86_FEATURE_SHSTK) &&
-		     0;
-
-	if (!kernel_ibt && !user_shstk)
-		return;
-
-	if (user_shstk)
-		set_cpu_cap(c, X86_FEATURE_USER_SHSTK);
-
-	if (kernel_ibt)
-		wrmsrq(MSR_IA32_S_CET, CET_ENDBR_EN);
-	else
-		wrmsrq(MSR_IA32_S_CET, 0);
-
-	cr4_set_bits(X86_CR4_CET);
-
-	if (kernel_ibt && ibt_selftest()) {
-		pr_err("IBT selftest: Failed!\n");
-		wrmsrq(MSR_IA32_S_CET, 0);
-		setup_clear_cpu_cap(X86_FEATURE_IBT);
-	}
-}
-
-__noendbr void cet_disable(void)
-{
-	if (!(cpu_feature_enabled(X86_FEATURE_IBT) ||
-	      cpu_feature_enabled(X86_FEATURE_SHSTK)))
-		return;
-
-	wrmsrq(MSR_IA32_S_CET, 0);
-	wrmsrq(MSR_IA32_U_CET, 0);
-}
 
 /*
  * Some CPU features depend on higher CPUID levels, which may not always
@@ -1910,7 +1841,7 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 
 	x86_init_rdrand(c);
 	setup_pku(c);
-	setup_cet(c);
+	cr4_clear_bits(X86_CR4_CET);
 
 	/*
 	 * Clear/Set all flags overridden by options, need do it
@@ -1950,8 +1881,6 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 static __init void identify_boot_cpu(void)
 {
 	identify_cpu(&boot_cpu_data);
-	if (HAS_KERNEL_IBT && cpu_feature_enabled(X86_FEATURE_IBT))
-		pr_info("CET detected: Indirect Branch Tracking enabled\n");
 	cpu_detect_tlb(&boot_cpu_data);
 	setup_cr_pinning();
 

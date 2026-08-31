@@ -93,20 +93,13 @@ static inline void efi_fpu_end(void)
 
 extern asmlinkage u64 __efi_call(void *fp, ...);
 
-extern bool efi_disable_ibt_for_runtime;
-
 #define efi_call(...) ({						\
 	__efi_nargs_check(efi_call, 7, __VA_ARGS__);			\
 	__efi_call(__VA_ARGS__);					\
 })
 
 #undef arch_efi_call_virt
-#define arch_efi_call_virt(p, f, args...) ({				\
-	u64 ret, ibt = ibt_save(efi_disable_ibt_for_runtime);		\
-	ret = efi_call((void *)p->f, args);				\
-	ibt_restore(ibt);						\
-	ret;								\
-})
+#define arch_efi_call_virt(p, f, args...)	efi_call((void *)p->f, args)
 
 extern int __init efi_memblock_x86_reserve_range(void);
 extern void __init efi_print_memmap(void);

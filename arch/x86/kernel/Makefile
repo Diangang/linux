@@ -29,7 +29,6 @@ obj-y			+= platform-quirks.o
 obj-y			+= process_$(BITS).o signal.o signal_$(BITS).o
 obj-y			+= traps.o idt.o irq.o irq_$(BITS).o dumpstack_$(BITS).o
 obj-y			+= time.o dumpstack.o nmi.o
-obj-$(CONFIG_X86_KERNEL_IBT)		+= ibt_selftest.o
 obj-y			+= setup.o x86_init.o i8259.o irqinit.o
 obj-$(CONFIG_JUMP_LABEL)	+= jump_label.o
 obj-$(CONFIG_IRQ_WORK)  += irq_work.o
@@ -75,7 +74,6 @@ obj-$(CONFIG_UNWINDER_ORC)		+= unwind_orc.o
 
 obj-$(CONFIG_CALL_THUNKS)		+= callthunks.o
 
-obj-$(CONFIG_X86_CET)			+= cet.o
 
 
 
