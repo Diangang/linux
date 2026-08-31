@@ -873,11 +873,6 @@ static inline void prep_compound_head(struct page *page, unsigned int order)
 	atomic_set(&folio->_large_mapcount, -1);
 	if (IS_ENABLED(CONFIG_PAGE_MAPCOUNT))
 		atomic_set(&folio->_nr_pages_mapped, 0);
-	if (IS_ENABLED(CONFIG_MM_ID)) {
-		folio->_mm_ids = 0;
-		folio->_mm_id_mapcount[0] = -1;
-		folio->_mm_id_mapcount[1] = -1;
-	}
 	if (IS_ENABLED(CONFIG_64BIT) || order > 1) {
 		atomic_set(&folio->_pincount, 0);
 		atomic_set(&folio->_entire_mapcount, -1);

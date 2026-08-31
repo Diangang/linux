@@ -195,10 +195,6 @@ config MEMORY_FAILURE
 config ARCH_WANT_GENERAL_HUGETLB
 	bool
 
-config MM_ID
-	def_bool n
-
-
 # simple helper to make the code a bit easier to read
 config PAGE_MAPCOUNT
 	def_bool y

@@ -2698,22 +2698,7 @@ static inline bool folio_maybe_mapped_shared(struct folio *folio)
 	if (!folio_test_large(folio) || unlikely(folio_test_hugetlb(folio)))
 		return mapcount > 1;
 
-	/*
-	 * vm_insert_page() with an arbitrary kernel allocation ...
-	 * simply assume "mapped shared", nobody should really care
-	 * about this for arbitrary kernel allocations.
-	 */
-	if (!IS_ENABLED(CONFIG_MM_ID))
-		return true;
-
-	/*
-	 * A single mapping implies "mapped exclusively", even if the
-	 * folio flag says something different: it's easier to handle this
-	 * case here instead of on the RMAP hot path.
-	 */
-	if (mapcount <= 1)
-		return false;
-	return test_bit(FOLIO_MM_IDS_SHARED_BITNUM, &folio->_mm_ids);
+	return true;
 }
 
 /**
