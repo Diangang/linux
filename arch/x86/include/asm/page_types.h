@@ -33,13 +33,8 @@
 
 #define __START_KERNEL		(__START_KERNEL_map + LOAD_PHYSICAL_ADDR)
 
-#ifdef CONFIG_X86_64
 #include <asm/page_64_types.h>
 #define IOREMAP_MAX_ORDER       (PUD_SHIFT)
-#else
-#include <asm/page_32_types.h>
-#define IOREMAP_MAX_ORDER       (PMD_SHIFT)
-#endif	/* CONFIG_X86_64 */
 
 #ifndef __ASSEMBLER__
 
