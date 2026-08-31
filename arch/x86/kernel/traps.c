@@ -548,20 +548,9 @@ __visible void __noreturn handle_stack_overflow(struct pt_regs *regs,
 }
 #endif
 
-/*
- * Prevent the compiler and/or objtool from marking the !CONFIG_X86_ESPFIX64
- * version of exc_double_fault() as noreturn.  Otherwise the noreturn mismatch
- * between configs triggers objtool warnings.
- *
- * This is a temporary hack until we have compiler or plugin support for
- * annotating noreturns.
- */
-#ifdef CONFIG_X86_ESPFIX64
-#define always_true() true
-#else
+/* Prevent the compiler and objtool from treating this path as noreturn. */
 bool always_true(void);
 bool __weak always_true(void) { return true; }
-#endif
 
 /*
  * Runs on an IST stack for x86_64 and on a special task stack for x86_32.
@@ -592,60 +581,6 @@ DEFINE_IDTENTRY_DF(exc_double_fault)
 	struct stack_info info;
 #endif
 
-#ifdef CONFIG_X86_ESPFIX64
-	extern unsigned char native_irq_return_iret[];
-
-	/*
-	 * If IRET takes a non-IST fault on the espfix64 stack, then we
-	 * end up promoting it to a doublefault.  In that case, take
-	 * advantage of the fact that we're not using the normal (TSS.sp0)
-	 * stack right now.  We can write a fake #GP(0) frame at TSS.sp0
-	 * and then modify our own IRET frame so that, when we return,
-	 * we land directly at the #GP(0) vector with the stack already
-	 * set up according to its expectations.
-	 *
-	 * The net result is that our #GP handler will think that we
-	 * entered from usermode with the bad user context.
-	 *
-	 * No need for nmi_enter() here because we don't use RCU.
-	 */
-	if (((long)regs->sp >> P4D_SHIFT) == ESPFIX_PGD_ENTRY &&
-		regs->cs == __KERNEL_CS &&
-		regs->ip == (unsigned long)native_irq_return_iret)
-	{
-		struct pt_regs *gpregs = (struct pt_regs *)this_cpu_read(cpu_tss_rw.x86_tss.sp0) - 1;
-		unsigned long *p = (unsigned long *)regs->sp;
-
-		/*
-		 * regs->sp points to the failing IRET frame on the
-		 * ESPFIX64 stack.  Copy it to the entry stack.  This fills
-		 * in gpregs->ss through gpregs->ip.
-		 *
-		 */
-		gpregs->ip	= p[0];
-		gpregs->cs	= p[1];
-		gpregs->flags	= p[2];
-		gpregs->sp	= p[3];
-		gpregs->ss	= p[4];
-		gpregs->orig_ax = 0;  /* Missing (lost) #GP error code */
-
-		/*
-		 * Adjust our frame so that we return straight to the #GP
-		 * vector with the expected RSP value.  This is safe because
-		 * we won't enable interrupts or schedule before we invoke
-		 * general_protection, so nothing will clobber the stack
-		 * frame we just set up.
-		 *
-		 * We will enter general_protection with kernel GSBASE,
-		 * which is what the stub expects, given that the faulting
-		 * RIP will be the IRET instruction.
-		 */
-		regs->ip = (unsigned long)asm_exc_general_protection;
-		regs->sp = (unsigned long)&gpregs->orig_ax;
-
-		return;
-	}
-#endif
 
 	irqentry_nmi_enter(regs);
 	instrumentation_begin();

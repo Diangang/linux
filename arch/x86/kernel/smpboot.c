@@ -989,7 +989,6 @@ static int do_boot_cpu(u32 apicid, unsigned int cpu, struct task_struct *idle)
 	}
 
 	/* Enable the espfix hack for this CPU */
-	init_espfix_ap(cpu);
 
 	/* So we see what's up */
 	announce_cpu(cpu, apicid);

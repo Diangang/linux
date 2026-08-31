@@ -3,7 +3,6 @@
 #define _ASM_X86_MMU_H
 
 #include <linux/spinlock.h>
-#include <linux/rwsem.h>
 #include <linux/mutex.h>
 #include <linux/atomic.h>
 #include <linux/bits.h>
@@ -41,10 +40,6 @@ typedef struct {
 
 	unsigned long next_trim_cpumask;
 
-#ifdef CONFIG_MODIFY_LDT_SYSCALL
-	struct rw_semaphore	ldt_usr_sem;
-	struct ldt_struct	*ldt;
-#endif
 
 	unsigned long flags;
 

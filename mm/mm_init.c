@@ -1830,7 +1830,6 @@ void __init mm_core_init(void)
 	if (!deferred_struct_pages)
 		page_ext_init();
 	/* Should be run before the first non-init thread is created */
-	init_espfix_bsp();
 	/* Should be run after espfix64 is set up. */
 	pti_init();
 	mm_cache_init();

@@ -251,7 +251,6 @@ DEFINE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page) = { .gdt = {
 	[GDT_ENTRY_APMBIOS_BASE+1]	= GDT_ENTRY_INIT(DESC_CODE16, 0, 0xffff),
 	[GDT_ENTRY_APMBIOS_BASE+2]	= GDT_ENTRY_INIT(DESC_DATA32_BIOS, 0, 0xffff),
 
-	[GDT_ENTRY_ESPFIX_SS]		= GDT_ENTRY_INIT(DESC_DATA32, 0, 0xfffff),
 	[GDT_ENTRY_PERCPU]		= GDT_ENTRY_INIT(DESC_DATA32, 0, 0xfffff),
 #endif
 } };
@@ -2306,7 +2305,7 @@ void cpu_init(void)
 	 */
 	load_sp0((unsigned long)(cpu_entry_stack(cpu) + 1));
 
-	load_mm_ldt(&init_mm);
+	clear_LDT();
 
 	initialize_debug_regs();
 	dbg_restore_debug_regs();

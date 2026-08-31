@@ -265,16 +265,7 @@ static int emulate_umip_insn(struct insn *insn, int umip_inst,
 		} else if (umip_inst == UMIP_INST_STR) {
 			dummy_value = GDT_ENTRY_TSS * 8;
 		} else if (umip_inst == UMIP_INST_SLDT) {
-#ifdef CONFIG_MODIFY_LDT_SYSCALL
-			down_read(&current->mm->context.ldt_usr_sem);
-			if (current->mm->context.ldt)
-				dummy_value = GDT_ENTRY_LDT * 8;
-			else
-				dummy_value = 0;
-			up_read(&current->mm->context.ldt_usr_sem);
-#else
 			dummy_value = 0;
-#endif
 		}
 
 		/*

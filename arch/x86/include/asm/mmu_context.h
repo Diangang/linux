@@ -14,69 +14,6 @@
 extern atomic64_t last_mm_ctx_id;
 
 
-#ifdef CONFIG_MODIFY_LDT_SYSCALL
-/*
- * ldt_structs can be allocated, used, and freed, but they are never
- * modified while live.
- */
-struct ldt_struct {
-	/*
-	 * Xen requires page-aligned LDTs with special permissions.  This is
-	 * needed to prevent us from installing evil descriptors such as
-	 * call gates.  On native, we could merge the ldt_struct and LDT
-	 * allocations, but it's not worth trying to optimize.
-	 */
-	struct desc_struct	*entries;
-	unsigned int		nr_entries;
-
-	/*
-	 * If PTI is in use, then the entries array is not mapped while we're
-	 * in user mode.  The whole array will be aliased at the addressed
-	 * given by ldt_slot_va(slot).  We use two slots so that we can allocate
-	 * and map, and enable a new LDT without invalidating the mapping
-	 * of an older, still-in-use LDT.
-	 *
-	 * slot will be -1 if this LDT doesn't have an alias mapping.
-	 */
-	int			slot;
-};
-
-/*
- * Used for LDT copy/destruction.
- */
-static inline void init_new_context_ldt(struct mm_struct *mm)
-{
-	mm->context.ldt = NULL;
-	init_rwsem(&mm->context.ldt_usr_sem);
-}
-int ldt_dup_context(struct mm_struct *oldmm, struct mm_struct *mm);
-void destroy_context_ldt(struct mm_struct *mm);
-void ldt_arch_exit_mmap(struct mm_struct *mm);
-#else	/* CONFIG_MODIFY_LDT_SYSCALL */
-static inline void init_new_context_ldt(struct mm_struct *mm) { }
-static inline int ldt_dup_context(struct mm_struct *oldmm,
-				  struct mm_struct *mm)
-{
-	return 0;
-}
-static inline void destroy_context_ldt(struct mm_struct *mm) { }
-static inline void ldt_arch_exit_mmap(struct mm_struct *mm) { }
-#endif
-
-#ifdef CONFIG_MODIFY_LDT_SYSCALL
-extern void load_mm_ldt(struct mm_struct *mm);
-extern void switch_ldt(struct mm_struct *prev, struct mm_struct *next);
-#else
-static inline void load_mm_ldt(struct mm_struct *mm)
-{
-	clear_LDT();
-}
-static inline void switch_ldt(struct mm_struct *prev, struct mm_struct *next)
-{
-	DEBUG_LOCKS_WARN_ON(preemptible());
-}
-#endif
-
 static inline unsigned long mm_lam_cr3_mask(struct mm_struct *mm)
 {
 	return 0;
@@ -118,14 +55,12 @@ static inline int init_new_context(struct task_struct *tsk,
 
 	mm_init_global_asid(mm);
 	mm_reset_untag_mask(mm);
-	init_new_context_ldt(mm);
 	return 0;
 }
 
 #define destroy_context destroy_context
 static inline void destroy_context(struct mm_struct *mm)
 {
-	destroy_context_ldt(mm);
 	mm_free_global_asid(mm);
 }
 
@@ -165,12 +100,11 @@ static inline int arch_dup_mmap(struct mm_struct *oldmm, struct mm_struct *mm)
 {
 	arch_dup_pkeys(oldmm, mm);
 	dup_lam(oldmm, mm);
-	return ldt_dup_context(oldmm, mm);
+	return 0;
 }
 
 static inline void arch_exit_mmap(struct mm_struct *mm)
 {
-	ldt_arch_exit_mmap(mm);
 }
 
 #ifdef CONFIG_X86_64

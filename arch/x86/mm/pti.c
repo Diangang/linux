@@ -491,16 +491,6 @@ static void __init pti_clone_user_shared(void)
 #endif /* CONFIG_X86_64 */
 
 /*
- * Clone the ESPFIX P4D into the user space visible page table
- */
-static void __init pti_setup_espfix64(void)
-{
-#ifdef CONFIG_X86_ESPFIX64
-	pti_clone_p4d(ESPFIX_BASE_ADDR);
-#endif
-}
-
-/*
  * Clone the populated PMDs of the entry text and force it RO.
  */
 static void pti_clone_entry_text(bool late)
@@ -627,7 +617,6 @@ void __init pti_init(void)
 	 * but notably the text is still RW.
 	 */
 	pti_clone_entry_text(false);
-	pti_setup_espfix64();
 	pti_setup_vsyscall();
 }
 

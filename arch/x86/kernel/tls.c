@@ -50,16 +50,11 @@ static bool tls_desc_okay(const struct user_desc *info)
 	 * a user_desc that satisfies LDT_empty.  To keep everything
 	 * working, we accept both.
 	 *
-	 * Note that there's a similar kludge in modify_ldt -- look at
-	 * the distinction between modes 1 and 0x11.
 	 */
 	if (LDT_empty(info) || LDT_zero(info))
 		return true;
 
-	/*
-	 * espfix is required for 16-bit data segments, but espfix
-	 * only works for LDT segments.
-	 */
+	/* 16-bit data segments are unsupported. */
 	if (!info->seg_32bit)
 		return false;
 

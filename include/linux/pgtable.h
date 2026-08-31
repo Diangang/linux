@@ -1929,10 +1929,6 @@ struct file;
 int phys_mem_access_prot_allowed(struct file *file, unsigned long pfn,
 			unsigned long size, pgprot_t *vma_prot);
 
-#ifndef CONFIG_X86_ESPFIX64
-static inline void init_espfix_bsp(void) { }
-#endif
-
 extern void __init pgtable_cache_init(void);
 
 #ifndef __HAVE_ARCH_PFN_MODIFY_ALLOWED

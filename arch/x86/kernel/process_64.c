@@ -422,24 +422,7 @@ unsigned long x86_fsgsbase_read_task(struct task_struct *task,
 		idx -= GDT_ENTRY_TLS_MIN;
 		base = get_desc_base(&task->thread.tls_array[idx]);
 	} else {
-#ifdef CONFIG_MODIFY_LDT_SYSCALL
-		struct ldt_struct *ldt;
-
-		/*
-		 * If performance here mattered, we could protect the LDT
-		 * with RCU.  This is a slow path, though, so we can just
-		 * take the mutex.
-		 */
-		mutex_lock(&task->mm->context.lock);
-		ldt = task->mm->context.ldt;
-		if (unlikely(!ldt || idx >= ldt->nr_entries))
-			base = 0;
-		else
-			base = get_desc_base(ldt->entries + idx);
-		mutex_unlock(&task->mm->context.lock);
-#else
 		base = 0;
-#endif
 	}
 
 	return base;

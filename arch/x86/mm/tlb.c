@@ -900,7 +900,6 @@ reload_tlb:
 
 	if (next != prev) {
 		cr4_update_pce_mm(next);
-		switch_ldt(prev, next);
 	}
 }
 
