@@ -430,21 +430,16 @@ static bool match_llc(struct cpuinfo_x86 *c, struct cpuinfo_x86 *o)
 }
 
 
-static inline int x86_sched_itmt_flags(void)
-{
-	return sysctl_sched_itmt_enabled ? SD_ASYM_PACKING : 0;
-}
-
 #ifdef CONFIG_SCHED_MC
 static int x86_core_flags(void)
 {
-	return cpu_core_flags() | x86_sched_itmt_flags();
+	return cpu_core_flags();
 }
 #endif
 #ifdef CONFIG_SCHED_CLUSTER
 static int x86_cluster_flags(void)
 {
-	return cpu_cluster_flags() | x86_sched_itmt_flags();
+	return cpu_cluster_flags();
 }
 #endif
 
@@ -456,7 +451,7 @@ static struct sched_domain_topology_level x86_topology[] = {
 #ifdef CONFIG_SCHED_MC
 	SDTL_INIT(tl_mc_mask, x86_core_flags, MC),
 #endif
-	SDTL_INIT(tl_pkg_mask, x86_sched_itmt_flags, PKG),
+	SDTL_INIT(tl_pkg_mask, NULL, PKG),
 	{ NULL },
 };
 

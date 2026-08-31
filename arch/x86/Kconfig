@@ -375,25 +375,6 @@ config NR_CPUS
 	  This is purely to save memory: each supported CPU adds about 8KB
 	  to the kernel image.
 
-config SCHED_MC_PRIO
-	bool "CPU core priorities scheduler support"
-	depends on SCHED_MC
-	default y
-	help
-	  Intel Turbo Boost Max Technology 3.0 enabled CPUs have a
-	  core ordering determined at manufacturing time, which allows
-	  certain cores to reach higher turbo frequencies (when running
-	  single threaded workloads) than others.
-
-	  Enabling this kernel feature teaches the scheduler about
-	  the TBM3 (aka ITMT) priority order of the CPU cores and adjusts the
-	  scheduler's CPU selection logic accordingly, so that higher
-	  overall system performance can be achieved.
-
-	  This feature will have no effect on CPUs without this feature.
-
-	  If unsure say Y here.
-
 config X86_LOCAL_APIC
 	def_bool y
 	depends on X86_64 || SMP || PCI_MSI
