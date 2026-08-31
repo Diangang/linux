@@ -444,7 +444,7 @@ retry:
 		return -EINVAL;
 
 retry_private:
-	if (1) {
+	{
 		CLASS(hb, hb1)(&key1);
 		CLASS(hb, hb2)(&key2);
 

@@ -18,25 +18,10 @@
 #include <linux/cpu.h>
 #include <linux/notifier.h>
 #include <linux/smp.h>
-#include <linux/smpboot.h>
 #include <asm/processor.h>
 
 static DEFINE_PER_CPU(struct llist_head, raised_list);
 static DEFINE_PER_CPU(struct llist_head, lazy_list);
-static DEFINE_PER_CPU(struct task_struct *, irq_workd);
-
-static void wake_irq_workd(void)
-{
-	struct task_struct *tsk = __this_cpu_read(irq_workd);
-
-	if (!llist_empty(this_cpu_ptr(&lazy_list)) && tsk)
-		wake_up_process(tsk);
-}
-
-static int irq_workd_should_run(unsigned int cpu)
-{
-	return !llist_empty(this_cpu_ptr(&lazy_list));
-}
 
 /*
  * Claim the entry so that no one else will poke at it.
@@ -219,10 +204,7 @@ static void irq_work_run_list(struct llist_head *list)
 void irq_work_run(void)
 {
 	irq_work_run_list(this_cpu_ptr(&raised_list));
-	if (!0)
-		irq_work_run_list(this_cpu_ptr(&lazy_list));
-	else
-		wake_irq_workd();
+	irq_work_run_list(this_cpu_ptr(&lazy_list));
 }
 EXPORT_SYMBOL_GPL(irq_work_run);
 
@@ -233,10 +215,7 @@ void irq_work_tick(void)
 	if (!llist_empty(raised) && !arch_irq_work_has_interrupt())
 		irq_work_run_list(raised);
 
-	if (!0)
-		irq_work_run_list(this_cpu_ptr(&lazy_list));
-	else
-		wake_irq_workd();
+	irq_work_run_list(this_cpu_ptr(&lazy_list));
 }
 
 /*
@@ -258,29 +237,3 @@ void irq_work_sync(struct irq_work *work)
 		cpu_relax();
 }
 EXPORT_SYMBOL_GPL(irq_work_sync);
-
-static void run_irq_workd(unsigned int cpu)
-{
-	irq_work_run_list(this_cpu_ptr(&lazy_list));
-}
-
-static void irq_workd_setup(unsigned int cpu)
-{
-	sched_set_fifo_low(current);
-}
-
-static struct smp_hotplug_thread irqwork_threads = {
-	.store                  = &irq_workd,
-	.setup			= irq_workd_setup,
-	.thread_should_run      = irq_workd_should_run,
-	.thread_fn              = run_irq_workd,
-	.thread_comm            = "irq_work/%u",
-};
-
-static __init int irq_work_init_threads(void)
-{
-	if (0)
-		BUG_ON(smpboot_register_percpu_thread(&irqwork_threads));
-	return 0;
-}
-early_initcall(irq_work_init_threads);

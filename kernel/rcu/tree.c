@@ -400,7 +400,7 @@ static int rcu_is_cpu_rrupt_from_idle(void)
 	return false;
 }
 
-#define DEFAULT_RCU_BLIMIT (0 ? 1000 : 10)
+#define DEFAULT_RCU_BLIMIT 10
 				// Maximum callbacks per rcu_do_batch ...
 #define DEFAULT_MAX_RCU_BLIMIT 10000 // ... even during callback flood.
 static long blimit = DEFAULT_RCU_BLIMIT;
@@ -418,7 +418,7 @@ module_param(qhimark, long, 0444);
 module_param(qlowmark, long, 0444);
 module_param(qovld, long, 0444);
 
-static ulong jiffies_till_first_fqs = 0 ? 0 : ULONG_MAX;
+static ulong jiffies_till_first_fqs = ULONG_MAX;
 static ulong jiffies_till_next_fqs = ULONG_MAX;
 static bool rcu_kick_kthreads;
 static int rcu_divisor = 7;
@@ -1089,19 +1089,6 @@ static void __maybe_unused rcu_advance_cbs_nowake(struct rcu_node *rnp,
 }
 
 /*
- * In CONFIG_RCU_STRICT_GRACE_PERIOD=y kernels, attempt to generate a
- * quiescent state.  This is intended to be invoked when the CPU notices
- * a new grace period.
- */
-static void rcu_strict_gp_check_qs(void)
-{
-	if (0) {
-		rcu_read_lock();
-		rcu_read_unlock();
-	}
-}
-
-/*
  * Update CPU-local rcu_data state to record the beginnings and ends of
  * grace periods.  The caller must hold the ->lock of the leaf rcu_node
  * structure corresponding to the current CPU, and must have irqs disabled.
@@ -1168,7 +1155,6 @@ static void note_gp_changes(struct rcu_data *rdp)
 	}
 	needwake = __note_gp_changes(rnp, rdp);
 	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
-	rcu_strict_gp_check_qs();
 	if (needwake)
 		rcu_gp_kthread_wake();
 }
@@ -1216,15 +1202,6 @@ EXPORT_SYMBOL_GPL(rcu_gp_set_torture_wait);
 /* Actually implement the aforementioned wait. */
 static void rcu_gp_torture_wait(void)
 {
-}
-
-/*
- * Handler for on_each_cpu() to invoke the target CPU's RCU core
- * processing.
- */
-static void rcu_strict_gp_boundary(void *unused)
-{
-	invoke_rcu_core();
 }
 
 // Make the polled API aware of the beginning of a grace period.
@@ -1791,10 +1768,6 @@ static noinline_for_stack bool rcu_gp_init(void)
 		WRITE_ONCE(rcu_state.gp_activity, jiffies);
 	}
 
-	// If strict, make all CPUs aware of new grace period.
-	if (0)
-		on_each_cpu(rcu_strict_gp_boundary, NULL, 0);
-
 	/*
 	 * Immediately report QS for the GP kthread's CPU. The GP kthread
 	 * cannot be in an RCU read-side critical section while running
@@ -2057,10 +2030,6 @@ static noinline void rcu_gp_cleanup(void)
 
 	// Make synchronize_rcu() users aware of the end of old grace period.
 	rcu_sr_normal_gp_cleanup();
-
-	// If strict, make all CPUs aware of the end of the old grace period.
-	if (0)
-		on_each_cpu(rcu_strict_gp_boundary, NULL, 0);
 }
 
 /*
@@ -2473,13 +2442,6 @@ static void rcu_do_batch(struct rcu_data *rdp)
  */
 void rcu_sched_clock_irq(int user)
 {
-	unsigned long j;
-
-	if (0) {
-		j = jiffies;
-		WARN_ON_ONCE(time_before(j, __this_cpu_read(rcu_data.last_sched_clock)));
-		__this_cpu_write(rcu_data.last_sched_clock, j);
-	}
 	lockdep_assert_irqs_disabled();
 	raw_cpu_inc(rcu_data.ticks_this_gp);
 	/* The load-acquire pairs with the store-release setting to true. */
@@ -2599,14 +2561,6 @@ void rcu_force_quiescent_state(void)
 }
 EXPORT_SYMBOL_GPL(rcu_force_quiescent_state);
 
-// Workqueue handler for an RCU reader for kernels enforcing struct RCU
-// grace periods.
-static void strict_work_handler(struct work_struct *work)
-{
-	rcu_read_lock();
-	rcu_read_unlock();
-}
-
 /* Perform RCU core processing work for the current CPU.  */
 static void rcu_core(void)
 {
@@ -2649,10 +2603,6 @@ static void rcu_core(void)
 
 	/* Do any needed deferred wakeups of rcuo kthreads. */
 	do_nocb_deferred_wakeup(rdp);
-
-	// If strict GPs, schedule an RCU reader in a clean environment.
-	if (0)
-		queue_work_on(rdp->cpu, rcu_gp_wq, &rdp->strict_work);
 }
 
 static void rcu_core_si(void)
@@ -3021,13 +2971,6 @@ static void synchronize_rcu_normal(void)
 
 	init_rcu_head_on_stack(&rs.head);
 	init_completion(&rs.completion);
-
-	/*
-	 * This code might be preempted, therefore take a GP
-	 * snapshot before adding a request.
-	 */
-	if (0)
-		get_state_synchronize_rcu_full(&rs.oldstate);
 
 	rcu_sr_normal_add_req(&rs);
 
@@ -3838,7 +3781,6 @@ rcu_boot_init_percpu_data(int cpu)
 
 	/* Set up local state, ensuring consistent view of global state. */
 	rdp->grpmask = leaf_node_cpu_bit(rdp->mynode, cpu);
-	INIT_WORK(&rdp->strict_work, strict_work_handler);
 	WARN_ON_ONCE(ct->nesting != 1);
 	WARN_ON_ONCE(rcu_watching_snap_in_eqs(ct_rcu_watching_cpu(cpu)));
 	rdp->barrier_seq_snap = rcu_state.barrier_sequence;
@@ -3846,7 +3788,6 @@ rcu_boot_init_percpu_data(int cpu)
 	rdp->rcu_ofl_gp_state = RCU_GP_CLEANED;
 	rdp->rcu_onl_gp_seq = rcu_state.gp_seq;
 	rdp->rcu_onl_gp_state = RCU_GP_CLEANED;
-	rdp->last_sched_clock = jiffies;
 	rdp->cpu = cpu;
 	rcu_boot_init_nocb_percpu_data(rdp);
 }
@@ -3873,7 +3814,6 @@ static void rcu_spawn_exp_par_gp_kworker(struct rcu_node *rnp)
 {
 	struct kthread_worker *kworker;
 	const char *name = "rcu_exp_par_gp_kthread_worker/%d";
-	struct sched_param param = { .sched_priority = kthread_prio };
 	int rnp_index = rnp - rcu_get_root();
 
 	if (rnp->exp_kworker)
@@ -3887,9 +3827,6 @@ static void rcu_spawn_exp_par_gp_kworker(struct rcu_node *rnp)
 	}
 	WRITE_ONCE(rnp->exp_kworker, kworker);
 
-	if (0)
-		sched_setscheduler_nocheck(kworker->task, SCHED_FIFO, &param);
-
 	rcu_thread_affine_rnp(kworker->task, rnp);
 	wake_up_process(kworker->task);
 }
@@ -3897,17 +3834,12 @@ static void rcu_spawn_exp_par_gp_kworker(struct rcu_node *rnp)
 static void __init rcu_start_exp_gp_kworker(void)
 {
 	const char *name = "rcu_exp_gp_kthread_worker";
-	struct sched_param param = { .sched_priority = kthread_prio };
-
 	rcu_exp_gp_kworker = kthread_run_worker(0, name);
 	if (IS_ERR_OR_NULL(rcu_exp_gp_kworker)) {
 		pr_err("Failed to create %s!\n", name);
 		rcu_exp_gp_kworker = NULL;
 		return;
 	}
-
-	if (0)
-		sched_setscheduler_nocheck(rcu_exp_gp_kworker->task, SCHED_FIFO, &param);
 }
 
 static void rcu_spawn_rnp_kthreads(struct rcu_node *rnp)

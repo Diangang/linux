@@ -4058,23 +4058,8 @@ static bool __flush_work(struct work_struct *work, bool from_cancel)
 
 		if (!WARN_ON_ONCE(data & WORK_STRUCT_PWQ) &&
 		    (data & WORK_OFFQ_BH)) {
-			/*
-			 * On RT, prevent a live lock when %current preempted
-			 * soft interrupt processing by blocking on lock which
-			 * is owned by the thread invoking the callback.
-			 */
-			while (!try_wait_for_completion(&barr.done)) {
-				if (0) {
-					struct worker_pool *pool;
-
-					guard(rcu)();
-					pool = get_work_pool(work);
-					if (pool)
-						workqueue_callback_cancel_wait_running(pool);
-				} else {
-					cpu_relax();
-				}
-			}
+			while (!try_wait_for_completion(&barr.done))
+				cpu_relax();
 			goto out_destroy;
 		}
 	}

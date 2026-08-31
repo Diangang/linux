@@ -1222,39 +1222,8 @@ static inline void __run_posix_cpu_timers(struct task_struct *tsk)
 static inline bool posix_cpu_timers_enable_work(struct task_struct *tsk,
 						unsigned long start)
 {
-	bool ret = true;
-
-	/*
-	 * On !RT kernels interrupts are disabled while collecting expired
-	 * timers, so no tick can happen and the fast path check can be
-	 * reenabled without further checks.
-	 */
-	if (!0) {
-		tsk->posix_cputimers_work.scheduled = false;
-		return true;
-	}
-
-	/*
-	 * On RT enabled kernels ticks can happen while the expired timers
-	 * are collected under sighand lock. But any tick which observes
-	 * the CPUTIMERS_WORK_SCHEDULED bit set, does not run the fastpath
-	 * checks. So reenabling the tick work has do be done carefully:
-	 *
-	 * Disable interrupts and run the fast path check if jiffies have
-	 * advanced since the collecting of expired timers started. If
-	 * jiffies have not advanced or the fast path check did not find
-	 * newly expired timers, reenable the fast path check in the timer
-	 * interrupt. If there are newly expired timers, return false and
-	 * let the collection loop repeat.
-	 */
-	local_irq_disable();
-	if (start != jiffies && fastpath_timer_check(tsk))
-		ret = false;
-	else
-		tsk->posix_cputimers_work.scheduled = false;
-	local_irq_enable();
-
-	return ret;
+	tsk->posix_cputimers_work.scheduled = false;
+	return true;
 }
 #else /* CONFIG_POSIX_CPU_TIMERS_TASK_WORK */
 static inline void __run_posix_cpu_timers(struct task_struct *tsk)

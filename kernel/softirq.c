@@ -616,16 +616,7 @@ EXPORT_SYMBOL(tasklet_init);
 void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 {
 	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
-		if (0) {
-			/*
-			 * Prevent a live lock when current preempted soft
-			 * interrupt processing or prevents ksoftirqd from
-			 * running.
-			 */
-			tasklet_callback_cancel_wait_running();
-		} else {
-			cpu_relax();
-		}
+		cpu_relax();
 	}
 }
 EXPORT_SYMBOL(tasklet_unlock_spin_wait);

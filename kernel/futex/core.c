@@ -1200,7 +1200,7 @@ static void exit_pi_state_list(struct task_struct *curr)
 		next = head->next;
 		pi_state = list_entry(next, struct futex_pi_state, list);
 		key = pi_state->key;
-		if (1) {
+		{
 			CLASS(hb, hb)(&key);
 
 			/*

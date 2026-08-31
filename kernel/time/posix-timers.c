@@ -1531,10 +1531,7 @@ static int __init posixtimer_init(void)
 					       __alignof__(struct k_itimer),
 					       0, NULL);
 
-	if (0)
-		size = 512;
-	else
-		size = roundup_pow_of_two(512 * num_possible_cpus());
+	size = roundup_pow_of_two(512 * num_possible_cpus());
 
 	timer_buckets = alloc_large_system_hash("posixtimers", sizeof(*timer_buckets),
 						size, 0, 0, &shift, NULL, size, size);

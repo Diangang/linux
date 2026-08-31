@@ -5462,11 +5462,7 @@ __setup("preempt=", setup_preempt_mode);
 static void __init preempt_dynamic_init(void)
 {
 	if (preempt_dynamic_mode == preempt_dynamic_undefined) {
-		if (0) {
-			sched_dynamic_update(preempt_dynamic_none);
-		} else if (0) {
-			sched_dynamic_update(preempt_dynamic_voluntary);
-		} else if (IS_ENABLED(CONFIG_PREEMPT_LAZY)) {
+		if (IS_ENABLED(CONFIG_PREEMPT_LAZY)) {
 			sched_dynamic_update(preempt_dynamic_lazy);
 		} else {
 			/* Default static call setting, nothing to do */
@@ -5515,11 +5511,6 @@ const char *preempt_model_str(void)
 		seq_buf_init(&s, buf, sizeof(buf));
 		seq_buf_puts(&s, "PREEMPT");
 
-		if (0)
-			seq_buf_printf(&s, "%sRT%s",
-				       brace ? "_{" : "_",
-				       brace ? "," : "");
-
 		if (IS_ENABLED(CONFIG_PREEMPT_DYNAMIC)) {
 			seq_buf_printf(&s, "(%s)%s",
 				       preempt_dynamic_mode >= 0 ?
@@ -5536,9 +5527,6 @@ const char *preempt_model_str(void)
 
 		return seq_buf_str(&s);
 	}
-
-	if (0)
-		return "VOLUNTARY";
 
 	return "NONE";
 }

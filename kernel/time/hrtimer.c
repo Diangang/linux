@@ -34,8 +34,6 @@
 #include <linux/debugobjects.h>
 #include <linux/sched/signal.h>
 #include <linux/sched/sysctl.h>
-#include <linux/sched/rt.h>
-#include <linux/sched/deadline.h>
 #include <linux/sched/nohz.h>
 #include <linux/sched/debug.h>
 #include <linux/sched/isolation.h>
@@ -1333,14 +1331,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim, u64 delta_ns,
 	debug_hrtimer_assert_init(timer);
 
 	/*
-	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
-	 * match on CONFIG_PREEMPT_RT = n. With PREEMPT_RT check the hard
-	 * expiry mode because unmarked timers are moved to softirq expiry.
+	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft match.
 	 */
-	if (!0)
-		WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
-	else
-		WARN_ON_ONCE(!(mode & HRTIMER_MODE_HARD) ^ !timer->is_hard);
+	WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
 
 	base = lock_hrtimer_base(timer, &flags);
 
@@ -1955,30 +1948,6 @@ EXPORT_SYMBOL_GPL(hrtimer_sleeper_start_expires);
 static void __hrtimer_setup_sleeper(struct hrtimer_sleeper *sl, clockid_t clock_id,
 				    enum hrtimer_mode mode)
 {
-	/*
-	 * On PREEMPT_RT enabled kernels hrtimers which are not explicitly
-	 * marked for hard interrupt expiry mode are moved into soft
-	 * interrupt context either for latency reasons or because the
-	 * hrtimer callback takes regular spinlocks or invokes other
-	 * functions which are not suitable for hard interrupt context on
-	 * PREEMPT_RT.
-	 *
-	 * The hrtimer_sleeper callback is RT compatible in hard interrupt
-	 * context, but there is a latency concern: Untrusted userspace can
-	 * spawn many threads which arm timers for the same expiry time on
-	 * the same CPU. That causes a latency spike due to the wakeup of
-	 * a gazillion threads.
-	 *
-	 * OTOH, privileged real-time user space applications rely on the
-	 * low latency of hard interrupt wakeups. If the current task is in
-	 * a real-time scheduling class, mark the mode for hard interrupt
-	 * expiry.
-	 */
-	if (0) {
-		if (rt_or_dl_task_policy(current) && !(mode & HRTIMER_MODE_SOFT))
-			mode |= HRTIMER_MODE_HARD;
-	}
-
 	__hrtimer_setup(&sl->timer, hrtimer_wakeup, clock_id, mode);
 	sl->task = current;
 }

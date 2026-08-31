@@ -1152,11 +1152,9 @@ static irqreturn_t irq_forced_thread_fn(struct irq_desc *desc, struct irqaction 
 	irqreturn_t ret;
 
 	local_bh_disable();
-	if (!0)
-		local_irq_disable();
+	local_irq_disable();
 	ret = irq_thread_fn(desc, action);
-	if (!0)
-		local_irq_enable();
+	local_irq_enable();
 	local_bh_enable();
 	return ret;
 }

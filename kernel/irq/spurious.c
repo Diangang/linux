@@ -393,10 +393,6 @@ MODULE_PARM_DESC(noirqdebug, "Disable irq lockup detection when true");
 
 static int __init irqfixup_setup(char *str)
 {
-	if (0) {
-		pr_warn("irqfixup boot option not supported with PREEMPT_RT\n");
-		return 1;
-	}
 	irqfixup = 1;
 	pr_warn("Misrouted IRQ fixup support enabled.\n");
 	pr_warn("This may impact system performance.\n");
@@ -407,10 +403,6 @@ module_param(irqfixup, int, 0644);
 
 static int __init irqpoll_setup(char *str)
 {
-	if (0) {
-		pr_warn("irqpoll boot option not supported with PREEMPT_RT\n");
-		return 1;
-	}
 	irqfixup = 2;
 	pr_warn("Misrouted IRQ fixup and polling support enabled\n");
 	pr_warn("This may significantly impact system performance\n");

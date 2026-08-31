@@ -265,7 +265,7 @@ retry:
 		return ret;
 
 retry_private:
-	if (1) {
+	{
 		CLASS(hb, hb1)(&key1);
 		CLASS(hb, hb2)(&key2);
 
@@ -445,7 +445,7 @@ retry:
 		struct futex_q *q = &vs[i].q;
 		u32 val = vs[i].w.val;
 
-		if (1) {
+		{
 			CLASS(hb, hb)(&q->key);
 
 			futex_q_lock(q, hb);
@@ -620,7 +620,7 @@ retry:
 		return ret;
 
 retry_private:
-	if (1) {
+	{
 		CLASS(hb, hb)(&q->key);
 
 		futex_q_lock(q, hb);

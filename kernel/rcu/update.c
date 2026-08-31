@@ -94,8 +94,6 @@ EXPORT_SYMBOL_GPL(rcu_async_should_hurry);
  */
 void rcu_async_hurry(void)
 {
-	if (0)
-		atomic_inc(&rcu_async_hurry_nesting);
 }
 EXPORT_SYMBOL_GPL(rcu_async_hurry);
 
@@ -107,8 +105,6 @@ EXPORT_SYMBOL_GPL(rcu_async_hurry);
  */
 void rcu_async_relax(void)
 {
-	if (0)
-		atomic_dec(&rcu_async_hurry_nesting);
 }
 EXPORT_SYMBOL_GPL(rcu_async_relax);
 
@@ -185,11 +181,6 @@ EXPORT_SYMBOL_GPL(rcu_inkernel_boot_has_ended);
  */
 void rcu_test_sync_prims(void)
 {
-	if (!0)
-		return;
-	pr_info("Running RCU synchronous self tests\n");
-	synchronize_rcu();
-	synchronize_rcu_expedited();
 }
 
 

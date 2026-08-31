@@ -2642,8 +2642,6 @@ static const struct attribute_group cpuhp_cpu_root_attr_group = {
 
 static bool cpu_smt_num_threads_valid(unsigned int threads)
 {
-	if (0)
-		return threads >= 1 && threads <= cpu_smt_max_threads;
 	return threads == 1 || threads == cpu_smt_max_threads;
 }
 

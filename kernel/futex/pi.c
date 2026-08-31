@@ -944,7 +944,7 @@ retry:
 		goto out;
 
 retry_private:
-	if (1) {
+	{
 		CLASS(hb, hb)(&q.key);
 
 		futex_q_lock(&q, hb);
