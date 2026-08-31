@@ -194,7 +194,7 @@ static int alloc_init_cont_pte(pmd_t *pmdp, unsigned long addr,
 
 	BUG_ON(pmd_leaf(pmd));
 	if (pmd_none(pmd)) {
-		pmdval_t pmdval = PMD_TYPE_TABLE | PMD_TABLE_UXN | PMD_TABLE_AF;
+		pmdval_t pmdval = PMD_TYPE_TABLE | PMD_TABLE_UXN;
 		phys_addr_t pte_phys;
 
 		if (flags & NO_EXEC_MAPPINGS)
@@ -293,7 +293,7 @@ static int alloc_init_cont_pmd(pud_t *pudp, unsigned long addr,
 	 */
 	BUG_ON(pud_leaf(pud));
 	if (pud_none(pud)) {
-		pudval_t pudval = PUD_TYPE_TABLE | PUD_TABLE_UXN | PUD_TABLE_AF;
+		pudval_t pudval = PUD_TYPE_TABLE | PUD_TABLE_UXN;
 		phys_addr_t pmd_phys;
 
 		if (flags & NO_EXEC_MAPPINGS)
@@ -346,7 +346,7 @@ static int alloc_init_pud(p4d_t *p4dp, unsigned long addr, unsigned long end,
 	pud_t *pudp;
 
 	if (p4d_none(p4d)) {
-		p4dval_t p4dval = P4D_TYPE_TABLE | P4D_TABLE_UXN | P4D_TABLE_AF;
+		p4dval_t p4dval = P4D_TYPE_TABLE | P4D_TABLE_UXN;
 		phys_addr_t pud_phys;
 
 		if (flags & NO_EXEC_MAPPINGS)
@@ -412,7 +412,7 @@ static int alloc_init_p4d(pgd_t *pgdp, unsigned long addr, unsigned long end,
 	p4d_t *p4dp;
 
 	if (pgd_none(pgd)) {
-		pgdval_t pgdval = PGD_TYPE_TABLE | PGD_TABLE_UXN | PGD_TABLE_AF;
+		pgdval_t pgdval = PGD_TYPE_TABLE | PGD_TABLE_UXN;
 		phys_addr_t p4d_phys;
 
 		if (flags & NO_EXEC_MAPPINGS)
@@ -577,7 +577,7 @@ static void split_contpte(pte_t *ptep)
 
 static int split_pmd(pmd_t *pmdp, pmd_t pmd, gfp_t gfp, bool to_cont)
 {
-	pmdval_t tableprot = PMD_TYPE_TABLE | PMD_TABLE_UXN | PMD_TABLE_AF;
+	pmdval_t tableprot = PMD_TYPE_TABLE | PMD_TABLE_UXN;
 	unsigned long pfn = pmd_pfn(pmd);
 	pgprot_t prot = pmd_pgprot(pmd);
 	phys_addr_t pte_phys;
@@ -623,7 +623,7 @@ static void split_contpmd(pmd_t *pmdp)
 
 static int split_pud(pud_t *pudp, pud_t pud, gfp_t gfp, bool to_cont)
 {
-	pudval_t tableprot = PUD_TYPE_TABLE | PUD_TABLE_UXN | PUD_TABLE_AF;
+	pudval_t tableprot = PUD_TYPE_TABLE | PUD_TABLE_UXN;
 	unsigned int step = PMD_SIZE >> PAGE_SHIFT;
 	unsigned long pfn = pud_pfn(pud);
 	pgprot_t prot = pud_pgprot(pud);

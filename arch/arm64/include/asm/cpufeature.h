@@ -824,11 +824,6 @@ static inline bool system_supports_gcs(void)
 	return alternative_has_cap_unlikely(ARM64_HAS_GCS);
 }
 
-static inline bool system_supports_haft(void)
-{
-	return cpus_have_final_cap(ARM64_HAFT);
-}
-
 static __always_inline bool system_supports_mpam(void)
 {
 	return alternative_has_cap_unlikely(ARM64_MPAM);

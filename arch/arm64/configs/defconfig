@@ -190,7 +190,6 @@ CONFIG_ARM64_BTI=y
 # ARMv8.9 architectural features
 #
 CONFIG_ARM64_POE=y
-CONFIG_ARM64_HAFT=y
 # end of ARMv8.9 architectural features
 
 #
