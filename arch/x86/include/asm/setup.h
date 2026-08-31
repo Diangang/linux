@@ -31,13 +31,6 @@
 #include <asm/bootparam.h>
 #include <asm/x86_init.h>
 
-/* Interrupt control for vSMPowered x86_64 systems */
-#ifdef CONFIG_X86_64
-void vsmp_init(void);
-#else
-static inline void vsmp_init(void) { }
-#endif
-
 struct pt_regs;
 
 void early_platform_quirks(void);

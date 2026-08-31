@@ -912,8 +912,6 @@ void __init setup_arch(char **cmdline_p)
 	/* Look for ACPI tables and reserve memory occupied by them. */
 	acpi_boot_table_init();
 
-	vsmp_init();
-
 	io_delay_init();
 
 	early_platform_quirks();
