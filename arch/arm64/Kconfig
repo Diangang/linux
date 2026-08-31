@@ -527,13 +527,6 @@ config ARM64_AMU_EXTN
 	  correctly reflect reality. Most commonly, the value read will be 0,
 	  indicating that the counter is not enabled.
 
-config ARM64_TLB_RANGE
-	bool "Enable support for tlbi range feature"
-	default y
-	help
-	  ARMv8.4-TLBI provides TLBI invalidation instruction that apply to a
-	  range of input addresses.
-
 endmenu # "ARMv8.4 architectural features"
 
 menu "ARMv8.5 architectural features"

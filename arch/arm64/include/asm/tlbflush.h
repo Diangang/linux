@@ -179,28 +179,6 @@ static inline void __tlbi_level(tlbi_op op, u64 addr, u32 level)
  * EL1, Inner Shareable".
  *
  */
-#define TLBIR_ASID_MASK		GENMASK_ULL(63, 48)
-#define TLBIR_TG_MASK		GENMASK_ULL(47, 46)
-#define TLBIR_SCALE_MASK	GENMASK_ULL(45, 44)
-#define TLBIR_NUM_MASK		GENMASK_ULL(43, 39)
-#define TLBIR_TTL_MASK		GENMASK_ULL(38, 37)
-#define TLBIR_BADDR_MASK	GENMASK_ULL(36,  0)
-
-/* These macros are used by the TLBI RANGE feature. */
-#define __TLBI_RANGE_PAGES(num, scale)	\
-	((unsigned long)((num) + 1) << (5 * (scale) + 1))
-#define MAX_TLBI_RANGE_PAGES		__TLBI_RANGE_PAGES(31, 3)
-
-/*
- * Generate 'num' values from -1 to 31 with -1 rejected by the
- * __flush_tlb_range() loop below. Its return value is only
- * significant for a maximum of MAX_TLBI_RANGE_PAGES pages. If
- * 'pages' is more than that, you must iterate over the overall
- * range.
- */
-#define __TLBI_RANGE_NUM(pages, scale)					\
-	(((pages) >> (5 * (scale) + 1)) - 1)
-
 /*
  * Complete broadcast TLB maintenance issued by the host which invalidates
  * stage 1 information in the host's own translation regime.
@@ -364,133 +342,28 @@ static inline void arch_tlbbatch_flush(struct arch_tlbflush_unmap_batch *batch)
  */
 #define MAX_DVM_OPS	PTRS_PER_PTE
 
-/*
- * __flush_tlb_range_op - Perform TLBI operation upon a range
- *
- * @lop:	TLBI level operation to perform
- * @rop:	TLBI range operation to perform
- * @start:	The start address of the range
- * @pages:	Range as the number of pages from 'start'
- * @stride:	Flush granularity
- * @asid:	The ASID of the task (0 for IPA instructions)
- * @level:	Translation Table level hint, if known
- * @lpa2:	If 'true', the lpa2 scheme is used as set out below
- *
- * When the CPU does not support TLB range operations, flush the TLB
- * entries one by one at the granularity of 'stride'. If the TLB
- * range ops are supported, then:
- *
- * 1. If FEAT_LPA2 is in use, the start address of a range operation must be
- *    64KB aligned, so flush pages one by one until the alignment is reached
- *    using the non-range operations. This step is skipped if LPA2 is not in
- *    use.
- *
- * 2. The minimum range granularity is decided by 'scale', so multiple range
- *    TLBI operations may be required. Start from scale = 3, flush the largest
- *    possible number of pages ((num+1)*2^(5*scale+1)) that fit into the
- *    requested range, then decrement scale and continue until one or zero pages
- *    are left. We must start from highest scale to ensure 64KB start alignment
- *    is maintained in the LPA2 case.
- *
- * 3. If there is 1 page remaining, flush it through non-range operations. Range
- *    operations can only span an even number of pages. We save this for last to
- *    ensure 64KB start alignment is maintained for the LPA2 case.
- */
-static __always_inline void rvae1is(u64 arg)
-{
-	__tlbi(rvae1is, arg);
-	__tlbi_user(rvae1is, arg);
-}
-
-static __always_inline void rvale1(u64 arg)
-{
-	__tlbi(rvale1, arg);
-	__tlbi_user(rvale1, arg);
-}
-
-static __always_inline void rvale1is(u64 arg)
-{
-	__tlbi(rvale1is, arg);
-	__tlbi_user(rvale1is, arg);
-}
-
-static __always_inline void rvaale1is(u64 arg)
-{
-	__tlbi(rvaale1is, arg);
-}
-
-static __always_inline void ripas2e1is(u64 arg)
-{
-	__tlbi(ripas2e1is, arg);
-}
-
-static __always_inline void __tlbi_range(tlbi_op op, u64 addr,
-					 u16 asid, int scale, int num,
-					 u32 level, bool lpa2)
-{
-	u64 arg = 0;
-
-	arg |= FIELD_PREP(TLBIR_BADDR_MASK, addr >> (lpa2 ? 16 : PAGE_SHIFT));
-	arg |= FIELD_PREP(TLBIR_TTL_MASK, level > 3 ? 0 : level);
-	arg |= FIELD_PREP(TLBIR_NUM_MASK, num);
-	arg |= FIELD_PREP(TLBIR_SCALE_MASK, scale);
-	arg |= FIELD_PREP(TLBIR_TG_MASK, get_trans_granule());
-	arg |= FIELD_PREP(TLBIR_ASID_MASK, asid);
-
-	op(arg);
-}
-
-static __always_inline void __flush_tlb_range_op(tlbi_op lop, tlbi_op rop,
+static __always_inline void __flush_tlb_range_op(tlbi_op lop,
 						 u64 start, size_t pages,
 						 u64 stride, u16 asid,
-						 u32 level, bool lpa2)
+						 u32 level)
 {
 	u64 addr = start, end = start + pages * PAGE_SIZE;
-	int scale = 3;
 
 	while (addr != end) {
-		int num;
-
-		pages = (end - addr) >> PAGE_SHIFT;
-
-		if (!system_supports_tlb_range() || pages == 1)
-			goto invalidate_one;
-
-		if (lpa2 && !IS_ALIGNED(addr, SZ_64K))
-			goto invalidate_one;
-
-		num = __TLBI_RANGE_NUM(pages, scale);
-		if (num >= 0) {
-			__tlbi_range(rop, addr, asid, scale, num, level, lpa2);
-			addr += __TLBI_RANGE_PAGES(num, scale) << PAGE_SHIFT;
-		}
-
-		scale--;
-		continue;
-invalidate_one:
 		__tlbi_level_asid(lop, addr, level, asid);
 		addr += stride;
 	}
 }
 
 #define __flush_s1_tlb_range_op(op, start, pages, stride, asid, tlb_level) \
-	__flush_tlb_range_op(op, r##op, start, pages, stride, asid, tlb_level, lpa2_is_enabled())
+	__flush_tlb_range_op(op, start, pages, stride, asid, tlb_level)
 
 #define __flush_s2_tlb_range_op(op, start, pages, stride, tlb_level) \
-	__flush_tlb_range_op(op, r##op, start, pages, stride, 0, tlb_level, kvm_lpa2_is_enabled())
+	__flush_tlb_range_op(op, start, pages, stride, 0, tlb_level)
 
 static inline bool __flush_tlb_range_limit_excess(unsigned long pages,
 						  unsigned long stride)
 {
-	/*
-	 * Assume that the worst case number of DVM ops required to flush a
-	 * given range on a system that supports tlb-range is 20 (4 scales, 1
-	 * final page, 15 for alignment on LPA2 systems), which is much smaller
-	 * than MAX_DVM_OPS.
-	 */
-	if (system_supports_tlb_range())
-		return pages > MAX_TLBI_RANGE_PAGES;
-
 	return pages >= (MAX_DVM_OPS * stride) >> PAGE_SHIFT;
 }
 
