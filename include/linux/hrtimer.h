@@ -13,7 +13,6 @@
 #define _LINUX_HRTIMER_H
 
 #include <linux/hrtimer_defs.h>
-#include <linux/hrtimer_rearm.h>
 #include <linux/hrtimer_types.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -32,13 +31,6 @@
  *				  soft irq context
  * HRTIMER_MODE_HARD		- Timer callback function will be executed in
  *				  hard irq context even on PREEMPT_RT.
- * HRTIMER_MODE_LAZY_REARM	- Avoid reprogramming if the timer was the
- *				  first expiring timer and is moved into the
- *				  future. Special mode for the HRTICK timer to
- *				  avoid extensive reprogramming of the hardware,
- *				  which is expensive in virtual machines. Risks
- *				  a pointless expiry, but that's better than
- *				  reprogramming on every context switch,
  */
 enum hrtimer_mode {
 	HRTIMER_MODE_ABS	= 0x00,
@@ -46,8 +38,6 @@ enum hrtimer_mode {
 	HRTIMER_MODE_PINNED	= 0x02,
 	HRTIMER_MODE_SOFT	= 0x04,
 	HRTIMER_MODE_HARD	= 0x08,
-	HRTIMER_MODE_LAZY_REARM	= 0x10,
-
 	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
 	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
 

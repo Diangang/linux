@@ -39,6 +39,3 @@ config HZ
 	int
 	default 250 if HZ_250
 	default 1000 if HZ_1000
-
-config SCHED_HRTICK
-	def_bool HIGH_RES_TIMERS

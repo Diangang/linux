@@ -42,7 +42,4 @@
 #define TIF_RSEQ		11	// Run RSEQ fast path
 #define _TIF_RSEQ		BIT(TIF_RSEQ)
 
-#define TIF_HRTIMER_REARM	12       // re-arm the timer
-#define _TIF_HRTIMER_REARM	BIT(TIF_HRTIMER_REARM)
-
 #endif /* _ASM_GENERIC_THREAD_INFO_TIF_H_ */

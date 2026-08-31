@@ -834,13 +834,6 @@ struct rq {
 	unsigned long		calc_load_update;
 	long			calc_load_active;
 
-#ifdef CONFIG_SCHED_HRTICK
-	call_single_data_t	hrtick_csd;
-	struct hrtimer		hrtick_timer;
-	ktime_t			hrtick_time;
-	ktime_t			hrtick_delay;
-	unsigned int		hrtick_sched;
-#endif
 
 
 
@@ -1868,7 +1861,6 @@ struct sched_class {
 	struct rq *(*find_lock_rq)(struct task_struct *p, struct rq *rq);
 
 	/*
-	 * hrtick: rq->lock
 	 * sched_tick: rq->lock
 	 * sched_tick_remote: rq->lock
 	 */
@@ -2245,40 +2237,6 @@ extern unsigned int sysctl_numa_balancing_scan_period_min;
 extern unsigned int sysctl_numa_balancing_scan_period_max;
 extern unsigned int sysctl_numa_balancing_scan_size;
 extern unsigned int sysctl_numa_balancing_hot_threshold;
-
-#ifdef CONFIG_SCHED_HRTICK
-
-/*
- * Use hrtick when:
- *  - enabled by features
- *  - hrtimer is actually high res
- */
-static inline bool hrtick_enabled(struct rq *rq)
-{
-	return cpu_active(cpu_of(rq)) && hrtimer_highres_enabled();
-}
-
-static inline bool hrtick_enabled_fair(struct rq *rq)
-{
-	return sched_feat(HRTICK) && hrtick_enabled(rq);
-}
-
-static inline bool hrtick_enabled_dl(struct rq *rq)
-{
-	return sched_feat(HRTICK_DL) && hrtick_enabled(rq);
-}
-
-extern void hrtick_start(struct rq *rq, u64 delay);
-static inline bool hrtick_active(struct rq *rq)
-{
-	return hrtimer_active(&rq->hrtick_timer);
-}
-
-#else /* !CONFIG_SCHED_HRTICK: */
-static inline bool hrtick_enabled_fair(struct rq *rq) { return false; }
-static inline bool hrtick_enabled_dl(struct rq *rq) { return false; }
-static inline bool hrtick_enabled(struct rq *rq) { return false; }
-#endif /* !CONFIG_SCHED_HRTICK */
 
 #ifndef arch_scale_freq_tick
 static __always_inline void arch_scale_freq_tick(void) { }

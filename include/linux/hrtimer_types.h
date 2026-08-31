@@ -33,8 +33,6 @@ enum hrtimer_restart {
  * @is_soft:	Set if hrtimer will be expired in soft interrupt context.
  * @is_hard:	Set if hrtimer will be expired in hard interrupt context
  *		even on RT.
- * @is_lazy:	Set if the timer is frequently rearmed to avoid updates
- *		of the clock event device
  *
  * The hrtimer structure must be initialized by hrtimer_setup()
  */
@@ -45,7 +43,6 @@ struct hrtimer {
 	bool				is_rel;
 	bool				is_soft;
 	bool				is_hard;
-	bool				is_lazy;
 	ktime_t				_softexpires;
 	enum hrtimer_restart		(*__private function)(struct hrtimer *);
 };

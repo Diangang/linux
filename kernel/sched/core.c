@@ -421,153 +421,6 @@ void update_rq_clock(struct rq *rq)
 	update_rq_clock_task(rq, delta);
 }
 
-#ifdef CONFIG_SCHED_HRTICK
-/*
- * Use HR-timers to deliver accurate preemption points.
- */
-
-enum {
-	HRTICK_SCHED_NONE		= 0,
-	HRTICK_SCHED_DEFER		= BIT(1),
-	HRTICK_SCHED_START		= BIT(2),
-	HRTICK_SCHED_REARM_HRTIMER	= BIT(3)
-};
-
-static void __used hrtick_clear(struct rq *rq)
-{
-	if (hrtimer_active(&rq->hrtick_timer))
-		hrtimer_cancel(&rq->hrtick_timer);
-}
-
-/*
- * High-resolution timer tick.
- * Runs from hardirq context with interrupts disabled.
- */
-static enum hrtimer_restart hrtick(struct hrtimer *timer)
-{
-	struct rq *rq = container_of(timer, struct rq, hrtick_timer);
-	struct rq_flags rf;
-
-	WARN_ON_ONCE(cpu_of(rq) != smp_processor_id());
-
-	rq_lock(rq, &rf);
-	update_rq_clock(rq);
-	rq->donor->sched_class->task_tick(rq, rq->donor, 1);
-	rq_unlock(rq, &rf);
-
-	return HRTIMER_NORESTART;
-}
-
-static inline bool hrtick_needs_rearm(struct hrtimer *timer, ktime_t expires)
-{
-	/*
-	 * Queued is false when the timer is not started or currently
-	 * running the callback. In both cases, restart. If queued check
-	 * whether the expiry time actually changes substantially.
-	 */
-	return !hrtimer_is_queued(timer) ||
-		abs(expires - hrtimer_get_expires(timer)) > 5000;
-}
-
-static void hrtick_cond_restart(struct rq *rq)
-{
-	struct hrtimer *timer = &rq->hrtick_timer;
-	ktime_t time = rq->hrtick_time;
-
-	if (hrtick_needs_rearm(timer, time))
-		hrtimer_start(timer, time, HRTIMER_MODE_ABS_PINNED_HARD);
-}
-
-/*
- * called from hardirq (IPI) context
- */
-static void __hrtick_start(void *arg)
-{
-	struct rq *rq = arg;
-	struct rq_flags rf;
-
-	rq_lock(rq, &rf);
-	hrtick_cond_restart(rq);
-	rq_unlock(rq, &rf);
-}
-
-/*
- * Called to set the hrtick timer state.
- *
- * called with rq->lock held and IRQs disabled
- */
-void hrtick_start(struct rq *rq, u64 delay)
-{
-	s64 delta;
-
-	/*
-	 * Don't schedule slices shorter than 10000ns, that just
-	 * doesn't make sense and can cause timer DoS.
-	 */
-	delta = max_t(s64, delay, 10000LL);
-
-	/*
-	 * If this is in the middle of schedule() only note the delay
-	 * and let hrtick_schedule_exit() deal with it.
-	 */
-	if (rq->hrtick_sched) {
-		rq->hrtick_sched |= HRTICK_SCHED_START;
-		rq->hrtick_delay = delta;
-		return;
-	}
-
-	rq->hrtick_time = ktime_add_ns(ktime_get(), delta);
-	if (!hrtick_needs_rearm(&rq->hrtick_timer, rq->hrtick_time))
-		return;
-
-	if (rq == this_rq())
-		hrtimer_start(&rq->hrtick_timer, rq->hrtick_time, HRTIMER_MODE_ABS_PINNED_HARD);
-	else
-		smp_call_function_single_async(cpu_of(rq), &rq->hrtick_csd);
-}
-
-static inline void hrtick_schedule_enter(struct rq *rq)
-{
-	rq->hrtick_sched = HRTICK_SCHED_DEFER;
-	if (hrtimer_test_and_clear_rearm_deferred())
-		rq->hrtick_sched |= HRTICK_SCHED_REARM_HRTIMER;
-}
-
-static inline void hrtick_schedule_exit(struct rq *rq)
-{
-	if (rq->hrtick_sched & HRTICK_SCHED_START) {
-		rq->hrtick_time = ktime_add_ns(ktime_get(), rq->hrtick_delay);
-		hrtick_cond_restart(rq);
-	} else if (idle_rq(rq)) {
-		/*
-		 * No need for using hrtimer_is_active(). The timer is CPU local
-		 * and interrupts are disabled, so the callback cannot be
-		 * running and the queued state is valid.
-		 */
-		if (hrtimer_is_queued(&rq->hrtick_timer))
-			hrtimer_cancel(&rq->hrtick_timer);
-	}
-
-	if (rq->hrtick_sched & HRTICK_SCHED_REARM_HRTIMER)
-		__hrtimer_rearm_deferred();
-
-	rq->hrtick_sched = HRTICK_SCHED_NONE;
-}
-
-static void hrtick_rq_init(struct rq *rq)
-{
-	INIT_CSD(&rq->hrtick_csd, __hrtick_start, rq);
-	rq->hrtick_sched = HRTICK_SCHED_NONE;
-	hrtimer_setup(&rq->hrtick_timer, hrtick, CLOCK_MONOTONIC,
-		      HRTIMER_MODE_REL_HARD | HRTIMER_MODE_LAZY_REARM);
-}
-#else /* !CONFIG_SCHED_HRTICK: */
-static inline void hrtick_clear(struct rq *rq) { }
-static inline void hrtick_rq_init(struct rq *rq) { }
-static inline void hrtick_schedule_enter(struct rq *rq) { }
-static inline void hrtick_schedule_exit(struct rq *rq) { }
-#endif /* !CONFIG_SCHED_HRTICK */
-
 /*
  * try_cmpxchg based fetch_or() macro so it works for different integer types:
  */
@@ -3723,7 +3576,6 @@ static inline void finish_lock_switch(struct rq *rq)
 	 */
 	spin_acquire(&__rq_lockp(rq)->dep_map, 0, 0, _THIS_IP_);
 	__balance_callbacks(rq, NULL);
-	hrtick_schedule_exit(rq);
 	raw_spin_rq_unlock_irq(rq);
 }
 
@@ -4567,8 +4419,6 @@ static void __sched notrace __schedule(int sched_mode)
 	rq_lock(rq, &rf);
 	smp_mb__after_spinlock();
 
-	hrtick_schedule_enter(rq);
-
 	/* Promote REQ to ACT */
 	rq->clock_update_flags <<= 1;
 	update_rq_clock(rq);
@@ -4692,7 +4542,6 @@ keep_resched:
 	} else {
 		rq_unpin_lock(rq, &rf);
 		__balance_callbacks(rq, NULL);
-		hrtick_schedule_exit(rq);
 		raw_spin_rq_unlock_irq(rq);
 	}
 }
@@ -6255,7 +6104,6 @@ int sched_cpu_dying(unsigned int cpu)
 
 	calc_load_migrate(rq);
 	update_max_interval();
-	hrtick_clear(rq);
 	sched_core_cpu_dying(cpu);
 	return 0;
 }
@@ -6366,7 +6214,6 @@ void __init sched_init(void)
 #ifdef CONFIG_HOTPLUG_CPU
 		rcuwait_init(&rq->hotplug_wait);
 #endif
-		hrtick_rq_init(rq);
 		atomic_set(&rq->nr_iowait, 0);
 		fair_server_init(rq);
 

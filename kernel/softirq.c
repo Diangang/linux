@@ -323,13 +323,6 @@ void irq_enter_rcu(void)
 {
 	__irq_enter_raw();
 
-	/*
-	 * If this is a nested interrupt that hits the exit_to_user_mode_loop
-	 * where it has enabled interrupts but before it has hit schedule() we
-	 * could have hrtimers in an undefined state. Fix it up here.
-	 */
-	hrtimer_rearm_deferred();
-
 	if (tick_nohz_full_cpu(smp_processor_id()) ||
 	    (is_idle_task(current) && (irq_count() == HARDIRQ_OFFSET)))
 		tick_irq_enter();
@@ -387,11 +380,6 @@ static inline void __irq_exit_rcu(void)
 	account_hardirq_exit(current);
 	preempt_count_sub(HARDIRQ_OFFSET);
 	if (!in_interrupt() && local_softirq_pending()) {
-		/*
-		 * If we left hrtimers unarmed, make sure to arm them now,
-		 * before enabling interrupts to run SoftIRQ.
-		 */
-		hrtimer_rearm_deferred();
 		invoke_softirq();
 	}
 

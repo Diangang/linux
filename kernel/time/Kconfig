@@ -51,11 +51,6 @@ config GENERIC_CLOCKEVENTS_COUPLED_INLINE
 	bool
 
 # Generic update of CMOS clock
-config HRTIMER_REARM_DEFERRED
-       def_bool y
-       depends on GENERIC_ENTRY && HAVE_GENERIC_TIF_BITS
-       depends on HIGH_RES_TIMERS && SCHED_HRTICK
-
 # Select to handle posix CPU timers from task_work
 # and not from the timer interrupt context
 config HAVE_POSIX_CPU_TIMERS_TASK_WORK

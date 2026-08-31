@@ -2503,17 +2503,6 @@ static void wakeup_preempt_dl(struct rq *rq, struct task_struct *p, int flags)
 		check_preempt_equal_dl(rq, p);
 }
 
-#ifdef CONFIG_SCHED_HRTICK
-static void start_hrtick_dl(struct rq *rq, struct sched_dl_entity *dl_se)
-{
-	hrtick_start(rq, dl_se->runtime);
-}
-#else /* !CONFIG_SCHED_HRTICK: */
-static void start_hrtick_dl(struct rq *rq, struct sched_dl_entity *dl_se)
-{
-}
-#endif /* !CONFIG_SCHED_HRTICK */
-
 static void set_next_task_dl(struct rq *rq, struct task_struct *p, bool first)
 {
 	struct sched_dl_entity *dl_se = &p->dl;
@@ -2534,8 +2523,6 @@ static void set_next_task_dl(struct rq *rq, struct task_struct *p, bool first)
 
 	deadline_queue_push_tasks(rq);
 
-	if (hrtick_enabled_dl(rq))
-		start_hrtick_dl(rq, &p->dl);
 }
 
 static struct sched_dl_entity *pick_next_dl_entity(struct dl_rq *dl_rq)
@@ -2616,14 +2603,6 @@ static void task_tick_dl(struct rq *rq, struct task_struct *p, int queued)
 	update_curr_dl(rq);
 
 	update_dl_rq_load_avg(rq_clock_pelt(rq), rq, 1);
-	/*
-	 * Even when we have runtime, update_curr_dl() might have resulted in us
-	 * not being the leftmost task anymore. In that case NEED_RESCHED will
-	 * be set and schedule() will start a new hrtick for the next task.
-	 */
-	if (hrtick_enabled_dl(rq) && queued && p->dl.runtime > 0 &&
-	    is_leftmost(&p->dl, &rq->dl))
-		start_hrtick_dl(rq, &p->dl);
 }
 
 static void task_fork_dl(struct task_struct *p)

@@ -5,7 +5,6 @@
 #include <linux/context_tracking.h>
 #include <linux/ftrace.h>
 #include <linux/highmem.h>
-#include <linux/hrtimer_rearm.h>
 #include <linux/rseq_entry.h>
 #include <linux/static_call_types.h>
 #include <linux/syscalls.h>
@@ -27,13 +26,8 @@
 	 _TIF_NOTIFY_SIGNAL | _TIF_RSEQ |				\
 	 ARCH_EXIT_TO_USER_MODE_WORK)
 
-#ifdef CONFIG_HRTIMER_REARM_DEFERRED
-# define EXIT_TO_USER_MODE_WORK_SYSCALL	(EXIT_TO_USER_MODE_WORK)
-# define EXIT_TO_USER_MODE_WORK_IRQ	(EXIT_TO_USER_MODE_WORK | _TIF_HRTIMER_REARM)
-#else
 # define EXIT_TO_USER_MODE_WORK_SYSCALL	(EXIT_TO_USER_MODE_WORK)
 # define EXIT_TO_USER_MODE_WORK_IRQ	(EXIT_TO_USER_MODE_WORK)
-#endif
 
 /**
  * arch_enter_from_user_mode - Architecture specific sanity check for user mode regs
@@ -194,10 +188,8 @@ static __always_inline void __exit_to_user_mode_prepare(struct pt_regs *regs,
 	tick_nohz_user_enter_prepare();
 
 	ti_work = read_thread_flags();
-	if (unlikely(ti_work & work_mask)) {
-		if (!hrtimer_rearm_deferred_user_irq(&ti_work, work_mask))
-			ti_work = exit_to_user_mode_loop(regs, ti_work);
-	}
+	if (unlikely(ti_work & work_mask))
+		ti_work = exit_to_user_mode_loop(regs, ti_work);
 
 	arch_exit_to_user_mode_prepare(regs, ti_work);
 }
@@ -488,7 +480,6 @@ irqentry_exit_to_kernel_mode_after_preempt(struct pt_regs *regs, irqentry_state_
 		 */
 		if (state.exit_rcu) {
 			instrumentation_begin();
-			hrtimer_rearm_deferred();
 			/* Tell the tracer that IRET will enable interrupts */
 			trace_hardirqs_on_prepare();
 			lockdep_hardirqs_on_prepare();
@@ -499,7 +490,6 @@ irqentry_exit_to_kernel_mode_after_preempt(struct pt_regs *regs, irqentry_state_
 		}
 
 		instrumentation_begin();
-		hrtimer_rearm_deferred();
 		/* Covers both tracing and lockdep */
 		trace_hardirqs_on();
 		instrumentation_end();

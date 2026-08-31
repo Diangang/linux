@@ -4995,16 +4995,6 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 	update_load_avg(cfs_rq, curr, UPDATE_TG);
 	update_cfs_group(curr);
 
-#ifdef CONFIG_SCHED_HRTICK
-	/*
-	 * queued ticks are scheduled to match the slice, so don't bother
-	 * validating it and just reschedule.
-	 */
-	if (queued) {
-		resched_curr(rq_of(cfs_rq));
-		return;
-	}
-#endif
 }
 
 
@@ -5058,69 +5048,6 @@ static inline void sched_fair_update_stop_tick(struct rq *rq, struct task_struct
 /**************************************************
  * CFS operations on tasks:
  */
-
-#ifdef CONFIG_SCHED_HRTICK
-static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
-{
-	struct sched_entity *se = &p->se;
-	unsigned long scale = 1024;
-	unsigned long util = 0;
-	u64 vdelta;
-	u64 delta;
-
-	WARN_ON_ONCE(task_rq(p) != rq);
-
-	if (rq->cfs.h_nr_queued <= 1)
-		return;
-
-	/*
-	 * Compute time until virtual deadline
-	 */
-	vdelta = se->deadline - se->vruntime;
-	if ((s64)vdelta < 0) {
-		if (task_current_donor(rq, p))
-			resched_curr(rq);
-		return;
-	}
-	delta = (se->load.weight * vdelta) / NICE_0_LOAD;
-
-	/*
-	 * Correct for instantaneous load of other classes.
-	 */
-	util += cpu_util_irq(rq);
-	if (util && util < 1024) {
-		scale *= 1024;
-		scale /= (1024 - util);
-	}
-
-	hrtick_start(rq, (scale * delta) / 1024);
-}
-
-/*
- * Called on enqueue to start the hrtick when h_nr_queued becomes more than 1.
- */
-static void hrtick_update(struct rq *rq)
-{
-	struct task_struct *donor = rq->donor;
-
-	if (!hrtick_enabled_fair(rq) || donor->sched_class != &fair_sched_class)
-		return;
-
-	if (hrtick_active(rq))
-		return;
-
-	hrtick_start_fair(rq, donor);
-}
-#else /* !CONFIG_SCHED_HRTICK: */
-static inline void
-hrtick_start_fair(struct rq *rq, struct task_struct *p)
-{
-}
-
-static inline void hrtick_update(struct rq *rq)
-{
-}
-#endif /* !CONFIG_SCHED_HRTICK */
 
 /* Runqueue only has SCHED_IDLE tasks enqueued */
 static int sched_idle_rq(struct rq *rq)
@@ -5256,7 +5183,6 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 
 	assert_list_leaf_cfs_rq(rq);
 
-	hrtick_update(rq);
 }
 
 /*
@@ -10945,9 +10871,6 @@ static void __set_next_task_fair(struct rq *rq, struct task_struct *p, bool firs
 		return;
 
 	WARN_ON_ONCE(se->sched_delayed);
-
-	if (hrtick_enabled_fair(rq))
-		hrtick_start_fair(rq, p);
 
 	update_misfit_status(p, rq);
 	sched_fair_update_stop_tick(rq, p);
