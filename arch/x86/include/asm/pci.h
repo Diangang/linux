@@ -27,7 +27,6 @@ struct pci_sysdata {
 
 extern int pci_routeirq;
 extern int noioapicquirk;
-extern int noioapicreroute;
 
 static inline struct pci_sysdata *to_pci_sysdata(const struct pci_bus *bus)
 {

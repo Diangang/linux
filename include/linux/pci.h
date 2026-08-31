@@ -257,11 +257,6 @@ enum pci_dev_flags {
 	PCI_DEV_FLAGS_PCI_BRIDGE_NO_ALIAS = (__force pci_dev_flags_t) (1 << 14),
 };
 
-enum pci_irq_reroute_variant {
-	INTEL_IRQ_REROUTE_VARIANT = 1,
-	MAX_IRQ_REROUTE_VARIANTS = 3
-};
-
 typedef unsigned short __bitwise pci_bus_flags_t;
 enum pci_bus_flags {
 	PCI_BUS_FLAGS_NO_MSI	= (__force pci_bus_flags_t) 1,
@@ -441,7 +436,6 @@ struct pci_dev {
 	unsigned int	no_msi:1;		/* May not use MSI */
 	unsigned int	block_cfg_access:1;	/* Config space access blocked */
 	unsigned int	broken_parity_status:1;	/* Generates false positive parity */
-	unsigned int	irq_reroute_variant:2;	/* Needs IRQ rerouting variant */
 	unsigned int	msi_enabled:1;
 	unsigned int	msix_enabled:1;
 	unsigned int	ari_enabled:1;		/* ARI forwarding */

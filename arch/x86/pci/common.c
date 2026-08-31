@@ -27,11 +27,6 @@ unsigned int pci_probe = PCI_PROBE_BIOS | PCI_PROBE_CONF1 | PCI_PROBE_CONF2 |
 static int pci_bf_sort;
 int pci_routeirq;
 int noioapicquirk;
-#ifdef CONFIG_X86_REROUTE_FOR_BROKEN_BOOT_IRQS
-int noioapicreroute = 0;
-#else
-int noioapicreroute = 1;
-#endif
 int pcibios_last_bus = -1;
 unsigned long pirq_table_addr;
 const struct pci_raw_ops *__read_mostly raw_pci_ops;
@@ -601,14 +596,6 @@ char *__init pcibios_setup(char *str)
 		return NULL;
 	} else if (!strcmp(str, "noioapicquirk")) {
 		noioapicquirk = 1;
-		return NULL;
-	} else if (!strcmp(str, "ioapicreroute")) {
-		if (noioapicreroute != -1)
-			noioapicreroute = 0;
-		return NULL;
-	} else if (!strcmp(str, "noioapicreroute")) {
-		if (noioapicreroute != -1)
-			noioapicreroute = 1;
 		return NULL;
 	}
 	return str;

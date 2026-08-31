@@ -115,9 +115,6 @@ extern bool ioapic_is_disabled;
 /* 1 if "noapic" boot option passed */
 extern int noioapicquirk;
 
-/* -1 if "noapic" boot option passed */
-extern int noioapicreroute;
-
 extern u32 gsi_top;
 
 extern unsigned long io_apic_irqs;

@@ -179,7 +179,6 @@ void disable_ioapic_support(void)
 {
 #ifdef CONFIG_PCI
 	noioapicquirk = 1;
-	noioapicreroute = -1;
 #endif
 	ioapic_is_disabled = true;
 }
