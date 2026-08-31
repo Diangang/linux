@@ -21,14 +21,6 @@ KCOV_INSTRUMENT_softirq.o := n
 # and produce insane amounts of uninteresting coverage.
 KCOV_INSTRUMENT_extable.o := n
 KCOV_INSTRUMENT_stacktrace.o := n
-# Don't self-instrument.
-KCOV_INSTRUMENT_kcov.o := n
-# If sanitizers detect any issues in kcov, it may lead to recursion
-# via printk, etc.
-UBSAN_SANITIZE_kcov.o := n
-
-CFLAGS_kcov.o := $(call cc-option, -fno-conserve-stack) -fno-stack-protector
-
 obj-y += sched/
 obj-y += locking/
 obj-y += printk/

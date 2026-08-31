@@ -17,15 +17,14 @@ KCOV_INSTRUMENT_vmstat.o := n
 
 CFLAGS_init-mm.o += -Wno-override-init
 
-mmu-y			:= nommu.o
-mmu-$(CONFIG_MMU)	:= highmem.o memory.o mincore.o \
+mmu-y			:= highmem.o memory.o mincore.o \
 			   mlock.o mmap.o mmu_gather.o mprotect.o mremap.o \
 			   msync.o page_vma_mapped.o pagewalk.o \
 			   pgtable-generic.o rmap.o vmalloc.o vma.o vma_exec.o
 
 
 ifdef CONFIG_64BIT
-mmu-$(CONFIG_MMU)	+= mseal.o
+mmu-y			+= mseal.o
 endif
 
 obj-y			:= filemap.o mempool.o oom_kill.o fadvise.o \
