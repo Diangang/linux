@@ -354,5 +354,4 @@ static inline void debug_dma_dump_mappings(struct device *dev)
 {
 }
 
-extern const struct dma_map_ops dma_dummy_ops;
 #endif /* _LINUX_DMA_MAP_OPS_H */

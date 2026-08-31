@@ -1571,7 +1571,7 @@ int acpi_dma_configure_id(struct device *dev, enum dev_dma_attr attr,
 	int ret;
 
 	if (attr == DEV_DMA_NOT_SUPPORTED) {
-		set_dma_ops(dev, &dma_dummy_ops);
+		set_dma_ops(dev, NULL);
 		return 0;
 	}
 

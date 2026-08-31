@@ -26,7 +26,6 @@ void arm64_force_sig_mceerr(int code, unsigned long far, short lsb, const char *
 void arm64_force_sig_ptrace_errno_trap(int errno, unsigned long far, const char *str);
 
 int bug_brk_handler(struct pt_regs *regs, unsigned long esr);
-int cfi_brk_handler(struct pt_regs *regs, unsigned long esr);
 int reserved_fault_brk_handler(struct pt_regs *regs, unsigned long esr);
 int ubsan_brk_handler(struct pt_regs *regs, unsigned long esr);
 
