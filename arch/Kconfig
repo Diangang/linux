@@ -948,7 +948,4 @@ config FUNCTION_ALIGNMENT
 config ARCH_HAS_CPU_ATTACK_VECTORS
 	bool
 
-config HAVE_ARCH_GET_SECUREBOOT
-	def_bool EFI
-
 endmenu
