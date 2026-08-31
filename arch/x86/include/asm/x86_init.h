@@ -3,26 +3,9 @@
 #define _ASM_X86_PLATFORM_H
 
 struct ghcb;
-struct mpc_bus;
-struct mpc_cpu;
 struct pt_regs;
-struct mpc_table;
 struct cpuinfo_x86;
 struct irq_domain;
-
-/**
- * struct x86_init_mpparse - platform specific mpparse ops
- * @setup_ioapic_ids:		platform specific ioapic id override
- * @find_mptable:		Find MPTABLE early to reserve the memory region
- * @early_parse_smp_cfg:	Parse the SMP configuration data early before initmem_init()
- * @parse_smp_cfg:		Parse the SMP configuration data
- */
-struct x86_init_mpparse {
-	void (*setup_ioapic_ids)(void);
-	void (*find_mptable)(void);
-	void (*early_parse_smp_cfg)(void);
-	void (*parse_smp_cfg)(void);
-};
 
 /**
  * struct x86_init_resources - platform specific resource related ops
@@ -159,7 +142,6 @@ struct x86_guest {
  */
 struct x86_init_ops {
 	struct x86_init_resources	resources;
-	struct x86_init_mpparse		mpparse;
 	struct x86_init_irqs		irqs;
 	struct x86_init_oem		oem;
 	struct x86_init_paging		paging;

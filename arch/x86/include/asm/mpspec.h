@@ -5,7 +5,6 @@
 #include <linux/types.h>
 
 #include <asm/mpspec_def.h>
-#include <asm/x86_init.h>
 #include <asm/apicdef.h>
 
 extern int pic_mode;
@@ -25,20 +24,6 @@ extern u8 boot_cpu_apic_version;
 extern int smp_found_config;
 #else
 # define smp_found_config 0
-#endif
-
-#ifdef CONFIG_X86_MPPARSE
-extern void e820__memblock_alloc_reserved_mpc_new(void);
-extern int enable_update_mptable;
-extern void mpparse_find_mptable(void);
-extern void mpparse_parse_early_smp_config(void);
-extern void mpparse_parse_smp_config(void);
-#else
-static inline void e820__memblock_alloc_reserved_mpc_new(void) { }
-#define enable_update_mptable		0
-#define mpparse_find_mptable		x86_init_noop
-#define mpparse_parse_early_smp_config	x86_init_noop
-#define mpparse_parse_smp_config	x86_init_noop
 #endif
 
 extern DECLARE_BITMAP(phys_cpu_present_map, MAX_LOCAL_APIC);

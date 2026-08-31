@@ -285,14 +285,6 @@ config SMP
 
 	  If you don't know what to do here, say N.
 
-config X86_MPPARSE
-	bool "Enable MPS table" if ACPI
-	default y
-	depends on X86_LOCAL_APIC
-	help
-	  For old smp systems that do not have proper acpi support. Newer systems
-	  (esp with 64bit cpus) with acpi support, MADT and DSDT will override it
-
 # This is an alphabetically sorted list of 64 bit extended platforms
 # Please maintain the alphabetic order if and when there are additions
 config SCHED_OMIT_FRAME_POINTER

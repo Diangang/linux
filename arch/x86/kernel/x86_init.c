@@ -70,13 +70,6 @@ struct x86_init_ops x86_init __initdata = {
 		.dmi_setup		= dmi_setup,
 	},
 
-	.mpparse = {
-		.setup_ioapic_ids	= x86_init_noop,
-		.find_mptable		= mpparse_find_mptable,
-		.early_parse_smp_cfg	= mpparse_parse_early_smp_config,
-		.parse_smp_cfg		= mpparse_parse_smp_config,
-	},
-
 	.irqs = {
 		.pre_vector_init	= init_ISA_irqs,
 		.intr_init		= native_init_IRQ,

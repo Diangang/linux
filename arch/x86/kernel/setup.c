@@ -811,9 +811,6 @@ void __init setup_arch(char **cmdline_p)
 	else
 		max_low_pfn = max_pfn;
 
-	/* Find and reserve MPTABLE area */
-	x86_init.mpparse.find_mptable();
-
 	early_alloc_pgt_buf();
 
 	/*
@@ -842,9 +839,6 @@ void __init setup_arch(char **cmdline_p)
 	 * called after ExitBootServices(). This is, in fact, a lie.
 	 */
 	efi_reserve_boot_services();
-
-	/* preallocate 4k for mptable mpc */
-	e820__memblock_alloc_reserved_mpc_new();
 
 	/*
 	 * Find free memory for the real mode trampoline and place it there. If
@@ -918,8 +912,6 @@ void __init setup_arch(char **cmdline_p)
 
 	/* Some platforms need the APIC registered for NUMA configuration */
 	early_acpi_boot_init();
-	x86_init.mpparse.early_parse_smp_cfg();
-
 	x86_flattree_get_config();
 
 	initmem_init();
@@ -952,8 +944,6 @@ void __init setup_arch(char **cmdline_p)
 	 * specific parser.
 	 */
 	acpi_boot_init();
-	x86_init.mpparse.parse_smp_cfg();
-
 	/* Last opportunity to detect and map the local APIC */
 	init_apic_mappings();
 
