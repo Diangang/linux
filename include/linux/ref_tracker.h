@@ -4,7 +4,6 @@
 #include <linux/refcount.h>
 #include <linux/types.h>
 #include <linux/spinlock.h>
-#include <linux/stackdepot.h>
 
 #define __ostream_printf __printf(2, 3)
 

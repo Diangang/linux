@@ -2,7 +2,6 @@
 config SLUB_DEBUG
 	bool "Enable SLUB debugging support" if EXPERT
 	depends on SYSFS
-	select STACKDEPOT if STACKTRACE_SUPPORT
 	help
 	  SLUB has extensive debug support features. Disabling these can
 	  result in significant savings in code size. While /sys/kernel/slab

@@ -22,7 +22,6 @@
 #include <linux/page_ext.h>
 #include <linux/pti.h>
 #include <linux/pgtable.h>
-#include <linux/stackdepot.h>
 #include <linux/swap.h>
 #include <linux/cma.h>
 #include <linux/crash_dump.h>
@@ -1817,14 +1816,11 @@ void __init mm_core_init(void)
 	mem_debugging_and_hardening_init();
 	kfence_alloc_pool_and_metadata();
 	report_meminit();
-	stack_depot_early_init();
-
 	memblock_free_all();
 	mem_init();
 	kmem_cache_init();
 	/*
-	 * page_owner must be initialized after buddy is ready, and also after
-	 * slab is ready so that stack_depot_init() works properly
+	 * page_owner must be initialized after buddy and slab are ready.
 	 */
 	page_ext_init_flatmem_late();
 	ptlock_cache_init();

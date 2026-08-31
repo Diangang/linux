@@ -72,13 +72,6 @@ obj-$(CONFIG_GENERIC_STRNLEN_USER) += strnlen_user.o
 obj-$(CONFIG_SG_POOL) += sg_pool.o
 obj-$(CONFIG_MEMREGION) += memregion.o
 
-# stackdepot.c should not be instrumented or call instrumented functions.
-# Prevent the compiler from calling builtins like memcmp() or bcmp() from this
-# file.
-CFLAGS_stackdepot.o += -fno-builtin
-obj-$(CONFIG_STACKDEPOT) += stackdepot.o
-KCOV_INSTRUMENT_stackdepot.o := n
-
 libfdt_files = fdt.o fdt_ro.o fdt_wip.o fdt_rw.o fdt_sw.o fdt_strerror.o \
 	       fdt_empty_tree.o fdt_addresses.o
 $(foreach file, $(libfdt_files), \

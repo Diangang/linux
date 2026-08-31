@@ -93,7 +93,6 @@
 #include <linux/rodata_test.h>
 #include <linux/jump_label.h>
 #include <linux/init_syscalls.h>
-#include <linux/stackdepot.h>
 #include <linux/randomize_kstack.h>
 #include <linux/pidfs.h>
 #include <linux/time_namespace.h>

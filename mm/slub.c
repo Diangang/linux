@@ -29,7 +29,6 @@
 #include <linux/cpuset.h>
 #include <linux/mempolicy.h>
 #include <linux/ctype.h>
-#include <linux/stackdepot.h>
 #include <linux/debugobjects.h>
 #include <linux/kallsyms.h>
 #include <linux/kfence.h>
@@ -285,12 +284,8 @@ void *fixup_red_left(struct kmem_cache *s, void *p)
 /*
  * Tracking user of a slab.
  */
-#define TRACK_ADDRS_COUNT 16
 struct track {
 	unsigned long addr;	/* Called from address */
-#ifdef CONFIG_STACKDEPOT
-	depot_stack_handle_t handle;
-#endif
 	int cpu;		/* Was running on cpu */
 	int pid;		/* Pid context */
 	unsigned long when;	/* When did the operation occur */
@@ -799,34 +794,11 @@ static struct track *get_track(struct kmem_cache *s, void *object,
 	return p + alloc;
 }
 
-#ifdef CONFIG_STACKDEPOT
-static noinline depot_stack_handle_t set_track_prepare(gfp_t gfp_flags)
-{
-	depot_stack_handle_t handle;
-	unsigned long entries[TRACK_ADDRS_COUNT];
-	unsigned int nr_entries;
-
-	nr_entries = stack_trace_save(entries, ARRAY_SIZE(entries), 3);
-	handle = stack_depot_save(entries, nr_entries, gfp_flags);
-
-	return handle;
-}
-#else
-static inline depot_stack_handle_t set_track_prepare(gfp_t gfp_flags)
-{
-	return 0;
-}
-#endif
-
 static void set_track_update(struct kmem_cache *s, void *object,
-			     enum track_item alloc, unsigned long addr,
-			     depot_stack_handle_t handle)
+			     enum track_item alloc, unsigned long addr)
 {
 	struct track *p = get_track(s, object, alloc);
 
-#ifdef CONFIG_STACKDEPOT
-	p->handle = handle;
-#endif
 	p->addr = addr;
 	p->cpu = raw_smp_processor_id();
 	p->pid = current->pid;
@@ -834,11 +806,9 @@ static void set_track_update(struct kmem_cache *s, void *object,
 }
 
 static __always_inline void set_track(struct kmem_cache *s, void *object,
-				      enum track_item alloc, unsigned long addr, gfp_t gfp_flags)
+				      enum track_item alloc, unsigned long addr)
 {
-	depot_stack_handle_t handle = set_track_prepare(gfp_flags);
-
-	set_track_update(s, object, alloc, addr, handle);
+	set_track_update(s, object, alloc, addr);
 }
 
 static void init_tracking(struct kmem_cache *s, void *object)
@@ -854,20 +824,11 @@ static void init_tracking(struct kmem_cache *s, void *object)
 
 static void print_track(const char *s, struct track *t, unsigned long pr_time)
 {
-	depot_stack_handle_t handle __maybe_unused;
-
 	if (!t->addr)
 		return;
 
 	pr_err("%s in %pS age=%lu cpu=%u pid=%d\n",
 	       s, (void *)t->addr, pr_time - t->when, t->cpu, t->pid);
-#ifdef CONFIG_STACKDEPOT
-	handle = READ_ONCE(t->handle);
-	if (handle)
-		stack_depot_print(handle);
-	else
-		pr_err("object allocation/free stack trace missing\n");
-#endif
 }
 
 void print_tracking(struct kmem_cache *s, void *object)
@@ -1622,8 +1583,6 @@ static int __init setup_slub_debug(const char *str, const struct kernel_param *k
 			global_slub_debug_changed = true;
 		} else {
 			slab_list_specified = true;
-			if (flags & SLAB_STORE_USER)
-				stack_depot_request_early_init();
 		}
 	}
 
@@ -1641,8 +1600,6 @@ static int __init setup_slub_debug(const char *str, const struct kernel_param *k
 	}
 out:
 	slub_debug = global_flags;
-	if (slub_debug & SLAB_STORE_USER)
-		stack_depot_request_early_init();
 	if (slub_debug != 0 || slub_debug_string)
 		static_branch_enable(&slub_debug_enabled);
 	else
@@ -1727,14 +1684,13 @@ static inline bool alloc_debug_processing(struct kmem_cache *s,
 
 static inline bool free_debug_processing(struct kmem_cache *s,
 	struct slab *slab, void *head, void *tail, int *bulk_cnt,
-	unsigned long addr, depot_stack_handle_t handle) { return true; }
+	unsigned long addr) { return true; }
 
 static inline void slab_pad_check(struct kmem_cache *s, struct slab *slab) {}
 static inline int check_object(struct kmem_cache *s, struct slab *slab,
 			void *object, u8 val) { return 1; }
-static inline depot_stack_handle_t set_track_prepare(gfp_t gfp_flags) { return 0; }
 static inline void set_track(struct kmem_cache *s, void *object,
-			     enum track_item alloc, unsigned long addr, gfp_t gfp_flags) {}
+			     enum track_item alloc, unsigned long addr) {}
 static inline void add_full(struct kmem_cache *s, struct kmem_cache_node *n,
 					struct slab *slab) {}
 static inline void remove_full(struct kmem_cache *s, struct kmem_cache_node *n,
@@ -3116,7 +3072,7 @@ static inline unsigned long node_nr_objs(struct kmem_cache_node *n)
 /* Supports checking bulk free of a constructed freelist */
 static inline bool free_debug_processing(struct kmem_cache *s,
 	struct slab *slab, void *head, void *tail, int *bulk_cnt,
-	unsigned long addr, depot_stack_handle_t handle)
+	unsigned long addr)
 {
 	bool checks_ok = false;
 	void *object = head;
@@ -3144,7 +3100,7 @@ next_object:
 	}
 
 	if (s->flags & SLAB_STORE_USER)
-		set_track_update(s, object, TRACK_FREE, addr, handle);
+		set_track_update(s, object, TRACK_FREE, addr);
 	trace(s, slab, object, 0);
 	/* Freepointer not overwritten by init_object(), SLAB_POISON moved it */
 	init_object(s, object, SLUB_RED_INACTIVE);
@@ -3448,7 +3404,7 @@ new_objects:
 
 success:
 	if (kmem_cache_debug_flags(s, SLAB_STORE_USER))
-		set_track(s, object, TRACK_ALLOC, addr, gfpflags);
+		set_track(s, object, TRACK_ALLOC, addr);
 
 	return object;
 }
@@ -4327,18 +4283,10 @@ static noinline void free_to_partial_list(
 	struct slab *slab_free = NULL;
 	int cnt = bulk_cnt;
 	unsigned long flags;
-	depot_stack_handle_t handle = 0;
-
-	/*
-	 * We cannot use GFP_NOWAIT as there are callsites where waking up
-	 * kswapd could deadlock
-	 */
-	if (s->flags & SLAB_STORE_USER)
-		handle = set_track_prepare(__GFP_NOWARN);
 
 	spin_lock_irqsave(&n->list_lock, flags);
 
-	if (free_debug_processing(s, slab, head, tail, &cnt, addr, handle)) {
+	if (free_debug_processing(s, slab, head, tail, &cnt, addr)) {
 		void *prior = slab->freelist;
 
 		/* Perform the actual freeing while we still hold the locks */
@@ -6715,7 +6663,6 @@ int __kmem_cache_shutdown(struct kmem_cache *s)
 void __kmem_obj_info(struct kmem_obj_info *kpp, void *object, struct slab *slab)
 {
 	void *base;
-	int __maybe_unused i;
 	unsigned int objnr;
 	void *objp;
 	void *objp0;
@@ -6744,28 +6691,6 @@ void __kmem_obj_info(struct kmem_obj_info *kpp, void *object, struct slab *slab)
 	objp = fixup_red_left(s, objp);
 	trackp = get_track(s, objp, TRACK_ALLOC);
 	kpp->kp_ret = (void *)trackp->addr;
-#ifdef CONFIG_STACKDEPOT
-	{
-		depot_stack_handle_t handle;
-		unsigned long *entries;
-		unsigned int nr_entries;
-
-		handle = READ_ONCE(trackp->handle);
-		if (handle) {
-			nr_entries = stack_depot_fetch(handle, &entries);
-			for (i = 0; i < KS_ADDRS_COUNT && i < nr_entries; i++)
-				kpp->kp_stack[i] = (void *)entries[i];
-		}
-
-		trackp = get_track(s, objp, TRACK_FREE);
-		handle = READ_ONCE(trackp->handle);
-		if (handle) {
-			nr_entries = stack_depot_fetch(handle, &entries);
-			for (i = 0; i < KS_ADDRS_COUNT && i < nr_entries; i++)
-				kpp->kp_free_stack[i] = (void *)entries[i];
-		}
-	}
-#endif
 #endif
 }
 #endif

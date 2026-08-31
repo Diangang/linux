@@ -25,8 +25,6 @@
 #include <asm/cacheflush.h>
 #include <asm/tlbflush.h>
 #include <asm/page.h>
-#include <linux/stackdepot.h>
-
 #include "../kernel/rcu/rcu.h"
 #include "internal.h"
 #include "slab.h"
@@ -282,13 +280,9 @@ struct kmem_cache *__kmem_cache_create_args(const char *name,
 	 * If no slab_debug was enabled globally, the static key is not yet
 	 * enabled by setup_slub_debug(). Enable it if the cache is being
 	 * created with any of the debugging flags passed explicitly.
-	 * It's also possible that this is the first cache created with
-	 * SLAB_STORE_USER and we should init stack_depot for it.
 	 */
 	if (flags & SLAB_DEBUG_FLAGS)
 		static_branch_enable(&slub_debug_enabled);
-	if (flags & SLAB_STORE_USER)
-		stack_depot_init();
 #else
 	flags &= ~SLAB_DEBUG_FLAGS;
 #endif
