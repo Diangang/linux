@@ -67,7 +67,6 @@ obj-$(CONFIG_AMD_NODE)		+= amd_node.o
 
 
 obj-$(CONFIG_SCHED_MC_PRIO)		+= itmt.o
-obj-$(CONFIG_X86_UMIP)			+= umip.o
 
 obj-$(CONFIG_UNWINDER_ORC)		+= unwind_orc.o
 

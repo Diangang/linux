@@ -61,7 +61,6 @@
 #include <asm/alternative.h>
 #include <asm/fpu/xstate.h>
 #include <asm/vm86.h>
-#include <asm/umip.h>
 #include <asm/insn.h>
 #include <asm/insn-eval.h>
 #include <asm/vdso.h>
@@ -774,9 +773,6 @@ DEFINE_IDTENTRY_ERRORCODE(exc_general_protection)
 
 	if (user_mode(regs)) {
 		if (fixup_vdso_exception(regs, X86_TRAP_GP, error_code, 0))
-			goto exit;
-
-		if (fixup_umip_exception(regs))
 			goto exit;
 
 		gp_user_force_sig_segv(regs, X86_TRAP_GP, error_code, desc);

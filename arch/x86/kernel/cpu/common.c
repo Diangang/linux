@@ -317,30 +317,6 @@ static __always_inline void setup_smap(struct cpuinfo_x86 *c)
 		cr4_set_bits(X86_CR4_SMAP);
 }
 
-static __always_inline void setup_umip(struct cpuinfo_x86 *c)
-{
-	/* Check the boot processor, plus build option for UMIP. */
-	if (!cpu_feature_enabled(X86_FEATURE_UMIP))
-		goto out;
-
-	/* Check the current processor's cpuid bits. */
-	if (!cpu_has(c, X86_FEATURE_UMIP))
-		goto out;
-
-	cr4_set_bits(X86_CR4_UMIP);
-
-	pr_info_once("x86/cpu: User Mode Instruction Prevention (UMIP) activated\n");
-
-	return;
-
-out:
-	/*
-	 * Make sure UMIP is disabled in case it was enabled in a
-	 * previous boot (e.g., via kexec).
-	 */
-	cr4_clear_bits(X86_CR4_UMIP);
-}
-
 static int enable_lass(unsigned int cpu)
 {
 	cr4_set_bits(X86_CR4_LASS);
@@ -366,7 +342,7 @@ static int cpu_finalize_pre_userspace(void)
 late_initcall(cpu_finalize_pre_userspace);
 
 /* These bits should not change their value after CPU init is finished. */
-static const unsigned long cr4_pinned_mask = X86_CR4_SMEP | X86_CR4_SMAP | X86_CR4_UMIP |
+static const unsigned long cr4_pinned_mask = X86_CR4_SMEP | X86_CR4_SMAP |
 					     X86_CR4_FSGSBASE | X86_CR4_CET;
 
 /*
@@ -1907,7 +1883,7 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 
 	setup_smep(c);
 	setup_smap(c);
-	setup_umip(c);
+	cr4_clear_bits(X86_CR4_UMIP);
 
 	/*
 	 * The vendor-specific functions might have changed features.

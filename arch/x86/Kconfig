@@ -570,21 +570,6 @@ config X86_PAT
 
 	  If unsure, say Y.
 
-config X86_UMIP
-	def_bool y
-	prompt "User Mode Instruction Prevention" if EXPERT
-	help
-	  User Mode Instruction Prevention (UMIP) is a security feature in
-	  some x86 processors. If enabled, a general protection fault is
-	  issued if the SGDT, SLDT, SIDT, SMSW or STR instructions are
-	  executed in user mode. These instructions unnecessarily expose
-	  information about the hardware state.
-
-	  The vast majority of applications do not use these instructions.
-	  For the very few that do, software emulation is provided in
-	  specific cases in protected and virtual-8086 modes. Emulated
-	  results are dummy.
-
 config CC_HAS_IBT
 	# GCC >= 9 and binutils >= 2.29
 	# Retpoline check to work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93654
