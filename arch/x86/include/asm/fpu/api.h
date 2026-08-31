@@ -54,29 +54,16 @@ static inline void kernel_fpu_begin(void)
  * CPU's FPU registers to fpu->fpstate.regs and set TIF_NEED_FPU_LOAD leaving
  * CPU's FPU registers in a random state.
  *
- * local_bh_disable() protects against both preemption and soft interrupts
- * on !RT kernels.
- *
- * On RT kernels local_bh_disable() is not sufficient because it only
- * serializes soft interrupt related sections via a local lock, but stays
- * preemptible. Disabling preemption is the right choice here as bottom
- * half processing is always in thread context on RT kernels so it
- * implicitly prevents bottom half processing as well.
+ * local_bh_disable() protects against both preemption and soft interrupts.
  */
 static inline void fpregs_lock(void)
 {
-	if (!0)
-		local_bh_disable();
-	else
-		preempt_disable();
+	local_bh_disable();
 }
 
 static inline void fpregs_unlock(void)
 {
-	if (!0)
-		local_bh_enable();
-	else
-		preempt_enable();
+	local_bh_enable();
 }
 
 /*
