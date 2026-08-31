@@ -37,12 +37,6 @@
 #define ACPI_PCI_CONFIGURED
 #endif
 
-#ifdef CONFIG_ACPI_REDUCED_HARDWARE_ONLY
-#define ACPI_REDUCED_HARDWARE 1
-#endif
-
-
-
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/ctype.h>

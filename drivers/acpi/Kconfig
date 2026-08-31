@@ -54,17 +54,6 @@ config ACPI_CCA_REQUIRED
 config ACPI_MCFG
 	bool
 
-config ACPI_REDUCED_HARDWARE_ONLY
-	bool "Hardware-reduced ACPI support only" if EXPERT
-	help
-	  This config item changes the way the ACPI code is built.  When this
-	  option is selected, the kernel will use a specialized version of
-	  ACPICA that ONLY supports the ACPI "reduced hardware" mode.  The
-	  resulting kernel will be smaller but it will also be restricted to
-	  running in ACPI reduced hardware mode ONLY.
-
-	  If you are unsure what to do, do not enable this option.
-
 endif	# ACPI
 
 config X86_PM_TIMER
