@@ -342,15 +342,6 @@ struct compat_robust_list_head {
 	compat_uptr_t			list_op_pending;
 };
 
-#ifdef CONFIG_COMPAT_OLD_SIGACTION
-struct compat_old_sigaction {
-	compat_uptr_t			sa_handler;
-	compat_old_sigset_t		sa_mask;
-	compat_ulong_t			sa_flags;
-	compat_uptr_t			sa_restorer;
-};
-#endif
-
 struct compat_keyctl_kdf_params {
 	compat_uptr_t hashname;
 	compat_uptr_t otherinfo;
@@ -728,12 +719,6 @@ asmlinkage long compat_sys_sigpending(compat_old_sigset_t __user *set);
 asmlinkage long compat_sys_sigprocmask(int how, compat_old_sigset_t __user *nset,
 				       compat_old_sigset_t __user *oset);
 #endif
-#ifdef CONFIG_COMPAT_OLD_SIGACTION
-asmlinkage long compat_sys_sigaction(int sig,
-                                   const struct compat_old_sigaction __user *act,
-                                   struct compat_old_sigaction __user *oact);
-#endif
-
 #ifdef __ARCH_WANT_COMPAT_TRUNCATE64
 asmlinkage long compat_sys_truncate64(const char __user *pathname, compat_arg_u64(len));
 #endif
