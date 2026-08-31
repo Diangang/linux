@@ -460,7 +460,6 @@ static const struct arm64_ftr_bits ftr_id_aa64mmfr1[] = {
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_HCX_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_ETS_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_TWED_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_XNX_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_HIGHER_SAFE, ID_AA64MMFR1_EL1_SpecSEI_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_PAN_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR1_EL1_LO_SHIFT, 4, 0),
@@ -1778,28 +1777,6 @@ static bool unmap_kernel_at_el0(const struct arm64_cpu_capabilities *entry,
 	return !meltdown_safe;
 }
 
-static bool has_nv1(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	/*
-	 * Although the Apple M2 family appears to support NV1, the
-	 * PTW barfs on the nVHE EL2 S1 page table format. Pretend
-	 * that it doesn't support NV1 at all.
-	 */
-	static const struct midr_range nv1_ni_list[] = {
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_BLIZZARD),
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_AVALANCHE),
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_BLIZZARD_PRO),
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_AVALANCHE_PRO),
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_BLIZZARD_MAX),
-		MIDR_ALL_VERSIONS(MIDR_APPLE_M2_AVALANCHE_MAX),
-		{}
-	};
-
-	return (__system_matches_cap(ARM64_HAS_NESTED_VIRT) &&
-		!(has_cpuid_feature(entry, scope) ||
-		  is_midr_in_range_list(nv1_ni_list)));
-}
-
 static void cpu_enable_kpti(struct arm64_cpu_capabilities const *cap)
 {
 	if (__this_cpu_read(this_cpu_vector) == vectors) {
@@ -2091,13 +2068,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, ECV, IMP)
 	},
 	{
-		.desc = "Enhanced Counter Virtualization (CNTPOFF)",
-		.capability = ARM64_HAS_ECV_CNTPOFF,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, ECV, CNTPOFF)
-	},
-	{
 		.desc = "Privileged Access Never",
 		.capability = ARM64_HAS_PAN,
 		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
@@ -2253,20 +2223,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.matches = has_cpuid_feature,
 		ARM64_CPUID_FIELDS(ID_AA64ISAR1_EL1, LRCPC, IMP)
 	},
-	{
-		.desc = "Fine Grained Traps",
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.capability = ARM64_HAS_FGT,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, FGT, IMP)
-	},
-	{
-		.desc = "Fine Grained Traps 2",
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.capability = ARM64_HAS_FGT2,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR0_EL1, FGT, FGT2)
-	},
 #ifdef CONFIG_ARM64_SME
 	{
 		.desc = "Scalable Matrix Extension",
@@ -2365,13 +2321,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.capability = ARM64_MPAM_HCR,
 		.matches = test_has_mpam_hcr,
 	},
-	{
-		.desc = "NV1",
-		.capability = ARM64_HAS_HCR_NV1,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_nv1,
-		ARM64_CPUID_FIELDS_NEG(ID_AA64MMFR4_EL1, E2H0, NI_NV1)
-	},
 #ifdef CONFIG_ARM64_POE
 	{
 		.desc = "Stage-1 Permission Overlay Extension (S1POE)",
@@ -2411,13 +2360,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.type = ARM64_CPUCAP_EARLY_LOCAL_CPU_FEATURE,
 		.capability = ARM64_HAS_GICV5_LEGACY,
 		.matches = test_has_gicv5_legacy,
-	},
-	{
-		.desc = "XNX",
-		.capability = ARM64_HAS_XNX,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR1_EL1, XNX, IMP)
 	},
 	{},
 };
