@@ -402,10 +402,6 @@ config PARAVIRT
 config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
 	def_bool CRASH_RESERVE
 
-config TRANS_TABLE
-	def_bool y
-	depends on n || KEXEC_CORE
-
 # include/linux/mmzone.h requires the following to be true:
 #
 #   MAX_PAGE_ORDER + PAGE_SHIFT <= SECTION_SIZE_BITS
