@@ -3,26 +3,7 @@
 #define _MEMREGION_H_
 #include <linux/types.h>
 #include <linux/errno.h>
-#include <linux/range.h>
 #include <linux/bug.h>
-
-struct memregion_info {
-	int target_node;
-	struct range range;
-};
-
-#ifdef CONFIG_MEMREGION
-int memregion_alloc(gfp_t gfp);
-void memregion_free(int id);
-#else
-static inline int memregion_alloc(gfp_t gfp)
-{
-	return -ENOMEM;
-}
-static inline void memregion_free(int id)
-{
-}
-#endif
 
 /**
  * cpu_cache_invalidate_memregion - drop any CPU cached data for

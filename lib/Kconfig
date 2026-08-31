@@ -105,9 +105,6 @@ config SG_POOL
 config ARCH_HAS_PMEM_API
 	bool
 
-config MEMREGION
-	bool
-
 config ARCH_HAS_CPU_CACHE_INVALIDATE_MEMREGION
 	bool
 
