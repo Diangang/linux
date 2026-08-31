@@ -64,10 +64,7 @@ static inline void __kunmap_local(const void *addr)
 
 static inline void *kmap_atomic(const struct page *page)
 {
-	if (0)
-		migrate_disable();
-	else
-		preempt_disable();
+	preempt_disable();
 	pagefault_disable();
 	return page_address(page);
 }
@@ -88,10 +85,7 @@ static inline void __kunmap_atomic(const void *addr)
 	kunmap_flush_on_unmap(PTR_ALIGN_DOWN(addr, PAGE_SIZE));
 #endif
 	pagefault_enable();
-	if (0)
-		migrate_enable();
-	else
-		preempt_enable();
+	preempt_enable();
 }
 
 static inline unsigned long nr_free_highpages(void) { return 0; }

@@ -52,10 +52,6 @@ static void __init rcu_bootup_announce_oddness(void)
 			RCU_FANOUT);
 	if (rcu_fanout_exact)
 		pr_info("\tHierarchical RCU autobalancing is disabled.\n");
-	if (0)
-		pr_info("\tRCU lockdep checking is enabled.\n");
-	if (0)
-		pr_info("\tRCU strict (and thus non-scalable) grace periods are enabled.\n");
 	if (RCU_NUM_LVLS >= 4)
 		pr_info("\tFour(or more)-level hierarchy is enabled.\n");
 	if (RCU_FANOUT_LEAF != 16)
@@ -471,15 +467,8 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 		return;
 	}
 	t->rcu_read_unlock_special.s = 0;
-	if (special.b.need_qs) {
-		if (0) {
-			rdp->cpu_no_qs.b.norm = false;
-			rcu_report_qs_rdp(rdp);
-			udelay(rcu_unlock_delay);
-		} else {
-			rcu_qs();
-		}
-	}
+	if (special.b.need_qs)
+		rcu_qs();
 
 	/*
 	 * Respond to a request by an expedited grace period for a
@@ -514,10 +503,6 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 			WRITE_ONCE(rnp->gp_tasks, np);
 		if (&t->rcu_node_entry == rnp->exp_tasks)
 			WRITE_ONCE(rnp->exp_tasks, np);
-		if (0) {
-			if (&t->rcu_node_entry == rnp->boost_tasks)
-				WRITE_ONCE(rnp->boost_tasks, np);
-		}
 
 		/*
 		 * If this was the last task on the current list, and if
@@ -832,33 +817,6 @@ static void rcu_preempt_deferred_qs_init(struct rcu_data *rdp)
 	rdp->defer_qs_iw = IRQ_WORK_INIT_HARD(rcu_preempt_deferred_qs_handler);
 }
 #else /* #ifdef CONFIG_PREEMPT_RCU */
-
-/*
- * If strict grace periods are enabled, and if the calling
- * __rcu_read_unlock() marks the beginning of a quiescent state, immediately
- * report that quiescent state and, if requested, spin for a bit.
- */
-void rcu_read_unlock_strict(void)
-{
-	struct rcu_data *rdp;
-
-	if (irqs_disabled() || in_atomic_preempt_off() || !rcu_state.gp_kthread)
-		return;
-
-	/*
-	 * rcu_report_qs_rdp() can only be invoked with a stable rdp and
-	 * from the local CPU.
-	 *
-	 * The in_atomic_preempt_off() check ensures that we come here holding
-	 * the last preempt_count (which will get dropped once we return to
-	 * __rcu_read_unlock().
-	 */
-	rdp = this_cpu_ptr(&rcu_data);
-	rdp->cpu_no_qs.b.norm = false;
-	rcu_report_qs_rdp(rdp);
-	udelay(rcu_unlock_delay);
-}
-EXPORT_SYMBOL_GPL(rcu_read_unlock_strict);
 
 /*
  * Tell them what RCU they are running.

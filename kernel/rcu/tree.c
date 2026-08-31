@@ -179,8 +179,6 @@ module_param(nohz_full_patience_delay, int, 0444);
 static int nohz_full_patience_delay_jiffies;
 
 // Add delay to rcu_read_unlock() for strict grace periods.
-static int rcu_unlock_delay;
-
 /* Retrieve RCU kthreads priority for rcutorture */
 int rcu_get_gp_kthreads_prio(void)
 {

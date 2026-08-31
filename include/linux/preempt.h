@@ -388,8 +388,6 @@ do {								\
  */
 static __always_inline void preempt_enable_nested(void)
 {
-	if (0)
-		preempt_enable();
 }
 
 DEFINE_LOCK_GUARD_0(preempt, preempt_disable(), preempt_enable())
