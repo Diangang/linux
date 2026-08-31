@@ -48,7 +48,7 @@ config VIRTIO_PCI
 
 config VIRTIO_PCI_ADMIN_LEGACY
 	bool
-	depends on VIRTIO_PCI && (X86 || COMPILE_TEST)
+	depends on VIRTIO_PCI && X86
 	default y
 
 config VIRTIO_PCI_LEGACY

@@ -2,7 +2,6 @@
 
 config HAS_DMA
 	bool
-	depends on y
 	default y
 
 config NEED_SG_DMA_LENGTH

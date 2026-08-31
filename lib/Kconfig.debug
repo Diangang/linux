@@ -84,8 +84,6 @@ endchoice # "Debug information"
 config FRAME_WARN
 	int "Warn for stack frames larger than"
 	range 0 8192
-	default 0 if n
-	default 2048 if PARISC
 	default 1536 if (!64BIT && XTENSA)
 	default 1280 if !64BIT
 	default 2048 if 64BIT
@@ -108,8 +106,8 @@ config ARCH_WANT_FRAME_POINTERS
 
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
-	depends on DEBUG_KERNEL && (M68K || UML || SUPERH) || ARCH_WANT_FRAME_POINTERS
-	default y if (DEBUG_INFO && UML) || ARCH_WANT_FRAME_POINTERS
+	depends on ARCH_WANT_FRAME_POINTERS
+	default y
 	help
 	  If you say Y here the resulting kernel image will be slightly
 	  larger and slower, but it gives very useful debugging information
@@ -127,8 +125,6 @@ config NOINSTR_VALIDATION
 endmenu # "Compiler options"
 
 menu "Generic Kernel Debugging Instruments"
-
-source "lib/Kconfig.ubsan"
 
 endmenu
 
@@ -194,7 +190,7 @@ config STRICT_DEVMEM
 	bool "Filter access to /dev/mem"
 	depends on MMU && DEVMEM
 	depends on ARCH_HAS_DEVMEM_IS_ALLOWED || GENERIC_LIB_DEVMEM_IS_ALLOWED
-	default y if PPC || X86 || ARM64 || S390
+	default y if X86 || ARM64
 	help
 	  If this option is disabled, you allow userspace (root) access to all
 	  of memory, including kernel and userspace memory. Accidental

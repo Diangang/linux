@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: GPL-2.0-only
-config ARCH_HAS_UBSAN
-	bool
-
-if UBSAN
-
-endif	# if UBSAN

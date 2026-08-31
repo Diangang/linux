@@ -45,7 +45,6 @@ config LD_VERSION
 
 config LLD_VERSION
 	int
-	default $(ld-version) if n
 	default 0
 
 config RUSTC_VERSION
@@ -112,8 +111,7 @@ menu "General setup"
 
 config INIT_ENV_ARG_LIMIT
 	int
-	default 32 if !UML
-	default 128 if UML
+	default 32
 	help
 	  Maximum of each of the number of arguments and environment
 	  variables passed to init from the kernel command line.
@@ -133,7 +131,6 @@ config LOCALVERSION
 config LOCALVERSION_AUTO
 	bool "Automatically append version information to the version string"
 	default y
-	depends on !COMPILE_TEST
 	help
 	  This will try to automatically determine if the current tree is a
 	  release tree by looking for git tags that belong to the current
@@ -166,7 +163,7 @@ config HAVE_KERNEL_GZIP
 choice
 	prompt "Kernel compression mode"
 	default KERNEL_GZIP
-	depends on HAVE_KERNEL_GZIP || n
+	depends on HAVE_KERNEL_GZIP
 	help
 	  The linux kernel is a kind of self-extracting executable.
 	  Several compression algorithms are available, which differ
@@ -226,7 +223,6 @@ choice
 # Kind of a stub config for the pure tick based cputime accounting
 config TICK_CPU_ACCOUNTING
 	bool "Simple tick based cputime accounting"
-	depends on !S390 && !NO_HZ_FULL
 	help
 	  This is the basic tick based cputime accounting that maintains
 	  statistics about user, system and idle time spent on per jiffies
@@ -366,7 +362,7 @@ config ARCH_SUPPORTS_INT128
 config NUMA_BALANCING
 	bool "Memory placement aware NUMA scheduler"
 	depends on ARCH_SUPPORTS_NUMA_BALANCING
-	depends on SMP && NUMA_MIGRATION && y
+	depends on SMP && NUMA_MIGRATION
 	help
 	  This option adds support for automatic NUMA aware memory/task placement.
 	  The mechanism is quite primitive and is based on migrating memory when
@@ -518,7 +514,6 @@ config BUG
 
 config FUTEX
 	bool "Enable futex support" if EXPERT
-	depends on !(SPARC32 && SMP)
 	default y
 	imply RT_MUTEXES
 	help
@@ -583,7 +578,6 @@ source "arch/Kconfig"
 
 config RT_MUTEXES
 	bool
-	default y if n
 
 source "block/Kconfig"
 

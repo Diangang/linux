@@ -71,7 +71,7 @@ endif	# ACPI
 
 config X86_PM_TIMER
 	bool "Power Management Timer Support" if EXPERT
-	depends on X86 && (ACPI || n)
+	depends on X86 && ACPI
 	default y
 	help
 	  The Power Management Timer is available on all ACPI-capable,

@@ -19,10 +19,6 @@ config UNINLINE_SPIN_UNLOCK
 #   - DEBUG_SPINLOCK=n and ARCH_INLINE_*LOCK=y
 #
 
-if !DEBUG_SPINLOCK
-
-endif
-
 config ARCH_SUPPORTS_ATOMIC_RMW
 	bool
 
@@ -50,4 +46,4 @@ config ARCH_USE_QUEUED_RWLOCKS
 
 config QUEUED_RWLOCKS
 	def_bool y if ARCH_USE_QUEUED_RWLOCKS
-	depends on SMP && y
+	depends on SMP

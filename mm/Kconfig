@@ -10,8 +10,6 @@ config SLUB
 
 config KVFREE_RCU_BATCHED
 	def_bool y
-	depends on y
-	depends on y
 
 config SLAB_MERGE_DEFAULT
 	bool "Allow slab caches to be merged"
@@ -107,10 +105,6 @@ config SPLIT_PTE_PTLOCKS
 	depends on MMU
 	depends on SMP
 	depends on NR_CPUS >= 4
-	depends on !ARM || CPU_CACHE_VIPT
-	depends on !PARISC || PA20
-	depends on !SPARC32
-	depends on !UML
 
 config ARCH_ENABLE_SPLIT_PMD_PTLOCK
 	bool
@@ -141,7 +135,6 @@ config COMPACTION
 config COMPACT_UNEVICTABLE_DEFAULT
 	int
 	depends on COMPACTION
-	default 0 if n
 	default 1
 
 config NUMA_MIGRATION
@@ -284,7 +277,6 @@ config ZONE_DMA
 
 config ZONE_DMA32
 	bool "Support DMA32 zone"
-	depends on y
 	default y if ARM64
 
 config ARCH_USES_HIGH_VMA_FLAGS
@@ -307,9 +299,6 @@ config VM_EVENT_COUNTERS
 config ARCH_HAS_PTE_SPECIAL
 	bool
 
-if USERFAULTFD
-endif # USERFAULTFD
-
 # multi-gen LRU {
 
 config ARCH_SUPPORTS_PER_VMA_LOCK
@@ -326,7 +315,6 @@ config PER_VMA_LOCK
 
 config LOCK_MM_AND_FIND_VMA
 	bool
-	depends on !STACK_GROWSUP
 
 config EXECMEM
 	bool
