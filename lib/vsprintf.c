@@ -2213,11 +2213,8 @@ char *pointer(const char *fmt, char *buf, char *end, void *ptr,
 	case 'f':
 		return fwnode_string(buf, end, ptr, spec, fmt + 1);
 	case 'A':
-		if (!0) {
-			WARN_ONCE(1, "Please remove %%pA from non-Rust code\n");
-			return error_string(buf, end, "(%pA?)", spec);
-		}
-		return rust_fmt_argument(buf, end, ptr);
+		WARN_ONCE(1, "Please remove %%pA from non-Rust code\n");
+		return error_string(buf, end, "(%pA?)", spec);
 	case 'x':
 		return pointer_string(buf, end, ptr, spec);
 	case 'e':

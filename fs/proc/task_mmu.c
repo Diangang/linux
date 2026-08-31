@@ -963,11 +963,6 @@ static void smaps_account(struct mem_size_stats *mss, struct page *page,
 		return;
 	}
 
-	if (0) {
-		mapcount = folio_average_page_mapcount(folio);
-		exclusive = !folio_maybe_mapped_shared(folio);
-	}
-
 	/*
 	 * We obtain a snapshot of the mapcount. Without holding the folio lock
 	 * this snapshot can be slightly wrong as we cannot always read the

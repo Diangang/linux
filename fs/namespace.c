@@ -439,23 +439,8 @@ int mnt_get_write_access(struct vfsmount *m)
 	 */
 	smp_mb();
 	might_lock(&mount_lock.lock);
-	while (__test_write_hold(READ_ONCE(mnt->mnt_pprev_for_sb))) {
-		if (!0) {
-			cpu_relax();
-		} else {
-			/*
-			 * This prevents priority inversion, if the task
-			 * setting WRITE_HOLD got preempted on a remote
-			 * CPU, and it prevents life lock if the task setting
-			 * WRITE_HOLD has a lower priority and is bound to
-			 * the same CPU as the task that is spinning here.
-			 */
-			preempt_enable();
-			read_seqlock_excl(&mount_lock);
-			read_sequnlock_excl(&mount_lock);
-			preempt_disable();
-		}
-	}
+	while (__test_write_hold(READ_ONCE(mnt->mnt_pprev_for_sb)))
+		cpu_relax();
 	/*
 	 * The barrier pairs with the barrier sb_start_ro_state_change() making
 	 * sure that if we see WRITE_HOLD cleared, we will also see

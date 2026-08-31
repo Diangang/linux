@@ -1237,8 +1237,6 @@ static void __init check_for_memory(pg_data_t *pgdat)
 	for (zone_type = 0; zone_type <= ZONE_MOVABLE - 1; zone_type++) {
 		struct zone *zone = &pgdat->node_zones[zone_type];
 		if (populated_zone(zone)) {
-			if (0)
-				node_set_state(pgdat->node_id, N_HIGH_MEMORY);
 			if (zone_type <= ZONE_NORMAL)
 				node_set_state(pgdat->node_id, N_NORMAL_MEMORY);
 			break;

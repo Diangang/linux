@@ -2121,8 +2121,7 @@ int uart_parse_earlycon(char *p, enum uart_iotype *iotype,
 		*iotype = UPIO_MEM32BE;
 		p += 9;
 	} else if (strncmp(p, "mmio32native,", 13) == 0) {
-		*iotype = 0 ?
-			UPIO_MEM32BE : UPIO_MEM32;
+		*iotype = UPIO_MEM32;
 		p += 13;
 	} else if (strncmp(p, "io,", 3) == 0) {
 		*iotype = UPIO_PORT;

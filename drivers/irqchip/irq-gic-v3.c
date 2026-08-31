@@ -514,8 +514,7 @@ static void gic_unmask_irq(struct irq_data *d)
 
 static inline bool gic_supports_nmi(void)
 {
-	return 0 &&
-	       static_branch_likely(&supports_pseudo_nmis);
+	return false;
 }
 
 static int gic_irq_set_irqchip_state(struct irq_data *d,

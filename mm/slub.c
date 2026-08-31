@@ -624,8 +624,7 @@ static inline bool __slab_update_freelist(struct kmem_cache *s, struct slab *sla
 {
 	bool ret;
 
-	if (!0)
-		lockdep_assert_irqs_disabled();
+	lockdep_assert_irqs_disabled();
 
 	if (s->flags & __CMPXCHG_DOUBLE)
 		ret = __update_freelist_fast(slab, old, new);
@@ -6142,8 +6141,7 @@ EXPORT_SYMBOL(kmem_cache_alloc_bulk);
  * take the list_lock.
  */
 static unsigned int slub_min_order;
-static unsigned int slub_max_order =
-	0 ? 1 : PAGE_ALLOC_COSTLY_ORDER;
+static unsigned int slub_max_order = PAGE_ALLOC_COSTLY_ORDER;
 static unsigned int slub_min_objects;
 
 /*
