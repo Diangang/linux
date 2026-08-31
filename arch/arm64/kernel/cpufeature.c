@@ -473,7 +473,6 @@ static const struct arm64_ftr_bits ftr_id_aa64mmfr1[] = {
 
 static const struct arm64_ftr_bits ftr_id_aa64mmfr2[] = {
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64MMFR2_EL1_E0PD_SHIFT, 4, 0),
-	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR2_EL1_EVT_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR2_EL1_BBM_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR2_EL1_TTL_SHIFT, 4, 0),
 	ARM64_FTR_BITS(FTR_HIDDEN, FTR_STRICT, FTR_LOWER_SAFE, ID_AA64MMFR2_EL1_FWB_SHIFT, 4, 0),
@@ -2337,13 +2336,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		.capability = ARM64_KVM_HVHE,
 		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
 		.matches = hvhe_possible,
-	},
-	{
-		.desc = "Enhanced Virtualization Traps",
-		.capability = ARM64_HAS_EVT,
-		.type = ARM64_CPUCAP_SYSTEM_FEATURE,
-		.matches = has_cpuid_feature,
-		ARM64_CPUID_FIELDS(ID_AA64MMFR2_EL1, EVT, IMP)
 	},
 	{
 		.desc = "BBM Level 2 without TLB conflict abort",
