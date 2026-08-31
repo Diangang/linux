@@ -26,7 +26,6 @@ typedef struct {
 
 /* non-uapi in-kernel SA_FLAGS for those indicates ABI for a signal frame */
 #define SA_IA32_ABI	0x02000000u
-#define SA_X32_ABI	0x01000000u
 
 #endif /* __ASSEMBLER__ */
 #include <uapi/asm/signal.h>

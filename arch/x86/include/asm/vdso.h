@@ -25,7 +25,6 @@ struct vdso_image {
 };
 
 extern const struct vdso_image vdso64_image;
-extern const struct vdso_image vdsox32_image;
 
 extern int __init init_vdso_image(const struct vdso_image *image);
 
