@@ -43,7 +43,6 @@
 #include <linux/rv.h>
 #include <linux/uidgid_types.h>
 #include <linux/tracepoint-defs.h>
-#include <linux/unwind_deferred_types.h>
 #include <asm/kmap_size.h>
 #include <linux/time64.h>
 #ifndef COMPILE_OFFSETS
@@ -1100,10 +1099,6 @@ struct task_struct {
 #endif
 
 
-
-#ifdef CONFIG_UNWIND_USER
-	struct unwind_task_info		unwind_info;
-#endif
 
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;

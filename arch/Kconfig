@@ -266,13 +266,6 @@ config HAVE_FUNCTION_ARG_ACCESS_API
 	  the API needed to access function arguments from pt_regs,
 	  declared in asm/ptrace.h
 
-config UNWIND_USER
-	bool
-
-config HAVE_UNWIND_USER_FP
-	bool
-	select UNWIND_USER
-
 config HAVE_ARCH_JUMP_LABEL
 	bool
 

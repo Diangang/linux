@@ -61,7 +61,6 @@
 #include <linux/compat.h>
 #include <linux/sysfs.h>
 #include <linux/user_events.h>
-#include <linux/unwind_deferred.h>
 #include <linux/uaccess.h>
 #include <linux/pidfs.h>
 
@@ -749,20 +748,6 @@ void __noreturn do_exit(long code)
 
 	tsk->exit_code = code;
 	taskstats_exit(tsk, group_dead);
-
-	/*
-	 * Since sampling can touch ->mm, make sure to stop everything before we
-	 * tear it down.
-	 *
-	 * Also flushes inherited counters to the parent - before the parent
-	 * gets woken up by child-exit notifications.
-	 */
-	/*
-	 * PF_EXITING (above) ensures unwind_deferred_request() will no
-	 * longer add new unwinds. While exit_mm() (below) will destroy the
-	 * abaility to do unwinds. So flush any pending unwinds here.
-	 */
-	unwind_deferred_task_exit(tsk);
 
 	exit_mm();
 

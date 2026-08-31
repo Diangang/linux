@@ -98,7 +98,6 @@
 #include <uapi/linux/pidfd.h>
 #include <linux/pidfs.h>
 #include <linux/tick.h>
-#include <linux/unwind_deferred.h>
 #include <linux/pgalloc.h>
 #include <linux/uaccess.h>
 
@@ -614,7 +613,6 @@ void __put_task_struct(struct task_struct *tsk)
 	WARN_ON(refcount_read(&tsk->usage));
 	WARN_ON(tsk == current);
 
-	unwind_task_free(tsk);
 	cgroup_task_free(tsk);
 	task_numa_free(tsk, true);
 	security_task_free(tsk);
@@ -1901,8 +1899,6 @@ struct task_struct *copy_process(
 
 	p->blocked_on = NULL; /* not blocked yet */
 
-
-	unwind_task_init(p);
 
 	/* Perform scheduler related setup. Assign this task to a CPU. */
 	retval = sched_fork(clone_flags, p);

@@ -9,7 +9,6 @@
 #include <linux/static_call_types.h>
 #include <linux/syscalls.h>
 #include <linux/tick.h>
-#include <linux/unwind_deferred.h>
 
 #include <asm/entry-common.h>
 
@@ -259,7 +258,6 @@ static __always_inline void irqentry_exit_to_user_mode_prepare(struct pt_regs *r
 static __always_inline void exit_to_user_mode(void)
 {
 	instrumentation_begin();
-	unwind_reset_info();
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare();
 	instrumentation_end();

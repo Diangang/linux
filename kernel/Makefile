@@ -28,7 +28,6 @@ obj-y += irq/
 obj-y += rcu/
 obj-y += dma/
 obj-y += entry/
-obj-y += unwind/
 obj-$(CONFIG_STACKTRACE) += stacktrace.o
 obj-y += time/
 obj-$(CONFIG_FUTEX) += futex/
