@@ -354,36 +354,6 @@ config HAVE_CMPXCHG_LOCAL
 config HAVE_CMPXCHG_DOUBLE
 	bool
 
-config HAVE_ARCH_SECCOMP
-	bool
-	help
-	  An arch should select this symbol to support seccomp mode 1 (the fixed
-	  syscall policy), and must provide an overrides for __NR_seccomp_sigreturn,
-	  and compat syscalls if the asm-generic/seccomp.h defaults need adjustment:
-	  - __NR_seccomp_read_32
-	  - __NR_seccomp_write_32
-	  - __NR_seccomp_exit_32
-	  - __NR_seccomp_sigreturn_32
-
-config HAVE_ARCH_SECCOMP_FILTER
-	bool
-	select HAVE_ARCH_SECCOMP
-	help
-	  An arch should select this symbol if it provides all of these things:
-	  - all the requirements for HAVE_ARCH_SECCOMP
-	  - syscall_get_arch()
-	  - syscall_get_arguments()
-	  - syscall_rollback()
-	  - syscall_set_return_value()
-	  - SIGSYS siginfo_t support
-	  - secure_computing is called from a ptrace_event()-safe context
-	  - secure_computing return value is checked and a return value of -1
-	    results in the system call being skipped immediately.
-	  - seccomp syscall wired up
-	  - if !HAVE_SPARSE_SYSCALL_NR, have SECCOMP_ARCH_NATIVE,
-	    SECCOMP_ARCH_NATIVE_NR, SECCOMP_ARCH_NATIVE_NAME defined. If
-	    COMPAT is supported, have the SECCOMP_ARCH_COMPAT* defines too.
-
 config HAVE_STACKPROTECTOR
 	bool
 	help
