@@ -350,7 +350,6 @@ void rcu_note_context_switch(bool preempt)
 	rcu_qs();
 	if (rdp->cpu_no_qs.b.exp)
 		rcu_report_exp_rdp(rdp);
-	rcu_tasks_qs(current, preempt);
 }
 EXPORT_SYMBOL_GPL(rcu_note_context_switch);
 
@@ -924,12 +923,10 @@ void rcu_note_context_switch(bool preempt)
 	rcu_qs();
 	/* Load rcu_urgent_qs before other flags. */
 	if (!smp_load_acquire(this_cpu_ptr(&rcu_data.rcu_urgent_qs)))
-		goto out;
+		return;
 	this_cpu_write(rcu_data.rcu_urgent_qs, false);
 	if (unlikely(raw_cpu_read(rcu_data.rcu_need_heavy_qs)))
 		rcu_momentary_eqs();
-out:
-	rcu_tasks_qs(current, preempt);
 }
 EXPORT_SYMBOL_GPL(rcu_note_context_switch);
 

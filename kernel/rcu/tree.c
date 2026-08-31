@@ -254,7 +254,6 @@ void rcu_softirq_qs(void)
 			 "Illegal rcu_softirq_qs() in RCU read-side critical section");
 	rcu_qs();
 	rcu_preempt_deferred_qs(current);
-	rcu_tasks_qs(current, false);
 }
 
 /*
@@ -1764,7 +1763,7 @@ static noinline_for_stack bool rcu_gp_init(void)
 			rcu_report_qs_rnp(mask, rnp, rnp->gp_seq, flags);
 		else
 			raw_spin_unlock_irq_rcu_node(rnp);
-		cond_resched_tasks_rcu_qs();
+		cond_resched();
 		WRITE_ONCE(rcu_state.gp_activity, jiffies);
 	}
 
@@ -1900,13 +1899,13 @@ static noinline_for_stack void rcu_gp_fqs_loop(void)
 				first_gp_fqs = false;
 				gf = rcu_state.cbovld ? RCU_GP_FLAG_OVLD : 0;
 			}
-			cond_resched_tasks_rcu_qs();
+			cond_resched();
 			WRITE_ONCE(rcu_state.gp_activity, jiffies);
 			ret = 0; /* Force full wait till next FQS. */
 			j = READ_ONCE(jiffies_till_next_fqs);
 		} else {
 			/* Deal with stray signal. */
-			cond_resched_tasks_rcu_qs();
+			cond_resched();
 			WRITE_ONCE(rcu_state.gp_activity, jiffies);
 			WARN_ON(signal_pending(current));
 			ret = 1; /* Keep old FQS timing. */
@@ -1985,7 +1984,7 @@ static noinline void rcu_gp_cleanup(void)
 		sq = rcu_nocb_gp_get(rnp);
 		raw_spin_unlock_irq_rcu_node(rnp);
 		rcu_nocb_gp_cleanup(sq);
-		cond_resched_tasks_rcu_qs();
+		cond_resched();
 		WRITE_ONCE(rcu_state.gp_activity, jiffies);
 		rcu_gp_slow(gp_cleanup_delay);
 	}
@@ -2051,7 +2050,7 @@ static int __noreturn rcu_gp_kthread(void *unused)
 			/* Locking provides needed memory barrier. */
 			if (rcu_gp_init())
 				break;
-			cond_resched_tasks_rcu_qs();
+			cond_resched();
 			WRITE_ONCE(rcu_state.gp_activity, jiffies);
 			WARN_ON(signal_pending(current));
 		}
@@ -2384,7 +2383,7 @@ static void rcu_do_batch(struct rcu_data *rdp)
 			// depriving other softirq vectors of CPU cycles.
 			local_bh_enable();
 			lockdep_assert_irqs_enabled();
-			cond_resched_tasks_rcu_qs();
+			cond_resched();
 			lockdep_assert_irqs_enabled();
 			local_bh_disable();
 			// But rcuc kthreads can delay quiescent-state
@@ -2454,8 +2453,6 @@ void rcu_sched_clock_irq(int user)
 	rcu_flavor_sched_clock_irq(user);
 	if (rcu_pending(user))
 		invoke_rcu_core();
-	if (user || rcu_is_cpu_rrupt_from_idle())
-		rcu_note_voluntary_context_switch(current);
 	lockdep_assert_irqs_disabled();
 
 }
@@ -2479,7 +2476,7 @@ static void force_qs_rnp(int (*f)(struct rcu_data *rdp))
 		unsigned long mask = 0;
 		unsigned long rsmask = 0;
 
-		cond_resched_tasks_rcu_qs();
+		cond_resched();
 		raw_spin_lock_irqsave_rcu_node(rnp, flags);
 		rcu_state.cbovldnext |= !!rnp->cbovldmask;
 		if (rnp->qsmask == 0) {
@@ -4533,8 +4530,6 @@ void __init rcu_init(void)
 	(void)start_poll_synchronize_rcu_expedited();
 
 	rcu_test_sync_prims();
-
-	tasks_cblist_init_generic();
 }
 
 #include "tree_stall.h"

@@ -315,9 +315,6 @@ EXPORT_SYMBOL_GPL(get_completed_synchronize_rcu);
 
 void rcu_early_boot_tests(void) {}
 
-#include "tasks.h"
-
-
 /*
  * Print any significant non-default boot-time settings.
  */
@@ -333,5 +330,4 @@ void __init rcupdate_announce_bootup_oddness(void)
 		pr_info("\tRCU CPU stall warnings suppressed (rcu_cpu_stall_suppress).\n");
 	if (rcu_cpu_stall_timeout != CONFIG_RCU_CPU_STALL_TIMEOUT)
 		pr_info("\tRCU CPU stall warnings timeout set to %d (rcu_cpu_stall_timeout).\n", rcu_cpu_stall_timeout);
-	rcu_tasks_bootup_oddness();
 }

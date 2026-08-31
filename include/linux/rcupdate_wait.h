@@ -40,10 +40,8 @@ do {												\
  * @...: List of call_rcu() functions for different grace periods to wait on
  *
  * This macro waits concurrently for multiple types of RCU grace periods.
- * For example, synchronize_rcu_mult(call_rcu, call_rcu_tasks) would wait
- * on concurrent RCU and RCU-tasks grace periods.  Waiting on a given SRCU
- * domain requires you to write a wrapper function for that SRCU domain's
- * call_srcu() function, with this wrapper supplying the pointer to the
+ * Waiting on a given SRCU domain requires you to write a wrapper function
+ * for that SRCU domain's call_srcu() function, with this wrapper supplying the
  * corresponding srcu_struct.
  *
  * Note that call_rcu_hurry() should be used instead of call_rcu()

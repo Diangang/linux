@@ -142,66 +142,15 @@ static inline void rcu_nocb_flush_deferred_wakeup(void) { }
 #define RCU_NOCB_LOCKDEP_WARN(c, s)
 
 
-/*
- * Note a quasi-voluntary context switch for RCU-tasks's benefit.
- * This is a macro rather than an inline function to avoid #include hell.
- */
-#ifdef CONFIG_TASKS_RCU_GENERIC
-
-# ifdef CONFIG_TASKS_RCU
-# define rcu_tasks_classic_qs(t, preempt)				\
-	do {								\
-		if (!(preempt) && READ_ONCE((t)->rcu_tasks_holdout))	\
-			WRITE_ONCE((t)->rcu_tasks_holdout, false);	\
-	} while (0)
-void call_rcu_tasks(struct rcu_head *head, rcu_callback_t func);
-void synchronize_rcu_tasks(void);
-void rcu_tasks_torture_stats_print(char *tt, char *tf);
-# else
-# define rcu_tasks_classic_qs(t, preempt) do { } while (0)
-# define call_rcu_tasks call_rcu
-# define synchronize_rcu_tasks synchronize_rcu
-# endif
-
-#define rcu_tasks_qs(t, preempt) rcu_tasks_classic_qs((t), (preempt))
-
-
-#define rcu_note_voluntary_context_switch(t) rcu_tasks_qs(t, false)
-void exit_tasks_rcu_start(void);
-void exit_tasks_rcu_finish(void);
-#else /* #ifdef CONFIG_TASKS_RCU_GENERIC */
-#define rcu_tasks_classic_qs(t, preempt) do { } while (0)
-#define rcu_tasks_qs(t, preempt) do { } while (0)
-#define rcu_note_voluntary_context_switch(t) do { } while (0)
-#define call_rcu_tasks call_rcu
-#define synchronize_rcu_tasks synchronize_rcu
-static inline void exit_tasks_rcu_start(void) { }
-static inline void exit_tasks_rcu_finish(void) { }
-#endif /* #else #ifdef CONFIG_TASKS_RCU_GENERIC */
-
 /**
- * cond_resched_tasks_rcu_qs - Report potential quiescent states to RCU
- *
- * This macro resembles cond_resched(), except that it is defined to
- * report potential quiescent states to RCU-tasks even if the cond_resched()
- * machinery were to be shut off, as some advocate for PREEMPTION kernels.
- */
-#define cond_resched_tasks_rcu_qs() \
-do { \
-	rcu_tasks_qs(current, false); \
-	cond_resched(); \
-} while (0)
-
-/**
- * rcu_softirq_qs_periodic - Report RCU and RCU-Tasks quiescent states
+ * rcu_softirq_qs_periodic - Report RCU quiescent states
  * @old_ts: jiffies at start of processing.
  *
  * This helper is for long-running softirq handlers, such as NAPI threads in
  * networking. The caller should initialize the variable passed in as @old_ts
  * at the beginning of the softirq handler. When invoked frequently, this macro
- * will invoke rcu_softirq_qs() every 100 milliseconds thereafter, which will
- * provide both RCU and RCU-Tasks quiescent states. Note that this macro
- * modifies its old_ts argument.
+ * will invoke rcu_softirq_qs() every 100 milliseconds thereafter. Note that
+ * this macro modifies its old_ts argument.
  *
  * Because regions of code that have disabled softirq act as RCU read-side
  * critical sections, this macro should be invoked with softirq (and
@@ -209,8 +158,7 @@ do { \
  *
  * The macro is not needed when CONFIG_PREEMPT_RT is defined. RT kernels would
  * have more chance to invoke schedule() calls and provide necessary quiescent
- * states. As a contrast, calling cond_resched() only won't achieve the same
- * effect because cond_resched() does not provide RCU-Tasks quiescent states.
+ * states.
  */
 #define rcu_softirq_qs_periodic(old_ts) \
 do { \

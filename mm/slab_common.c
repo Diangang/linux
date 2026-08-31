@@ -1232,7 +1232,7 @@ kvfree_rcu_bulk(struct kfree_rcu_cpu *krcp,
 	if (bnode)
 		free_page((unsigned long) bnode);
 
-	cond_resched_tasks_rcu_qs();
+	cond_resched();
 }
 
 static void
@@ -1250,7 +1250,7 @@ kvfree_rcu_list(struct rcu_head *head)
 		kvfree(ptr);
 
 		rcu_lock_release(&rcu_callback_map);
-		cond_resched_tasks_rcu_qs();
+		cond_resched();
 	}
 }
 

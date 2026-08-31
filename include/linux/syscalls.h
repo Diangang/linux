@@ -977,10 +977,6 @@ asmlinkage long sys_sigpending(old_sigset_t __user *uset);
 asmlinkage long sys_sigprocmask(int how, old_sigset_t __user *set,
 				old_sigset_t __user *oset);
 
-#ifdef CONFIG_OLD_SIGSUSPEND3
-asmlinkage long sys_sigsuspend(int unused1, int unused2, old_sigset_t mask);
-#endif
-
 asmlinkage long sys_signal(int sig, __sighandler_t handler);
 
 /* obsolete */

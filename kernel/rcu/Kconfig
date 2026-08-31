@@ -35,21 +35,6 @@ config TREE_SRCU
 	help
 	  This option selects the full-fledged version of SRCU.
 
-config TASKS_RCU_GENERIC
-	def_bool TASKS_RCU
-	help
-	  This option enables generic infrastructure code supporting
-	  task-based RCU implementations.  Not for manual selection.
-
-config NEED_TASKS_RCU
-	bool
-	default n
-
-config TASKS_RCU
-	bool
-	default NEED_TASKS_RCU && PREEMPTION
-	select IRQ_WORK
-
 config RCU_STALL_COMMON
 	def_bool TREE_RCU
 	help
@@ -59,6 +44,6 @@ config RCU_STALL_COMMON
 	  making these warnings mandatory for the tree variants.
 
 config RCU_NEED_SEGCBLIST
-	def_bool ( TREE_RCU || TREE_SRCU || TASKS_RCU_GENERIC )
+	def_bool ( TREE_RCU || TREE_SRCU )
 
 endmenu # "RCU Subsystem"

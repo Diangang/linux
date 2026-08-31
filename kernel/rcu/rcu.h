@@ -494,33 +494,12 @@ void rcu_async_hurry(void);
 void rcu_async_relax(void);
 void rcupdate_announce_bootup_oddness(void);
 bool rcu_cpu_online(int cpu);
-#ifdef CONFIG_TASKS_RCU_GENERIC
-void show_rcu_tasks_gp_kthreads(void);
-#else /* #ifdef CONFIG_TASKS_RCU_GENERIC */
-static inline void show_rcu_tasks_gp_kthreads(void) {}
-#endif /* #else #ifdef CONFIG_TASKS_RCU_GENERIC */
-
-#ifdef CONFIG_TASKS_RCU
-struct task_struct *get_rcu_tasks_gp_kthread(void);
-void rcu_tasks_get_gp_data(int *flags, unsigned long *gp_seq);
-#endif // # ifdef CONFIG_TASKS_RCU
-
-
-#ifdef CONFIG_TASKS_RCU_GENERIC
-void tasks_cblist_init_generic(void);
-#else /* #ifdef CONFIG_TASKS_RCU_GENERIC */
-static inline void tasks_cblist_init_generic(void) { }
-#endif /* #else #ifdef CONFIG_TASKS_RCU_GENERIC */
-
 #define RCU_SCHEDULER_INACTIVE	0
 #define RCU_SCHEDULER_INIT	1
 #define RCU_SCHEDULER_RUNNING	2
 
 enum rcutorture_type {
 	RCU_FLAVOR,
-	RCU_TASKS_FLAVOR,
-	RCU_TASKS_RUDE_FLAVOR,
-	RCU_TASKS_TRACING_FLAVOR,
 	RCU_TRIVIAL_FLAVOR,
 	SRCU_FLAVOR,
 	INVALID_RCU_FLAVOR
@@ -585,13 +564,6 @@ void rcu_gp_slow_unregister(atomic_t *rgssp);
 unsigned long srcu_batches_completed(struct srcu_struct *sp);
 
 static inline void rcu_bind_current_to_nocb(void) { }
-
-#if defined(CONFIG_TASKS_RCU)
-void show_rcu_tasks_classic_gp_kthread(void);
-#else
-static inline void show_rcu_tasks_classic_gp_kthread(void) {}
-#endif
-static inline void show_rcu_tasks_rude_gp_kthread(void) {}
 
 bool rcu_cpu_beenfullyonline(int cpu);
 
