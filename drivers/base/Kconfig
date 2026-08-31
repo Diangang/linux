@@ -44,34 +44,6 @@ config DRIVER_DEFERRED_PROBE_TIMEOUT
 	  See Documentation/admin-guide/kernel-parameters.txt for a description
 	  of the deferred_probe_timeout kernel parameter.
 
-config STANDALONE
-	bool "Select only drivers that don't need compile-time external firmware"
-	default y
-	help
-	  Select this option if you don't have magic firmware for drivers that
-	  need it.
-
-	  If unsure, say Y.
-
-config PREVENT_FIRMWARE_BUILD
-	bool "Disable drivers features which enable custom firmware building"
-	default y
-	help
-	  Say yes to disable driver features which enable building a custom
-	  driver firmware at kernel build time. These drivers do not use the
-	  kernel firmware API to load firmware (CONFIG_FW_LOADER), instead they
-	  use their own custom loading mechanism. The required firmware is
-	  usually shipped with the driver, building the driver firmware
-	  should only be needed if you have an updated firmware source.
-
-	  Firmware should not be being built as part of kernel, these days
-	  you should always prevent this and say Y here. There are only two
-	  old drivers which enable building of its firmware at kernel build
-	  time:
-
-	    o CONFIG_WANXL through CONFIG_WANXL_BUILD_FIRMWARE
-	    o CONFIG_SCSI_AIC79XX through CONFIG_AIC79XX_BUILD_FIRMWARE
-
 config GENERIC_CPU_DEVICES
 	bool
 	default n
