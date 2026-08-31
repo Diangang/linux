@@ -18,7 +18,6 @@
 #include <asm/thread_info.h>
 #include <asm/memory.h>
 #include <asm/smp_plat.h>
-#include <asm/suspend.h>
 #include <linux/kbuild.h>
 #include <linux/arm-smccc.h>
 

@@ -26,11 +26,6 @@
 #define HVC_SET_VECTORS 0
 
 /*
- * HVC_SOFT_RESTART - CPU soft reset, used by the cpu_soft_restart routine.
- */
-#define HVC_SOFT_RESTART 1
-
-/*
  * HVC_RESET_VECTORS - Restore the vectors to the original HYP stubs
  */
 #define HVC_RESET_VECTORS 2

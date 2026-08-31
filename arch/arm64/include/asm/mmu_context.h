@@ -115,8 +115,8 @@ static inline void cpu_install_idmap(void)
  * services), while for a userspace-driven test_resume cycle it points to
  * userspace page tables (and we must point it at a zero page ourselves).
  *
- * We change T0SZ as part of installing the idmap. This is undone by
- * cpu_uninstall_idmap() in __cpu_suspend_exit().
+ * We change T0SZ as part of installing the idmap. This is undone when the
+ * idmap is uninstalled.
  */
 static inline void cpu_install_ttbr0(phys_addr_t ttbr0, unsigned long t0sz)
 {

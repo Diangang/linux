@@ -58,15 +58,7 @@ SYM_CODE_START_LOCAL(elx_sync)
 	mrs_s	x1, SYS_ICH_VTR_EL2
 	b	9f
 
-2:	cmp	x0, #HVC_SOFT_RESTART
-	b.ne	3f
-	mov	x0, x2
-	mov	x2, x4
-	mov	x4, x1
-	mov	x1, x3
-	br	x4				// no return
-
-3:	cmp	x0, #HVC_RESET_VECTORS
+2:	cmp	x0, #HVC_RESET_VECTORS
 	beq	9f				// Nothing to reset!
 
 	/* Someone called kvm_call_hyp() against the hyp-stub... */
