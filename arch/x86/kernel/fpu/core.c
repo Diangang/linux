@@ -50,15 +50,6 @@ DEFINE_PER_CPU(bool, kernel_fpu_allowed);
  */
 DEFINE_PER_CPU(struct fpu *, fpu_fpregs_owner_ctx);
 
-#ifdef CONFIG_X86_DEBUG_FPU
-struct fpu *x86_task_fpu(struct task_struct *task)
-{
-	if (WARN_ON_ONCE(task->flags & PF_KTHREAD))
-		return NULL;
-
-	return (void *)task + sizeof(*task);
-}
-#endif
 
 /*
  * Can we use the FPU in kernel mode with the
@@ -621,22 +612,6 @@ void fpregs_lock_and_load(void)
 		fpregs_restore_userregs();
 }
 
-#ifdef CONFIG_X86_DEBUG_FPU
-/*
- * If current FPU state according to its tracking (loaded FPU context on this
- * CPU) is not valid then we must have TIF_NEED_FPU_LOAD set so the context is
- * loaded on return to userland.
- */
-void fpregs_assert_state_consistent(void)
-{
-	struct fpu *fpu = x86_task_fpu(current);
-
-	if (test_thread_flag(TIF_NEED_FPU_LOAD))
-		return;
-
-	WARN_ON_FPU(!fpregs_state_valid(fpu, smp_processor_id()));
-}
-#endif
 
 void fpregs_mark_activate(void)
 {

@@ -75,11 +75,7 @@ static inline void fpregs_unlock(void)
  */
 void fpregs_lock_and_load(void);
 
-#ifdef CONFIG_X86_DEBUG_FPU
-extern void fpregs_assert_state_consistent(void);
-#else
 static inline void fpregs_assert_state_consistent(void) { }
-#endif
 
 /*
  * Load the task FPU state before returning to userspace.

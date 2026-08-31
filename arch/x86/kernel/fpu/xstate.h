@@ -173,11 +173,7 @@ static inline int update_pkru_in_sigframe(struct xregs_state __user *buf, u32 pk
 		     : [xa] "m" (*(st)), "a" (lmask), "d" (hmask)	\
 		     : "memory")
 
-#if defined(CONFIG_X86_64) && defined(CONFIG_X86_DEBUG_FPU)
-extern void xfd_validate_state(struct fpstate *fpstate, u64 mask, bool rstor);
-#else
 static inline void xfd_validate_state(struct fpstate *fpstate, u64 mask, bool rstor) { }
-#endif
 
 #ifdef CONFIG_X86_64
 static inline void xfd_set_state(u64 xfd)
