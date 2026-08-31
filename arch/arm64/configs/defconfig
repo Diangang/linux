@@ -641,8 +641,6 @@ CONFIG_STRICT_DEVMEM=y
 #
 # Kernel Testing and Coverage
 #
-CONFIG_ARCH_HAS_KCOV=y
-CONFIG_ARCH_USE_MEMTEST=y
 # end of Kernel Testing and Coverage
 
 # end of Kernel hacking

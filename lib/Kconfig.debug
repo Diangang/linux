@@ -150,19 +150,6 @@ config PANIC_TIMEOUT
 	  with the kernel command line option panic=, and from userspace via
 	  /proc/sys/kernel/panic.
 
-#
-# Global switch whether to build a hardlockup detector at all. It is available
-# only when the architecture supports at least one implementation. There are
-# two exceptions. The hardlockup detector is never enabled on:
-#
-#	s390: it reported many false positives there
-#
-#	sparc64: has a custom implementation which is not using the common
-#		hardlockup command line options and sysctl interface.
-#
-config HARDLOCKUP_CHECK_TIMESTAMP
-	bool
-
 endmenu # "Debug lockups and hangs"
 
 menu "Lock Debugging (spinlocks, mutexes, etc...)"
@@ -214,19 +201,6 @@ endmenu
 endif
 
 menu "Kernel Testing and Coverage"
-
-config ARCH_HAS_KCOV
-	bool
-	help
-	  An architecture should select this when it can successfully
-	  build and run with CONFIG_KCOV. This typically requires
-	  disabling instrumentation for some early boot code.
-
-config ARCH_USE_MEMTEST
-	bool
-	help
-	  An architecture should select this when it uses early_memtest()
-	  during boot process.
 
 endmenu # "Kernel Testing and Coverage"
 

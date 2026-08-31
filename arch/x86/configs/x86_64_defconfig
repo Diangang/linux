@@ -576,7 +576,6 @@ CONFIG_NOINSTR_VALIDATION=y
 #
 # Debug Oops, Lockups and Hangs
 #
-CONFIG_HARDLOCKUP_CHECK_TIMESTAMP=y
 # end of Debug Oops, Lockups and Hangs
 
 #
