@@ -36,7 +36,6 @@
 #include <linux/notifier.h>
 #include <linux/delay.h>
 #include <linux/kthread.h>
-#include <linux/freezer.h>
 #include <linux/migrate.h>
 #include <linux/delayacct.h>
 #include <linux/sysctl.h>
@@ -3267,8 +3266,6 @@ restart:
 		unsigned long nr_reclaimed = sc.nr_reclaimed;
 		bool raise_priority = true;
 		bool balanced;
-		bool ret;
-		bool was_frozen;
 
 		sc.reclaim_idx = highest_zoneidx;
 
@@ -3351,12 +3348,13 @@ restart:
 				allow_direct_reclaim(pgdat))
 			wake_up_all(&pgdat->pfmemalloc_wait);
 
-		/* Check if kswapd should be suspending */
+		/* Check if kswapd should stop. */
 		__fs_reclaim_release(_THIS_IP_);
-		ret = kthread_freezable_should_stop(&was_frozen);
-		__fs_reclaim_acquire(_THIS_IP_);
-		if (was_frozen || ret)
+		if (kthread_should_stop()) {
+			__fs_reclaim_acquire(_THIS_IP_);
 			break;
+		}
+		__fs_reclaim_acquire(_THIS_IP_);
 
 		/*
 		 * Raise priority if scanning rate is too low or there was no
@@ -3456,7 +3454,7 @@ static void kswapd_try_to_sleep(pg_data_t *pgdat, int alloc_order, int reclaim_o
 	long remaining = 0;
 	DEFINE_WAIT(wait);
 
-	if (freezing(current) || kthread_should_stop())
+	if (kthread_should_stop())
 		return;
 
 	prepare_to_wait(&pgdat->kswapd_wait, &wait, TASK_INTERRUPTIBLE);
@@ -3566,14 +3564,11 @@ static int kswapd(void *p)
 	 * trying to free the first piece of memory in the first place).
 	 */
 	tsk->flags |= PF_MEMALLOC | PF_KSWAPD;
-	set_freezable();
 
 	WRITE_ONCE(pgdat->kswapd_order, 0);
 	WRITE_ONCE(pgdat->kswapd_highest_zoneidx, MAX_NR_ZONES);
 	atomic_set(&pgdat->nr_writeback_throttled, 0);
 	for ( ; ; ) {
-		bool was_frozen;
-
 		alloc_order = reclaim_order = READ_ONCE(pgdat->kswapd_order);
 		highest_zoneidx = kswapd_highest_zoneidx(pgdat,
 							highest_zoneidx);
@@ -3589,15 +3584,8 @@ kswapd_try_sleep:
 		WRITE_ONCE(pgdat->kswapd_order, 0);
 		WRITE_ONCE(pgdat->kswapd_highest_zoneidx, MAX_NR_ZONES);
 
-		if (kthread_freezable_should_stop(&was_frozen))
+		if (kthread_should_stop())
 			break;
-
-		/*
-		 * We can speed up thawing tasks if we don't call balance_pgdat
-		 * after returning from the refrigerator
-		 */
-		if (was_frozen)
-			continue;
 
 		/*
 		 * Reclaim begins at the requested order but if a high-order

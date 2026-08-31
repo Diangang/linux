@@ -7,7 +7,6 @@
 #include <linux/init.h>
 #include <linux/pm.h>
 #include <linux/mm.h>
-#include <linux/freezer.h>
 #include <asm/errno.h>
 
 static inline void pm_set_vt_switch(int do_switch)

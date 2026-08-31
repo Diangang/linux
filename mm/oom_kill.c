@@ -36,7 +36,6 @@
 #include <linux/mempolicy.h>
 #include <linux/security.h>
 #include <linux/ptrace.h>
-#include <linux/freezer.h>
 #include <linux/ftrace.h>
 #include <linux/ratelimit.h>
 #include <linux/kthread.h>
@@ -602,12 +601,11 @@ done:
 
 static int oom_reaper(void *unused)
 {
-	set_freezable();
-
 	while (true) {
 		struct task_struct *tsk = NULL;
 
-		wait_event_freezable(oom_reaper_wait, oom_reaper_list != NULL);
+		wait_event_interruptible(oom_reaper_wait,
+					 oom_reaper_list != NULL);
 		spin_lock_irq(&oom_reaper_lock);
 		if (oom_reaper_list != NULL) {
 			tsk = oom_reaper_list;
@@ -729,13 +727,6 @@ static void mark_oom_victim(struct task_struct *tsk)
 	if (!cmpxchg(&tsk->signal->oom_mm, NULL, mm))
 		mmgrab(tsk->signal->oom_mm);
 
-	/*
-	 * Make sure that the process is woken up from uninterruptible sleep
-	 * if it is frozen because OOM killer wouldn't be able to free any
-	 * memory and livelock. The freezer will thaw the tasks that are OOM
-	 * victims regardless of the PM freezing and cgroup freezing states.
-	 */
-	thaw_process(tsk);
 	atomic_inc(&oom_victims);
 	cred = get_task_cred(tsk);
 	put_cred(cred);

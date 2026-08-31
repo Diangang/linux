@@ -332,7 +332,6 @@ static inline unsigned int work_static(struct work_struct *work) { return 0; }
 enum wq_flags {
 	WQ_BH			= 1 << 0, /* execute in bottom half (softirq) context */
 	WQ_UNBOUND		= 1 << 1, /* not bound to any cpu */
-	WQ_FREEZABLE		= 1 << 2, /* freeze during suspend */
 	WQ_MEM_RECLAIM		= 1 << 3, /* may be used for memory reclaim */
 	WQ_HIGHPRI		= 1 << 4, /* high priority */
 	WQ_CPU_INTENSIVE	= 1 << 5, /* cpu intensive workqueue */
@@ -410,8 +409,8 @@ enum wq_consts {
  * executed immediately as long as max_active limit is not reached and
  * resources are available.
  *
- * system_freezable_wq is equivalent to system_percpu_wq except that it's
- * freezable.
+ * system_freezable_wq retains its legacy name and is equivalent to
+ * system_percpu_wq.
  *
  * *_power_efficient_wq are inclined towards saving power and converted
  * into WQ_UNBOUND variants if 'wq_power_efficient' is enabled; otherwise,
@@ -501,7 +500,7 @@ devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 /**
  * alloc_ordered_workqueue - allocate an ordered workqueue
  * @fmt: printf format for the name of the workqueue
- * @flags: WQ_* flags (only WQ_FREEZABLE and WQ_MEM_RECLAIM are meaningful)
+ * @flags: WQ_* flags (only WQ_MEM_RECLAIM is meaningful)
  * @args: args for @fmt
  *
  * Allocate an ordered workqueue.  An ordered workqueue executes at
@@ -518,9 +517,6 @@ devm_alloc_workqueue(struct device *dev, const char *fmt, unsigned int flags,
 
 #define create_workqueue(name)						\
 	alloc_workqueue("%s", __WQ_LEGACY | WQ_MEM_RECLAIM | WQ_PERCPU, 1, (name))
-#define create_freezable_workqueue(name)				\
-	alloc_workqueue("%s", __WQ_LEGACY | WQ_FREEZABLE | WQ_UNBOUND |	\
-			WQ_MEM_RECLAIM, 1, (name))
 #define create_singlethread_workqueue(name)				\
 	alloc_ordered_workqueue("%s", __WQ_LEGACY | WQ_MEM_RECLAIM, name)
 
@@ -582,7 +578,6 @@ extern unsigned int work_busy(struct work_struct *work);
 extern __printf(1, 2) void set_worker_desc(const char *fmt, ...);
 extern void print_worker_info(const char *log_lvl, struct task_struct *task);
 extern void show_all_workqueues(void);
-extern void show_freezable_workqueues(void);
 extern void show_one_workqueue(struct workqueue_struct *wq);
 extern void wq_worker_comm(char *buf, size_t size, struct task_struct *task);
 
@@ -796,12 +791,6 @@ long work_on_cpu_key(int cpu, long (*fn)(void *),
 })
 
 #endif /* CONFIG_SMP */
-
-#ifdef CONFIG_FREEZER
-extern void freeze_workqueues_begin(void);
-extern bool freeze_workqueues_busy(void);
-extern void thaw_workqueues(void);
-#endif /* CONFIG_FREEZER */
 
 #ifdef CONFIG_SYSFS
 int workqueue_sysfs_register(struct workqueue_struct *wq);

@@ -15,7 +15,6 @@ struct file;
 #define UMH_WAIT_EXEC	0x01	/* wait for the exec, but not the process */
 #define UMH_WAIT_PROC	0x02	/* wait for the process to complete */
 #define UMH_KILLABLE	0x04	/* wait for EXEC/PROC killable */
-#define UMH_FREEZABLE	0x08	/* wait for EXEC/PROC freezable */
 
 struct subprocess_info {
 	struct work_struct work;

@@ -24,7 +24,6 @@
 #include <linux/export.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
-#include <linux/freezer.h>
 #include <linux/ptrace.h>
 #include <linux/uaccess.h>
 #include <linux/numa.h>
@@ -176,31 +175,6 @@ bool kthread_should_stop_or_park(void)
 
 	return kthread->flags & (BIT(KTHREAD_SHOULD_STOP) | BIT(KTHREAD_SHOULD_PARK));
 }
-
-/**
- * kthread_freezable_should_stop - should this freezable kthread return now?
- * @was_frozen: optional out parameter, indicates whether %current was frozen
- *
- * kthread_should_stop() for freezable kthreads, which will enter
- * refrigerator if necessary.  This function is safe from kthread_stop() /
- * freezer deadlock and freezable kthreads should use this function instead
- * of calling try_to_freeze() directly.
- */
-bool kthread_freezable_should_stop(bool *was_frozen)
-{
-	bool frozen = false;
-
-	might_sleep();
-
-	if (unlikely(freezing(current)))
-		frozen = __refrigerator(true);
-
-	if (was_frozen)
-		*was_frozen = frozen;
-
-	return kthread_should_stop();
-}
-EXPORT_SYMBOL_GPL(kthread_freezable_should_stop);
 
 /**
  * kthread_func - return the function specified on kthread creation
@@ -786,7 +760,6 @@ int kthreadd(void *unused)
 	ignore_signals(tsk);
 	set_mems_allowed(node_states[N_MEMORY]);
 
-	current->flags |= PF_NOFREEZE;
 	cgroup_init_kthreadd();
 
 	kthread_affine_node();
@@ -968,8 +941,7 @@ EXPORT_SYMBOL_GPL(__kthread_init_worker);
  * is empty.
  *
  * The works are not allowed to keep any locks, disable preemption or interrupts
- * when they finish. There is defined a safe point for freezing when one work
- * finishes and before a new one is started.
+ * when they finish.
  *
  * Also the works must not be handled by more than one worker at the same time,
  * see also kthread_queue_work().
@@ -985,9 +957,6 @@ int kthread_worker_fn(void *worker_ptr)
 	 */
 	WARN_ON(worker->task && worker->task != current);
 	worker->task = current;
-
-	if (worker->flags & KTW_FREEZABLE)
-		set_freezable();
 
 repeat:
 	set_current_state(TASK_INTERRUPTIBLE);	/* mb paired w/ kthread_stop */
@@ -1013,18 +982,10 @@ repeat:
 	if (work) {
 		__set_current_state(TASK_RUNNING);
 		work->func(work);
-	} else if (!freezing(current)) {
-		schedule();
 	} else {
-		/*
-		 * Handle the case where the current remains
-		 * TASK_INTERRUPTIBLE. try_to_freeze() expects
-		 * the current to be TASK_RUNNING.
-		 */
-		__set_current_state(TASK_RUNNING);
+		schedule();
 	}
 
-	try_to_freeze();
 	cond_resched();
 	goto repeat;
 }
@@ -1048,7 +1009,6 @@ __kthread_create_worker_on_node(unsigned int flags, int node,
 	if (IS_ERR(task))
 		goto fail_task;
 
-	worker->flags = flags;
 	worker->task = task;
 
 	return worker;

@@ -19,7 +19,6 @@
 #include <linux/sysfs.h>
 #include <linux/page-isolation.h>
 #include <linux/kthread.h>
-#include <linux/freezer.h>
 #include <linux/page_owner.h>
 #include <linux/psi.h>
 #include <linux/cpuset.h>
@@ -3113,7 +3112,7 @@ void wakeup_kcompactd(pg_data_t *pgdat, int order, int highest_zoneidx)
 		pgdat->kcompactd_highest_zoneidx = highest_zoneidx;
 
 	/*
-	 * Pairs with implicit barrier in wait_event_freezable()
+	 * Pairs with implicit barrier in wait_event_interruptible_timeout()
 	 * such that wakeups are not missed.
 	 */
 	if (!wq_has_sleeper(&pgdat->kcompactd_wait))
@@ -3136,7 +3135,6 @@ static int kcompactd(void *p)
 	long timeout = default_timeout;
 
 	current->flags |= PF_KCOMPACTD;
-	set_freezable();
 
 	pgdat->kcompactd_max_order = 0;
 	pgdat->kcompactd_highest_zoneidx = pgdat->nr_zones - 1;
@@ -3150,7 +3148,7 @@ static int kcompactd(void *p)
 		 */
 		if (!sysctl_compaction_proactiveness)
 			timeout = MAX_SCHEDULE_TIMEOUT;
-		if (wait_event_freezable_timeout(pgdat->kcompactd_wait,
+		if (wait_event_interruptible_timeout(pgdat->kcompactd_wait,
 			kcompactd_work_requested(pgdat), timeout) &&
 			!pgdat->proactive_compact_trigger) {
 

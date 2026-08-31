@@ -39,7 +39,6 @@
 #include <linux/kthread.h>
 #include <linux/hardirq.h>
 #include <linux/mempolicy.h>
-#include <linux/freezer.h>
 #include <linux/debug_locks.h>
 #include <linux/device/devres.h>
 #include <linux/lockdep.h>
@@ -448,7 +447,6 @@ static DEFINE_RAW_SPINLOCK(wq_mayday_lock);	/* protects wq->maydays list */
 static struct rcuwait manager_wait = __RCUWAIT_INITIALIZER(manager_wait);
 
 static LIST_HEAD(workqueues);		/* PR: list of all workqueues */
-static bool workqueue_freezing;		/* PL: have wqs started freezing? */
 
 /* PL: mirror the cpu_online_mask excluding the CPU in the midst of hotplugging */
 static cpumask_var_t wq_online_cpumask;
@@ -1792,7 +1790,7 @@ static void pwq_dec_nr_active(struct pool_workqueue *pwq)
 	 *
 	 * $nna->max may change as CPUs come online/offline and @pwq->wq's
 	 * max_active gets updated. However, it is guaranteed to be equal to or
-	 * larger than @pwq->wq->min_active which is above zero unless freezing.
+	 * larger than @pwq->wq->min_active which is above zero.
 	 * This maintains the forward progress guarantee.
 	 */
 	if (atomic_dec_return(&nna->nr) >= READ_ONCE(nna->max))
@@ -5404,24 +5402,16 @@ static int init_rescuer(struct workqueue_struct *wq)
  * wq_adjust_max_active - update a wq's max_active to the current setting
  * @wq: target workqueue
  *
- * If @wq isn't freezing, set @wq->max_active to the saved_max_active and
- * activate inactive work items accordingly. If @wq is freezing, clear
- * @wq->max_active to zero.
+ * Set @wq->max_active to the saved_max_active and activate inactive work
+ * items accordingly.
  */
 static void wq_adjust_max_active(struct workqueue_struct *wq)
 {
 	bool activated;
-	int new_max, new_min;
+	int new_max = wq->saved_max_active;
+	int new_min = wq->saved_min_active;
 
 	lockdep_assert_held(&wq->mutex);
-
-	if ((wq->flags & WQ_FREEZABLE) && workqueue_freezing) {
-		new_max = 0;
-		new_min = 0;
-	} else {
-		new_max = wq->saved_max_active;
-		new_min = wq->saved_min_active;
-	}
 
 	if (wq->max_active == new_max && wq->min_active == new_min)
 		return;
@@ -6238,29 +6228,6 @@ void show_all_workqueues(void)
 	rcu_read_unlock();
 }
 
-/**
- * show_freezable_workqueues - dump freezable workqueue state
- *
- * Called from try_to_freeze_tasks() and prints out all freezable workqueues
- * still busy.
- */
-void show_freezable_workqueues(void)
-{
-	struct workqueue_struct *wq;
-
-	rcu_read_lock();
-
-	pr_info("Showing freezable workqueues that are still busy:\n");
-
-	list_for_each_entry_rcu(wq, &workqueues, list) {
-		if (!(wq->flags & WQ_FREEZABLE))
-			continue;
-		show_one_workqueue(wq);
-	}
-
-	rcu_read_unlock();
-}
-
 /* used to show worker information through /proc/PID/{comm,stat,status} */
 void wq_worker_comm(char *buf, size_t size, struct task_struct *task)
 {
@@ -6578,114 +6545,6 @@ long work_on_cpu_key(int cpu, long (*fn)(void *),
 }
 EXPORT_SYMBOL_GPL(work_on_cpu_key);
 #endif /* CONFIG_SMP */
-
-#ifdef CONFIG_FREEZER
-
-/**
- * freeze_workqueues_begin - begin freezing workqueues
- *
- * Start freezing workqueues.  After this function returns, all freezable
- * workqueues will queue new works to their inactive_works list instead of
- * pool->worklist.
- *
- * CONTEXT:
- * Grabs and releases wq_pool_mutex, wq->mutex and pool->lock's.
- */
-void freeze_workqueues_begin(void)
-{
-	struct workqueue_struct *wq;
-
-	mutex_lock(&wq_pool_mutex);
-
-	WARN_ON_ONCE(workqueue_freezing);
-	workqueue_freezing = true;
-
-	list_for_each_entry(wq, &workqueues, list) {
-		mutex_lock(&wq->mutex);
-		wq_adjust_max_active(wq);
-		mutex_unlock(&wq->mutex);
-	}
-
-	mutex_unlock(&wq_pool_mutex);
-}
-
-/**
- * freeze_workqueues_busy - are freezable workqueues still busy?
- *
- * Check whether freezing is complete.  This function must be called
- * between freeze_workqueues_begin() and thaw_workqueues().
- *
- * CONTEXT:
- * Grabs and releases wq_pool_mutex.
- *
- * Return:
- * %true if some freezable workqueues are still busy.  %false if freezing
- * is complete.
- */
-bool freeze_workqueues_busy(void)
-{
-	bool busy = false;
-	struct workqueue_struct *wq;
-	struct pool_workqueue *pwq;
-
-	mutex_lock(&wq_pool_mutex);
-
-	WARN_ON_ONCE(!workqueue_freezing);
-
-	list_for_each_entry(wq, &workqueues, list) {
-		if (!(wq->flags & WQ_FREEZABLE))
-			continue;
-		/*
-		 * nr_active is monotonically decreasing.  It's safe
-		 * to peek without lock.
-		 */
-		rcu_read_lock();
-		for_each_pwq(pwq, wq) {
-			WARN_ON_ONCE(pwq->nr_active < 0);
-			if (pwq->nr_active) {
-				busy = true;
-				rcu_read_unlock();
-				goto out_unlock;
-			}
-		}
-		rcu_read_unlock();
-	}
-out_unlock:
-	mutex_unlock(&wq_pool_mutex);
-	return busy;
-}
-
-/**
- * thaw_workqueues - thaw workqueues
- *
- * Thaw workqueues.  Normal queueing is restored and all collected
- * frozen works are transferred to their respective pool worklists.
- *
- * CONTEXT:
- * Grabs and releases wq_pool_mutex, wq->mutex and pool->lock's.
- */
-void thaw_workqueues(void)
-{
-	struct workqueue_struct *wq;
-
-	mutex_lock(&wq_pool_mutex);
-
-	if (!workqueue_freezing)
-		goto out_unlock;
-
-	workqueue_freezing = false;
-
-	/* restore max_active and repopulate worklist */
-	list_for_each_entry(wq, &workqueues, list) {
-		mutex_lock(&wq->mutex);
-		wq_adjust_max_active(wq);
-		mutex_unlock(&wq->mutex);
-	}
-
-out_unlock:
-	mutex_unlock(&wq_pool_mutex);
-}
-#endif /* CONFIG_FREEZER */
 
 static int workqueue_apply_unbound_cpumask(const cpumask_var_t unbound_cpumask)
 {
@@ -7432,11 +7291,11 @@ void __init workqueue_init_early(void)
 	system_unbound_wq = alloc_workqueue("events_unbound", WQ_UNBOUND, WQ_MAX_ACTIVE);
 	system_dfl_wq = alloc_workqueue("events_unbound", WQ_UNBOUND, WQ_MAX_ACTIVE);
 	system_freezable_wq = alloc_workqueue("events_freezable",
-					      WQ_FREEZABLE | WQ_PERCPU, 0);
+					      WQ_PERCPU, 0);
 	system_power_efficient_wq = alloc_workqueue("events_power_efficient",
 					      WQ_POWER_EFFICIENT | WQ_PERCPU, 0);
 	system_freezable_power_efficient_wq = alloc_workqueue("events_freezable_pwr_efficient",
-					      WQ_FREEZABLE | WQ_POWER_EFFICIENT | WQ_PERCPU, 0);
+					      WQ_POWER_EFFICIENT | WQ_PERCPU, 0);
 	system_bh_wq = alloc_workqueue("events_bh", WQ_BH | WQ_PERCPU, 0);
 	system_bh_highpri_wq = alloc_workqueue("events_bh_highpri",
 					       WQ_BH | WQ_HIGHPRI | WQ_PERCPU, 0);

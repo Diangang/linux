@@ -27,7 +27,6 @@
 #include <linux/async.h>
 #include <linux/uaccess.h>
 #include <linux/initrd.h>
-#include <linux/freezer.h>
 
 static kernel_cap_t usermodehelper_bset = CAP_FULL_SET;
 static kernel_cap_t usermodehelper_inheritable = CAP_FULL_SET;
@@ -177,8 +176,7 @@ static void call_usermodehelper_exec_work(struct work_struct *work)
 
 /*
  * If set, call_usermodehelper_exec() will exit immediately returning -EBUSY
- * (used for preventing user land processes from being created after the user
- * land has been frozen during a system-wide hibernation or suspend operation).
+ * (used when user land helper creation must be quiesced).
  * Should always be manipulated under umhelper_sem acquired for write.
  */
 static enum umh_disable_depth usermodehelper_disabled = UMH_DISABLED;
@@ -225,7 +223,6 @@ int usermodehelper_read_trylock(void)
 			break;
 
 		schedule();
-		try_to_freeze();
 
 		down_read(&umhelper_sem);
 	}
@@ -427,9 +424,6 @@ int call_usermodehelper_exec(struct subprocess_info *sub_info, int wait)
 	queue_work(system_unbound_wq, &sub_info->work);
 	if (wait == UMH_NO_WAIT)	/* task has freed sub_info */
 		goto unlock;
-
-	if (wait & UMH_FREEZABLE)
-		state |= TASK_FREEZABLE;
 
 	if (wait & UMH_KILLABLE) {
 		retval = wait_for_completion_state(&done, state | TASK_KILLABLE);
