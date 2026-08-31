@@ -34,13 +34,7 @@
 #define IDMAP_LEVELS		ARM64_HW_PGTABLE_LEVELS(IDMAP_VA_BITS)
 #define IDMAP_ROOT_LEVEL	(4 - IDMAP_LEVELS)
 
-/*
- * A relocatable kernel may execute from an address that differs from the one at
- * which it was linked. In the worst case, its runtime placement may intersect
- * with two adjacent PGDIR entries, which means that an additional page table
- * may be needed at each subordinate level.
- */
-#define EXTRA_PAGE	__is_defined(CONFIG_RELOCATABLE)
+#define EXTRA_PAGE	0
 
 #define SPAN_NR_ENTRIES(vstart, vend, shift) \
 	((((vend) - 1) >> (shift)) - ((vstart) >> (shift)) + 1)

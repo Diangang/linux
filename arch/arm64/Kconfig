@@ -527,37 +527,6 @@ config ARM64_SME
 	  register state capable of holding two dimensional matrix tiles to
 	  enable various matrix operations.
 
-config RELOCATABLE
-	bool "Build a relocatable kernel image" if EXPERT
-	select ARCH_HAS_RELR
-	default y
-	help
-	  This builds the kernel as a Position Independent Executable (PIE),
-	  which retains all relocation metadata required to relocate the
-	  kernel binary at runtime to a different virtual address than the
-	  address it was linked at.
-	  Since AArch64 uses the RELA relocation format, this requires a
-	  relocation pass at runtime even if the kernel is loaded at the
-	  same address it was linked at.
-
-config RANDOMIZE_BASE
-	bool "Randomize the address of the kernel image"
-	select RELOCATABLE
-	help
-	  Randomizes the virtual address at which the kernel image is
-	  loaded, as a security feature that deters exploit attempts
-	  relying on knowledge of the location of kernel internals.
-
-	  It is the bootloader's job to provide entropy, by passing a
-	  random u64 value in /chosen/kaslr-seed at kernel entry.
-
-	  When booting via the UEFI stub, it will invoke the firmware's
-	  EFI_RNG_PROTOCOL implementation (if available) to supply entropy
-	  to the kernel proper. In addition, it will randomise the physical
-	  location of the kernel Image as well.
-
-	  If unsure, say N.
-
 endmenu # "Kernel Features"
 
 menu "Boot options"

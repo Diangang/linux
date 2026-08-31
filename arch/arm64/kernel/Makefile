@@ -26,7 +26,6 @@ obj-y			:= debug-monitors.o entry.o irq.o fpsimd.o		\
 			   rsi.o jump_label.o
 
 obj-$(CONFIG_PCI)			+= pci.o
-obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr.o
 obj-y					+= vdso-wrap.o
 
 # Force dependency (vdso*-wrap.S includes vdso.so through incbin)

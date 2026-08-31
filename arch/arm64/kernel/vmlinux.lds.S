@@ -194,18 +194,6 @@ SECTIONS
 
 	HYPERVISOR_RELOC_SECTION
 
-	.rela.dyn : ALIGN(8) {
-		__pi_rela_start = .;
-		*(.rela .rela*)
-		__pi_rela_end = .;
-	}
-
-	.relr.dyn : ALIGN(8) {
-		__pi_relr_start = .;
-		*(.relr.dyn)
-		__pi_relr_end = .;
-	}
-
 	. = ALIGN(SEGMENT_ALIGN);
 	__initdata_end = .;
 	__init_end = .;

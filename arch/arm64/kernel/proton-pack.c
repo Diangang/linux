@@ -306,33 +306,6 @@ void spectre_v2_enable_mitigation(const struct arm64_cpu_capabilities *__unused)
 }
 
 /*
- * Spectre-v3a.
- *
- * Phew, there's not an awful lot to do here! We just instruct EL2 to use
- * an indirect trampoline for the hyp vectors so that guests can't read
- * VBAR_EL2 to defeat randomisation of the hypervisor VA layout.
- */
-bool has_spectre_v3a(const struct arm64_cpu_capabilities *entry, int scope)
-{
-	static const struct midr_range spectre_v3a_unsafe_list[] = {
-		MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
-		MIDR_ALL_VERSIONS(MIDR_CORTEX_A72),
-		{},
-	};
-
-	WARN_ON(scope != SCOPE_LOCAL_CPU || preemptible());
-	return is_midr_in_range_list(spectre_v3a_unsafe_list);
-}
-
-void spectre_v3a_enable_mitigation(const struct arm64_cpu_capabilities *__unused)
-{
-	struct bp_hardening_data *data = this_cpu_ptr(&bp_hardening_data);
-
-	if (this_cpu_has_cap(ARM64_SPECTRE_V3A))
-		data->slot += HYP_VECTOR_INDIRECT;
-}
-
-/*
  * Spectre v4.
  *
  * If you thought Spectre v2 was nasty, wait until you see this mess. A CPU is

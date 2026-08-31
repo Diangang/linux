@@ -281,8 +281,6 @@ void __init setup_arch(char **cmdline_p)
 
 	*cmdline_p = boot_command_line;
 
-	kaslr_init();
-
 	early_fixmap_init();
 	early_ioremap_init();
 
@@ -379,15 +377,7 @@ bool arch_cpu_is_hotpluggable(int num)
 
 static void dump_kernel_offset(void)
 {
-	const unsigned long offset = kaslr_offset();
-
-	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE) && offset > 0) {
-		pr_emerg("Kernel Offset: 0x%lx from 0x%lx\n",
-			 offset, KIMAGE_VADDR);
-		pr_emerg("PHYS_OFFSET: 0x%llx\n", PHYS_OFFSET);
-	} else {
-		pr_emerg("Kernel Offset: disabled\n");
-	}
+	pr_emerg("Kernel Offset: disabled\n");
 }
 
 static int arm64_panic_block_dump(struct notifier_block *self,

@@ -51,9 +51,6 @@ enum fixed_addresses {
 
 
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
-#ifdef CONFIG_RELOCATABLE
-	FIX_ENTRY_TRAMP_TEXT4,	/* one extra slot for the data page */
-#endif
 	FIX_ENTRY_TRAMP_TEXT3,
 	FIX_ENTRY_TRAMP_TEXT2,
 	FIX_ENTRY_TRAMP_TEXT1,

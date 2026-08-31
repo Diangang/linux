@@ -262,16 +262,6 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 		.matches = has_spectre_v2,
 		.cpu_enable = spectre_v2_enable_mitigation,
 	},
-#ifdef CONFIG_RANDOMIZE_BASE
-	{
-	/* Must come after the Spectre-v2 entry */
-		.desc = "Spectre-v3a",
-		.capability = ARM64_SPECTRE_V3A,
-		.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,
-		.matches = has_spectre_v3a,
-		.cpu_enable = spectre_v3a_enable_mitigation,
-	},
-#endif
 	{
 		.desc = "Spectre-v4",
 		.capability = ARM64_SPECTRE_V4,

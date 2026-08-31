@@ -37,6 +37,4 @@ $(obj)/lib-%.o: $(srctree)/lib/%.c FORCE
 obj-y					:= idreg-override.pi.o \
 					   map_kernel.pi.o map_range.pi.o \
 					   lib-fdt.pi.o lib-fdt_ro.pi.o
-obj-$(CONFIG_RELOCATABLE)		+= relocate.pi.o
-obj-$(CONFIG_RANDOMIZE_BASE)		+= kaslr_early.pi.o
 targets					:= $(patsubst %.pi.o,%.o,$(obj-y))

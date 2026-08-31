@@ -175,23 +175,6 @@ extern s64			memstart_addr;
 /* the offset between the kernel virtual and physical mappings */
 extern u64			kimage_voffset;
 
-static inline unsigned long kaslr_offset(void)
-{
-	return (u64)&_text - KIMAGE_VADDR;
-}
-
-#ifdef CONFIG_RANDOMIZE_BASE
-void kaslr_init(void);
-static inline bool kaslr_enabled(void)
-{
-	extern bool __kaslr_is_enabled;
-	return __kaslr_is_enabled;
-}
-#else
-static inline void kaslr_init(void) { }
-static inline bool kaslr_enabled(void) { return false; }
-#endif
-
 /*
  * Allow all memory at the discovery stage. We will clip it later.
  */

@@ -1227,9 +1227,7 @@ void __init kpti_install_ng_mappings(void)
 		return;
 
 	/*
-	 * We don't need to rewrite the page-tables if either we've done
-	 * it already or we have KASLR enabled and therefore have not
-	 * created any global mappings at all.
+	 * We don't need to rewrite the page-tables if we've done it already.
 	 */
 	if (arm64_use_ng_mappings)
 		return;
@@ -1266,10 +1264,6 @@ static int __init map_entry_trampoline(void)
 	for (i = 0; i < DIV_ROUND_UP(entry_tramp_text_size(), PAGE_SIZE); i++)
 		__set_fixmap(FIX_ENTRY_TRAMP_TEXT1 - i,
 			     pa_start + i * PAGE_SIZE, prot);
-
-	if (IS_ENABLED(CONFIG_RELOCATABLE))
-		__set_fixmap(FIX_ENTRY_TRAMP_TEXT1 - i,
-			     pa_start + i * PAGE_SIZE, PAGE_KERNEL_RO);
 
 	return 0;
 }

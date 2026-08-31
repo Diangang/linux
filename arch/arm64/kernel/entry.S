@@ -445,19 +445,8 @@ SYM_CODE_END(ret_to_user)
 	.endm
 
 	.macro		tramp_data_read_var	dst, var
-#ifdef CONFIG_RELOCATABLE
-	ldr		\dst, .L__tramp_data_\var
-	.ifndef		.L__tramp_data_\var
-	.pushsection	".entry.tramp.rodata", "a", %progbits
-	.align		3
-.L__tramp_data_\var:
-	.quad		\var
-	.popsection
-	.endif
-#else
 	/*
-	 * As !RELOCATABLE implies !RANDOMIZE_BASE the address is always a
-	 * compile time constant (and hence not secret and not worth hiding).
+	 * The address is always a compile time constant.
 	 *
 	 * As statically allocated kernel code and data always live in the top
 	 * 47 bits of the address space we can sign-extend bit 47 and avoid an
@@ -466,7 +455,6 @@ SYM_CODE_END(ret_to_user)
 	movz		\dst, :abs_g2_s:\var
 	movk		\dst, :abs_g1_nc:\var
 	movk		\dst, :abs_g0_nc:\var
-#endif
 	.endm
 
 #define BHB_MITIGATION_NONE	0

@@ -1761,14 +1761,6 @@ static bool unmap_kernel_at_el0(const struct arm64_cpu_capabilities *entry,
 	if (!meltdown_safe)
 		__meltdown_safe = false;
 
-	/* Useful for KASLR robustness */
-	if (kaslr_enabled()) {
-		if (!__kpti_forced) {
-			str = "KASLR";
-			__kpti_forced = 1;
-		}
-	}
-
 	if (cpu_mitigations_off() && !__kpti_forced) {
 		str = "mitigations=off";
 		__kpti_forced = -1;

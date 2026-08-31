@@ -24,11 +24,7 @@
 #define TCR_TG_FLAGS	((TCR_EL1_TG0_4K << TCR_EL1_TG0_SHIFT) |\
 			 (TCR_EL1_TG1_4K << TCR_EL1_TG1_SHIFT))
 
-#ifdef CONFIG_RANDOMIZE_BASE
-#define TCR_KASLR_FLAGS	TCR_EL1_NFD1
-#else
 #define TCR_KASLR_FLAGS	0
-#endif
 
 /* PTWs cacheable, inner/outer WBWA */
 #define TCR_CACHE_FLAGS	TCR_IRGN_WBWA | TCR_ORGN_WBWA

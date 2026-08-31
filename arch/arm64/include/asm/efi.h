@@ -81,17 +81,7 @@ static inline unsigned long efi_get_max_initrd_addr(unsigned long image_addr)
 
 static inline unsigned long efi_get_kimg_min_align(void)
 {
-	extern bool efi_nokaslr;
-
-	/*
-	 * Although relocatable kernels can fix up the misalignment with
-	 * respect to MIN_KIMG_ALIGN, the resulting virtual text addresses are
-	 * subtly out of sync with those recorded in the vmlinux when kaslr is
-	 * disabled but the image required relocation anyway. Therefore retain
-	 * 2M alignment if KASLR was explicitly disabled, even if it was not
-	 * going to be activated to begin with.
-	 */
-	return efi_nokaslr ? MIN_KIMG_ALIGN : EFI_KIMG_ALIGN;
+	return MIN_KIMG_ALIGN;
 }
 
 #define EFI_ALLOC_ALIGN		SZ_64K

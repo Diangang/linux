@@ -18,11 +18,7 @@
  * at link time (e.g. the subtraction of two symbol addresses), so we must get
  * the linker to endian-swap certain values before emitting them.
  *
- * Note that, in order for this to work when building the ELF64 PIE executable
- * (for KASLR), these values should not be referenced via R_AARCH64_ABS64
- * relocations, since these are fixed up at runtime rather than at build time
- * when PIE is in effect. So we need to split them up in 32-bit high and low
- * words.
+ * Split the values into 32-bit high and low words for the linker.
  */
 #define DATA_LE32(data) ((data) & 0xffffffff)
 

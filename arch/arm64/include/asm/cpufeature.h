@@ -15,7 +15,6 @@
 #define MAX_CPU_FEATURES	192
 #define cpu_feature(x)		KERNEL_HWCAP_ ## x
 
-#define ARM64_SW_FEATURE_OVERRIDE_NOKASLR	0
 #define ARM64_SW_FEATURE_OVERRIDE_HVHE		4
 #define ARM64_SW_FEATURE_OVERRIDE_RODATA_OFF	8
 
@@ -935,11 +934,6 @@ static inline bool arm64_test_sw_feature_override(int feat)
 	 */
 	return arm64_apply_feature_override(0, feat, 4,
 					    &arm64_sw_feature_override);
-}
-
-static inline bool kaslr_disabled_cmdline(void)
-{
-	return arm64_test_sw_feature_override(ARM64_SW_FEATURE_OVERRIDE_NOKASLR);
 }
 
 u32 get_kvm_ipa_limit(void);
