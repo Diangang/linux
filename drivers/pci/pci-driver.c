@@ -529,39 +529,7 @@ static void pci_device_shutdown(struct device *dev)
 
 }
 
-
-
-
-#define pci_pm_prepare	NULL
-#define pci_pm_complete	NULL
-
-
-
-#define pci_pm_suspend		NULL
-#define pci_pm_suspend_late	NULL
-#define pci_pm_suspend_noirq	NULL
-#define pci_pm_resume		NULL
-#define pci_pm_resume_early	NULL
-#define pci_pm_resume_noirq	NULL
-
-
-#define pci_pm_freeze		NULL
-#define pci_pm_freeze_noirq	NULL
-#define pci_pm_thaw		NULL
-#define pci_pm_thaw_noirq	NULL
-#define pci_pm_poweroff		NULL
-#define pci_pm_poweroff_late	NULL
-#define pci_pm_poweroff_noirq	NULL
-#define pci_pm_restore		NULL
-#define pci_pm_restore_noirq	NULL
-
-
-#define pci_pm_runtime_suspend	NULL
-#define pci_pm_runtime_resume	NULL
-#define pci_pm_runtime_idle	NULL
-
 #define PCI_PM_OPS_PTR	NULL
-
 
 /**
  * __pci_register_driver - register a new pci driver
