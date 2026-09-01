@@ -92,7 +92,6 @@ static const unsigned char mt_pivots[] = {
 	[maple_arange_64]	= MAPLE_ARANGE64_SLOTS - 1,
 	[maple_copy]		= 3,
 };
-#define mt_pivot_count(x) mt_pivots[mte_node_type(x)]
 
 static const unsigned char mt_min_slots[] = {
 	[maple_dense]		= MAPLE_NODE_SLOTS / 2,
@@ -101,7 +100,6 @@ static const unsigned char mt_min_slots[] = {
 	[maple_arange_64]	= (MAPLE_ARANGE64_SLOTS / 2) - 1,
 	[maple_copy]		= 1, /* Should never be used */
 };
-#define mt_min_slot_count(x) mt_min_slots[mte_node_type(x)]
 
 /* Functions */
 static inline struct maple_node *mt_alloc_one(gfp_t gfp)
@@ -366,7 +364,6 @@ static __always_inline bool mt_is_alloc(struct maple_tree *mt)
 #define MAPLE_PARENT_16B_SLOT_MASK	0xFC
 
 #define MAPLE_PARENT_RANGE64		0x06
-#define MAPLE_PARENT_RANGE32		0x02
 #define MAPLE_PARENT_NOT_RANGE16	0x02
 
 /*
