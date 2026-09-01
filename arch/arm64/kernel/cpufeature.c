@@ -2380,19 +2380,6 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
 		HWCAP_CPUID_MATCH(reg, field, min_value) 		\
 	}
 
-#define HWCAP_MULTI_CAP(list, cap_type, cap)					\
-	{									\
-		__HWCAP_CAP(#cap, cap_type, cap)				\
-		.matches = cpucap_multi_entry_cap_matches,			\
-		.match_list = list,						\
-	}
-
-#define HWCAP_CAP_MATCH(match, cap_type, cap)					\
-	{									\
-		__HWCAP_CAP(#cap, cap_type, cap)				\
-		.matches = match,						\
-	}
-
 #define HWCAP_CAP_MATCH_ID(match, reg, field, min_value, cap_type, cap)		\
 	{									\
 		__HWCAP_CAP(#cap, cap_type, cap)				\
