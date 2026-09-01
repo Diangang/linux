@@ -11,7 +11,6 @@
 #include <linux/slab.h>
 #include <linux/io.h>
 #include <linux/pm.h>
-#include <linux/pm_runtime.h>
 #include <linux/amba/bus.h>
 #include <linux/sizes.h>
 #include <linux/limits.h>
@@ -286,17 +285,9 @@ static int amba_probe(struct device *dev)
 		if (ret)
 			break;
 
-		pm_runtime_get_noresume(dev);
-		pm_runtime_set_active(dev);
-		pm_runtime_enable(dev);
-
 		ret = pcdrv->probe(pcdev, id);
 		if (ret == 0)
 			break;
-
-		pm_runtime_disable(dev);
-		pm_runtime_set_suspended(dev);
-		pm_runtime_put_noidle(dev);
 
 		amba_put_disable_pclk(pcdev);
 	} while (0);
@@ -309,15 +300,8 @@ static void amba_remove(struct device *dev)
 	struct amba_device *pcdev = to_amba_device(dev);
 	struct amba_driver *drv = to_amba_driver(dev->driver);
 
-	pm_runtime_get_sync(dev);
 	if (drv->remove)
 		drv->remove(pcdev);
-	pm_runtime_put_noidle(dev);
-
-	/* Undo the runtime PM settings in amba_probe() */
-	pm_runtime_disable(dev);
-	pm_runtime_set_suspended(dev);
-	pm_runtime_put_noidle(dev);
 
 	amba_put_disable_pclk(pcdev);
 }
