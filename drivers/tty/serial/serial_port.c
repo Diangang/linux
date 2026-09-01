@@ -10,83 +10,12 @@
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/pnp.h>
 #include <linux/property.h>
 #include <linux/serial_core.h>
 #include <linux/spinlock.h>
 
 #include "serial_base.h"
-
-#define SERIAL_PORT_AUTOSUSPEND_DELAY_MS	500
-
-/* Only considers pending TX for now. Caller must take care of locking */
-static int __serial_port_busy(struct uart_port *port)
-{
-	return !uart_tx_stopped(port) &&
-		!kfifo_is_empty(&port->state->port.xmit_fifo);
-}
-
-static int serial_port_runtime_resume(struct device *dev)
-{
-	struct serial_port_device *port_dev = to_serial_base_port_device(dev);
-	struct uart_port *port;
-	unsigned long flags;
-
-	port = port_dev->port;
-
-	if (port->flags & UPF_DEAD)
-		goto out;
-
-	/* Flush any pending TX for the port */
-	uart_port_lock_irqsave(port, &flags);
-	if (!port_dev->tx_enabled)
-		goto unlock;
-	if (__serial_port_busy(port))
-		port->ops->start_tx(port);
-
-unlock:
-	uart_port_unlock_irqrestore(port, flags);
-
-out:
-	pm_runtime_mark_last_busy(dev);
-
-	return 0;
-}
-
-static int serial_port_runtime_suspend(struct device *dev)
-{
-	struct serial_port_device *port_dev = to_serial_base_port_device(dev);
-	struct uart_port *port = port_dev->port;
-	unsigned long flags;
-	bool busy;
-
-	if (port->flags & UPF_DEAD)
-		return 0;
-
-	/*
-	 * Nothing to do on pm_runtime_force_suspend(), see
-	 * DEFINE_RUNTIME_DEV_PM_OPS.
-	 */
-	if (!pm_runtime_enabled(dev))
-		return 0;
-
-	uart_port_lock_irqsave(port, &flags);
-	if (!port_dev->tx_enabled) {
-		uart_port_unlock_irqrestore(port, flags);
-		return 0;
-	}
-
-	busy = __serial_port_busy(port);
-	if (busy)
-		port->ops->start_tx(port);
-	uart_port_unlock_irqrestore(port, flags);
-
-	if (busy)
-		pm_runtime_mark_last_busy(dev);
-
-	return busy ? -EBUSY : 0;
-}
 
 static void serial_base_port_set_tx(struct uart_port *port,
 				    struct serial_port_device *port_dev,
@@ -111,27 +40,6 @@ void serial_base_port_shutdown(struct uart_port *port)
 	struct serial_port_device *port_dev = port->port_dev;
 
 	serial_base_port_set_tx(port, port_dev, false);
-}
-
-static DEFINE_RUNTIME_DEV_PM_OPS(serial_port_pm,
-				 serial_port_runtime_suspend,
-				 serial_port_runtime_resume, NULL);
-
-static int serial_port_probe(struct device *dev)
-{
-	pm_runtime_enable(dev);
-	pm_runtime_set_autosuspend_delay(dev, SERIAL_PORT_AUTOSUSPEND_DELAY_MS);
-	pm_runtime_use_autosuspend(dev);
-
-	return 0;
-}
-
-static int serial_port_remove(struct device *dev)
-{
-	pm_runtime_dont_use_autosuspend(dev);
-	pm_runtime_disable(dev);
-
-	return 0;
 }
 
 /*
@@ -301,9 +209,6 @@ EXPORT_SYMBOL_GPL(uart_read_and_validate_port_properties);
 static struct device_driver serial_port_driver = {
 	.name = "port",
 	.suppress_bind_attrs = true,
-	.probe = serial_port_probe,
-	.remove = serial_port_remove,
-	.pm = pm_ptr(&serial_port_pm),
 };
 
 int serial_base_port_init(void)

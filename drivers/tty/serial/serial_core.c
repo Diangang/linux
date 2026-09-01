@@ -137,30 +137,11 @@ static void uart_stop(struct tty_struct *tty)
 static void __uart_start(struct uart_state *state)
 {
 	struct uart_port *port = state->uart_port;
-	struct serial_port_device *port_dev;
-	int err;
 
 	if (!port || port->flags & UPF_DEAD || uart_tx_stopped(port))
 		return;
 
-	port_dev = port->port_dev;
-
-	/* Increment the runtime PM usage count for the active check below */
-	err = pm_runtime_get(&port_dev->dev);
-	if (err < 0 && err != -EINPROGRESS) {
-		pm_runtime_put_noidle(&port_dev->dev);
-		return;
-	}
-
-	/*
-	 * Start TX if enabled, and kick runtime PM. If the device is not
-	 * enabled, serial_port_runtime_resume() calls start_tx() again
-	 * after enabling the device.
-	 */
-	if (!pm_runtime_enabled(port->dev) || pm_runtime_active(&port_dev->dev))
-		port->ops->start_tx(port);
-	pm_runtime_mark_last_busy(&port_dev->dev);
-	pm_runtime_put_autosuspend(&port_dev->dev);
+	port->ops->start_tx(port);
 }
 
 static void uart_start(struct tty_struct *tty)
@@ -3189,10 +3170,7 @@ int serial_core_register_port(struct uart_driver *drv, struct uart_port *port)
 
 	guard(mutex)(&port_mutex);
 
-	/*
-	 * Prevent serial_port_runtime_resume() from trying to use the port
-	 * until serial_core_add_one_port() has completed
-	 */
+	/* Keep the port unavailable until serial_core_add_one_port() completes. */
 	port->flags |= UPF_DEAD;
 
 	/* Inititalize a serial core controller device if needed */
@@ -3204,11 +3182,7 @@ int serial_core_register_port(struct uart_driver *drv, struct uart_port *port)
 		ctrl_dev = new_ctrl_dev;
 	}
 
-	/*
-	 * Initialize a serial core port device. Tag the port dead to prevent
-	 * serial_port_runtime_resume() trying to do anything until port has
-	 * been registered. It gets cleared by serial_core_add_one_port().
-	 */
+	/* The dead flag is cleared by serial_core_add_one_port(). */
 	ret = serial_core_port_device_add(ctrl_dev, port);
 	if (ret)
 		goto err_unregister_ctrl_dev;
