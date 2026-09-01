@@ -15,7 +15,6 @@
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
-#include <linux/pm_runtime.h>
 #include <linux/clk.h>
 #include <linux/reset.h>
 #include <linux/notifier.h>
@@ -97,13 +96,10 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 
 	memset(port, 0, sizeof(*port));
 
-	pm_runtime_enable(&ofdev->dev);
-	pm_runtime_get_sync(&ofdev->dev);
-
 	ret = of_address_to_resource(np, 0, &resource);
 	if (ret) {
 		dev_err_probe(dev, ret, "invalid address\n");
-		goto err_pmruntime;
+		goto err;
 	}
 
 	port->dev = &ofdev->dev;
@@ -120,7 +116,7 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 
 	ret = uart_read_and_validate_port_properties(port);
 	if (ret)
-		goto err_pmruntime;
+		goto err;
 
 	/* Get clk rate through clk driver if present */
 	if (!port->uartclk) {
@@ -129,14 +125,14 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 		bus_clk = devm_clk_get_optional_enabled(dev, "bus");
 		if (IS_ERR(bus_clk)) {
 			ret = dev_err_probe(dev, PTR_ERR(bus_clk), "failed to get bus clock\n");
-			goto err_pmruntime;
+			goto err;
 		}
 
 		/* If the bus clock is required, core clock must be named */
 		info->clk = devm_clk_get_enabled(dev, bus_clk ? "core" : NULL);
 		if (IS_ERR(info->clk)) {
 			ret = dev_err_probe(dev, PTR_ERR(info->clk), "failed to get clock\n");
-			goto err_pmruntime;
+			goto err;
 		}
 
 		info->bus_clk = bus_clk;
@@ -153,12 +149,12 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 	info->rst = devm_reset_control_get_optional_shared(&ofdev->dev, NULL);
 	if (IS_ERR(info->rst)) {
 		ret = PTR_ERR(info->rst);
-		goto err_pmruntime;
+		goto err;
 	}
 
 	ret = reset_control_deassert(info->rst);
 	if (ret)
-		goto err_pmruntime;
+		goto err;
 
 	port->type = type;
 	port->rs485_config = serial8250_em485_config;
@@ -179,12 +175,10 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 		break;
 	}
 	if (ret)
-		goto err_pmruntime;
+		goto err;
 
 	return 0;
-err_pmruntime:
-	pm_runtime_put_sync(&ofdev->dev);
-	pm_runtime_disable(&ofdev->dev);
+err:
 	return ret;
 }
 
@@ -234,7 +228,7 @@ static int of_platform_serial_probe(struct platform_device *ofdev)
 
 	ret = serial8250_register_8250_port(&port8250);
 	if (ret < 0)
-		goto err_dispose;
+		goto err_free;
 
 	info->type = port_type;
 	info->line = ret;
@@ -252,9 +246,6 @@ static int of_platform_serial_probe(struct platform_device *ofdev)
 	return 0;
 err_unregister:
 	serial8250_unregister_port(info->line);
-err_dispose:
-	pm_runtime_put_sync(&ofdev->dev);
-	pm_runtime_disable(&ofdev->dev);
 err_free:
 	kfree(info);
 	return ret;
@@ -273,8 +264,6 @@ static void of_platform_serial_remove(struct platform_device *ofdev)
 	serial8250_unregister_port(info->line);
 
 	reset_control_assert(info->rst);
-	pm_runtime_put_sync(&ofdev->dev);
-	pm_runtime_disable(&ofdev->dev);
 	kfree(info);
 }
 
