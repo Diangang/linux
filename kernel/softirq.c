@@ -513,10 +513,6 @@ static void tasklet_lock_callback(void) { }
 static void tasklet_unlock_callback(void) { }
 static void tasklet_callback_sync_wait_running(void) { }
 
-#ifdef CONFIG_SMP
-static void tasklet_callback_cancel_wait_running(void) { }
-#endif
-
 static void tasklet_action_common(struct tasklet_head *tl_head,
 				  unsigned int softirq_nr)
 {
