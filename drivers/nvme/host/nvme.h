@@ -915,9 +915,7 @@ int nvme_identify_ns(struct nvme_ctrl *ctrl, unsigned nsid,
 int nvme_getgeo(struct gendisk *disk, struct hd_geometry *geo);
 
 extern const struct attribute_group *nvme_ns_attr_groups[];
-extern const struct attribute_group nvme_ns_mpath_attr_group;
 extern const struct pr_ops nvme_pr_ops;
-extern const struct block_device_operations nvme_ns_head_ops;
 extern const struct attribute_group nvme_dev_attrs_group;
 extern const struct attribute_group *nvme_subsys_attrs_groups[];
 extern const struct attribute_group *nvme_dev_attr_groups[];
