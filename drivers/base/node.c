@@ -150,7 +150,6 @@ static struct node_access_nodes *node_init_node_access(struct node *node,
 	if (device_register(dev))
 		goto free_name;
 
-	pm_runtime_no_callbacks(dev);
 	list_add_tail(&access_node->list_node, &node->access_list);
 	return access_node;
 free_name:

@@ -29,10 +29,6 @@ static inline int __pm_runtime_resume(struct device *dev, int rpmflags)
 {
 	return 1;
 }
-static inline int pm_runtime_get_if_active(struct device *dev)
-{
-	return -EINVAL;
-}
 static inline int __pm_runtime_set_status(struct device *dev,
 					    unsigned int status) { return 0; }
 static inline void pm_runtime_barrier(struct device *dev) {}
@@ -40,10 +36,6 @@ static inline void pm_runtime_forbid(struct device *dev) {}
 
 static inline void pm_runtime_get_noresume(struct device *dev) {}
 static inline void pm_runtime_put_noidle(struct device *dev) {}
-static inline bool pm_runtime_active(struct device *dev) { return true; }
-static inline bool pm_runtime_enabled(struct device *dev) { return false; }
-
-static inline void pm_runtime_no_callbacks(struct device *dev) {}
 
 /**
  * pm_runtime_idle - Conditionally set up autosuspend of a device or suspend it.
