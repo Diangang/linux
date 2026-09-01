@@ -51,9 +51,6 @@ config ACPI_GENERIC_GSI
 config ACPI_CCA_REQUIRED
 	bool
 
-config ACPI_MCFG
-	bool
-
 endif	# ACPI
 
 config X86_PM_TIMER

@@ -2321,7 +2321,7 @@ extern int pci_create_resource_files(struct pci_dev *dev);
 extern void pci_remove_resource_files(struct pci_dev *dev);
 #endif
 
-#if defined(CONFIG_PCI_MMCONFIG) || defined(CONFIG_ACPI_MCFG)
+#ifdef CONFIG_PCI_MMCONFIG
 void __init pci_mmcfg_early_init(void);
 void __init pci_mmcfg_late_init(void);
 #else

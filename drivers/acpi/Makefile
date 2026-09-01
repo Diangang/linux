@@ -29,7 +29,6 @@ acpi-y				+= scan.o
 acpi-y				+= resource.o
 acpi-y				+= processor_core.o
 acpi-$(CONFIG_PCI)		+= pci_root.o pci_link.o pci_irq.o
-obj-$(CONFIG_ACPI_MCFG)		+= pci_mcfg.o
 acpi-y				+= power.o
 acpi-y				+= sysfs.o
 acpi-y				+= property.o
