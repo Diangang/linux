@@ -4110,17 +4110,8 @@ int rcutree_dead_cpu(unsigned int cpu)
 	return 0;
 }
 
-/*
- * Near the end of the offline process.  Trace the fact that this CPU
- * is going offline.
- */
 int rcutree_dying_cpu(unsigned int cpu)
 {
-	bool blkd;
-	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
-	struct rcu_node *rnp = rdp->mynode;
-
-	blkd = !!(READ_ONCE(rnp->qsmask) & rdp->grpmask);
 	return 0;
 }
 
