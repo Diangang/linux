@@ -30,8 +30,6 @@
 #define NORMAL_RETRIES			5
 #define IOCTL_NORMAL_TIMEOUT			(10 * HZ)
 
-#define MAX_BUF PAGE_SIZE
-
 /**
  * ioctl_probe  --  return host identification
  * @host:	host to identify
