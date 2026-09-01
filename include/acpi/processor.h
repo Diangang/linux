@@ -180,8 +180,6 @@ struct acpi_processor_throttling {
 	struct acpi_tsd_package domain_info;
 	cpumask_var_t shared_cpu_map;
 	int (*acpi_processor_get_throttling) (struct acpi_processor * pr);
-	int (*acpi_processor_set_throttling) (struct acpi_processor * pr,
-					      int state, bool force);
 
 	u32 address;
 	u8 duty_offset;
@@ -271,69 +269,12 @@ extern int acpi_processor_get_performance_info(struct acpi_processor *pr);
 DECLARE_PER_CPU(struct acpi_processor *, processors);
 extern struct acpi_processor_errata errata;
 
-static inline void acpi_processor_power_init_bm_check(struct
-						      acpi_processor_flags
-						      *flags, unsigned int cpu)
-{
-	flags->bm_check = 1;
-	return;
-}
-static inline int acpi_processor_ffh_cstate_probe(unsigned int cpu,
-						  struct acpi_processor_cx *cx,
-						  struct acpi_power_register
-						  *reg)
-{
-	return -1;
-}
-static inline void acpi_processor_ffh_cstate_enter(struct acpi_processor_cx
-						   *cstate)
-{
-	return;
-}
 static inline void __noreturn acpi_processor_ffh_play_dead(struct acpi_processor_cx *cx)
 {
 	BUG();
 }
 
-static inline int call_on_cpu(int cpu, long (*fn)(void *), void *arg,
-			      bool direct)
-{
-	if (direct || (is_percpu_thread() && cpu == smp_processor_id()))
-		return fn(arg);
-	return work_on_cpu(cpu, fn, arg);
-}
-
 /* in processor_perflib.c */
-
-static inline void acpi_processor_ignore_ppc_init(void)
-{
-	return;
-}
-static inline void acpi_processor_ppc_init(struct cpufreq_policy *policy)
-{
-	return;
-}
-static inline void acpi_processor_ppc_exit(struct cpufreq_policy *policy)
-{
-	return;
-}
-static inline void acpi_processor_ppc_has_changed(struct acpi_processor *pr,
-								int event_flag)
-{
-	static unsigned int printout = 1;
-	if (printout) {
-		printk(KERN_WARNING
-		       "Warning: Processor Platform Limit event detected, but not handled.\n");
-		printk(KERN_WARNING
-		       "Consider compiling CPUfreq support into your kernel.\n");
-		printout = 0;
-	}
-}
-static inline int acpi_processor_get_bios_limit(int cpu, unsigned int *limit)
-{
-	return -ENODEV;
-}
-
 
 /* in processor_core.c */
 phys_cpuid_t acpi_get_phys_id(acpi_handle, int type, u32 acpi_id);
@@ -341,40 +282,10 @@ phys_cpuid_t acpi_map_madt_entry(u32 acpi_id);
 int acpi_map_cpuid(phys_cpuid_t phys_id, u32 acpi_id);
 int acpi_get_cpuid(acpi_handle, int type, u32 acpi_id);
 
-static inline int acpi_cppc_processor_probe(struct acpi_processor *pr)
-{
-	return 0;
-}
-static inline void acpi_cppc_processor_exit(struct acpi_processor *pr)
-{
-	return;
-}
-
 /* in processor_pdc.c */
 void acpi_processor_set_pdc(acpi_handle handle);
 
 /* in processor_throttling.c */
-static inline int acpi_processor_tstate_has_changed(struct acpi_processor *pr)
-{
-	return 0;
-}
-
-static inline int acpi_processor_get_throttling_info(struct acpi_processor *pr)
-{
-	return -ENODEV;
-}
-
-static inline int acpi_processor_set_throttling(struct acpi_processor *pr,
-					 int state, bool force)
-{
-	return -ENODEV;
-}
-
-static inline void acpi_processor_reevaluate_tstate(struct acpi_processor *pr,
-			bool is_dead) {}
-
-static inline void acpi_processor_throttling_init(void) {}
-
 /* in processor_idle.c */
 
 /* in processor_thermal.c */
@@ -383,15 +294,6 @@ int acpi_processor_thermal_init(struct acpi_processor *pr,
 void acpi_processor_thermal_exit(struct acpi_processor *pr,
 				 struct acpi_device *device);
 extern const struct thermal_cooling_device_ops processor_cooling_ops;
-static inline void acpi_thermal_cpufreq_init(struct cpufreq_policy *policy)
-{
-	return;
-}
-static inline void acpi_thermal_cpufreq_exit(struct cpufreq_policy *policy)
-{
-	return;
-}
-
 void acpi_processor_init_invariance_cppc(void);
 
 #endif
