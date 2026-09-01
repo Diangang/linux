@@ -4136,7 +4136,6 @@ EXPORT_SYMBOL(console_force_preferred_locked);
  */
 void __init console_init(void)
 {
-	int ret;
 	initcall_t call;
 	initcall_entry_t *ce;
 
@@ -4151,7 +4150,7 @@ void __init console_init(void)
 	ce = __con_initcall_start;
 	while (ce < __con_initcall_end) {
 		call = initcall_from_entry(ce);
-		ret = call();
+		call();
 		ce++;
 	}
 }
