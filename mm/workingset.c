@@ -588,12 +588,6 @@ static unsigned long scan_shadow_nodes(struct shrinker *shrinker,
 					NULL);
 }
 
-/*
- * Our list_lru->lock is IRQ-safe as it nests inside the IRQ-safe
- * i_pages lock.
- */
-static struct lock_class_key shadow_nodes_key;
-
 static int __init workingset_init(void)
 {
 	unsigned int timestamp_bits, timestamp_bits_anon;
