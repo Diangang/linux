@@ -105,20 +105,6 @@ static inline bool is_dl_boosted(struct sched_dl_entity *dl_se)
 }
 #endif /* !CONFIG_RT_MUTEXES */
 
-#define DL_OTHER	0
-#define DL_TASK		1
-#define DL_SERVER_FAIR	2
-#define DL_SERVER_EXT	3
-
-static inline u8 dl_get_type(struct sched_dl_entity *dl_se, struct rq *rq)
-{
-	if (!dl_server(dl_se))
-		return DL_TASK;
-	if (dl_se == &rq->fair_server)
-		return DL_SERVER_FAIR;
-	return DL_OTHER;
-}
-
 static inline struct dl_bw *dl_bw_of(int i)
 {
 	RCU_LOCKDEP_WARN(!rcu_read_lock_sched_held(),
