@@ -380,14 +380,6 @@ static void amba_dma_cleanup(struct device *dev)
 }
 
 
-static const struct dev_pm_ops amba_pm = {
-	SET_RUNTIME_PM_OPS(
-		amba_pm_runtime_suspend,
-		amba_pm_runtime_resume,
-		NULL
-	)
-};
-
 /*
  * Primecells are part of the Advanced Microcontroller Bus Architecture,
  * so we call the bus "amba".
@@ -404,7 +396,6 @@ const struct bus_type amba_bustype = {
 	.shutdown	= amba_shutdown,
 	.dma_configure	= amba_dma_configure,
 	.dma_cleanup	= amba_dma_cleanup,
-	.pm		= &amba_pm,
 };
 EXPORT_SYMBOL_GPL(amba_bustype);
 
