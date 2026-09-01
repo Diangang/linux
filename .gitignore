@@ -76,8 +76,6 @@ modules.order
 /modules.builtin
 /modules.builtin.modinfo
 /modules.builtin.ranges
-/modules.nsdeps
-
 #
 # RPM spec file (make rpm-pkg)
 #

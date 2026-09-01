@@ -1348,7 +1348,7 @@ dt_compatible_check: dt_binding_schemas
 
 # Directories & files removed with 'make clean'
 CLEAN_FILES += vmlinux.symvers modules-only.symvers \
-	       modules.builtin modules.builtin.modinfo modules.nsdeps \
+	       modules.builtin modules.builtin.modinfo \
 	       modules.builtin.ranges vmlinux.o.map vmlinux.unstripped \
 	       compile_commands.json rust/test \
 	       rust-project.json .vmlinux.objs .vmlinux.export.c \
@@ -1441,9 +1441,6 @@ help:
 	@echo  '  headers_install - Install sanitised kernel UAPI headers to INSTALL_HDR_PATH'; \
 	 echo  '                    (default: $(INSTALL_HDR_PATH))'; \
 	 echo  ''
-	@echo  'Tools:'
-	@echo  '  nsdeps          - Generate missing symbol namespace dependencies'
-	@echo  ''
 	@echo  'Rust targets:'
 	@echo  '  rustfmt	  - Reformat all the Rust code in the kernel'
 	@echo  '  rustfmtcheck	  - Checks if all the Rust code in the kernel'
@@ -1583,7 +1580,7 @@ KBUILD_BUILTIN :=
 build-dir := .
 
 clean-dirs := .
-clean: private rm-files := Module.symvers modules.nsdeps compile_commands.json
+clean: private rm-files := Module.symvers compile_commands.json
 
 PHONY += prepare
 # now expand this into a simple variable to reduce the cost of shell evaluations
@@ -1679,14 +1676,6 @@ clean: $(clean-dirs)
 		\) -type f -print \
 		-o -name '.tmp_*' -print \
 		| xargs rm -rf
-
-# Script to generate missing namespace dependencies
-# ---------------------------------------------------------------------------
-
-PHONY += nsdeps
-nsdeps: export KBUILD_NSDEPS=1
-nsdeps: modules
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/nsdeps
 
 # Clang Tooling
 # ---------------------------------------------------------------------------
