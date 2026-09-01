@@ -2293,11 +2293,6 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 	BUILD_BUG();
 }
 
-static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
-{
-	BUILD_BUG();
-}
-
 static void lru_gen_shrink_node(struct pglist_data *pgdat, struct scan_control *sc)
 {
 	BUILD_BUG();
