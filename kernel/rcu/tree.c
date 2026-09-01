@@ -1070,22 +1070,6 @@ static bool rcu_advance_cbs(struct rcu_node *rnp, struct rcu_data *rdp)
 }
 
 /*
- * Move and classify callbacks, but only if doing so won't require
- * that the RCU grace-period kthread be awakened.
- */
-static void __maybe_unused rcu_advance_cbs_nowake(struct rcu_node *rnp,
-						  struct rcu_data *rdp)
-{
-	rcu_lockdep_assert_cblist_protected(rdp);
-	if (!rcu_seq_state(rcu_seq_current(&rnp->gp_seq)) || !raw_spin_trylock_rcu_node(rnp))
-		return;
-	// The grace period cannot end while we hold the rcu_node lock.
-	if (rcu_seq_state(rcu_seq_current(&rnp->gp_seq)))
-		WARN_ON_ONCE(rcu_advance_cbs(rnp, rdp));
-	raw_spin_unlock_rcu_node(rnp);
-}
-
-/*
  * Update CPU-local rcu_data state to record the beginnings and ends of
  * grace periods.  The caller must hold the ->lock of the leaf rcu_node
  * structure corresponding to the current CPU, and must have irqs disabled.
