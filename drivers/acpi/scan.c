@@ -1443,18 +1443,7 @@ bool acpi_dma_supported(const struct acpi_device *adev)
 	if (!adev)
 		return false;
 
-	if (adev->flags.cca_seen)
-		return true;
-
-	/*
-	* Per ACPI 6.0 sec 6.2.17, assume devices can do cache-coherent
-	* DMA on "Intel platforms".  Presumably that includes all x86 and
-	* ia64, and other arches will set CONFIG_ACPI_CCA_REQUIRED=y.
-	*/
-	if (!IS_ENABLED(CONFIG_ACPI_CCA_REQUIRED))
-		return true;
-
-	return false;
+	return true;
 }
 
 /**
@@ -1608,16 +1597,8 @@ static void acpi_init_coherency(struct acpi_device *adev)
 					       NULL, &cca);
 		if (ACPI_SUCCESS(status))
 			adev->flags.cca_seen = 1;
-		else if (!IS_ENABLED(CONFIG_ACPI_CCA_REQUIRED))
-			/*
-			 * If architecture does not specify that _CCA is
-			 * required for DMA-able devices (e.g. x86),
-			 * we default to _CCA=1.
-			 */
-			cca = 1;
 		else
-			acpi_handle_debug(adev->handle,
-					  "ACPI device is missing _CCA.\n");
+			cca = 1;
 	}
 
 	adev->flags.coherent_dma = cca;

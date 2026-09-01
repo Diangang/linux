@@ -45,12 +45,6 @@ if ACPI
 config ACPI_LEGACY_TABLES_LOOKUP
 	bool
 
-config ACPI_GENERIC_GSI
-	bool
-
-config ACPI_CCA_REQUIRED
-	bool
-
 endif	# ACPI
 
 config X86_PM_TIMER

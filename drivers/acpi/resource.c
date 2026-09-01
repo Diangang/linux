@@ -37,18 +37,10 @@ static inline bool
 acpi_iospace_resource_valid(struct resource *res) { return true; }
 #endif
 
-#if IS_ENABLED(CONFIG_ACPI_GENERIC_GSI)
-static inline bool is_gsi(struct acpi_resource_extended_irq *ext_irq)
-{
-	return ext_irq->resource_source.string_length == 0 &&
-	       ext_irq->producer_consumer == ACPI_CONSUMER;
-}
-#else
 static inline bool is_gsi(struct acpi_resource_extended_irq *ext_irq)
 {
 	return true;
 }
-#endif
 
 static bool acpi_dev_resource_len_valid(u64 start, u64 end, u64 len, bool io)
 {

@@ -1308,11 +1308,6 @@ static inline int acpi_parse_spcr(bool enable_earlycon, bool enable_console)
 	return -ENODEV;
 }
 
-#if IS_ENABLED(CONFIG_ACPI_GENERIC_GSI)
-int acpi_irq_get(acpi_handle handle, unsigned int index, struct resource *res);
-const struct cpumask *acpi_irq_get_affinity(acpi_handle handle,
-					    unsigned int index);
-#else
 static inline
 int acpi_irq_get(acpi_handle handle, unsigned int index, struct resource *res)
 {
@@ -1323,7 +1318,6 @@ static inline const struct cpumask *acpi_irq_get_affinity(acpi_handle handle,
 {
 	return NULL;
 }
-#endif
 
 static inline int lpit_read_residency_count_address(u64 *address)
 {
