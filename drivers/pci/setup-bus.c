@@ -1139,28 +1139,6 @@ static void pbus_size_io(struct pci_bus *bus, resource_size_t add_size,
 	}
 }
 
-static inline resource_size_t calculate_mem_align(resource_size_t *aligns,
-						  int max_order)
-{
-	resource_size_t align = 0;
-	resource_size_t min_align = 0;
-	int order;
-
-	for (order = 0; order <= max_order; order++) {
-		resource_size_t align1 = 1;
-
-		align1 <<= order + __ffs(SZ_1M);
-
-		if (!align)
-			min_align = align1;
-		else if (ALIGN(align + min_align, min_align) < align1)
-			min_align = align1 >> 1;
-		align += aligns[order];
-	}
-
-	return min_align;
-}
-
 /*
  * Calculate bridge window head alignment that leaves no gaps in between
  * resources.
