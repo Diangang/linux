@@ -2038,8 +2038,6 @@ static void pl011_remove(struct amba_device *dev)
 }
 
 
-static SIMPLE_DEV_PM_OPS(pl011_dev_pm_ops, pl011_suspend, pl011_resume);
-
 static void qpdf2400_erratum44_workaround(struct device *dev,
 					  struct uart_amba_port *uap)
 { /* empty */ }
@@ -2127,7 +2125,6 @@ static struct platform_driver arm_sbsa_uart_platform_driver = {
 	.remove		= sbsa_uart_remove,
 	.driver	= {
 		.name	= "sbsa-uart",
-		.pm	= &pl011_dev_pm_ops,
 		.of_match_table = sbsa_uart_of_match,
 		.acpi_match_table = sbsa_uart_acpi_match,
 		.suppress_bind_attrs = IS_BUILTIN(CONFIG_SERIAL_AMBA_PL011),
@@ -2158,7 +2155,6 @@ MODULE_DEVICE_TABLE(amba, pl011_ids);
 static struct amba_driver pl011_driver = {
 	.drv = {
 		.name	= "uart-pl011",
-		.pm	= &pl011_dev_pm_ops,
 		.suppress_bind_attrs = IS_BUILTIN(CONFIG_SERIAL_AMBA_PL011),
 	},
 	.id_table	= pl011_ids,
