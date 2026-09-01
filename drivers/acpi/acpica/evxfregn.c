@@ -20,14 +20,13 @@ ACPI_MODULE_NAME("evxfregn")
 
 /*******************************************************************************
  *
- * FUNCTION:    acpi_install_address_space_handler_internal
+ * FUNCTION:    acpi_install_address_space_handler
  *
  * PARAMETERS:  device          - Handle for the device
  *              space_id        - The address space ID
  *              handler         - Address of the handler
  *              setup           - Address of the setup function
  *              context         - Value passed to the handler on each access
- *              Run_reg         - Run _REG methods for this address space?
  *
  * RETURN:      Status
  *
@@ -38,16 +37,12 @@ ACPI_MODULE_NAME("evxfregn")
  * are executed here, and these methods can only be safely executed after
  * the default handlers have been installed and the hardware has been
  * initialized (via acpi_enable_subsystem.)
- * To avoid this problem pass FALSE for Run_Reg and later on call
- * acpi_execute_reg_methods() to execute _REG.
- *
  ******************************************************************************/
-static acpi_status
-acpi_install_address_space_handler_internal(acpi_handle device,
-					    acpi_adr_space_type space_id,
-					    acpi_adr_space_handler handler,
-					    acpi_adr_space_setup setup,
-					    void *context, u8 run_reg)
+acpi_status
+acpi_install_address_space_handler(acpi_handle device,
+				   acpi_adr_space_type space_id,
+				   acpi_adr_space_handler handler,
+				   acpi_adr_space_setup setup, void *context)
 {
 	struct acpi_namespace_node *node;
 	acpi_status status;
@@ -84,41 +79,15 @@ acpi_install_address_space_handler_internal(acpi_handle device,
 
 	/* Run all _REG methods for this address space */
 
-	if (run_reg) {
-		acpi_ev_execute_reg_methods(node, ACPI_UINT32_MAX, space_id,
-					    ACPI_REG_CONNECT);
-	}
+	acpi_ev_execute_reg_methods(node, ACPI_UINT32_MAX, space_id,
+				    ACPI_REG_CONNECT);
 
 unlock_and_exit:
 	(void)acpi_ut_release_mutex(ACPI_MTX_NAMESPACE);
 	return_ACPI_STATUS(status);
 }
 
-acpi_status
-acpi_install_address_space_handler(acpi_handle device,
-				   acpi_adr_space_type space_id,
-				   acpi_adr_space_handler handler,
-				   acpi_adr_space_setup setup, void *context)
-{
-	return acpi_install_address_space_handler_internal(device, space_id,
-							   handler, setup,
-							   context, TRUE);
-}
-
 ACPI_EXPORT_SYMBOL(acpi_install_address_space_handler)
-acpi_status
-acpi_install_address_space_handler_no_reg(acpi_handle device,
-					  acpi_adr_space_type space_id,
-					  acpi_adr_space_handler handler,
-					  acpi_adr_space_setup setup,
-					  void *context)
-{
-	return acpi_install_address_space_handler_internal(device, space_id,
-							   handler, setup,
-							   context, FALSE);
-}
-
-ACPI_EXPORT_SYMBOL(acpi_install_address_space_handler_no_reg)
 
 /*******************************************************************************
  *
