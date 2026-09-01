@@ -238,12 +238,6 @@ static int __init osi_setup(char *str)
 }
 __setup("acpi_osi=", osi_setup);
 
-bool acpi_osi_is_win8(void)
-{
-	return acpi_gbl_osi_data >= ACPI_OSI_WIN_8;
-}
-EXPORT_SYMBOL(acpi_osi_is_win8);
-
 static void __init acpi_osi_dmi_darwin(void)
 {
 	pr_notice("DMI detected to setup _OSI(\"Darwin\"): Apple hardware\n");

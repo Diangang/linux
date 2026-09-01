@@ -380,7 +380,6 @@ extern char acpi_video_backlight_string[];
 extern long acpi_is_video_device(acpi_handle handle);
 
 extern void acpi_osi_setup(char *str);
-extern bool acpi_osi_is_win8(void);
 int early_acpi_osi_init(void);
 
 static inline int acpi_get_genport_coordinates(u32 uid,
