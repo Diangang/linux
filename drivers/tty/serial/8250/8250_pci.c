@@ -1126,8 +1126,6 @@ static int pci_oxsemi_tornado_init(struct pci_dev *dev)
 /* Tornado-specific constants for the TCR and CPR registers; see below.  */
 #define OXSEMI_TORNADO_TCR_MASK	0xf
 #define OXSEMI_TORNADO_CPR_MASK	0x1ff
-#define OXSEMI_TORNADO_CPR_MIN	0x008
-#define OXSEMI_TORNADO_CPR_DEF	0x10f
 
 /*
  * Determine the oversampling rate, the clock prescaler, and the clock
@@ -2006,8 +2004,6 @@ pci_sunix_setup(struct serial_private *priv,
 
 #define MOXA_RS232	0x00
 #define MOXA_RS422	0x01
-#define MOXA_RS485_4W	0x0B
-#define MOXA_RS485_2W	0x0F
 #define MOXA_UIR_OFFSET	0x04
 #define MOXA_EVEN_RS_MASK	GENMASK(3, 0)
 #define MOXA_ODD_RS_MASK	GENMASK(7, 4)
