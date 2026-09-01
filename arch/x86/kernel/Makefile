@@ -20,7 +20,6 @@ KCOV_INSTRUMENT_dumpstack.o				:= n
 KCOV_INSTRUMENT_dumpstack_$(BITS).o			:= n
 KCOV_INSTRUMENT_unwind_orc.o				:= n
 CFLAGS_head64.o := -fno-stack-protector
-CFLAGS_irq.o := -I $(src)/../include/asm/trace
 
 obj-y			+= head_$(BITS).o
 obj-y			+= head$(BITS).o
