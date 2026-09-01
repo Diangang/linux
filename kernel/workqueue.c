@@ -2904,7 +2904,6 @@ restart:
 
 static void worker_lock_callback(struct worker_pool *pool) { }
 static void worker_unlock_callback(struct worker_pool *pool) { }
-static void workqueue_callback_cancel_wait_running(struct worker_pool *pool) { }
 
 
 /**
