@@ -41,15 +41,10 @@ static const u8 acpi_protocol_lengths[] = {
 	0xFF			/* F - ATTRIB_RAW_PROCESS_BYTES */
 };
 
-#define PCC_MASTER_SUBSPACE     3
-
 /*
- * The following macros determine a given offset is a COMD field.
- * According to the specification, generic subspaces (types 0-2) contains a
- * 2-byte COMD field at offset 4 and master subspaces (type 3) contains a 4-byte
- * COMD field starting at offset 12.
+ * Determine whether a given offset is in the 4-byte COMD field starting at
+ * offset 12 in a master subspace.
  */
-#define GENERIC_SUBSPACE_COMMAND(a)     (4 == a || a == 5)
 #define MASTER_SUBSPACE_COMMAND(a)      (12 <= a && a <= 15)
 
 /*******************************************************************************
