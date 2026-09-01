@@ -60,18 +60,6 @@
 #include <linux/slab.h>
 #include <linux/limits.h>
 #include <asm/barrier.h>
-#define TP_FCT tracepoint_string(__func__)
-
-/*
- * Kernel pointer hashing renders much of the maple tree dump useless as tagged
- * pointers get hashed to arbitrary values.
- *
- * If CONFIG_DEBUG_VM_MAPLE_TREE is set we are in a debug mode where it is
- * permissible to bypass this. Otherwise remain cautious and retain the hashing.
- *
- * Userland doesn't know about %px so also use %p there.
- */
-#define PTR_FMT "%p"
 
 #define MA_ROOT_PARENT 1
 
@@ -6271,4 +6259,3 @@ void *mt_find_after(struct maple_tree *mt, unsigned long *index,
 	return mt_find(mt, index, max);
 }
 EXPORT_SYMBOL(mt_find_after);
-
