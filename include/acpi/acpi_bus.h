@@ -141,22 +141,6 @@ struct acpi_scan_handler {
 };
 
 /*
- * ACPI Hotplug Context
- * --------------------
- */
-
-typedef int (*acpi_hp_notify) (struct acpi_device *, u32);
-typedef void (*acpi_hp_uevent) (struct acpi_device *, u32);
-typedef void (*acpi_hp_fixup) (struct acpi_device *);
-
-struct acpi_hotplug_context {
-	struct acpi_device *self;
-	acpi_hp_notify notify;
-	acpi_hp_uevent uevent;
-	acpi_hp_fixup fixup;
-};
-
-/*
  * ACPI Driver
  * -----------
  */
@@ -477,7 +461,6 @@ struct acpi_device {
 	struct acpi_device_dir dir;
 	struct acpi_device_data data;
 	struct acpi_scan_handler *handler;
-	struct acpi_hotplug_context *hp;
 	struct acpi_device_software_nodes *swnodes;
 	const struct acpi_gpio_mapping *driver_gpios;
 	void *driver_data;
@@ -572,17 +555,6 @@ static inline void acpi_set_device_status(struct acpi_device *adev, u32 sta)
 	*((u32 *)&adev->status) = sta;
 }
 
-static inline void acpi_set_hp_context(struct acpi_device *adev,
-				       struct acpi_hotplug_context *hp)
-{
-	hp->self = adev;
-	adev->hp = hp;
-}
-
-void acpi_initialize_hp_context(struct acpi_device *adev,
-				struct acpi_hotplug_context *hp,
-				acpi_hp_notify notify, acpi_hp_uevent uevent);
-
 /* acpi_device.dev.bus == &acpi_bus_type */
 extern const struct bus_type acpi_bus_type;
 
@@ -634,8 +606,6 @@ u8 acpi_dev_power_state_for_wake(struct acpi_device *adev);
 
 void acpi_scan_lock_acquire(void);
 void acpi_scan_lock_release(void);
-void acpi_lock_hp_context(void);
-void acpi_unlock_hp_context(void);
 int acpi_scan_add_handler(struct acpi_scan_handler *handler);
 /*
  * use a macro to avoid include chaining to get THIS_MODULE

@@ -40,7 +40,6 @@ static DEFINE_MUTEX(acpi_scan_lock);
 static LIST_HEAD(acpi_scan_handlers_list);
 DEFINE_MUTEX(acpi_device_lock);
 LIST_HEAD(acpi_wakeup_device_list);
-static DEFINE_MUTEX(acpi_hp_context_lock);
 static LIST_HEAD(acpi_scan_system_dev_list);
 
 /*
@@ -61,28 +60,6 @@ void acpi_scan_lock_release(void)
 	mutex_unlock(&acpi_scan_lock);
 }
 EXPORT_SYMBOL_GPL(acpi_scan_lock_release);
-
-void acpi_lock_hp_context(void)
-{
-	mutex_lock(&acpi_hp_context_lock);
-}
-
-void acpi_unlock_hp_context(void)
-{
-	mutex_unlock(&acpi_hp_context_lock);
-}
-
-void acpi_initialize_hp_context(struct acpi_device *adev,
-				struct acpi_hotplug_context *hp,
-				acpi_hp_notify notify, acpi_hp_uevent uevent)
-{
-	acpi_lock_hp_context();
-	hp->notify = notify;
-	hp->uevent = uevent;
-	acpi_set_hp_context(adev, hp);
-	acpi_unlock_hp_context();
-}
-EXPORT_SYMBOL_GPL(acpi_initialize_hp_context);
 
 int acpi_scan_add_handler(struct acpi_scan_handler *handler)
 {
@@ -451,19 +428,11 @@ void acpi_device_hotplug(struct acpi_device *adev, u32 src)
 	if (adev->flags.hotplug_notify) {
 		error = acpi_generic_hotplug_event(adev, src);
 	} else {
-		acpi_hp_notify notify;
-
-		acpi_lock_hp_context();
-		notify = adev->hp ? adev->hp->notify : NULL;
-		acpi_unlock_hp_context();
 		/*
 		 * There may be additional notify handlers for device objects
 		 * without the .event() callback, so ignore them here.
 		 */
-		if (notify)
-			error = notify(adev, src);
-		else
-			goto out;
+		goto out;
 	}
 	switch (error) {
 	case 0:
