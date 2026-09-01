@@ -114,11 +114,6 @@ static inline unsigned int bs_bio_slab_size(struct bio_set *bs)
 	return bs->front_pad + sizeof(struct bio) + bs->back_pad;
 }
 
-static inline void *bio_slab_addr(struct bio *bio)
-{
-	return (void *)bio - bio->bi_pool->front_pad;
-}
-
 static struct kmem_cache *bio_find_or_create_slab(struct bio_set *bs)
 {
 	unsigned int size = bs_bio_slab_size(bs);
