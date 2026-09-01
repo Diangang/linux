@@ -34,8 +34,6 @@
  * (at your option) any later version.
  *
  */
-#define MD4_DIGEST_SIZE		16
-#define MD4_HMAC_BLOCK_SIZE	64
 #define MD4_BLOCK_WORDS		16
 #define MD4_HASH_WORDS		4
 
