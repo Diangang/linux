@@ -384,9 +384,6 @@ static int device_reorder_to_tail(struct device *dev, void *not_used)
 	if (device_is_registered(dev))
 		devices_kset_move_last(dev);
 
-	if (device_pm_initialized(dev))
-		device_pm_move_last(dev);
-
 	device_for_each_child(dev, NULL, device_reorder_to_tail);
 	list_for_each_entry(link, &dev->links.consumers, s_node) {
 		if (device_link_flag_is_sync_state_only(link->flags))
@@ -398,22 +395,20 @@ static int device_reorder_to_tail(struct device *dev, void *not_used)
 }
 
 /**
- * device_pm_move_to_tail - Move set of devices to the end of device lists
+ * device_pm_move_to_tail - Move set of devices to the end of the device list
  * @dev: Device to move
  *
  * This is a device_reorder_to_tail() wrapper taking the requisite locks.
  *
  * It moves the @dev along with all of its children and all of its consumers
- * to the ends of the device_kset and dpm_list, recursively.
+ * to the end of devices_kset, recursively.
  */
 void device_pm_move_to_tail(struct device *dev)
 {
 	int idx;
 
 	idx = device_links_read_lock();
-	device_pm_lock();
 	device_reorder_to_tail(dev, NULL);
-	device_pm_unlock();
 	device_links_read_unlock(idx);
 }
 
@@ -730,7 +725,6 @@ struct device_link *device_link_add(struct device *consumer,
 		return NULL;
 
 	device_links_write_lock();
-	device_pm_lock();
 
 	/*
 	 * If the supplier has not been fully registered yet or there is a
@@ -739,7 +733,7 @@ struct device_link *device_link_add(struct device *consumer,
 	 * SYNC_STATE_ONLY link, we don't check for reverse dependencies
 	 * because it only affects sync_state() callbacks.
 	 */
-	if (!device_pm_initialized(supplier)
+	if (!device_is_registered(supplier)
 	    || (!(flags & DL_FLAG_SYNC_STATE_ONLY) &&
 		  device_is_dependent(consumer, supplier))) {
 		link = NULL;
@@ -872,17 +866,13 @@ struct device_link *device_link_add(struct device *consumer,
 reorder:
 	/*
 	 * Move the consumer and all of the devices depending on it to the end
-	 * of dpm_list and the devices_kset list.
-	 *
-	 * It is necessary to hold dpm_list locked throughout all that or else
-	 * we may end up suspending with a wrong ordering of it.
+	 * of the devices_kset list.
 	 */
 	device_reorder_to_tail(consumer, NULL);
 
 	dev_dbg(consumer, "Linked as a consumer to %s\n", dev_name(supplier));
 
 out:
-	device_pm_unlock();
 	device_links_write_unlock();
 
 	return link;
@@ -3600,8 +3590,6 @@ int device_add(struct device *dev)
 	error = dpm_sysfs_add(dev);
 	if (error)
 		goto DPMError;
-	device_pm_add(dev);
-
 	if (MAJOR(dev->devt)) {
 		error = device_create_file(dev, &dev_attr_dev);
 		if (error)
@@ -3625,10 +3613,7 @@ int device_add(struct device *dev)
 	 * this device (supplier) to be added so that they can create a device
 	 * link to it.
 	 *
-	 * This needs to happen after device_pm_add() because device_link_add()
-	 * requires the supplier be registered before it's called.
-	 *
-	 * But this also needs to happen before bus_probe_device() to make sure
+	 * This needs to happen before bus_probe_device() to make sure
 	 * waiting consumers can link to it before the driver is bound to the
 	 * device and the driver sync_state callback is called for this device.
 	 */
@@ -3686,7 +3671,6 @@ done:
 	if (MAJOR(dev->devt))
 		device_remove_file(dev, &dev_attr_dev);
  DevAttrError:
-	device_pm_remove(dev);
 	dpm_sysfs_remove(dev);
  DPMError:
 	device_set_driver(dev, NULL);
@@ -3842,7 +3826,6 @@ void device_del(struct device *dev)
 	device_remove_file(dev, &dev_attr_uevent);
 	device_remove_attrs(dev);
 	bus_remove_device(dev);
-	device_pm_remove(dev);
 	driver_deferred_probe_del(dev);
 	device_platform_notify_remove(dev);
 	device_links_purge(dev);
@@ -4545,7 +4528,6 @@ int device_move(struct device *dev, struct device *new_parent,
 	if (!dev)
 		return -EINVAL;
 
-	device_pm_lock();
 	new_parent = get_device(new_parent);
 	new_parent_kobj = get_device_parent(dev, new_parent);
 	if (IS_ERR(new_parent_kobj)) {
@@ -4596,22 +4578,18 @@ int device_move(struct device *dev, struct device *new_parent,
 	case DPM_ORDER_NONE:
 		break;
 	case DPM_ORDER_DEV_AFTER_PARENT:
-		device_pm_move_after(dev, new_parent);
 		devices_kset_move_after(dev, new_parent);
 		break;
 	case DPM_ORDER_PARENT_BEFORE_DEV:
-		device_pm_move_before(new_parent, dev);
 		devices_kset_move_before(new_parent, dev);
 		break;
 	case DPM_ORDER_DEV_LAST:
-		device_pm_move_last(dev);
 		devices_kset_move_last(dev);
 		break;
 	}
 
 	put_device(old_parent);
 out:
-	device_pm_unlock();
 	put_device(dev);
 	return error;
 }

@@ -559,9 +559,6 @@ extern void dev_pm_put_subsys_data(struct device *dev);
  */
 
 
-#define device_pm_lock() do {} while (0)
-#define device_pm_unlock() do {} while (0)
-
 static inline int dpm_suspend_start(pm_message_t state)
 {
 	return 0;

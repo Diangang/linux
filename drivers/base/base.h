@@ -284,18 +284,6 @@ static inline void device_pm_init(struct device *dev)
 	}
 }
 
-static inline void device_pm_add(struct device *dev) {}
-static inline void device_pm_remove(struct device *dev) {}
-static inline void device_pm_move_before(struct device *deva,
-					 struct device *devb) {}
-static inline void device_pm_move_after(struct device *deva,
-					struct device *devb) {}
-static inline void device_pm_move_last(struct device *dev) {}
-static inline void device_pm_check_callbacks(struct device *dev) {}
-static inline bool device_pm_initialized(struct device *dev)
-{
-	return device_is_registered(dev);
-}
 static inline int dpm_sysfs_add(struct device *dev) { return 0; }
 static inline void dpm_sysfs_remove(struct device *dev) {}
 static inline int dpm_sysfs_change_owner(struct device *dev, kuid_t kuid,
