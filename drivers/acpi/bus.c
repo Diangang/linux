@@ -1057,12 +1057,6 @@ const struct bus_type acpi_bus_type = {
 	.uevent		= acpi_device_uevent,
 };
 
-int acpi_bus_for_each_dev(int (*fn)(struct device *, void *), void *data)
-{
-	return bus_for_each_dev(&acpi_bus_type, NULL, data, fn);
-}
-EXPORT_SYMBOL_GPL(acpi_bus_for_each_dev);
-
 struct acpi_dev_walk_context {
 	int (*fn)(struct acpi_device *, void *);
 	void *data;
