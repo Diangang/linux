@@ -575,11 +575,6 @@ void __meminit __init_page_from_nid(unsigned long pfn, int nid)
 
 static inline void pgdat_set_deferred_range(pg_data_t *pgdat) {}
 
-static inline bool early_page_initialised(unsigned long pfn, int nid)
-{
-	return true;
-}
-
 static inline bool defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 {
 	return false;
