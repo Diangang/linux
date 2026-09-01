@@ -168,66 +168,14 @@ cpu_enable_cache_maint_trap(const struct arm64_cpu_capabilities *__unused)
 	sysreg_clear_set(sctlr_el1, SCTLR_EL1_UCI, 0);
 }
 
-#define CAP_MIDR_RANGE(model, v_min, r_min, v_max, r_max)	\
-	.matches = is_affected_midr_range,			\
-	.midr_range = MIDR_RANGE(model, v_min, r_min, v_max, r_max)
-
-#define CAP_MIDR_ALL_VERSIONS(model)					\
-	.matches = is_affected_midr_range,				\
-	.midr_range = MIDR_ALL_VERSIONS(model)
-
-#define MIDR_FIXED(rev, revidr_mask) \
-	.fixed_revs = (struct arm64_midr_revidr[]){{ (rev), (revidr_mask) }, {}}
-
-#define ERRATA_MIDR_RANGE(model, v_min, r_min, v_max, r_max)		\
-	.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,				\
-	CAP_MIDR_RANGE(model, v_min, r_min, v_max, r_max)
-
 #define CAP_MIDR_RANGE_LIST(list)				\
 	.matches = is_affected_midr_range_list,			\
 	.midr_range_list = list
-
-/* Errata affecting a range of revisions of  given model variant */
-#define ERRATA_MIDR_REV_RANGE(m, var, r_min, r_max)	 \
-	ERRATA_MIDR_RANGE(m, var, r_min, var, r_max)
-
-/* Errata affecting a single variant/revision of a model */
-#define ERRATA_MIDR_REV(model, var, rev)	\
-	ERRATA_MIDR_RANGE(model, var, rev, var, rev)
-
-/* Errata affecting all variants/revisions of a given a model */
-#define ERRATA_MIDR_ALL_VERSIONS(model)				\
-	.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,			\
-	CAP_MIDR_ALL_VERSIONS(model)
 
 /* Errata affecting a list of midr ranges, with same work around */
 #define ERRATA_MIDR_RANGE_LIST(midr_list)			\
 	.type = ARM64_CPUCAP_LOCAL_CPU_ERRATUM,			\
 	CAP_MIDR_RANGE_LIST(midr_list)
-
-static const __maybe_unused struct midr_range tx2_family_cpus[] = {
-	MIDR_ALL_VERSIONS(MIDR_BRCM_VULCAN),
-	MIDR_ALL_VERSIONS(MIDR_CAVIUM_THUNDERX2),
-	{},
-};
-
-static bool __maybe_unused
-needs_tx2_tvm_workaround(const struct arm64_cpu_capabilities *entry,
-			 int scope)
-{
-	int i;
-
-	if (!is_affected_midr_range_list(entry, scope) ||
-	    !is_hyp_mode_available())
-		return false;
-
-	for_each_possible_cpu(i) {
-		if (MPIDR_AFFINITY_LEVEL(cpu_logical_map(i), 0) != 0)
-			return true;
-	}
-
-	return false;
-}
 
 static bool __maybe_unused
 has_neoverse_n1_erratum_1542419(const struct arm64_cpu_capabilities *entry,
