@@ -248,8 +248,6 @@ static void check_is_string_list(struct check *c, struct dt_info *dti,
 }
 #define WARNING_IF_NOT_STRING_LIST(nm, propname) \
 	WARNING(nm, check_is_string_list, (propname))
-#define ERROR_IF_NOT_STRING_LIST(nm, propname) \
-	ERROR(nm, check_is_string_list, (propname))
 
 static void check_is_cell(struct check *c, struct dt_info *dti,
 			  struct node *node)
@@ -266,8 +264,6 @@ static void check_is_cell(struct check *c, struct dt_info *dti,
 }
 #define WARNING_IF_NOT_CELL(nm, propname) \
 	WARNING(nm, check_is_cell, (propname))
-#define ERROR_IF_NOT_CELL(nm, propname) \
-	ERROR(nm, check_is_cell, (propname))
 
 /*
  * Structural check functions
