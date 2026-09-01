@@ -64,8 +64,6 @@ static int effective_prio(struct task_struct *p)
 
 void set_user_nice(struct task_struct *p, long nice)
 {
-	int old_prio;
-
 	if (task_nice(p) == nice || nice < MIN_NICE || nice > MAX_NICE)
 		return;
 	/*
@@ -88,7 +86,6 @@ void set_user_nice(struct task_struct *p, long nice)
 	scoped_guard (sched_change, p, DEQUEUE_SAVE) {
 		p->static_prio = NICE_TO_PRIO(nice);
 		set_load_weight(p, true);
-		old_prio = p->prio;
 		p->prio = effective_prio(p);
 	}
 }
