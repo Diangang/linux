@@ -264,11 +264,7 @@ void *fixup_red_left(struct kmem_cache *s, void *p)
 #define OO_MASK		((1 << OO_SHIFT) - 1)
 #define MAX_OBJS_PER_PAGE	32767 /* since slab.objects is u15 */
 
-/* Internal SLUB flags */
-/* Poison object */
-#define __OBJECT_POISON		__SLAB_FLAG_BIT(_SLAB_OBJECT_POISON)
 /* Use cmpxchg_double */
-
 #ifdef system_has_freelist_aba
 #define __CMPXCHG_DOUBLE	__SLAB_FLAG_BIT(_SLAB_CMPXCHG_DOUBLE)
 #else
