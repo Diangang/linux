@@ -47,19 +47,6 @@ EXPORT_SYMBOL(pci_pci_problems);
 
 unsigned int pci_pm_d3hot_delay;
 
-static void pci_pme_list_scan(struct work_struct *work);
-
-static LIST_HEAD(pci_pme_list);
-static DEFINE_MUTEX(pci_pme_list_mutex);
-static DECLARE_DELAYED_WORK(pci_pme_work, pci_pme_list_scan);
-
-struct pci_pme_device {
-	struct list_head list;
-	struct pci_dev *dev;
-};
-
-#define PME_TIMEOUT 1000 /* How long between PME checks */
-
 /*
  * Following exit from Conventional Reset, devices must be ready within 1 sec
  * (PCIe r6.0 sec 6.6.1).  A D3cold to D0 transition implies a Conventional
@@ -2172,36 +2159,6 @@ bool pci_check_pme_status(struct pci_dev *dev)
 }
 
 /**
- * pci_pme_wakeup - Wake up a PCI device if its PME Status bit is set.
- * @dev: Device to handle.
- * @pme_poll_reset: Whether or not to reset the device's pme_poll flag.
- *
- * Check if @dev has generated PME and queue a resume request for it in that
- * case.
- */
-static int pci_pme_wakeup(struct pci_dev *dev, void *pme_poll_reset)
-{
-	if (pme_poll_reset && dev->pme_poll)
-		dev->pme_poll = false;
-
-	if (pci_check_pme_status(dev)) {
-		pm_request_resume(&dev->dev);
-	}
-	return 0;
-}
-
-/**
- * pci_pme_wakeup_bus - Walk given bus and wake up devices on it, if necessary.
- * @bus: Top bus of the subtree to walk.
- */
-void pci_pme_wakeup_bus(struct pci_bus *bus)
-{
-	if (bus)
-		pci_walk_bus(bus, pci_pme_wakeup, (void *)true);
-}
-
-
-/**
  * pci_pme_capable - check the capability of PCI device to generate PME#
  * @dev: PCI device to handle.
  * @state: PCI state from which device will issue PME#.
@@ -2214,58 +2171,6 @@ bool pci_pme_capable(struct pci_dev *dev, pci_power_t state)
 	return !!(dev->pme_support & (1 << state));
 }
 EXPORT_SYMBOL(pci_pme_capable);
-
-static void pci_pme_list_scan(struct work_struct *work)
-{
-	struct pci_pme_device *pme_dev, *n;
-
-	mutex_lock(&pci_pme_list_mutex);
-	list_for_each_entry_safe(pme_dev, n, &pci_pme_list, list) {
-		struct pci_dev *pdev = pme_dev->dev;
-
-		if (pdev->pme_poll) {
-			struct pci_dev *bridge = pdev->bus->self;
-			struct device *dev = &pdev->dev;
-			struct device *bdev = bridge ? &bridge->dev : NULL;
-			int bref = 0;
-
-			/*
-			 * If we have a bridge, it should be in an active/D0
-			 * state or the configuration space of subordinate
-			 * devices may not be accessible or stable over the
-			 * course of the call.
-			 */
-			if (bdev) {
-				bref = pm_runtime_get_if_active(bdev);
-				if (!bref)
-					continue;
-
-				if (bridge->current_state != PCI_D0)
-					goto put_bridge;
-			}
-
-			/*
-			 * The device itself should be suspended but config
-			 * space must be accessible, therefore it cannot be in
-			 * D3cold.
-			 */
-			if (pm_runtime_suspended(dev) &&
-			    pdev->current_state != PCI_D3cold)
-				pci_pme_wakeup(pdev, NULL);
-
-put_bridge:
-			if (bref > 0)
-				pm_runtime_put(bdev);
-		} else {
-			list_del(&pme_dev->list);
-			kfree(pme_dev);
-		}
-	}
-	if (!list_empty(&pci_pme_list))
-		queue_delayed_work(system_freezable_wq, &pci_pme_work,
-				   msecs_to_jiffies(PME_TIMEOUT));
-	mutex_unlock(&pci_pme_list_mutex);
-}
 
 static void __pci_pme_active(struct pci_dev *dev, bool enable)
 {
@@ -2316,55 +2221,6 @@ void pci_pme_restore(struct pci_dev *dev)
 void pci_pme_active(struct pci_dev *dev, bool enable)
 {
 	__pci_pme_active(dev, enable);
-
-	/*
-	 * PCI (as opposed to PCIe) PME requires that the device have
-	 * its PME# line hooked up correctly. Not all hardware vendors
-	 * do this, so the PME never gets delivered and the device
-	 * remains asleep. The easiest way around this is to
-	 * periodically walk the list of suspended devices and check
-	 * whether any have their PME flag set. The assumption is that
-	 * we'll wake up often enough anyway that this won't be a huge
-	 * hit, and the power savings from the devices will still be a
-	 * win.
-	 *
-	 * Although PCIe uses in-band PME message instead of PME# line
-	 * to report PME, PME does not work for some PCIe devices in
-	 * reality.  For example, there are devices that set their PME
-	 * status bits, but don't really bother to send a PME message;
-	 * there are PCI Express Root Ports that don't bother to
-	 * trigger interrupts when they receive PME messages from the
-	 * devices below.  So PME poll is used for PCIe devices too.
-	 */
-
-	if (dev->pme_poll) {
-		struct pci_pme_device *pme_dev;
-		if (enable) {
-			pme_dev = kmalloc_obj(struct pci_pme_device);
-			if (!pme_dev) {
-				pci_warn(dev, "can't enable PME#\n");
-				return;
-			}
-			pme_dev->dev = dev;
-			mutex_lock(&pci_pme_list_mutex);
-			list_add(&pme_dev->list, &pci_pme_list);
-			if (list_is_singular(&pci_pme_list))
-				queue_delayed_work(system_freezable_wq,
-						   &pci_pme_work,
-						   msecs_to_jiffies(PME_TIMEOUT));
-			mutex_unlock(&pci_pme_list_mutex);
-		} else {
-			mutex_lock(&pci_pme_list_mutex);
-			list_for_each_entry(pme_dev, &pci_pme_list, list) {
-				if (pme_dev->dev == dev) {
-					list_del(&pme_dev->list);
-					kfree(pme_dev);
-					break;
-				}
-			}
-			mutex_unlock(&pci_pme_list_mutex);
-		}
-	}
 
 	pci_dbg(dev, "PME# %s\n", enable ? "enabled" : "disabled");
 }
@@ -2956,7 +2812,6 @@ void pci_pm_init(struct pci_dev *dev)
 			 (pmc & PCI_PM_CAP_PME_D3hot) ? " D3hot" : "",
 			 (pmc & PCI_PM_CAP_PME_D3cold) ? " D3cold" : "");
 		dev->pme_support = FIELD_GET(PCI_PM_CAP_PME_MASK, pmc);
-		dev->pme_poll = true;
 		/*
 		 * Make device's PM flags reflect the wake-up capability, but
 		 * let the user space enable it to wake up the system as needed.

@@ -108,15 +108,6 @@ static inline int pm_runtime_resume(struct device *dev)
 }
 
 /**
- * pm_request_resume - Queue up runtime-resume of a device.
- * @dev: Target device.
- */
-static inline int pm_request_resume(struct device *dev)
-{
-	return __pm_runtime_resume(dev, RPM_ASYNC);
-}
-
-/**
  * pm_runtime_get - Bump up usage counter and queue up resume of a device.
  * @dev: Target device.
  *

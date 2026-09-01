@@ -385,7 +385,6 @@ struct pci_dev {
 	u8		pm_cap;		/* PM capability offset */
 	unsigned int	pme_support:5;	/* Bitmask of states from which PME#
 					   can be generated */
-	unsigned int	pme_poll:1;	/* Poll device's PME status bit */
 	unsigned int	pinned:1;	/* Whether this dev is pinned */
 	unsigned int	config_rrs_sv:1; /* Config RRS software visibility */
 	unsigned int	imm_ready:1;	/* Supports Immediate Readiness */
