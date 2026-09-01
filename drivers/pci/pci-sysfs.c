@@ -210,10 +210,7 @@ static ssize_t max_link_width_show(struct device *dev,
 	struct pci_dev *pdev = to_pci_dev(dev);
 	ssize_t ret;
 
-	/* We read PCI_EXP_LNKCAP, so we need the device to be accessible. */
-	pci_config_pm_runtime_get(pdev);
 	ret = sysfs_emit(buf, "%u\n", pcie_get_width_cap(pdev));
-	pci_config_pm_runtime_put(pdev);
 
 	return ret;
 }
@@ -227,9 +224,7 @@ static ssize_t current_link_speed_show(struct device *dev,
 	int err;
 	enum pci_bus_speed speed;
 
-	pci_config_pm_runtime_get(pci_dev);
 	err = pcie_capability_read_word(pci_dev, PCI_EXP_LNKSTA, &linkstat);
-	pci_config_pm_runtime_put(pci_dev);
 
 	if (err)
 		return -EINVAL;
@@ -247,9 +242,7 @@ static ssize_t current_link_width_show(struct device *dev,
 	u16 linkstat;
 	int err;
 
-	pci_config_pm_runtime_get(pci_dev);
 	err = pcie_capability_read_word(pci_dev, PCI_EXP_LNKSTA, &linkstat);
-	pci_config_pm_runtime_put(pci_dev);
 
 	if (err)
 		return -EINVAL;
@@ -266,9 +259,7 @@ static ssize_t secondary_bus_number_show(struct device *dev,
 	u8 sec_bus;
 	int err;
 
-	pci_config_pm_runtime_get(pci_dev);
 	err = pci_read_config_byte(pci_dev, PCI_SECONDARY_BUS, &sec_bus);
-	pci_config_pm_runtime_put(pci_dev);
 
 	if (err)
 		return -EINVAL;
@@ -285,9 +276,7 @@ static ssize_t subordinate_bus_number_show(struct device *dev,
 	u8 sub_bus;
 	int err;
 
-	pci_config_pm_runtime_get(pci_dev);
 	err = pci_read_config_byte(pci_dev, PCI_SUBORDINATE_BUS, &sub_bus);
-	pci_config_pm_runtime_put(pci_dev);
 
 	if (err)
 		return -EINVAL;
@@ -688,8 +677,6 @@ static ssize_t pci_read_config(struct file *filp, struct kobject *kobj,
 		size = count;
 	}
 
-	pci_config_pm_runtime_get(dev);
-
 	if ((off & 1) && size) {
 		u8 val;
 		pci_user_read_config_byte(dev, off, &val);
@@ -734,8 +721,6 @@ static ssize_t pci_read_config(struct file *filp, struct kobject *kobj,
 		data[off - init_off] = val;
 	}
 
-	pci_config_pm_runtime_put(dev);
-
 	return count;
 }
 
@@ -766,8 +751,6 @@ static ssize_t pci_write_config(struct file *filp, struct kobject *kobj,
 		size = dev->cfg_size - off;
 		count = size;
 	}
-
-	pci_config_pm_runtime_get(dev);
 
 	if ((off & 1) && size) {
 		pci_user_write_config_byte(dev, off, data[off - init_off]);
@@ -803,8 +786,6 @@ static ssize_t pci_write_config(struct file *filp, struct kobject *kobj,
 
 	if (size)
 		pci_user_write_config_byte(dev, off, data[off - init_off]);
-
-	pci_config_pm_runtime_put(dev);
 
 	return count;
 }
@@ -1511,12 +1492,8 @@ static ssize_t __resource_resize_show(struct device *dev, int n, char *buf)
 	struct pci_dev *pdev = to_pci_dev(dev);
 	ssize_t ret;
 
-	pci_config_pm_runtime_get(pdev);
-
 	ret = sysfs_emit(buf, "%016llx\n",
 			 pci_rebar_get_possible_sizes(pdev, n));
-
-	pci_config_pm_runtime_put(pdev);
 
 	return ret;
 }
@@ -1539,13 +1516,11 @@ static ssize_t __resource_resize_store(struct device *dev, int n,
 		goto unlock;
 	}
 
-	pci_config_pm_runtime_get(pdev);
-
 	if ((pdev->class >> 8) == PCI_CLASS_DISPLAY_VGA) {
 		ret = aperture_remove_conflicting_pci_devices(pdev,
 						"resourceN_resize");
 		if (ret)
-			goto pm_put;
+			goto unlock;
 	}
 
 	pci_read_config_word(pdev, PCI_COMMAND, &cmd);
@@ -1562,8 +1537,6 @@ static ssize_t __resource_resize_store(struct device *dev, int n,
 		pci_warn(pdev, "Failed to recreate resource files after BAR resizing\n");
 
 	pci_write_config_word(pdev, PCI_COMMAND, cmd);
-pm_put:
-	pci_config_pm_runtime_put(pdev);
 unlock:
 	device_unlock(dev);
 

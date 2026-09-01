@@ -56,8 +56,6 @@ static ssize_t proc_bus_pci_read(struct file *file, char __user *buf,
 	if (!access_ok(buf, cnt))
 		return -EINVAL;
 
-	pci_config_pm_runtime_get(dev);
-
 	if ((pos & 1) && cnt) {
 		unsigned char val;
 		pci_user_read_config_byte(dev, pos, &val);
@@ -102,8 +100,6 @@ static ssize_t proc_bus_pci_read(struct file *file, char __user *buf,
 		pos++;
 	}
 
-	pci_config_pm_runtime_put(dev);
-
 	*ppos = pos;
 	return nbytes;
 }
@@ -131,8 +127,6 @@ static ssize_t proc_bus_pci_write(struct file *file, const char __user *buf,
 
 	if (!access_ok(buf, cnt))
 		return -EINVAL;
-
-	pci_config_pm_runtime_get(dev);
 
 	if ((pos & 1) && cnt) {
 		unsigned char val;
@@ -176,8 +170,6 @@ static ssize_t proc_bus_pci_write(struct file *file, const char __user *buf,
 		pci_user_write_config_byte(dev, pos, val);
 		pos++;
 	}
-
-	pci_config_pm_runtime_put(dev);
 
 	*ppos = pos;
 	i_size_write(ino, dev->cfg_size);

@@ -284,9 +284,7 @@ static ssize_t vpd_read(struct file *filp, struct kobject *kobj,
 			return -ENODEV;
 	}
 
-	pci_config_pm_runtime_get(vpd_dev);
 	ret = pci_read_vpd(vpd_dev, off, count, buf);
-	pci_config_pm_runtime_put(vpd_dev);
 
 	if (dev->dev_flags & PCI_DEV_FLAGS_VPD_REF_F0)
 		pci_dev_put(vpd_dev);
@@ -308,9 +306,7 @@ static ssize_t vpd_write(struct file *filp, struct kobject *kobj,
 			return -ENODEV;
 	}
 
-	pci_config_pm_runtime_get(vpd_dev);
 	ret = pci_write_vpd(vpd_dev, off, count, buf);
-	pci_config_pm_runtime_put(vpd_dev);
 
 	if (dev->dev_flags & PCI_DEV_FLAGS_VPD_REF_F0)
 		pci_dev_put(vpd_dev);

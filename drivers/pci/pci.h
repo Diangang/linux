@@ -262,8 +262,6 @@ void pci_disable_enabled_device(struct pci_dev *dev);
 void pcie_clear_root_pme_status(struct pci_dev *dev);
 bool pci_check_pme_status(struct pci_dev *dev);
 void pci_pme_restore(struct pci_dev *dev);
-void pci_config_pm_runtime_get(struct pci_dev *dev);
-void pci_config_pm_runtime_put(struct pci_dev *dev);
 void pci_pm_power_up_and_verify_state(struct pci_dev *pci_dev);
 void pci_pm_init(struct pci_dev *dev);
 void pci_ea_init(struct pci_dev *dev);

@@ -11,8 +11,8 @@
  *	into as default, usually this means the pins are up and ready to
  *	be used by the device driver. This state is commonly used by
  *	hogs to configure muxing and pins at boot, and also as a state
- *	to go into when returning from sleep and idle in
- *	.pm_runtime_resume() or ordinary .resume() for example.
+ *	to go into when returning from sleep and idle in a runtime resume
+ *	callback or ordinary .resume() for example.
  * @PINCTRL_STATE_INIT: normally the pinctrl will be set to "default"
  *	before the driver's probe() function is called.  There are some
  *	drivers where that is not appropriate becausing doing so would

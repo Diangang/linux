@@ -2500,38 +2500,6 @@ pci_power_t pci_choose_state(struct pci_dev *dev, pm_message_t state)
 }
 EXPORT_SYMBOL(pci_choose_state);
 
-void pci_config_pm_runtime_get(struct pci_dev *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct device *parent = dev->parent;
-
-	if (parent)
-		pm_runtime_get_sync(parent);
-	pm_runtime_get_noresume(dev);
-	/*
-	 * pdev->current_state is set to PCI_D3cold during suspending,
-	 * so wait until suspending completes
-	 */
-	pm_runtime_barrier(dev);
-	/*
-	 * Only need to resume devices in D3cold, because config
-	 * registers are still accessible for devices suspended but
-	 * not in D3cold.
-	 */
-	if (pdev->current_state == PCI_D3cold)
-		pm_runtime_resume(dev);
-}
-
-void pci_config_pm_runtime_put(struct pci_dev *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct device *parent = dev->parent;
-
-	pm_runtime_put(dev);
-	if (parent)
-		pm_runtime_put_sync(parent);
-}
-
 static const struct dmi_system_id bridge_d3_blacklist[] = {
 #ifdef CONFIG_X86
 	{
