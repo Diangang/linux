@@ -41,7 +41,6 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	long total_scan;
 	long freeable;
 	long nr;
-	long new_nr;
 	long batch_size = shrinker->batch ? shrinker->batch
 					  : SHRINK_BATCH;
 	long scanned = 0, next_deferred;
@@ -122,7 +121,7 @@ static unsigned long do_shrink_slab(struct shrink_control *shrinkctl,
 	 * move the unused scan count back into the shrinker in a
 	 * manner that handles concurrent updates.
 	 */
-	new_nr = add_nr_deferred(next_deferred, shrinker, shrinkctl);
+	add_nr_deferred(next_deferred, shrinker, shrinkctl);
 
 	return freed;
 }
