@@ -234,8 +234,6 @@ static inline int folio_average_page_mapcount(struct folio *folio)
 /*
  * array.c
  */
-extern const struct file_operations proc_tid_children_operations;
-
 extern void proc_task_name(struct seq_file *m, struct task_struct *p,
 			   bool escape);
 extern int proc_tid_stat(struct seq_file *, struct pid_namespace *,
