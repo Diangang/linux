@@ -938,28 +938,8 @@ static inline bool device_async_suspend_enabled(struct device *dev)
 	return !!dev->power.async_suspend;
 }
 
-static inline bool device_pm_not_required(struct device *dev)
-{
-	return dev->power.no_pm;
-}
-
-static inline void device_set_pm_not_required(struct device *dev)
-{
-	dev->power.no_pm = true;
-}
-
 static inline void dev_pm_syscore_device(struct device *dev, bool val)
 {
-}
-
-static inline void dev_pm_set_driver_flags(struct device *dev, u32 flags)
-{
-	dev->power.driver_flags = flags;
-}
-
-static inline bool dev_pm_test_driver_flags(struct device *dev, u32 flags)
-{
-	return !!(dev->power.driver_flags & flags);
 }
 
 static inline bool dev_pm_smart_suspend(struct device *dev)

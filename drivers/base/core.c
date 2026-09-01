@@ -831,7 +831,6 @@ struct device_link *device_link_add(struct device *consumer,
 	kref_init(&link->kref);
 
 	link->link_dev.class = &devlink_class;
-	device_set_pm_not_required(&link->link_dev);
 	dev_set_name(&link->link_dev, "%s:%s--%s:%s",
 		     dev_bus_name(supplier), dev_name(supplier),
 		     dev_bus_name(consumer), dev_name(consumer));

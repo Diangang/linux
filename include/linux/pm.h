@@ -450,32 +450,11 @@ struct pm_subsys_data {
 	unsigned int refcount;
 };
 
-/*
- * Driver flags to control system suspend/resume behavior.
- *
- * These flags can be set by device drivers at the probe time.  They need not be
- * cleared by the drivers as the driver core will take care of that.
- *
- * NO_DIRECT_COMPLETE: Do not apply direct-complete optimization to the device.
- * SMART_PREPARE: Take the driver ->prepare callback return value into account.
- * SMART_SUSPEND: Avoid resuming the device from runtime suspend.
- * MAY_SKIP_RESUME: Allow driver "noirq" and "early" callbacks to be skipped.
- *
- * See Documentation/driver-api/pm/devices.rst for details.
- */
-#define DPM_FLAG_NO_DIRECT_COMPLETE	BIT(0)
-#define DPM_FLAG_SMART_PREPARE		BIT(1)
-#define DPM_FLAG_SMART_SUSPEND		BIT(2)
-#define DPM_FLAG_MAY_SKIP_RESUME	BIT(3)
-
 struct dev_pm_info {
-	pm_message_t		power_state;
 	bool			can_wakeup:1;
 	bool			async_suspend:1;
 	bool			is_prepared:1;	/* Owned by the PM core */
-	bool			no_pm:1;
 	bool			early_init:1;	/* Owned by the PM core */
-	u32			driver_flags;
 	spinlock_t		lock;
 	bool			should_wakeup:1;
 	struct pm_subsys_data	*subsys_data;  /* Owned by the subsystem. */

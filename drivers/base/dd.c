@@ -574,7 +574,6 @@ static void device_unbind_cleanup(struct device *dev)
 	dev->dma_range_map = NULL;
 	device_set_driver(dev, NULL);
 	dev_set_drvdata(dev, NULL);
-	dev_pm_set_driver_flags(dev, 0);
 }
 
 static void device_remove(struct device *dev)

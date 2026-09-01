@@ -201,14 +201,6 @@ static inline int dev_pm_qos_remove_notifier(struct device *dev,
 					     struct notifier_block *notifier,
 					     enum dev_pm_qos_req_type type)
 			{ return 0; }
-static inline void dev_pm_qos_constraints_init(struct device *dev)
-{
-	dev->power.power_state = PMSG_ON;
-}
-static inline void dev_pm_qos_constraints_destroy(struct device *dev)
-{
-	dev->power.power_state = PMSG_INVALID;
-}
 static inline int dev_pm_qos_add_ancestor_request(struct device *dev,
 						  struct dev_pm_qos_request *req,
 						  enum dev_pm_qos_req_type type,
