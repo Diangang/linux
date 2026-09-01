@@ -701,7 +701,6 @@ static int acpi_pci_root_add(struct acpi_device *device,
 	if (no_aspm)
 		pcie_no_aspm();
 
-	pci_acpi_add_root_pm_notifier(device, root);
 	device_set_wakeup_capable(root->bus->bridge, device->wakeup.flags.valid);
 
 	if (hotadd) {
@@ -731,7 +730,6 @@ static void acpi_pci_root_remove(struct acpi_device *device)
 	pci_stop_root_bus(root->bus);
 
 	device_set_wakeup_capable(root->bus->bridge, false);
-	pci_acpi_remove_bus_pm_notifier(device);
 
 	pci_remove_root_bus(root->bus);
 

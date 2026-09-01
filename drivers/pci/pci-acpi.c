@@ -746,64 +746,6 @@ bool shpchp_is_native(struct pci_dev *bridge)
 	return bridge->shpc_managed;
 }
 
-/**
- * pci_acpi_wake_bus - Root bus wakeup notification fork function.
- * @context: Device wakeup context.
- */
-static void pci_acpi_wake_bus(struct acpi_device_wakeup_context *context)
-{
-	pci_pme_wakeup_bus(to_pci_host_bridge(context->dev)->bus);
-}
-
-/**
- * pci_acpi_wake_dev - PCI device wakeup notification work function.
- * @context: Device wakeup context.
- */
-static void pci_acpi_wake_dev(struct acpi_device_wakeup_context *context)
-{
-	struct pci_dev *pci_dev;
-
-	pci_dev = to_pci_dev(context->dev);
-
-	if (pci_dev->pme_poll)
-		pci_dev->pme_poll = false;
-
-	if (pci_dev->current_state == PCI_D3cold) {
-		pm_request_resume(&pci_dev->dev);
-		return;
-	}
-
-	/* Clear PME Status if set. */
-	if (pci_dev->pme_support)
-		pci_check_pme_status(pci_dev);
-
-	pm_request_resume(&pci_dev->dev);
-
-	pci_pme_wakeup_bus(pci_dev->subordinate);
-}
-
-/**
- * pci_acpi_add_root_pm_notifier - Register PM notifier for root PCI bus.
- * @dev: PCI root bridge ACPI device.
- * @root: PCI root corresponding to @dev.
- */
-acpi_status pci_acpi_add_root_pm_notifier(struct acpi_device *dev,
-					  struct acpi_pci_root *root)
-{
-	return acpi_add_pm_notifier(dev, root->bus->bridge, pci_acpi_wake_bus);
-}
-
-/**
- * pci_acpi_add_pm_notifier - Register PM notifier for given PCI device.
- * @dev: ACPI device to add the notifier for.
- * @pci_dev: PCI device to check for the PME status if an event is signaled.
- */
-acpi_status pci_acpi_add_pm_notifier(struct acpi_device *dev,
-				     struct pci_dev *pci_dev)
-{
-	return acpi_add_pm_notifier(dev, &pci_dev->dev, pci_acpi_wake_dev);
-}
-
 /*
  * _SxD returns the D-state with the highest power
  * (lowest D-state number) supported in the S-state "x".
@@ -1320,7 +1262,6 @@ void pci_acpi_setup(struct device *dev, struct acpi_device *adev)
 	pci_acpi_set_external_facing(pci_dev);
 	pci_acpi_add_edr_notifier(pci_dev);
 
-	pci_acpi_add_pm_notifier(adev, pci_dev);
 	if (!adev->wakeup.flags.valid)
 		return;
 
@@ -1346,7 +1287,6 @@ void pci_acpi_cleanup(struct device *dev, struct acpi_device *adev)
 	struct pci_dev *pci_dev = to_pci_dev(dev);
 
 	pci_acpi_remove_edr_notifier(pci_dev);
-	pci_acpi_remove_pm_notifier(adev);
 	if (adev->wakeup.flags.valid) {
 		acpi_device_power_remove_dependent(adev, dev);
 		if (pci_dev->bridge_d3)

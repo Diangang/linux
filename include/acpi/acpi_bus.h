@@ -331,12 +331,6 @@ struct acpi_device_perf {
 /* Wakeup Management */
 struct acpi_device_wakeup_flags {
 	u8 valid:1;		/* Can successfully enable wakeup? */
-	u8 notifier_present:1;  /* Wake-up notify handler has been installed */
-};
-
-struct acpi_device_wakeup_context {
-	void (*func)(struct acpi_device_wakeup_context *context);
-	struct device *dev;
 };
 
 struct acpi_device_wakeup {
@@ -345,7 +339,6 @@ struct acpi_device_wakeup {
 	u64 sleep_state;
 	struct list_head resources;
 	struct acpi_device_wakeup_flags flags;
-	struct acpi_device_wakeup_context context;
 	struct wakeup_source *ws;
 	int prepare_count;
 	int enable_count;
@@ -761,16 +754,6 @@ acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip)
 	return 0;
 }
 
-static inline acpi_status acpi_add_pm_notifier(struct acpi_device *adev,
-					       struct device *dev,
-					       void (*func)(struct acpi_device_wakeup_context *context))
-{
-	return AE_SUPPORT;
-}
-static inline acpi_status acpi_remove_pm_notifier(struct acpi_device *adev)
-{
-	return AE_SUPPORT;
-}
 static inline bool acpi_pm_device_can_wakeup(struct device *dev)
 {
 	return false;

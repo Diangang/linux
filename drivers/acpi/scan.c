@@ -1002,8 +1002,6 @@ static bool acpi_wakeup_gpe_init(struct acpi_device *device)
 	const struct acpi_device_id *match;
 	acpi_status status;
 
-	wakeup->flags.notifier_present = 0;
-
 	match = acpi_match_acpi_device(button_device_ids, device);
 	if (match && wakeup->sleep_state == ACPI_STATE_S5)
 		wakeup->sleep_state = ACPI_STATE_S4;
