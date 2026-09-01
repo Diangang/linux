@@ -219,8 +219,6 @@ static bool readers_active_check(struct percpu_rw_semaphore *sem)
 
 void __sched percpu_down_write(struct percpu_rw_semaphore *sem)
 {
-	bool contended = false;
-
 	might_sleep();
 	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
 
@@ -231,10 +229,8 @@ void __sched percpu_down_write(struct percpu_rw_semaphore *sem)
 	 * Try set sem->block; this provides writer-writer exclusion.
 	 * Having sem->block set makes new readers block.
 	 */
-	if (!__percpu_down_write_trylock(sem)) {
+	if (!__percpu_down_write_trylock(sem))
 		percpu_rwsem_wait(sem, /* .reader = */ false, false);
-		contended = true;
-	}
 
 	/* smp_mb() implied by __percpu_down_write_trylock() on success -- D matches A */
 
