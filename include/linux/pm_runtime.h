@@ -9,10 +9,7 @@
 #define _LINUX_PM_RUNTIME_H
 
 #include <linux/device.h>
-#include <linux/notifier.h>
 #include <linux/pm.h>
-
-#include <linux/jiffies.h>
 
 /* Runtime PM flag argument bits */
 #define RPM_ASYNC		0x01	/* Request is asynchronous */
