@@ -12,7 +12,6 @@
 #include <linux/io.h>
 #include <linux/pm.h>
 #include <linux/pm_runtime.h>
-#include <linux/pm_domain.h>
 #include <linux/amba/bus.h>
 #include <linux/sizes.h>
 #include <linux/limits.h>
@@ -138,16 +137,10 @@ static int amba_read_periphid(struct amba_device *dev)
 	void __iomem *tmp;
 	int i, ret;
 
-	ret = dev_pm_domain_attach(&dev->dev, PD_FLAG_ATTACH_POWER_ON);
-	if (ret) {
-		dev_dbg(&dev->dev, "can't get PM domain: %d\n", ret);
-		goto err_out;
-	}
-
 	ret = amba_get_enable_pclk(dev);
 	if (ret) {
 		dev_dbg(&dev->dev, "can't get pclk: %d\n", ret);
-		goto err_pm;
+		goto err_out;
 	}
 
 	/*
@@ -199,8 +192,6 @@ static int amba_read_periphid(struct amba_device *dev)
 
 err_clk:
 	amba_put_disable_pclk(dev);
-err_pm:
-	dev_pm_domain_detach(&dev->dev, true);
 err_out:
 	return ret;
 }
@@ -289,11 +280,6 @@ static int amba_probe(struct device *dev)
 
 		ret = of_clk_set_defaults(dev->of_node, false);
 		if (ret < 0)
-			break;
-
-		ret = dev_pm_domain_attach(dev, PD_FLAG_ATTACH_POWER_ON |
-						PD_FLAG_DETACH_POWER_OFF);
-		if (ret)
 			break;
 
 		ret = amba_get_enable_pclk(pcdev);
