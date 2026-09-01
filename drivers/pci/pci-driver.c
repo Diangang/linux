@@ -14,7 +14,6 @@
 #include <linux/sched.h>
 #include <linux/sched/isolation.h>
 #include <linux/cpu.h>
-#include <linux/pm_runtime.h>
 #include <linux/suspend.h>
 #include <linux/of_device.h>
 #include <linux/acpi.h>
@@ -309,23 +308,12 @@ static int local_pci_probe(struct drv_dev_and_id *ddi)
 	struct device *dev = &pci_dev->dev;
 	int rc;
 
-	/*
-	 * Unbound PCI devices are always put in D0, regardless of
-	 * runtime PM status.  During probe, the device is set to
-	 * active and the usage count is incremented.  If the driver
-	 * supports runtime PM, it should call pm_runtime_put_noidle(),
-	 * or any other runtime PM helper function decrementing the usage
-	 * count, in its probe routine and pm_runtime_get_noresume() in
-	 * its remove routine.
-	 */
-	pm_runtime_get_sync(dev);
 	pci_dev->driver = pci_drv;
 	rc = pci_drv->probe(pci_dev, ddi->id);
 	if (!rc)
 		return rc;
 	if (rc < 0) {
 		pci_dev->driver = NULL;
-		pm_runtime_put_sync(dev);
 		return rc;
 	}
 	/*
@@ -480,23 +468,11 @@ static void pci_device_remove(struct device *dev)
 	struct pci_driver *drv = pci_dev->driver;
 
 	if (drv->remove) {
-		pm_runtime_get_sync(dev);
-		/*
-		 * If the driver provides a .runtime_idle() callback and it has
-		 * started to run already, it may continue to run in parallel
-		 * with the code below, so wait until all of the runtime PM
-		 * activity has completed.
-		 */
-		pm_runtime_barrier(dev);
 		drv->remove(pci_dev);
-		pm_runtime_put_noidle(dev);
 	}
 	pcibios_free_irq(pci_dev);
 	pci_dev->driver = NULL;
 	pci_iov_remove(pci_dev);
-
-	/* Undo the runtime PM settings in local_pci_probe() */
-	pm_runtime_put_sync(dev);
 
 	/*
 	 * If the device is still on, set the power state as "unknown",
@@ -521,8 +497,6 @@ static void pci_device_shutdown(struct device *dev)
 {
 	struct pci_dev *pci_dev = to_pci_dev(dev);
 	struct pci_driver *drv = pci_dev->driver;
-
-	pm_runtime_resume(dev);
 
 	if (drv && drv->shutdown)
 		drv->shutdown(pci_dev);
