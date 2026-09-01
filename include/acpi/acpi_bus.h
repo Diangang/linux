@@ -657,8 +657,6 @@ int acpi_device_power_add_dependent(struct acpi_device *adev,
 void acpi_device_power_remove_dependent(struct acpi_device *adev,
 					struct device *dev);
 
-static inline bool acpi_bus_can_wakeup(acpi_handle handle) { return false; }
-
 void acpi_scan_lock_acquire(void);
 void acpi_scan_lock_release(void);
 void acpi_lock_hp_context(void);
@@ -756,10 +754,6 @@ struct acpi_pci_root *acpi_pci_find_root(acpi_handle handle);
 int acpi_enable_wakeup_device_power(struct acpi_device *dev, int state);
 int acpi_disable_wakeup_device_power(struct acpi_device *dev);
 
-static inline bool acpi_quirk_skip_acpi_ac_and_battery(void)
-{
-	return false;
-}
 static inline int
 acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip)
 {
@@ -767,18 +761,6 @@ acpi_quirk_skip_serdev_enumeration(struct device *controller_parent, bool *skip)
 	return 0;
 }
 
-static inline bool acpi_quirk_skip_i2c_client_enumeration(struct acpi_device *adev)
-{
-	return false;
-}
-static inline bool acpi_quirk_skip_gpio_event_handlers(void)
-{
-	return false;
-}
-
-static inline void acpi_pm_wakeup_event(struct device *dev)
-{
-}
 static inline acpi_status acpi_add_pm_notifier(struct acpi_device *adev,
 					       struct device *dev,
 					       void (*func)(struct acpi_device_wakeup_context *context))
@@ -813,18 +795,6 @@ static inline u32 acpi_target_system_state(void) { return ACPI_STATE_S0; }
 static inline bool acpi_device_power_manageable(struct acpi_device *adev)
 {
 	return adev->flags.power_manageable;
-}
-
-static inline bool acpi_device_can_wakeup(struct acpi_device *adev)
-{
-	return adev->wakeup.flags.valid;
-}
-
-static inline bool acpi_device_can_poweroff(struct acpi_device *adev)
-{
-	return adev->power.states[ACPI_STATE_D3_COLD].flags.valid ||
-		((acpi_gbl_FADT.header.revision < 6) &&
-		adev->power.states[ACPI_STATE_D3_HOT].flags.explicit_set);
 }
 
 int acpi_dev_uid_to_integer(struct acpi_device *adev, u64 *integer);
