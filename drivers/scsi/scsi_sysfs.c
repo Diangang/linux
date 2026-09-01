@@ -1257,8 +1257,6 @@ static int scsi_target_add(struct scsi_target *starget)
 	transport_add_device(&starget->dev);
 	starget->state = STARGET_RUNNING;
 
-	pm_runtime_set_active(&starget->dev);
-	pm_runtime_enable(&starget->dev);
 	device_enable_async_suspend(&starget->dev);
 
 	return 0;
@@ -1286,14 +1284,6 @@ int scsi_sysfs_add_sdev(struct scsi_device *sdev)
 	transport_configure_device(&starget->dev);
 
 	device_enable_async_suspend(&sdev->sdev_gendev);
-	scsi_autopm_get_target(starget);
-	pm_runtime_set_active(&sdev->sdev_gendev);
-	if (!sdev->rpm_autosuspend)
-		pm_runtime_forbid(&sdev->sdev_gendev);
-	pm_runtime_enable(&sdev->sdev_gendev);
-	scsi_autopm_put_target(starget);
-
-	scsi_autopm_get_device(sdev);
 
 	scsi_dh_add_device(sdev);
 
@@ -1315,7 +1305,6 @@ int scsi_sysfs_add_sdev(struct scsi_device *sdev)
 	transport_add_device(&sdev->sdev_gendev);
 	sdev->is_visible = 1;
 
-	scsi_autopm_put_device(sdev);
 	return error;
 }
 

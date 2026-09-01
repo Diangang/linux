@@ -3963,7 +3963,6 @@ static int sd_probe(struct scsi_device *sdp)
 	int index;
 	int error;
 
-	scsi_autopm_get_device(sdp);
 	error = -ENODEV;
 	if (sdp->type != TYPE_DISK &&
 	    sdp->type != TYPE_ZBC &&
@@ -4081,7 +4080,6 @@ static int sd_probe(struct scsi_device *sdp)
 
 	sd_printk(KERN_NOTICE, sdkp, "Attached SCSI %sdisk\n",
 		  sdp->removable ? "removable " : "");
-	scsi_autopm_put_device(sdp);
 
 	return 0;
 
@@ -4092,7 +4090,6 @@ static int sd_probe(struct scsi_device *sdp)
  out_free:
 	kfree(sdkp);
  out:
-	scsi_autopm_put_device(sdp);
 	return error;
 }
 
@@ -4177,9 +4174,6 @@ static void sd_shutdown(struct scsi_device *sdp)
 	if (!sdkp)
 		return;         /* this can happen */
 
-	if (pm_runtime_suspended(dev))
-		return;
-
 	if (sdkp->WCE && sdkp->media_present) {
 		sd_printk(KERN_NOTICE, sdkp, "Synchronizing SCSI cache\n");
 		sd_sync_cache(sdkp);
@@ -4213,8 +4207,6 @@ static void sd_remove(struct scsi_device *sdp)
 {
 	struct device *dev = &sdp->sdev_gendev;
 	struct scsi_disk *sdkp = dev_get_drvdata(dev);
-
-	scsi_autopm_get_device(sdkp->device);
 
 	device_del(&sdkp->disk_dev);
 	del_gendisk(sdkp->disk);

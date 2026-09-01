@@ -2310,14 +2310,6 @@ int scsi_error_handler(void *data)
 		 * what we need to do to get it up and online again (if we can).
 		 * If we fail, we end up taking the thing offline.
 		 */
-		if (!shost->eh_noresume && scsi_autopm_get_host(shost) != 0) {
-			SCSI_LOG_ERROR_RECOVERY(1,
-				shost_printk(KERN_ERR, shost,
-					     "scsi_eh_%d: unable to autoresume\n",
-					     shost->host_no));
-			continue;
-		}
-
 		if (shost->transportt->eh_strategy_handler)
 			shost->transportt->eh_strategy_handler(shost);
 		else
@@ -2334,8 +2326,6 @@ int scsi_error_handler(void *data)
 		 * which are still online.
 		 */
 		scsi_restart_operations(shost);
-		if (!shost->eh_noresume)
-			scsi_autopm_put_host(shost);
 	}
 	__set_current_state(TASK_RUNNING);
 
@@ -2435,14 +2425,11 @@ scsi_ioctl_reset(struct scsi_device *dev, int __user *arg)
 	if (error)
 		return error;
 
-	if (scsi_autopm_get_host(shost) < 0)
-		return -EIO;
-
 	error = -EIO;
 	rq = kzalloc(sizeof(struct request) + sizeof(struct scsi_cmnd) +
 			shost->hostt->cmd_size, GFP_KERNEL);
 	if (!rq)
-		goto out_put_autopm_host;
+		goto out;
 	blk_rq_init(NULL, rq);
 
 	scmd = (struct scsi_cmnd *)(rq + 1);
@@ -2508,8 +2495,7 @@ scsi_ioctl_reset(struct scsi_device *dev, int __user *arg)
 
 	kfree(rq);
 
-out_put_autopm_host:
-	scsi_autopm_put_host(shost);
+out:
 	return error;
 }
 

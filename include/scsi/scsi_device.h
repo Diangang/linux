@@ -245,8 +245,6 @@ struct scsi_device {
 	unsigned broken_fua:1;		/* Don't set FUA bit */
 	unsigned lun_in_cdb:1;		/* Store LUN bits in CDB[1] */
 	unsigned unmap_limit_for_ws:1;	/* Use the UNMAP limit for WRITE SAME */
-	unsigned rpm_autosuspend:1;	/* Enable runtime autosuspend at device
-					 * creation time */
 	unsigned ignore_media_change:1; /* Ignore MEDIA CHANGE on resume */
 	unsigned silence_suspend:1;	/* Do not print runtime PM related messages */
 	unsigned no_vpd_size:1;		/* No VPD size reported in header */
@@ -569,9 +567,6 @@ extern void sdev_enable_disk_events(struct scsi_device *sdev);
 extern int scsi_vpd_lun_id(struct scsi_device *, char *, size_t);
 extern int scsi_vpd_lun_serial(struct scsi_device *, char *, size_t);
 extern int scsi_vpd_tpg_id(struct scsi_device *, int *);
-
-static inline int scsi_autopm_get_device(struct scsi_device *d) { return 0; }
-static inline void scsi_autopm_put_device(struct scsi_device *d) {}
 
 static inline int __must_check scsi_device_reprobe(struct scsi_device *sdev)
 {

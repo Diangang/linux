@@ -36,13 +36,10 @@ static inline int pm_runtime_get_if_active(struct device *dev)
 static inline int __pm_runtime_set_status(struct device *dev,
 					    unsigned int status) { return 0; }
 static inline void pm_runtime_barrier(struct device *dev) {}
-static inline void pm_runtime_enable(struct device *dev) {}
-static inline void __pm_runtime_disable(struct device *dev, bool c) {}
 static inline void pm_runtime_forbid(struct device *dev) {}
 
 static inline void pm_runtime_get_noresume(struct device *dev) {}
 static inline void pm_runtime_put_noidle(struct device *dev) {}
-static inline bool pm_runtime_suspended(struct device *dev) { return false; }
 static inline bool pm_runtime_active(struct device *dev) { return true; }
 static inline bool pm_runtime_enabled(struct device *dev) { return false; }
 
@@ -243,42 +240,6 @@ static inline int pm_runtime_put_sync(struct device *dev)
 static inline int pm_runtime_set_active(struct device *dev)
 {
 	return __pm_runtime_set_status(dev, RPM_ACTIVE);
-}
-
-/**
- * pm_runtime_set_suspended - Set runtime PM status to "suspended".
- * @dev: Target device.
- *
- * Set the runtime PM status of @dev to %RPM_SUSPENDED and ensure that
- * dependencies of it will be taken into account.
- *
- * It is not valid to call this function for devices with runtime PM enabled.
- */
-static inline int pm_runtime_set_suspended(struct device *dev)
-{
-	return __pm_runtime_set_status(dev, RPM_SUSPENDED);
-}
-
-/**
- * pm_runtime_disable - Disable runtime PM for a device.
- * @dev: Target device.
- *
- * Prevent the runtime PM framework from working with @dev by incrementing its
- * "disable" counter.
- *
- * If the counter is zero when this function runs and there is a pending runtime
- * resume request for @dev, it will be resumed.  If the counter is still zero at
- * that point, all of the pending runtime PM requests for @dev will be canceled
- * and all runtime PM operations in progress involving it will be waited for to
- * complete.
- *
- * For each invocation of this function for @dev, there must be a matching
- * pm_runtime_enable() call, so that runtime PM is eventually enabled for it
- * again.
- */
-static inline void pm_runtime_disable(struct device *dev)
-{
-	__pm_runtime_disable(dev, true);
 }
 
 #endif

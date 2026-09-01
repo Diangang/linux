@@ -176,7 +176,6 @@ void scsi_remove_host(struct Scsi_Host *shost)
 		}
 	spin_unlock_irqrestore(shost->host_lock, flags);
 
-	scsi_autopm_get_host(shost);
 	flush_workqueue(shost->tmf_work_q);
 	scsi_forget_host(shost);
 	mutex_unlock(&shost->scan_mutex);
@@ -264,19 +263,11 @@ int scsi_add_host_with_dma(struct Scsi_Host *shost, struct device *dev,
 	kref_init(&shost->tagset_refcnt);
 	init_completion(&shost->tagset_freed);
 
-	/*
-	 * Increase usage count temporarily here so that calling
-	 * scsi_autopm_put_host() will trigger runtime idle if there is
-	 * nothing else preventing suspending the device.
-	 */
-	pm_runtime_get_noresume(&shost->shost_gendev);
-	pm_runtime_set_active(&shost->shost_gendev);
-	pm_runtime_enable(&shost->shost_gendev);
 	device_enable_async_suspend(&shost->shost_gendev);
 
 	error = device_add(&shost->shost_gendev);
 	if (error)
-		goto out_disable_runtime_pm;
+		goto out_disable_async_suspend;
 
 	scsi_host_set_state(shost, SHOST_RUNNING);
 	get_device(shost->shost_gendev.parent);
@@ -322,7 +313,6 @@ int scsi_add_host_with_dma(struct Scsi_Host *shost, struct device *dev,
 	}
 
 	scsi_proc_host_add(shost);
-	scsi_autopm_put_host(shost);
 	return error;
 
 	/*
@@ -338,11 +328,8 @@ int scsi_add_host_with_dma(struct Scsi_Host *shost, struct device *dev,
 	 */
 	put_device(&shost->shost_dev);
 	device_del(&shost->shost_gendev);
- out_disable_runtime_pm:
+ out_disable_async_suspend:
 	device_disable_async_suspend(&shost->shost_gendev);
-	pm_runtime_disable(&shost->shost_gendev);
-	pm_runtime_set_suspended(&shost->shost_gendev);
-	pm_runtime_put_noidle(&shost->shost_gendev);
 	kref_put(&shost->tagset_refcnt, scsi_mq_free_tags);
  fail:
 	return error;

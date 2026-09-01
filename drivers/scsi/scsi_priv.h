@@ -147,12 +147,6 @@ extern const struct attribute_group *scsi_shost_groups[];
 static inline void scsi_netlink_init(void) {}
 static inline void scsi_netlink_exit(void) {}
 
-/* scsi_pm.c */
-static inline void scsi_autopm_get_target(struct scsi_target *t) {}
-static inline void scsi_autopm_put_target(struct scsi_target *t) {}
-static inline int scsi_autopm_get_host(struct Scsi_Host *h) { return 0; }
-static inline void scsi_autopm_put_host(struct Scsi_Host *h) {}
-
 /* scsi_dh.c */
 static inline void scsi_dh_add_device(struct scsi_device *sdev) { }
 static inline void scsi_dh_release_device(struct scsi_device *sdev) { }
