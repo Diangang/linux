@@ -25,7 +25,6 @@
 #include <linux/capability.h>
 #include <linux/security.h>
 #include <linux/slab.h>
-#include <linux/pm_runtime.h>
 #include <linux/msi.h>
 #include <linux/of.h>
 #include <linux/aperture.h>
@@ -1345,9 +1344,7 @@ static ssize_t reset_store(struct device *dev, struct device_attribute *attr,
 	if (val != 1)
 		return -EINVAL;
 
-	pm_runtime_get_sync(dev);
 	result = pci_reset_function(pdev);
-	pm_runtime_put(dev);
 	if (result < 0)
 		return result;
 
@@ -1424,10 +1421,6 @@ static ssize_t reset_method_store(struct device *dev,
 		pci_warn(pdev, "All device reset methods disabled by user");
 		return count;
 	}
-
-	PM_RUNTIME_ACQUIRE(dev, pm);
-	if (PM_RUNTIME_ACQUIRE_ERR(&pm))
-		return -ENXIO;
 
 	if (sysfs_streq(buf, "default")) {
 		pci_init_reset_methods(pdev);

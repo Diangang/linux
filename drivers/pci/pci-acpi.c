@@ -17,7 +17,6 @@
 #include <linux/module.h>
 #include <linux/pci-acpi.h>
 #include <linux/pci-ecam.h>
-#include <linux/pm_runtime.h>
 #include <linux/pm_qos.h>
 #include <linux/rwsem.h>
 #include "pci.h"

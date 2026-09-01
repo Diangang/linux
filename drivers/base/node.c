@@ -18,7 +18,6 @@
 #include <linux/nodemask.h>
 #include <linux/cpu.h>
 #include <linux/device.h>
-#include <linux/pm_runtime.h>
 #include <linux/swap.h>
 #include <linux/slab.h>
 #include <linux/memblock.h>

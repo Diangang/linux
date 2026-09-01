@@ -14,7 +14,6 @@
 #include <linux/types.h>
 #include <linux/mutex.h>
 #include <linux/pm.h>
-#include <linux/pm_runtime.h>
 #include <linux/pci.h>
 #include <linux/pci-acpi.h>
 #include <linux/dmar.h>

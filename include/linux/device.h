@@ -360,7 +360,7 @@ enum device_link_state {
  * STATELESS: The core will not remove this link automatically.
  * AUTOREMOVE_CONSUMER: Remove the link automatically on consumer driver unbind.
  * PM_RUNTIME: If set, the runtime PM framework will use this link.
- * RPM_ACTIVE: Run pm_runtime_get_sync() on the supplier during link creation.
+ * RPM_ACTIVE: Track the supplier as active during link creation.
  * AUTOREMOVE_SUPPLIER: Remove the link automatically on supplier driver unbind.
  * AUTOPROBE_CONSUMER: Probe consumer driver automatically after supplier binds.
  * MANAGED: The core tracks presence of supplier/consumer drivers (internal).

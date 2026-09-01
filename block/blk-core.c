@@ -32,7 +32,6 @@
 #include <linux/list_sort.h>
 #include <linux/delay.h>
 #include <linux/ratelimit.h>
-#include <linux/pm_runtime.h>
 #include <linux/t10-pi.h>
 #include <linux/debugfs.h>
 #include <linux/part_stat.h>

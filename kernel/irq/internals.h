@@ -8,7 +8,6 @@
  */
 #include <linux/irqdesc.h>
 #include <linux/kernel_stat.h>
-#include <linux/pm_runtime.h>
 #include <linux/sched/clock.h>
 
 #ifdef CONFIG_SPARSE_IRQ

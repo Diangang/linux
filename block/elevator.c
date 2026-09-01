@@ -34,7 +34,6 @@
 #include <linux/blktrace_api.h>
 #include <linux/hash.h>
 #include <linux/uaccess.h>
-#include <linux/pm_runtime.h>
 
 #include "elevator.h"
 #include "blk.h"
