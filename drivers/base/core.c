@@ -25,7 +25,6 @@
 #include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/sched/mm.h>
 #include <linux/sched/signal.h>
 #include <linux/slab.h>
@@ -504,19 +503,6 @@ static void device_link_release_fn(struct work_struct *work)
 	/* Ensure that all references to the link object have been dropped. */
 	device_link_synchronize_removal();
 
-	pm_runtime_release_supplier(link);
-	/*
-	 * If supplier_preactivated is set, the link has been dropped between
-	 * the pm_runtime_get_suppliers() and pm_runtime_put_suppliers() calls
-	 * in __driver_probe_device().  In that case, drop the supplier's
-	 * PM-runtime usage counter to remove the reference taken by
-	 * pm_runtime_get_suppliers().
-	 */
-	if (link->supplier_preactivated)
-		pm_runtime_put_noidle(link->supplier);
-
-	pm_request_idle(link->supplier);
-
 	put_device(link->consumer);
 	put_device(link->supplier);
 	kfree(link);
@@ -736,13 +722,6 @@ struct device_link *device_link_add(struct device *consumer,
 		      DL_FLAG_AUTOREMOVE_SUPPLIER)))
 		return NULL;
 
-	if (flags & DL_FLAG_PM_RUNTIME && flags & DL_FLAG_RPM_ACTIVE) {
-		if (pm_runtime_get_sync(supplier) < 0) {
-			pm_runtime_put_noidle(supplier);
-			return NULL;
-		}
-	}
-
 	if (!(flags & DL_FLAG_STATELESS))
 		flags |= DL_FLAG_MANAGED;
 
@@ -796,7 +775,6 @@ struct device_link *device_link_add(struct device *consumer,
 
 		if (flags & DL_FLAG_PM_RUNTIME) {
 			if (!device_link_test(link, DL_FLAG_PM_RUNTIME)) {
-				pm_runtime_new_link(consumer);
 				link->flags |= DL_FLAG_PM_RUNTIME;
 			}
 			if (flags & DL_FLAG_RPM_ACTIVE)
@@ -873,7 +851,6 @@ struct device_link *device_link_add(struct device *consumer,
 		if (flags & DL_FLAG_RPM_ACTIVE)
 			refcount_inc(&link->rpm_active);
 
-		pm_runtime_new_link(consumer);
 	}
 
 	/* Determine the initial link state. */
@@ -881,14 +858,6 @@ struct device_link *device_link_add(struct device *consumer,
 		link->status = DL_STATE_NONE;
 	else
 		device_link_init_status(link, consumer, supplier);
-
-	/*
-	 * Some callers expect the link creation during consumer driver probe to
-	 * resume the supplier even without DL_FLAG_RPM_ACTIVE.
-	 */
-	if (link->status == DL_STATE_CONSUMER_PROBE &&
-	    flags & DL_FLAG_PM_RUNTIME)
-		pm_runtime_resume(supplier);
 
 	list_add_tail_rcu(&link->s_node, &supplier->links.consumers);
 	list_add_tail_rcu(&link->c_node, &consumer->links.suppliers);
@@ -916,9 +885,6 @@ out:
 	device_pm_unlock();
 	device_links_write_unlock();
 
-	if ((flags & DL_FLAG_PM_RUNTIME && flags & DL_FLAG_RPM_ACTIVE) && !link)
-		pm_runtime_put(supplier);
-
 	return link;
 }
 EXPORT_SYMBOL_GPL(device_link_add);
@@ -929,8 +895,6 @@ static void __device_link_del(struct kref *kref)
 
 	dev_dbg(link->consumer, "Dropping the link to %s\n",
 		dev_name(link->supplier));
-
-	pm_runtime_drop_link(link);
 
 	device_link_remove_from_lists(link);
 	device_unregister(&link->link_dev);
@@ -1743,7 +1707,6 @@ static void fw_devlink_relax_link(struct device_link *link)
 	if (device_link_flag_is_sync_state_only(link->flags))
 		return;
 
-	pm_runtime_drop_link(link);
 	link->flags = DL_FLAG_MANAGED | FW_DEVLINK_FLAGS_PERMISSIVE;
 	dev_dbg(link->consumer, "Relaxing link with %s\n",
 		dev_name(link->supplier));
@@ -4812,10 +4775,6 @@ void device_shutdown(void)
 		if (parent)
 			device_lock(parent);
 		device_lock(dev);
-
-		/* Don't allow any more runtime suspends */
-		pm_runtime_get_noresume(dev);
-		pm_runtime_barrier(dev);
 
 		if (dev->class && dev->class->shutdown_pre) {
 			if (initcall_debug)
