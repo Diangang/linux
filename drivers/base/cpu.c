@@ -423,14 +423,6 @@ static const struct attribute_group *cpu_root_attr_groups[] = {
 	NULL,
 };
 
-bool cpu_is_hotpluggable(unsigned int cpu)
-{
-	struct device *dev = get_cpu_device(cpu);
-	return dev && container_of(dev, struct cpu, dev)->hotpluggable
-		&& tick_nohz_cpu_hotpluggable(cpu);
-}
-EXPORT_SYMBOL_GPL(cpu_is_hotpluggable);
-
 #ifdef CONFIG_GENERIC_CPU_DEVICES
 DEFINE_PER_CPU(struct cpu, cpu_devices);
 
