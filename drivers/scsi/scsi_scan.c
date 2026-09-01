@@ -60,12 +60,6 @@
 #define SCSI_REPORT_LUNS_TIMEOUT (30*HZ)
 
 /*
- * Prefix values for the SCSI id's (stored in sysfs name field)
- */
-#define SCSI_UID_SER_NUM 'S'
-#define SCSI_UID_UNKNOWN 'Z'
-
-/*
  * Return values of some of the scanning functions.
  *
  * SCSI_SCAN_NO_RESPONSE: no valid response received from the target, this
