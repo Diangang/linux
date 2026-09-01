@@ -17,7 +17,7 @@ endef
 
 ###
 # Comparison macros.
-# Usage: $(call test-lt, $(CONFIG_LLD_VERSION), 150000)
+# Usage: $(call test-lt, $(CONFIG_GCC_VERSION), 150000)
 #
 # Use $(intcmp ...) if supported. (Make >= 4.4)
 # Otherwise, fall back to the 'test' shell command.

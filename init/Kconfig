@@ -27,10 +27,6 @@ config GCC_VERSION
 config LD_IS_BFD
 	def_bool $(success,test "$(ld-name)" = BFD)
 
-config LLD_VERSION
-	int
-	default 0
-
 config RUSTC_VERSION
 	int
 	default $(rustc-version)
