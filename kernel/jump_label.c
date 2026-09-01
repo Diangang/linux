@@ -412,26 +412,6 @@ static inline struct jump_entry *static_key_entries(struct static_key *key)
 	return (struct jump_entry *)(key->type & ~JUMP_TYPE_MASK);
 }
 
-static inline bool static_key_type(struct static_key *key)
-{
-	return key->type & JUMP_TYPE_TRUE;
-}
-
-static inline bool static_key_linked(struct static_key *key)
-{
-	return key->type & JUMP_TYPE_LINKED;
-}
-
-static inline void static_key_clear_linked(struct static_key *key)
-{
-	key->type &= ~JUMP_TYPE_LINKED;
-}
-
-static inline void static_key_set_linked(struct static_key *key)
-{
-	key->type |= JUMP_TYPE_LINKED;
-}
-
 /***
  * A 'struct static_key' uses a union such that it either points directly
  * to a table of 'struct jump_entry' or to a linked list of modules which in
