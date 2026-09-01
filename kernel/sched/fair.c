@@ -6713,7 +6713,6 @@ struct task_struct *
 pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	__must_hold(__rq_lockp(rq))
 {
-	struct sched_entity *se;
 	struct task_struct *p;
 	int new_tasks;
 
@@ -6721,7 +6720,6 @@ again:
 	p = pick_task_fair(rq, rf);
 	if (!p)
 		goto idle;
-	se = &p->se;
 
 	put_prev_set_next_task(rq, prev, p);
 	return p;
