@@ -27,7 +27,6 @@ acpi-y				+= device_sysfs.o device_pm.o
 acpi-y				+= bus.o glue.o
 acpi-y				+= scan.o
 acpi-y				+= resource.o
-acpi-y				+= processor_core.o
 acpi-$(CONFIG_PCI)		+= pci_root.o pci_link.o pci_irq.o
 acpi-y				+= power.o
 acpi-y				+= sysfs.o
