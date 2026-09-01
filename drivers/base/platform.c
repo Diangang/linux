@@ -1326,11 +1326,6 @@ static void platform_dma_cleanup(struct device *dev)
 		iommu_device_unuse_default_domain(dev);
 }
 
-static const struct dev_pm_ops platform_dev_pm_ops = {
-	SET_RUNTIME_PM_OPS(pm_generic_runtime_suspend, pm_generic_runtime_resume, NULL)
-	USE_PLATFORM_PM_SLEEP_OPS
-};
-
 const struct bus_type platform_bus_type = {
 	.name		= "platform",
 	.dev_groups	= platform_dev_groups,
@@ -1342,7 +1337,6 @@ const struct bus_type platform_bus_type = {
 	.shutdown	= platform_shutdown,
 	.dma_configure	= platform_dma_configure,
 	.dma_cleanup	= platform_dma_cleanup,
-	.pm		= &platform_dev_pm_ops,
 };
 EXPORT_SYMBOL_GPL(platform_bus_type);
 
