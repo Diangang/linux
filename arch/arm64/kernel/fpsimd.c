@@ -50,7 +50,6 @@
 #define FPEXC_OFF	(1 << 2)
 #define FPEXC_UFF	(1 << 3)
 #define FPEXC_IXF	(1 << 4)
-#define FPEXC_IDF	(1 << 7)
 
 /*
  * (Note: in this discussion, statements about FPSIMD apply equally to SVE.)
