@@ -243,7 +243,7 @@ __kmem_cache_alias(const char *name, unsigned int size, slab_flags_t flags,
 
 /**
  * __kmem_cache_create_args - Create a kmem cache.
- * @name: A string which is used in /proc/slabinfo to identify this cache.
+ * @name: A string which is used to identify this cache.
  * @object_size: The size of objects to be created in this cache.
  * @args: Additional arguments for the cache creation (see
  *        &struct kmem_cache_args).
@@ -275,17 +275,7 @@ struct kmem_cache *__kmem_cache_create_args(const char *name,
 	const char *cache_name;
 	int err;
 
-#ifdef CONFIG_SLUB_DEBUG
-	/*
-	 * If no slab_debug was enabled globally, the static key is not yet
-	 * enabled by setup_slub_debug(). Enable it if the cache is being
-	 * created with any of the debugging flags passed explicitly.
-	 */
-	if (flags & SLAB_DEBUG_FLAGS)
-		static_branch_enable(&slub_debug_enabled);
-#else
 	flags &= ~SLAB_DEBUG_FLAGS;
-#endif
 
 	/*
 	 * Caches with specific capacity are special enough. It's simpler to
@@ -346,8 +336,8 @@ EXPORT_SYMBOL(__kmem_cache_create_args);
 /**
  * kmem_buckets_create - Create a set of caches that handle dynamic sized
  *			 allocations via kmem_buckets_alloc()
- * @name: A prefix string which is used in /proc/slabinfo to identify this
- *	  cache. The individual caches with have their sizes as the suffix.
+ * @name: A prefix string which is used to identify this cache. The individual
+ *	  caches with have their sizes as the suffix.
  * @flags: SLAB flags (see kmem_cache_create() for details).
  * @useroffset: Starting offset within an allocation that may be copied
  *		to/from userspace.
@@ -817,143 +807,6 @@ gfp_t kmalloc_fix_flags(gfp_t flags)
 
 	return flags;
 }
-
-
-#ifdef CONFIG_SLUB_DEBUG
-#define SLABINFO_RIGHTS (0400)
-
-static void print_slabinfo_header(struct seq_file *m)
-{
-	/*
-	 * Output format version, so at least we can change it
-	 * without _too_ many complaints.
-	 */
-	seq_puts(m, "slabinfo - version: 2.1\n");
-	seq_puts(m, "# name            <active_objs> <num_objs> <objsize> <objperslab> <pagesperslab>");
-	seq_puts(m, " : tunables <limit> <batchcount> <sharedfactor>");
-	seq_puts(m, " : slabdata <active_slabs> <num_slabs> <sharedavail>");
-	seq_putc(m, '\n');
-}
-
-static void *slab_start(struct seq_file *m, loff_t *pos)
-{
-	mutex_lock(&slab_mutex);
-	return seq_list_start(&slab_caches, *pos);
-}
-
-static void *slab_next(struct seq_file *m, void *p, loff_t *pos)
-{
-	return seq_list_next(p, &slab_caches, pos);
-}
-
-static void slab_stop(struct seq_file *m, void *p)
-{
-	mutex_unlock(&slab_mutex);
-}
-
-static void cache_show(struct kmem_cache *s, struct seq_file *m)
-{
-	struct slabinfo sinfo;
-
-	memset(&sinfo, 0, sizeof(sinfo));
-	get_slabinfo(s, &sinfo);
-
-	seq_printf(m, "%-17s %6lu %6lu %6u %4u %4d",
-		   s->name, sinfo.active_objs, sinfo.num_objs, s->size,
-		   sinfo.objects_per_slab, (1 << sinfo.cache_order));
-
-	seq_printf(m, " : tunables %4u %4u %4u",
-		   sinfo.limit, sinfo.batchcount, sinfo.shared);
-	seq_printf(m, " : slabdata %6lu %6lu %6lu",
-		   sinfo.active_slabs, sinfo.num_slabs, sinfo.shared_avail);
-	seq_putc(m, '\n');
-}
-
-static int slab_show(struct seq_file *m, void *p)
-{
-	struct kmem_cache *s = list_entry(p, struct kmem_cache, list);
-
-	if (p == slab_caches.next)
-		print_slabinfo_header(m);
-	cache_show(s, m);
-	return 0;
-}
-
-void dump_unreclaimable_slab(void)
-{
-	struct kmem_cache *s;
-	struct slabinfo sinfo;
-
-	/*
-	 * Here acquiring slab_mutex is risky since we don't prefer to get
-	 * sleep in oom path. But, without mutex hold, it may introduce a
-	 * risk of crash.
-	 * Use mutex_trylock to protect the list traverse, dump nothing
-	 * without acquiring the mutex.
-	 */
-	if (!mutex_trylock(&slab_mutex)) {
-		pr_warn("excessive unreclaimable slab but cannot dump stats\n");
-		return;
-	}
-
-	pr_info("Unreclaimable slab info:\n");
-	pr_info("Name                      Used          Total\n");
-
-	list_for_each_entry(s, &slab_caches, list) {
-		if (s->flags & SLAB_RECLAIM_ACCOUNT)
-			continue;
-
-		get_slabinfo(s, &sinfo);
-
-		if (sinfo.num_objs > 0)
-			pr_info("%-17s %10luKB %10luKB\n", s->name,
-				(sinfo.active_objs * s->size) / 1024,
-				(sinfo.num_objs * s->size) / 1024);
-	}
-	mutex_unlock(&slab_mutex);
-}
-
-/*
- * slabinfo_op - iterator that generates /proc/slabinfo
- *
- * Output layout:
- * cache-name
- * num-active-objs
- * total-objs
- * object size
- * num-active-slabs
- * total-slabs
- * num-pages-per-slab
- * + further values on SMP and with statistics enabled
- */
-static const struct seq_operations slabinfo_op = {
-	.start = slab_start,
-	.next = slab_next,
-	.stop = slab_stop,
-	.show = slab_show,
-};
-
-static int slabinfo_open(struct inode *inode, struct file *file)
-{
-	return seq_open(file, &slabinfo_op);
-}
-
-static const struct proc_ops slabinfo_proc_ops = {
-	.proc_flags	= PROC_ENTRY_PERMANENT,
-	.proc_open	= slabinfo_open,
-	.proc_read	= seq_read,
-	.proc_lseek	= seq_lseek,
-	.proc_release	= seq_release,
-};
-
-static int __init slab_proc_init(void)
-{
-	proc_create("slabinfo", SLABINFO_RIGHTS, NULL, &slabinfo_proc_ops);
-	return 0;
-}
-module_init(slab_proc_init);
-
-#endif /* CONFIG_SLUB_DEBUG */
 
 /**
  * kfree_sensitive - Clear sensitive information in memory before freeing

@@ -98,12 +98,6 @@ menu "Networking Debugging"
 
 endmenu # "Networking Debugging"
 
-menu "Memory Debugging"
-
-source "mm/Kconfig.debug"
-
-endmenu # "Memory Debugging"
-
 menu "Debug Oops, Lockups and Hangs"
 
 config PANIC_TIMEOUT

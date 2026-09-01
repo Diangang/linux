@@ -49,7 +49,7 @@ enum _slab_flag_bits {
 
 /*
  * Flags to pass to kmem_cache_create().
- * The ones marked DEBUG need CONFIG_SLUB_DEBUG enabled, otherwise are no-op
+ * The ones marked DEBUG are no-op.
  */
 /* DEBUG: Perform (expensive) checks on alloc/free */
 #define SLAB_CONSISTENCY_CHECKS	__SLAB_FLAG_BIT(_SLAB_CONSISTENCY_CHECKS)
@@ -327,7 +327,7 @@ __kmem_cache_create(const char *name, unsigned int size, unsigned int align,
 /**
  * kmem_cache_create_usercopy - Create a kmem cache with a region suitable
  * for copying to userspace.
- * @name: A string which is used in /proc/slabinfo to identify this cache.
+ * @name: A string which is used to identify this cache.
  * @size: The size of objects to be created in this cache.
  * @align: The required alignment for the objects.
  * @flags: SLAB flags
@@ -375,7 +375,7 @@ __kmem_cache_default_args(const char *name, unsigned int size,
 
 /**
  * kmem_cache_create - Create a kmem cache.
- * @__name: A string which is used in /proc/slabinfo to identify this cache.
+ * @__name: A string which is used to identify this cache.
  * @__object_size: The size of objects to be created in this cache.
  * @__args: Optional arguments, see &struct kmem_cache_args. Passing %NULL
  *	    means defaults will be used for all the arguments.

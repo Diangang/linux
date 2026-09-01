@@ -392,53 +392,11 @@ void __kmem_cache_release(struct kmem_cache *);
 int __kmem_cache_shrink(struct kmem_cache *);
 void slab_kmem_cache_release(struct kmem_cache *);
 
-struct seq_file;
-struct file;
-
-struct slabinfo {
-	unsigned long active_objs;
-	unsigned long num_objs;
-	unsigned long active_slabs;
-	unsigned long num_slabs;
-	unsigned long shared_avail;
-	unsigned int limit;
-	unsigned int batchcount;
-	unsigned int shared;
-	unsigned int objects_per_slab;
-	unsigned int cache_order;
-};
-
-void get_slabinfo(struct kmem_cache *s, struct slabinfo *sinfo);
-
-#ifdef CONFIG_SLUB_DEBUG
-DECLARE_STATIC_KEY_FALSE(slub_debug_enabled);
-extern void print_tracking(struct kmem_cache *s, void *object);
-long validate_slab_cache(struct kmem_cache *s);
-static inline bool __slub_debug_enabled(void)
-{
-	return static_branch_unlikely(&slub_debug_enabled);
-}
-#else
 static inline void print_tracking(struct kmem_cache *s, void *object)
 {
 }
-static inline bool __slub_debug_enabled(void)
-{
-	return false;
-}
-#endif
-
-/*
- * Returns true if any of the specified slab_debug flags is enabled for the
- * cache. Use only for flags parsed by setup_slub_debug() as it also enables
- * the static key.
- */
 static inline bool kmem_cache_debug_flags(struct kmem_cache *s, slab_flags_t flags)
 {
-	if (IS_ENABLED(CONFIG_SLUB_DEBUG))
-		VM_WARN_ON_ONCE(!(flags & SLAB_DEBUG_FLAGS));
-	if (__slub_debug_enabled())
-		return s->flags & flags;
 	return false;
 }
 
@@ -463,13 +421,9 @@ static inline size_t large_kmalloc_size(const struct page *page)
 	return PAGE_SIZE << large_kmalloc_order(page);
 }
 
-#ifdef CONFIG_SLUB_DEBUG
-void dump_unreclaimable_slab(void);
-#else
 static inline void dump_unreclaimable_slab(void)
 {
 }
-#endif
 
 void ___cache_free(struct kmem_cache *cache, void *x, unsigned long addr);
 
@@ -527,9 +481,5 @@ static inline bool slub_debug_orig_size(struct kmem_cache *s)
 	return (kmem_cache_debug_flags(s, SLAB_STORE_USER) &&
 			(s->flags & SLAB_KMALLOC));
 }
-
-#ifdef CONFIG_SLUB_DEBUG
-void skip_orig_size_check(struct kmem_cache *s, const void *object);
-#endif
 
 #endif /* MM_SLAB_H */
