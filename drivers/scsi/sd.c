@@ -4218,54 +4218,12 @@ static void sd_remove(struct scsi_device *sdp)
 
 	device_del(&sdkp->disk_dev);
 	del_gendisk(sdkp->disk);
-	if (!sdkp->suspended)
-		sd_shutdown(sdp);
+	sd_shutdown(sdp);
 
 	put_disk(sdkp->disk);
 
 	if (sdp->sector_size > PAGE_SIZE)
 		sd_large_pool_destroy();
-}
-
-static inline bool sd_do_start_stop(struct scsi_device *sdev, bool runtime)
-{
-	return (sdev->manage_system_start_stop && !runtime) ||
-		(sdev->manage_runtime_start_stop && runtime);
-}
-
-static int sd_suspend_common(struct device *dev, bool runtime)
-{
-	struct scsi_disk *sdkp = dev_get_drvdata(dev);
-	int ret = 0;
-
-	if (!sdkp)	/* E.g.: runtime suspend following sd_remove() */
-		return 0;
-
-	if (sdkp->WCE && sdkp->media_present) {
-		if (!sdkp->device->silence_suspend)
-			sd_printk(KERN_NOTICE, sdkp, "Synchronizing SCSI cache\n");
-		ret = sd_sync_cache(sdkp);
-		/* ignore OFFLINE device */
-		if (ret == -ENODEV)
-			return 0;
-
-		if (ret)
-			return ret;
-	}
-
-	if (sd_do_start_stop(sdkp->device, runtime)) {
-		if (!sdkp->device->silence_suspend)
-			sd_printk(KERN_NOTICE, sdkp, "Stopping disk\n");
-		/* an error is not worth aborting a system sleep */
-		ret = sd_start_stop_device(sdkp, 0);
-		if (!runtime)
-			ret = 0;
-	}
-
-	if (!ret)
-		sdkp->suspended = true;
-
-	return ret;
 }
 
 static int sd_resume(struct device *dev)
