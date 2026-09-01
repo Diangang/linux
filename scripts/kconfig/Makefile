@@ -39,21 +39,12 @@ endif
 unexport CONFIG_
 
 config-prog	:= conf
-menuconfig-prog	:= mconf
-nconfig-prog	:= nconf
-gconfig-prog	:= gconf
-xconfig-prog	:= qconf
 
-define config_rule
-PHONY += $(1)
-$(1): $(obj)/$($(1)-prog)
-	$(Q)$$< $(silent) $(Kconfig)
+PHONY += config build_config
+config: $(obj)/$(config-prog)
+	$(Q)$< $(silent) $(Kconfig)
 
-PHONY += build_$(1)
-build_$(1): $(obj)/$($(1)-prog)
-endef
-
-$(foreach c, config menuconfig nconfig gconfig xconfig, $(eval $(call config_rule,$(c))))
+build_config: $(obj)/$(config-prog)
 
 PHONY += localmodconfig localyesconfig
 localyesconfig localmodconfig: $(obj)/conf
@@ -124,10 +115,6 @@ clean-files += tests/.cache
 help:
 	@echo  'Configuration targets:'
 	@echo  '  config	  - Update current config utilising a line-oriented program'
-	@echo  '  nconfig         - Update current config utilising a ncurses menu based program'
-	@echo  '  menuconfig	  - Update current config utilising a menu based program'
-	@echo  '  xconfig	  - Update current config utilising a Qt based front-end'
-	@echo  '  gconfig	  - Update current config utilising a GTK+ based front-end'
 	@echo  '  oldconfig	  - Update current config utilising a provided .config as base'
 	@echo  '  localmodconfig  - Update current config disabling modules not loaded'
 	@echo  '                    except those preserved by LMC_KEEP environment variable'
@@ -167,64 +154,3 @@ HOSTCFLAGS_parser.tab.o	:= -I $(src)
 # conf: Used for defconfig, oldconfig and related targets
 hostprogs	+= conf
 conf-objs	:= conf.o $(common-objs)
-
-# nconf: Used for the nconfig target based on ncurses
-hostprogs	+= nconf
-nconf-objs	:= nconf.o nconf.gui.o mnconf-common.o $(common-objs)
-
-HOSTLDLIBS_nconf       = $(call read-file, $(obj)/nconf-libs)
-HOSTCFLAGS_nconf.o     = $(call read-file, $(obj)/nconf-cflags)
-HOSTCFLAGS_nconf.gui.o = $(call read-file, $(obj)/nconf-cflags)
-
-$(obj)/nconf: | $(obj)/nconf-libs
-$(obj)/nconf.o $(obj)/nconf.gui.o: | $(obj)/nconf-cflags
-
-# mconf: Used for the menuconfig target based on lxdialog
-hostprogs	+= mconf
-lxdialog	:= $(addprefix lxdialog/, \
-		     checklist.o inputbox.o menubox.o textbox.o util.o yesno.o)
-mconf-objs	:= mconf.o $(lxdialog) mnconf-common.o $(common-objs)
-
-HOSTLDLIBS_mconf = $(call read-file, $(obj)/mconf-libs)
-$(foreach f, mconf.o $(lxdialog), \
-  $(eval HOSTCFLAGS_$f = $$(call read-file, $(obj)/mconf-cflags)))
-
-$(obj)/mconf: | $(obj)/mconf-libs
-$(addprefix $(obj)/, mconf.o $(lxdialog)): | $(obj)/mconf-cflags
-
-# qconf: Used for the xconfig target based on Qt
-hostprogs	+= qconf
-qconf-cxxobjs	:= qconf.o qconf-moc.o
-qconf-objs	:= $(common-objs)
-
-HOSTLDLIBS_qconf         = $(call read-file, $(obj)/qconf-libs)
-HOSTCXXFLAGS_qconf.o     = -std=c++11 -fPIC $(call read-file, $(obj)/qconf-cflags)
-HOSTCXXFLAGS_qconf-moc.o = -std=c++11 -fPIC $(call read-file, $(obj)/qconf-cflags)
-$(obj)/qconf: | $(obj)/qconf-libs
-$(obj)/qconf.o $(obj)/qconf-moc.o: | $(obj)/qconf-cflags
-
-quiet_cmd_moc = MOC     $@
-      cmd_moc = $(call read-file, $(obj)/qconf-bin)/moc $< -o $@
-
-$(obj)/qconf-moc.cc: $(src)/qconf.h FORCE | $(obj)/qconf-bin
-	$(call if_changed,moc)
-
-targets += qconf-moc.cc
-
-# gconf: Used for the gconfig target based on GTK+
-hostprogs	+= gconf
-gconf-objs	:= gconf.o $(common-objs)
-
-HOSTLDLIBS_gconf   = $(call read-file, $(obj)/gconf-libs)
-HOSTCFLAGS_gconf.o = $(call read-file, $(obj)/gconf-cflags)
-
-$(obj)/gconf: | $(obj)/gconf-libs
-$(obj)/gconf.o: | $(obj)/gconf-cflags
-
-# check if necessary packages are available, and configure build flags
-cmd_conf_cfg = $< $(addprefix $(obj)/$*conf-, cflags libs bin); touch $(obj)/$*conf-bin
-
-$(obj)/%conf-cflags $(obj)/%conf-libs $(obj)/%conf-bin: $(src)/%conf-cfg.sh
-	$(call cmd,conf_cfg)
-
-clean-files += *conf-cflags *conf-libs *conf-bin

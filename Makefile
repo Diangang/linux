@@ -827,7 +827,7 @@ $(KCONFIG_CONFIG):
 	@echo >&2 '*** Configuration file "$@" not found!'
 	@echo >&2 '***'
 	@echo >&2 '*** Please run some configurator (e.g. "make oldconfig" or'
-	@echo >&2 '*** "make menuconfig" or "make xconfig").'
+	@echo >&2 '*** "make config").'
 	@echo >&2 '***'
 	@/bin/false
 
@@ -1648,8 +1648,7 @@ endif
 prepare: outputmakefile
 
 # Preset locale variables to speed up the build process. Limit locale
-# tweaks to this spot to avoid wrong language settings when running
-# make menuconfig etc.
+# tweaks to this spot to avoid wrong language settings in configuration tools.
 # Error messages still appears in the original language
 PHONY += $(build-dir)
 $(build-dir): prepare
