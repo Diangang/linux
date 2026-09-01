@@ -497,13 +497,6 @@ static int __add_disk(struct device *parent, struct gendisk *disk,
 	if (ret)
 		goto out_device_del;
 
-	/*
-	 * avoid probable deadlock caused by allocating memory with
-	 * GFP_KERNEL in runtime_resume callback of its all ancestor
-	 * devices
-	 */
-	pm_runtime_set_memalloc_noio(ddev, true);
-
 	disk->part0->bd_holder_dir =
 		kobject_create_and_add("holders", &ddev->kobj);
 	if (!disk->part0->bd_holder_dir) {
@@ -553,7 +546,6 @@ out_put_holder_dir:
 	kobject_put(disk->part0->bd_holder_dir);
 out_del_block_link:
 	sysfs_remove_link(block_depr, dev_name(ddev));
-	pm_runtime_set_memalloc_noio(ddev, false);
 out_device_del:
 	device_del(ddev);
 out_free_ext_minor:
@@ -740,7 +732,6 @@ static void __del_gendisk(struct gendisk *disk)
 	part_stat_set_all(disk->part0, 0);
 	disk->part0->bd_stamp = 0;
 	sysfs_remove_link(block_depr, dev_name(disk_to_dev(disk)));
-	pm_runtime_set_memalloc_noio(disk_to_dev(disk), false);
 	device_del(disk_to_dev(disk));
 
 	blk_mq_freeze_queue_wait(q);
