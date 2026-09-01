@@ -933,40 +933,6 @@ static inline void device_disable_async_suspend(struct device *dev)
 		dev->power.async_suspend = false;
 }
 
-static inline bool device_async_suspend_enabled(struct device *dev)
-{
-	return !!dev->power.async_suspend;
-}
-
-static inline void dev_pm_syscore_device(struct device *dev, bool val)
-{
-}
-
-static inline bool dev_pm_smart_suspend(struct device *dev)
-{
-	return false;
-}
-
-/*
- * dev_pm_set_strict_midlayer - Update the device's power.strict_midlayer flag
- * @dev: Target device.
- * @val: New flag value.
- *
- * When set, power.strict_midlayer means that the middle layer power management
- * code (typically, a bus type or a PM domain) does not expect its runtime PM
- * suspend callback to be invoked at all during system-wide PM transitions and
- * it does not expect its runtime PM resume callback to be invoked at any point
- * when runtime PM is disabled for the device during system-wide PM transitions.
- */
-static inline void dev_pm_set_strict_midlayer(struct device *dev, bool val)
-{
-}
-
-static inline bool dev_pm_strict_midlayer_is_set(struct device *dev)
-{
-	return false;
-}
-
 static inline void device_lock(struct device *dev)
 {
 	mutex_lock(&dev->mutex);
