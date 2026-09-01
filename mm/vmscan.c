@@ -369,7 +369,7 @@ static bool skip_throttle_noprogress(pg_data_t *pgdat)
 void reclaim_throttle(pg_data_t *pgdat, enum vmscan_throttle_state reason)
 {
 	wait_queue_head_t *wqh = &pgdat->reclaim_wait[reason];
-	long timeout, ret;
+	long timeout;
 	DEFINE_WAIT(wait);
 
 	/*
@@ -424,7 +424,7 @@ void reclaim_throttle(pg_data_t *pgdat, enum vmscan_throttle_state reason)
 	}
 
 	prepare_to_wait(wqh, &wait, TASK_UNINTERRUPTIBLE);
-	ret = schedule_timeout(timeout);
+	schedule_timeout(timeout);
 	finish_wait(wqh, &wait);
 
 	if (reason == VMSCAN_THROTTLE_WRITEBACK)
@@ -1846,7 +1846,7 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	LIST_HEAD(l_hold);	/* The folios which were snipped off */
 	LIST_HEAD(l_active);
 	LIST_HEAD(l_inactive);
-	unsigned nr_deactivate, nr_activate;
+	unsigned nr_deactivate;
 	unsigned nr_rotated = 0;
 	bool file = is_file_lru(lru);
 	struct pglist_data *pgdat = lruvec_pgdat(lruvec);
@@ -1910,7 +1910,7 @@ static void shrink_active_list(unsigned long nr_to_scan,
 	/*
 	 * Move folios back to the lru list.
 	 */
-	nr_activate = move_folios_to_lru(&l_active);
+	move_folios_to_lru(&l_active);
 	nr_deactivate = move_folios_to_lru(&l_inactive);
 
 	count_vm_events(PGDEACTIVATE, nr_deactivate);
