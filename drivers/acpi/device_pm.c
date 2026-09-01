@@ -16,7 +16,6 @@
 #include <linux/export.h>
 #include <linux/mutex.h>
 #include <linux/pm_qos.h>
-#include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/suspend.h>
 

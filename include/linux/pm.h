@@ -504,31 +504,6 @@ struct dev_pm_info {
 extern int dev_pm_get_subsys_data(struct device *dev);
 extern void dev_pm_put_subsys_data(struct device *dev);
 
-/**
- * struct dev_pm_domain - power management domain representation.
- *
- * @ops: Power management operations associated with this domain.
- * @start: Called when a user needs to start the device via the domain.
- * @detach: Called when removing a device from the domain.
- * @activate: Called before executing probe routines for bus types and drivers.
- * @sync: Called after successful driver probe.
- * @dismiss: Called after unsuccessful driver probe and after driver removal.
- * @set_performance_state: Called to request a new performance state.
- *
- * Power domains provide callbacks that are executed during system suspend,
- * hibernation, system resume and during runtime PM transitions instead of
- * subsystem-level and driver-level callbacks.
- */
-struct dev_pm_domain {
-	struct dev_pm_ops	ops;
-	int (*start)(struct device *dev);
-	void (*detach)(struct device *dev, bool power_off);
-	int (*activate)(struct device *dev);
-	void (*sync)(struct device *dev);
-	void (*dismiss)(struct device *dev);
-	int (*set_performance_state)(struct device *dev, unsigned int state);
-};
-
 /*
  * The PM_EVENT_ messages are also used by drivers implementing the legacy
  * suspend framework, based on the ->suspend() and ->resume() callbacks common

@@ -549,9 +549,6 @@ enum struct_device_flags {
  * @links:	Links to suppliers and consumers of this device.
  * @power:	For device power management.
  *		See Documentation/driver-api/pm/devices.rst for details.
- * @pm_domain:	Provide callbacks that are executed during system suspend,
- * 		hibernation, system resume and during runtime PM transitions
- * 		along with subsystem-level and driver-level callbacks.
  * @pins:	For device pin management.
  *		See Documentation/driver-api/pin-control.rst for details.
  * @msi:	MSI related data
@@ -649,7 +646,6 @@ struct device {
 
 	struct dev_links_info	links;
 	struct dev_pm_info	power;
-	struct dev_pm_domain	*pm_domain;
 
 
 	struct dev_msi_info	msi;

@@ -25,7 +25,6 @@
 #include <linux/kthread.h>
 #include <linux/wait.h>
 #include <linux/async.h>
-#include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/pinctrl/devinfo.h>
 #include <linux/slab.h>
@@ -578,9 +577,6 @@ static void device_unbind_cleanup(struct device *dev)
 	dev->dma_range_map = NULL;
 	device_set_driver(dev, NULL);
 	dev_set_drvdata(dev, NULL);
-	dev_pm_domain_detach(dev, dev->power.detach_power_off);
-	if (dev->pm_domain && dev->pm_domain->dismiss)
-		dev->pm_domain->dismiss(dev);
 	dev_pm_set_driver_flags(dev, 0);
 }
 
@@ -671,12 +667,6 @@ static int really_probe(struct device *dev, const struct device_driver *drv)
 		goto sysfs_failed;
 	}
 
-	if (dev->pm_domain && dev->pm_domain->activate) {
-		ret = dev->pm_domain->activate(dev);
-		if (ret)
-			goto probe_failed;
-	}
-
 	ret = call_driver_probe(dev, drv);
 	if (ret) {
 		/*
@@ -711,9 +701,6 @@ static int really_probe(struct device *dev, const struct device_driver *drv)
 	}
 
 	pinctrl_init_done(dev);
-
-	if (dev->pm_domain && dev->pm_domain->sync)
-		dev->pm_domain->sync(dev);
 
 	driver_bound(dev);
 	dev_dbg(dev, "bus: '%s': %s: bound device to driver %s\n",
