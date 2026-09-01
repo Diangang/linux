@@ -245,9 +245,6 @@ void *fixup_red_left(struct kmem_cache *s, void *p)
  */
 #define MAX_PARTIAL 10
 
-#define DEBUG_DEFAULT_FLAGS (SLAB_CONSISTENCY_CHECKS | SLAB_RED_ZONE | \
-				SLAB_POISON | SLAB_STORE_USER)
-
 /*
  * These debug flags cannot use CMPXCHG because there might be consistency
  * issues when checking or reading debug information
