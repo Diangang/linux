@@ -82,34 +82,6 @@ static int notifier_call_chain(struct notifier_block **nl,
 }
 NOKPROBE_SYMBOL(notifier_call_chain);
 
-/**
- * notifier_call_chain_robust - Inform the registered notifiers about an event
- *                              and rollback on error.
- * @nl:		Pointer to head of the blocking notifier chain
- * @val_up:	Value passed unmodified to the notifier function
- * @val_down:	Value passed unmodified to the notifier function when recovering
- *              from an error on @val_up
- * @v:		Pointer passed unmodified to the notifier function
- *
- * NOTE:	It is important the @nl chain doesn't change between the two
- *		invocations of notifier_call_chain() such that we visit the
- *		exact same notifier callbacks; this rules out any RCU usage.
- *
- * Return:	the return value of the @val_up call.
- */
-static int notifier_call_chain_robust(struct notifier_block **nl,
-				     unsigned long val_up, unsigned long val_down,
-				     void *v)
-{
-	int ret, nr = 0;
-
-	ret = notifier_call_chain(nl, val_up, v, -1, &nr);
-	if (ret & NOTIFY_STOP_MASK)
-		notifier_call_chain(nl, val_down, v, nr-1, NULL);
-
-	return ret;
-}
-
 /*
  *	Atomic notifier chain routines.  Registration and unregistration
  *	use a spinlock, and call_chain is synchronized by RCU (no locks).
@@ -316,25 +288,6 @@ int blocking_notifier_chain_unregister(struct blocking_notifier_head *nh,
 }
 EXPORT_SYMBOL_GPL(blocking_notifier_chain_unregister);
 
-int blocking_notifier_call_chain_robust(struct blocking_notifier_head *nh,
-		unsigned long val_up, unsigned long val_down, void *v)
-{
-	int ret = NOTIFY_DONE;
-
-	/*
-	 * We check the head outside the lock, but if this access is
-	 * racy then it does not matter what the result of the test
-	 * is, we re-check the list after having taken the lock anyway:
-	 */
-	if (rcu_access_pointer(nh->head)) {
-		down_read(&nh->rwsem);
-		ret = notifier_call_chain_robust(&nh->head, val_up, val_down, v);
-		up_read(&nh->rwsem);
-	}
-	return ret;
-}
-EXPORT_SYMBOL_GPL(blocking_notifier_call_chain_robust);
-
 /**
  *	blocking_notifier_call_chain - Call functions in a blocking notifier chain
  *	@nh: Pointer to head of the blocking notifier chain
@@ -408,13 +361,6 @@ int raw_notifier_chain_unregister(struct raw_notifier_head *nh,
 	return notifier_chain_unregister(&nh->head, n);
 }
 EXPORT_SYMBOL_GPL(raw_notifier_chain_unregister);
-
-int raw_notifier_call_chain_robust(struct raw_notifier_head *nh,
-		unsigned long val_up, unsigned long val_down, void *v)
-{
-	return notifier_call_chain_robust(&nh->head, val_up, val_down, v);
-}
-EXPORT_SYMBOL_GPL(raw_notifier_call_chain_robust);
 
 /**
  *	raw_notifier_call_chain - Call functions in a raw notifier chain
