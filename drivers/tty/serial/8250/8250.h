@@ -80,7 +80,6 @@ struct serial8250_config {
 #define UART_CAP_UUE	BIT(12)	/* UART needs IER bit 6 set (Xscale) */
 #define UART_CAP_RTOIE	BIT(13)	/* UART needs IER bit 4 set (Xscale, Tegra) */
 #define UART_CAP_HFIFO	BIT(14)	/* UART has a "hidden" FIFO */
-#define UART_CAP_RPM	BIT(15)	/* Runtime PM is active while idle */
 #define UART_CAP_IRDA	BIT(16)	/* UART supports IrDA line discipline */
 #define UART_CAP_MINI	BIT(17)	/* Mini UART on BCM283X family lacks:
 					 * STOP PARITY EPAR SPAR WLEN5 WLEN6
@@ -178,11 +177,6 @@ static unsigned int __maybe_unused serial_icr_read(struct uart_8250_port *up,
 void serial8250_clear_fifos(struct uart_8250_port *p);
 void serial8250_clear_and_reinit_fifos(struct uart_8250_port *p);
 void serial8250_fifo_wait_for_lsr_thre(struct uart_8250_port *up, unsigned int count);
-
-void serial8250_rpm_get(struct uart_8250_port *p);
-void serial8250_rpm_put(struct uart_8250_port *p);
-DEFINE_GUARD(serial8250_rpm, struct uart_8250_port *,
-	     serial8250_rpm_get(_T), serial8250_rpm_put(_T));
 
 static inline u32 serial_dl_read(struct uart_8250_port *up)
 {
