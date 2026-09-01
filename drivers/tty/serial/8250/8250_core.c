@@ -22,7 +22,6 @@
 #include <linux/sysrq.h>
 #include <linux/delay.h>
 #include <linux/platform_device.h>
-#include <linux/pm_runtime.h>
 #include <linux/tty.h>
 #include <linux/ratelimit.h>
 #include <linux/tty_flip.h>
@@ -379,9 +378,6 @@ void __init serial8250_register_ports(struct uart_driver *drv, struct device *de
 			continue;
 
 		up->port.dev = dev;
-
-		if (uart_console_registered(&up->port))
-			pm_runtime_get_sync(up->port.dev);
 
 		serial8250_apply_quirks(up);
 		uart_add_one_port(drv, &up->port);
@@ -811,9 +807,6 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
 
 	/* Check the type (again)! It might have changed by the port.type assignment above. */
 	if (uart->port.type != PORT_8250_CIR) {
-		if (uart_console_registered(&uart->port))
-			pm_runtime_get_sync(uart->port.dev);
-
 		if (serial8250_isa_config != NULL)
 			serial8250_isa_config(0, &uart->port,
 					&uart->capabilities);
