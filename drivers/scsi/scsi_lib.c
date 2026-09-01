@@ -36,7 +36,6 @@
 #include <scsi/scsi_transport.h> /* scsi_init_limits() */
 #include <scsi/scsi_dh.h>
 
-#include "scsi_debugfs.h"
 #include "scsi_priv.h"
 #include "scsi_logging.h"
 
