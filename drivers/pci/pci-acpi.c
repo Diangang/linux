@@ -1276,7 +1276,6 @@ void pci_acpi_setup(struct device *dev, struct acpi_device *adev)
 		device_wakeup_enable(dev);
 
 	acpi_pci_wakeup(pci_dev, false);
-	acpi_device_power_add_dependent(adev, dev);
 
 	if (pci_is_bridge(pci_dev))
 		acpi_dev_power_up_children_with_adr(adev);
@@ -1288,7 +1287,6 @@ void pci_acpi_cleanup(struct device *dev, struct acpi_device *adev)
 
 	pci_acpi_remove_edr_notifier(pci_dev);
 	if (adev->wakeup.flags.valid) {
-		acpi_device_power_remove_dependent(adev, dev);
 		if (pci_dev->bridge_d3)
 			device_wakeup_disable(dev);
 

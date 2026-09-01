@@ -30,7 +30,6 @@
 #include <linux/types.h>
 #include <linux/slab.h>
 #include <linux/string_choices.h>
-#include <linux/pm_runtime.h>
 #include <linux/sysfs.h>
 #include <linux/acpi.h>
 #include "internal.h"
@@ -38,11 +37,6 @@
 #define ACPI_POWER_RESOURCE_STATE_OFF	0x00
 #define ACPI_POWER_RESOURCE_STATE_ON	0x01
 #define ACPI_POWER_RESOURCE_STATE_UNKNOWN 0xFF
-
-struct acpi_power_dependent_device {
-	struct device *dev;
-	struct list_head node;
-};
 
 struct acpi_power_resource {
 	struct acpi_device device;
@@ -52,7 +46,6 @@ struct acpi_power_resource {
 	unsigned int ref_count;
 	u8 state;
 	struct mutex resource_lock;
-	struct list_head dependents;
 };
 
 struct acpi_power_resource_entry {
@@ -246,123 +239,9 @@ static int acpi_power_get_list_state(struct list_head *list, u8 *state)
 	return 0;
 }
 
-static int
-acpi_power_resource_add_dependent(struct acpi_power_resource *resource,
-				  struct device *dev)
-{
-	struct acpi_power_dependent_device *dep;
-	int ret = 0;
-
-	mutex_lock(&resource->resource_lock);
-	list_for_each_entry(dep, &resource->dependents, node) {
-		/* Only add it once */
-		if (dep->dev == dev)
-			goto unlock;
-	}
-
-	dep = kzalloc_obj(*dep);
-	if (!dep) {
-		ret = -ENOMEM;
-		goto unlock;
-	}
-
-	dep->dev = dev;
-	list_add_tail(&dep->node, &resource->dependents);
-	dev_dbg(dev, "added power dependency to [%s]\n",
-		resource_dev_name(resource));
-
-unlock:
-	mutex_unlock(&resource->resource_lock);
-	return ret;
-}
-
-static void
-acpi_power_resource_remove_dependent(struct acpi_power_resource *resource,
-				     struct device *dev)
-{
-	struct acpi_power_dependent_device *dep;
-
-	mutex_lock(&resource->resource_lock);
-	list_for_each_entry(dep, &resource->dependents, node) {
-		if (dep->dev == dev) {
-			list_del(&dep->node);
-			kfree(dep);
-			dev_dbg(dev, "removed power dependency to [%s]\n",
-				resource_dev_name(resource));
-			break;
-		}
-	}
-	mutex_unlock(&resource->resource_lock);
-}
-
-/**
- * acpi_device_power_add_dependent - Add dependent device of this ACPI device
- * @adev: ACPI device pointer
- * @dev: Dependent device
- *
- * If @adev has non-empty _PR0 the @dev is added as dependent device to all
- * power resources returned by it. This means that whenever these power
- * resources are turned _ON the dependent devices get runtime resumed. This
- * is needed for devices such as PCI to allow its driver to re-initialize
- * it after it went to D0uninitialized.
- *
- * If @adev does not have _PR0 this does nothing.
- *
- * Returns %0 in case of success and negative errno otherwise.
- */
-int acpi_device_power_add_dependent(struct acpi_device *adev,
-				    struct device *dev)
-{
-	struct acpi_power_resource_entry *entry;
-	struct list_head *resources;
-	int ret;
-
-	if (!adev->flags.power_manageable)
-		return 0;
-
-	resources = &adev->power.states[ACPI_STATE_D0].resources;
-	list_for_each_entry(entry, resources, node) {
-		ret = acpi_power_resource_add_dependent(entry->resource, dev);
-		if (ret)
-			goto err;
-	}
-
-	return 0;
-
-err:
-	list_for_each_entry(entry, resources, node)
-		acpi_power_resource_remove_dependent(entry->resource, dev);
-
-	return ret;
-}
-
-/**
- * acpi_device_power_remove_dependent - Remove dependent device
- * @adev: ACPI device pointer
- * @dev: Dependent device
- *
- * Does the opposite of acpi_device_power_add_dependent() and removes the
- * dependent device if it is found. Can be called to @adev that does not
- * have _PR0 as well.
- */
-void acpi_device_power_remove_dependent(struct acpi_device *adev,
-					struct device *dev)
-{
-	struct acpi_power_resource_entry *entry;
-	struct list_head *resources;
-
-	if (!adev->flags.power_manageable)
-		return;
-
-	resources = &adev->power.states[ACPI_STATE_D0].resources;
-	list_for_each_entry_reverse(entry, resources, node)
-		acpi_power_resource_remove_dependent(entry->resource, dev);
-}
-
 static int __acpi_power_on(struct acpi_power_resource *resource)
 {
 	acpi_handle handle = resource->device.handle;
-	struct acpi_power_dependent_device *dep;
 	acpi_status status = AE_OK;
 
 	status = acpi_evaluate_object(handle, "_ON", NULL, NULL);
@@ -374,21 +253,6 @@ static int __acpi_power_on(struct acpi_power_resource *resource)
 	resource->state = ACPI_POWER_RESOURCE_STATE_ON;
 
 	acpi_handle_debug(handle, "Power resource turned on\n");
-
-	/*
-	 * If there are other dependents on this power resource we need to
-	 * resume them now so that their drivers can re-initialize the
-	 * hardware properly after it went back to D0.
-	 */
-	if (list_empty(&resource->dependents) ||
-	    list_is_singular(&resource->dependents))
-		return 0;
-
-	list_for_each_entry(dep, &resource->dependents, node) {
-		dev_dbg(dep->dev, "runtime resuming because [%s] turned on\n",
-			resource_dev_name(resource));
-		pm_request_resume(dep->dev);
-	}
 
 	return 0;
 }
@@ -949,7 +813,6 @@ struct acpi_device *acpi_add_power_resource(acpi_handle handle)
 				acpi_release_power_resource);
 	mutex_init(&resource->resource_lock);
 	INIT_LIST_HEAD(&resource->list_node);
-	INIT_LIST_HEAD(&resource->dependents);
 	device->power.state = ACPI_STATE_UNKNOWN;
 	device->flags.match_driver = true;
 
