@@ -1094,37 +1094,6 @@ int acpi_pci_wakeup(struct pci_dev *dev, bool enable)
 	return acpi_pci_propagate_wakeup(dev->bus, enable);
 }
 
-bool acpi_pci_need_resume(struct pci_dev *dev)
-{
-	struct acpi_device *adev;
-
-	if (acpi_pci_disabled)
-		return false;
-
-	/*
-	 * In some cases (eg. Samsung 305V4A) leaving a bridge in suspend over
-	 * system-wide suspend/resume confuses the platform firmware, so avoid
-	 * doing that.  According to Section 16.1.6 of ACPI 6.2, endpoint
-	 * devices are expected to be in D3 before invoking the S3 entry path
-	 * from the firmware, so they should not be affected by this issue.
-	 */
-	if (pci_is_bridge(dev) && acpi_target_system_state() != ACPI_STATE_S0)
-		return true;
-
-	adev = ACPI_COMPANION(&dev->dev);
-	if (!adev || !acpi_device_power_manageable(adev))
-		return false;
-
-	if (adev->wakeup.flags.valid &&
-	    device_may_wakeup(&dev->dev) != !!adev->wakeup.prepare_count)
-		return true;
-
-	if (acpi_target_system_state() == ACPI_STATE_S0)
-		return false;
-
-	return !!adev->power.flags.dsw_present;
-}
-
 void acpi_pci_add_bus(struct pci_bus *bus)
 {
 	union acpi_object *obj;

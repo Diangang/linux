@@ -1051,11 +1051,6 @@ static inline int platform_pci_set_wakeup(struct pci_dev *dev, bool enable)
 	return acpi_pci_wakeup(dev, enable);
 }
 
-static inline bool platform_pci_need_resume(struct pci_dev *dev)
-{
-	return acpi_pci_need_resume(dev);
-}
-
 static inline bool platform_pci_bridge_d3(struct pci_dev *dev)
 {
 	return acpi_pci_bridge_d3(dev);
@@ -1122,22 +1117,6 @@ int pci_platform_power_transition(struct pci_dev *dev, pci_power_t state)
 	return error;
 }
 EXPORT_SYMBOL_GPL(pci_platform_power_transition);
-
-static int pci_resume_one(struct pci_dev *pci_dev, void *ign)
-{
-	pm_request_resume(&pci_dev->dev);
-	return 0;
-}
-
-/**
- * pci_resume_bus - Walk given bus and runtime resume devices on it
- * @bus: Top bus of the subtree to walk.
- */
-void pci_resume_bus(struct pci_bus *bus)
-{
-	if (bus)
-		pci_walk_bus(bus, pci_resume_one, NULL);
-}
 
 static int pci_dev_wait(struct pci_dev *dev, char *reset_type, int timeout)
 {
@@ -2611,32 +2590,6 @@ int pci_back_from_sleep(struct pci_dev *dev)
 EXPORT_SYMBOL(pci_back_from_sleep);
 
 /**
- * pci_finish_runtime_suspend - Carry out PCI-specific part of runtime suspend.
- * @dev: PCI device being suspended.
- *
- * Prepare @dev to generate wake-up events at run time and put it into a low
- * power state.
- */
-int pci_finish_runtime_suspend(struct pci_dev *dev)
-{
-	pci_power_t target_state;
-	int error;
-
-	target_state = pci_target_state(dev, device_can_wakeup(&dev->dev));
-	if (target_state == PCI_POWER_ERROR)
-		return -EIO;
-
-	__pci_enable_wake(dev, target_state, pci_dev_run_wake(dev));
-
-	error = pci_set_power_state(dev, target_state);
-
-	if (error)
-		pci_enable_wake(dev, target_state, false);
-
-	return error;
-}
-
-/**
  * pci_dev_run_wake - Check if device can generate run-time wake-up events.
  * @dev: Device to check.
  *
@@ -2674,82 +2627,6 @@ bool pci_dev_run_wake(struct pci_dev *dev)
 	return false;
 }
 EXPORT_SYMBOL_GPL(pci_dev_run_wake);
-
-/**
- * pci_dev_need_resume - Check if it is necessary to resume the device.
- * @pci_dev: Device to check.
- *
- * Return 'true' if the device is not runtime-suspended or it has to be
- * reconfigured due to wakeup settings difference between system and runtime
- * suspend, or the current power state of it is not suitable for the upcoming
- * (system-wide) transition.
- */
-bool pci_dev_need_resume(struct pci_dev *pci_dev)
-{
-	struct device *dev = &pci_dev->dev;
-	pci_power_t target_state;
-
-	if (!pm_runtime_suspended(dev) || platform_pci_need_resume(pci_dev))
-		return true;
-
-	target_state = pci_target_state(pci_dev, device_may_wakeup(dev));
-
-	/*
-	 * If the earlier platform check has not triggered, D3cold is just power
-	 * removal on top of D3hot, so no need to resume the device in that
-	 * case.
-	 */
-	return target_state != pci_dev->current_state &&
-		target_state != PCI_D3cold &&
-		pci_dev->current_state != PCI_D3hot;
-}
-
-/**
- * pci_dev_adjust_pme - Adjust PME setting for a suspended device.
- * @pci_dev: Device to check.
- *
- * If the device is suspended and it is not configured for system wakeup,
- * disable PME for it to prevent it from waking up the system unnecessarily.
- *
- * Note that if the device's power state is D3cold and the platform check in
- * pci_dev_need_resume() has not triggered, the device's configuration need not
- * be changed.
- */
-void pci_dev_adjust_pme(struct pci_dev *pci_dev)
-{
-	struct device *dev = &pci_dev->dev;
-
-	spin_lock_irq(&dev->power.lock);
-
-	if (pm_runtime_suspended(dev) && !device_may_wakeup(dev) &&
-	    pci_dev->current_state < PCI_D3cold)
-		__pci_pme_active(pci_dev, false);
-
-	spin_unlock_irq(&dev->power.lock);
-}
-
-/**
- * pci_dev_complete_resume - Finalize resume from system sleep for a device.
- * @pci_dev: Device to handle.
- *
- * If the device is runtime suspended and wakeup-capable, enable PME for it as
- * it might have been disabled during the prepare phase of system suspend if
- * the device was not configured for system wakeup.
- */
-void pci_dev_complete_resume(struct pci_dev *pci_dev)
-{
-	struct device *dev = &pci_dev->dev;
-
-	if (!pci_dev_run_wake(pci_dev))
-		return;
-
-	spin_lock_irq(&dev->power.lock);
-
-	if (pm_runtime_suspended(dev) && pci_dev->current_state < PCI_D3cold)
-		__pci_pme_active(pci_dev, true);
-
-	spin_unlock_irq(&dev->power.lock);
-}
 
 /**
  * pci_choose_state - Choose the power state of a PCI device.
