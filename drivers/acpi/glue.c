@@ -209,13 +209,6 @@ struct acpi_device *acpi_find_child_device(struct acpi_device *parent,
 }
 EXPORT_SYMBOL_GPL(acpi_find_child_device);
 
-struct acpi_device *acpi_find_child_by_adr(struct acpi_device *adev,
-					   acpi_bus_address adr)
-{
-	return acpi_find_child(adev, adr, false, false);
-}
-EXPORT_SYMBOL_GPL(acpi_find_child_by_adr);
-
 static void acpi_physnode_link_name(char *buf, unsigned int node_id)
 {
 	if (node_id > 0)
