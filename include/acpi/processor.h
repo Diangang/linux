@@ -269,11 +269,6 @@ extern int acpi_processor_get_performance_info(struct acpi_processor *pr);
 DECLARE_PER_CPU(struct acpi_processor *, processors);
 extern struct acpi_processor_errata errata;
 
-static inline void __noreturn acpi_processor_ffh_play_dead(struct acpi_processor_cx *cx)
-{
-	BUG();
-}
-
 /* in processor_perflib.c */
 
 /* in processor_core.c */
