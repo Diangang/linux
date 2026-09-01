@@ -23,8 +23,7 @@
  * @PINCTRL_STATE_IDLE: the state the pinctrl handle shall be put into
  *	when the pins are idle. This is a state where the system is relaxed
  *	but not fully sleeping - some power may be on but clocks gated for
- *	example. Could typically be set from a pm_runtime_suspend() or
- *	pm_runtime_idle() operation.
+ *	example. Could typically be set from a runtime suspend or idle callback.
  * @PINCTRL_STATE_SLEEP: the state the pinctrl handle shall be put into
  *	when the pins are sleeping. This is a state where the system is in
  *	its lowest sleep state. Could typically be set from an

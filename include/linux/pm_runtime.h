@@ -21,10 +21,6 @@ static inline int __pm_runtime_idle(struct device *dev, int rpmflags)
 {
 	return -ENOSYS;
 }
-static inline int __pm_runtime_suspend(struct device *dev, int rpmflags)
-{
-	return -ENOSYS;
-}
 static inline int __pm_runtime_resume(struct device *dev, int rpmflags)
 {
 	return 1;
@@ -38,72 +34,12 @@ static inline void pm_runtime_get_noresume(struct device *dev) {}
 static inline void pm_runtime_put_noidle(struct device *dev) {}
 
 /**
- * pm_runtime_idle - Conditionally set up autosuspend of a device or suspend it.
- * @dev: Target device.
- *
- * Invoke the "idle check" callback of @dev and, depending on its return value,
- * set up autosuspend of @dev or suspend it (depending on whether or not
- * autosuspend has been enabled for it).
- *
- * Return:
- * * 0: Success.
- * * -EINVAL: Runtime PM error.
- * * -EACCES: Runtime PM disabled.
- * * -EAGAIN: Runtime PM usage counter non-zero, Runtime PM status change
- *            ongoing or device not in %RPM_ACTIVE state.
- * * -EBUSY: Runtime PM child_count non-zero.
- * * -EPERM: Device PM QoS resume latency 0.
- * * -EINPROGRESS: Suspend already in progress.
- * * -ENOSYS: CONFIG_PM not enabled.
- * Other values and conditions for the above values are possible as returned by
- * Runtime PM idle and suspend callbacks.
- */
-static inline int pm_runtime_idle(struct device *dev)
-{
-	return __pm_runtime_idle(dev, 0);
-}
-
-/**
- * pm_runtime_suspend - Suspend a device synchronously.
- * @dev: Target device.
- *
- * Return:
- * * 1: Success; device was already suspended.
- * * 0: Success.
- * * -EINVAL: Runtime PM error.
- * * -EACCES: Runtime PM disabled.
- * * -EAGAIN: Runtime PM usage counter non-zero or Runtime PM status change
- *            ongoing.
- * * -EBUSY: Runtime PM child_count non-zero.
- * * -EPERM: Device PM QoS resume latency 0.
- * * -ENOSYS: CONFIG_PM not enabled.
- * Other values and conditions for the above values are possible as returned by
- * Runtime PM suspend callbacks.
- */
-static inline int pm_runtime_suspend(struct device *dev)
-{
-	return __pm_runtime_suspend(dev, 0);
-}
-
-/**
  * pm_runtime_resume - Resume a device synchronously.
  * @dev: Target device.
  */
 static inline int pm_runtime_resume(struct device *dev)
 {
 	return __pm_runtime_resume(dev, 0);
-}
-
-/**
- * pm_runtime_get - Bump up usage counter and queue up resume of a device.
- * @dev: Target device.
- *
- * Bump up the runtime PM usage counter of @dev and queue up a work item to
- * carry out runtime-resume of it.
- */
-static inline int pm_runtime_get(struct device *dev)
-{
-	return __pm_runtime_resume(dev, RPM_GET_PUT | RPM_ASYNC);
 }
 
 /**
@@ -116,9 +52,6 @@ static inline int pm_runtime_get(struct device *dev)
  * The possible return values of this function are the same as for
  * pm_runtime_resume() and the runtime PM usage counter of @dev remains
  * incremented in all cases, even if it returns an error code.
- * Consider using pm_runtime_resume_and_get() instead of it, especially
- * if its return value is checked by the caller, as this is likely to result
- * in cleaner code.
  */
 static inline int pm_runtime_get_sync(struct device *dev)
 {
@@ -136,19 +69,6 @@ static inline int pm_runtime_get_active(struct device *dev, int rpmflags)
 	}
 
 	return 0;
-}
-
-/**
- * pm_runtime_resume_and_get - Bump up usage counter of a device and resume it.
- * @dev: Target device.
- *
- * Resume @dev synchronously and if that is successful, increment its runtime
- * PM usage counter. Return 0 if the runtime PM usage counter of @dev has been
- * incremented or a negative error code otherwise.
- */
-static inline int pm_runtime_resume_and_get(struct device *dev)
-{
-	return pm_runtime_get_active(dev, 0);
 }
 
 /**
