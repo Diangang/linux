@@ -247,48 +247,14 @@ struct acpi_processor_errata {
 	} piix4;
 };
 
-extern int acpi_processor_preregister_performance(struct
-						  acpi_processor_performance
-						  __percpu *performance);
-
-extern int acpi_processor_register_performance(struct acpi_processor_performance
-					       *performance, unsigned int cpu);
-extern void acpi_processor_unregister_performance(unsigned int cpu);
-
-int acpi_processor_pstate_control(void);
-/* note: this locks both the calling module and the processor module
-         if a _PPC object exists, rmmod is disallowed then */
-int acpi_processor_notify_smm(struct module *calling_module);
-int acpi_processor_get_psd(acpi_handle handle,
-			   struct acpi_psd_package *pdomain);
-
-/* parsing the _P* objects. */
-extern int acpi_processor_get_performance_info(struct acpi_processor *pr);
-
 /* for communication between multiple parts of the processor kernel module */
 DECLARE_PER_CPU(struct acpi_processor *, processors);
 extern struct acpi_processor_errata errata;
-
-/* in processor_perflib.c */
 
 /* in processor_core.c */
 phys_cpuid_t acpi_get_phys_id(acpi_handle, int type, u32 acpi_id);
 phys_cpuid_t acpi_map_madt_entry(u32 acpi_id);
 int acpi_map_cpuid(phys_cpuid_t phys_id, u32 acpi_id);
 int acpi_get_cpuid(acpi_handle, int type, u32 acpi_id);
-
-/* in processor_pdc.c */
-void acpi_processor_set_pdc(acpi_handle handle);
-
-/* in processor_throttling.c */
-/* in processor_idle.c */
-
-/* in processor_thermal.c */
-int acpi_processor_thermal_init(struct acpi_processor *pr,
-				struct acpi_device *device);
-void acpi_processor_thermal_exit(struct acpi_processor *pr,
-				 struct acpi_device *device);
-extern const struct thermal_cooling_device_ops processor_cooling_ops;
-void acpi_processor_init_invariance_cppc(void);
 
 #endif
