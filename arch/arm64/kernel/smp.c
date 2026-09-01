@@ -503,14 +503,6 @@ int arch_register_cpu(int cpu)
 
 
 #ifdef CONFIG_ACPI
-static struct acpi_madt_generic_interrupt cpu_madt_gicc[NR_CPUS];
-
-struct acpi_madt_generic_interrupt *acpi_cpu_get_madt_gicc(int cpu)
-{
-	return &cpu_madt_gicc[cpu];
-}
-EXPORT_SYMBOL_GPL(acpi_cpu_get_madt_gicc);
-
 /*
  * acpi_map_gic_cpu_interface - parse processor MADT entry
  *
@@ -546,7 +538,6 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
 			return;
 		}
 		bootcpu_valid = true;
-		cpu_madt_gicc[0] = *processor;
 		return;
 	}
 
@@ -555,8 +546,6 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
 
 	/* map the logical cpu id to cpu MPIDR */
 	set_cpu_logical_map(cpu_count, hwid);
-
-	cpu_madt_gicc[cpu_count] = *processor;
 
 	/*
 	 * Set-up the ACPI parking protocol cpu entries
