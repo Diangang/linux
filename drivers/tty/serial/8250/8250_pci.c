@@ -4406,9 +4406,6 @@ static void pciserial_remove_one(struct pci_dev *dev)
 }
 
 
-static SIMPLE_DEV_PM_OPS(pciserial_pm_ops, pciserial_suspend_one,
-			 pciserial_resume_one);
-
 static const struct pci_device_id serial_pci_tbl[] = {
 	{	PCI_VENDOR_ID_ADVANTECH, PCI_DEVICE_ID_ADVANTECH_PCI1600,
 		PCI_DEVICE_ID_ADVANTECH_PCI1600_1611, PCI_ANY_ID, 0, 0,
@@ -6271,9 +6268,6 @@ static struct pci_driver serial_pci_driver = {
 	.name		= "serial",
 	.probe		= pciserial_init_one,
 	.remove		= pciserial_remove_one,
-	.driver         = {
-		.pm     = &pciserial_pm_ops,
-	},
 	.id_table	= serial_pci_tbl,
 	.err_handler	= &serial8250_err_handler,
 };
