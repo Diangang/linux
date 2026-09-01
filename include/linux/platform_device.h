@@ -382,16 +382,6 @@ void platform_unregister_drivers(struct platform_driver * const *drivers,
 #define platform_register_drivers(drivers, count) \
 	__platform_register_drivers(drivers, count, THIS_MODULE)
 
-#define platform_pm_suspend		NULL
-#define platform_pm_resume		NULL
-
-#define platform_pm_freeze		NULL
-#define platform_pm_thaw		NULL
-#define platform_pm_poweroff		NULL
-#define platform_pm_restore		NULL
-
-#define USE_PLATFORM_PM_SLEEP_OPS
-
 /*
  * REVISIT: This stub is needed for all non-SuperH users of early platform
  * drivers. It should go away once we introduce the new platform_device-based
