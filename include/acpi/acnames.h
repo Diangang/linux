@@ -39,7 +39,6 @@
 #define METHOD_NAME__SEG        "_SEG"
 #define METHOD_NAME__SRS        "_SRS"
 #define METHOD_NAME__STA        "_STA"
-#define METHOD_NAME__SUB        "_SUB"
 #define METHOD_NAME__UID        "_UID"
 
 /* Method names - these methods must appear at the namespace root */
