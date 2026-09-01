@@ -673,13 +673,6 @@ fail:
 	delete_gpe_attr_array();
 }
 
-static void __exit interrupt_stats_exit(void)
-{
-	sysfs_remove_group(acpi_kobj, &interrupt_stats_attr_group);
-
-	delete_gpe_attr_array();
-}
-
 static ssize_t pm_profile_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	return sysfs_emit(buf, "%d\n", acpi_gbl_FADT.preferred_profile);
