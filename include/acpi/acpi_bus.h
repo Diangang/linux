@@ -615,8 +615,6 @@ int acpi_bus_scan(acpi_handle handle);
 void acpi_bus_trim(struct acpi_device *start);
 int acpi_match_device_ids(struct acpi_device *device,
 			  const struct acpi_device_id *ids);
-void acpi_set_modalias(struct acpi_device *adev, const char *default_id,
-		       char *modalias, size_t len);
 
 static inline bool acpi_device_enumerated(struct acpi_device *adev)
 {
