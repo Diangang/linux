@@ -610,10 +610,6 @@ struct acpi_bus_event {
 
 extern struct kobject *acpi_kobj;
 extern int acpi_bus_generate_netlink_event(const char*, const char*, u8, int);
-void acpi_bus_private_data_handler(acpi_handle, void *);
-int acpi_bus_get_private_data(acpi_handle, void **);
-int acpi_bus_attach_private_data(acpi_handle, void *);
-void acpi_bus_detach_private_data(acpi_handle);
 int acpi_dev_install_notify_handler(struct acpi_device *adev,
 				    u32 handler_type,
 				    acpi_notify_handler handler, void *context);

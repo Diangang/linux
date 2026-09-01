@@ -120,51 +120,6 @@ int acpi_bus_get_status(struct acpi_device *device)
 }
 EXPORT_SYMBOL(acpi_bus_get_status);
 
-void acpi_bus_private_data_handler(acpi_handle handle,
-				   void *context)
-{
-	return;
-}
-EXPORT_SYMBOL(acpi_bus_private_data_handler);
-
-int acpi_bus_attach_private_data(acpi_handle handle, void *data)
-{
-	acpi_status status;
-
-	status = acpi_attach_data(handle,
-			acpi_bus_private_data_handler, data);
-	if (ACPI_FAILURE(status)) {
-		acpi_handle_debug(handle, "Error attaching device data\n");
-		return -ENODEV;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(acpi_bus_attach_private_data);
-
-int acpi_bus_get_private_data(acpi_handle handle, void **data)
-{
-	acpi_status status;
-
-	if (!data)
-		return -EINVAL;
-
-	status = acpi_get_data(handle, acpi_bus_private_data_handler, data);
-	if (ACPI_FAILURE(status)) {
-		acpi_handle_debug(handle, "No context for object\n");
-		return -ENODEV;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(acpi_bus_get_private_data);
-
-void acpi_bus_detach_private_data(acpi_handle handle)
-{
-	acpi_detach_data(handle, acpi_bus_private_data_handler);
-}
-EXPORT_SYMBOL_GPL(acpi_bus_detach_private_data);
-
 static void acpi_dump_osc_data(acpi_handle handle, const guid_t *guid, int rev,
 			       struct acpi_buffer *cap)
 {
