@@ -139,7 +139,6 @@ static char *extra_command_line;
 /* Extra init arguments */
 static char *extra_init_args;
 
-# define bootconfig_found false
 # define initargs_offs 0
 
 static char *execute_command;
