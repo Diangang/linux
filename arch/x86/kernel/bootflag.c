@@ -14,7 +14,6 @@
 #include <linux/mc146818rtc.h>
 
 #define SBF_RESERVED (0x78)
-#define SBF_PNPOS    (1<<0)
 #define SBF_BOOTING  (1<<1)
 #define SBF_DIAG     (1<<2)
 #define SBF_PARITY   (1<<7)
