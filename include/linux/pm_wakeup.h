@@ -39,11 +39,4 @@ static inline bool device_may_wakeup(struct device *dev)
 	return dev->power.can_wakeup && dev->power.should_wakeup;
 }
 
-static inline void device_set_wakeup_path(struct device *dev) {}
-
-static inline void device_set_awake_path(struct device *dev)
-{
-	device_set_wakeup_path(dev);
-}
-
 #endif /* _LINUX_PM_WAKEUP_H */
