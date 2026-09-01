@@ -299,21 +299,6 @@ static inline void *mte_safe_root(const struct maple_enode *node)
 	return (void *)((unsigned long)node & ~MAPLE_ROOT_NODE);
 }
 
-static inline void __maybe_unused *mte_set_full(const struct maple_enode *node)
-{
-	return (void *)((unsigned long)node & ~MAPLE_ENODE_NULL);
-}
-
-static inline void __maybe_unused *mte_clear_full(const struct maple_enode *node)
-{
-	return (void *)((unsigned long)node | MAPLE_ENODE_NULL);
-}
-
-static inline bool __maybe_unused mte_has_null(const struct maple_enode *node)
-{
-	return (unsigned long)node & MAPLE_ENODE_NULL;
-}
-
 static __always_inline bool ma_is_root(struct maple_node *node)
 {
 	return ((unsigned long)node->parent & MA_ROOT_PARENT);
@@ -322,11 +307,6 @@ static __always_inline bool ma_is_root(struct maple_node *node)
 static __always_inline bool mte_is_root(const struct maple_enode *node)
 {
 	return ma_is_root(mte_to_node(node));
-}
-
-static inline bool mas_is_root_limits(const struct ma_state *mas)
-{
-	return !mas->min && mas->max == ULONG_MAX;
 }
 
 static __always_inline bool mt_is_alloc(struct maple_tree *mt)
