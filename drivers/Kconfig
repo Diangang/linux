@@ -8,8 +8,6 @@ source "drivers/pci/Kconfig"
 
 source "drivers/base/Kconfig"
 
-source "drivers/bus/Kconfig"
-
 source "drivers/firmware/Kconfig"
 
 source "drivers/of/Kconfig"

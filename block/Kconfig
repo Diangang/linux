@@ -22,12 +22,3 @@ menuconfig BLOCK
 
 	 Say Y here unless you know you really don't want to mount disks and
 	 suchlike.
-
-if BLOCK
-
-source "block/partitions/Kconfig"
-
-# do not use in new code
-source "block/Kconfig.iosched"
-
-endif # BLOCK

@@ -222,8 +222,6 @@ config PGTABLE_LEVELS
 	int
 	default 4
 
-source "arch/arm64/Kconfig.platforms"
-
 menu "Kernel Features"
 
 menu "ARM errata workarounds via the alternatives framework"
