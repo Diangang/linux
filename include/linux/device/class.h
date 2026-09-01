@@ -77,7 +77,6 @@ struct class_dev_iter {
 
 int __must_check class_register(const struct class *class);
 void class_unregister(const struct class *class);
-bool class_is_registered(const struct class *class);
 
 struct class_compat;
 struct class_compat *class_compat_register(const char *name);
