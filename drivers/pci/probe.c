@@ -21,7 +21,6 @@
 #include <linux/acpi.h>
 #include <linux/hypervisor.h>
 #include <linux/irqdomain.h>
-#include <linux/pm_runtime.h>
 #include <linux/bitfield.h>
 #include "pci.h"
 
@@ -1406,12 +1405,6 @@ static int pci_scan_bridge_extend(struct pci_bus *bus, struct pci_dev *dev,
 	u8 fixed_sec, fixed_sub;
 	int next_busnr;
 
-	/*
-	 * Make sure the bridge is powered on to be able to access config
-	 * space of devices below it.
-	 */
-	pm_runtime_get_sync(&dev->dev);
-
 	pci_read_config_dword(dev, PCI_PRIMARY_BUS, &buses);
 	primary = FIELD_GET(PCI_PRIMARY_BUS_MASK, buses);
 	secondary = FIELD_GET(PCI_SECONDARY_BUS_MASK, buses);
@@ -1562,8 +1555,6 @@ out:
 	pci_write_config_word(dev, PCI_SEC_STATUS, 0xffff);
 
 	pci_write_config_word(dev, PCI_BRIDGE_CONTROL, bctl);
-
-	pm_runtime_put(&dev->dev);
 
 	return max;
 }
@@ -3227,16 +3218,6 @@ int pci_host_probe(struct pci_host_bridge *bridge)
 	pci_lock_rescan_remove();
 	pci_bus_add_devices(bus);
 	pci_unlock_rescan_remove();
-
-	/*
-	 * Ensure pm_runtime_enable() is called for the controller drivers
-	 * before calling pci_host_probe(). The PM framework expects that
-	 * if the parent device supports runtime PM, it will be enabled
-	 * before child runtime PM is enabled.
-	 */
-	pm_runtime_set_active(&bridge->dev);
-	pm_runtime_no_callbacks(&bridge->dev);
-	devm_pm_runtime_enable(&bridge->dev);
 
 	return 0;
 }
