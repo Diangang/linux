@@ -1397,7 +1397,6 @@ struct gendisk *__alloc_disk_node(struct request_queue *q, int node_id,
 	kobject_init(&disk->queue_kobj, &blk_queue_ktype);
 	return disk;
 
-out_erase_part0:
 	xa_erase(&disk->part_tbl, 0);
 out_destroy_part_tbl:
 	xa_destroy(&disk->part_tbl);
