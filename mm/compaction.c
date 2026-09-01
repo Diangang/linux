@@ -2321,7 +2321,6 @@ static bool __compaction_suitable(struct zone *zone, int order,
 bool compaction_suitable(struct zone *zone, int order, unsigned long watermark,
 			 int highest_zoneidx)
 {
-	enum compact_result compact_result;
 	bool suitable;
 
 	suitable = __compaction_suitable(zone, order, watermark, highest_zoneidx,
@@ -2343,18 +2342,14 @@ bool compaction_suitable(struct zone *zone, int order, unsigned long watermark,
 	 * expense of system stability.
 	 */
 	if (suitable) {
-		compact_result = COMPACT_CONTINUE;
 		if (order > PAGE_ALLOC_COSTLY_ORDER) {
 			int fragindex = fragmentation_index(zone, order);
 
 			if (fragindex >= 0 &&
 			    fragindex <= sysctl_extfrag_threshold) {
 				suitable = false;
-				compact_result = COMPACT_NOT_SUITABLE_ZONE;
 			}
 		}
-	} else {
-		compact_result = COMPACT_SKIPPED;
 	}
 
 
