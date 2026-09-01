@@ -1304,15 +1304,6 @@ int acpi_check_region(resource_size_t start, resource_size_t n,
 EXPORT_SYMBOL(acpi_check_region);
 
 /*
- * Let drivers know whether the resource checks are effective
- */
-int acpi_resources_are_enforced(void)
-{
-	return acpi_enforce_resources == ENFORCE_RESOURCES_STRICT;
-}
-EXPORT_SYMBOL(acpi_resources_are_enforced);
-
-/*
  * Deallocate the memory for a spinlock.
  */
 void acpi_os_delete_lock(acpi_spinlock handle)

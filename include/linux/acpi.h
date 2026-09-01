@@ -439,9 +439,6 @@ int acpi_check_resource_conflict(const struct resource *res);
 int acpi_check_region(resource_size_t start, resource_size_t n,
 		      const char *name);
 
-int acpi_resources_are_enforced(void);
-
-
 int acpi_register_wakeup_handler(
 	int wake_irq, bool (*wakeup)(void *context), void *context);
 void acpi_unregister_wakeup_handler(
