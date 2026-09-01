@@ -77,13 +77,4 @@ void pci_acpi_crs_quirks(void);
 static inline void pci_acpi_crs_quirks(void) { }
 #endif
 
-/*--------------------------------------------------------------------------
-                                  Dock Station
-  -------------------------------------------------------------------------- */
-
-static inline int is_dock_device(struct acpi_device *adev)
-{
-	return 0;
-}
-
 #endif /*__ACPI_DRIVERS_H__*/
