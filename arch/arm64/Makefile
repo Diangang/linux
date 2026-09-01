@@ -108,12 +108,6 @@ endif
 
 vdso-install-y				+= arch/arm64/kernel/vdso/vdso.so.dbg
 
-include $(srctree)/scripts/Makefile.defconf
-
-PHONY += virtconfig
-virtconfig:
-	$(call merge_into_defconfig_override,defconfig,virt)
-
 define archhelp
   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'
   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'

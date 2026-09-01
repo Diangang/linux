@@ -46,21 +46,6 @@ config: $(obj)/$(config-prog)
 
 build_config: $(obj)/$(config-prog)
 
-PHONY += localmodconfig localyesconfig
-localyesconfig localmodconfig: $(obj)/conf
-	$(Q)$(PERL) $(src)/streamline_config.pl --$@ $(srctree) $(Kconfig) > .tmp.config
-	$(Q)if [ -f .config ]; then 				\
-		cmp -s .tmp.config .config ||			\
-		(mv -f .config .config.old.1;			\
-		 mv -f .tmp.config .config;			\
-		 $< $(silent) --oldconfig $(Kconfig);		\
-		 mv -f .config.old.1 .config.old)		\
-	else							\
-		mv -f .tmp.config .config;			\
-		$< $(silent) --oldconfig $(Kconfig);		\
-	fi
-	$(Q)rm -f .tmp.config
-
 # These targets map 1:1 to the commandline options of 'conf'
 #
 # Note:
@@ -92,34 +77,11 @@ endif
 %_defconfig: $(obj)/conf
 	$(Q)$< $(silent) --defconfig=arch/$(SRCARCH)/configs/$@ $(Kconfig)
 
-configfiles = $(wildcard $(srctree)/arch/$(SRCARCH)/configs/$(1))
-all-config-fragments = $(call configfiles,*.config)
-config-fragments = $(call configfiles,$@)
-
-cmd_merge_fragments = $(srctree)/scripts/kconfig/merge_config.sh -m $(KCONFIG_CONFIG) $(config-fragments)
-
-%.config: $(obj)/conf
-	$(if $(config-fragments),, $(error $@ fragment does not exists on this architecture))
-	$(call cmd,merge_fragments)
-	$(Q)$(MAKE) -f $(srctree)/Makefile olddefconfig
-
-# CHECK: -o cache_dir=<path> working?
-PHONY += testconfig
-testconfig: $(obj)/conf
-	$(Q)$(PYTHON3) -B -m pytest $(src)/tests \
-	-o cache_dir=$(abspath $(obj)/tests/.cache) \
-	$(if $(findstring 1,$(KBUILD_VERBOSE)),--capture=no)
-clean-files += tests/.cache
-
 # Help text used by make help
 help:
 	@echo  'Configuration targets:'
 	@echo  '  config	  - Update current config utilising a line-oriented program'
 	@echo  '  oldconfig	  - Update current config utilising a provided .config as base'
-	@echo  '  localmodconfig  - Update current config disabling modules not loaded'
-	@echo  '                    except those preserved by LMC_KEEP environment variable'
-	@echo  '  localyesconfig  - Update current config converting local mods to core'
-	@echo  '                    except those preserved by LMC_KEEP environment variable'
 	@echo  '  defconfig	  - New config with default from ARCH supplied defconfig'
 	@echo  '  savedefconfig   - Save current config as ./defconfig (minimal config)'
 	@echo  '  allnoconfig	  - New config where all options are answered with no'
@@ -134,13 +96,6 @@ help:
 	@echo  '  helpnewconfig   - List new options and help text'
 	@echo  '  olddefconfig	  - Same as oldconfig but sets new symbols to their'
 	@echo  '                    default value without prompting'
-	@echo  '  testconfig	  - Run Kconfig unit tests (requires python3 and pytest)'
-	@echo  ''
-	@echo  'Configuration topic targets:'
-	@$(foreach f, $(all-config-fragments), \
-		if help=$$(grep -m1 '^# Help: ' $(f)); then \
-			printf '  %-25s - %s\n' '$(notdir $(f))' "$${help#*: }"; \
-		fi;)
 
 # ===========================================================================
 # object files used by all kconfig flavours
