@@ -284,12 +284,6 @@ static inline bool pci_bus_rrs_vendor_id(u32 l)
 	return (l & 0xffff) == PCI_VENDOR_ID_PCI_SIG;
 }
 
-static inline void pci_wakeup_event(struct pci_dev *dev)
-{
-	/* Wait 100 ms before the system can be put into a sleep state. */
-	pm_wakeup_event(&dev->dev, 100);
-}
-
 /**
  * pci_bar_index_is_valid - Check whether a BAR index is within valid range
  * @bar: BAR index

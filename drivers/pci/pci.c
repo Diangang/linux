@@ -2206,7 +2206,6 @@ static int pci_pme_wakeup(struct pci_dev *dev, void *pme_poll_reset)
 		dev->pme_poll = false;
 
 	if (pci_check_pme_status(dev)) {
-		pci_wakeup_event(dev);
 		pm_request_resume(&dev->dev);
 	}
 	return 0;

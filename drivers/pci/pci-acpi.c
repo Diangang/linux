@@ -769,7 +769,6 @@ static void pci_acpi_wake_dev(struct acpi_device_wakeup_context *context)
 		pci_dev->pme_poll = false;
 
 	if (pci_dev->current_state == PCI_D3cold) {
-		pci_wakeup_event(pci_dev);
 		pm_request_resume(&pci_dev->dev);
 		return;
 	}
@@ -778,7 +777,6 @@ static void pci_acpi_wake_dev(struct acpi_device_wakeup_context *context)
 	if (pci_dev->pme_support)
 		pci_check_pme_status(pci_dev);
 
-	pci_wakeup_event(pci_dev);
 	pm_request_resume(&pci_dev->dev);
 
 	pci_pme_wakeup_bus(pci_dev->subordinate);

@@ -41,17 +41,9 @@ static inline bool device_may_wakeup(struct device *dev)
 
 static inline void device_set_wakeup_path(struct device *dev) {}
 
-static inline void pm_wakeup_dev_event(struct device *dev, unsigned int msec,
-				       bool hard) {}
-
 static inline void device_set_awake_path(struct device *dev)
 {
 	device_set_wakeup_path(dev);
-}
-
-static inline void pm_wakeup_event(struct device *dev, unsigned int msec)
-{
-	pm_wakeup_dev_event(dev, msec, false);
 }
 
 #endif /* _LINUX_PM_WAKEUP_H */

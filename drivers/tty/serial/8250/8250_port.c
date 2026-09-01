@@ -1722,7 +1722,6 @@ static bool handle_rx_dma(struct uart_8250_port *up, unsigned int iir)
 void serial8250_handle_irq_locked(struct uart_port *port, unsigned int iir)
 {
 	struct uart_8250_port *up = up_to_u8250p(port);
-	struct tty_port *tport = &port->state->port;
 	bool skip_rx = false;
 	u16 status;
 
@@ -1744,11 +1743,6 @@ void serial8250_handle_irq_locked(struct uart_port *port, unsigned int iir)
 		skip_rx = true;
 
 	if (status & (UART_LSR_DR | UART_LSR_BI) && !skip_rx) {
-		struct irq_data *d;
-
-		d = irq_get_irq_data(port->irq);
-		if (d && irqd_is_wakeup_set(d))
-			pm_wakeup_event(tport->tty->dev, 0);
 		if (!up->dma || handle_rx_dma(up, iir))
 			status = serial8250_rx_chars(up, status);
 	}
