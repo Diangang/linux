@@ -20,9 +20,6 @@ quiet_cmd_syshdr = SYSHDR  $@
 quiet_cmd_systbl = SYSTBL  $@
       cmd_systbl = $(CONFIG_SHELL) $(systbl) --abis $(abis) $< $@
 
-quiet_cmd_hypercalls = HYPERCALLS $@
-      cmd_hypercalls = $(CONFIG_SHELL) '$<' $@ $(filter-out $<, $(real-prereqs))
-
 $(uapi)/unistd_x32.h: abis := common,x32
 $(uapi)/unistd_x32.h: offset := __X32_SYSCALL_BIT
 $(uapi)/unistd_x32.h: $(syscall64) $(syshdr) FORCE
@@ -43,11 +40,6 @@ $(out)/syscalls_64.h: $(syscall64) $(systbl) FORCE
 $(out)/syscalls_x32.h: abis := common,x32
 $(out)/syscalls_x32.h: $(syscall64) $(systbl) FORCE
 	$(call if_changed,systbl)
-
-$(out)/xen-hypercalls.h: $(srctree)/scripts/xen-hypercalls.sh FORCE
-	$(call if_changed,hypercalls)
-
-$(out)/xen-hypercalls.h: $(srctree)/include/xen/interface/xen*.h
 
 uapisyshdr-y			+= unistd_64.h unistd_x32.h
 syshdr-$(CONFIG_X86_64)		+= unistd_64_x32.h
