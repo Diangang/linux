@@ -81,10 +81,6 @@ struct gic_chip_data {
 #define gic_lock_irqsave(f)		do { (void)(f); } while(0)
 #define gic_unlock_irqrestore(f)	do { (void)(f); } while(0)
 
-#define gic_lock()			do { } while(0)
-#define gic_unlock()			do { } while(0)
-
-
 static DEFINE_STATIC_KEY_FALSE(needs_rmw_access);
 
 /*
@@ -105,7 +101,6 @@ static DEFINE_PER_CPU(u32, sgi_intid);
 
 #define gic_data_dist_base(d)	((d)->dist_base.common_base)
 #define gic_data_cpu_base(d)	((d)->cpu_base.common_base)
-#define enable_frankengic()	do { } while(0)
 
 static inline void __iomem *gic_dist_base(struct irq_data *d)
 {
