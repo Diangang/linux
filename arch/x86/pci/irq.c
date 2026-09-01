@@ -313,7 +313,6 @@ void elcr_set_level_irq(unsigned int irq)
 
 #define PC_CONF_FINALI_LOCK		0x03u
 #define PC_CONF_FINALI_PCI_INTX_RT1	0x42u
-#define PC_CONF_FINALI_PCI_INTX_RT2	0x43u
 #define PC_CONF_FINALI_PCI_INTX_SENS	0x44u
 
 #define PC_CONF_FINALI_LOCK_KEY		0xc5u
@@ -814,7 +813,6 @@ static int pirq_sis497_set(struct pci_dev *router, struct pci_dev *dev,
 
 #define PIRQ_SIS503_IRQ_MASK	0x0f
 #define PIRQ_SIS503_IRQ_DISABLE	0x80
-#define PIRQ_SIS503_USB_ENABLE	0x40
 
 static int pirq_sis503_get(struct pci_dev *router, struct pci_dev *dev,
 			   int pirq)

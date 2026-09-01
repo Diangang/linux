@@ -9,12 +9,6 @@
 #include <linux/numa.h>
 
 /*
- * Longest parameter of 'acpi=' is 'copy_dsdt', plus an extra '\0'
- * for termination.
- */
-#define MAX_ACPI_ARG_LENGTH 10
-
-/*
  * Immovable memory regions representation. Max amount of memory regions is
  * MAX_NUMNODES*2.
  */
