@@ -100,11 +100,6 @@ static inline void elf_coredump_set_mm_eflags(struct mm_struct *mm, u32 flags)
 {
 }
 
-static inline u32 elf_coredump_get_mm_eflags(struct mm_struct *mm, u32 flags)
-{
-	return flags;
-}
-
 /*
  * We need to explicitly zero any trailing portion of the page that follows
  * p_filesz when it ends before the page ends (e.g. bss), otherwise this
