@@ -89,18 +89,6 @@ typedef struct pm_message {
  *	@poweroff(), can be executed (e.g. if the suspend callback fails for one
  *	of the other devices that the PM core has unsuccessfully attempted to
  *	suspend earlier).
- *	The PM core executes subsystem-level @complete() after it has executed
- *	the appropriate resume callbacks for all devices.  If the corresponding
- *	@prepare() at the beginning of the suspend transition returned a
- *	positive number and the device was left in runtime suspend (without
- *	executing any suspend and resume callbacks for it), @complete() will be
- *	the only callback executed for the device during resume.  In that case,
- *	@complete() must be prepared to do whatever is necessary to ensure the
- *	proper functioning of the device after the system resume.  To this end,
- *	@complete() can check the power.direct_complete flag of the device to
- *	learn whether (unset) or not (set) the previous suspend and resume
- *	callbacks have been executed for it.
- *
  * @suspend: Executed before putting the system into a sleep state in which the
  *	contents of main memory are preserved.  The exact action to perform
  *	depends on the device's subsystem (PM domain, device type, class or bus
@@ -484,21 +472,15 @@ struct dev_pm_info {
 	pm_message_t		power_state;
 	bool			can_wakeup:1;
 	bool			async_suspend:1;
-	bool			in_dpm_list:1;	/* Owned by the PM core */
 	bool			is_prepared:1;	/* Owned by the PM core */
-	bool			is_suspended:1;	/* Ditto */
-	bool			is_noirq_suspended:1;
-	bool			is_late_suspended:1;
 	bool			no_pm:1;
 	bool			early_init:1;	/* Owned by the PM core */
-	bool			direct_complete:1;	/* Owned by the PM core */
 	u32			driver_flags;
 	spinlock_t		lock;
 	bool			should_wakeup:1;
 	struct pm_subsys_data	*subsys_data;  /* Owned by the subsystem. */
 	void (*set_latency_tolerance)(struct device *, s32);
 	struct dev_pm_qos	*qos;
-	bool			detach_power_off:1;	/* Owned by the driver core */
 };
 
 extern int dev_pm_get_subsys_data(struct device *dev);
