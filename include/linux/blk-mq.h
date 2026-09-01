@@ -1023,8 +1023,6 @@ void blk_rq_init(struct request_queue *q, struct request *rq);
 int blk_rq_prep_clone(struct request *rq, struct request *rq_src,
 		struct bio_set *bs, gfp_t gfp_mask,
 		int (*bio_ctr)(struct bio *, struct bio *, void *), void *data);
-void blk_rq_unprep_clone(struct request *rq);
-blk_status_t blk_insert_cloned_request(struct request *rq);
 
 struct rq_map_data {
 	struct page **pages;

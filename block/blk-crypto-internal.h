@@ -108,8 +108,6 @@ static inline int blk_crypto_rq_bio_prep(struct request *rq, struct bio *bio,
 	return 0;
 }
 
-bool blk_crypto_fallback_bio_prep(struct bio *bio);
-
 static inline int
 blk_crypto_fallback_start_using_mode(enum blk_crypto_mode_num mode_num)
 {

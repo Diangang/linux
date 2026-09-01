@@ -23,9 +23,6 @@ static inline int blk_trace_remove(struct request_queue *q)
 	return -ENOTTY;
 }
 
-
-void blk_fill_rwbs(char *rwbs, blk_opf_t opf);
-
 static inline sector_t blk_rq_trace_sector(struct request *rq)
 {
 	/*

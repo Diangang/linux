@@ -44,5 +44,4 @@ put_partition(struct parsed_partitions *p, int n, sector_t from, sector_t size)
 	}
 }
 
-int efi_partition(struct parsed_partitions *state);
 int msdos_partition(struct parsed_partitions *state);

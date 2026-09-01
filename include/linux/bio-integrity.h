@@ -87,14 +87,4 @@ static inline int bio_integrity_add_page(struct bio *bio, struct page *page,
 	return 0;
 }
 
-void bio_integrity_alloc_buf(struct bio *bio, bool zero_buffer);
-void bio_integrity_free_buf(struct bio_integrity_payload *bip);
-void bio_integrity_setup_default(struct bio *bio);
-
-unsigned int fs_bio_integrity_alloc(struct bio *bio);
-void fs_bio_integrity_free(struct bio *bio);
-void fs_bio_integrity_generate(struct bio *bio);
-int fs_bio_integrity_verify(struct bio *bio, sector_t sector,
-		unsigned int size);
-
 #endif /* _LINUX_BIO_INTEGRITY_H */

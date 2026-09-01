@@ -870,9 +870,6 @@ static inline struct request_queue *bdev_get_queue(struct block_device *bdev)
 	return bdev->bd_queue;	/* this is never NULL */
 }
 
-/* Convert a zone condition BLK_ZONE_COND_name into the string "name" */
-const char *blk_zone_cond_str(enum blk_zone_cond zone_cond);
-
 static inline unsigned int bio_zone_no(struct bio *bio)
 {
 	return disk_zone_no(bio->bi_bdev->bd_disk, bio->bi_iter.bi_sector);
