@@ -25,7 +25,6 @@
 #include <linux/kthread.h>
 #include <linux/wait.h>
 #include <linux/async.h>
-#include <linux/pm_runtime.h>
 #include <linux/pinctrl/devinfo.h>
 #include <linux/slab.h>
 
@@ -806,21 +805,10 @@ static int __driver_probe_device(const struct device_driver *drv, struct device 
 	dev_dbg(dev, "bus: '%s': %s: matched device with driver %s\n",
 		drv->bus->name, __func__, drv->name);
 
-	pm_runtime_get_suppliers(dev);
-	if (dev->parent)
-		pm_runtime_get_sync(dev->parent);
-
-	pm_runtime_barrier(dev);
 	if (initcall_debug)
 		ret = really_probe_debug(dev, drv);
 	else
 		ret = really_probe(dev, drv);
-	pm_request_idle(dev);
-
-	if (dev->parent)
-		pm_runtime_put(dev->parent);
-
-	pm_runtime_put_suppliers(dev);
 	return ret;
 }
 
@@ -998,16 +986,8 @@ static void __device_attach_async_helper(void *_dev, async_cookie_t cookie)
 	if (dev->p->dead || dev->driver)
 		goto out_unlock;
 
-	if (dev->parent)
-		pm_runtime_get_sync(dev->parent);
-
 	bus_for_each_drv(dev->bus, NULL, &data, __device_attach_driver);
 	dev_dbg(dev, "async probe completed\n");
-
-	pm_request_idle(dev);
-
-	if (dev->parent)
-		pm_runtime_put(dev->parent);
 out_unlock:
 	device_unlock(dev);
 
@@ -1041,9 +1021,6 @@ static int __device_attach(struct device *dev, bool allow_async)
 			.want_async = false,
 		};
 
-		if (dev->parent)
-			pm_runtime_get_sync(dev->parent);
-
 		ret = bus_for_each_drv(dev->bus, NULL, &data,
 					__device_attach_driver);
 		if (!ret && allow_async && data.have_async) {
@@ -1057,12 +1034,7 @@ static int __device_attach(struct device *dev, bool allow_async)
 			dev_dbg(dev, "scheduling asynchronous probe\n");
 			get_device(dev);
 			async = true;
-		} else {
-			pm_request_idle(dev);
 		}
-
-		if (dev->parent)
-			pm_runtime_put(dev->parent);
 	}
 out_unlock:
 	device_unlock(dev);
@@ -1270,8 +1242,6 @@ static void __device_release_driver(struct device *dev, struct device *parent)
 
 	drv = dev->driver;
 	if (drv) {
-		pm_runtime_get_sync(dev);
-
 		while (device_links_busy(dev)) {
 			__device_driver_unlock(dev, parent);
 
@@ -1282,18 +1252,14 @@ static void __device_release_driver(struct device *dev, struct device *parent)
 			 * A concurrent invocation of the same function might
 			 * have released the driver successfully while this one
 			 * was waiting, so check for that.
-			 */
-			if (dev->driver != drv) {
-				pm_runtime_put(dev);
-				return;
-			}
+				 */
+				if (dev->driver != drv)
+					return;
 		}
 
 		driver_sysfs_remove(dev);
 
 		bus_notify(dev, BUS_NOTIFY_UNBIND_DRIVER);
-
-		pm_runtime_put_sync(dev);
 
 		device_remove(dev);
 
