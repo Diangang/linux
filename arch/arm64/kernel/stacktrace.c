@@ -274,24 +274,6 @@ do_kunwind(struct kunwind_state *state, kunwind_consume_fn consume_state,
 			: stackinfo_get_unknown();		\
 	})
 
-/*
- * SDEI stacks are only accessible when unwinding the current task in an NMI
- * context.
- */
-#define STACKINFO_SDEI(name)					\
-	({							\
-		((task == current) && in_nmi())			\
-			? stackinfo_get_sdei_##name()		\
-			: stackinfo_get_unknown();		\
-	})
-
-#define STACKINFO_EFI						\
-	({							\
-		((task == current) && current_in_efi())		\
-			? stackinfo_get_efi()			\
-			: stackinfo_get_unknown();		\
-	})
-
 static __always_inline int
 kunwind_stack_walk(kunwind_consume_fn consume_state,
 		   void *cookie, struct task_struct *task,
