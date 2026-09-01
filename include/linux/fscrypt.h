@@ -441,10 +441,6 @@ static inline bool __fscrypt_inode_uses_inline_crypto(const struct inode *inode)
 	return false;
 }
 
-static inline void fscrypt_set_bio_crypt_ctx(struct bio *bio,
-					     const struct inode *inode,
-					     loff_t pos, gfp_t gfp_mask) { }
-
 static inline bool fscrypt_mergeable_bio(struct bio *bio,
 					 const struct inode *inode,
 					 loff_t pos)
