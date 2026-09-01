@@ -12,25 +12,10 @@
 
 #include <linux/device.h>
 #include <linux/module.h>
-#include <linux/pm_runtime.h>
 #include <linux/serial_core.h>
 #include <linux/spinlock.h>
 
 #include "serial_base.h"
-
-static int serial_ctrl_probe(struct device *dev)
-{
-	pm_runtime_enable(dev);
-
-	return 0;
-}
-
-static int serial_ctrl_remove(struct device *dev)
-{
-	pm_runtime_disable(dev);
-
-	return 0;
-}
 
 /*
  * Serial core controller device init functions. Note that the physical
@@ -49,8 +34,6 @@ void serial_ctrl_unregister_port(struct uart_driver *drv, struct uart_port *port
 static struct device_driver serial_ctrl_driver = {
 	.name = "ctrl",
 	.suppress_bind_attrs = true,
-	.probe = serial_ctrl_probe,
-	.remove = serial_ctrl_remove,
 };
 
 int serial_base_ctrl_init(void)
