@@ -24,10 +24,6 @@ config GCC_VERSION
 	default $(cc-version) if CC_IS_GCC
 	default 0
 
-config CLANG_VERSION
-	int
-	default 0
-
 config LD_IS_BFD
 	def_bool $(success,test "$(ld-name)" = BFD)
 
