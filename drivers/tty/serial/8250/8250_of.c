@@ -278,8 +278,6 @@ static void of_platform_serial_remove(struct platform_device *ofdev)
 	kfree(info);
 }
 
-static SIMPLE_DEV_PM_OPS(of_serial_pm_ops, of_serial_suspend, of_serial_resume);
-
 /*
  * A few common types, add more as needed.
  */
@@ -316,7 +314,6 @@ static struct platform_driver of_platform_serial_driver = {
 	.driver = {
 		.name = "of_serial",
 		.of_match_table = of_platform_serial_table,
-		.pm = &of_serial_pm_ops,
 	},
 	.probe = of_platform_serial_probe,
 	.remove = of_platform_serial_remove,
