@@ -305,7 +305,6 @@ static int local_pci_probe(struct drv_dev_and_id *ddi)
 {
 	struct pci_dev *pci_dev = ddi->dev;
 	struct pci_driver *pci_drv = ddi->drv;
-	struct device *dev = &pci_dev->dev;
 	int rc;
 
 	pci_dev->driver = pci_drv;
