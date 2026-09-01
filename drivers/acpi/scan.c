@@ -887,29 +887,6 @@ static struct acpi_device *acpi_find_parent_acpi_dev(acpi_handle handle)
 	return adev;
 }
 
-acpi_status
-acpi_bus_get_ejd(acpi_handle handle, acpi_handle *ejd)
-{
-	acpi_status status;
-	acpi_handle tmp;
-	struct acpi_buffer buffer = {ACPI_ALLOCATE_BUFFER, NULL};
-	union acpi_object *obj;
-
-	status = acpi_get_handle(handle, "_EJD", &tmp);
-	if (ACPI_FAILURE(status))
-		return status;
-
-	status = acpi_evaluate_object(handle, "_EJD", NULL, &buffer);
-	if (ACPI_SUCCESS(status)) {
-		obj = buffer.pointer;
-		status = acpi_get_handle(ACPI_ROOT_OBJECT, obj->string.pointer,
-					 ejd);
-		kfree(buffer.pointer);
-	}
-	return status;
-}
-EXPORT_SYMBOL_GPL(acpi_bus_get_ejd);
-
 static int acpi_bus_extract_wakeup_device_power_package(struct acpi_device *dev)
 {
 	acpi_handle handle = dev->handle;
