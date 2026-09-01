@@ -529,8 +529,6 @@ static void pci_device_shutdown(struct device *dev)
 
 }
 
-#define PCI_PM_OPS_PTR	NULL
-
 /**
  * __pci_register_driver - register a new pci driver
  * @drv: the driver structure to register
@@ -779,7 +777,6 @@ const struct bus_type pci_bus_type = {
 	.dev_groups	= pci_dev_groups,
 	.bus_groups	= pci_bus_groups,
 	.drv_groups	= pci_drv_groups,
-	.pm		= PCI_PM_OPS_PTR,
 	.num_vf		= pci_bus_num_vf,
 	.dma_configure	= pci_dma_configure,
 	.dma_cleanup	= pci_dma_cleanup,
