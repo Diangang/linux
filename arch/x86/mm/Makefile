@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 # Kernel does not boot with instrumentation of tlb.c.
-KCOV_INSTRUMENT_tlb.o			:= n
-KCOV_INSTRUMENT_pgprot.o		:= n
 # See the "Disable KCOV" comment in arch/x86/kernel/Makefile.
-KCOV_INSTRUMENT_physaddr.o		:= n
 
 obj-y				:=  init.o init_$(BITS).o fault.o ioremap.o extable.o mmap.o \
 				    pgtable.o physaddr.o tlb.o cpu_entry_area.o maccess.o pgprot.o

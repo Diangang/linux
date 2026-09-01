@@ -6,11 +6,6 @@
 # These files are disabled because they produce non-interesting and/or
 # flaky coverage that is not a function of syscall inputs. E.g. slab is out of
 # free pages, or a task is migrated between nodes.
-KCOV_INSTRUMENT_slab_common.o := n
-KCOV_INSTRUMENT_slub.o := n
-KCOV_INSTRUMENT_page_alloc.o := n
-KCOV_INSTRUMENT_mmzone.o := n
-KCOV_INSTRUMENT_vmstat.o := n
 
 CFLAGS_init-mm.o += -Wno-override-init
 

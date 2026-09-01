@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: GPL-2.0-only
-kcov-flags-y					+= -fsanitize-coverage=trace-pc
-
-kcov-rflags-y					+= -Cpasses=sancov-module
-kcov-rflags-y					+= -Cllvm-args=-sanitizer-coverage-level=3
-kcov-rflags-y					+= -Cllvm-args=-sanitizer-coverage-trace-pc
-
-export CFLAGS_KCOV := $(kcov-flags-y)
-export RUSTFLAGS_KCOV := $(kcov-rflags-y)

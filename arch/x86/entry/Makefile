@@ -3,8 +3,6 @@
 # Makefile for the x86 low level entry code
 #
 
-UBSAN_SANITIZE := n
-KCOV_INSTRUMENT := n
 
 CFLAGS_syscall_64.o		+= -fno-stack-protector
 

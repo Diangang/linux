@@ -12,13 +12,8 @@ CPPFLAGS_vmlinux.lds += -U$(UTS_MACHINE)
 
 # If instrumentation of the following files is enabled, boot hangs during
 # first second.
-KCOV_INSTRUMENT_head$(BITS).o				:= n
 # These are called from save_stack_trace() on debug paths,
 # and produce large amounts of uninteresting coverage.
-KCOV_INSTRUMENT_stacktrace.o				:= n
-KCOV_INSTRUMENT_dumpstack.o				:= n
-KCOV_INSTRUMENT_dumpstack_$(BITS).o			:= n
-KCOV_INSTRUMENT_unwind_orc.o				:= n
 CFLAGS_head64.o := -fno-stack-protector
 
 obj-y			+= head_$(BITS).o

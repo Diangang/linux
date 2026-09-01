@@ -10,8 +10,6 @@ KBUILD_CFLAGS		+= -D__DISABLE_EXPORTS -mcmodel=small -fPIC \
 
 # disable LTO
 KBUILD_CFLAGS	:= $(filter-out $(CC_FLAGS_LTO),$(KBUILD_CFLAGS))
-UBSAN_SANITIZE	:= n
-KCOV_INSTRUMENT	:= n
 
 obj-$(CONFIG_X86_64)		+= gdt_idt.o map_kernel.o
 pi-objs				:= $(patsubst %.o,$(obj)/%.o,$(obj-y))

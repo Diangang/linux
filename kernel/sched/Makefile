@@ -6,7 +6,6 @@ ccflags-y += $(call cc-disable-warning, unused-but-set-variable)
 
 # These files are disabled because they produce non-interesting flaky coverage
 # that is not a function of syscall inputs. E.g. involuntary context switches.
-KCOV_INSTRUMENT := n
 
 
 ifneq ($(CONFIG_SCHED_OMIT_FRAME_POINTER),y)

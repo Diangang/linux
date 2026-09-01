@@ -4,7 +4,6 @@
 #
 
 # If these files are instrumented, boot hangs during the first second.
-KCOV_INSTRUMENT_common.o := n
 
 obj-y			:= cacheinfo.o scattered.o
 obj-y			+= topology_common.o topology_ext.o topology_amd.o
