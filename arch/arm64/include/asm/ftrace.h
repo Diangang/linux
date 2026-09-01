@@ -84,7 +84,4 @@ static inline bool arch_syscall_match_sym_name(const char *sym,
 }
 #endif /* ifndef __ASSEMBLER__ */
 
-#ifndef __ASSEMBLER__
-#endif
-
 #endif /* __ASM_FTRACE_H */

@@ -125,10 +125,6 @@ static __always_inline unsigned long arch_local_irq_save(void)
 }
 #else
 
-#ifdef CONFIG_X86_64
-
-#endif
-
 #endif /* __ASSEMBLER__ */
 
 #ifndef __ASSEMBLER__

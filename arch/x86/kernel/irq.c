@@ -25,9 +25,6 @@
 #include <asm/posted_intr.h>
 #include <asm/irq_remapping.h>
 
-#if defined(CONFIG_X86_LOCAL_APIC)
-#endif
-
 DEFINE_PER_CPU_SHARED_ALIGNED(irq_cpustat_t, irq_stat);
 EXPORT_PER_CPU_SYMBOL(irq_stat);
 

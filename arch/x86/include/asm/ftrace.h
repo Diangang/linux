@@ -23,10 +23,6 @@ static inline bool arch_syscall_match_sym_name(const char *sym, const char *name
 		(!strncmp(sym, "__ia32_", 7) && !strcmp(sym + 10, name + 3)) ||
 		(!strncmp(sym, "__do_sys", 8) && !strcmp(sym + 8, name + 3));
 }
-
-#ifndef COMPILE_OFFSETS
-
-#endif /* !COMPILE_OFFSETS */
 #endif /* !__ASSEMBLER__ */
 
 #endif /* _ASM_X86_FTRACE_H */

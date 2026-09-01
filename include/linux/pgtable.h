@@ -1013,8 +1013,6 @@ static inline void pmdp_set_wrprotect(struct mm_struct *mm,
 	BUILD_BUG();
 }
 #endif
-#ifndef __HAVE_ARCH_PUDP_SET_WRPROTECT
-#endif
 
 #ifndef pmdp_collapse_flush
 static inline pmd_t pmdp_collapse_flush(struct vm_area_struct *vma,

@@ -469,8 +469,6 @@ void arch_pick_mmap_layout(struct mm_struct *mm, const struct rlimit *rlim_stack
 	mm_flags_clear(MMF_TOPDOWN, mm);
 }
 #endif
-#ifdef CONFIG_MMU
-#endif
 
 /**
  * __account_locked_vm - account locked pages to an mm's locked_vm
