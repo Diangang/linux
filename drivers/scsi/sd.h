@@ -214,9 +214,6 @@ static inline sector_t sectors_to_logical(struct scsi_device *sdev, sector_t sec
 	return sector >> (ilog2(sdev->sector_size) - 9);
 }
 
-void sd_dif_config_host(struct scsi_disk *sdkp, struct queue_limits *lim);
-
-
 static inline int sd_zbc_read_zones(struct scsi_disk *sdkp,
 		struct queue_limits *lim, u8 buf[SD_BUF_SIZE])
 {
