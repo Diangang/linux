@@ -2509,20 +2509,6 @@ void acpi_bus_trim(struct acpi_device *adev)
 }
 EXPORT_SYMBOL_GPL(acpi_bus_trim);
 
-int acpi_bus_register_early_device(int type)
-{
-	struct acpi_device *device = NULL;
-	int result;
-
-	result = acpi_add_single_object(&device, NULL, type, false);
-	if (result)
-		return result;
-
-	acpi_default_enumeration(device);
-	return 0;
-}
-EXPORT_SYMBOL_GPL(acpi_bus_register_early_device);
-
 static void acpi_bus_add_fixed_device_object(enum acpi_bus_device_type type)
 {
 	struct acpi_device *adev = NULL;
