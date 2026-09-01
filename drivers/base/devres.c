@@ -813,14 +813,6 @@ static struct devres_action *devres_action_find(struct device *dev,
 	return NULL;
 }
 
-bool devm_is_action_added(struct device *dev, void (*action)(void *), void *data)
-{
-	guard(spinlock_irqsave)(&dev->devres_lock);
-
-	return !!devres_action_find(dev, action, data);
-}
-EXPORT_SYMBOL_GPL(devm_is_action_added);
-
 static struct devres_action *remove_action(struct device *dev,
 					   void (*action)(void *),
 					   void *data)
