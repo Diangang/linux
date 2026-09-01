@@ -20,7 +20,6 @@
 #include <linux/sched/debug.h>
 #include <linux/alarmtimer.h>
 #include <linux/mutex.h>
-#include <linux/platform_device.h>
 #include <linux/posix-timers.h>
 #include <linux/workqueue.h>
 #include <linux/freezer.h>
@@ -52,10 +51,6 @@ static ktime_t freezer_expires;
 static ktime_t freezer_delta;
 static DEFINE_SPINLOCK(freezer_delta_lock);
 #endif
-
-static inline int alarmtimer_rtc_interface_setup(void) { return 0; }
-static inline void alarmtimer_rtc_interface_remove(void) { }
-static inline void alarmtimer_rtc_timer_init(void) { }
 
 /**
  * alarmtimer_enqueue - Adds an alarm timer to an alarm_base timerqueue
@@ -123,16 +118,6 @@ ktime_t alarm_expires_remaining(const struct alarm *alarm)
 	return ktime_sub(alarm->node.expires, base->get_ktime());
 }
 EXPORT_SYMBOL_GPL(alarm_expires_remaining);
-
-static int alarmtimer_suspend(struct device *dev)
-{
-	return 0;
-}
-
-static int alarmtimer_resume(struct device *dev)
-{
-	return 0;
-}
 
 static void
 __alarm_init(struct alarm *alarm, enum alarmtimer_type type,
@@ -656,19 +641,6 @@ const struct k_clock alarm_clock = {
 #endif /* CONFIG_POSIX_TIMERS */
 
 
-/* Suspend hook structures */
-static const struct dev_pm_ops alarmtimer_pm_ops = {
-	.suspend = alarmtimer_suspend,
-	.resume = alarmtimer_resume,
-};
-
-static struct platform_driver alarmtimer_driver = {
-	.driver = {
-		.name = "alarmtimer",
-		.pm = &alarmtimer_pm_ops,
-	}
-};
-
 static void get_boottime_timespec(struct timespec64 *tp)
 {
 	ktime_get_boottime_ts64(tp);
@@ -683,10 +655,7 @@ static void get_boottime_timespec(struct timespec64 *tp)
  */
 static int __init alarmtimer_init(void)
 {
-	int error;
 	int i;
-
-	alarmtimer_rtc_timer_init();
 
 	/* Initialize alarm bases */
 	alarm_bases[ALARM_REALTIME].base_clockid = CLOCK_REALTIME;
@@ -700,17 +669,6 @@ static int __init alarmtimer_init(void)
 		spin_lock_init(&alarm_bases[i].lock);
 	}
 
-	error = alarmtimer_rtc_interface_setup();
-	if (error)
-		return error;
-
-	error = platform_driver_register(&alarmtimer_driver);
-	if (error)
-		goto out_if;
-
 	return 0;
-out_if:
-	alarmtimer_rtc_interface_remove();
-	return error;
 }
 device_initcall(alarmtimer_init);
