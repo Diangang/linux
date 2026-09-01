@@ -1952,7 +1952,6 @@ static struct irqaction *__free_irq(struct irq_desc *desc, void *dev_id)
 
 	mutex_unlock(&desc->request_mutex);
 
-	irq_chip_pm_put(&desc->irq_data);
 	module_put(desc->owner);
 	kfree(action->secondary);
 	return action;
@@ -2019,7 +2018,6 @@ static const void *__cleanup_nmi(unsigned int irq, struct irq_desc *desc)
 
 	irq_release_resources(desc);
 
-	irq_chip_pm_put(&desc->irq_data);
 	module_put(desc->owner);
 
 	return devname;
@@ -2138,16 +2136,9 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 	action->name = devname;
 	action->dev_id = dev_id;
 
-	retval = irq_chip_pm_get(&desc->irq_data);
-	if (retval < 0) {
-		kfree(action);
-		return retval;
-	}
-
 	retval = __setup_irq(irq, desc, action);
 
 	if (retval) {
-		irq_chip_pm_put(&desc->irq_data);
 		kfree(action->secondary);
 		kfree(action);
 	}
@@ -2259,13 +2250,9 @@ int request_nmi(unsigned int irq, irq_handler_t handler,
 	action->name = name;
 	action->dev_id = dev_id;
 
-	retval = irq_chip_pm_get(&desc->irq_data);
-	if (retval < 0)
-		goto err_out;
-
 	retval = __setup_irq(irq, desc, action);
 	if (retval)
-		goto err_irq_setup;
+		goto err_out;
 
 	scoped_guard(raw_spinlock_irqsave, &desc->lock) {
 		/* Setup NMI state */
@@ -2278,8 +2265,6 @@ int request_nmi(unsigned int irq, irq_handler_t handler,
 		return 0;
 	}
 
-err_irq_setup:
-	irq_chip_pm_put(&desc->irq_data);
 err_out:
 	kfree(action);
 
@@ -2386,7 +2371,6 @@ static struct irqaction *__free_percpu_irq(unsigned int irq, void __percpu *dev_
 	}
 
 	unregister_handler_proc(irq, action);
-	irq_chip_pm_put(&desc->irq_data);
 	module_put(desc->owner);
 	return action;
 }
@@ -2495,16 +2479,9 @@ int request_percpu_irq_affinity(unsigned int irq, irq_handler_t handler, const c
 	if (!action)
 		return -ENOMEM;
 
-	retval = irq_chip_pm_get(&desc->irq_data);
-	if (retval < 0) {
-		kfree(action);
-		return retval;
-	}
-
 	retval = __setup_irq(irq, desc, action);
 
 	if (retval) {
-		irq_chip_pm_put(&desc->irq_data);
 		kfree(action);
 	}
 
@@ -2562,20 +2539,14 @@ int request_percpu_nmi(unsigned int irq, irq_handler_t handler, const char *name
 	if (!action)
 		return -ENOMEM;
 
-	retval = irq_chip_pm_get(&desc->irq_data);
-	if (retval < 0)
-		goto err_out;
-
 	retval = __setup_irq(irq, desc, action);
 	if (retval)
-		goto err_irq_setup;
+		goto err_out;
 
 	scoped_guard(raw_spinlock_irqsave, &desc->lock)
 		desc->istate |= IRQS_NMI;
 	return 0;
 
-err_irq_setup:
-	irq_chip_pm_put(&desc->irq_data);
 err_out:
 	kfree(action);
 

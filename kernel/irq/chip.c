@@ -969,7 +969,6 @@ __irq_do_set_handler(struct irq_desc *desc, irq_flow_handler_t handle,
 		irq_state_set_disabled(desc);
 		if (is_chained) {
 			desc->action = NULL;
-			irq_chip_pm_put(irq_desc_get_irq_data(desc));
 		}
 		desc->depth = 1;
 	}
@@ -996,7 +995,6 @@ __irq_do_set_handler(struct irq_desc *desc, irq_flow_handler_t handle,
 		irq_settings_set_norequest(desc);
 		irq_settings_set_nothread(desc);
 		desc->action = &chained_action;
-		WARN_ON(irq_chip_pm_get(irq_desc_get_irq_data(desc)));
 		irq_activate_and_startup(desc, IRQ_RESEND);
 	}
 }
@@ -1396,43 +1394,4 @@ int irq_chip_compose_msi_msg(struct irq_data *data, struct msi_msg *msg)
 
 	pos->chip->irq_compose_msi_msg(pos, msg);
 	return 0;
-}
-
-static struct device *irq_get_pm_device(struct irq_data *data)
-{
-	if (data->domain)
-		return data->domain->pm_dev;
-
-	return NULL;
-}
-
-/**
- * irq_chip_pm_get - Enable power for an IRQ chip
- * @data:	Pointer to interrupt specific data
- *
- * Enable the power to the IRQ chip referenced by the interrupt data
- * structure.
- */
-int irq_chip_pm_get(struct irq_data *data)
-{
-	return 0;
-}
-
-/**
- * irq_chip_pm_put - Drop a PM reference on an IRQ chip
- * @data:	Pointer to interrupt specific data
- *
- * Drop a power management reference, acquired via irq_chip_pm_get(), on the IRQ
- * chip represented by the interrupt data structure.
- *
- * Note that this will not disable power to the IRQ chip until this function
- * has been called for all IRQs that have called irq_chip_pm_get() and it may
- * not disable power at all (if user space prevents that, for example).
- */
-void irq_chip_pm_put(struct irq_data *data)
-{
-	struct device *dev = irq_get_pm_device(data);
-
-	if (dev)
-		pm_runtime_put(dev);
 }
