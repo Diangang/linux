@@ -1410,14 +1410,13 @@ sd_init(struct sched_domain_topology_level *tl,
 {
 	struct sd_data *sdd = &tl->data;
 	struct sched_domain *sd = *per_cpu_ptr(sdd->sd, cpu);
-	int sd_id, sd_weight, sd_flags = 0;
+	int sd_weight, sd_flags = 0;
 	struct cpumask *sd_span;
 	u64 now = sched_clock();
 
 	sd_span = sched_domain_span(sd);
 	cpumask_and(sd_span, cpu_map, tl->mask(tl, cpu));
 	sd_weight = cpumask_weight(sd_span);
-	sd_id = cpumask_first(sd_span);
 
 	if (tl->sd_flags)
 		sd_flags = (*tl->sd_flags)();
