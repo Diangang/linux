@@ -133,14 +133,10 @@ extern void setup_boot_APIC_clock(void);
 extern void setup_secondary_APIC_clock(void);
 extern void lapic_update_tsc_freq(void);
 
-#ifdef CONFIG_X86_64
 static inline bool apic_force_enable(unsigned long addr)
 {
 	return false;
 }
-#else
-extern bool apic_force_enable(unsigned long addr);
-#endif
 
 extern void apic_ap_setup(void);
 

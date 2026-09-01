@@ -86,13 +86,6 @@ static inline bool apic_accessible(void)
 
 
 /*
- * Knob to control our willingness to enable the local APIC.
- *
- * +1=force-enable
- */
-static int force_enable_local_apic __initdata;
-
-/*
  * APIC command line parameters
  */
 static int __init parse_lapic(char *arg)
@@ -1576,7 +1569,6 @@ void __init check_x2apic(void)
 	setup_clear_cpu_cap(X86_FEATURE_APIC);
 }
 
-#ifdef CONFIG_X86_64
 /*
  * Detect and enable local APICs on non-SMP boards.
  * Original code written by Keir Fraser.
@@ -1593,112 +1585,6 @@ static bool __init detect_init_APIC(void)
 	register_lapic_address(APIC_DEFAULT_PHYS_BASE);
 	return true;
 }
-#else
-
-static bool __init apic_verify(unsigned long addr)
-{
-	u32 features, h, l;
-
-	/*
-	 * The APIC feature bit should now be enabled
-	 * in `cpuid'
-	 */
-	features = cpuid_edx(1);
-	if (!(features & (1 << X86_FEATURE_APIC))) {
-		pr_warn("Could not enable APIC!\n");
-		return false;
-	}
-	set_cpu_cap(&boot_cpu_data, X86_FEATURE_APIC);
-
-	/* The BIOS may have set up the APIC at some other address */
-	if (boot_cpu_data.x86 >= 6) {
-		rdmsr(MSR_IA32_APICBASE, l, h);
-		if (l & MSR_IA32_APICBASE_ENABLE)
-			addr = l & MSR_IA32_APICBASE_BASE;
-	}
-
-	register_lapic_address(addr);
-	pr_info("Found and enabled local APIC!\n");
-	return true;
-}
-
-bool __init apic_force_enable(unsigned long addr)
-{
-	u32 h, l;
-
-	if (apic_is_disabled)
-		return false;
-
-	/*
-	 * Some BIOSes disable the local APIC in the APIC_BASE
-	 * MSR. This can only be done in software for Intel P6 or later
-	 * and AMD K7 (Model > 1) or later.
-	 */
-	if (boot_cpu_data.x86 >= 6) {
-		rdmsr(MSR_IA32_APICBASE, l, h);
-		if (!(l & MSR_IA32_APICBASE_ENABLE)) {
-			pr_info("Local APIC disabled by BIOS -- reenabling.\n");
-			l &= ~MSR_IA32_APICBASE_BASE;
-			l |= MSR_IA32_APICBASE_ENABLE | addr;
-			wrmsr(MSR_IA32_APICBASE, l, h);
-			enabled_via_apicbase = 1;
-		}
-	}
-	return apic_verify(addr);
-}
-
-/*
- * Detect and initialize APIC
- */
-static bool __init detect_init_APIC(void)
-{
-	/* Disabled by kernel option? */
-	if (apic_is_disabled)
-		return false;
-
-	switch (boot_cpu_data.x86_vendor) {
-	case X86_VENDOR_AMD:
-		if ((boot_cpu_data.x86 == 6 && boot_cpu_data.x86_model > 1) ||
-		    (boot_cpu_data.x86 >= 15))
-			break;
-		goto no_apic;
-	case X86_VENDOR_HYGON:
-		break;
-	case X86_VENDOR_INTEL:
-		if ((boot_cpu_data.x86 == 5 && boot_cpu_has(X86_FEATURE_APIC)) ||
-		    boot_cpu_data.x86_vfm >= INTEL_PENTIUM_PRO)
-			break;
-		goto no_apic;
-	default:
-		goto no_apic;
-	}
-
-	if (!boot_cpu_has(X86_FEATURE_APIC)) {
-		/*
-		 * Over-ride BIOS and try to enable the local APIC only if
-		 * "lapic" specified.
-		 */
-		if (!force_enable_local_apic) {
-			pr_info("Local APIC disabled by BIOS -- "
-				"you can enable it with \"lapic\"\n");
-			return false;
-		}
-		if (!apic_force_enable(APIC_DEFAULT_PHYS_BASE))
-			return false;
-	} else {
-		if (!apic_verify(APIC_DEFAULT_PHYS_BASE))
-			return false;
-	}
-
-	apic_pm_activate();
-
-	return true;
-
-no_apic:
-	pr_info("No local APIC present or hardware disabled\n");
-	return false;
-}
-#endif
 
 /**
  * init_apic_mappings - initialize APIC mappings
