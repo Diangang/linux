@@ -24,9 +24,6 @@ struct acpi_handle_list {
 
 /* acpi_utils.h */
 acpi_status
-acpi_extract_package(union acpi_object *package,
-		     struct acpi_buffer *format, struct acpi_buffer *buffer);
-acpi_status
 acpi_evaluate_integer(acpi_handle handle,
 		      acpi_string pathname,
 		      struct acpi_object_list *arguments, unsigned long long *data);
