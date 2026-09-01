@@ -22,7 +22,6 @@
 #include <linux/err.h>
 #include <linux/slab.h>
 #include <linux/pm_runtime.h>
-#include <linux/pm_domain.h>
 #include <linux/idr.h>
 #include <linux/acpi.h>
 #include <linux/clk/clk-conf.h>
@@ -1246,7 +1245,7 @@ static int platform_probe(struct device *_dev)
 	 * again later because the probe function usually lives in __init code
 	 * and so is gone. For these drivers .probe is set to
 	 * platform_probe_fail in __platform_driver_probe(). Don't even prepare
-	 * clocks and PM domains for these to match the traditional behaviour.
+	 * clocks for these to match the traditional behaviour.
 	 */
 	if (unlikely(drv->probe == platform_probe_fail))
 		return -ENXIO;
@@ -1255,15 +1254,9 @@ static int platform_probe(struct device *_dev)
 	if (ret < 0)
 		return ret;
 
-	ret = dev_pm_domain_attach(_dev, PD_FLAG_ATTACH_POWER_ON |
-					 PD_FLAG_DETACH_POWER_OFF);
-	if (ret)
-		goto out;
-
 	if (drv->probe)
 		ret = drv->probe(dev);
 
-out:
 	if (drv->prevent_deferred_probe && ret == -EPROBE_DEFER) {
 		dev_warn(_dev, "probe deferral not supported\n");
 		ret = -ENXIO;
